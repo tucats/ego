@@ -16,10 +16,10 @@ character in the shell language.
 In addition to the built-in functions provided by the expressions package, this also demonstrates
 how to add a new function to the available functions.
 
-##pi()
+## pi()
 This simple function accepts no arguments, and returns a float64 value for pi. It returns no errors.
 
-#sum()
+## sum()
 This is a more complex function that handles a variable argument list, of heterogenous types. The
 function scans over the argument list, and performs a sum operation on the arguments. The type of the
 first argument in the sum() parameter list deterimes the return type.
