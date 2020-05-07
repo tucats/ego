@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -49,13 +50,16 @@ func main() {
 	os.Exit(0)
 }
 
-func pi([]interface{}) (interface{}, error) {
+func pi(args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.New("too many arguments to pi()")
+	}
 	return 3.1415926535, nil
 }
 
 func sum(args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return 0, nil
+		return nil, errors.New("insufficient arguments to sum()")
 	}
 	base := args[0]
 	for _, addend := range args[1:] {

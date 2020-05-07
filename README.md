@@ -17,7 +17,8 @@ In addition to the built-in functions provided by the expressions package, this 
 how to add a new function to the available functions.
 
 ## pi()
-This simple function accepts no arguments, and returns a float64 value for pi. It returns no errors.
+This simple function accepts no arguments, and returns a float64 value for pi. It returns an error if it is passed
+any parameters.
 
 ## sum()
 This is a more complex function that handles a variable argument list, of heterogenous types. The
@@ -28,5 +29,6 @@ Each argument is coerced to match the type of the first arguemnt (supported type
 and string). A type-switch is used to select the appropriate summation operation to perform based on the
 type of the value.
 
-The result of the summations is returned. This function returns no errors.
+The result of the summations is returned. If the function was
+called without any arguments, an error is returned.
 
