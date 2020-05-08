@@ -4,6 +4,10 @@ can be used to solve expressions, reference environment variables, and use built
 
 Because the arguments are passed in from a shell, they may have to be escaped to support
 the expression syntax for functions, strings, etc.
+You can also omit any arguments at all, and you will be prompted
+to enter text to solve. This will continue until a blank line
+is entered. When in this prompting mode, no additional escaping
+is needed.
 
 Example:
 
@@ -14,7 +18,7 @@ This prints the value "15". The quotes are required because the "*" character is
 character in the shell language.
 
 In addition to the built-in functions provided by the expressions package, this also demonstrates
-how to add a new function to the available functions.
+how to add a new function to the builtin functions.
 
 ## pi()
 This simple function accepts no arguments, and returns a float64 value for pi. It returns an error if it is passed

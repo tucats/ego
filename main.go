@@ -6,22 +6,26 @@ import (
 	"os"
 	"strings"
 
+	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/expressions"
 )
 
 func main() {
 
-	// Build the expression string from arguments
-
-	var text strings.Builder
+	text := ""
+	wasCommandLine := true
 
 	if len(os.Args) == 1 {
-		fmt.Printf("usage: solve <expression>\n")
-		os.Exit(0)
-	}
-	for _, v := range os.Args[1:] {
-		text.WriteString(v)
-		text.WriteRune(' ')
+		wasCommandLine = false
+		fmt.Println("Enter expressions to evaluate. End with a blank line.")
+		text = ui.Prompt("solve> ")
+	} else {
+		var buffer strings.Builder
+		for _, v := range os.Args[1:] {
+			buffer.WriteString(v)
+			buffer.WriteRune(' ')
+		}
+		text = buffer.String()
 	}
 
 	// Get a list of all the environment variables and make
@@ -37,16 +41,23 @@ func main() {
 	symbols["pi()"] = pi
 	symbols["sum()"] = sum
 
-	// Make an expression handler and evaluate the expression,
-	// using the environment symbols already loaded.
-	e := expressions.New(text.String())
-	v, err := e.Eval(symbols)
+	for len(strings.TrimSpace(text)) > 0 {
+		// Make an expression handler and evaluate the expression,
+		// using the environment symbols already loaded.
+		e := expressions.New(text)
+		v, err := e.Eval(symbols)
 
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("%v\n", v)
+		if wasCommandLine {
+			break
+		}
+		text = ui.Prompt("solve> ")
 	}
-	fmt.Printf("%v\n", v)
+
 	os.Exit(0)
 }
 
