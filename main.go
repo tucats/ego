@@ -51,7 +51,7 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("%v\n", v)
+		fmt.Printf("%s\n", expressions.Format(v))
 		if wasCommandLine {
 			break
 		}
