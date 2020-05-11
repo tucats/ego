@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/expressions"
+	"github.com/tucats/gopackages/util"
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("%s\n", expressions.Format(v))
+		fmt.Printf("%s\n", util.Format(v))
 		if wasCommandLine {
 			break
 		}
@@ -74,7 +75,7 @@ func sum(args []interface{}) (interface{}, error) {
 	}
 	base := args[0]
 	for _, addend := range args[1:] {
-		addend = expressions.Coerce(addend, base)
+		addend = util.Coerce(addend, base)
 		switch addend.(type) {
 		case int:
 			base = base.(int) + addend.(int)
