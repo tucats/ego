@@ -15,14 +15,23 @@ func main() {
 
 	text := ""
 	wasCommandLine := true
+	debug := false
 
-	if len(os.Args) == 1 {
+	args := os.Args[1:]
+	if len(args) > 0 {
+		if args[0] == "-d" {
+			debug = true
+			args = args[1:]
+		}
+	}
+
+	if len(args) == 0 {
 		wasCommandLine = false
 		fmt.Println("Enter expressions to evaluate. End with a blank line.")
 		text = ui.Prompt("solve> ")
 	} else {
 		var buffer strings.Builder
-		for _, v := range os.Args[1:] {
+		for _, v := range args {
 			buffer.WriteString(v)
 			buffer.WriteRune(' ')
 		}
@@ -46,6 +55,9 @@ func main() {
 		// Make an expression handler and evaluate the expression,
 		// using the environment symbols already loaded.
 		e := expressions.New(text)
+		if debug {
+			e.Disasm()
+		}
 		v, err := e.Eval(symbols)
 
 		if err != nil {
