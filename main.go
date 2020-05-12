@@ -56,6 +56,7 @@ func main() {
 		// using the environment symbols already loaded.
 		e := expressions.New(text)
 		if debug {
+			ui.DebugMode = true
 			e.Disasm()
 		}
 		v, err := e.Eval(symbols)
