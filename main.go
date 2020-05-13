@@ -52,6 +52,18 @@ func main() {
 	// Add local funcion(s)
 	symbols.Set("pi()", pi)
 	symbols.Set("sum()", sum)
+
+	// Create a bytecode function (this is a little brute force)
+	// The function takes the first argument and doubles it.
+	bc := bytecode.New("double()")
+	bc.Emit(bytecode.Load, "_args")
+	bc.Emit(bytecode.Push, 1)
+	bc.Emit0(bytecode.Index)
+	bc.Emit(bytecode.Push, 2)
+	bc.Emit(bytecode.Mul, nil)
+	bc.Emit(bytecode.Stop, nil)
+	symbols.Set("double()", bc)
+
 	exitValue := 0
 
 	for len(strings.TrimSpace(text)) > 0 {
@@ -60,6 +72,7 @@ func main() {
 		t := tokenizer.New(text)
 
 		// Peek ahead to see if this is an assignment
+
 		symbolName := ""
 		if t.Peek(2) == ":=" {
 			symbolName = t.Next()
@@ -69,7 +82,7 @@ func main() {
 		// Compile the token stream as an expression
 		b, err := expressions.Compile(t)
 		if err != nil {
-			fmt.Printf("Error[compile]: %v\n", err)
+			fmt.Printf("Error: compile, %v\n", err)
 			exitValue = 1
 		} else {
 
@@ -89,7 +102,7 @@ func main() {
 			err = c.Run()
 
 			if err != nil {
-				fmt.Printf("Error[exec]: %v\n", err)
+				fmt.Printf("Error: execute, %v\n", err)
 			} else {
 				if symbolName == "" {
 					v, _ := c.Pop()
