@@ -52,6 +52,7 @@ func main() {
 	// Add local funcion(s)
 	symbols.Set("pi()", pi)
 	symbols.Set("sum()", sum)
+	exitValue := 0
 
 	for len(strings.TrimSpace(text)) > 0 {
 
@@ -75,21 +76,23 @@ func main() {
 
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
+			exitValue = 1
+		} else {
+
+			if symbolName > "" {
+				symbols.Set(symbolName, v)
+			} else {
+				fmt.Printf("%s\n", util.Format(v))
+			}
 		}
 
-		if symbolName > "" {
-			symbols.Set(symbolName, v)
-		} else {
-			fmt.Printf("%s\n", util.Format(v))
-		}
 		if wasCommandLine {
 			break
 		}
 		text = ui.Prompt("solve> ")
 	}
 
-	os.Exit(0)
+	os.Exit(exitValue)
 }
 
 func pi(args []interface{}) (interface{}, error) {
