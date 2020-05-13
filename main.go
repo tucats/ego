@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/util"
 )
@@ -40,16 +41,16 @@ func main() {
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case name
-	symbols := map[string]interface{}{}
+	symbols := bytecode.NewSymbolTable("environment variables")
 	list := os.Environ()
 	for _, env := range list {
 		pair := strings.SplitN(env, "=", 2)
-		symbols[strings.ToLower(pair[0])] = pair[1]
+		symbols.Set(strings.ToLower(pair[0]), pair[1])
 	}
 
 	// Add local funcion(s)
-	symbols["pi()"] = pi
-	symbols["sum()"] = sum
+	symbols.Set("pi()", pi)
+	symbols.Set("sum()", sum)
 
 	for len(strings.TrimSpace(text)) > 0 {
 		// Make an expression handler and evaluate the expression,
