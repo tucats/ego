@@ -62,8 +62,8 @@ func main() {
 		// Peek ahead to see if this is an assignment
 		symbolName := ""
 		if t.Peek(2) == ":=" {
-			symbolName = t.Peek(1)
-			t.Advance(2)
+			symbolName = t.Next()
+			t.Advance(1)
 		}
 
 		// Parse an expression with the remaining tokens
