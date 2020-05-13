@@ -66,23 +66,35 @@ func main() {
 			t.Advance(1)
 		}
 
-		// Parse an expression with the remaining tokens
-		e := expressions.NewWithTokenizer(t)
-		if debug {
-			ui.DebugMode = true
-			e.Disasm()
-		}
-		v, err := e.Eval(symbols)
-
+		// Compile the token stream as an expression
+		b, err := expressions.Compile(t)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Printf("Error[compile]: %v\n", err)
 			exitValue = 1
 		} else {
 
+			// Was there an assignment? If so, emit
 			if symbolName > "" {
-				symbols.Set(symbolName, v)
+				b.Emit(bytecode.Store, symbolName)
+			}
+
+			// If debugging, dump the code now.
+			if debug {
+				ui.DebugMode = debug
+				b.Disasm()
+			}
+
+			// Run the compiled code
+			c := bytecode.NewContext(symbols, b)
+			err = c.Run()
+
+			if err != nil {
+				fmt.Printf("Error[exec]: %v\n", err)
 			} else {
-				fmt.Printf("%s\n", util.Format(v))
+				if symbolName == "" {
+					v, _ := c.Pop()
+					fmt.Printf("%s\n", util.Format(v))
+				}
 			}
 		}
 
