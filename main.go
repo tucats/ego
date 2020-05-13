@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/expressions"
+	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
 
@@ -53,9 +54,19 @@ func main() {
 	symbols.Set("sum()", sum)
 
 	for len(strings.TrimSpace(text)) > 0 {
-		// Make an expression handler and evaluate the expression,
-		// using the environment symbols already loaded.
-		e := expressions.New(text)
+
+		// Tokenize the input
+		t := tokenizer.New(text)
+
+		// Peek ahead to see if this is an assignment
+		symbolName := ""
+		if t.Peek(2) == ":=" {
+			symbolName = t.Peek(1)
+			t.Advance(2)
+		}
+
+		// Parse an expression with the remaining tokens
+		e := expressions.NewWithTokenizer(t)
 		if debug {
 			ui.DebugMode = true
 			e.Disasm()
@@ -66,7 +77,12 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("%s\n", util.Format(v))
+
+		if symbolName > "" {
+			symbols.Set(symbolName, v)
+		} else {
+			fmt.Printf("%s\n", util.Format(v))
+		}
 		if wasCommandLine {
 			break
 		}
