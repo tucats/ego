@@ -1,0 +1,12 @@
+/*
+ * test1.solve
+ *
+ * Simple test program for solve processor.
+ */
+
+function dbl(x) {
+   return x * 2
+}
+
+print "Twice 55 is ", dbl[55
+
