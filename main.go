@@ -102,7 +102,7 @@ func SolveAction(c *cli.Context) error {
 		// Compile the token stream
 		b, err := compiler.Compile(t)
 		if err != nil {
-			fmt.Printf("Error: compile, %v\n", err)
+			fmt.Printf("Error: compile, %s %v\n", t.PositionString(), err)
 			exitValue = 1
 		} else {
 
@@ -115,7 +115,9 @@ func SolveAction(c *cli.Context) error {
 
 			if err != nil {
 				fmt.Printf("Error: execute, %v\n", err)
+				exitValue = 2
 			}
+			exitValue = 0
 		}
 
 		if wasCommandLine {

@@ -1,3 +1,9 @@
+/*
+ * test1.solve
+ *
+ * Simple test program for solve processor.
+ */
+
 function dbl(x) {
    return x * 2
 }
