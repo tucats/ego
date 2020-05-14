@@ -8,7 +8,7 @@ import (
 
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
-	"github.com/tucats/gopackages/expressions"
+	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
@@ -58,7 +58,7 @@ func main() {
 	bc := bytecode.New("double()")
 	bc.Emit(bytecode.Load, "_args")
 	bc.Emit(bytecode.Push, 1)
-	bc.Emit0(bytecode.Index)
+	bc.Emit(bytecode.Index, nil)
 	bc.Emit(bytecode.Push, 2)
 	bc.Emit(bytecode.Mul, nil)
 	bc.Emit(bytecode.Stop, nil)
@@ -71,43 +71,23 @@ func main() {
 		// Tokenize the input
 		t := tokenizer.New(text)
 
-		// Peek ahead to see if this is an assignment
-
-		symbolName := ""
-		if t.Peek(2) == ":=" {
-			symbolName = t.Next()
-			t.Advance(1)
-		}
-
-		// Compile the token stream as an expression
-		b, err := expressions.Compile(t)
+		// Compile the token stream
+		b, err := compiler.Compile(t)
 		if err != nil {
 			fmt.Printf("Error: compile, %v\n", err)
 			exitValue = 1
 		} else {
 
-			// Was there an assignment? If so, emit
-			if symbolName > "" {
-				b.Emit(bytecode.Store, symbolName)
-			}
-
-			// If debugging, dump the code now.
 			if debug {
-				ui.DebugMode = debug
+				ui.DebugMode = true
 				b.Disasm()
 			}
-
 			// Run the compiled code
 			c := bytecode.NewContext(symbols, b)
 			err = c.Run()
 
 			if err != nil {
 				fmt.Printf("Error: execute, %v\n", err)
-			} else {
-				if symbolName == "" {
-					v, _ := c.Pop()
-					fmt.Printf("%s\n", util.Format(v))
-				}
 			}
 		}
 
