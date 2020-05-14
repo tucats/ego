@@ -3,9 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/tucats/gopackages/app-cli/app"
+	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
@@ -13,21 +16,57 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
+// SolveGrammar handles the command line options
+var SolveGrammar = []cli.Option{
+	cli.Option{
+		LongName:    "file",
+		Description: "The name of a file to execute",
+		OptionType:  cli.StringType,
+	},
+	cli.Option{
+		LongName:    "disassemble",
+		ShortName:   "d",
+		Description: "Display a disassembly of the bytecode before execution",
+		OptionType:  cli.BooleanType,
+	},
+}
+
 func main() {
+	app := app.New("solve: execute code in the solve language")
+	app.SetVersion(1, 0, 0)
+	app.SetCopyright("(C) Copyright Tom Cole 2020")
+
+	err := app.Parse(SolveGrammar, os.Args, SolveAction)
+
+	// If something went wrong, report it to the user and force an exit
+	// status from the error, else a default General error.
+	if err != nil {
+		fmt.Printf("Error: %v\n", err.Error())
+		if e2, ok := err.(cli.ExitError); ok {
+			os.Exit(e2.ExitStatus)
+		}
+		os.Exit(1)
+	}
+}
+
+// SolveAction is the command handler for the solve CLI
+func SolveAction(c *cli.Context) error {
 
 	text := ""
 	wasCommandLine := true
-	debug := false
+	debug := ui.DebugMode
+	args := c.Parameters
 
-	args := os.Args[1:]
-	if len(args) > 0 {
-		if args[0] == "-d" {
-			debug = true
-			args = args[1:]
+	if c.WasFound("file") {
+		fname, _ := c.GetString("file")
+		content, err := ioutil.ReadFile(fname)
+		if err != nil {
+			return fmt.Errorf("unable to read file: %s", fname)
 		}
-	}
 
-	if len(args) == 0 {
+		// Convert []byte to string
+		text = string(content)
+	} else if len(args) == 0 {
 		wasCommandLine = false
 		fmt.Println("Enter expressions to evaluate. End with a blank line.")
 		text = ui.Prompt("solve> ")
@@ -68,7 +107,6 @@ func main() {
 		} else {
 
 			if debug {
-				ui.DebugMode = true
 				b.Disasm()
 			}
 			// Run the compiled code
@@ -86,7 +124,10 @@ func main() {
 		text = ui.Prompt("solve> ")
 	}
 
-	os.Exit(exitValue)
+	if exitValue > 0 {
+		return errors.New("terminated with errors")
+	}
+	return nil
 }
 
 func pi(args []interface{}) (interface{}, error) {
