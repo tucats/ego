@@ -53,17 +53,6 @@ func main() {
 	symbols.Set("pi()", pi)
 	symbols.Set("sum()", sum)
 
-	// Create a bytecode function (this is a little brute force)
-	// The function takes the first argument and doubles it.
-	bc := bytecode.New("double()")
-	bc.Emit(bytecode.Load, "_args")
-	bc.Emit(bytecode.Push, 1)
-	bc.Emit(bytecode.Index, nil)
-	bc.Emit(bytecode.Push, 2)
-	bc.Emit(bytecode.Mul, nil)
-	bc.Emit(bytecode.Stop, nil)
-	symbols.Set("double()", bc)
-
 	exitValue := 0
 
 	for len(strings.TrimSpace(text)) > 0 {
