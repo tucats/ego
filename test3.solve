@@ -1,0 +1,12 @@
+/*
+ * test3.solve
+ *
+ * Runtime divide-by-zero error.
+ */
+
+function half(x) {
+   return x / 0 
+}
+
+print "Twice 55 is ", half(55)
+
