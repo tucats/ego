@@ -1,0 +1,6 @@
+print "Here is a list from 1 to 5:"
+
+for n := 1; n <= 5; n := n + 1 {
+    print n
+}
+
