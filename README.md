@@ -1,38 +1,27 @@
 # solve
-Simple expression solver that uses gopackages/expressions. The build command line tool
-can be used to solve expressions, reference environment variables, and use built-in functions.
-
-Because the arguments are passed in from a shell, they may have to be escaped to support
-the expression syntax for functions, strings, etc.
-You can also omit any arguments at all, and you will be prompted
-to enter text to solve. This will continue until a blank line
-is entered. When in this prompting mode, no additional escaping
-is needed.
+Implementation of the _Solve_ language. This command accepts either an input file
+(via the `run` command) or an interactive set of commands typed in from the console
+(via the `interactive` or `i` command). You can use the `help` command to get a full
+display of the options available.
 
 Example:
 
     
-    solve "3*5"
+    solve i
+    solve> print 3*5
     
-This prints the value "15". The quotes are required because the "*" character is a special
-character in the shell language.
+This prints the value 15. You can enter virtually any program statement that will fit on
+one line using the `interactive` command. If a statement is more complex, it may be easier
+to create a text file with the code, and then compile and run the file:
 
-In addition to the built-in functions provided by the expressions package, this also demonstrates
-how to add a new function to the builtin functions.
+Example:
+
+     solve run test1.solve
+     15
+
+This program also demonstrates how to add a new function to the available builtin functions.
 
 ## pi()
+This program also demonstrates how to add a new function to the available builtin functions.
 This simple function accepts no arguments, and returns a float64 value for pi. It returns an error if it is passed
 any parameters.
-
-## sum()
-This is a more complex function that handles a variable argument list, of heterogenous types. The
-function scans over the argument list, and performs a sum operation on the arguments. The type of the
-first argument in the sum() parameter list deterimes the return type.
-
-Each argument is coerced to match the type of the first arguemnt (supported types are int, float64, bool,
-and string). A type-switch is used to select the appropriate summation operation to perform based on the
-type of the value.
-
-The result of the summations is returned. If the function was
-called without any arguments, an error is returned.
-

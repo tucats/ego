@@ -20,6 +20,7 @@ var SolveGrammar = []cli.Option{
 	},
 	cli.Option{
 		LongName:             "interactive",
+		Aliases:              []string{"i"},
 		Description:          "Type in program statements from the console",
 		OptionType:           cli.Subcommand,
 		Action:               RunAction,
