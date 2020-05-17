@@ -4,3 +4,10 @@ for n := 1; n <= 5; n := n + 1 {
     print n
 }
 
+print "Here is a range:"
+x := [true, "Tom", 3.14, 42]
+
+for i, j := range x {
+   print "Element ", i, " is ", j
+}
+
