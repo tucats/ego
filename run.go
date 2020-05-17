@@ -19,14 +19,21 @@ func RunAction(c *cli.Context) error {
 
 	text := ""
 	wasCommandLine := true
-	debug := ui.DebugMode
+	disassemble := c.GetBool("disassemble")
+	if disassemble {
+		ui.DebugMode = true
+	}
+
 	args := c.Parameters
 
 	if c.GetParameterCount() > 0 {
 		fname := c.GetParameter(0)
 		content, err := ioutil.ReadFile(fname)
 		if err != nil {
-			return fmt.Errorf("unable to read file: %s", fname)
+			content, err = ioutil.ReadFile(fname + ".solve")
+			if err != nil {
+				return fmt.Errorf("unable to read file: %s", fname)
+			}
 		}
 
 		// Convert []byte to string
@@ -70,12 +77,19 @@ func RunAction(c *cli.Context) error {
 			exitValue = 1
 		} else {
 
-			if debug {
+			if disassemble {
 				b.Disasm()
 			}
 			// Run the compiled code
-			c := bytecode.NewContext(symbols, b)
-			err = c.Run()
+			ctx := bytecode.NewContext(symbols, b)
+
+			oldDebugMode := ui.DebugMode
+			ctx.Tracing = c.GetBool("trace")
+			if ctx.Tracing {
+				ui.DebugMode = true
+			}
+			err = ctx.Run()
+			ui.DebugMode = oldDebugMode
 
 			if err != nil {
 				fmt.Printf("Error: %s\n", err.Error())

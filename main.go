@@ -15,17 +15,9 @@ var SolveGrammar = []cli.Option{
 		Description:          "Run an existing program",
 		OptionType:           cli.Subcommand,
 		Action:               RunAction,
-		ParametersExpected:   1,
+		Value:                RunGrammar,
+		ParametersExpected:   -1,
 		ParameterDescription: "file-name",
-	},
-	cli.Option{
-		LongName:             "interactive",
-		Aliases:              []string{"i"},
-		Description:          "Type in program statements from the console",
-		OptionType:           cli.Subcommand,
-		Action:               RunAction,
-		ParametersExpected:   0,
-		ParameterDescription: "",
 	},
 }
 
@@ -35,6 +27,12 @@ var RunGrammar = []cli.Option{
 		LongName:    "disassemble",
 		ShortName:   "d",
 		Description: "Display a disassembly of the bytecode before execution",
+		OptionType:  cli.BooleanType,
+	},
+	cli.Option{
+		LongName:    "trace",
+		ShortName:   "t",
+		Description: "Display trace of bytecode execution",
 		OptionType:  cli.BooleanType,
 	},
 }

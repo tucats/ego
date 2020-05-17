@@ -1,13 +1,15 @@
 # solve
 Implementation of the _Solve_ language. This command accepts either an input file
-(via the `run` command) or an interactive set of commands typed in from the console
-(via the `interactive` or `i` command). You can use the `help` command to get a full
+(via the `run` command followed by a file name) or an interactive set of commands 
+typed in from the console
+(via the `run` command with no file name given ). You can use the `help` command to get a full
 display of the options available.
 
 Example:
 
     
-    solve i
+    $ solve run
+    Enter expressions to evaulate. End with a blank line.
     solve> print 3*5
     
 This prints the value 15. You can enter virtually any program statement that will fit on
