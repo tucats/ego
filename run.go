@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
+	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/tokenizer"
 )
 
@@ -60,8 +61,11 @@ func RunAction(c *cli.Context) error {
 		symbols.Set(strings.ToLower(pair[0]), pair[1])
 	}
 
+	// Add the builtin functions
+	expressions.AddBuiltins(symbols)
+
 	// Add local funcion(s)
-	symbols.Set("pi()", FunctionPi)
+	symbols.Set("pi", FunctionPi)
 
 	exitValue := 0
 
