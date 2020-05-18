@@ -60,7 +60,12 @@ func main() {
 	app.SetVersion(1, 0, 0)
 	app.SetCopyright("(C) Copyright Tom Cole 2020")
 
-	err := app.Run(SolveGrammar, os.Args)
+	// fF there aren't any arguments, default to "run"
+	args := os.Args
+	if len(args) == 1 {
+		args = append(args, "run")
+	}
+	err := app.Run(SolveGrammar, args)
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
