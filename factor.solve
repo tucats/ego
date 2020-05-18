@@ -36,11 +36,13 @@ function factor(n) {
     }
 
     result := result + n
-    return result
+    return _util.sort(result)
 }
 
-if len(_args) = 0 {
-    print "Missing parameter"
+// Complain if there are no arguments, else use the parameter
+// as the value to factor.
+if len(_args) != 1 {
+    print "Parameter error"
 } else {
     print factor(int(_args[1]))
 }
