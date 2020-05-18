@@ -77,6 +77,24 @@ func RunAction(c *cli.Context) error {
 
 	for len(strings.TrimSpace(text)) > 0 {
 
+		// Handle special cases.
+		if text == "%quit" {
+			break
+		}
+
+		if len(text) > 8 && text[:8] == "%include" {
+			fname := strings.TrimSpace(text[8:])
+			content, err := ioutil.ReadFile(fname)
+			if err != nil {
+				content, err = ioutil.ReadFile(fname + ".solve")
+				if err != nil {
+					return fmt.Errorf("unable to read file: %s", fname)
+				}
+			}
+			mainName = fname
+			// Convert []byte to string
+			text = string(content)
+		}
 		// Tokenize the input
 		t := tokenizer.New(text)
 
