@@ -1,0 +1,5 @@
+
+// Illegal operation, as the len symbol is a builtin
+
+_strings.len := 33
+

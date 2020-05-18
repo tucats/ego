@@ -16,7 +16,7 @@ var SolveGrammar = []cli.Option{
 		OptionType:           cli.Subcommand,
 		Action:               RunAction,
 		Value:                RunGrammar,
-		ParametersExpected:   -1,
+		ParametersExpected:   -99,
 		ParameterDescription: "file-name",
 	},
 }
@@ -33,6 +33,18 @@ var RunGrammar = []cli.Option{
 		LongName:    "trace",
 		ShortName:   "t",
 		Description: "Display trace of bytecode execution",
+		OptionType:  cli.BooleanType,
+	},
+	cli.Option{
+		LongName:    "symbols",
+		ShortName:   "s",
+		Description: "Display symbol table",
+		OptionType:  cli.BooleanType,
+	},
+	cli.Option{
+		LongName:    "environment",
+		ShortName:   "e",
+		Description: "Automatically add environment vars as symbols",
 		OptionType:  cli.BooleanType,
 	},
 }
