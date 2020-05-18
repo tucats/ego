@@ -1,0 +1,46 @@
+/*
+ * Create a function that returns an array of factors for an integer value
+ */
+
+function factor(n) {
+    if n < 1 {
+        return []
+    }
+
+    if n <> int(n) {
+        return []
+    }
+
+    if n = 1 {
+        return [1]
+    }
+    if n = 2 {
+        return [1,2]
+    }
+
+    length := int(_math.sqrt(n))
+    count := 0
+    result := [1]
+    for i:= 2; i <= length; i:=i+1 {
+        count := count + 1
+        d := float(n)/i
+        j := int(n)/i
+        if d = j {
+            if index(result, i) = 0 {
+                result := result + i
+            }
+            if index(result, j) = 0 {
+                result := result + j
+            }
+        }
+    }
+
+    result := result + n
+    return result
+}
+
+if len(_args) = 0 {
+    print "Missing parameter"
+} else {
+    print factor(int(_args[1]))
+}
