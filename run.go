@@ -11,7 +11,8 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
-	"github.com/tucats/gopackages/expressions"
+	"github.com/tucats/gopackages/functions"
+	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
 )
 
@@ -54,7 +55,7 @@ func RunAction(c *cli.Context) error {
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case name
-	symbols := bytecode.NewSymbolTable("environment variables")
+	symbols := symbols.NewSymbolTable("environment variables")
 	list := os.Environ()
 	for _, env := range list {
 		pair := strings.SplitN(env, "=", 2)
@@ -62,7 +63,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Add the builtin functions
-	expressions.AddBuiltins(symbols)
+	functions.AddBuiltins(symbols)
 
 	// Add local funcion(s)
 	symbols.Set("pi", FunctionPi)
