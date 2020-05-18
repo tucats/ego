@@ -98,6 +98,10 @@ func RunAction(c *cli.Context) error {
 			if ctx.Tracing {
 				ui.DebugMode = true
 			}
+			if c.GetBool("source-tracing") {
+				ctx.SetTokenizer(t)
+			}
+
 			err = ctx.Run()
 			ui.DebugMode = oldDebugMode
 

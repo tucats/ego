@@ -47,6 +47,12 @@ var RunGrammar = []cli.Option{
 		Description: "Automatically add environment vars as symbols",
 		OptionType:  cli.BooleanType,
 	},
+	cli.Option{
+		LongName:    "source-tracing",
+		ShortName:   "x",
+		Description: "Print source lines as they are executed",
+		OptionType:  cli.BooleanType,
+	},
 }
 
 func main() {
