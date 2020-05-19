@@ -1,5 +1,5 @@
 
-// Illegal operation, as the len symbol is a builtin
+// Illegal operation, as the _strings package is readonly 
 
 _strings.len := 33
 
