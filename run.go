@@ -16,6 +16,8 @@ import (
 	"github.com/tucats/gopackages/tokenizer"
 )
 
+var syms = symbols.NewSymbolTable("")
+
 // RunAction is the command handler for the solve CLI
 func RunAction(c *cli.Context) error {
 
@@ -58,20 +60,21 @@ func RunAction(c *cli.Context) error {
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case name
-	symbols := symbols.NewSymbolTable(mainName)
-	symbols.Set("_args", programArgs)
+	syms = symbols.NewSymbolTable(mainName)
+	syms.Set("_args", programArgs)
 	if c.GetBool("environment") {
 		list := os.Environ()
 		for _, env := range list {
 			pair := strings.SplitN(env, "=", 2)
-			symbols.Set(strings.ToLower(pair[0]), pair[1])
+			syms.Set(strings.ToLower(pair[0]), pair[1])
 		}
 	}
 	// Add the builtin functions
-	functions.AddBuiltins(symbols)
+	functions.AddBuiltins(syms)
 
 	// Add local funcion(s)
-	symbols.SetAlways("pi", FunctionPi)
+	syms.SetAlways("pi", FunctionPi)
+	syms.SetAlways("symbols", printSymbols)
 
 	exitValue := 0
 
@@ -109,7 +112,7 @@ func RunAction(c *cli.Context) error {
 				b.Disasm()
 			}
 			// Run the compiled code
-			ctx := bytecode.NewContext(symbols, b)
+			ctx := bytecode.NewContext(syms, b)
 
 			oldDebugMode := ui.DebugMode
 			ctx.Tracing = c.GetBool("trace")
@@ -131,7 +134,7 @@ func RunAction(c *cli.Context) error {
 		}
 
 		if c.GetBool("symbols") {
-			fmt.Println(symbols.Format())
+			fmt.Println(syms.Format(false))
 
 		}
 		if wasCommandLine {
@@ -144,4 +147,8 @@ func RunAction(c *cli.Context) error {
 		return errors.New("terminated with errors")
 	}
 	return nil
+}
+
+func printSymbols([]interface{}) (interface{}, error) {
+	return syms.Format(false), nil
 }
