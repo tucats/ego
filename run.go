@@ -71,7 +71,7 @@ func RunAction(c *cli.Context) error {
 	functions.AddBuiltins(symbols)
 
 	// Add local funcion(s)
-	symbols.Set("pi", FunctionPi)
+	symbols.SetAlways("pi", FunctionPi)
 
 	exitValue := 0
 
