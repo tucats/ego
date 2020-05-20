@@ -1,0 +1,20 @@
+/* Test scoping */
+
+g := 33
+
+{
+   g := 42
+   if g != 42 {
+      call _util.exit("scope error")
+   }
+  g = 3
+  if g != 3 {
+      call _util.exit("scope error")
+  }
+}
+
+if g != 33 {
+   call _util.exit("scope error")
+}
+
+
