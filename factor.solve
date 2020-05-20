@@ -11,31 +11,31 @@ function factor(n) {
         return []
     }
 
-    if n = 1 {
+    if n == 1 {
         return [1]
     }
-    if n = 2 {
+    if n == 2 {
         return [1,2]
     }
 
     length := int(_math.sqrt(n))
     count := 0
     result := [1]
-    for i:= 2; i <= length; i:=i+1 {
-        count := count + 1
+    for i:= 2; i <= length; i=i+1 {
+        count = count + 1
         d := float(n)/i
         j := int(n)/i
-        if d = j {
-            if index(result, i) = 0 {
-                result := result + i
+        if d == j {
+            if index(result, i) == 0 {
+                result = result + i
             }
-            if index(result, j) = 0 {
-                result := result + j
+            if index(result, j) == 0 {
+                result = result + j
             }
         }
     }
 
-    result := result + n
+    result = result + n
     return _util.sort(result)
 }
 

@@ -16,8 +16,6 @@ import (
 	"github.com/tucats/gopackages/tokenizer"
 )
 
-var syms = symbols.NewSymbolTable("")
-
 // RunAction is the command handler for the solve CLI
 func RunAction(c *cli.Context) error {
 
@@ -58,15 +56,17 @@ func RunAction(c *cli.Context) error {
 		text = ui.Prompt("solve> ")
 	}
 
+	// Create an empty symbol table and store the program arguments.
+	syms := symbols.NewSymbolTable(mainName)
+	syms.SetAlways("_args", programArgs)
+
 	// Get a list of all the environment variables and make
-	// a symbol map of their lower-case name
-	syms = symbols.NewSymbolTable(mainName)
-	syms.Set("_args", programArgs)
+	// a symbol map of their lower-case names
 	if c.GetBool("environment") {
 		list := os.Environ()
 		for _, env := range list {
 			pair := strings.SplitN(env, "=", 2)
-			syms.Set(strings.ToLower(pair[0]), pair[1])
+			syms.SetAlways(strings.ToLower(pair[0]), pair[1])
 		}
 	}
 	// Add the builtin functions
@@ -74,7 +74,6 @@ func RunAction(c *cli.Context) error {
 
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
-	syms.SetAlways("symbols", printSymbols)
 
 	exitValue := 0
 
@@ -147,8 +146,4 @@ func RunAction(c *cli.Context) error {
 		return errors.New("terminated with errors")
 	}
 	return nil
-}
-
-func printSymbols([]interface{}) (interface{}, error) {
-	return syms.Format(false), nil
 }
