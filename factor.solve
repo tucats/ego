@@ -1,3 +1,5 @@
+package factor
+
 /*
  * Create a function that returns an array of factors for an integer value
  */
@@ -37,12 +39,4 @@ function factor(n) {
 
     result = result + n
     return _util.sort(result)
-}
-
-// Complain if there are no arguments, else use the parameter
-// as the value to factor.
-if len(_args) != 1 {
-    print "Parameter error"
-} else {
-    print factor(int(_args[1]))
 }
