@@ -118,6 +118,10 @@ func RunAction(c *cli.Context) error {
 			if ctx.Tracing {
 				ui.DebugMode = true
 			}
+
+			// If we are doing source tracing of execution, we'll need to link the tokenzier
+			// back to the execution context. If you don't need source tracing, you can use
+			// the simpler CompileString() function which doesn't require a discrete tokenizer.
 			if c.GetBool("source-tracing") {
 				ctx.SetTokenizer(t)
 			}
