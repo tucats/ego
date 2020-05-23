@@ -1,0 +1,4 @@
+import _strings
+
+print _strings.camel("test")
+

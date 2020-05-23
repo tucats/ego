@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
-	"github.com/tucats/gopackages/functions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
 )
@@ -69,8 +68,6 @@ func RunAction(c *cli.Context) error {
 			syms.SetAlways(strings.ToLower(pair[0]), pair[1])
 		}
 	}
-	// Add the builtin functions
-	functions.AddBuiltins(syms)
 
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
@@ -101,12 +98,16 @@ func RunAction(c *cli.Context) error {
 		t := tokenizer.New(text)
 
 		// Compile the token stream
-		b, err := compiler.Compile(t)
+		comp := compiler.New()
+		b, err := comp.Compile(t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			exitValue = 1
 		} else {
 
+			// Add the builtin functions
+			comp.AddBuiltins("")
+			comp.AddPackageToSymbols(syms)
 			if disassemble {
 				b.Disasm()
 			}

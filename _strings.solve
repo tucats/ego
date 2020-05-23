@@ -1,0 +1,13 @@
+package _strings
+
+function camel(s) {
+   if len(s) == 0 {
+      return ""
+   }   
+   if len(s) == 1 {
+      return _strings.upper(s)
+   }
+
+   return _strings.upper( _strings.left(s, 1)) + _strings.lower( _strings.right(s, len(s)-1))
+}
+
