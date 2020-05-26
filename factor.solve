@@ -1,5 +1,10 @@
 package factor
 
+import (
+   _math
+   _util
+)
+
 /*
  * Create a function that returns an array of factors for an integer value
  */
