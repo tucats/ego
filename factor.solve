@@ -14,7 +14,7 @@ function factor(n) {
         return []
     }
 
-    if n <> int(n) {
+    if n != int(n) {
         return []
     }
 
