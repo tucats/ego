@@ -15,6 +15,9 @@ import (
 	"github.com/tucats/gopackages/tokenizer"
 )
 
+// QuitCommand is the command that exits console input
+const QuitCommand = "%quit"
+
 // RunAction is the command handler for the solve CLI
 func RunAction(c *cli.Context) error {
 
@@ -51,8 +54,8 @@ func RunAction(c *cli.Context) error {
 		}
 	} else if argc == 0 {
 		wasCommandLine = false
-		fmt.Println("Enter expressions to evaluate. End with a blank line.")
-		text = ui.Prompt("solve> ")
+		fmt.Printf("Enter %s to exit\n", QuitCommand)
+		text = readConsoleText()
 	}
 
 	// Create an empty symbol table and store the program arguments.
@@ -74,10 +77,10 @@ func RunAction(c *cli.Context) error {
 
 	exitValue := 0
 
-	for len(strings.TrimSpace(text)) > 0 {
+	for true {
 
 		// Handle special cases.
-		if text == "%quit" {
+		if strings.TrimSpace(text) == QuitCommand {
 			break
 		}
 
@@ -144,11 +147,37 @@ func RunAction(c *cli.Context) error {
 		if wasCommandLine {
 			break
 		}
-		text = ui.Prompt("solve> ")
+		text = readConsoleText()
 	}
 
 	if exitValue > 0 {
 		return errors.New("terminated with errors")
 	}
 	return nil
+}
+
+func readConsoleText() string {
+
+	var b strings.Builder
+
+	prompt := "solve> "
+	reading := true
+	line := 1
+
+	for reading {
+		text := ui.Prompt(prompt)
+		if len(text) == 0 {
+			break
+		}
+		line = line + 1
+		if text[len(text)-1:] == "\\" {
+			text = text[:len(text)-1]
+			prompt = fmt.Sprintf("solve[%d]> ", line)
+		} else {
+			reading = false
+		}
+		b.WriteString(text)
+		b.WriteString("\n")
+	}
+	return b.String()
 }
