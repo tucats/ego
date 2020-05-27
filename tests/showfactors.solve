@@ -1,8 +1,9 @@
-import "factor"
+import _math 
+import _util
 
 if len(_args) != 1 {
   call _util.exit("incorrect number of parameters")
 }
 
-print factor.factor(int(_args[1]))
+print _math.factor(int(_args[1]))
 
