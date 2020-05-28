@@ -1,0 +1,49 @@
+/* Switch statement test */
+
+x := 5
+
+print "Test 1 -- want five"
+switch x {
+    case 1:
+    print "one"
+
+    case 2:
+    print "two"
+
+    case 5:
+    print "five"
+
+    default:
+    print "other"
+}
+
+x = 6
+print "Test 2 -- want other"
+switch x {
+    case 1:
+    print "one"
+
+    case 2:
+    print "two"
+
+    case 5:
+    print "five"
+
+    default:
+    print "other"
+}
+
+print "Test 3 -- want no output"
+switch x {
+    case 1:
+    print "one"
+
+    case 2:
+    print "two"
+
+    case 5:
+    print "five"
+}
+
+
+print "Test done"
