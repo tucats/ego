@@ -2,11 +2,8 @@ package _math
 
 /* Classic prime number search using sieve method */
 
-function primes() [] {
+function primes(size) [] {
 
-    if len(_args) != 1 {
-        call _util.exit("incorrect number of parameters")
-    }
     size := _args[1]
 
 	array t[size] = false

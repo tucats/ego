@@ -10,7 +10,7 @@ import _util
  * line of text from stdin and returns it as the string value.
  */
 
-function prompt() string {
+function prompt(...) string {
    
    if len(_args) > 1 {
       call _util.exit("invalid number of arguments")
