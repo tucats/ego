@@ -1,0 +1,29 @@
+package _io
+
+import _util
+
+/*
+ * prompt()
+ *
+ * Prompt has an optional string parameter, which if present is used as a
+ * prompt string written to the user's stdout. The program then reads a single
+ * line of text from stdin and returns it as the string value.
+ */
+
+function prompt() string {
+   
+   if len(_args) > 1 {
+      call _util.exit("invalid number of arguments")
+   }
+
+   if len(_args) > 0 {
+      if len(_args[1]) > 0 {
+         print _args[1], " ", 
+      }
+   }
+
+   r := _io.readfile(".")
+
+   return r
+}
+
