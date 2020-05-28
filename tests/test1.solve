@@ -4,7 +4,7 @@
  * Simple test program for solve processor.
  */
 
-function dbl(x) {
+function dbl(x) any {
    return x * 2
 }
 

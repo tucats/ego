@@ -1,4 +1,5 @@
 /* Test scoping */
+import _util
 
 g := 33
 

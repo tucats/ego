@@ -4,7 +4,7 @@
  * Runtime divide-by-zero error.
  */
 
-function half(x) {
+function half(x) float {
    return x / 0 
 }
 

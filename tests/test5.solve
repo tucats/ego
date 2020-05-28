@@ -1,5 +1,6 @@
 
 // Illegal operation, as the _strings package is readonly 
+import _strings
 
 _strings.len := 33
 

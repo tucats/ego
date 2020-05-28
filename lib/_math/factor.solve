@@ -9,7 +9,7 @@ import (
  * Create a function that returns an array of factors for an integer value
  */
 
-function factor(n) {
+function factor(n)[] {
     if n < 1 {
         return []
     }
