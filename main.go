@@ -19,6 +19,28 @@ var SolveGrammar = []cli.Option{
 		ParametersExpected:   -99,
 		ParameterDescription: "file-name",
 	},
+	cli.Option{
+		LongName:    "server",
+		Description: "Accept REST calls",
+		OptionType:  cli.Subcommand,
+		Action:      Server,
+		Value:       ServerGrammar,
+	}}
+
+// ServerGrammar handles command line options for the server subcommand
+var ServerGrammar = []cli.Option{
+	cli.Option{
+		LongName:    "port",
+		ShortName:   "p",
+		OptionType:  cli.IntType,
+		Description: "Specify port number to listen on",
+	},
+	cli.Option{
+		LongName:    "not-secure",
+		ShortName:   "k",
+		OptionType:  cli.BooleanType,
+		Description: "If set, use HTTP instead of HTTPS",
+	},
 }
 
 // RunGrammar handles the command line options
