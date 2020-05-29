@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -16,11 +21,23 @@ import (
 	"github.com/tucats/gopackages/tokenizer"
 )
 
+var pathRoot string
+
 // Server initailizes the server
 func Server(c *cli.Context) error {
 
 	http.HandleFunc("/code", CodeHandler)
-	http.HandleFunc("/service", LibHandler)
+
+	pathRoot, _ := c.GetString("context-root")
+	if pathRoot == "" {
+		pathRoot = os.Getenv("SOLVE_PATH")
+	}
+
+	err := defineLibHandlers(pathRoot, "/services")
+	if err != nil {
+		return err
+	}
+
 	port := 8080
 	if c.WasFound("port") {
 		port, _ = c.GetInteger("port")
@@ -28,13 +45,7 @@ func Server(c *cli.Context) error {
 	tls := !c.GetBool("not-secure")
 
 	addr := ":" + strconv.Itoa(port)
-	ui.Debug("** REST service starting on port %d **", port)
-
-	// Use ListenAndServeTLS() instead of ListenAndServe() which accepts two extra parameters.
-	// We need to specify both the certificate file and the key file (which we've named
-	// https-server.crt and https-server.key).
-
-	var err error
+	ui.Debug("** REST service starting on port %d, secure=%v **", port, tls)
 
 	if tls {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
@@ -112,6 +123,46 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func defineLibHandlers(root, subpath string) error {
+
+	paths := make([]string, 0)
+
+	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
+	if err != nil {
+		return err
+	}
+
+	for _, f := range fids {
+		fullname := f.Name()
+		slash := strings.LastIndex(fullname, "/")
+		if slash > 0 {
+			fullname = fullname[:slash]
+		}
+		e := path.Ext(fullname)
+		if e != "" {
+			fullname = fullname[:len(e)-1]
+		}
+
+		if !f.IsDir() {
+			paths = append(paths, path.Join(subpath, fullname))
+		} else {
+			newpath := filepath.Join(subpath, fullname)
+			ui.Debug(">>> Processing endpoint directory %s", newpath)
+			err := defineLibHandlers(root, newpath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, path := range paths {
+		ui.Debug(">>> Defining endpoint %s", path)
+		http.HandleFunc(path, LibHandler)
+	}
+
+	return nil
+}
+
 // LibHandler is the rest handler
 func LibHandler(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Add("Content-Type", "application/text")
@@ -133,18 +184,19 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	syms.SetAlways("_parms", args)
 
-	fn, found := r.URL.Query()["name"]
-	if !found || len(fn) != 1 {
-		w.WriteHeader(400)
-		io.WriteString(w, "missing service name")
+	path := r.URL.Path
+	if path[:1] == "/" {
+		path = path[1:]
+	}
+	ui.Debug(">>> Load path is %s%s", pathRoot, path)
+
+	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".solve"))
+	if err != nil {
+		io.WriteString(w, "File open error: "+err.Error())
 	}
 
-	path := "server/" + fn[0]
-	ui.Debug(">>> Load path is %s", path)
-
-	text := "print \"Hello\""
-
 	// Tokenize the input
+	text := string(bs)
 	t := tokenizer.New(text)
 
 	// Compile the token stream
