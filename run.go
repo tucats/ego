@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/gopackages/app-cli/cli"
+	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
@@ -28,6 +29,12 @@ func RunAction(c *cli.Context) error {
 	disassemble := c.GetBool("disassemble")
 	if disassemble {
 		ui.DebugMode = true
+	}
+
+	exitOnBlankLine := false
+	v := persistence.Get("exit-on-blank")
+	if v == "true" {
+		exitOnBlankLine = true
 	}
 
 	argc := c.GetParameterCount()
@@ -54,7 +61,11 @@ func RunAction(c *cli.Context) error {
 		}
 	} else if argc == 0 {
 		wasCommandLine = false
-		fmt.Printf("Enter %s to exit\n", QuitCommand)
+		if exitOnBlankLine {
+			fmt.Printf("Enter a blank line to exit\n")
+		} else {
+			fmt.Printf("Enter %s to exit\n", QuitCommand)
+		}
 		text = readConsoleText()
 	}
 
@@ -81,6 +92,10 @@ func RunAction(c *cli.Context) error {
 
 		// Handle special cases.
 		if strings.TrimSpace(text) == QuitCommand {
+			break
+		}
+
+		if exitOnBlankLine && len(strings.TrimSpace(text)) == 0 {
 			break
 		}
 
