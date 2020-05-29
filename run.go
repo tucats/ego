@@ -87,6 +87,7 @@ func RunAction(c *cli.Context) error {
 	syms.SetAlways("pi", FunctionPi)
 
 	exitValue := 0
+	builtinsAdded := false
 
 	for true {
 
@@ -123,9 +124,19 @@ func RunAction(c *cli.Context) error {
 			exitValue = 1
 		} else {
 
-			// Add the builtin functions
-			comp.AddBuiltins("")
-			comp.AddPackageToSymbols(syms)
+			if !builtinsAdded {
+				// Add the builtin functions
+				comp.AddBuiltins("")
+
+				if persistence.Get("auto-import") == "true" {
+					err := comp.AutoImport()
+					if err != nil {
+						fmt.Printf("Unable to auto-import packages: " + err.Error())
+					}
+				}
+				comp.AddPackageToSymbols(syms)
+				builtinsAdded = true
+			}
 			if disassemble {
 				b.Disasm()
 			}
