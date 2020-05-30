@@ -1,0 +1,44 @@
+package _cipher
+
+function token(user) string {
+    token := {user:user, id:_util.uuid()}
+    htoken := string(token)
+    hash := _cipher.hash(htoken)
+    token.hash = hash
+    return _cipher.encrypt(string(token), _util.profile("token-key"))
+}
+
+function valid(s) bool {
+    ts := ""
+    try {
+        ts = _cipher.decrypt(s, _util.profile("token-key"))
+    } catch {
+        return false
+    }
+    token := eval(ts)
+    t := {user:token.user, id:token.id}
+    htoken := string(t) 
+    hash := _cipher.hash(htoken)
+    return token.hash == hash
+}
+
+
+function getuser(s) string {
+
+    ts := ""
+    try {
+        ts = _cipher.decrypt(s, _util.profile("token-key"))
+    } catch {
+        return false
+    }
+    token := eval(ts)
+    t := {user:token.user, id:token.id}
+    htoken := string(t) 
+    hash := _cipher.hash(htoken)
+
+    r := ""
+    if token.hash == hash {
+        r = t.user
+    }
+    return r
+}

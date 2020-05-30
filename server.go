@@ -183,6 +183,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 	syms.SetAlways("_parms", args)
+	syms.SetAlways("eval", FunctionEval)
 
 	path := r.URL.Path
 	if path[:1] == "/" {

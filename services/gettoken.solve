@@ -12,9 +12,4 @@ import _util
  }
 
 user := _parms["username"][1]
-token := {user:user, id:_util.uuid()}
-htoken := _cipher.encrypt(token, _util.profile("token-key"))
-hash := _cipher.hash(htoken)
-token.hash = hash
-print _json.format(token)
 return

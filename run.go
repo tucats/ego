@@ -85,7 +85,7 @@ func RunAction(c *cli.Context) error {
 
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
-
+	syms.SetAlways("eval", FunctionEval)
 	exitValue := 0
 	builtinsAdded := false
 
