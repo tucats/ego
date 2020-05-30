@@ -1,0 +1,20 @@
+/*
+ * Get a new token. Requires a URL parameter with the user name
+ */
+import _strings
+import _util 
+
+
+ /* Do we have a user name? */
+ if _strings.index(_util.members(_parms), "username") == 0 {
+     print "Error: username not specified"
+     return
+ }
+
+user := _parms["username"][1]
+token := {user:user, id:_util.uuid()}
+htoken := _cipher.encrypt(token, _util.profile("token-key"))
+hash := _cipher.hash(htoken)
+token.hash = hash
+print _json.format(token)
+return

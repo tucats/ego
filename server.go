@@ -140,7 +140,7 @@ func defineLibHandlers(root, subpath string) error {
 		}
 		e := path.Ext(fullname)
 		if e != "" {
-			fullname = fullname[:len(e)-1]
+			fullname = fullname[:len(fullname)-len(e)]
 		}
 
 		if !f.IsDir() {
