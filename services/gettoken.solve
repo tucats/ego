@@ -1,15 +1,21 @@
 /*
- * Get a new token. Requires a URL parameter with the user name
+ * Get a new token. Requires a payload with the username and password
  */
 import _strings
 import _util 
 
+user := ""
+password := ""
 
- /* Do we have a user name? */
- if _strings.index(_util.members(_parms), "username") == 0 {
-     print "Error: username not specified"
-     return
- }
+try {
+   payload := _json.decode(_body)
+   user = payload.user
+   password = payload.password
+} catch {
+    print "Error: invalid payload"
+}
 
-user := _parms["username"][1]
-return
+if user != "" {
+    print _cipher.token(user)
+}
+

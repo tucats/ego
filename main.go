@@ -41,6 +41,12 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 		Description: "If set, use HTTP instead of HTTPS",
 	},
+	cli.Option{
+		LongName:    "trace",
+		ShortName:   "t",
+		Description: "Display trace of bytecode execution",
+		OptionType:  cli.BooleanType,
+	},
 }
 
 // RunGrammar handles the command line options

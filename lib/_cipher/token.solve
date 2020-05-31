@@ -2,21 +2,45 @@ package _cipher
 
 function token(user) string {
     token := {user:user, id:_util.uuid()}
+
+    // Add in a duration after which the token is invalid
+    duration := _util.profile("token-expiration")
+    if duration == "" {
+        duration = "15m"
+    }
+    token.expiration = _time.add(_time.now(), duration)
+
+    // Cryptographically sign the token
     htoken := string(token)
     hash := _cipher.hash(htoken)
     token.hash = hash
+
+    // Return the token as an encrypted string.
     return _cipher.encrypt(string(token), _util.profile("token-key"))
 }
 
 function valid(s) bool {
+
+    // Decrypt the token string.
     ts := ""
     try {
         ts = _cipher.decrypt(s, _util.profile("token-key"))
     } catch {
         return false
     }
+
+    // If it could be decrypted, it was from us so it's a valid format. Convert
+    // into a real structure.
     token := eval(ts)
-    t := {user:token.user, id:token.id}
+
+    // See if the token is expired
+    delta := _time.subtract(token.expiration, _time.now())
+    if _strings.left(delta,1) == "-" {
+        return false
+    }
+
+    // Reform the cryptographic hash and verify it hasn't changed either.
+    t := {user:token.user, id:token.id, expiration:token.expiration}
     htoken := string(t) 
     hash := _cipher.hash(htoken)
     return token.hash == hash
@@ -32,7 +56,13 @@ function getuser(s) string {
         return false
     }
     token := eval(ts)
-    t := {user:token.user, id:token.id}
+
+    delta := _time.subtract(token.expiration, _time.now())
+    if _strings.left(delta,1) == "-" {
+        return false
+    }
+
+    t := {user:token.user, id:token.id, expiration:token.expiration}
     htoken := string(t) 
     hash := _cipher.hash(htoken)
 

@@ -22,11 +22,13 @@ import (
 )
 
 var pathRoot string
+var tracing bool
 
 // Server initailizes the server
 func Server(c *cli.Context) error {
 
 	http.HandleFunc("/code", CodeHandler)
+	tracing = c.GetBool("trace")
 
 	pathRoot, _ := c.GetString("context-root")
 	if pathRoot == "" {
@@ -211,6 +213,13 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		// Add the builtin functions
 		comp.AddBuiltins("")
 
+		// Get the body of the request as a string
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		btext := buf.String()
+		syms.SetAlways("_body", btext)
+
+		// Handle auto-import
 		if persistence.Get("auto-import") == "true" {
 			err := comp.AutoImport()
 			if err != nil {
@@ -222,6 +231,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		// Run the compiled code
 		ctx := bytecode.NewContext(syms, b)
 		ctx.EnableConsoleOutput(false)
+		ctx.Tracing = tracing
 
 		err = ctx.Run()
 
