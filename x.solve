@@ -1,0 +1,4 @@
+package x
+
+function c-> name() void { print "this=", c }
+

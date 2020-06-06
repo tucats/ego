@@ -1,0 +1,10 @@
+type e { 
+        name { 
+              first string 
+              last string
+             } 
+        age int
+       }
+
+a := new(e)
+
