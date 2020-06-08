@@ -1,4 +1,31 @@
 package x
 
-function c-> name() void { print "this=", c }
+/*
+ * The package x defines the employee type.
+ * This is a type creation that includes a linkage to
+ * the package, which allows objects of this type to
+ * locate the associated functions bound to the package.
+ */
+
+type employee-> x {
+    name {
+           first string
+           last string
+         }
+    age  int
+}
+
+
+/*
+ * This is a function in the package that assumes an
+ * objected oriented call. The item sending the message
+ * is stored as the value c, and there are no other
+ * parameters to this function. The function body
+ * can reference 'c' as an instance of an employee.
+ */
+
+function c-> fullname() string { 
+
+    return c.name.first + " " + c.name.last 
+}
 
