@@ -29,3 +29,8 @@ function c-> fullname() string {
     return c.name.first + " " + c.name.last 
 }
 
+function c-> setname(f, l) void {
+    c.name = {first:f, last:l}
+    return
+}
+
