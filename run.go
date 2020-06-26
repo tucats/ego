@@ -14,6 +14,13 @@ import (
 	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
+	"github.com/tucats/gopackages/util"
+)
+
+// Reserved symbol names used for configuration
+const (
+	ConfigDisassemble = "disassemble"
+	ConfigTrace       = "trace"
 )
 
 // QuitCommand is the command that exits console input
@@ -71,7 +78,10 @@ func RunAction(c *cli.Context) error {
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable(mainName)
+
 	syms.SetAlways("_args", programArgs)
+	setConfig(syms, ConfigDisassemble, disassemble)
+	setConfig(syms, ConfigTrace, c.GetBool("trace"))
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case names
@@ -137,14 +147,17 @@ func RunAction(c *cli.Context) error {
 				comp.AddPackageToSymbols(syms)
 				builtinsAdded = true
 			}
-			if disassemble {
+			oldDebugMode := ui.DebugMode
+			if getConfig(syms, ConfigDisassemble) {
+				ui.DebugMode = true
 				b.Disasm()
 			}
+			ui.DebugMode = oldDebugMode
+
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b)
-
-			oldDebugMode := ui.DebugMode
-			ctx.Tracing = c.GetBool("trace")
+			oldDebugMode = ui.DebugMode
+			ctx.Tracing = getConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
 			}
@@ -206,4 +219,31 @@ func readConsoleText() string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+func setConfig(s *symbols.SymbolTable, name string, value bool) {
+	v, found := s.Get("_config")
+	if !found {
+		m := map[string]interface{}{name: value}
+		s.SetAlways("_config", m)
+	}
+	if m, ok := v.(map[string]interface{}); ok {
+		m[name] = value
+	}
+}
+
+func getConfig(s *symbols.SymbolTable, name string) bool {
+
+	f := false
+
+	v, found := s.Get("_config")
+	if found {
+		if m, ok := v.(map[string]interface{}); ok {
+			f, found := m[name]
+			if found {
+				return util.GetBool(f)
+			}
+		}
+	}
+	return f
 }
