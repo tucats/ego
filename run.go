@@ -68,10 +68,12 @@ func RunAction(c *cli.Context) error {
 		}
 	} else if argc == 0 {
 		wasCommandLine = false
-		if exitOnBlankLine {
-			fmt.Printf("Enter a blank line to exit\n")
-		} else {
-			fmt.Printf("Enter %s to exit\n", QuitCommand)
+		if !isConsolePipe() {
+			if exitOnBlankLine {
+				fmt.Printf("Enter a blank line to exit\n")
+			} else {
+				fmt.Printf("Enter %s to exit\n", QuitCommand)
+			}
 		}
 		text = readConsoleText()
 	}
@@ -200,6 +202,10 @@ func readConsoleText() string {
 	var b strings.Builder
 
 	prompt := "solve> "
+	if isConsolePipe() {
+		prompt = ""
+	}
+
 	reading := true
 	line := 1
 
@@ -219,6 +225,15 @@ func readConsoleText() string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+func isConsolePipe() bool {
+	fi, _ := os.Stdin.Stat() // get the FileInfo struct describing the standard input.
+
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		return true
+	}
+	return false
 }
 
 func setConfig(s *symbols.SymbolTable, name string, value bool) {
