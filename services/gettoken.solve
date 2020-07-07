@@ -4,6 +4,8 @@
 import _strings
 import _util 
 
+@authentication_domain "authentication"
+
 user := ""
 password := ""
 

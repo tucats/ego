@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
+	"github.com/tucats/gopackages/util"
 )
 
 var pathRoot string
@@ -63,6 +64,7 @@ func Server(c *cli.Context) error {
 
 // CodeHandler is the rest handler
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
+
 	//w.Header().Add("Content-Type", "application/text")
 	ui.Debug(">>> New /code REST call requested")
 
@@ -171,9 +173,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(">>> New /lib REST call requested")
 
 	// Create an empty symbol table and store the program arguments.
-	// @TOMCOLE Later this will need to parse the arguments from the URL
 	syms := symbols.NewSymbolTable("REST server")
-
 	u := r.URL.Query()
 	args := map[string]interface{}{}
 
@@ -205,10 +205,29 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	// Compile the token stream
 	comp := compiler.New()
 	b, err := comp.Compile(t)
+	user := ""
+	pass := ""
+	ok := false
+
 	if err != nil {
 		w.WriteHeader(400)
 		io.WriteString(w, "Error: "+err.Error())
 	} else {
+
+		// Do we need to authenticate?
+		var realmI interface{} = "authentication"
+		user, pass, ok = r.BasicAuth()
+
+		// Temporary measure to handle usernames
+		if user != "admin" || pass != "password" {
+			ok = false
+		}
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="`+util.GetString(realmI)+`"`)
+			w.WriteHeader(401)
+			w.Write([]byte("You are Unauthorized to access the application.\n"))
+			return
+		}
 
 		// Add the builtin functions
 		comp.AddBuiltins("")
@@ -218,6 +237,8 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		buf.ReadFrom(r.Body)
 		btext := buf.String()
 		syms.SetAlways("_body", btext)
+		syms.SetAlways("_user", user)
+		syms.SetAlways("_password", pass)
 
 		// Handle auto-import
 		if persistence.Get("auto-import") == "true" {
