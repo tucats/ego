@@ -31,6 +31,8 @@ func RunAction(c *cli.Context) error {
 
 	programArgs := make([]interface{}, 0)
 	mainName := "main program"
+	prompt := c.MainProgram + "> "
+
 	text := ""
 	wasCommandLine := true
 	disassemble := c.GetBool("disassemble")
@@ -75,7 +77,7 @@ func RunAction(c *cli.Context) error {
 				fmt.Printf("Enter %s to exit\n", QuitCommand)
 			}
 		}
-		text = readConsoleText()
+		text = readConsoleText(prompt)
 	}
 
 	// Create an empty symbol table and store the program arguments.
@@ -127,6 +129,19 @@ func RunAction(c *cli.Context) error {
 		}
 		// Tokenize the input
 		t := tokenizer.New(text)
+
+		// If not in command-line mode, see if there is an incomplete quote
+		// in the last token, which means we want to prompt for more and
+		// re-tokenize
+		for !wasCommandLine && len(t.Tokens) > 0 {
+			lastToken := t.Tokens[len(t.Tokens)-1]
+			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:len(lastToken)] != "`" {
+				text = text + readConsoleText("...> ")
+				t = tokenizer.New(text)
+				continue
+			}
+			break
+		}
 
 		// Compile the token stream
 		comp := compiler.New()
@@ -188,7 +203,7 @@ func RunAction(c *cli.Context) error {
 		if wasCommandLine {
 			break
 		}
-		text = readConsoleText()
+		text = readConsoleText(prompt)
 	}
 
 	if exitValue > 0 {
@@ -197,11 +212,9 @@ func RunAction(c *cli.Context) error {
 	return nil
 }
 
-func readConsoleText() string {
+func readConsoleText(prompt string) string {
 
 	var b strings.Builder
-
-	prompt := "solve> "
 
 	reading := true
 	line := 1
