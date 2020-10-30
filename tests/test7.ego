@@ -1,21 +1,16 @@
 /* Test scoping */
-import _util
 
 g := 33
 
-{
+{ // Starts a new scope
    g := 42
-   if g != 42 {
-      call _util.exit("scope error")
-   }
-  g = 3
-  if g != 3 {
-      call _util.exit("scope error")
-  }
+   assert g == 42, "scope error"
+   
+   g = 3
+   assert g ==3, "scope error"
 }
 
-if g != 33 {
-   call _util.exit("scope error")
-}
+assert g==33 , "scope error"
+
 
 

@@ -1,4 +1,3 @@
-import _strings
+import strings
 
-print _strings.camel("test")
-
+assert strings.camel("test") == "Test"

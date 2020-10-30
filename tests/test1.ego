@@ -8,5 +8,5 @@ function dbl(x) any {
    return x * 2
 }
 
-print "Twice 55 is ", dbl(55)
+assert dbl(55)==110
 

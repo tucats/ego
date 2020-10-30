@@ -1,6 +1,5 @@
-import util
 
 x := {a:5, b:6}
-y := util.members(x)
-print "The members are ", y
+y := members(x)
+assert sort(y) == ["a","b"], "members did not return expected values"
 
