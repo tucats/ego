@@ -1,9 +1,5 @@
 package math
 
-import (
-   math
-   util
-)
 
 /*
  * Create a function that returns an array of factors for an integer value
@@ -43,5 +39,5 @@ function factor(n)[] {
     }
 
     result = result + n
-    return util.sort(result)
+    return sort(result)
 }
