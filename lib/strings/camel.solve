@@ -5,7 +5,7 @@ function camel(s) string {
       return ""
    }   
    if len(s) == 1 {
-      return _strings.upper(s)
+      return strings.upper(s)
    }
 
    left := strings.upper(strings.left(s, 1))

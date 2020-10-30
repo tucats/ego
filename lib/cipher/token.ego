@@ -35,7 +35,7 @@ function valid(s) bool {
 
     // See if the token is expired
     delta := _time.subtract(token.expiration, _time.now())
-    if _strings.left(delta,1) == "-" {
+    if strings.left(delta,1) == "-" {
         return false
     }
 
@@ -58,7 +58,7 @@ function getuser(s) string {
     token := eval(ts)
 
     delta := _time.subtract(token.expiration, _time.now())
-    if _strings.left(delta,1) == "-" {
+    if strings.left(delta,1) == "-" {
         return false
     }
 

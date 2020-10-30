@@ -1,8 +1,8 @@
 /*
  * Get a new token. Requires a payload with the username and password
  */
-import _strings
-import _util 
+import strings
+import util 
 
 @authentication_domain "authentication"
 
