@@ -1,6 +1,6 @@
-import _util
+import util
 
 x := {a:5, b:6}
-y := _util.members(x)
+y := util.members(x)
 print "The members are ", y
 

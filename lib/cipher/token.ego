@@ -1,4 +1,4 @@
-package _cipher
+package cipher
 
 function token(user) string {
     token := {user:user, id:_util.uuid()}
@@ -12,7 +12,7 @@ function token(user) string {
 
     // Cryptographically sign the token
     htoken := string(token)
-    hash := _cipher.hash(htoken)
+    hash := cipher.hash(htoken)
     token.hash = hash
 
     // Return the token as an encrypted string.
@@ -24,7 +24,7 @@ function valid(s) bool {
     // Decrypt the token string.
     ts := ""
     try {
-        ts = _cipher.decrypt(s, _util.profile("token-key"))
+        ts = cipher.decrypt(s, _util.profile("token-key"))
     } catch {
         return false
     }
@@ -42,7 +42,7 @@ function valid(s) bool {
     // Reform the cryptographic hash and verify it hasn't changed either.
     t := {user:token.user, id:token.id, expiration:token.expiration}
     htoken := string(t) 
-    hash := _cipher.hash(htoken)
+    hash := cipher.hash(htoken)
     return token.hash == hash
 }
 

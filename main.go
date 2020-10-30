@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/gopackages/app-cli/cli"
 )
 
-// SolveGrammar handles the command line options
-var SolveGrammar = []cli.Option{
+// EgoGrammar handles the command line options
+var EgoGrammar = []cli.Option{
 	cli.Option{
 		LongName:             "run",
 		Description:          "Run an existing program",
@@ -84,7 +84,7 @@ var RunGrammar = []cli.Option{
 }
 
 func main() {
-	app := app.New("solve: execute code in the solve language")
+	app := app.New("ego: execute code in the ego language")
 	app.SetVersion(1, 0, 0)
 	app.SetCopyright("(C) Copyright Tom Cole 2020")
 
@@ -93,7 +93,7 @@ func main() {
 	if len(args) == 1 {
 		args = append(args, "run")
 	}
-	err := app.Run(SolveGrammar, args)
+	err := app.Run(EgoGrammar, args)
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.

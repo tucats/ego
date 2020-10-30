@@ -1,4 +1,4 @@
-package _strings
+package strings
 
 function camel(s) string {
    if len(s) == 0 {
@@ -8,8 +8,8 @@ function camel(s) string {
       return _strings.upper(s)
    }
 
-   left := _strings.upper(_strings.left(s, 1))
-   right := _strings.lower(_strings.right(s, len(s)-1))
+   left := strings.upper(strings.left(s, 1))
+   right := strings.lower(strings.right(s, len(s)-1))
 
    return (left + right)
 }

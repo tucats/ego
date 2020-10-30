@@ -1,6 +1,6 @@
-package _io
+package io
 
-import _util
+import util
 
 /*
  * prompt()
@@ -13,7 +13,7 @@ import _util
 function prompt(...) string {
    
    if len(_args) > 1 {
-      call _util.exit("invalid number of arguments")
+      call util.exit("invalid number of arguments")
    }
 
    if len(_args) > 0 {
@@ -22,7 +22,7 @@ function prompt(...) string {
       }
    }
 
-   r := _io.readfile(".")
+   r := io.readfile(".")
 
    return r
 }

@@ -1,7 +1,7 @@
 /*
- * test1.solve
+ * test1.ego
  *
- * Simple test program for solve processor.
+ * Simple test program for ego processor.
  */
 
 function dbl(x) any {

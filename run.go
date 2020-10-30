@@ -26,7 +26,7 @@ const (
 // QuitCommand is the command that exits console input
 const QuitCommand = "%quit"
 
-// RunAction is the command handler for the solve CLI
+// RunAction is the command handler for the ego CLI
 func RunAction(c *cli.Context) error {
 
 	programArgs := make([]interface{}, 0)
@@ -52,7 +52,7 @@ func RunAction(c *cli.Context) error {
 		fname := c.GetParameter(0)
 		content, err := ioutil.ReadFile(fname)
 		if err != nil {
-			content, err = ioutil.ReadFile(fname + ".solve")
+			content, err = ioutil.ReadFile(fname + ".ego")
 			if err != nil {
 				return fmt.Errorf("unable to read file: %s", fname)
 			}
@@ -118,7 +118,7 @@ func RunAction(c *cli.Context) error {
 			fname := strings.TrimSpace(text[8:])
 			content, err := ioutil.ReadFile(fname)
 			if err != nil {
-				content, err = ioutil.ReadFile(fname + ".solve")
+				content, err = ioutil.ReadFile(fname + ".ego")
 				if err != nil {
 					return fmt.Errorf("unable to read file: %s", fname)
 				}
@@ -227,7 +227,7 @@ func readConsoleText(prompt string) string {
 		line = line + 1
 		if text[len(text)-1:] == "\\" {
 			text = text[:len(text)-1]
-			prompt = fmt.Sprintf("solve[%d]> ", line)
+			prompt = fmt.Sprintf("ego[%d]> ", line)
 		} else {
 			reading = false
 		}

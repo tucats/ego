@@ -33,7 +33,7 @@ func Server(c *cli.Context) error {
 
 	pathRoot, _ := c.GetString("context-root")
 	if pathRoot == "" {
-		pathRoot = os.Getenv("SOLVE_PATH")
+		pathRoot = os.Getenv("EGO_PATH")
 	}
 
 	err := defineLibHandlers(pathRoot, "/services")
@@ -193,7 +193,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ui.Debug(">>> Load path is %s%s", pathRoot, path)
 
-	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".solve"))
+	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".ego"))
 	if err != nil {
 		io.WriteString(w, "File open error: "+err.Error())
 	}

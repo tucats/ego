@@ -1,4 +1,4 @@
-package _math
+package math
 
 /* Classic prime number search using sieve method */
 

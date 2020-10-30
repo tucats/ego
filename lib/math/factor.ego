@@ -1,8 +1,8 @@
-package _math
+package math
 
 import (
-   _math
-   _util
+   math
+   util
 )
 
 /*
@@ -25,7 +25,7 @@ function factor(n)[] {
         return [1,2]
     }
 
-    length := int(_math.sqrt(n))
+    length := int(math.sqrt(n))
     count := 0
     result := [1]
     for i:= 2; i <= length; i=i+1 {
@@ -43,5 +43,5 @@ function factor(n)[] {
     }
 
     result = result + n
-    return _util.sort(result)
+    return util.sort(result)
 }
