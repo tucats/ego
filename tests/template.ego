@@ -1,0 +1,14 @@
+// Template test program
+
+@template g_prefix `g.V()`
+@template g_labels `.label().dedup()`
+@template g_getlabels `{{template "g_prefix"}}{{template "g_labels"}}`
+
+print strings.template(g_getlabels)
+
+@template g_getbytype `{{template "g_prefix"}}.hasLabel("{{.Label}}")`
+
+parms := { Label: "cars" }
+print strings.template(g_getbytype, parms)
+
+
