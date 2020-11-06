@@ -100,6 +100,8 @@ func RunAction(c *cli.Context) error {
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
 	syms.SetAlways("eval", FunctionEval)
+	syms.SetAlways("gopen", FunctionGremlinOpen)
+	syms.SetAlways("gquery", FunctionGremlinQuery)
 	exitValue := 0
 	builtinsAdded := false
 
