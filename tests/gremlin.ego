@@ -1,5 +1,7 @@
 // Test program for accessing a local gremlin system.
 
+import "util"
+
 url := "ws://localhost:8182/gremlin"
 g := 0
 
@@ -10,11 +12,22 @@ try {
 	call util.exit(1)
 }
 
+// Create some vertices in the database
+
 call g.query(`g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
 call g.query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
 call g.query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
+call g.query( `g.addV("test1").property("name", "Bob").property("rate", 10).property("temp", true)`)
+call g.query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
 
-print g.map(`g.V().hasLabel("test1").valueMap()`)
+// Generate a column map of the database label "test1"
+query := `g.V().hasLabel("test1").valueMap()`
+map := g.map(query)
 
+// Make the same read, using the map
+data := g.querymap(query, map)
+print data
+
+// Clean up all our nodes
 call g.query( `g.V().hasLabel("test1").drop()`)
 

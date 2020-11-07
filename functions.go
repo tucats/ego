@@ -63,6 +63,7 @@ func FunctionGremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (inte
 		"client":     client,
 		"query":      FunctionGremlinQuery,
 		"map":        FunctionGremlinMap,
+		"querymap":   FunctionGremlinQueryMap,
 		"__readonly": true,
 	}, err
 
@@ -84,6 +85,31 @@ func FunctionGremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (int
 		return nil, err
 	}
 	return gremlinResult(string(res[0]))
+}
+
+// FunctionGremlinQueryMap executes a string query against an open client. The
+// result is then normalized against a map provided by the user.
+func FunctionGremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	client, err := getGremlinClient(symbols)
+	if err != nil {
+		return nil, err
+	}
+	if len(args) != 2 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+	query := util.GetString(args[0])
+	res, err := client.ExecuteStringQuery(query)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := gremlinResult(string(res[0]))
+	if err != nil {
+		return r, err
+	}
+
+	return gremlinApplyMap(r, args[1])
 }
 
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
@@ -223,15 +249,30 @@ func gremlinResult(str string) (interface{}, error) {
 func gremlinResultValue(i interface{}) (interface{}, error) {
 
 	switch m := i.(type) {
+	// The nil value
 	case nil:
 		return nil, nil
 
+	// Native Ego types
 	case string:
 		return m, nil
+	case bool:
+		return m, nil
+	case int:
+		return m, nil
+	case int64:
+		return m, nil
+	case float32:
+		return m, nil
+	case float64:
+		return m, nil
 
+	// Complex results
 	case map[string]interface{}:
 		v := m["@value"]
 		switch m["@type"] {
+		case "g:UUID":
+			return v, nil // treat as string in the Go code
 		case "g:List":
 			r, err := gremlinResultArray(v)
 			if err != nil {
@@ -319,4 +360,45 @@ func gremlinResultMap(i interface{}) (interface{}, error) {
 		}
 	}
 	return r, nil
+}
+
+func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
+	// Unwrap the parameters
+
+	rows := util.GetArray(r)
+	if rows == nil {
+		return nil, errors.New("rowset not an array")
+	}
+	columnList := util.GetArray(m)
+	if columnList == nil {
+		return nil, errors.New("map not a struct")
+	}
+
+	columns := map[string]string{}
+	for _, v := range columnList {
+		columnMap := util.GetMap(v)
+		name := util.GetString(columnMap["name"])
+		kind := util.GetString(columnMap["type"])
+		columns[name] = kind
+	}
+
+	// Scan over the rows of the result set. For each row, force a new
+	// row to be constructed that is normalized to the map.
+	result := make([]interface{}, len(rows))
+	for n, row := range rows {
+		resultRow := map[string]interface{}{
+			"_id": n,
+		}
+		data := util.GetMap(row)
+		for columnName, columnInfo := range columns {
+			v, ok := data[columnName]
+			if !ok {
+				v = 0
+			}
+			resultRow[columnName] = util.CoerceType(v, columnInfo)
+		}
+		result[n] = resultRow
+	}
+
+	return result, nil
 }
