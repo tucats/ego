@@ -100,9 +100,14 @@ func RunAction(c *cli.Context) error {
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
 	syms.SetAlways("eval", FunctionEval)
-	syms.SetAlways("gopen", FunctionGremlinOpen)
-	syms.SetAlways("gquery", FunctionGremlinQuery)
-	syms.SetAlways("gmap", FunctionGremlinMap)
+
+	g := map[string]interface{}{
+		"open":       FunctionGremlinOpen,
+		"query":      FunctionGremlinQuery,
+		"map":        FunctionGremlinMap,
+		"__readonly": true,
+	}
+	syms.SetAlways("gremlin", g)
 
 	exitValue := 0
 	builtinsAdded := false

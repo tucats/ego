@@ -4,17 +4,17 @@ url := "ws://localhost:8182/gremlin"
 g := 0
 
 try {
-	g = gopen(url)
+	g = gremlin.open(url)
 } catch {
 	print "Unable to connect to Gremlin server"
 	call util.exit(1)
 }
 
-call gquery(g, `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
-call gquery(g, `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
-call gquery(g, `g.addV("test1").property("name", "Sue").property("rate", 10)`)
+call gremlin.query(g, `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
+call gremlin.query(g, `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
+call gremlin.query(g, `g.addV("test1").property("name", "Sue").property("rate", 10)`)
 
-print gmap(g, `g.V().hasLabel("test1").valueMap()`)
+print gremlin.map(g, `g.V().hasLabel("test1").valueMap()`)
 
-call gquery(g, `g.V().hasLabel("test1").drop()`)
+call gremlin.query(g, `g.V().hasLabel("test1").drop()`)
 
