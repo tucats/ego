@@ -99,11 +99,19 @@ type GremlinColumn struct {
 // tabular result.
 func FunctionGremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
-	if len(args) != 1 {
+	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New("incorrect number of arguments")
 	}
 	r := args[0]
+	var err error
+
 	switch r.(type) {
+	case *grammes.Client:
+		// We were given a query to execute
+		r, err = FunctionGremlinQuery(symbols, args)
+		if err != nil {
+			return nil, err
+		}
 	case map[string]interface{}:
 		r = []interface{}{r}
 	case []interface{}:
