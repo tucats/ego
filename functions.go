@@ -286,24 +286,8 @@ func gremlinResultMapList(i interface{}) (interface{}, error) {
 }
 
 func gremlinResultMap(i interface{}) (interface{}, error) {
-	r := map[string]interface{}{}
-
-	/*
-		a, ok := i.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("expected map not found")
-		}
-
-
-		for i := 0; i < len(a); i = i + 1 {
-			k := util.GetString(a[i])
-			v, err := gremlinResultValue(a[i+1])
-			if err != nil {
-				return nil, err
-			}
-			r[k] = v
-		}*/
 	var err error
+	r := map[string]interface{}{}
 	a, ok := i.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("expected map not found")
