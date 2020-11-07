@@ -10,11 +10,11 @@ try {
 	call util.exit(1)
 }
 
-call gremlin.query(g, `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
-call gremlin.query(g, `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
-call gremlin.query(g, `g.addV("test1").property("name", "Sue").property("rate", 10)`)
+call g.query(`g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
+call g.query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
+call g.query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
 
-print gremlin.map(g, `g.V().hasLabel("test1").valueMap()`)
+print g.map(`g.V().hasLabel("test1").valueMap()`)
 
-call gremlin.query(g, `g.V().hasLabel("test1").drop()`)
+call g.query( `g.V().hasLabel("test1").drop()`)
 

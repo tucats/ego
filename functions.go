@@ -7,7 +7,6 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/go-gremlin/gremlin"
 	"github.com/northwesternmutual/grammes"
 	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/symbols"
@@ -38,7 +37,12 @@ func FunctionGremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (inte
 
 	var username, password string
 
-	url := util.GetString(args[0])
+	var url string
+	if len(args) == 0 {
+		url = "ws://localhost:8182/gremlin"
+	} else {
+		url = util.GetString(args[0])
+	}
 	if len(args) > 1 {
 		username = util.GetString(args[1])
 		if len(args) > 2 {
@@ -46,45 +50,61 @@ func FunctionGremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (inte
 		}
 	}
 
-	// Are we using the grammes client?
-	if true {
-		client, err := grammes.DialWithWebSocket(url)
-		return client, err
-	}
-	var auth gremlin.OptAuth
-
+	var client *grammes.Client
+	var err error
 	if username != "" {
-		auth = gremlin.OptAuthUserPass(username, password)
-		return gremlin.NewClient(url, auth)
+		auth := grammes.WithAuthUserPass(username, password)
+		client, err = grammes.DialWithWebSocket(url, auth)
+	} else {
+		client, err = grammes.DialWithWebSocket(url)
 	}
-	return gremlin.NewClient(url)
+
+	return map[string]interface{}{
+		"client":     client,
+		"query":      FunctionGremlinQuery,
+		"map":        FunctionGremlinMap,
+		"__readonly": true,
+	}, err
 
 }
 
 // FunctionGremlinQuery executes a string query against an open client
 func FunctionGremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
-	if len(args) != 2 {
+	client, err := getGremlinClient(symbols)
+	if err != nil {
+		return nil, err
+	}
+	if len(args) != 1 {
 		return nil, errors.New("incorrect number of arguments")
 	}
-	query := util.GetString(args[1])
-	client, ok := args[0].(*gremlin.Client)
-	if ok {
-		res, err := client.ExecQuery(query)
-		if err != nil {
-			return nil, err
-		}
-		return gremlinResult(string(res))
-	}
-	grammes, ok := args[0].(*grammes.Client)
-	if !ok {
-		return nil, errors.New("not a valid gremlin client")
-	}
-	res, err := grammes.ExecuteStringQuery(query)
+	query := util.GetString(args[0])
+	res, err := client.ExecuteStringQuery(query)
 	if err != nil {
 		return nil, err
 	}
 	return gremlinResult(string(res[0]))
+}
+
+func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
+
+	g, ok := symbols.Get("_this")
+	if !ok {
+		return nil, errors.New("no function reciver")
+	}
+	gc, ok := g.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("not a valid gremlin client struct")
+	}
+	client, ok := gc["client"]
+	if !ok {
+		return nil, errors.New("no 'client' member found")
+	}
+	cp, ok := client.(*grammes.Client)
+	if !ok {
+		return nil, errors.New("'client' is not a gremlin client pointer")
+	}
+	return cp, nil
 }
 
 // GremlinColumn describes everything we know about a column in a gremlin
@@ -106,7 +126,7 @@ func FunctionGremlinMap(symbols *symbols.SymbolTable, args []interface{}) (inter
 	var err error
 
 	switch r.(type) {
-	case *grammes.Client:
+	case string:
 		// We were given a query to execute
 		r, err = FunctionGremlinQuery(symbols, args)
 		if err != nil {

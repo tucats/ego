@@ -17,7 +17,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 		{
 			name:    "Simple vertex count",
 			query:   "g.V().hasLabel('MADEUPNAME').count()",
-			want:    []interface{}{0},
+			want:    0,
 			wantErr: false,
 		},
 		{
@@ -28,13 +28,10 @@ func TestFunctionGremlinQuery(t *testing.T) {
 		{
 			name:  "value map",
 			query: "g.V().hasLabel('airport').valueMap()",
-			want: []interface{}{
-				map[string]interface{}{
-					"code": []interface{}{"RDU"},
-					"name": []interface{}{"Raleigh"},
-				},
+			want: map[string]interface{}{
+				"code": "RDU",
+				"name": "Raleigh",
 			},
-
 			wantErr: false,
 		},
 		{
@@ -50,12 +47,11 @@ func TestFunctionGremlinQuery(t *testing.T) {
 		t.Errorf("Error connecting to gremlin server: %v", err)
 	}
 
-	syms.SetAlways("client", client)
+	syms.SetAlways("_this", client)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := FunctionGremlinQuery(syms, []interface{}{
-				client,
 				tt.query,
 			})
 			if (err != nil) != tt.wantErr {
