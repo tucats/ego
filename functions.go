@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/go-gremlin/gremlin"
 	"github.com/northwesternmutual/grammes"
@@ -88,7 +89,7 @@ func FunctionGremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (int
 func gremlinResult(str string) (interface{}, error) {
 
 	var r interface{}
-	fmt.Printf("DEBUG: %s\n", str)
+	//	fmt.Printf("DEBUG: %s\n", str)
 	err := json.Unmarshal([]byte(str), &r)
 	if err != nil {
 		return nil, err
@@ -109,13 +110,34 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 		v := m["@value"]
 		switch m["@type"] {
 		case "g:List":
-			return gremlinResultArray(v)
+			r, err := gremlinResultArray(v)
+			if err != nil {
+				return nil, err
+			}
+			ra, ok := r.([]interface{})
+			if ok && len(ra) == 1 {
+				r = ra[0]
+			}
+			return r, nil
 		case "g:Map":
 			return gremlinResultMapList(v)
 		case "g:Vertex":
 			return gremlinResultMap(v)
-		case "g:Int64":
+		case "g:Int32":
 			return util.GetInt(v), nil
+		case "g:Int64":
+			i := util.GetInt64(v)
+			if math.Abs(float64(i)) > math.MaxInt32 {
+				return i, nil
+			}
+			return int(i), nil
+
+		case "gx:BigDecimal":
+			if r, ok := v.(float64); ok {
+				return r, nil
+			}
+			return nil, fmt.Errorf("unexpected gx:BigDecimal type %#v", v)
+
 		default:
 			return nil, fmt.Errorf("unexpected item type %s", m["@type"])
 		}
