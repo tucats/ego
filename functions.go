@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/go-gremlin/gremlin"
 	"github.com/northwesternmutual/grammes"
@@ -86,6 +87,100 @@ func FunctionGremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (int
 	return gremlinResult(string(res[0]))
 }
 
+// GremlinColumn describes everything we know about a column in a gremlin
+// result set.
+type GremlinColumn struct {
+	Name string
+	Type int
+}
+
+// FunctionGremlinMap accepts an opaque object and creates a map of the columns and most-compatible
+// types for the columns. This is a precursor to being able to view a gremlin result set as a
+// tabular result.
+func FunctionGremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+	r := args[0]
+	switch r.(type) {
+	case map[string]interface{}:
+		r = []interface{}{r}
+	case []interface{}:
+		// do nothing
+	default:
+		return nil, errors.New("invalid result set type")
+	}
+
+	columns := map[string]GremlinColumn{}
+
+	for _, row := range r.([]interface{}) {
+		rowMap, ok := row.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("invalid row")
+		}
+		for k, v := range rowMap {
+			gc := GremlinColumn{Name: k}
+			t := reflect.TypeOf(v)
+			gc.Type = int(t.Kind())
+
+			// Do we already know about this one? If so,
+			// calculate best type to use
+			if existingColumn, ok := columns[k]; ok {
+				if gc.Type < existingColumn.Type {
+					gc.Type = existingColumn.Type
+				}
+			}
+			columns[k] = gc
+		}
+	}
+
+	typeMap := map[reflect.Kind]string{
+		reflect.Bool:          "bool",
+		reflect.Int:           "int",
+		reflect.Int8:          "int8",
+		reflect.Int16:         "int16",
+		reflect.Int32:         "int32",
+		reflect.Int64:         "int64",
+		reflect.Uint:          "uint",
+		reflect.Uint8:         "uint8",
+		reflect.Uint16:        "uint16",
+		reflect.Uint32:        "uint32",
+		reflect.Uint64:        "uint64",
+		reflect.Uintptr:       "uintptr",
+		reflect.Float32:       "float32",
+		reflect.Float64:       "float64",
+		reflect.Complex64:     "complex64",
+		reflect.Complex128:    "complex128",
+		reflect.Array:         "array",
+		reflect.Chan:          "channel",
+		reflect.Func:          "func",
+		reflect.Interface:     "interface{}",
+		reflect.Map:           "map",
+		reflect.Ptr:           "ptr",
+		reflect.Slice:         "slice",
+		reflect.String:        "string",
+		reflect.Struct:        "struct",
+		reflect.UnsafePointer: "unsafe ptr",
+	}
+	// Convert the column array set to a normalized form
+	rv := []interface{}{}
+	for _, v := range columns {
+
+		ts, ok := typeMap[reflect.Kind(v.Type)]
+		if !ok {
+			ts = fmt.Sprintf("Type %d", v.Type)
+		}
+		rm := map[string]interface{}{
+			"name": v.Name,
+			"type": ts,
+		}
+		rv = append(rv, rm)
+	}
+	return rv, nil
+}
+
+// Utility functions for Gremlin support
 func gremlinResult(str string) (interface{}, error) {
 
 	var r interface{}

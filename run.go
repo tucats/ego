@@ -102,6 +102,8 @@ func RunAction(c *cli.Context) error {
 	syms.SetAlways("eval", FunctionEval)
 	syms.SetAlways("gopen", FunctionGremlinOpen)
 	syms.SetAlways("gquery", FunctionGremlinQuery)
+	syms.SetAlways("gmap", FunctionGremlinMap)
+
 	exitValue := 0
 	builtinsAdded := false
 

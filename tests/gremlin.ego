@@ -15,6 +15,8 @@ call gquery(g, `g.addV("test1").property("name", "Mary").property("rate", 77.75)
 call gquery(g, `g.addV("test1").property("name", "Sue").property("rate", 10)`)
 
 
-print gquery(g, `g.V().hasLabel("test1").valueMap()`)
+r := gquery(g, `g.V().hasLabel("test1").valueMap()`)
+print gmap(r)
+
 call gquery(g, `g.V().hasLabel("test1").drop()`)
 
