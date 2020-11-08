@@ -371,7 +371,6 @@ func FunctionGremlinMap(symbols *symbols.SymbolTable, args []interface{}) (inter
 func gremlinResult(str string) (interface{}, error) {
 
 	var r interface{}
-	//	fmt.Printf("DEBUG: %s\n", str)
 	err := json.Unmarshal([]byte(str), &r)
 	if err != nil {
 		return nil, err
@@ -504,7 +503,6 @@ func gremlinResultMap(i interface{}) (interface{}, error) {
 
 func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
 	// Unwrap the parameters
-
 	rows := util.GetArray(r)
 	if rows == nil {
 		return nil, errors.New("rowset not an array")
@@ -533,7 +531,7 @@ func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
 		for columnName, columnInfo := range columns {
 			v, ok := data[columnName]
 			if !ok {
-				v = 0
+				v = nil
 			}
 			resultRow[columnName] = util.CoerceType(v, columnInfo)
 		}

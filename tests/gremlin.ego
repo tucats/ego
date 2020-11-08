@@ -19,7 +19,7 @@ try {
 call g.query(`g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
 call g.query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
 call g.query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
-call g.query( `g.addV("test1").property("name", "Bob").property("rate", 10).property("temp", true)`)
+call g.query( `g.addV("test1").property("name", "Bob").property("rate", 10.3).property("temp", true)`)
 call g.query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
 
 // Run a query and coerce the result into a normalized table format
