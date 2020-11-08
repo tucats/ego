@@ -12,7 +12,9 @@ try {
 	call util.exit(1)
 }
 
-// Create some vertices in the database
+// Create some vertices in the database. Note that not all of them have the same
+// properties; any vertex missing a property will be considered to have a null value
+// for that property in the result set.
 
 call g.query(`g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
 call g.query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
@@ -20,13 +22,15 @@ call g.query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
 call g.query( `g.addV("test1").property("name", "Bob").property("rate", 10).property("temp", true)`)
 call g.query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
 
-// Generate a column map of the database label "test1"
-query := `g.V().hasLabel("test1").valueMap()`
-map := g.map(query)
+// Run a query and coerce the result into a normalized table format
+query := `g.V().hasLabel("test1").order().by("name").valueMap()`
+data := g.querymap(query)
 
-// Make the same read, using the map
-data := g.querymap(query, map)
-print data
+// Generate formatted output, which is an array of strings
+t := table(data)
+for r := range t {
+	print r
+}
 
 // Clean up all our nodes
 call g.query( `g.V().hasLabel("test1").drop()`)

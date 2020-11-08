@@ -100,11 +100,9 @@ func RunAction(c *cli.Context) error {
 	// Add local funcion(s)
 	syms.SetAlways("pi", FunctionPi)
 	syms.SetAlways("eval", FunctionEval)
-
+	syms.SetAlways("table", FunctionTable)
 	g := map[string]interface{}{
 		"open":       FunctionGremlinOpen,
-		"query":      FunctionGremlinQuery,
-		"map":        FunctionGremlinMap,
 		"__readonly": true,
 	}
 	syms.SetAlways("gremlin", g)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/northwesternmutual/grammes"
 	"github.com/tucats/gopackages/expressions"
@@ -91,13 +93,26 @@ func FunctionGremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (int
 // result is then normalized against a map provided by the user.
 func FunctionGremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+
+	var m interface{}
+	var err error
+
+	if len(args) > 1 {
+		m = args[1]
+	} else {
+		m, err = FunctionGremlinMap(symbols, args)
+		if err != nil {
+			return m, err
+		}
+	}
 	client, err := getGremlinClient(symbols)
 	if err != nil {
 		return nil, err
 	}
-	if len(args) != 2 {
-		return nil, errors.New("incorrect number of arguments")
-	}
+
 	query := util.GetString(args[0])
 	res, err := client.ExecuteStringQuery(query)
 	if err != nil {
@@ -109,7 +124,125 @@ func FunctionGremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (
 		return r, err
 	}
 
-	return gremlinApplyMap(r, args[1])
+	return gremlinApplyMap(r, m)
+}
+
+type column struct {
+	name  string
+	width int
+	kind  int
+}
+
+// FunctionTable generates a string describing a rectangular result map
+func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+	// Scan over the first data element to pick up the column names and types
+	a := util.GetArray(args[0])
+	if a == nil || len(a) == 0 {
+		return nil, errors.New("not a result set")
+	}
+
+	// Make a list of the sort key names
+	row := util.GetMap(a[0])
+	keys := []string{}
+	for k := range row {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	columns := []column{}
+	for _, k := range keys {
+		v := row[k]
+		c := column{}
+		c.name = k
+		c.kind = int(reflect.TypeOf(v).Kind())
+		c.width = len(k)
+		columns = append(columns, c)
+	}
+
+	// Scan all rows to get maximum length values
+	for _, r := range a {
+		row := util.GetMap(r)
+		for n := 0; n < len(columns); n = n + 1 {
+			c := columns[n]
+			v, ok := row[c.name]
+			if ok {
+				width := len(util.FormatUnquoted(v))
+				if width > c.width {
+					c.width = width
+					columns[n] = c
+				}
+			}
+		}
+	}
+
+	// Go over the columns and right-align numeric values
+	for n := 0; n < len(columns); n = n + 1 {
+		c := columns[n]
+		if isNumeric(c.kind) {
+			c.width = -c.width
+			columns[n] = c
+		}
+	}
+
+	// Fill in the headers
+	result := []interface{}{}
+	var b strings.Builder
+	var h strings.Builder
+	for _, c := range columns {
+		b.WriteString(pad(c.name, c.width))
+		b.WriteRune(' ')
+		w := c.width
+		if w < 0 {
+			w = -w
+		}
+		h.WriteString(strings.Repeat("=", w))
+		h.WriteRune(' ')
+	}
+	result = append(result, b.String())
+	result = append(result, h.String())
+
+	// Loop over the rows and fill in the values
+	for _, r := range a {
+		row := util.GetMap(r)
+		var b strings.Builder
+		for _, c := range columns {
+			v, ok := row[c.name]
+			if ok {
+				b.WriteString(pad(util.FormatUnquoted(v), c.width))
+				b.WriteRune(' ')
+			} else {
+				b.WriteString(strings.Repeat(" ", c.width+1))
+			}
+		}
+		result = append(result, b.String())
+	}
+
+	return result, nil
+}
+
+func pad(s string, w int) string {
+	count := w
+	if count < 0 {
+		count = -count
+	}
+	padString := ""
+	if count > len(s) {
+		padString = strings.Repeat(" ", count-len(s))
+	}
+	var r string
+	if w < 0 {
+		r = padString + s
+	} else {
+		r = s + padString
+	}
+	if len(r) > count {
+		r = r[:count]
+	}
+	return string(r)
 }
 
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
@@ -244,6 +377,13 @@ func gremlinResult(str string) (interface{}, error) {
 		return nil, err
 	}
 	return gremlinResultValue(r)
+}
+
+func isNumeric(t int) bool {
+	if t >= int(reflect.Int) && t <= int(reflect.Complex128) {
+		return true
+	}
+	return false
 }
 
 func gremlinResultValue(i interface{}) (interface{}, error) {
@@ -387,7 +527,7 @@ func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
 	result := make([]interface{}, len(rows))
 	for n, row := range rows {
 		resultRow := map[string]interface{}{
-			"_id": n,
+			"_row_": n + 1,
 		}
 		data := util.GetMap(row)
 		for columnName, columnInfo := range columns {
