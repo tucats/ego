@@ -15,6 +15,35 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
+var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
+	reflect.Bool:          "bool",
+	reflect.Int:           "int",
+	reflect.Int8:          "int8",
+	reflect.Int16:         "int16",
+	reflect.Int32:         "int32",
+	reflect.Int64:         "int64",
+	reflect.Uint:          "uint",
+	reflect.Uint8:         "uint8",
+	reflect.Uint16:        "uint16",
+	reflect.Uint32:        "uint32",
+	reflect.Uint64:        "uint64",
+	reflect.Uintptr:       "uintptr",
+	reflect.Float32:       "float32",
+	reflect.Float64:       "float64",
+	reflect.Complex64:     "complex64",
+	reflect.Complex128:    "complex128",
+	reflect.Array:         "array",
+	reflect.Chan:          "channel",
+	reflect.Func:          "func",
+	reflect.Interface:     "interface{}",
+	reflect.Map:           "map",
+	reflect.Ptr:           "ptr",
+	reflect.Slice:         "slice",
+	reflect.String:        "string",
+	reflect.Struct:        "struct",
+	reflect.UnsafePointer: "unsafe ptr",
+}
+
 // FunctionPi implements the pi() function
 func FunctionPi(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
@@ -66,6 +95,7 @@ func FunctionGremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (inte
 		"query":      FunctionGremlinQuery,
 		"map":        FunctionGremlinMap,
 		"querymap":   FunctionGremlinQueryMap,
+		"asjson":     FunctionAsJSON,
 		"__readonly": true,
 	}, err
 
@@ -128,9 +158,92 @@ func FunctionGremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (
 }
 
 type column struct {
-	name  string
-	width int
-	kind  int
+	Name           string `json:"name"`
+	FormattedWidth int    `json:"formattedWidth"`
+	Kind           int    `json:"kind"`
+	KindName       string `json:"kindName"`
+}
+
+// FunctionAsJSON executes a query and constructs a JSON string that represents the
+// resulting result set. This is similar to using QueryMap followed by Table but
+// generating JSON instead of a formatted text output.
+func FunctionAsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+
+	// Get a normalized result set from the query.
+	resultSet, err := FunctionGremlinQueryMap(symbols, args)
+
+	// Scan over the first data element to pick up the column names and types
+	a := util.GetArray(resultSet)
+	if a == nil || len(a) == 0 {
+		return nil, errors.New("not a result set")
+	}
+
+	// Make a list of the sort key names
+	rowMap := util.GetMap(a[0])
+	keys := []string{}
+	for k := range rowMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	type rowvalues struct {
+		kind  string
+		value string
+	}
+
+	type Row []interface{}
+
+	type jsonData struct {
+		Columns []column `json:"columns"`
+		Rows    []Row    `json:"rows"`
+	}
+
+	r := jsonData{}
+
+	// Construct a list of the columns.
+	r.Columns = []column{}
+	for _, k := range keys {
+		v := rowMap[k]
+		c := column{}
+		c.Name = k
+		kind := reflect.TypeOf(v).Kind()
+		c.Kind = int(kind)
+		c.KindName = typeMap[kind]
+		r.Columns = append(r.Columns, c)
+	}
+
+	// Determine the column width of each column of the result set
+	for _, rowValue := range a {
+		rowMap := util.GetMap(rowValue)
+		for n := 0; n < len(r.Columns); n = n + 1 {
+			c := r.Columns[n]
+			v, ok := rowMap[c.Name]
+			if ok {
+				width := len(util.FormatUnquoted(v))
+				if width > c.FormattedWidth {
+					c.FormattedWidth = width
+					r.Columns[n] = c
+				}
+			}
+		}
+	}
+
+	// Loop over the rows and fill in the values
+	for _, rowElement := range a {
+		rowMap := util.GetMap(rowElement)
+		rs := make([]interface{}, len(r.Columns))
+		for i, c := range r.Columns {
+			v := rowMap[c.Name]
+			rs[i] = v
+		}
+		r.Rows = append(r.Rows, rs)
+	}
+
+	bytes, err := json.Marshal(r)
+	return string(bytes), err
 }
 
 // FunctionTable generates a string describing a rectangular result map
@@ -162,10 +275,10 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 	for _, k := range keys {
 		v := row[k]
 		c := column{}
-		c.name = k
-		c.kind = int(reflect.TypeOf(v).Kind())
+		c.Name = k
+		c.Kind = int(reflect.TypeOf(v).Kind())
 		if includeHeadings {
-			c.width = len(k)
+			c.FormattedWidth = len(k)
 		}
 		columns = append(columns, c)
 	}
@@ -175,11 +288,11 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 		row := util.GetMap(r)
 		for n := 0; n < len(columns); n = n + 1 {
 			c := columns[n]
-			v, ok := row[c.name]
+			v, ok := row[c.Name]
 			if ok {
 				width := len(util.FormatUnquoted(v))
-				if width > c.width {
-					c.width = width
+				if width > c.FormattedWidth {
+					c.FormattedWidth = width
 					columns[n] = c
 				}
 			}
@@ -189,8 +302,8 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 	// Go over the columns and right-align numeric values
 	for n := 0; n < len(columns); n = n + 1 {
 		c := columns[n]
-		if isNumeric(c.kind) {
-			c.width = -c.width
+		if isNumeric(c.Kind) {
+			c.FormattedWidth = -c.FormattedWidth
 			columns[n] = c
 		}
 	}
@@ -202,9 +315,9 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 		var b strings.Builder
 		var h strings.Builder
 		for _, c := range columns {
-			b.WriteString(pad(c.name, c.width))
+			b.WriteString(pad(c.Name, c.FormattedWidth))
 			b.WriteRune(' ')
-			w := c.width
+			w := c.FormattedWidth
 			if w < 0 {
 				w = -w
 			}
@@ -220,12 +333,12 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 		row := util.GetMap(r)
 		var b strings.Builder
 		for _, c := range columns {
-			v, ok := row[c.name]
+			v, ok := row[c.Name]
 			if ok {
-				b.WriteString(pad(v, c.width))
+				b.WriteString(pad(v, c.FormattedWidth))
 				b.WriteRune(' ')
 			} else {
-				b.WriteString(strings.Repeat(" ", c.width+1))
+				b.WriteString(strings.Repeat(" ", c.FormattedWidth+1))
 			}
 		}
 		result = append(result, b.String())
@@ -336,34 +449,6 @@ func FunctionGremlinMap(symbols *symbols.SymbolTable, args []interface{}) (inter
 		}
 	}
 
-	typeMap := map[reflect.Kind]string{
-		reflect.Bool:          "bool",
-		reflect.Int:           "int",
-		reflect.Int8:          "int8",
-		reflect.Int16:         "int16",
-		reflect.Int32:         "int32",
-		reflect.Int64:         "int64",
-		reflect.Uint:          "uint",
-		reflect.Uint8:         "uint8",
-		reflect.Uint16:        "uint16",
-		reflect.Uint32:        "uint32",
-		reflect.Uint64:        "uint64",
-		reflect.Uintptr:       "uintptr",
-		reflect.Float32:       "float32",
-		reflect.Float64:       "float64",
-		reflect.Complex64:     "complex64",
-		reflect.Complex128:    "complex128",
-		reflect.Array:         "array",
-		reflect.Chan:          "channel",
-		reflect.Func:          "func",
-		reflect.Interface:     "interface{}",
-		reflect.Map:           "map",
-		reflect.Ptr:           "ptr",
-		reflect.Slice:         "slice",
-		reflect.String:        "string",
-		reflect.Struct:        "struct",
-		reflect.UnsafePointer: "unsafe ptr",
-	}
 	// Convert the column array set to a normalized form
 	rv := []interface{}{}
 	for _, v := range columns {
