@@ -136,9 +136,14 @@ type column struct {
 // FunctionTable generates a string describing a rectangular result map
 func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
-	if len(args) != 1 {
+	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New("incorrect number of arguments")
 	}
+	includeHeadings := true
+	if len(args) == 2 {
+		includeHeadings = util.GetBool(args[1])
+	}
+
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(args[0])
 	if a == nil || len(a) == 0 {
@@ -159,7 +164,9 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 		c := column{}
 		c.name = k
 		c.kind = int(reflect.TypeOf(v).Kind())
-		c.width = len(k)
+		if includeHeadings {
+			c.width = len(k)
+		}
 		columns = append(columns, c)
 	}
 
@@ -190,20 +197,23 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 
 	// Fill in the headers
 	result := []interface{}{}
-	var b strings.Builder
-	var h strings.Builder
-	for _, c := range columns {
-		b.WriteString(pad(c.name, c.width))
-		b.WriteRune(' ')
-		w := c.width
-		if w < 0 {
-			w = -w
+
+	if includeHeadings {
+		var b strings.Builder
+		var h strings.Builder
+		for _, c := range columns {
+			b.WriteString(pad(c.name, c.width))
+			b.WriteRune(' ')
+			w := c.width
+			if w < 0 {
+				w = -w
+			}
+			h.WriteString(strings.Repeat("=", w))
+			h.WriteRune(' ')
 		}
-		h.WriteString(strings.Repeat("=", w))
-		h.WriteRune(' ')
+		result = append(result, b.String())
+		result = append(result, h.String())
 	}
-	result = append(result, b.String())
-	result = append(result, h.String())
 
 	// Loop over the rows and fill in the values
 	for _, r := range a {
@@ -212,7 +222,7 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 		for _, c := range columns {
 			v, ok := row[c.name]
 			if ok {
-				b.WriteString(pad(util.FormatUnquoted(v), c.width))
+				b.WriteString(pad(v, c.width))
 				b.WriteRune(' ')
 			} else {
 				b.WriteString(strings.Repeat(" ", c.width+1))
@@ -224,7 +234,11 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 	return result, nil
 }
 
-func pad(s string, w int) string {
+// Pad the formatted value of a given object to the specified number
+// of characters. Negative numbers are right-aligned, positive numbers
+// are left-aligned.
+func pad(v interface{}, w int) string {
+	s := util.FormatUnquoted(v)
 	count := w
 	if count < 0 {
 		count = -count

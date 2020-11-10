@@ -27,10 +27,7 @@ query := `g.V().hasLabel("test1").order().by("name").valueMap()`
 data := g.querymap(query)
 
 // Generate formatted output, which is an array of strings
-t := table(data)
-for r := range t {
-	print r
-}
+print string(table(data))
 
 // Clean up all our nodes
 call g.query( `g.V().hasLabel("test1").drop()`)
