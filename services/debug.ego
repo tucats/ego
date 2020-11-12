@@ -1,5 +1,5 @@
 /* Debugging service. This just dumps out the symbol table */
 
-import _util
-print _util.symbols()
+import util
+print util.symbols()
 

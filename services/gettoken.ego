@@ -1,8 +1,7 @@
 /*
  * Get a new token. Requires a payload with the username and password
  */
-import strings
-import util 
+import ( strings util json cipher )
 
 @authentication_domain "authentication"
 
@@ -10,7 +9,7 @@ user := ""
 password := ""
 
 try {
-   payload := _json.decode(_body)
+   payload := json.decode(_body)
    user = payload.user
    password = payload.password
 } catch {
@@ -18,6 +17,6 @@ try {
 }
 
 if user != "" {
-    print _cipher.token(user)
+    print cipher.token(user)
 }
 

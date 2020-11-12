@@ -34,6 +34,9 @@ func Server(c *cli.Context) error {
 	pathRoot, _ := c.GetString("context-root")
 	if pathRoot == "" {
 		pathRoot = os.Getenv("EGO_PATH")
+		if pathRoot == "" {
+			pathRoot = persistence.Get("ego-path")
+		}
 	}
 
 	err := defineLibHandlers(pathRoot, "/services")
