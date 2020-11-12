@@ -1,14 +1,14 @@
 package cipher
 
 function token(user) string {
-    token := {user:user, id:_util.uuid()}
+    token := {user:user, id:util.uuid()}
 
     // Add in a duration after which the token is invalid
-    duration := _util.profile("token-expiration")
+    duration := util.profile("token-expiration")
     if duration == "" {
         duration = "15m"
     }
-    token.expiration = _time.add(_time.now(), duration)
+    token.expiration = time.add(time.now(), duration)
 
     // Cryptographically sign the token
     htoken := string(token)
@@ -16,7 +16,7 @@ function token(user) string {
     token.hash = hash
 
     // Return the token as an encrypted string.
-    return _cipher.encrypt(string(token), _util.profile("token-key"))
+    return cipher.encrypt(string(token), util.profile("token-key"))
 }
 
 function valid(s) bool {
@@ -24,7 +24,7 @@ function valid(s) bool {
     // Decrypt the token string.
     ts := ""
     try {
-        ts = cipher.decrypt(s, _util.profile("token-key"))
+        ts = cipher.decrypt(s, util.profile("token-key"))
     } catch {
         return false
     }
@@ -34,7 +34,7 @@ function valid(s) bool {
     token := eval(ts)
 
     // See if the token is expired
-    delta := _time.subtract(token.expiration, _time.now())
+    delta := time.subtract(token.expiration, time.now())
     if strings.left(delta,1) == "-" {
         return false
     }
@@ -51,20 +51,20 @@ function getuser(s) string {
 
     ts := ""
     try {
-        ts = _cipher.decrypt(s, _util.profile("token-key"))
+        ts = cipher.decrypt(s, util.profile("token-key"))
     } catch {
         return false
     }
     token := eval(ts)
 
-    delta := _time.subtract(token.expiration, _time.now())
+    delta := time.subtract(token.expiration, time.now())
     if strings.left(delta,1) == "-" {
         return false
     }
 
     t := {user:token.user, id:token.id, expiration:token.expiration}
     htoken := string(t) 
-    hash := _cipher.hash(htoken)
+    hash := cipher.hash(htoken)
 
     r := ""
     if token.hash == hash {
