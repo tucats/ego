@@ -24,12 +24,12 @@ type employee-> x {
  * can reference 'c' as an instance of an employee.
  */
 
-function c-> fullname() string { 
+func c-> fullname() string { 
 
     return c.name.first + " " + c.name.last 
 }
 
-function c-> setname(f, l) void {
+func c-> setname(f, l) void {
     c.name = {first:f, last:l}
     return
 }
