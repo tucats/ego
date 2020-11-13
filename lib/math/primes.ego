@@ -1,8 +1,7 @@
 package math
 
 /* Classic prime number search using sieve method */
-
-function primes(size) [] {
+func primes(size) [] {
 
     size := _args[1]
 

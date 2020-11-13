@@ -1,6 +1,6 @@
 package strings
 
-function camel(s) string {
+func camel(s) string {
    if len(s) == 0 {
       return ""
    }   

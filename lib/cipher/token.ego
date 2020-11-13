@@ -1,6 +1,6 @@
 package cipher
 
-function token(user) string {
+func token(user) string {
     token := {user:user, id:util.uuid()}
 
     // Add in a duration after which the token is invalid
@@ -19,7 +19,7 @@ function token(user) string {
     return cipher.encrypt(string(token), util.profile("token-key"))
 }
 
-function valid(s) bool {
+func valid(s) bool {
 
     // Decrypt the token string.
     ts := ""
@@ -47,7 +47,7 @@ function valid(s) bool {
 }
 
 
-function getuser(s) string {
+func getuser(s) string {
 
     ts := ""
     try {
