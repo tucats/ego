@@ -71,10 +71,14 @@ func RunAction(c *cli.Context) error {
 	} else if argc == 0 {
 		wasCommandLine = false
 		if !ui.IsConsolePipe() {
+			var banner string
+			if persistence.Get("no-copyright") != "true" {
+				banner = c.AppName + " " + c.Version + " " + c.Copyright
+			}
 			if exitOnBlankLine {
-				fmt.Printf("Enter a blank line to exit\n")
+				fmt.Printf("%s\nEnter a blank line to exit\n", banner)
 			} else {
-				fmt.Printf("Enter %s to exit\n", QuitCommand)
+				fmt.Printf("%s\n", banner)
 			}
 		}
 		text = readConsoleText(prompt)
