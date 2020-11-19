@@ -25,7 +25,6 @@ type employee-> x {
  */
 
 func c-> fullname() string { 
-
     return c.name.first + " " + c.name.last 
 }
 
@@ -34,3 +33,6 @@ func c-> setname(f, l) void {
     return
 }
 
+func c->greet() string {
+    return "Greetings, " + c->fullname()
+}
