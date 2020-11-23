@@ -1,0 +1,4 @@
+count := 20
+
+for i := 0; i < count; i = i + 1 { x := math.factor(1234567890) }
+
