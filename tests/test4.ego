@@ -1,13 +1,26 @@
-print "Here is a list from 1 to 5:"
+@test "basic for-loops"
 
+// Simple for loop with explicit terms. Calculate the
+// sum of values from 1..5
+s := 0
 for n := 1; n <= 5; n = n + 1 {
-    print n
+    s = s + n
 }
+@assert s == 15;
 
-print "Here is a range:"
+// Use range to scan over a heterogenous list. The addition
+// operator will convert these to a string value as the 
+// most-compatible type, after first converting true to 1.
+// Also, sums up the index values (first result of the)
+// range, which is sum of 1..4
+s = 0
+s2 := 0
 x := [true, "Tom", 3.14, 42]
-
 for i, j := range x {
-   print "Element ", i, " is ", j
+   s = s + j
+   s2 = s2 + i
 }
 
+@assert s == "1Tom3.1442"
+@assert s2 == 10
+@pass

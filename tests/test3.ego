@@ -4,9 +4,15 @@
  * Runtime divide-by-zero error.
  */
 
-function half(x) float {
-   return x / 0 
+@test "divide by zero"
+
+func half(x) float {
+   try {
+      return x / 0 
+   } catch {
+      return -55.0
+   }
 }
 
-print "Twice 55 is ", half(55)
-
+@assert half(1) == -55
+@pass

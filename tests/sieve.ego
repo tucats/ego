@@ -1,6 +1,8 @@
 /* Classic prime number search using sieve method */
 
-function primes(size) [] {
+@test "seive test"
+
+func primes(size) [] {
 
 	array t[size] = false
 	array r[0]
@@ -27,4 +29,7 @@ function primes(size) [] {
 	return r
 }
 
-print primes(100)
+// Calcuate the array containing the primes from 1..10
+p := primes(10)
+@assert p == [ 3, 5, 7]
+@pass

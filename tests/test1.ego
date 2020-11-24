@@ -4,9 +4,12 @@
  * Simple test program for ego processor.
  */
 
-function dbl(x) any {
+@test "simple function call"
+
+func dbl(x) any {
    return x * 2
 }
 
-assert dbl(55)==110
-
+@assert dbl(55) == 110
+@assert dbl(-2) == -4
+@pass

@@ -1,16 +1,18 @@
 /* Test scoping */
 
+@test "block scoping"
+
 g := 33
 
 { // Starts a new scope
    g := 42
-   assert g == 42, "scope error"
+   @assert g == 42 "Did not find nested scope value"
    
    g = 3
-   assert g ==3, "scope error"
+   @assert g ==3 "Did not assign local value"
 }
 
-assert g==33 , "scope error"
-
+@assert g==33  "Outer scope value not preserved"
+@pass
 
 

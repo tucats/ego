@@ -2,5 +2,13 @@
 // Illegal operation, as the strings package is readonly 
 import strings
 
-strings.len := 33
+@test "write to readonly function value"
 
+caught := false
+try {
+len = 33
+} catch {
+    caught = true
+}
+@assert caught "Readonly not honored"
+@pass

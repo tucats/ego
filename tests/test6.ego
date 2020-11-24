@@ -1,9 +1,8 @@
 /* Test of break and continue */
 
+@test "break and continue from loop"
 x := [1,5,3,6,9,10]
-
-print "Processing ", x
-
+t := 0
 for i := range x {
    if i == 3 {
       continue
@@ -12,8 +11,8 @@ for i := range x {
    if i == 9 {
       break
    }
-   print "Value ", i
+   t = t + i
 }
 
-print "End of list"
-
+@assert t == 12
+@pass
