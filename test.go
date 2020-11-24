@@ -1,0 +1,190 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/tucats/gopackages/app-cli/cli"
+	"github.com/tucats/gopackages/app-cli/persistence"
+	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/bytecode"
+	"github.com/tucats/gopackages/compiler"
+	"github.com/tucats/gopackages/symbols"
+	"github.com/tucats/gopackages/tokenizer"
+)
+
+// TestAction is the command handler for the ego TEST command
+func TestAction(c *cli.Context) error {
+
+	var text string
+	var err error
+
+	// Create an empty symbol table and store the program arguments.
+	syms := symbols.NewSymbolTable("Unit Tests")
+
+	// Add local funcion(s)
+	syms.SetAlways("pi", FunctionPi)
+	syms.SetAlways("eval", FunctionEval)
+	syms.SetAlways("table", FunctionTable)
+	g := map[string]interface{}{
+		"open":       FunctionGremlinOpen,
+		"__readonly": true,
+	}
+	syms.SetAlways("gremlin", g)
+
+	exitValue := 0
+	builtinsAdded := false
+
+	// Use the parameters from the parent context which are the command line
+	// values after the verb.
+	for _, fileOrPath := range c.Parent.Parameters {
+
+		text, err = ReadFile(fileOrPath)
+		if err != nil {
+			return fmt.Errorf("unable to read file: %s", fileOrPath)
+		}
+
+		// Handle special cases.
+		if strings.TrimSpace(text) == QuitCommand {
+			break
+		}
+
+		// Tokenize the input
+		t := tokenizer.New(text)
+
+		// Compile the token stream
+		comp := compiler.New()
+		b, err := comp.Compile(t)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err.Error())
+			exitValue = 1
+		} else {
+
+			if !builtinsAdded {
+				// Add the builtin functions
+				comp.AddBuiltins("")
+
+				if persistence.Get("auto-import") == "true" {
+					err := comp.AutoImport()
+					if err != nil {
+						fmt.Printf("Unable to auto-import packages: " + err.Error())
+					}
+				}
+				comp.AddPackageToSymbols(syms)
+				builtinsAdded = true
+			}
+			oldDebugMode := ui.DebugMode
+			if getConfig(syms, ConfigDisassemble) {
+				ui.DebugMode = true
+				b.Disasm()
+			}
+			ui.DebugMode = oldDebugMode
+
+			// Run the compiled code
+			ctx := bytecode.NewContext(syms, b)
+			oldDebugMode = ui.DebugMode
+			ctx.Tracing = getConfig(syms, ConfigTrace)
+			if ctx.Tracing {
+				ui.DebugMode = true
+			}
+
+			// If we are doing source tracing of execution, we'll need to link the tokenzier
+			// back to the execution context. If you don't need source tracing, you can use
+			// the simpler CompileString() function which doesn't require a discrete tokenizer.
+			if c.GetBool("source-tracing") {
+				ctx.SetTokenizer(t)
+			}
+
+			err = ctx.Run()
+			ui.DebugMode = oldDebugMode
+
+			if err != nil {
+				fmt.Printf("Error: %s\n", err.Error())
+				exitValue = 2
+			}
+		}
+
+	}
+
+	if exitValue > 0 {
+		return errors.New("terminated with errors")
+	}
+	return nil
+}
+
+// ReadDirectory reads all the files in a directory into a single string.
+func ReadDirectory(name string) (string, error) {
+
+	var b strings.Builder
+
+	ui.Debug("+++ Directory read attempt for \"%s\"", name)
+
+	dirname := name
+	fi, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		if _, ok := err.(*os.PathError); ok {
+			ui.Debug("+++ No such directory")
+		} else {
+			if errors.Is(err, &os.SyscallError{Syscall: "fdopendir", Err: os.ErrInvalid}) {
+				ui.Debug("+++ Not a directory")
+			} else {
+				ui.Debug("--- error reading dirinfo, %#v", err)
+			}
+		}
+		return "", err
+	}
+
+	if len(fi) == 0 {
+		ui.Debug("+++ Directory is empty")
+	} else {
+		ui.Debug("+++ Reading test directory %s", dirname)
+	}
+
+	// For all the items that aren't directories themselves, and
+	// for file names ending in ".ego", read them into the master
+	// result string. Note that recursive directory reading is
+	// not supported.
+	for _, f := range fi {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
+			fname := filepath.Join(dirname, f.Name())
+			t, err := ReadFile(fname)
+			if err != nil {
+				return "", err
+			}
+			b.WriteString(t)
+			b.WriteString("\n")
+		}
+	}
+
+	return b.String(), nil
+}
+
+// ReadFile reads the text from a file into a string
+func ReadFile(name string) (string, error) {
+
+	s, err := ReadDirectory(name)
+	if err == nil {
+		return s, nil
+	}
+	ui.Debug("+++ Reading test file %s", name)
+	// Not a directory, try to read the file
+	content, err := ioutil.ReadFile(name)
+	if err != nil {
+		content, err = ioutil.ReadFile(name + ".ego")
+		if err != nil {
+			r := os.Getenv("EGO_PATH")
+			fn := filepath.Join(r, "lib", name+".ego")
+			content, err = ioutil.ReadFile(fn)
+			if err != nil {
+				return "", fmt.Errorf("unable to read test file: %s", err.Error())
+			}
+		}
+	}
+
+	// Convert []byte to string
+	return string(content), nil
+}

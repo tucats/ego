@@ -20,6 +20,15 @@ var EgoGrammar = []cli.Option{
 		ParameterDescription: "file-name",
 	},
 	cli.Option{
+		LongName:             "test",
+		Description:          "Run an test suite",
+		OptionType:           cli.Subcommand,
+		Action:               TestAction,
+		Value:                RunGrammar,
+		ParametersExpected:   -99,
+		ParameterDescription: "file or path",
+	},
+	cli.Option{
 		LongName:    "server",
 		Description: "Accept REST calls",
 		OptionType:  cli.Subcommand,

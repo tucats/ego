@@ -3,6 +3,7 @@
 
 @test "switch statement"
 
+{
 x := 5
 
 // Select a specific single value
@@ -46,5 +47,5 @@ switch x {
     case 5:
         @fail "Case 5 incorrectly taken"
 }
-
+}
 @pass
