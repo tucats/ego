@@ -11,6 +11,13 @@ import (
 // EgoGrammar handles the command line options
 var EgoGrammar = []cli.Option{
 	cli.Option{
+		LongName:           "path",
+		Description:        "Print the default ego path",
+		OptionType:         cli.Subcommand,
+		Action:             PathAction,
+		ParametersExpected: 0,
+	},
+	cli.Option{
 		LongName:             "run",
 		Description:          "Run an existing program",
 		OptionType:           cli.Subcommand,
@@ -20,6 +27,13 @@ var EgoGrammar = []cli.Option{
 		ParameterDescription: "file-name",
 	},
 	cli.Option{
+		LongName:    "server",
+		Description: "Accept REST calls",
+		OptionType:  cli.Subcommand,
+		Action:      Server,
+		Value:       ServerGrammar,
+	},
+	cli.Option{
 		LongName:             "test",
 		Description:          "Run a test suite",
 		OptionType:           cli.Subcommand,
@@ -27,13 +41,7 @@ var EgoGrammar = []cli.Option{
 		ParametersExpected:   -99,
 		ParameterDescription: "file or path",
 	},
-	cli.Option{
-		LongName:    "server",
-		Description: "Accept REST calls",
-		OptionType:  cli.Subcommand,
-		Action:      Server,
-		Value:       ServerGrammar,
-	}}
+}
 
 // ServerGrammar handles command line options for the server subcommand
 var ServerGrammar = []cli.Option{
