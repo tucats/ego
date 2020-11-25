@@ -7,8 +7,9 @@
 }
 
 {
-    want := ["/Users/tom/go/src/github.com/tucats/ego/functions.go"]
-    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/functions", ".go")
+    want := "/Users/tom/go/src/github.com/tucats/ego/functions.go"
+    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
+    got = got[1]
     @assert want == got "single path name with .go extension"
 }
 
