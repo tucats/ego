@@ -21,10 +21,9 @@ var EgoGrammar = []cli.Option{
 	},
 	cli.Option{
 		LongName:             "test",
-		Description:          "Run an test suite",
+		Description:          "Run a test suite",
 		OptionType:           cli.Subcommand,
 		Action:               TestAction,
-		Value:                RunGrammar,
 		ParametersExpected:   -99,
 		ParameterDescription: "file or path",
 	},

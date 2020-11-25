@@ -41,10 +41,28 @@ func TestAction(c *cli.Context) error {
 	builtinsAdded := false
 
 	// Use the parameters from the parent context which are the command line
-	// values after the verb.
-
+	// values after the verb. If there were no parameters, assume the default
+	// of "tests" is expected, from the ego path if it is defined.
+	locations := []string{}
 	fileList := []string{}
-	for _, fileOrPath := range c.Parent.Parameters {
+
+	if len(c.Parent.Parameters) == 0 {
+		path := persistence.Get("ego-path")
+		if path == "" {
+			path = os.Getenv("EGO_PATH")
+		}
+		defaultName := "tests"
+		if path != "" {
+			defaultName = filepath.Join(path, "tests")
+		}
+		locations = []string{defaultName}
+	} else {
+		for _, fileOrPath := range c.Parent.Parameters {
+			locations = append(locations, fileOrPath)
+		}
+	}
+	// Now use the list of locations given to build an expanded list of files
+	for _, fileOrPath := range locations {
 		files, err := functions.ExpandPath(fileOrPath, ".ego")
 		if err != nil {
 			return fmt.Errorf("unable to read file or path: %s", fileOrPath)
@@ -78,11 +96,10 @@ func TestAction(c *cli.Context) error {
 				// Add the builtin functions
 				comp.AddBuiltins("")
 
-				if persistence.Get("auto-import") == "true" {
-					err := comp.AutoImport()
-					if err != nil {
-						fmt.Printf("Unable to auto-import packages: " + err.Error())
-					}
+				// Always autoimport
+				err := comp.AutoImport()
+				if err != nil {
+					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
 				comp.AddPackageToSymbols(syms)
 				builtinsAdded = true
