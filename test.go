@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
+	"github.com/tucats/gopackages/functions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
 )
@@ -41,8 +42,17 @@ func TestAction(c *cli.Context) error {
 
 	// Use the parameters from the parent context which are the command line
 	// values after the verb.
-	for _, fileOrPath := range c.Parent.Parameters {
 
+	fileList := []string{}
+	for _, fileOrPath := range c.Parent.Parameters {
+		files, err := functions.ExpandPath(fileOrPath, ".ego")
+		if err != nil {
+			return fmt.Errorf("unable to read file or path: %s", fileOrPath)
+		}
+		fileList = append(fileList, files...)
+	}
+
+	for _, fileOrPath := range fileList {
 		text, err = ReadFile(fileOrPath)
 		if err != nil {
 			return fmt.Errorf("unable to read file: %s", fileOrPath)

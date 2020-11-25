@@ -1,0 +1,23 @@
+@test "io.expand() testing"
+
+{
+    want := ["/Users/tom/go/src/github.com/tucats/ego/functions.go"]
+    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/functions.go")
+    @assert want == got "single path name with no extension"
+}
+
+{
+    want := ["/Users/tom/go/src/github.com/tucats/ego/functions.go"]
+    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/functions", ".go")
+    @assert want == got "single path name with .go extension"
+}
+
+{
+    want := "/Users/tom/go/src/github.com/tucats/ego/tests/sieve.ego"
+    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/tests")
+    @assert len(got)>0 "did not return a list"
+    @assert got[1] == want "single level deep directory"
+}
+
+@pass
+
