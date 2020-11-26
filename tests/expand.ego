@@ -14,10 +14,10 @@
 }
 
 {
-    want := "/Users/tom/go/src/github.com/tucats/ego/tests/blocks.ego"
+    want := "/Users/tom/go/src/github.com/tucats/ego/tests/README.md"
     got := io.expand("/Users/tom/go/src/github.com/tucats/ego/tests")
     @assert len(got)>0 "did not return a list"
-    @assert got[1] == want "single level deep directory"
+    @assert got[1] == want "single level deep directory, got " + string(got)
 }
 
 @pass
