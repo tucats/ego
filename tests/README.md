@@ -78,8 +78,20 @@ to the next statement. If the boolean value is not true, the test stops executin
 the associated string expression is used to form an error message printed on the
 console.
 
+### @error
+The `@error` is used to generate a runtime error; the text of the error message is 
+the string expression following the directive. Note that this is not a fatal error,
+so it can be used in a `try...catch...` construct and the `catch` block will be
+executed.
+
+    @error "signal this as an error"
+
+    
 ### @fail
-The `@fail` is used to unilaterally fail the test. There is no conditional expression.
+The `@fail` is used to unilaterally fail the test. This is a fatal error; i.e. the
+remainder of the test does not execute and an error is reported. The `@fail` 
+directive cannot be caught in a `try...catch...` block. (If you need to generate
+a non-fatal error message that can be caught, use `@error`) There is no conditional expression.
 This is a simpler version of using `@assert fail ...`. This is most commonly used in
 tests that are validating flow-of-control, such as:
 

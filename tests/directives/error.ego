@@ -1,0 +1,10 @@
+@test "test of using @error with a try/catch block"
+
+try {
+   @error "test error";
+   @fail "Did not catch the error"
+} catch {
+   // no problem
+}
+
+@pass
