@@ -148,23 +148,16 @@ func ReadDirectory(name string) (string, error) {
 
 	var b strings.Builder
 
-	ui.Debug("+++ Directory read attempt for \"%s\"", name)
-
 	dirname := name
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Debug("+++ No such directory")
-		} else {
-			if errors.Is(err, &os.SyscallError{Syscall: "fdopendir", Err: os.ErrInvalid}) {
-				ui.Debug("+++ Not a directory")
-			} else {
-				ui.Debug("--- error reading dirinfo, %#v", err)
-			}
 		}
 		return "", err
 	}
 
+	ui.Debug("+++ Directory read attempt for \"%s\"", name)
 	if len(fi) == 0 {
 		ui.Debug("+++ Directory is empty")
 	} else {
