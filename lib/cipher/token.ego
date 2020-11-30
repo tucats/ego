@@ -19,7 +19,7 @@ func token(user) string {
     return cipher.encrypt(string(token), util.profile("token-key"))
 }
 
-func valid(s) bool {
+func valid(s string) bool {
 
     // Decrypt the token string.
     ts := ""
@@ -47,7 +47,7 @@ func valid(s) bool {
 }
 
 
-func getuser(s) string {
+func getuser(s string) any {
 
     ts := ""
     try {

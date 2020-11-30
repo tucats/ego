@@ -1,9 +1,7 @@
 package math
 
 /* Classic prime number search using sieve method */
-func primes(size) [] {
-
-    size := _args[1]
+func primes(size int) [] {
 
 	array t[size] = false
 	array r[0]
