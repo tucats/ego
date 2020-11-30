@@ -19,9 +19,9 @@
 	if td == "" {
 		td := "5m"
 	}
-	call util.profile("token-expiration", "1s")
+	call util.profile("token-expiration", ".5s")
 	t := cipher.token("test")
-	call time.sleep("2s")
+	call time.sleep("1s")
 	@assert cipher.valid(t) == false "token should have been invalid"
 	call util.profile("token-expiration", td)
 }
