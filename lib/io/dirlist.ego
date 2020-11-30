@@ -1,0 +1,18 @@
+package io
+
+func dirlist(path) string {
+
+    a := []
+    r := ""
+
+    try {
+        a = io.readdir(path)
+    } catch {
+        return "unable to read directory path: " + path
+    }
+    dir := table(a)
+    for i := range dir {
+        r = r + i + "\n"
+    }
+    return r
+}
