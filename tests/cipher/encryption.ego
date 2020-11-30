@@ -1,0 +1,42 @@
+@test "basic encrypt/decrypt"
+
+// Simple encryption and decryption
+{
+    msg := "test string of text"
+    key := "gibberish"
+
+    e := cipher.encrypt(msg, key)
+    d := cipher.decrypt(e, key)
+
+    @assert msg == d "string did not decrypt correctly"
+}
+
+// Decryption with wrong key
+{
+    msg := "test string of text"
+    key := "gibberish"
+
+    e := cipher.encrypt(msg, key)
+    try {
+        d := cipher.decrypt(e, key+"a")
+        @fail "decryption with bad key did not error"
+    } catch {
+        // authentication failed, as expected
+    }
+}
+
+// Decryption with modified coded value 
+{
+    msg := "test string of text"
+    key := "gibberish"
+
+    e := cipher.encrypt(msg, key) + "X"
+    try {
+        d := cipher.decrypt(e, key)
+        @fail "decryption with modified value did not error"
+    } catch {
+        // authentication failed, as expected
+    }
+}
+
+@pass
