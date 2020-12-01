@@ -9,7 +9,7 @@
 {
     want := "/Users/tom/go/src/github.com/tucats/ego/functions.go"
     got := io.expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
-    got = got[1]
+    got = got[0]
     @assert want == got "single path name with .go extension"
 }
 
@@ -17,7 +17,7 @@
     want := "/Users/tom/go/src/github.com/tucats/ego/tests/README.md"
     got := io.expand("/Users/tom/go/src/github.com/tucats/ego/tests")
     @assert len(got)>0 "did not return a list"
-    @assert got[1] == want "single level deep directory, got " + string(got)
+    @assert got[0] == want "single level deep directory, got " + string(got)
 }
 
 @pass

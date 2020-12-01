@@ -3,16 +3,16 @@ package math
 /* Classic prime number search using sieve method */
 func primes(size int) [] {
 
-	array t[size] = false
+	array t[size+1] = false
 	array r[0]
 
-	for p := 2;  p <= size ; p = p + 1{
+	for p := 2;  p < size ; p = p + 1{
 
-		for n := p; n <=size; n = n + p {
+		for n := p; n < size; n = n + p {
 			t[n] = true
 		}
 		next := 0
-		for n := p+1; n <= size; n= n + 1 {
+		for n := p+1; n < size; n= n + 1 {
 			if !t[n] {
 				next = n
 				break

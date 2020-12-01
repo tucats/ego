@@ -4,7 +4,7 @@
 
 func primes(size) [] {
 
-	array t[size] = false
+	array t[size+1] = false
 	array r[0]
 
 	for p := 2;  p <= size ; p = p + 1{

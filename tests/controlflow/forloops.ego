@@ -19,7 +19,7 @@
     x := [true, "Tom", 3.14, 42]
     for i, j := range x {
         s = s + j
-        s2 = s2 + i
+        s2 = s2 + (i+1)
     }
 
     @assert s == "1Tom3.1442"
