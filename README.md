@@ -7,7 +7,6 @@ display of the options available.
 
 Example:
 
-    
     $ ego run
     Enter expressions to evaulate. End with a blank line.
     ego> print 3*5

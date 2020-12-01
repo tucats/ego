@@ -21,8 +21,8 @@
 	}
 	call util.profile("token-expiration", ".5s")
 	t := cipher.token("test")
-	call time.sleep("1s")
-	@assert cipher.valid(t) == false "token should have been invalid"
+	call time.sleep(".25s")
+	@assert cipher.valid(t) == false "token sh5uld have been invalid"
 	call util.profile("token-expiration", td)
 }
 
