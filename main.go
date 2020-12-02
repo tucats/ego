@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/tucats/gopackages/app-cli/app"
 	"github.com/tucats/gopackages/app-cli/cli"
 )
+
+var BuildVersion = "0"
 
 // EgoGrammar handles the command line options
 var EgoGrammar = []cli.Option{
@@ -101,7 +104,10 @@ var RunGrammar = []cli.Option{
 
 func main() {
 	app := app.New("ego: execute code in the ego language")
-	app.SetVersion(1, 0, 33)
+
+	// Use the build number from the externally-generated build processor.
+	buildVer, _ := strconv.Atoi(BuildVersion)
+	app.SetVersion(1, 0, buildVer)
 	app.SetCopyright("(C) Copyright Tom Cole 2020")
 
 	// fF there aren't any arguments, default to "run"

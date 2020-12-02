@@ -20,9 +20,11 @@ Example:
      ego run test1.ego
      15
 
-This program also demonstrates how to add a new function to the available builtin functions.
 
-## pi()
-This program also demonstrates how to add a new function to the available builtin functions.
-This simple function accepts no arguments, and returns a float64 value for pi. It returns an error if it is passed
-any parameters.
+## Building
+
+You can build the program with a simple `go build` when in the `ego` root source directory.
+
+If you wish to increment the build number (the third integer in the version number string),
+you can use the shell script `build` supplied with the repository. This depends on the 
+existence of the file buildver.txt which contains the last integer value used.

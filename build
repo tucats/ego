@@ -1,0 +1,8 @@
+# Build script that injects version number
+
+BUILDVER=$(cat buildver.txt)
+let "BUILDVER = $BUILDVER + 1"
+echo $BUILDVER >buildver.txt
+
+go build -ldflags "-X main.BuildVersion=$BUILDVER"
+
