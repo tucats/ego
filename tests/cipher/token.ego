@@ -1,5 +1,7 @@
 @test "cipher token functions"
 
+import cipher
+
 // Simple test of storing user data
 {
 	msg := "hidden message"
