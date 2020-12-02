@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -50,17 +51,29 @@ func RunAction(c *cli.Context) error {
 
 	if argc > 0 {
 		fname := c.GetParameter(0)
-		content, err := ioutil.ReadFile(fname)
-		if err != nil {
-			content, err = ioutil.ReadFile(fname + ".ego")
-			if err != nil {
-				return fmt.Errorf("unable to read file: %s", fname)
-			}
-		}
-		mainName = fname
-		// Convert []byte to string
-		text = string(content)
 
+		// If the input file is "." then we read all of stdin
+		if fname == "." {
+			text = ""
+			mainName = "<stdin>"
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				text = text + scanner.Text() + " "
+			}
+		} else {
+
+			// Otherwise, use the parameter as a filename
+			content, err := ioutil.ReadFile(fname)
+			if err != nil {
+				content, err = ioutil.ReadFile(fname + ".ego")
+				if err != nil {
+					return fmt.Errorf("unable to read file: %s", fname)
+				}
+			}
+			mainName = fname
+			// Convert []byte to string
+			text = string(content)
+		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
 			programArgs = make([]interface{}, argc-1)
@@ -80,8 +93,16 @@ func RunAction(c *cli.Context) error {
 			} else {
 				fmt.Printf("%s\n", banner)
 			}
+			text = readConsoleText(prompt)
+		} else {
+			wasCommandLine = true // It is a pipe, so no prompting for more!
+			text = ""
+			mainName = "<stdin>"
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				text = text + scanner.Text() + " "
+			}
 		}
-		text = readConsoleText(prompt)
 	}
 
 	// Create an empty symbol table and store the program arguments.
