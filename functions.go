@@ -52,15 +52,14 @@ func FunctionPi(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	return 3.1415926535, nil
 }
 
-// FunctionEval implements the pi() function
+// FunctionEval implements the eval() function, which uses the expressions
+// package to compile an expression fragment and execute it to get the resulting
+// value.
 func FunctionEval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New("wrong number of arguments")
 	}
-	exprString := util.GetString(args[0])
-	e := expressions.New(exprString)
-	v, err := e.Eval(symbols)
-	return v, err
+	return expressions.Evaluate(util.GetString(args[0]), symbols)
 }
 
 // FunctionGremlinOpen opens a gremlin connetion and stores it in the result value
