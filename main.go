@@ -101,7 +101,7 @@ var RunGrammar = []cli.Option{
 
 func main() {
 	app := app.New("ego: execute code in the ego language")
-	app.SetVersion(1, 0, 32)
+	app.SetVersion(1, 0, 33)
 	app.SetCopyright("(C) Copyright Tom Cole 2020")
 
 	// fF there aren't any arguments, default to "run"
