@@ -17,15 +17,15 @@ import cipher
 	@assert cipher.getuser(t) ==  false "token does not contain empty user data"
 }
 {
-	td := util.profile("token-expiration")
+	td := profile.get("token-expiration")
 	if td == "" {
 		td := "5m"
 	}
-	call util.profile("token-expiration", ".5s")
+	call profile.set("token-expiration", ".5s")
 	t := cipher.token("test")
 	call time.sleep("1s")
 	@assert cipher.valid(t) == false "token should have been invalid"
-	call util.profile("token-expiration", td)
+	call profile.set("token-expiration", td)
 }
 
 @pass

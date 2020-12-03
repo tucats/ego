@@ -1,10 +1,12 @@
 package cipher
 
+import profile
+
 func token(user) string {
     token := {user:user, id:util.uuid()}
 
     // Add in a duration after which the token is invalid
-    duration := util.profile("token-expiration")
+    duration := profile.get("token-expiration")
     if duration == "" {
         duration = "15m"
     }
@@ -16,7 +18,7 @@ func token(user) string {
     token.hash = hash
 
     // Return the token as an encrypted string.
-    return cipher.encrypt(string(token), util.profile("token-key"))
+    return cipher.encrypt(string(token), profile.get("token-key"))
 }
 
 func valid(s string) bool {
@@ -24,7 +26,7 @@ func valid(s string) bool {
     // Decrypt the token string.
     ts := ""
     try {
-        ts = cipher.decrypt(s, util.profile("token-key"))
+        ts = cipher.decrypt(s, profile.get("token-key"))
     } catch {
         return false
     }
@@ -51,7 +53,7 @@ func getuser(s string) any {
 
     ts := ""
     try {
-        ts = cipher.decrypt(s, util.profile("token-key"))
+        ts = cipher.decrypt(s, profile.get("token-key"))
     } catch {
         return false
     }
