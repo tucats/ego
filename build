@@ -1,4 +1,4 @@
-# Build script that injects version number, and optionally
+# Build script for Ego that injects version number, and optionally
 # increments it.
 #
 #   -i     Increment the build number before injecting it.
