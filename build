@@ -1,8 +1,18 @@
-# Build script that injects version number
+# Build script that injects version number, and optionally
+# increments it.
+#
+#   -i     Increment the build number before injecting it.
+#          By default, uses the current build number
+#
 
 BUILDVER=$(cat buildver.txt)
+
+if [ "$1" == "-i" ]; then
+
 let "BUILDVER = $BUILDVER + 1"
 echo $BUILDVER >buildver.txt
+fi
 
+echo Build $BUILDVER
 go build -ldflags "-X main.BuildVersion=$BUILDVER"
 
