@@ -96,6 +96,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Compile the token stream
 	comp := compiler.New()
+	comp.LowercaseIdentifiers = persistence.GetBool("case-normalized")
 	b, err := comp.Compile(t)
 	if err != nil {
 		w.WriteHeader(400)

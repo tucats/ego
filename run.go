@@ -179,7 +179,8 @@ func RunAction(c *cli.Context) error {
 		}
 
 		// Compile the token stream
-		comp := compiler.New()
+		comp := compiler.New().IdentifierNormalization(persistence.GetBool("case-normalized"))
+
 		b, err := comp.Compile(t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
