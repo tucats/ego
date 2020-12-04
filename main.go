@@ -9,6 +9,9 @@ import (
 	"github.com/tucats/gopackages/app-cli/cli"
 )
 
+// BuildVersion is the incremental build version that is
+// injected into the version number string by the build
+// script
 var BuildVersion = "0"
 
 // EgoGrammar handles the command line options

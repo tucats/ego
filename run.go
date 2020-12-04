@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -126,6 +127,8 @@ func RunAction(c *cli.Context) error {
 	syms.SetAlways("pi", FunctionPi)
 	syms.SetAlways("eval", FunctionEval)
 	syms.SetAlways("table", FunctionTable)
+	syms.SetAlways("prompt", FunctionPrompt)
+
 	g := map[string]interface{}{
 		"open":       FunctionGremlinOpen,
 		"__readonly": true,
@@ -167,7 +170,7 @@ func RunAction(c *cli.Context) error {
 		// re-tokenize
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
-			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:len(lastToken)] != "`" {
+			if lastToken == "`" || (lastToken[0:1] == "`" && lastToken[len(lastToken)-1:len(lastToken)] != "`") {
 				text = text + readConsoleText("...> ")
 				t = tokenizer.New(text)
 				continue
@@ -244,29 +247,57 @@ func RunAction(c *cli.Context) error {
 	return nil
 }
 
+// ReaderInstance is the readline Instance used for console input
+var consoleReader *readline.Instance
+
 func readConsoleText(prompt string) string {
 
-	var b strings.Builder
+	mode := persistence.Get("use-readline")
 
-	reading := true
-	line := 1
+	// If readline has been explicitly disabled for some reason,
+	// do a more primitive input operation.
+	// TODO this entire functionality could probably be moved
+	// into ui.Prompt() at some point.
+	if mode == "off" || mode == "false" {
 
-	for reading {
-		text := ui.Prompt(prompt)
-		if len(text) == 0 {
-			break
+		var b strings.Builder
+
+		reading := true
+		line := 1
+
+		for reading {
+			text := ui.Prompt(prompt)
+			if len(text) == 0 {
+				break
+			}
+			line = line + 1
+			if text[len(text)-1:] == "\\" {
+				text = text[:len(text)-1]
+				prompt = fmt.Sprintf("ego[%d]> ", line)
+			} else {
+				reading = false
+			}
+			b.WriteString(text)
+			b.WriteString("\n")
 		}
-		line = line + 1
-		if text[len(text)-1:] == "\\" {
-			text = text[:len(text)-1]
-			prompt = fmt.Sprintf("ego[%d]> ", line)
-		} else {
-			reading = false
-		}
-		b.WriteString(text)
-		b.WriteString("\n")
+		return b.String()
 	}
-	return b.String()
+
+	// Nope, let's use readline. IF we have never initialized
+	// the reader, let's do so now.
+	if consoleReader == nil {
+		consoleReader, _ = readline.New(prompt)
+	}
+
+	if len(prompt) > 1 && prompt[:1] == "~" {
+		b, _ := consoleReader.ReadPassword(prompt[1:])
+		return string(b)
+	}
+	// Set the prompt string and do the read. We ignore errors.
+	consoleReader.SetPrompt(prompt)
+	result, _ := consoleReader.Readline()
+	return result + "\n"
+
 }
 
 func setConfig(s *symbols.SymbolTable, name string, value bool) {

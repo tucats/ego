@@ -52,6 +52,24 @@ func FunctionPi(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	return 3.1415926535, nil
 }
 
+// FunctionPrompt implements the prompt() function, which uses the console
+// reader
+func FunctionPrompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	prompt := ""
+	if len(args) > 0 {
+		prompt = util.GetString(args[0])
+	}
+	text := readConsoleText(prompt)
+	if text == "\n" {
+		text = ""
+	} else {
+		if strings.HasSuffix(text, "\n") {
+			text = text[:len(text)-1]
+		}
+	}
+	return text, nil
+}
+
 // FunctionEval implements the eval() function, which uses the expressions
 // package to compile an expression fragment and execute it to get the resulting
 // value.
