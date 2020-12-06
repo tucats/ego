@@ -97,7 +97,7 @@ func TestAction(c *cli.Context) error {
 				comp.AddBuiltins("")
 
 				// Always autoimport
-				err := comp.AutoImport()
+				err := comp.AutoImport(true)
 				if err != nil {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}

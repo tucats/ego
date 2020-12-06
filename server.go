@@ -105,12 +105,9 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Add the builtin functions
 		comp.AddBuiltins("")
-
-		if persistence.Get("auto-import") == "true" {
-			err := comp.AutoImport()
-			if err != nil {
-				fmt.Printf("Unable to auto-import packages: " + err.Error())
-			}
+		err := comp.AutoImport(persistence.GetBool("auto-import"))
+		if err != nil {
+			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
 		comp.AddPackageToSymbols(syms)
 
@@ -245,11 +242,9 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		syms.SetAlways("_password", pass)
 
 		// Handle auto-import
-		if persistence.Get("auto-import") == "true" {
-			err := comp.AutoImport()
-			if err != nil {
-				fmt.Printf("Unable to auto-import packages: " + err.Error())
-			}
+		err := comp.AutoImport(persistence.GetBool("auto-import"))
+		if err != nil {
+			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
 		comp.AddPackageToSymbols(syms)
 

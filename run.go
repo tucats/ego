@@ -35,6 +35,11 @@ func RunAction(c *cli.Context) error {
 	mainName := "main program"
 	prompt := c.MainProgram + "> "
 
+	autoImport := persistence.GetBool("auto-import")
+	if c.WasFound("auto-import") {
+		autoImport = c.GetBool("auto-import")
+	}
+
 	text := ""
 	wasCommandLine := true
 	disassemble := c.GetBool("disassemble")
@@ -190,12 +195,9 @@ func RunAction(c *cli.Context) error {
 			if !builtinsAdded {
 				// Add the builtin functions
 				comp.AddBuiltins("")
-
-				if persistence.Get("auto-import") == "true" {
-					err := comp.AutoImport()
-					if err != nil {
-						fmt.Printf("Unable to auto-import packages: " + err.Error())
-					}
+				err := comp.AutoImport(autoImport)
+				if err != nil {
+					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
 				comp.AddPackageToSymbols(syms)
 				builtinsAdded = true

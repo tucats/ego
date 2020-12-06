@@ -92,6 +92,11 @@ var RunGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	cli.Option{
+		LongName:    "auto-import",
+		Description: "Override auto-import profile setting",
+		OptionType:  cli.BooleanValueType,
+	},
+	cli.Option{
 		LongName:    "environment",
 		ShortName:   "e",
 		Description: "Automatically add environment vars as symbols",
