@@ -62,9 +62,6 @@ func FunctionPrompt(symbols *symbols.SymbolTable, args []interface{}) (interface
 	return text, nil
 }
 
-// FunctionEval implements the eval() function, which uses the expressions
-// package to compile an expression fragment and execute it to get the resulting
-// value.
 // FunctionEval implements the eval() function whcih accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays
