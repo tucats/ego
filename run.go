@@ -133,6 +133,7 @@ func RunAction(c *cli.Context) error {
 	// values) so it is addressed as "gremlin.open()" in the Ego source
 	_ = syms.SetAlways("eval", FunctionEval)
 	_ = syms.SetAlways("table", FunctionTable)
+	_ = syms.SetAlways("prompt", FunctionPrompt)
 	g := map[string]interface{}{
 		"open":       FunctionGremlinOpen,
 		"__readonly": true,

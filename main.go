@@ -39,7 +39,7 @@ var EgoGrammar = []cli.Option{
 		Action:      Server,
 		Value:       ServerGrammar,
 	},
-	cli.Option{
+	{
 		LongName:             "test",
 		Description:          "Run a test suite",
 		OptionType:           cli.Subcommand,
@@ -69,7 +69,7 @@ var ServerGrammar = []cli.Option{
 		Description: "Display trace of bytecode execution",
 		OptionType:  cli.BooleanType,
 	},
-	cli.Option{
+	{
 		LongName:    "code",
 		ShortName:   "c",
 		Description: "Enable /code endpoint",

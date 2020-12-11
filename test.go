@@ -28,13 +28,13 @@ func TestAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable("Unit Tests")
 
 	// Add local funcion(s)
-	syms.SetAlways("eval", FunctionEval)
-	syms.SetAlways("table", FunctionTable)
+	_ = syms.SetAlways("eval", FunctionEval)
+	_ = syms.SetAlways("table", FunctionTable)
 	g := map[string]interface{}{
 		"open":       FunctionGremlinOpen,
 		"__readonly": true,
 	}
-	syms.SetAlways("gremlin", g)
+	_ = syms.SetAlways("gremlin", g)
 
 	exitValue := 0
 	builtinsAdded := false
@@ -56,10 +56,9 @@ func TestAction(c *cli.Context) error {
 		}
 		locations = []string{defaultName}
 	} else {
-		for _, fileOrPath := range c.Parent.Parameters {
-			locations = append(locations, fileOrPath)
-		}
+		locations = append(locations, c.Parent.Parameters...)
 	}
+
 	// Now use the list of locations given to build an expanded list of files
 	for _, fileOrPath := range locations {
 		files, err := functions.ExpandPath(fileOrPath, ".ego")
