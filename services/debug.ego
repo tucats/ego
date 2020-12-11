@@ -3,3 +3,4 @@
 import util
 print util.symbols()
 
+print "User token valid: ", cipher.valid(_token)

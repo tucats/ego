@@ -70,6 +70,18 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "realm",
+		ShortName:   "r",
+		Description: "Name of authentication realm",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "users",
+		ShortName:   "u",
+		Description: "File with authentication JSON data",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "code",
 		ShortName:   "c",
 		Description: "Enable /code endpoint",

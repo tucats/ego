@@ -72,3 +72,42 @@ The string is evaluated as an expression (using the `expressions` package in `go
 and the result is returned as the function value. This allows user input to contain complex
 expressions or function calls that are dynamically compiled at runtime. 
 
+## REST Server
+You can start Ego as a REST server, which responds to standard REST calls on a given port.
+When a valid REST call is made, Ego programs located in the $EGO_PATH/services directory
+are used to respond to the request. Each program becomes an endpoint.
+
+### Authentication
+If you do nothing else, the server will start up and support a username of "admin" and a
+password of "password" as the required Basic authentication. You can specify a JSON file
+that contains a map of valid names instead with the `--users` option.  For example, if
+this file contained:
+
+    {
+         "admin" : "popcorn",
+         "user"  : "snazzy"
+    }
+
+The server would allow two usernames (_admin_ and _user_) with the associated passwords.
+Additionally, if a rest call is received with an Authentication value of token followed
+by a string, that string is made available to the service program, and it must determine
+if the token is acceptable.
+
+The command line option `--realm` can be used to create the name of the authentication
+realm; if not specified the default realm name is "Ego Server". This is returned as part
+of the 401 HTTP response when authentication is not provided.
+
+### Global Variables
+Each time a REST call is made, the program associated with the endpoint is run. When it
+runs, it will have a number of global variables set already that the program can use
+to control its operation.
+
+| Name        | Type    | Description                                         |
+|-------------|---------|-----------------------------------------------------|
+| _body       | string  | The text of the body of the request.                |
+| _headers    | struct  | A struct where the field is the header name, and the value is an array of string values for each value found  |
+| _parms      | struct  | A struct where the field name is the parameter, and the value si an array of string values for each value found |
+| _password   | string  | The Basic authentication password provided, or empty string if not used |
+| _token      | string  | The Token authentication value, or an empty string if not used |
+| _user       | string  | The Basic authentication username provided, or an empty string if not used |
+

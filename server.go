@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,11 +20,12 @@ import (
 	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
-	"github.com/tucats/gopackages/util"
 )
 
 var pathRoot string
 var tracing bool
+var realm string
+var users map[string]string
 
 // Server initailizes the server
 func Server(c *cli.Context) error {
@@ -40,6 +42,27 @@ func Server(c *cli.Context) error {
 		if pathRoot == "" {
 			pathRoot = persistence.Get("ego-path")
 		}
+	}
+
+	realm = os.Getenv("EGO_REALM")
+	if c.WasFound("realm") {
+		realm, _ = c.GetString("realm")
+	}
+	if realm == "" {
+		realm = "Ego Server"
+	}
+
+	if c.WasFound("users") {
+		userFile, _ := c.GetString("users")
+		b, err := ioutil.ReadFile(userFile)
+		if err == nil {
+			err = json.Unmarshal(b, &users)
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		users = map[string]string{"admin": "password"}
 	}
 
 	err := defineLibHandlers(pathRoot, "/services")
@@ -191,6 +214,21 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_parms", args)
 	_ = syms.SetAlways("eval", FunctionEval)
 
+	// Put all the headers where they can be accessed as well. The authorization
+	// header is omitted.
+	headers := map[string]interface{}{}
+	for name, values := range r.Header {
+		if strings.ToLower(name) != "authorization" {
+			v := []interface{}{}
+			for _, value := range values {
+				v = append(v, value)
+			}
+			headers[name] = v
+		}
+	}
+
+	_ = syms.SetAlways("_headers", headers)
+
 	path := r.URL.Path
 	if path[:1] == "/" {
 		path = path[1:]
@@ -211,7 +249,6 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := comp.Compile(t)
 	user := ""
 	pass := ""
-	ok := false
 
 	if err != nil {
 		w.WriteHeader(400)
@@ -219,17 +256,27 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		// Do we need to authenticate?
-		var realmI interface{} = "authentication"
-		user, pass, ok = r.BasicAuth()
+		var ok bool
 
-		// Temporary measure to handle usernames
-		if user != "admin" || pass != "password" {
-			ok = false
+		auth := r.Header.Get("Authorization")
+		if strings.HasPrefix(strings.ToLower(auth), "token ") {
+			ok = true
+			token := auth[6:]
+			_ = syms.SetAlways("_token", token)
+			ui.Debug("Auth using token %s", token)
+		} else {
+			user, pass, ok = r.BasicAuth()
+			ui.Debug("Auth using user %s", user)
+			if p, valid := users[user]; valid {
+				ok = (p == pass)
+			}
+			_ = syms.SetAlways("_token", "")
 		}
+
 		if !ok {
-			w.Header().Set("WWW-Authenticate", `Basic realm="`+util.GetString(realmI)+`"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
 			w.WriteHeader(401)
-			_, _ = w.Write([]byte("You are Unauthorized to access the application.\n"))
+			_, _ = w.Write([]byte(fmt.Sprintf("You are not authorized to access " + realm + "\n")))
 			return
 		}
 
