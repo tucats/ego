@@ -28,7 +28,10 @@ var tracing bool
 // Server initailizes the server
 func Server(c *cli.Context) error {
 
-	http.HandleFunc("/code", CodeHandler)
+	if c.GetBool("code") {
+		http.HandleFunc("/code", CodeHandler)
+	}
+
 	tracing = c.GetBool("trace")
 
 	pathRoot, _ := c.GetString("context-root")
@@ -45,8 +48,8 @@ func Server(c *cli.Context) error {
 	}
 
 	port := 8080
-	if c.WasFound("port") {
-		port, _ = c.GetInteger("port")
+	if p, ok := c.GetInteger("port"); ok {
+		port = p
 	}
 	tls := !c.GetBool("not-secure")
 

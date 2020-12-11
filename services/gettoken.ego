@@ -1,9 +1,14 @@
 /*
  * Get a new token. Requires a payload with the username and password
  */
-import ( strings util json cipher )
+import ( 
+    strings 
+    util 
+    json 
+    cipher 
+)
 
-@authentication_domain "authentication"
+_authentication_domain := "authentication"
 
 user := ""
 password := ""

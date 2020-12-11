@@ -69,6 +69,12 @@ var ServerGrammar = []cli.Option{
 		Description: "Display trace of bytecode execution",
 		OptionType:  cli.BooleanType,
 	},
+	cli.Option{
+		LongName:    "code",
+		ShortName:   "c",
+		Description: "Enable /code endpoint",
+		OptionType:  cli.BooleanType,
+	},
 }
 
 // RunGrammar handles the command line options

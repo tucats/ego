@@ -124,7 +124,7 @@ func RunAction(c *cli.Context) error {
 		list := os.Environ()
 		for _, env := range list {
 			pair := strings.SplitN(env, "=", 2)
-			_ = syms.SetAlways(strings.ToLower(pair[0]), pair[1])
+			_ = syms.SetAlways(pair[0], pair[1])
 		}
 	}
 
