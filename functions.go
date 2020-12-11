@@ -44,15 +44,6 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.UnsafePointer: "unsafe ptr",
 }
 
-<<<<<<< HEAD
-// FunctionPi implements the pi() function
-func FunctionPi(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.New("too many arguments to pi()")
-	}
-	return 3.1415926535, nil
-}
-
 // FunctionPrompt implements the prompt() function, which uses the console
 // reader
 func FunctionPrompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -74,11 +65,9 @@ func FunctionPrompt(symbols *symbols.SymbolTable, args []interface{}) (interface
 // FunctionEval implements the eval() function, which uses the expressions
 // package to compile an expression fragment and execute it to get the resulting
 // value.
-=======
 // FunctionEval implements the eval() function whcih accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays
->>>>>>> Update for revised gopackages, fix lint issues
 func FunctionEval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New("wrong number of arguments")
