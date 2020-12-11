@@ -28,7 +28,6 @@ func TestAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable("Unit Tests")
 
 	// Add local funcion(s)
-	syms.SetAlways("pi", FunctionPi)
 	syms.SetAlways("eval", FunctionEval)
 	syms.SetAlways("table", FunctionTable)
 	g := map[string]interface{}{

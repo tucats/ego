@@ -85,10 +85,10 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		args[k] = va
 	}
-	syms.SetAlways("_parms", args)
+	_ = syms.SetAlways("_parms", args)
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
+	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
 
 	// Tokenize the input
@@ -100,7 +100,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := comp.Compile(t)
 	if err != nil {
 		w.WriteHeader(400)
-		io.WriteString(w, "Error: "+err.Error())
+		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
 
 		// Add the builtin functions
@@ -119,10 +119,10 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.WriteHeader(400)
-			io.WriteString(w, "Error: "+err.Error())
+			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {
 			w.WriteHeader(200)
-			io.WriteString(w, ctx.GetOutput())
+			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}
 
@@ -185,8 +185,8 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		args[k] = va
 	}
-	syms.SetAlways("_parms", args)
-	syms.SetAlways("eval", FunctionEval)
+	_ = syms.SetAlways("_parms", args)
+	_ = syms.SetAlways("eval", FunctionEval)
 
 	path := r.URL.Path
 	if path[:1] == "/" {
@@ -196,7 +196,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 
 	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".ego"))
 	if err != nil {
-		io.WriteString(w, "File open error: "+err.Error())
+		_, _ = io.WriteString(w, "File open error: "+err.Error())
 	}
 
 	// Tokenize the input
@@ -212,7 +212,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(400)
-		io.WriteString(w, "Error: "+err.Error())
+		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
 
 		// Do we need to authenticate?
@@ -226,7 +226,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+util.GetString(realmI)+`"`)
 			w.WriteHeader(401)
-			w.Write([]byte("You are Unauthorized to access the application.\n"))
+			_, _ = w.Write([]byte("You are Unauthorized to access the application.\n"))
 			return
 		}
 
@@ -235,11 +235,11 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Get the body of the request as a string
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
+		_, _ = buf.ReadFrom(r.Body)
 		btext := buf.String()
-		syms.SetAlways("_body", btext)
-		syms.SetAlways("_user", user)
-		syms.SetAlways("_password", pass)
+		_ = syms.SetAlways("_body", btext)
+		_ = syms.SetAlways("_user", user)
+		_ = syms.SetAlways("_password", pass)
 
 		// Handle auto-import
 		err := comp.AutoImport(persistence.GetBool("auto-import"))
@@ -257,10 +257,10 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.WriteHeader(400)
-			io.WriteString(w, "Error: "+err.Error())
+			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {
 			w.WriteHeader(200)
-			io.WriteString(w, ctx.GetOutput())
+			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}
 

@@ -44,6 +44,7 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.UnsafePointer: "unsafe ptr",
 }
 
+<<<<<<< HEAD
 // FunctionPi implements the pi() function
 func FunctionPi(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
@@ -73,6 +74,11 @@ func FunctionPrompt(symbols *symbols.SymbolTable, args []interface{}) (interface
 // FunctionEval implements the eval() function, which uses the expressions
 // package to compile an expression fragment and execute it to get the resulting
 // value.
+=======
+// FunctionEval implements the eval() function whcih accepts a string representation of
+// an expression and returns the expression result. This can also be used to convert
+// string expressions of structs or arrays
+>>>>>>> Update for revised gopackages, fix lint issues
 func FunctionEval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New("wrong number of arguments")
@@ -191,10 +197,12 @@ func FunctionAsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface
 
 	// Get a normalized result set from the query.
 	resultSet, err := FunctionGremlinQueryMap(symbols, args)
-
+	if err != nil {
+		return nil, err
+	}
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(resultSet)
-	if a == nil || len(a) == 0 {
+	if len(a) == 0 {
 		return nil, errors.New("not a result set")
 	}
 
@@ -205,11 +213,6 @@ func FunctionAsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-
-	type rowvalues struct {
-		kind  string
-		value string
-	}
 
 	type Row []interface{}
 
@@ -276,7 +279,7 @@ func FunctionTable(symbols *symbols.SymbolTable, args []interface{}) (interface{
 
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(args[0])
-	if a == nil || len(a) == 0 {
+	if len(a) == 0 {
 		return nil, errors.New("not a result set")
 	}
 

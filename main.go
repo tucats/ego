@@ -16,14 +16,14 @@ var BuildVersion = "0"
 
 // EgoGrammar handles the command line options
 var EgoGrammar = []cli.Option{
-	cli.Option{
+	{
 		LongName:           "path",
 		Description:        "Print the default ego path",
 		OptionType:         cli.Subcommand,
 		Action:             PathAction,
 		ParametersExpected: 0,
 	},
-	cli.Option{
+	{
 		LongName:             "run",
 		Description:          "Run an existing program",
 		OptionType:           cli.Subcommand,
@@ -32,7 +32,7 @@ var EgoGrammar = []cli.Option{
 		ParametersExpected:   -99,
 		ParameterDescription: "file-name",
 	},
-	cli.Option{
+	{
 		LongName:    "server",
 		Description: "Accept REST calls",
 		OptionType:  cli.Subcommand,
@@ -51,19 +51,19 @@ var EgoGrammar = []cli.Option{
 
 // ServerGrammar handles command line options for the server subcommand
 var ServerGrammar = []cli.Option{
-	cli.Option{
+	{
 		LongName:    "port",
 		ShortName:   "p",
 		OptionType:  cli.IntType,
 		Description: "Specify port number to listen on",
 	},
-	cli.Option{
+	{
 		LongName:    "not-secure",
 		ShortName:   "k",
 		OptionType:  cli.BooleanType,
 		Description: "If set, use HTTP instead of HTTPS",
 	},
-	cli.Option{
+	{
 		LongName:    "trace",
 		ShortName:   "t",
 		Description: "Display trace of bytecode execution",
@@ -73,36 +73,36 @@ var ServerGrammar = []cli.Option{
 
 // RunGrammar handles the command line options
 var RunGrammar = []cli.Option{
-	cli.Option{
+	{
 		LongName:    "disassemble",
 		ShortName:   "d",
 		Description: "Display a disassembly of the bytecode before execution",
 		OptionType:  cli.BooleanType,
 	},
-	cli.Option{
+	{
 		LongName:    "trace",
 		ShortName:   "t",
 		Description: "Display trace of bytecode execution",
 		OptionType:  cli.BooleanType,
 	},
-	cli.Option{
+	{
 		LongName:    "symbols",
 		ShortName:   "s",
 		Description: "Display symbol table",
 		OptionType:  cli.BooleanType,
 	},
-	cli.Option{
+	{
 		LongName:    "auto-import",
 		Description: "Override auto-import profile setting",
 		OptionType:  cli.BooleanValueType,
 	},
-	cli.Option{
+	{
 		LongName:    "environment",
 		ShortName:   "e",
 		Description: "Automatically add environment vars as symbols",
 		OptionType:  cli.BooleanType,
 	},
-	cli.Option{
+	{
 		LongName:    "source-tracing",
 		ShortName:   "x",
 		Description: "Print source lines as they are executed",

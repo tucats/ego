@@ -114,7 +114,7 @@ func RunAction(c *cli.Context) error {
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable(mainName)
 
-	syms.SetAlways("_args", programArgs)
+	_ = syms.SetAlways("_args", programArgs)
 	setConfig(syms, ConfigDisassemble, disassemble)
 	setConfig(syms, ConfigTrace, c.GetBool("trace"))
 
@@ -124,26 +124,25 @@ func RunAction(c *cli.Context) error {
 		list := os.Environ()
 		for _, env := range list {
 			pair := strings.SplitN(env, "=", 2)
-			syms.SetAlways(strings.ToLower(pair[0]), pair[1])
+			_ = syms.SetAlways(strings.ToLower(pair[0]), pair[1])
 		}
 	}
 
-	// Add local funcion(s)
-	syms.SetAlways("pi", FunctionPi)
-	syms.SetAlways("eval", FunctionEval)
-	syms.SetAlways("table", FunctionTable)
-	syms.SetAlways("prompt", FunctionPrompt)
-
+	// Add local funcion(s) that extend the Ego function set. Note that
+	// the gremlin open function is placed in a package (a map with special
+	// values) so it is addressed as "gremlin.open()" in the Ego source
+	_ = syms.SetAlways("eval", FunctionEval)
+	_ = syms.SetAlways("table", FunctionTable)
 	g := map[string]interface{}{
 		"open":       FunctionGremlinOpen,
 		"__readonly": true,
 	}
-	syms.SetAlways("gremlin", g)
+	_ = syms.SetAlways("gremlin", g)
 
 	exitValue := 0
 	builtinsAdded := false
 
-	for true {
+	for {
 
 		// Handle special cases.
 		if strings.TrimSpace(text) == QuitCommand {
@@ -163,7 +162,6 @@ func RunAction(c *cli.Context) error {
 					return fmt.Errorf("unable to read file: %s", fname)
 				}
 			}
-			mainName = fname
 			// Convert []byte to string
 			text = string(content)
 		}
@@ -175,7 +173,7 @@ func RunAction(c *cli.Context) error {
 		// re-tokenize
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
-			if lastToken == "`" || (lastToken[0:1] == "`" && lastToken[len(lastToken)-1:len(lastToken)] != "`") {
+			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
 				text = text + readConsoleText("...> ")
 				t = tokenizer.New(text)
 				continue
@@ -230,8 +228,9 @@ func RunAction(c *cli.Context) error {
 			if err != nil {
 				fmt.Printf("Error: %s\n", err.Error())
 				exitValue = 2
+			} else {
+				exitValue = 0
 			}
-			exitValue = 0
 		}
 
 		if c.GetBool("symbols") {
@@ -307,7 +306,7 @@ func setConfig(s *symbols.SymbolTable, name string, value bool) {
 	v, found := s.Get("_config")
 	if !found {
 		m := map[string]interface{}{name: value}
-		s.SetAlways("_config", m)
+		_ = s.SetAlways("_config", m)
 	}
 	if m, ok := v.(map[string]interface{}); ok {
 		m[name] = value
