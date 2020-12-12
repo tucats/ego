@@ -20,8 +20,9 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
 	} else {
-		token := persistence.Get("login-token")
+		token := persistence.Get("logon-token")
 		if token != "" {
+			client.SetAuthScheme("Token")
 			client.SetAuthToken(token)
 		}
 	}
@@ -34,6 +35,7 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"post":       RestPost,
 		"response":   "",
 		"status":     0,
+		"headers":    map[string]interface{}{},
 		"__readonly": true,
 	}, nil
 }
@@ -56,8 +58,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, _ := s.Get("_this")
 	this := t.(map[string]interface{})
 	this["status"] = response.StatusCode()
-	this["response"] = string(response.Body())
-	return this, nil
+	this["headers"] = response.Header()
+	rb := string(response.Body())
+	this["response"] = rb
+	return rb, nil
 }
 
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -82,8 +86,10 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, _ := s.Get("_this")
 	this := t.(map[string]interface{})
 	this["status"] = response.StatusCode()
-	this["response"] = response.Body()
-	return this, nil
+	this["headers"] = response.Header()
+	rb := string(response.Body())
+	this["response"] = rb
+	return rb, nil
 }
 
 // getClient searches the symbol table for the client receiver ("_this")

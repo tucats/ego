@@ -40,12 +40,44 @@ var EgoGrammar = []cli.Option{
 		Value:       ServerGrammar,
 	},
 	{
+		LongName:    "logon",
+		Description: "Request logon token",
+		OptionType:  cli.Subcommand,
+		Action:      Logon,
+		Value:       LogonGrammar,
+	},
+	{
 		LongName:             "test",
 		Description:          "Run a test suite",
 		OptionType:           cli.Subcommand,
 		Action:               TestAction,
 		ParametersExpected:   -99,
 		ParameterDescription: "file or path",
+	},
+}
+
+// LogonGrammar describes the login subcommand
+var LogonGrammar = []cli.Option{
+	{
+		LongName:            "username",
+		ShortName:           "u",
+		OptionType:          cli.StringType,
+		Description:         "Username for login",
+		EnvironmentVariable: "EGO_USERNAME",
+	},
+	{
+		LongName:            "password",
+		ShortName:           "p",
+		OptionType:          cli.StringType,
+		Description:         "Password for login",
+		EnvironmentVariable: "EGO_PASSWORD",
+	},
+	{
+		LongName:            "logon-server",
+		ShortName:           "l",
+		OptionType:          cli.StringType,
+		Description:         "URL of logon server",
+		EnvironmentVariable: "EGO_LOGON_SERVER",
 	},
 }
 

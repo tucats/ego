@@ -28,6 +28,10 @@ var tracing bool
 var realm string
 var users map[string]string
 
+const (
+	authScheme = "token "
+)
+
 // Server initializes the server
 func Server(c *cli.Context) error {
 
@@ -38,7 +42,7 @@ func Server(c *cli.Context) error {
 	if c.WasFound("trace") {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
-	_, tracing = ui.Loggers[ui.ByteCodeLogger]
+	tracing = ui.Loggers[ui.ByteCodeLogger]
 
 	pathRoot, _ := c.GetString("context-root")
 	if pathRoot == "" {
@@ -264,9 +268,9 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		var ok bool
 
 		auth := r.Header.Get("Authorization")
-		if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
+		if strings.HasPrefix(strings.ToLower(auth), authScheme) {
 			ok = true
-			token := auth[6:]
+			token := auth[len(authScheme):]
 			_ = syms.SetAlways("_token", token)
 			ui.Debug(ui.ServerLogger, "Auth using token %s", token)
 		} else {

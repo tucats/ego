@@ -116,7 +116,7 @@ func RunAction(c *cli.Context) error {
 
 	_ = syms.SetAlways("_args", programArgs)
 	setConfig(syms, ConfigDisassemble, disassemble)
-	_, traceLogging := ui.Loggers[ui.ByteCodeLogger]
+	traceLogging := ui.Loggers[ui.ByteCodeLogger]
 	setConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
 
 	// Get a list of all the environment variables and make
