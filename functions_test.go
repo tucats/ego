@@ -42,7 +42,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 	}
 
 	syms := symbols.NewSymbolTable("test")
-	client, err := FunctionGremlinOpen(syms, []interface{}{"ws://localhost:8182/gremlin"})
+	client, err := GremlinOpen(syms, []interface{}{"ws://localhost:8182/gremlin"})
 	if err != nil {
 		t.Errorf("Error connecting to gremlin server: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FunctionGremlinQuery(syms, []interface{}{
+			got, err := GremlinQuery(syms, []interface{}{
 				tt.query,
 			})
 			if (err != nil) != tt.wantErr {
@@ -160,7 +160,7 @@ func TestFunctionTable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FunctionTable(tt.args.symbols, tt.args.args)
+			got, err := Table(tt.args.symbols, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionTable() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -129,21 +129,14 @@ func RunAction(c *cli.Context) error {
 		}
 	}
 
-	// Add local funcion(s) that extend the Ego function set. Note that
-	// the gremlin open function is placed in a package (a map with special
-	// values) so it is addressed as "gremlin.open()" in the Ego source
-	_ = syms.SetAlways("eval", FunctionEval)
-	_ = syms.SetAlways("table", FunctionTable)
-	_ = syms.SetAlways("prompt", FunctionPrompt)
-	g := map[string]interface{}{
-		"open":       FunctionGremlinOpen,
-		"__readonly": true,
-	}
-	_ = syms.SetAlways("gremlin", g)
+	// Add local funcion(s) that extend the Ego function set.
+	_ = syms.SetAlways("eval", Eval)
+	_ = syms.SetAlways("table", Table)
+	_ = syms.SetAlways("prompt", Prompt)
+	AddBuiltinPackages(syms)
 
 	exitValue := 0
 	builtinsAdded := false
-
 	for {
 
 		// Handle special cases.

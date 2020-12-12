@@ -28,13 +28,10 @@ func TestAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable("Unit Tests")
 
 	// Add local funcion(s)
-	_ = syms.SetAlways("eval", FunctionEval)
-	_ = syms.SetAlways("table", FunctionTable)
-	g := map[string]interface{}{
-		"open":       FunctionGremlinOpen,
-		"__readonly": true,
-	}
-	_ = syms.SetAlways("gremlin", g)
+	_ = syms.SetAlways("eval", Eval)
+	_ = syms.SetAlways("table", Table)
+
+	AddBuiltinPackages(syms)
 
 	exitValue := 0
 	builtinsAdded := false

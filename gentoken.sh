@@ -6,5 +6,5 @@
 
 TOKEN=$(curl -s -X GET -u admin http://localhost:8080/services/gettoken )
 
-echo Authorization: token $TOKEN
+echo Authorization: Bearer $TOKEN
 

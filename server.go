@@ -213,7 +213,9 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 	_ = syms.SetAlways("_parms", args)
-	_ = syms.SetAlways("eval", FunctionEval)
+	_ = syms.SetAlways("eval", Eval)
+
+	AddBuiltinPackages(syms)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
@@ -260,7 +262,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		var ok bool
 
 		auth := r.Header.Get("Authorization")
-		if strings.HasPrefix(strings.ToLower(auth), "token ") {
+		if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
 			ok = true
 			token := auth[6:]
 			_ = syms.SetAlways("_token", token)
