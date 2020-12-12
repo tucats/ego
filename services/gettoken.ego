@@ -2,26 +2,10 @@
  * Get a new token. Requires a payload with the username and password
  */
 import ( 
-    strings 
-    util 
-    json 
     cipher 
 )
 
-_authentication_domain := "authentication"
-
-user := ""
-password := ""
-
-try {
-   payload := json.decode(_body)
-   user = payload.user
-   password = payload.password
-} catch {
-    print "Error: invalid payload"
-}
-
-if user != "" {
-    print cipher.token(user)
+if _user != "" {
+    print cipher.token(_user)
 }
 
