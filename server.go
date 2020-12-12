@@ -34,7 +34,10 @@ func Server(c *cli.Context) error {
 		http.HandleFunc("/code", CodeHandler)
 	}
 
-	tracing = c.GetBool("trace")
+	if c.WasFound("trace") {
+		ui.SetLogger(ui.ByteCodeLogger, true)
+	}
+	_, tracing = ui.Loggers[ui.ByteCodeLogger]
 
 	pathRoot, _ := c.GetString("context-root")
 	if pathRoot == "" {

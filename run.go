@@ -116,7 +116,8 @@ func RunAction(c *cli.Context) error {
 
 	_ = syms.SetAlways("_args", programArgs)
 	setConfig(syms, ConfigDisassemble, disassemble)
-	setConfig(syms, ConfigTrace, c.GetBool("trace"))
+	_, traceLogging := ui.Loggers[ui.ByteCodeLogger]
+	setConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case names
@@ -214,6 +215,7 @@ func RunAction(c *cli.Context) error {
 			ctx.Tracing = getConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
+				ui.SetLogger(ui.DebugLogger, true)
 			}
 
 			// If we are doing source tracing of execution, we'll need to link the tokenzier
