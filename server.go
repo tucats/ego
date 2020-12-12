@@ -27,7 +27,7 @@ var tracing bool
 var realm string
 var users map[string]string
 
-// Server initailizes the server
+// Server initializes the server
 func Server(c *cli.Context) error {
 
 	if c.GetBool("code") {
@@ -77,7 +77,7 @@ func Server(c *cli.Context) error {
 	tls := !c.GetBool("not-secure")
 
 	addr := ":" + strconv.Itoa(port)
-	ui.Debug("** REST service starting on port %d, secure=%v **", port, tls)
+	ui.Debug(ui.DebugLogger, "** REST service starting on port %d, secure=%v **", port, tls)
 
 	if tls {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
@@ -95,7 +95,7 @@ func Server(c *cli.Context) error {
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	//w.Header().Add("Content-Type", "application/text")
-	ui.Debug(">>> New /code REST call requested")
+	ui.Debug(ui.DebugLogger, ">>> New /code REST call requested")
 
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
@@ -197,7 +197,7 @@ func defineLibHandlers(root, subpath string) error {
 // LibHandler is the rest handler
 func LibHandler(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Add("Content-Type", "application/text")
-	ui.Debug(">>> New /lib REST call requested")
+	ui.Debug(ui.DebugLogger, ">>> New /lib REST call requested")
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("REST server")

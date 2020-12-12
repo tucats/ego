@@ -150,16 +150,16 @@ func ReadDirectory(name string) (string, error) {
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			ui.Debug("+++ No such directory")
+			ui.Debug(ui.DebugLogger, "+++ No such directory")
 		}
 		return "", err
 	}
 
-	ui.Debug("+++ Directory read attempt for \"%s\"", name)
+	ui.Debug(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
 	if len(fi) == 0 {
-		ui.Debug("+++ Directory is empty")
+		ui.Debug(ui.DebugLogger, "+++ Directory is empty")
 	} else {
-		ui.Debug("+++ Reading test directory %s", dirname)
+		ui.Debug(ui.DebugLogger, "+++ Reading test directory %s", dirname)
 	}
 
 	// For all the items that aren't directories themselves, and

@@ -33,6 +33,9 @@ func valid(s string) bool {
 
     // If it could be decrypted, it was from us so it's a valid format. Convert
     // into a real structure.
+    if len(ts) == 0 {
+        return false
+    }
     token := eval(ts)
 
     // See if the token is expired
