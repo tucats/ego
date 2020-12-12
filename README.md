@@ -84,6 +84,7 @@ functions would become available:
 
 | Function | Description |
 |----------|-------------|
+| r.base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
 | r.get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
 | r.post(url [, body]) | POST to the named url. If the second parameter is given, it is a string reprsenting the body of the POST request
 

@@ -1,5 +1,5 @@
 /*
- * Get a new token. Requires a payload with the username and password
+ * Get a new token. Uses the "basic auth" username
  */
 import ( 
     cipher 
