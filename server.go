@@ -77,7 +77,7 @@ func Server(c *cli.Context) error {
 	tls := !c.GetBool("not-secure")
 
 	addr := ":" + strconv.Itoa(port)
-	ui.Debug(ui.DebugLogger, "** REST service starting on port %d, secure=%v **", port, tls)
+	ui.Debug(ui.ServerLogger, "** REST service starting on port %d, secure=%v **", port, tls)
 
 	if tls {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
@@ -94,8 +94,7 @@ func Server(c *cli.Context) error {
 // CodeHandler is the rest handler
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
-	//w.Header().Add("Content-Type", "application/text")
-	ui.Debug(ui.DebugLogger, ">>> New /code REST call requested")
+	ui.Debug(ui.ServerLogger, ">>> New /code REST call requested")
 
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
@@ -178,7 +177,7 @@ func defineLibHandlers(root, subpath string) error {
 			paths = append(paths, path.Join(subpath, fullname))
 		} else {
 			newpath := filepath.Join(subpath, fullname)
-			ui.Debug(">>> Processing endpoint directory %s", newpath)
+			ui.Debug(ui.ServerLogger, ">>> Processing endpoint directory %s", newpath)
 			err := defineLibHandlers(root, newpath)
 			if err != nil {
 				return err
@@ -187,7 +186,7 @@ func defineLibHandlers(root, subpath string) error {
 	}
 
 	for _, path := range paths {
-		ui.Debug(">>> Defining endpoint %s", path)
+		ui.Debug(ui.ServerLogger, ">>> Defining endpoint %s", path)
 		http.HandleFunc(path, LibHandler)
 	}
 
@@ -196,8 +195,7 @@ func defineLibHandlers(root, subpath string) error {
 
 // LibHandler is the rest handler
 func LibHandler(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Add("Content-Type", "application/text")
-	ui.Debug(ui.DebugLogger, ">>> New /lib REST call requested")
+	ui.Debug(ui.ServerLogger, ">>> New /lib REST call requested")
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("REST server")
@@ -233,7 +231,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	if path[:1] == "/" {
 		path = path[1:]
 	}
-	ui.Debug(">>> Load path is %s%s", pathRoot, path)
+	ui.Debug(ui.ServerLogger, ">>> Load path is %s%s", pathRoot, path)
 
 	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".ego"))
 	if err != nil {
@@ -263,10 +261,10 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 			ok = true
 			token := auth[6:]
 			_ = syms.SetAlways("_token", token)
-			ui.Debug("Auth using token %s", token)
+			ui.Debug(ui.ServerLogger, "Auth using token %s", token)
 		} else {
 			user, pass, ok = r.BasicAuth()
-			ui.Debug("Auth using user %s", user)
+			ui.Debug(ui.ServerLogger, "Auth using user %s", user)
 			if p, valid := users[user]; valid {
 				ok = (p == pass)
 			}
