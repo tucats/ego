@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
+	"github.com/tucats/gopackages/util"
 )
 
 var pathRoot string
@@ -214,6 +215,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = syms.SetAlways("_parms", args)
 	_ = syms.SetAlways("eval", Eval)
+	_ = syms.SetAlways("authenticated", Authenticated)
 
 	AddBuiltinPackages(syms)
 
@@ -317,4 +319,41 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+// Authenticated implmeents the Authenticated(user,pass) function. This accepts a username
+// and password string, and determines if they are authenticated using the
+// users database.
+func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	var user, pass string
+
+	// If there are no arguments, then we look for the _user and _password
+	// variables and use those. Otherwise, fetch them as the two parameters.
+	if len(args) == 0 {
+		if ux, ok := s.Get("_user"); ok {
+			user = util.GetString(ux)
+		}
+		if px, ok := s.Get("_password"); ok {
+			pass = util.GetString(px)
+		}
+	} else {
+		if len(args) != 2 {
+			return false, fmt.Errorf("incorrect number of arguments")
+		} else {
+			user = util.GetString(args[0])
+			pass = util.GetString(args[1])
+		}
+	}
+
+	// If no user database, then we're done.
+	if users == nil {
+		return false, nil
+	}
+
+	// If the user exists and the password matches then valid.
+	if p, ok := users[user]; ok && p == pass {
+		return true, nil
+	}
+	return false, nil
 }

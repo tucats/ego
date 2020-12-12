@@ -60,6 +60,9 @@ func getuser(s string) any {
     } catch {
         return false
     }
+    if ts == "" {
+        return ""
+    }
     token := eval(ts)
 
     delta := time.subtract(token.expiration, time.now())

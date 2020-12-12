@@ -2,5 +2,6 @@
 
 import util
 print util.symbols()
-
+print "Authenticated:    ", authenticated()
 print "User token valid: ", cipher.valid(_token)
+print "User data value:  ", cipher.getuser(_token)
