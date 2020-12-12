@@ -1,2 +1,4 @@
 ego
 ego.exe
+.DS_Store
+*.code-workspace
