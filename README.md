@@ -72,6 +72,24 @@ The string is evaluated as an expression (using the `expressions` package in `go
 and the result is returned as the function value. This allows user input to contain complex
 expressions or function calls that are dynamically compiled at runtime. 
 
+### rest.open(<user, password>)
+This returns a rest connection handle (an opaque Go object represented by an Ego symbol
+value). If the optional username and password are specified, then the request will use
+Basic authentication with that username and password. Otherwise, if the logon-token 
+preference item is available, it is used as a Bearer token string for authentication.
+
+The resulting item can be used to make calls using the connection just created. For 
+example, if the value of `rest.open()` was stored in the variable `r`, the following
+functions would become available:
+
+| Function | Description |
+|----------|-------------|
+| r.get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
+| r.post(url [, body]) | POST to the named url. If the second parameter is given, it is a string reprsenting the body of the POST request
+
+Additionally, the values `r.status` and `r.body` can be used to examing the HTTP status
+code of the last request, and the string value of the response body of the last request.
+
 ## REST Server
 You can start Ego as a REST server, which responds to standard REST calls on a given port.
 When a valid REST call is made, Ego programs located in the $EGO_PATH/services directory
