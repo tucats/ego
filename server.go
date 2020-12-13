@@ -35,8 +35,16 @@ const (
 // Server initializes the server
 func Server(c *cli.Context) error {
 
+	// Pretty much always want to generate a log unless specifically told not to...
+	if !c.WasFound("no-log") {
+		ui.SetLogger(ui.ServerLogger, true)
+	}
+
+	ui.Debug(ui.ServerLogger, "*** Configuring REST server ***")
+
 	if c.GetBool("code") {
 		http.HandleFunc("/code", CodeHandler)
+		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	if c.WasFound("trace") {
@@ -127,7 +135,7 @@ func Server(c *cli.Context) error {
 // CodeHandler is the rest handler
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
-	ui.Debug(ui.ServerLogger, ">>> New /code REST call requested")
+	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
@@ -210,7 +218,7 @@ func defineLibHandlers(root, subpath string) error {
 			paths = append(paths, path.Join(subpath, fullname))
 		} else {
 			newpath := filepath.Join(subpath, fullname)
-			ui.Debug(ui.ServerLogger, ">>> Processing endpoint directory %s", newpath)
+			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
 			err := defineLibHandlers(root, newpath)
 			if err != nil {
 				return err
@@ -219,7 +227,7 @@ func defineLibHandlers(root, subpath string) error {
 	}
 
 	for _, path := range paths {
-		ui.Debug(ui.ServerLogger, ">>> Defining endpoint %s", path)
+		ui.Debug(ui.ServerLogger, "Defining endpoint %s", path)
 		http.HandleFunc(path, LibHandler)
 	}
 
@@ -228,7 +236,8 @@ func defineLibHandlers(root, subpath string) error {
 
 // LibHandler is the rest handler
 func LibHandler(w http.ResponseWriter, r *http.Request) {
-	ui.Debug(ui.ServerLogger, ">>> New /lib REST call requested")
+
+	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("REST server")
@@ -267,7 +276,6 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	if path[:1] == "/" {
 		path = path[1:]
 	}
-	ui.Debug(ui.ServerLogger, ">>> Load path is %s%s", pathRoot, path)
 
 	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".ego"))
 	if err != nil {
@@ -292,26 +300,25 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		// Do we need to authenticate?
 		var ok bool
 
-		auth := r.Header.Get("Authorization")
-		if strings.HasPrefix(strings.ToLower(auth), authScheme) {
-			ok = true
-			token := auth[len(authScheme):]
-			_ = syms.SetAlways("_token", token)
-			ui.Debug(ui.ServerLogger, "Auth using token %s", token)
-		} else {
-			user, pass, ok = r.BasicAuth()
-			ui.Debug(ui.ServerLogger, "Auth using user %s", user)
-			if p, valid := users[user]; valid {
-				ok = (p == pass)
-			}
-			_ = syms.SetAlways("_token", "")
-		}
+		_ = syms.SetAlways("_token", "")
 
-		if !ok {
-			w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
-			w.WriteHeader(401)
-			_, _ = w.Write([]byte(fmt.Sprintf("You are not authorized to access " + realm + "\n")))
-			return
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			ui.Debug(ui.ServerLogger, "No authentication credentials given")
+		} else {
+			if strings.HasPrefix(strings.ToLower(auth), authScheme) {
+				ok = true
+				token := auth[len(authScheme):]
+				_ = syms.SetAlways("_token", token)
+				ui.Debug(ui.ServerLogger, "Auth using token %s", token)
+			} else {
+				user, pass, ok = r.BasicAuth()
+				if p, valid := users[user]; valid {
+					ok = (p == pass)
+				}
+				_ = syms.SetAlways("_token", "")
+				ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, ok)
+			}
 		}
 
 		// Add the builtin functions
@@ -324,6 +331,8 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		_ = syms.SetAlways("_body", btext)
 		_ = syms.SetAlways("_user", user)
 		_ = syms.SetAlways("_password", pass)
+		_ = syms.SetAlways("_authenticated", ok)
+		_ = syms.SetGlobal("_rest_status", 200)
 
 		// Indicate if this connection is the super-user
 		if su := persistence.Get("logon-superuser"); user == su && pass == "" {
@@ -346,11 +355,24 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = ctx.Run()
 
+		// Determine the status of the REST call by looking for the
+		// variable _rest_status which is set using the @status
+		// directive in the code. If it's a 401, also add the realm
+		// info to support the browser's attempt to prompt the user.
+		status := 200
+		if s, ok := syms.Get("_rest_status"); ok {
+			status = util.GetInt(s)
+			if status == 401 {
+				w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
+			}
+		}
+		ui.Debug(ui.ServerLogger, "STATUS = %d", status)
+
 		if err != nil {
-			w.WriteHeader(400)
-			_, _ = io.WriteString(w, "Error: "+err.Error())
+			w.WriteHeader(500)
+			_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 		} else {
-			w.WriteHeader(200)
+			w.WriteHeader(status)
 			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}

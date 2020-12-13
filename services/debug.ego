@@ -1,11 +1,14 @@
 /* Debugging service. This just dumps out the symbol table */
 
-import util
+import ( cipher util )
+@status 200
 
 if !authenticated() & !cipher.valid(_token) {
-    print "403 Forbidden"
+    print "Forbidden"
+    @status 401
     return
 }
+
 print util.symbols()
 print "Authenticated:    ", authenticated()
 print "User token valid: ", cipher.valid(_token)

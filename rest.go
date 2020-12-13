@@ -85,6 +85,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	url := applyBaseURL(util.GetString(args[0]), this)
 	response, err := client.NewRequest().Get(url)
 	if err != nil {
+		this["status"] = 503
 		return nil, err
 	}
 	this["status"] = response.StatusCode()
@@ -111,6 +112,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	response, err := client.NewRequest().SetBody(body).Post(url)
 	if err != nil {
+		this["status"] = 503
 		return nil, err
 	}
 

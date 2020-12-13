@@ -98,6 +98,11 @@ var ServerGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_INSECURE",
 	},
 	{
+		LongName:    "no-log",
+		Description: "Suppress server log",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:            "trace",
 		ShortName:           "t",
 		Description:         "Display trace of bytecode execution",
