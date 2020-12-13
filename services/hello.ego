@@ -1,0 +1,27 @@
+// Really simple page that just constructs some HTML, using templates.
+
+@template body `
+<body>
+    {{.Body}}
+</body>
+`
+
+@template head `
+<head>
+    {{.Heading}}
+    <hr/>
+    <p>
+</head>
+`
+
+@template html `
+    {{template "head" . }}
+    {{template "body" . }}
+`
+
+page := { 
+    Heading : "Test Web Page",
+    Body : "Hello, world"
+}
+
+print strings.template(html, page)

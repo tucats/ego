@@ -13,9 +13,10 @@ if !authenticated() & !cipher.valid(_token) {
 if _json {
     r := {}
     r.version = _version
-    r.authenticated = authenticated()
+    r.valid_user = authenticated()
     r.token_valid = cipher.valid(_token)
     r.token_value = cipher.getuser(_token)
+    r.session = _session
     @response r
     return
 }
