@@ -139,7 +139,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
-	syms := symbols.NewSymbolTable("REST server")
+	syms := symbols.NewSymbolTable("REST /code")
 
 	u := r.URL.Query()
 	args := map[string]interface{}{}
@@ -240,7 +240,9 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable("REST server")
+	syms := symbols.NewSymbolTable(fmt.Sprintf("REST %s", r.URL.Path))
+
+	// Get the query parameters and store as a local varialble
 	u := r.URL.Query()
 	args := map[string]interface{}{}
 
@@ -252,25 +254,33 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 	_ = syms.SetAlways("_parms", args)
+
+	// Other setup for REST server execution
 	_ = syms.SetAlways("eval", Eval)
 	_ = syms.SetAlways("authenticated", Authenticated)
-
+	_ = syms.SetAlways("_rest_response", nil)
 	AddBuiltinPackages(syms)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
 	headers := map[string]interface{}{}
+	isJSON := false
 	for name, values := range r.Header {
 		if strings.ToLower(name) != "authorization" {
 			v := []interface{}{}
 			for _, value := range values {
 				v = append(v, value)
+				// If this is the Accept header and it's the json indicator, store a flag
+				if strings.EqualFold(name, "Accept") && strings.Contains(value, "application/json") {
+					isJSON = true
+				}
 			}
 			headers[name] = v
 		}
 	}
 
 	_ = syms.SetAlways("_headers", headers)
+	_ = syms.SetAlways("_json", isJSON)
 
 	path := r.URL.Path
 	if path[:1] == "/" {
@@ -310,7 +320,7 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 				ok = true
 				token := auth[len(authScheme):]
 				_ = syms.SetAlways("_token", token)
-				ui.Debug(ui.ServerLogger, "Auth using token %s", token)
+				ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 			} else {
 				user, pass, ok = r.BasicAuth()
 				if p, valid := users[user]; valid {
@@ -366,14 +376,23 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
 			}
 		}
-		ui.Debug(ui.ServerLogger, "STATUS = %d", status)
 
 		if err != nil {
 			w.WriteHeader(500)
 			_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
+			ui.Debug(ui.ServerLogger, "STATUS %d", status)
 		} else {
 			w.WriteHeader(status)
-			_, _ = io.WriteString(w, ctx.GetOutput())
+			s, ok := syms.Get("_rest_response")
+			if ok && s != nil {
+				b, _ := json.Marshal(s)
+				_, _ = io.WriteString(w, string(b))
+				ui.Debug(ui.ServerLogger, "STATUS %d, sending JSON response", status)
+			} else {
+				// Otherwise, capture the print buffer.
+				_, _ = io.WriteString(w, ctx.GetOutput())
+				ui.Debug(ui.ServerLogger, "STATUS %d, sending TEXT response", status)
+			}
 		}
 	}
 

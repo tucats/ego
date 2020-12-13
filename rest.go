@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -35,6 +36,8 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"get":        RestGet,
 		"post":       RestPost,
 		"base":       RestBase,
+		"media":      RestMedia,
+		"media_type": "application/json",
 		"baseURL":    "",
 		"response":   "",
 		"status":     0,
@@ -72,6 +75,19 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return this, nil
 }
 
+// RestMedia implements the media() function
+func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	_, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	this := getThis(s)
+	media := util.GetString(args[0])
+
+	this["media_type"] = media
+	return this, nil
+}
+
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -83,14 +99,28 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("incorrect number of arguments")
 	}
 	url := applyBaseURL(util.GetString(args[0]), this)
-	response, err := client.NewRequest().Get(url)
+	r := client.NewRequest()
+	isJSON := false
+	if media, ok := this["media_type"]; ok {
+		ms := util.GetString(media)
+		isJSON = (ms == "application/json")
+		r.Header.Add("Accept", ms)
+	}
+	response, err := r.Get(url)
 	if err != nil {
 		this["status"] = 503
 		return nil, err
 	}
-	this["status"] = response.StatusCode()
+
+	status := response.StatusCode()
+	this["status"] = status
 	this["headers"] = response.Header()
 	rb := string(response.Body())
+	if status >= 200 && status <= 299 && isJSON {
+		var jsonResponse interface{}
+		err := json.Unmarshal([]byte(rb), &jsonResponse)
+		return jsonResponse, err
+	}
 	this["response"] = rb
 	return rb, nil
 }
@@ -110,7 +140,14 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		body = args[1]
 	}
 
-	response, err := client.NewRequest().SetBody(body).Post(url)
+	r := client.NewRequest().SetBody(body)
+	isJSON := false
+	if media, ok := this["media_type"]; ok {
+		ms := util.GetString(media)
+		isJSON = (ms == "application/json")
+		r.Header.Add("Accept", ms)
+	}
+	response, err := r.Post(url)
 	if err != nil {
 		this["status"] = 503
 		return nil, err
@@ -119,6 +156,11 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["status"] = response.StatusCode()
 	this["headers"] = response.Header()
 	rb := string(response.Body())
+	if isJSON {
+		var jsonResponse interface{}
+		err := json.Unmarshal([]byte(rb), &jsonResponse)
+		return jsonResponse, err
+	}
 	this["response"] = rb
 	return rb, nil
 }

@@ -8,6 +8,18 @@ if !authenticated() & !cipher.valid(_token) {
     @status 401
     return
 }
+
+
+if _json {
+    r := {}
+    r.version = _version
+    r.authenticated = authenticated()
+    r.token_valid = cipher.valid(_token)
+    r.token_value = cipher.getuser(_token)
+    @response r
+    return
+}
+
 print ;
 print "EGO Server ", _version
 print ;
