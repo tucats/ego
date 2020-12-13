@@ -60,8 +60,24 @@ func Server(c *cli.Context) error {
 		realm = "Ego Server"
 	}
 
-	if c.WasFound("users") {
-		userFile, _ := c.GetString("users")
+	defaultUser := "admin"
+	defaultPassword := "password"
+	if up := persistence.Get("default-credential"); up != "" {
+		if pos := strings.Index(up, ":"); pos >= 0 {
+			defaultUser = up[:pos]
+			defaultPassword = up[pos+1:]
+		} else {
+			defaultUser = up
+			defaultPassword = ""
+		}
+	}
+
+	// Is there a user database to load?
+	userFile, _ := c.GetString("users")
+	if userFile == "" {
+		userFile = persistence.Get("logon-userdata")
+	}
+	if userFile != "" {
 		b, err := ioutil.ReadFile(userFile)
 		if err == nil {
 			err = json.Unmarshal(b, &users)
@@ -69,8 +85,17 @@ func Server(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+		ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(users))
 	} else {
-		users = map[string]string{"admin": "password"}
+		users = map[string]string{
+			defaultUser: defaultPassword,
+		}
+		ui.Debug(ui.ServerLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
+	}
+
+	if su := persistence.Get("logon-superuser"); su != "" {
+		users[su] = ""
+		ui.Debug(ui.ServerLogger, "Adding superuser to user database")
 	}
 
 	err := defineLibHandlers(pathRoot, "/services")
@@ -299,6 +324,13 @@ func LibHandler(w http.ResponseWriter, r *http.Request) {
 		_ = syms.SetAlways("_body", btext)
 		_ = syms.SetAlways("_user", user)
 		_ = syms.SetAlways("_password", pass)
+
+		// Indicate if this connection is the super-user
+		if su := persistence.Get("logon-superuser"); user == su && pass == "" {
+			_ = syms.SetAlways("_superuser", true)
+		} else {
+			_ = syms.SetAlways("_superuser", false)
+		}
 
 		// Handle auto-import
 		err := comp.AutoImport(persistence.GetBool("auto-import"))
