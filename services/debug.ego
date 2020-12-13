@@ -8,8 +8,18 @@ if !authenticated() & !cipher.valid(_token) {
     @status 401
     return
 }
+print ;
+print "EGO Server ", _version
+print ;
+print;
 
+print "S Y M B O L   T A B L E"
+print "-----------------------"
 print util.symbols()
+
+print ;
+print "A U T H E N T I C A T I O N"
+print "---------------------------"
 print "Authenticated:    ", authenticated()
 print "User token valid: ", cipher.valid(_token)
 print "User data value:  ", cipher.getuser(_token)
