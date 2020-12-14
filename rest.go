@@ -138,12 +138,7 @@ func headerMap(response *resty.Response) map[string]interface{} {
 	for k, v := range response.Header() {
 		k = strings.ReplaceAll(k, "-", "_")
 		vs := fmt.Sprintf("%v", v)
-		if strings.HasPrefix(vs, "[") {
-			vs = vs[1:]
-		}
-		if strings.HasSuffix(vs, "]") {
-			vs = vs[:len(vs)-1]
-		}
+		vs = strings.TrimPrefix(strings.TrimSuffix(vs, "]"), "[")
 		headers[k] = vs
 	}
 	return headers
