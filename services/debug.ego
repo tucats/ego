@@ -5,7 +5,7 @@ import ( cipher util )
 
 if !authenticated() & !cipher.valid(_token) {
     print "Forbidden"
-    @status 401
+    @status 403
     return
 }
 
