@@ -165,6 +165,19 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		body = args[1]
 	}
 
+	// If the media type is json, then convert the value passed
+	// into a json value for the request body.
+	if mt, ok := this["media_type"]; ok {
+		media := util.GetString(mt)
+		if strings.Contains(media, "application/json") {
+			b, err := json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
+			body = string(b)
+		}
+	}
+
 	r := client.NewRequest().SetBody(body)
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
@@ -178,10 +191,12 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	this["status"] = response.StatusCode()
+	status := response.StatusCode()
+	this["status"] = status
 	this["headers"] = headerMap(response)
+
 	rb := string(response.Body())
-	if isJSON {
+	if status >= 200 && status <= 299 && isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
