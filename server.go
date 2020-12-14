@@ -417,10 +417,9 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	} else {
 		if len(args) != 2 {
 			return false, fmt.Errorf("incorrect number of arguments")
-		} else {
-			user = util.GetString(args[0])
-			pass = util.GetString(args[1])
 		}
+		user = util.GetString(args[0])
+		pass = util.GetString(args[1])
 	}
 
 	// If no user database, then we're done.

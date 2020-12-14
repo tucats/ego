@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
+// RestOpen implements the open() rest function
 func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	client := resty.New()
@@ -63,6 +64,7 @@ func applyBaseURL(url string, this map[string]interface{}) string {
 	return url
 }
 
+// RestBase implements the base() rest function
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
@@ -88,6 +90,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return this, nil
 }
 
+// RestGet implements the rest get() function
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -114,17 +117,39 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	status := response.StatusCode()
 	this["status"] = status
-	this["headers"] = response.Header()
+	this["headers"] = headerMap(response)
+
 	rb := string(response.Body())
 	if status >= 200 && status <= 299 && isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
+		this["response"] = jsonResponse
 		return jsonResponse, err
 	}
 	this["response"] = rb
 	return rb, nil
 }
 
+// headerMap is a support function that extracts the header data from a
+// rest response, and formats it to be an Ego struct. It also mangles
+// struct member names so "-" is converted to "_"
+func headerMap(response *resty.Response) map[string]interface{} {
+	headers := map[string]interface{}{}
+	for k, v := range response.Header() {
+		k = strings.ReplaceAll(k, "-", "_")
+		vs := fmt.Sprintf("%v", v)
+		if strings.HasPrefix(vs, "[") {
+			vs = vs[1:]
+		}
+		if strings.HasSuffix(vs, "]") {
+			vs = vs[:len(vs)-1]
+		}
+		headers[k] = vs
+	}
+	return headers
+}
+
+// RestPost implements the post() rest function
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -154,11 +179,12 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	this["status"] = response.StatusCode()
-	this["headers"] = response.Header()
+	this["headers"] = headerMap(response)
 	rb := string(response.Body())
 	if isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
+		this["response"] = jsonResponse
 		return jsonResponse, err
 	}
 	this["response"] = rb

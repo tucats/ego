@@ -43,7 +43,7 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.UnsafePointer: "unsafe ptr",
 }
 
-// FunctionGremlinOpen opens a gremlin connetion and stores it in the result value
+// GremlinOpen opens a gremlin connetion and stores it in the result value
 func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	var username, password string

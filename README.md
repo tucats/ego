@@ -88,8 +88,23 @@ functions would become available:
 | r.get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
 | r.post(url [, body]) | POST to the named url. If the second parameter is given, it is a string reprsenting the body of the POST request
 
-Additionally, the values `r.status` and `r.body` can be used to examing the HTTP status
-code of the last request, and the string value of the response body of the last request.
+Additionally, the values `r.status`, `r.headers`, and `r.response` can be used to examing the HTTP status
+code of the last request, the headers returned, and the value of the response body of the last request.
+The response body may be a string (if the media type was not json) or an actual object if the media type
+was json.
+
+Here's a simple example:
+
+    
+    server := rest.open().base("http://localhost:8080")
+    call server.get("/services/debug")
+     
+    if server.status == 200 {
+        print "Server session ID is ", server.response.session
+    }
+
+
+
 
 ## REST Server
 You can start Ego as a REST server, which responds to standard REST calls on a given port.
