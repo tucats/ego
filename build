@@ -9,10 +9,19 @@ BUILDVER=$(cat buildver.txt)
 
 if [ "$1" == "-i" ]; then
 
-let "BUILDVER = $BUILDVER + 1"
-echo $BUILDVER >buildver.txt
+   CHANGES=$(git status --porcelain)
+   if [ "$CHANGES" != "" ]; then
+      echo "You have uncommitted changes."
+      exit 1
+   fi
+
+   let "BUILDVER = $BUILDVER + 1"
+   echo $BUILDVER >buildver.txt
 fi
 
 echo Build $BUILDVER
 go build -ldflags "-X main.BuildVersion=$BUILDVER"
 
+if [ "$1" == "-i" ]; then
+   git commit -a -m "increment build version"
+fi
