@@ -114,13 +114,7 @@ are used to respond to the request. Each program becomes an endpoint.
 ### Authentication
 If you do nothing else, the server will start up and support a username of "admin" and a
 password of "password" as the required Basic authentication. You can specify a JSON file
-that contains a map of valid names instead with the `--users` option.  For example, if
-this file contained:
-
-    {
-         "admin" : "popcorn",
-         "user"  : "snazzy"
-    }
+that contains a map of valid names instead with the `--users` option.  
 
 The server would allow two usernames (_admin_ and _user_) with the associated passwords.
 Additionally, if a rest call is received with an Authentication value of token followed
@@ -142,6 +136,30 @@ to control its operation.
 | _headers    | struct  | A struct where the field is the header name, and the value is an array of string values for each value found  |
 | _parms      | struct  | A struct where the field name is the parameter, and the value si an array of string values for each value found |
 | _password   | string  | The Basic authentication password provided, or empty string if not used |
+| _superuser  | bool | The username or token identity has root privileges |
 | _token      | string  | The Token authentication value, or an empty string if not used |
-| _user       | string  | The Basic authentication username provided, or an empty string if not used |
+| _token_valid | bool | The Token authentication value is a valid token |
+| _user       | string  | The Basic authentication username provided, or identify of a valid Token |
 
+### Functions
+There are additional functions made available to the Ego programs run as services. These are generally used to support writing
+services for administrative or privileged functions. For example, a service that updates a password would use all of the following
+functions.
+
+| Function | Description | 
+|----------|------------|
+| u := getuser(name) | Get the user data for a given user
+| call setuser(u) | Update or create a user with the given user data
+| f := authenticated(user,pass) | Boolean if the username and password are valid
+
+A sample program might look like this:
+
+    // Assume u is username
+    //        p is password
+    //        n is a new password to assign to the user
+    
+    if authenticated(u, p) {
+        d := getuser(u)
+        d.password = newpass
+        call setuser(d)
+    }
