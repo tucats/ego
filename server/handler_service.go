@@ -76,7 +76,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		path = path[1:]
 	}
 
-	bs, err := ioutil.ReadFile(filepath.Join(pathRoot, path+".ego"))
+	bs, err := ioutil.ReadFile(filepath.Join(PathRoot, path+".ego"))
 	if err != nil {
 		_, _ = io.WriteString(w, "File open error: "+err.Error())
 	}
@@ -105,9 +105,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if auth == "" {
 			ui.Debug(ui.ServerLogger, "No authentication credentials given")
 		} else {
-			if strings.HasPrefix(strings.ToLower(auth), authScheme) {
+			if strings.HasPrefix(strings.ToLower(auth), AuthScheme) {
 				ok = true
-				token := auth[len(authScheme):]
+				token := auth[len(AuthScheme):]
 				_ = syms.SetAlways("_token", token)
 				ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 			} else {
@@ -146,7 +146,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Run the compiled code
 		ctx := bytecode.NewContext(syms, b)
 		ctx.EnableConsoleOutput(false)
-		ctx.Tracing = tracing
+		ctx.Tracing = Tracing
 
 		err = ctx.Run()
 
@@ -158,7 +158,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if s, ok := syms.Get("_rest_status"); ok {
 			status = util.GetInt(s)
 			if status == 401 {
-				w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
+				w.Header().Set("WWW-Authenticate", `Basic realm="`+Realm+`"`)
 			}
 		}
 

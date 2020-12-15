@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tucats/ego/server"
+	"github.com/tucats/ego/commands"
 	"github.com/tucats/gopackages/app-cli/cli"
 )
 
@@ -11,14 +11,14 @@ var EgoGrammar = []cli.Option{
 		LongName:           "path",
 		Description:        "Print the default ego path",
 		OptionType:         cli.Subcommand,
-		Action:             PathAction,
+		Action:             commands.PathAction,
 		ParametersExpected: 0,
 	},
 	{
 		LongName:             "run",
 		Description:          "Run an existing program",
 		OptionType:           cli.Subcommand,
-		Action:               RunAction,
+		Action:               commands.RunAction,
 		Value:                RunGrammar,
 		ParametersExpected:   -99,
 		ParameterDescription: "file-name",
@@ -27,21 +27,21 @@ var EgoGrammar = []cli.Option{
 		LongName:    "server",
 		Description: "Accept REST calls",
 		OptionType:  cli.Subcommand,
-		Action:      server.Server,
+		Action:      commands.Server,
 		Value:       ServerGrammar,
 	},
 	{
 		LongName:    "logon",
 		Description: "Request logon token",
 		OptionType:  cli.Subcommand,
-		Action:      Logon,
+		Action:      commands.Logon,
 		Value:       LogonGrammar,
 	},
 	{
 		LongName:             "test",
 		Description:          "Run a test suite",
 		OptionType:           cli.Subcommand,
-		Action:               TestAction,
+		Action:               commands.TestAction,
 		ParametersExpected:   -99,
 		ParameterDescription: "file or path",
 	},

@@ -1,25 +1,14 @@
-package server
+package commands
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
 	"strconv"
-	"strings"
 
+	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
-)
-
-var pathRoot string
-var tracing bool
-var realm string
-
-const (
-	authScheme = "token "
 )
 
 // Server initializes the server
@@ -32,7 +21,7 @@ func Server(c *cli.Context) error {
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {
-		http.HandleFunc("/code", CodeHandler)
+		http.HandleFunc("/code", server.CodeHandler)
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
@@ -41,36 +30,36 @@ func Server(c *cli.Context) error {
 	if c.WasFound("trace") {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
-	tracing = ui.Loggers[ui.ByteCodeLogger]
+	server.Tracing = ui.Loggers[ui.ByteCodeLogger]
 
 	// Figure out the root location of the services, which will
 	// also become the context-root of the ultimate URL path for
 	// each endpoint.
-	pathRoot, _ := c.GetString("context-root")
-	if pathRoot == "" {
-		pathRoot = os.Getenv("EGO_PATH")
-		if pathRoot == "" {
-			pathRoot = persistence.Get("ego-path")
+	server.PathRoot, _ = c.GetString("context-root")
+	if server.PathRoot == "" {
+		server.PathRoot = os.Getenv("EGO_PATH")
+		if server.PathRoot == "" {
+			server.PathRoot = persistence.Get("ego-path")
 		}
 	}
 
 	// Determine the reaml used in security challenges.
-	realm = os.Getenv("EGO_REALM")
+	server.Realm = os.Getenv("EGO_REALM")
 	if c.WasFound("realm") {
-		realm, _ = c.GetString("realm")
+		server.Realm, _ = c.GetString("realm")
 	}
-	if realm == "" {
-		realm = "Ego Server"
+	if server.Realm == "" {
+		server.Realm = "Ego Server"
 	}
 
 	// Load the user database (if requested)
-	if err := loadUserDatabase(c); err != nil {
+	if err := server.LoadUserDatabase(c); err != nil {
 		return err
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
 
-	err := defineLibHandlers(pathRoot, "/services")
+	err := server.DefineLibHandlers(server.PathRoot, "/services")
 	if err != nil {
 		return err
 	}
@@ -91,43 +80,4 @@ func Server(c *cli.Context) error {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 	return err
-}
-
-// defineLibHandlers starts at a root location and a subpath, and recursively scans
-// the directorie(s) found to identify ".ego" programs that can be defined as
-// available service endpoints.
-func defineLibHandlers(root string, subpath string) error {
-
-	paths := make([]string, 0)
-	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
-	if err != nil {
-		return err
-	}
-
-	for _, f := range fids {
-		fullname := f.Name()
-		slash := strings.LastIndex(fullname, "/")
-		if slash > 0 {
-			fullname = fullname[:slash]
-		}
-		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
-
-		if !f.IsDir() {
-			paths = append(paths, path.Join(subpath, fullname))
-		} else {
-			newpath := filepath.Join(subpath, fullname)
-			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
-			err := defineLibHandlers(root, newpath)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, path := range paths {
-		ui.Debug(ui.ServerLogger, "Defining endpoint %s", path)
-		http.HandleFunc(path, ServiceHandler)
-	}
-
-	return nil
 }

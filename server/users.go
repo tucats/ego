@@ -23,7 +23,7 @@ var userDatabase map[string]user
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
-func loadUserDatabase(c *cli.Context) error {
+func LoadUserDatabase(c *cli.Context) error {
 
 	defaultUser := "admin"
 	defaultPassword := "{password}"
