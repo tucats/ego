@@ -1,4 +1,4 @@
-package main
+package runtime
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/northwesternmutual/grammes"
+	"github.com/tucats/ego/io"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
 )
@@ -292,7 +293,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		var b strings.Builder
 		var h strings.Builder
 		for _, c := range columns {
-			b.WriteString(pad(c.Name, c.FormattedWidth))
+			b.WriteString(io.Pad(c.Name, c.FormattedWidth))
 			b.WriteRune(' ')
 			w := c.FormattedWidth
 			if w < 0 {
@@ -312,7 +313,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		for _, c := range columns {
 			v, ok := row[c.Name]
 			if ok {
-				b.WriteString(pad(v, c.FormattedWidth))
+				b.WriteString(io.Pad(v, c.FormattedWidth))
 				b.WriteRune(' ')
 			} else {
 				b.WriteString(strings.Repeat(" ", c.FormattedWidth+1))
@@ -322,31 +323,6 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 
 	return result, nil
-}
-
-// Pad the formatted value of a given object to the specified number
-// of characters. Negative numbers are right-aligned, positive numbers
-// are left-aligned.
-func pad(v interface{}, w int) string {
-	s := util.FormatUnquoted(v)
-	count := w
-	if count < 0 {
-		count = -count
-	}
-	padString := ""
-	if count > len(s) {
-		padString = strings.Repeat(" ", count-len(s))
-	}
-	var r string
-	if w < 0 {
-		r = padString + s
-	} else {
-		r = s + padString
-	}
-	if len(r) > count {
-		r = r[:count]
-	}
-	return string(r)
 }
 
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {

@@ -1,9 +1,10 @@
-package main
+package runtime
 
 import (
 	"errors"
 	"strings"
 
+	"github.com/tucats/ego/io"
 	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
@@ -30,7 +31,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	if len(args) > 0 {
 		prompt = util.GetString(args[0])
 	}
-	text := readConsoleText(prompt)
+	text := io.ReadConsoleText(prompt)
 	if text == "\n" {
 		text = ""
 	} else {

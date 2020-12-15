@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/sha256"
@@ -113,17 +113,17 @@ func validatePassword(user, pass string) bool {
 		realPass := p.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
-			realPass = hashString(realPass[1 : len(realPass)-1])
+			realPass = HashString(realPass[1 : len(realPass)-1])
 		}
-		hashPass := hashString(pass)
+		hashPass := HashString(pass)
 		ok = realPass == hashPass
 	}
 	return ok
 }
 
-// hashString converts a given string to it's hash. This is used to manage
+// HashString converts a given string to it's hash. This is used to manage
 // passwords
-func hashString(s string) string {
+func HashString(s string) string {
 	h := sha256.New()
 	_, _ = h.Write([]byte(s))
 	v := h.Sum(nil)

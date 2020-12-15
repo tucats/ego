@@ -8,7 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/chzyer/readline"
+	"github.com/tucats/ego/io"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -16,7 +17,6 @@ import (
 	"github.com/tucats/gopackages/compiler"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
-	"github.com/tucats/gopackages/util"
 )
 
 // Reserved symbol names used for configuration
@@ -99,7 +99,7 @@ func RunAction(c *cli.Context) error {
 			} else {
 				fmt.Printf("%s\n", banner)
 			}
-			text = readConsoleText(prompt)
+			text = io.ReadConsoleText(prompt)
 		} else {
 			wasCommandLine = true // It is a pipe, so no prompting for more!
 			text = ""
@@ -115,9 +115,9 @@ func RunAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable(mainName)
 
 	_ = syms.SetAlways("_args", programArgs)
-	setConfig(syms, ConfigDisassemble, disassemble)
+	io.SetConfig(syms, ConfigDisassemble, disassemble)
 	traceLogging := ui.Loggers[ui.ByteCodeLogger]
-	setConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
+	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case names
@@ -130,10 +130,10 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Add local funcion(s) that extend the Ego function set.
-	_ = syms.SetAlways("eval", Eval)
-	_ = syms.SetAlways("table", Table)
-	_ = syms.SetAlways("prompt", Prompt)
-	AddBuiltinPackages(syms)
+	_ = syms.SetAlways("eval", runtime.Eval)
+	_ = syms.SetAlways("table", runtime.Table)
+	_ = syms.SetAlways("prompt", runtime.Prompt)
+	runtime.AddBuiltinPackages(syms)
 
 	exitValue := 0
 	builtinsAdded := false
@@ -169,7 +169,7 @@ func RunAction(c *cli.Context) error {
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
 			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
-				text = text + readConsoleText("...> ")
+				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
 				continue
 			}
@@ -196,7 +196,7 @@ func RunAction(c *cli.Context) error {
 				builtinsAdded = true
 			}
 			oldDebugMode := ui.DebugMode
-			if getConfig(syms, ConfigDisassemble) {
+			if io.GetConfig(syms, ConfigDisassemble) {
 				ui.DebugMode = true
 				b.Disasm()
 			}
@@ -205,7 +205,7 @@ func RunAction(c *cli.Context) error {
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b)
 			oldDebugMode = ui.DebugMode
-			ctx.Tracing = getConfig(syms, ConfigTrace)
+			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
@@ -236,91 +236,11 @@ func RunAction(c *cli.Context) error {
 		if wasCommandLine {
 			break
 		}
-		text = readConsoleText(prompt)
+		text = io.ReadConsoleText(prompt)
 	}
 
 	if exitValue > 0 {
 		return errors.New("terminated with errors")
 	}
 	return nil
-}
-
-// ReaderInstance is the readline Instance used for console input
-var consoleReader *readline.Instance
-
-func readConsoleText(prompt string) string {
-
-	mode := persistence.Get("use-readline")
-
-	// If readline has been explicitly disabled for some reason,
-	// do a more primitive input operation.
-	// TODO this entire functionality could probably be moved
-	// into ui.Prompt() at some point.
-	if mode == "off" || mode == "false" {
-
-		var b strings.Builder
-
-		reading := true
-		line := 1
-
-		for reading {
-			text := ui.Prompt(prompt)
-			if len(text) == 0 {
-				break
-			}
-			line = line + 1
-			if text[len(text)-1:] == "\\" {
-				text = text[:len(text)-1]
-				prompt = fmt.Sprintf("ego[%d]> ", line)
-			} else {
-				reading = false
-			}
-			b.WriteString(text)
-			b.WriteString("\n")
-		}
-		return b.String()
-	}
-
-	// Nope, let's use readline. IF we have never initialized
-	// the reader, let's do so now.
-	if consoleReader == nil {
-		consoleReader, _ = readline.New(prompt)
-	}
-
-	if len(prompt) > 1 && prompt[:1] == "~" {
-		b, _ := consoleReader.ReadPassword(prompt[1:])
-		return string(b)
-	}
-	// Set the prompt string and do the read. We ignore errors.
-	consoleReader.SetPrompt(prompt)
-	result, _ := consoleReader.Readline()
-	return result + "\n"
-
-}
-
-func setConfig(s *symbols.SymbolTable, name string, value bool) {
-	v, found := s.Get("_config")
-	if !found {
-		m := map[string]interface{}{name: value}
-		_ = s.SetAlways("_config", m)
-	}
-	if m, ok := v.(map[string]interface{}); ok {
-		m[name] = value
-	}
-}
-
-func getConfig(s *symbols.SymbolTable, name string) bool {
-
-	f := false
-
-	v, found := s.Get("_config")
-	if found {
-		if m, ok := v.(map[string]interface{}); ok {
-			f, found := m[name]
-			if found {
-				return util.GetBool(f)
-			}
-		}
-	}
-	return f
 }

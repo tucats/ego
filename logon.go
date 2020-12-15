@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -37,7 +38,7 @@ func Logon(c *cli.Context) error {
 	}
 
 	if c.GetBool("hash") {
-		fmt.Printf("HASH %s\n", hashString(pass))
+		fmt.Printf("HASH %s\n", server.HashString(pass))
 	}
 
 	// Turn logon server into full URL

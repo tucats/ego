@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
@@ -43,11 +44,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_parms", args)
 
 	// Other setup for REST server execution
-	_ = syms.SetAlways("eval", Eval)
+	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("authenticated", Authenticated)
 	_ = syms.SetAlways("permission", Permission)
 	_ = syms.SetAlways("_rest_response", nil)
-	AddBuiltinPackages(syms)
+	runtime.AddBuiltinPackages(syms)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.

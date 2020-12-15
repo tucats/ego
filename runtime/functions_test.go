@@ -1,9 +1,10 @@
-package main
+package runtime
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/io"
 	"github.com/tucats/gopackages/symbols"
 )
 
@@ -99,7 +100,7 @@ func Test_pad(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := pad(tt.args.s, tt.args.w); got != tt.want {
+			if got := io.Pad(tt.args.s, tt.args.w); got != tt.want {
 				t.Errorf("pad() = %v, want %v", got, tt.want)
 			}
 		})

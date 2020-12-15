@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tucats/ego/io"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -28,10 +30,10 @@ func TestAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable("Unit Tests")
 
 	// Add local funcion(s)
-	_ = syms.SetAlways("eval", Eval)
-	_ = syms.SetAlways("table", Table)
+	_ = syms.SetAlways("eval", runtime.Eval)
+	_ = syms.SetAlways("table", runtime.Table)
 
-	AddBuiltinPackages(syms)
+	runtime.AddBuiltinPackages(syms)
 
 	exitValue := 0
 	builtinsAdded := false
@@ -100,7 +102,7 @@ func TestAction(c *cli.Context) error {
 				builtinsAdded = true
 			}
 			oldDebugMode := ui.DebugMode
-			if getConfig(syms, ConfigDisassemble) {
+			if io.GetConfig(syms, ConfigDisassemble) {
 				ui.DebugMode = true
 				b.Disasm()
 			}
@@ -109,7 +111,7 @@ func TestAction(c *cli.Context) error {
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b)
 			oldDebugMode = ui.DebugMode
-			ctx.Tracing = getConfig(syms, ConfigTrace)
+			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
 			}
