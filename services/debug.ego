@@ -3,7 +3,9 @@
 import ( cipher util )
 @status 200
 
-if !authenticated() & !cipher.valid(_token) {
+tv := _token_valid
+
+if !authenticated() & !tv {
     print "401 Forbidden"
     @status 401
     return
@@ -14,8 +16,14 @@ if _json {
     r := {}
     r.version = _version
     r.valid_user = authenticated()
-    r.token_valid = cipher.valid(_token)
-    r.token_value = cipher.getuser(_token)
+    r.token_valid = tv
+    if tv {
+        // If the token was valid, get some additional info about the user it represents
+        t := cipher.token(_token)
+        r.user = t.name
+        r.data = t.data
+        r.superuser = getuser(t.name).superuser
+    }
     r.session = _session
 
     // If there was a body, this was a POST so return the body as

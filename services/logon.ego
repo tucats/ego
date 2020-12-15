@@ -22,5 +22,5 @@ if !_authenticated {
 }
 
 // Generate a token and return it as text to the caller
-print cipher.token(_user)
+print cipher.create(_user)
 @status 200

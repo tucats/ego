@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/functions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
 )
@@ -236,6 +237,35 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
+// Implements the GetUser() function
+func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	// There must be one parameter, which is a username
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+
+	r := map[string]interface{}{}
+	name := util.GetString(args[0])
+	t, ok := userDatabase[name]
+	if !ok {
+		return r, nil
+	}
+	r["name"] = name
+	su := false
+	perms := []interface{}{}
+	for p, f := range t.Permissions {
+		if strings.ToLower(p) == "root" {
+			su = true
+		}
+		if f {
+			perms = append(perms, p)
+		}
+	}
+	r["permissions"] = perms
+	r["superuser"] = su
+	return r, nil
+}
+
 // updateUserDatabase re-writes the user database file with updated values
 func updateUserDatabase() error {
 
@@ -248,4 +278,25 @@ func updateUserDatabase() error {
 
 	err = ioutil.WriteFile(userDatabaseFile, b, os.ModePerm)
 	return err
+}
+
+// validateToken is a helper function that calls the builtin cipher.validate()
+func validateToken(t string) bool {
+	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.validate", t)
+	return v.(bool)
+}
+
+// tokenUser is a helper function that calls the builtin cipher.token() and returns
+// the user field
+func tokenUser(t string) string {
+	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.validate", t)
+	if util.GetBool(v) {
+		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.token", t)
+		if m, ok := t.(map[string]interface{}); ok {
+			if n, ok := m["name"]; ok {
+				return util.GetString(n)
+			}
+		}
+	}
+	return ""
 }

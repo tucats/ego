@@ -48,6 +48,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("authenticated", Authenticated)
 	_ = syms.SetAlways("permission", Permission)
 	_ = syms.SetAlways("setuser", SetUser)
+	_ = syms.SetAlways("getuser", GetUser)
 	_ = syms.SetAlways("_rest_response", nil)
 	runtime.AddBuiltinPackages(syms)
 
@@ -110,6 +111,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				ok = true
 				token := auth[len(AuthScheme):]
 				_ = syms.SetAlways("_token", token)
+				_ = syms.SetAlways("_token_valid", validateToken(token))
+				user = tokenUser(token)
 				ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 			} else {
 				user, pass, ok = r.BasicAuth()
@@ -117,6 +120,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 					ok = validatePassword(user, pass)
 				}
 				_ = syms.SetAlways("_token", "")
+				_ = syms.SetAlways("_token_valid", false)
 				ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, ok)
 			}
 		}
