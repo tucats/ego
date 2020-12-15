@@ -45,6 +45,9 @@ func loadUserDatabase(c *cli.Context) error {
 			return err
 		}
 		ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
+		for k, v := range userDatabase {
+			ui.Debug(ui.ServerLogger, "   user \"%s\", pass \"%s\"", k, v)
+		}
 	} else {
 		userDatabase = map[string]string{
 			defaultUser: defaultPassword,
@@ -85,12 +88,21 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	// If no user database, then we're done.
 	if userDatabase == nil {
+		//ui.Debug(ui.ServerLogger, "AUTHENTICATED(\"%s\", \"%s\") = false (no database)", user, pass)
 		return false, nil
 	}
 
 	// If the user exists and the password matches then valid.
-	if p, ok := userDatabase[user]; ok && p == pass {
-		return true, nil
+	if p, ok := userDatabase[user]; ok {
+		if p == pass {
+			//ui.Debug(ui.ServerLogger, "AUTHENTICATED(\"%s\", \"%s\") = true", user, pass)
+			return true, nil
+		} else {
+			//ui.Debug(ui.ServerLogger, "AUTHENTICATED(\"%s\", \"%s\") = false (bad password)", user, pass)
+			return false, nil
+		}
+	} else {
+		//ui.Debug(ui.ServerLogger, "AUTHENTICATED(\"%s\", \"%s\") = false (no such user)", user, pass)
+		return false, nil
 	}
-	return false, nil
 }

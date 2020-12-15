@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -42,6 +43,17 @@ func Logon(c *cli.Context) error {
 		persistence.Set("logon-token", token)
 		ui.Say("Successfully logged in as \"%s\"", user)
 		return nil
+	}
+
+	if err == nil {
+		switch r.StatusCode() {
+		case 401:
+			err = errors.New("No credentials provided")
+		case 403:
+			err = errors.New("Invalid credentials")
+		default:
+			err = fmt.Errorf("HTTP %d", r.StatusCode())
+		}
 	}
 
 	return err

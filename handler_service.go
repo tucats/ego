@@ -110,8 +110,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 			} else {
 				user, pass, ok = r.BasicAuth()
-				if p, valid := userDatabase[user]; valid {
+				if p, userExists := userDatabase[user]; ok && userExists {
 					ok = (p == pass)
+				} else {
+					ok = false
 				}
 				_ = syms.SetAlways("_token", "")
 				ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, ok)

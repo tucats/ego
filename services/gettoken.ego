@@ -5,7 +5,19 @@ import (
     cipher 
 )
 
-if _user != "" {
-    print cipher.token(_user)
+// IF no credentials give, allow the browser to prompt
+if ( _user == "" ) & ( _password == "" ) {
+    print "401 No credentials"
+    @status 401
+    return
 }
 
+// If not an authenticated user, forbidden
+if !_authenticated {
+    print "403 Forbidden"
+    @status 403
+    return
+}
+
+print cipher.token(_user)
+@status 200
