@@ -52,10 +52,6 @@ func Server(c *cli.Context) error {
 		if pathRoot == "" {
 			pathRoot = persistence.Get("ego-path")
 		}
-		// If the user didn't specify a location and we had
-		// to use the Ego path, we always add the default
-		// location for the service files
-		pathRoot = filepath.Join(pathRoot, "/services")
 	}
 
 	// Determine the reaml used in security challenges.
@@ -74,7 +70,7 @@ func Server(c *cli.Context) error {
 
 	// Starting with the path root, recursively scan for service definitions.
 
-	err := defineLibHandlers(pathRoot, "")
+	err := defineLibHandlers(pathRoot, "/services")
 	if err != nil {
 		return err
 	}
@@ -103,7 +99,7 @@ func Server(c *cli.Context) error {
 func defineLibHandlers(root string, subpath string) error {
 
 	paths := make([]string, 0)
-	fids, err := ioutil.ReadDir(root)
+	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
 		return err
 	}
@@ -114,10 +110,7 @@ func defineLibHandlers(root string, subpath string) error {
 		if slash > 0 {
 			fullname = fullname[:slash]
 		}
-		e := path.Ext(fullname)
-		if e != "" {
-			fullname = fullname[:len(fullname)-len(e)]
-		}
+		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
 
 		if !f.IsDir() {
 			paths = append(paths, path.Join(subpath, fullname))

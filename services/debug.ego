@@ -4,8 +4,8 @@ import ( cipher util )
 @status 200
 
 if !authenticated() & !cipher.valid(_token) {
-    print "403 Forbidden"
-    @status 403
+    print "401 Forbidden"
+    @status 401
     return
 }
 
