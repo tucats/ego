@@ -11,6 +11,8 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 )
 
+const LogonEndpoint = "/services/logon"
+
 // Logon handles the logon subcommand
 func Logon(c *cli.Context) error {
 
@@ -34,6 +36,14 @@ func Logon(c *cli.Context) error {
 		pass = ui.PromptPassword("Password: ")
 	}
 
+	if c.GetBool("hash") {
+		fmt.Printf("HASH %s\n", hashString(pass))
+	}
+
+	// Turn logon server into full URL
+	url = strings.TrimSuffix(url, "/") + LogonEndpoint
+
+	// Call the endpoint
 	r, err := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass).NewRequest().Get(url)
 	if err == nil && r.StatusCode() == 200 {
 		token := string(r.Body())
@@ -45,12 +55,15 @@ func Logon(c *cli.Context) error {
 		return nil
 	}
 
+	// IF there was an error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
 		case 401:
 			err = errors.New("No credentials provided")
 		case 403:
 			err = errors.New("Invalid credentials")
+		case 404:
+			err = errors.New("Logon endpoint not found on server")
 		default:
 			err = fmt.Errorf("HTTP %d", r.StatusCode())
 		}

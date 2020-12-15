@@ -79,6 +79,11 @@ var LogonGrammar = []cli.Option{
 		Description:         "URL of logon server",
 		EnvironmentVariable: "EGO_LOGON_SERVER",
 	},
+	{
+		LongName:   "hash",
+		ShortName:  "h",
+		OptionType: cli.BooleanType,
+	},
 }
 
 // ServerGrammar handles command line options for the server subcommand
@@ -122,6 +127,11 @@ var ServerGrammar = []cli.Option{
 		Description:         "File with authentication JSON data",
 		OptionType:          cli.StringType,
 		EnvironmentVariable: "EGO_USERS",
+	},
+	{
+		LongName:    "superuser",
+		Description: "Designate this user as a super-user with ROOT privileges",
+		OptionType:  cli.StringType,
 	},
 	{
 		LongName:    "code",

@@ -24,10 +24,10 @@ import (
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
-	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
+	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable(fmt.Sprintf("REST %s", r.URL.Path))
+	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 
 	// Get the query parameters and store as a local varialble
 	u := r.URL.Query()
@@ -45,6 +45,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Other setup for REST server execution
 	_ = syms.SetAlways("eval", Eval)
 	_ = syms.SetAlways("authenticated", Authenticated)
+	_ = syms.SetAlways("permission", Permission)
 	_ = syms.SetAlways("_rest_response", nil)
 	AddBuiltinPackages(syms)
 
@@ -110,10 +111,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 			} else {
 				user, pass, ok = r.BasicAuth()
-				if p, userExists := userDatabase[user]; ok && userExists {
-					ok = (p == pass)
-				} else {
-					ok = false
+				if ok {
+					ok = validatePassword(user, pass)
 				}
 				_ = syms.SetAlways("_token", "")
 				ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, ok)
@@ -134,11 +133,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		_ = syms.SetGlobal("_rest_status", 200)
 
 		// Indicate if this connection is the super-user
-		if su := persistence.Get("logon-superuser"); user == su && pass == "" {
-			_ = syms.SetAlways("_superuser", true)
-		} else {
-			_ = syms.SetAlways("_superuser", false)
-		}
+		_ = syms.SetAlways("_superuser", getPermission(user, "root"))
 
 		// Handle auto-import
 		err := comp.AutoImport(persistence.GetBool("auto-import"))

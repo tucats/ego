@@ -1,11 +1,13 @@
 /*
- * Get a new token. Uses the "basic auth" username
+ * Log on to the server. Requires username and password via the authentication
+ * headers, and returns an encrypted token that can be used for subsequent
+ * authorization operations.
  */
 import ( 
     cipher 
 )
 
-// IF no credentials give, allow the browser to prompt
+// If no credentials give, allow the browser to prompt
 if ( _user == "" ) & ( _password == "" ) {
     print "401 No credentials"
     @status 401
@@ -19,5 +21,6 @@ if !_authenticated {
     return
 }
 
+// Generate a token and return it as text to the caller
 print cipher.token(_user)
 @status 200
