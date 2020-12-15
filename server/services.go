@@ -47,6 +47,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("authenticated", Authenticated)
 	_ = syms.SetAlways("permission", Permission)
+	_ = syms.SetAlways("setuser", SetUser)
 	_ = syms.SetAlways("_rest_response", nil)
 	runtime.AddBuiltinPackages(syms)
 

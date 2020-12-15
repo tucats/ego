@@ -3,8 +3,10 @@ package server
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/tucats/gopackages/app-cli/cli"
@@ -20,6 +22,7 @@ type user struct {
 }
 
 var userDatabase map[string]user
+var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
@@ -38,12 +41,12 @@ func LoadUserDatabase(c *cli.Context) error {
 	}
 
 	// Is there a user database to load?
-	userFile, _ := c.GetString("users")
-	if userFile == "" {
-		userFile = persistence.Get("logon-userdata")
+	userDatabaseFile, _ = c.GetString("users")
+	if userDatabaseFile == "" {
+		userDatabaseFile = persistence.Get("logon-userdata")
 	}
-	if userFile != "" {
-		b, err := ioutil.ReadFile(userFile)
+	if userDatabaseFile != "" {
+		b, err := ioutil.ReadFile(userDatabaseFile)
 		if err == nil {
 			err = json.Unmarshal(b, &userDatabase)
 		}
@@ -68,6 +71,7 @@ func LoadUserDatabase(c *cli.Context) error {
 	if su != "" {
 		err = setPermission(su, "root", true)
 	}
+
 	return err
 }
 
@@ -186,4 +190,62 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// If the user exists and the privilege exists, return it's status
 	return getPermission(user, priv), nil
+}
+
+// Implements the SetUser() function
+func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	var err error
+
+	// Before we do anything else, are we running this call as a superuser?
+	superUser := false
+	if s, ok := s.Get("_superuser"); ok {
+		superUser = util.GetBool(s)
+	}
+	if !superUser {
+		return nil, errors.New("no privilege for operation")
+	}
+
+	// There must be one parameter, which is a struct containing
+	// the user data
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+
+	if u, ok := args[0].(map[string]interface{}); ok {
+		r := user{Permissions: map[string]bool{}}
+		name := ""
+		if n, ok := u["name"]; ok {
+			name = util.GetString(n)
+		}
+		if n, ok := u["password"]; ok {
+			r.Password = HashString(util.GetString(n))
+		}
+		if n, ok := u["permissions"]; ok {
+			if m, ok := n.([]interface{}); ok {
+				for _, p := range m {
+					r.Permissions[util.GetString(p)] = true
+				}
+			}
+		}
+
+		userDatabase[name] = r
+		err = updateUserDatabase()
+
+	}
+	return true, err
+}
+
+// updateUserDatabase re-writes the user database file with updated values
+func updateUserDatabase() error {
+
+	// Convert the database to a json string
+
+	b, err := json.MarshalIndent(userDatabase, "", "   ")
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(userDatabaseFile, b, os.ModePerm)
+	return err
 }
