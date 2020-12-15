@@ -214,15 +214,21 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if u, ok := args[0].(map[string]interface{}); ok {
-		r := user{Permissions: map[string]bool{}}
 		name := ""
 		if n, ok := u["name"]; ok {
 			name = util.GetString(n)
+		}
+		r, ok := userDatabase[name]
+		if !ok {
+			r = user{Permissions: map[string]bool{}}
 		}
 		if n, ok := u["password"]; ok {
 			r.Password = HashString(util.GetString(n))
 		}
 		if n, ok := u["permissions"]; ok {
+			// If permissions are specified, we clear out all the existing
+			// ones and replace them with the new ones we get here.
+			r.Permissions = map[string]bool{}
 			if m, ok := n.([]interface{}); ok {
 				for _, p := range m {
 					r.Permissions[util.GetString(p)] = true
