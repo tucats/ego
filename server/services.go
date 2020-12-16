@@ -26,9 +26,8 @@ import (
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-
-	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+	_ = syms.SetAlways("_method", r.Method)
 
 	// Get the query parameters and store as a local varialble
 	u := r.URL.Query()
@@ -43,7 +42,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = syms.SetAlways("_parms", args)
 
-	// Other setup for REST server execution
+	// Other setup for REST service execution
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("authenticated", Authenticated)
 	_ = syms.SetAlways("permission", Permission)
