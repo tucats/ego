@@ -1,12 +1,12 @@
 import strings
 
-@test "strings.camel()"
+@test "strings.Camel()"
 
-@assert strings.camel("test") == "Test" 
-@assert strings.camel("teST") == "Test"
-@assert strings.camel("TEST") == "Test"
-@assert strings.camel("") == ""
-@assert strings.camel("a") == "A" 
-@assert strings.camel("B") == "B" 
+@assert strings.Camel("test") == "Test" 
+@assert strings.Camel("teST") == "Test"
+@assert strings.Camel("TEST") == "Test"
+@assert strings.Camel("") == ""
+@assert strings.Camel("a") == "A" 
+@assert strings.Camel("B") == "B" 
 
 @pass

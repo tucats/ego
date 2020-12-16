@@ -73,10 +73,10 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 
 	return map[string]interface{}{
 		"client":     client,
-		"query":      GremlinQuery,
-		"map":        GremlinMap,
-		"querymap":   GremlinQueryMap,
-		"asjson":     AsJSON,
+		"Query":      GremlinQuery,
+		"Map":        GremlinMap,
+		"QueryMap":   GremlinQueryMap,
+		"AsJSON":     AsJSON,
 		"__readonly": true,
 	}, err
 

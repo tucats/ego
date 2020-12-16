@@ -6,14 +6,14 @@
 @template g_labels `.label().dedup()`
 @template g_getlabels `{{template "g_prefix"}}{{template "g_labels"}}`
 
-s1 := strings.template(g_getlabels)
+s1 := strings.Template(g_getlabels)
 @assert s1 == "g.V().label().dedup()"
 
 // Test of using a parameter value
 @template g_getbytype `{{template "g_prefix"}}.hasLabel("{{.Label}}")`
 
 parms := { Label: "cars" }
-s2 := strings.template(g_getbytype, parms)
+s2 := strings.Template(g_getbytype, parms)
 @assert s2 == "g.V().hasLabel(\"cars\")"
 
 @pass

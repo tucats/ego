@@ -1,15 +1,15 @@
 package strings
 
-func camel(s) string {
+func Camel(s) string {
    if len(s) == 0 {
       return ""
    }   
    if len(s) == 1 {
-      return strings.upper(s)
+      return strings.ToUpper(s)
    }
 
-   left := strings.upper(strings.left(s, 1))
-   right := strings.lower(strings.right(s, len(s)-1))
+   left := strings.ToUpper(strings.Left(s, 1))
+   right := strings.ToLower(strings.Right(s, len(s)-1))
 
    return (left + right)
 }

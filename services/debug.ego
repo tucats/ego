@@ -19,7 +19,7 @@ if _json {
     r.token_valid = tv
     if tv {
         // If the token was valid, get some additional info about the user it represents
-        t := cipher.token(_token)
+        t := cipher.Token(_token)
         r.user = t.name
         r.data = t.data
         r.superuser = getuser(t.name).superuser
@@ -29,7 +29,7 @@ if _json {
     // If there was a body, this was a POST so return the body as
     // a real value.
     if _body != "" {
-        r.posted = json.decode(_body)
+        r.posted = json.Unmarhsal(_body)
     }
     @response r
     return
@@ -42,11 +42,11 @@ print;
 
 print "S Y M B O L   T A B L E"
 print "-----------------------"
-print util.symbols()
+print util.Symbols()
 
 print ;
 print "A U T H E N T I C A T I O N"
 print "---------------------------"
 print "Authenticated:    ", authenticated()
-print "User token valid: ", cipher.valid(_token)
-print "User data value:  ", cipher.getuser(_token)
+print "User token valid: ", cipher.Validate(_token)
+print "User data value:  ", cipher.GetUser(_token)

@@ -1,18 +1,18 @@
 package io
 
-func dirlist(path) string {
+func DirList(path) string {
 
     a := []
     r := ""
 
     try {
-        a = io.readdir(path)
+        a = io.ReadDir(path)
     } catch {
         return "unable to read directory path: " + path
     }
     fmt := "%s  %-20s  %10d  %s\n"
     for i := range a {
-        r = r + strings.format(fmt, i.mode,  strings.left(i.modified, 19), i.size, i.name) 
+        r = r + strings.Format(fmt, i.mode,  strings.left(i.modified, 19), i.size, i.name) 
     }
     return r
 }

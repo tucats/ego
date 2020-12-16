@@ -24,4 +24,4 @@ page := {
     Body : "Hello, world"
 }
 
-print strings.template(html, page)
+print strings.Template(html, page)

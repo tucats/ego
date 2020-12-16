@@ -5,8 +5,8 @@
     msg := "test string of text"
     key := "gibberish"
 
-    e := cipher.encrypt(msg, key)
-    d := cipher.decrypt(e, key)
+    e := cipher.Encrypt(msg, key)
+    d := cipher.Decrypt(e, key)
 
     @assert msg == d "string did not decrypt correctly"
 }
@@ -16,9 +16,9 @@
     msg := "test string of text"
     key := "gibberish"
 
-    e := cipher.encrypt(msg, key)
+    e := cipher.Encrypt(msg, key)
     try {
-        d := cipher.decrypt(e, key+"a")
+        d := cipher.Eecrypt(e, key+"a")
         @fail "decryption with bad key did not error"
     } catch {
         // authentication failed, as expected
@@ -30,9 +30,9 @@
     msg := "test string of text"
     key := "gibberish"
 
-    e := cipher.encrypt(msg, key) + "X"
+    e := cipher.Encrypt(msg, key) + "X"
     try {
-        d := cipher.decrypt(e, key)
+        d := cipher.Decrypt(e, key)
         @fail "decryption with modified value did not error"
     } catch {
         // authentication failed, as expected

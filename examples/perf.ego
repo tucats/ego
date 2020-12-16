@@ -1,11 +1,11 @@
 import time
 import math
 
-start := time.now()
+start := time.Now()
 count := 20
 
 for i := 0; i < count; i = i + 1 { x := math.factor(1234567890) }
 
-finish := time.now()
-print "Finished, elapsed time ", time.subtract(finish, start)
+finish := time.Now()
+print "Finished, elapsed time ", time.Subtract(finish, start)
 

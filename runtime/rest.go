@@ -34,10 +34,10 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	return map[string]interface{}{
 		"client":     client,
-		"get":        RestGet,
-		"post":       RestPost,
-		"base":       RestBase,
-		"media":      RestMedia,
+		"Get":        RestGet,
+		"Post":       RestPost,
+		"Base":       RestBase,
+		"Media":      RestMedia,
 		"media_type": "application/json",
 		"baseURL":    "",
 		"response":   "",
