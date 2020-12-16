@@ -3,6 +3,7 @@ package io
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/chzyer/readline"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -11,6 +12,7 @@ import (
 
 // ReaderInstance is the readline Instance used for console input
 var consoleReader *readline.Instance
+var consoleLock sync.Mutex
 
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
@@ -47,10 +49,12 @@ func ReadConsoleText(prompt string) string {
 	}
 
 	// Nope, let's use readline. IF we have never initialized
-	// the reader, let's do so now.
+	// the reader, let's do so now (in a threadsafe fashion)
+	consoleLock.Lock()
 	if consoleReader == nil {
 		consoleReader, _ = readline.New(prompt)
 	}
+	consoleLock.Unlock()
 
 	if len(prompt) > 1 && prompt[:1] == "~" {
 		b, _ := consoleReader.ReadPassword(prompt[1:])
