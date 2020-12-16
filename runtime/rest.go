@@ -71,7 +71,13 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 	this := getThis(s)
-	base := util.GetString(args[0])
+
+	base := ""
+	if len(args) > 0 {
+		base = util.GetString(args[0])
+	} else {
+		base = persistence.Get("logon-server")
+	}
 
 	this["baseURL"] = base
 	return this, nil

@@ -1,4 +1,7 @@
 // Administrative functions for Server
+//
+// Create or update a user in the user database
+//
 
 if !_superuser {
     @status 403

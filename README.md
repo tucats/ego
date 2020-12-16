@@ -125,6 +125,29 @@ The command line option `--realm` can be used to create the name of the authenti
 realm; if not specified the default realm name is "Ego Server". This is returned as part
 of the 401 HTTP response when authentication is not provided.
 
+Server startup scans the `services/` directory below the Ego path to find the Ego programs
+that offer endpoint support. This directory structure will map to the endpoints that the
+server responds to.  For example, a service program named `foo` in the `services/` directory 
+will be referenced with an endoint like http://host:port/services/foo
+
+It is the responsibility of each endpoint to do whatever validation is requireed for
+the endpoint. To help support this, a number of global variables are set up for the
+endpoint service program which describe  information about the rest call and the
+credentials (if any) of the caller.
+
+### Profile items
+The REST server can be easily controlled by persistent items in the current profile,
+which are set with the `ego profile set` command or via program operation using the
+`profile` package.
+
+| item | description |
+|------| ------------|
+| default-credential | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| logon-userdata | the path to the JSON file containing the user data |
+| token-expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
+| token-key | A string used to encrypt tokens. This can be any string value |
+
+
 ### Global Variables
 Each time a REST call is made, the program associated with the endpoint is run. When it
 runs, it will have a number of global variables set already that the program can use
