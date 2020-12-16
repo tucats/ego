@@ -5,16 +5,15 @@ import cipher
 // Simple test of storing user data
 {
 	msg := "hidden message"
-	t := cipher.token(msg)
-	@assert cipher.valid(t) == true "token is not valid"package cipher
-	@assert cipher.getuser(t) == msg "token does not contain expected user data"
+	t := cipher.create(msg)
+	@assert cipher.validate(t) == true "token is not valid"package cipher
+	@assert cipher.token(t).name == msg "token does not contain expected user data"
 }
 
 {
 	msg := "hidden message"
-	t := cipher.token(msg) + "0"
-	@assert cipher.valid(t) == false "token is not invalid"
-	@assert cipher.getuser(t) ==  false "token does not contain empty user data"
+	t := cipher.create(msg) + "00"
+	@assert cipher.validate(t) == false "token is not invalid"
 }
 {
 	td := profile.get("token-expiration")
@@ -22,9 +21,9 @@ import cipher
 		td := "5m"
 	}
 	call profile.set("token-expiration", ".5s")
-	t := cipher.token("test")
+	t := cipher.create("test")
 	call time.sleep("1s")
-	@assert cipher.valid(t) == false "token should have been invalid"
+	@assert cipher.validate(t) == false "token should have been invalid"
 	call profile.set("token-expiration", td)
 }
 

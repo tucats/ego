@@ -1,13 +1,13 @@
 @test "io.expand() testing"
 
 {
-    want := ["/Users/tom/go/src/github.com/tucats/ego/functions.go"]
-    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/functions.go")
+    want := ["/Users/tom/go/src/github.com/tucats/ego/main.go"]
+    got := io.expand("/Users/tom/go/src/github.com/tucats/ego/main.go")
     @assert want == got "single path name with no extension"
 }
 
 {
-    want := "/Users/tom/go/src/github.com/tucats/ego/functions.go"
+    want := "/Users/tom/go/src/github.com/tucats/ego/commands/logon.go"
     got := io.expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
     got = got[0]
     @assert want == got "single path name with .go extension"
