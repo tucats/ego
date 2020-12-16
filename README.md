@@ -80,13 +80,16 @@ preference item is available, it is used as a Bearer token string for authentica
 
 The resulting item can be used to make calls using the connection just created. For 
 example, if the value of `rest.open()` was stored in the variable `r`, the following
-functions would become available:
+functions would become available: 
 
 | Function | Description |
 |----------|-------------|
 | r.base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
 | r.get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
 | r.post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
+
+&nbsp; 
+&nbsp;     
 
 Additionally, the values `r.status`, `r.headers`, and `r.response` can be used to examing the HTTP status
 code of the last request, the headers returned, and the value of the response body of the last request.
@@ -163,6 +166,8 @@ to control its operation.
 | _token      | string  | The Token authentication value, or an empty string if not used |
 | _token_valid | bool | The Token authentication value is a valid token |
 | _user       | string  | The Basic authentication username provided, or identify of a valid Token |
+&nbsp; 
+&nbsp;     
 
 ### Functions
 There are additional functions made available to the Ego programs run as services. These are generally used to support writing
@@ -174,13 +179,15 @@ functions.
 | u := getuser(name) | Get the user data for a given user
 | call setuser(u) | Update or create a user with the given user data
 | f := authenticated(user,pass) | Boolean if the username and password are valid
+&nbsp; 
+&nbsp;     
 
 A sample program might look like this:
 
     // Assume u is username
     //        p is password
     //        n is a new password to assign to the user
-    
+
     if authenticated(u, p) {
         d := getuser(u)
         d.password = newpass
