@@ -70,8 +70,13 @@ func Server(c *cli.Context) error {
 		port = p
 	}
 
-	addr := ":" + strconv.Itoa(port)
+	// If there is a maximum size to the cache of compiled service programs,
+	// set it now.
+	if c.WasFound("cache-size") {
+		server.MaxCachedEntries, _ = c.GetInteger("cache-size")
+	}
 
+	addr := ":" + strconv.Itoa(port)
 	if c.GetBool("not-secure") {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 		err = http.ListenAndServe(addr, nil)

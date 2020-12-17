@@ -113,6 +113,11 @@ var ServerGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_REALM",
 	},
 	{
+		LongName:    "cache-size",
+		Description: "Number of service programs to cache in memory",
+		OptionType:  cli.IntType,
+	},
+	{
 		LongName:            "users",
 		ShortName:           "u",
 		Description:         "File with authentication JSON data",
