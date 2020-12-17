@@ -25,6 +25,9 @@ func Server(c *cli.Context) error {
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
+	// Establish the admin endpoints
+	http.HandleFunc("/admin/user", server.UserHandler)
+
 	// Set up tracing for the server, and enable the logger if
 	// needed.
 	if c.WasFound("trace") {

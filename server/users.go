@@ -216,7 +216,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if u, ok := args[0].(map[string]interface{}); ok {
 		name := ""
 		if n, ok := u["name"]; ok {
-			name = util.GetString(n)
+			name = strings.ToLower(util.GetString(n))
 		}
 		r, ok := userDatabase[name]
 		if !ok {
@@ -243,6 +243,34 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
+// Implements the DeleteUser() function. Returns true if the name was deleted,
+// else false if it was not a valid username.
+func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	var err error
+	// Before we do anything else, are we running this call as a superuser?
+	superUser := false
+	if s, ok := s.Get("_superuser"); ok {
+		superUser = util.GetBool(s)
+	}
+	if !superUser {
+		return nil, errors.New("no privilege for operation")
+	}
+
+	// There must be one parameter, which is the username
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+	name := strings.ToLower(util.GetString(args[0]))
+
+	if _, ok := userDatabase[name]; ok {
+		delete(userDatabase, name)
+		err = updateUserDatabase()
+		return true, err
+	}
+	return false, nil
+}
+
 // Implements the GetUser() function
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// There must be one parameter, which is a username
@@ -251,7 +279,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	r := map[string]interface{}{}
-	name := util.GetString(args[0])
+	name := strings.ToLower(util.GetString(args[0]))
 	t, ok := userDatabase[name]
 	if !ok {
 		return r, nil
@@ -286,18 +314,23 @@ func updateUserDatabase() error {
 	return err
 }
 
-// validateToken is a helper function that calls the builtin cipher.validate()
+// validateToken is a helper function that calls the builtin cipher.validate(). The
+// optional second argument (true) tells the function to generate an error state for
+// the various ways the token was considered invalid.
 func validateToken(t string) bool {
-	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.validate", t)
+	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
+	if err != nil {
+		ui.Debug(ui.ServerLogger, "Token validation error: "+err.Error())
+	}
 	return v.(bool)
 }
 
 // tokenUser is a helper function that calls the builtin cipher.token() and returns
 // the user field
 func tokenUser(t string) string {
-	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.validate", t)
+	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if util.GetBool(v) {
-		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.token", t)
+		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
 		if m, ok := t.(map[string]interface{}); ok {
 			if n, ok := m["name"]; ok {
 				return util.GetString(n)

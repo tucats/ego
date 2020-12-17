@@ -65,6 +65,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("permission", Permission)
 	_ = syms.SetAlways("setuser", SetUser)
 	_ = syms.SetAlways("getuser", GetUser)
+	_ = syms.SetAlways("deleteuser", DeleteUser)
 	_ = syms.SetAlways("_rest_response", nil)
 	runtime.AddBuiltinPackages(syms)
 

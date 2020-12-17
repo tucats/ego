@@ -36,6 +36,7 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"client":     client,
 		"Get":        RestGet,
 		"Post":       RestPost,
+		"Delete":     RestDelete,
 		"Base":       RestBase,
 		"Media":      RestMedia,
 		"media_type": "application/json",
@@ -112,8 +113,9 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
-		isJSON = (ms == "application/json")
+		isJSON = (strings.Contains(ms, "application/json"))
 		r.Header.Add("Accept", ms)
+		r.Header.Add("Content_Type", ms)
 	}
 	response, err := r.Get(url)
 	if err != nil {
@@ -126,7 +128,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["headers"] = headerMap(response)
 
 	rb := string(response.Body())
-	if status >= 200 && status <= 299 && isJSON {
+	if isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
@@ -185,6 +187,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		ms := util.GetString(media)
 		isJSON = (ms == "application/json")
 		r.Header.Add("Accept", ms)
+		r.Header.Add("Content_Type", ms)
 	}
 	response, err := r.Post(url)
 	if err != nil {
@@ -197,7 +200,65 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["headers"] = headerMap(response)
 
 	rb := string(response.Body())
-	if status >= 200 && status <= 299 && isJSON {
+	if isJSON {
+		var jsonResponse interface{}
+		err := json.Unmarshal([]byte(rb), &jsonResponse)
+		this["response"] = jsonResponse
+		return jsonResponse, err
+	}
+	this["response"] = rb
+	return rb, nil
+}
+
+// RestDelete implements the delete() rest function
+func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	client, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	this := getThis(s)
+	if len(args) < 1 || len(args) > 2 {
+		return nil, fmt.Errorf("incorrect number of arguments")
+	}
+	url := applyBaseURL(util.GetString(args[0]), this)
+	var body interface{} = ""
+	if len(args) > 1 {
+		body = args[1]
+	}
+
+	// If the media type is json, then convert the value passed
+	// into a json value for the request body.
+	if mt, ok := this["media_type"]; ok {
+		media := util.GetString(mt)
+		if strings.Contains(media, "application/json") {
+			b, err := json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
+			body = string(b)
+		}
+	}
+
+	r := client.NewRequest().SetBody(body)
+	isJSON := false
+	if media, ok := this["media_type"]; ok {
+		ms := util.GetString(media)
+		isJSON = (strings.Contains(ms, "application/json"))
+		r.Header.Add("Accept", ms)
+		r.Header.Add("Content_Type", ms)
+	}
+	response, err := r.Delete(url)
+	if err != nil {
+		this["status"] = 503
+		return nil, err
+	}
+
+	status := response.StatusCode()
+	this["status"] = status
+	this["headers"] = headerMap(response)
+
+	rb := string(response.Body())
+	if isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
