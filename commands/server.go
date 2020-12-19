@@ -1,9 +1,16 @@
 package commands
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
@@ -11,8 +18,113 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 )
 
+// Detach starts the sever as a detached process
+func Start(c *cli.Context) error {
+
+	// Figure out the operating-system-approprite pid file name
+	pidFile := "/tmp/ego-server.pid"
+	if strings.HasPrefix(runtime.GOOS, "windows") {
+		pidFile = "\\tmp\\ego-server.pid"
+	}
+
+	// Is something already running?
+	b, err := ioutil.ReadFile(pidFile)
+	if err == nil {
+		if pid, err := strconv.Atoi(string(b)); err == nil {
+			if _, err := os.FindProcess(pid); err == nil {
+				return fmt.Errorf("server already running as pid %d", pid)
+			}
+		}
+	}
+
+	// Construct the command line again, but replace the DETACH verb
+	// with a RUN verb
+	args := []string{}
+	for _, v := range os.Args {
+		detached := false
+		if v == "start" {
+			v = "run"
+			detached = true
+		}
+		args = append(args, v)
+		if detached {
+			args = append(args, "--is-detached")
+		}
+	}
+
+	args[0], err = filepath.Abs(args[0])
+	if err != nil {
+		return err
+	}
+	//var sysproc = &syscall.SysProcAttr{Setsid: true, Noctty: true}
+
+	logFileName := os.Getenv("EGO_LOG")
+	if logFileName == "" {
+		logFileName = "ego-server.log"
+	}
+	if c.WasFound("log") {
+		logFileName, _ = c.GetString("log")
+	}
+	logf, err := os.Create(logFileName)
+	if err != nil {
+		return err
+	}
+	_, err = logf.WriteString(fmt.Sprintf("*** Log file initialized %s ***\n", time.Now().Format(time.UnixDate)))
+	if err != nil {
+		return err
+	}
+	var attr = syscall.ProcAttr{
+		Dir: ".",
+		Env: os.Environ(),
+		Files: []uintptr{
+			os.Stdin.Fd(),
+			logf.Fd(),
+			logf.Fd(),
+		},
+		//Sys: sysproc,
+	}
+
+	ui.Say("%v", args)
+	pid, err := syscall.ForkExec(args[0], args, &attr)
+	if err == nil {
+		ui.Say("Server started as process %d", pid)
+		_ = ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0777)
+	}
+	return err
+}
+
+// Stop stops a running server if it exists
+func Stop(c *cli.Context) error {
+
+	// Figure out the operating-system-approprite pid file name
+	pidFile := "/tmp/ego-server.pid"
+	if strings.HasPrefix(runtime.GOOS, "windows") {
+		pidFile = "\\tmp\\ego-server.pid"
+	}
+
+	// Is something already running?
+	b, err := ioutil.ReadFile(pidFile)
+	var pid int
+	var proc *os.Process
+	if err == nil {
+		pid, err = strconv.Atoi(string(b))
+		if err == nil {
+			proc, err = os.FindProcess(pid)
+			if err == nil {
+				err = proc.Kill()
+				if err == nil {
+					ui.Say("Server (pid %d) stopped", pid)
+					err = os.Remove(pidFile)
+				}
+			}
+		}
+	}
+	return err
+}
+
 // Server initializes the server
 func Server(c *cli.Context) error {
+
 	// Set up the logger unless specifically told not to
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)

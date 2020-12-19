@@ -27,7 +27,6 @@ var EgoGrammar = []cli.Option{
 		LongName:    "server",
 		Description: "Accept REST calls",
 		OptionType:  cli.Subcommand,
-		Action:      commands.Server,
 		Value:       ServerGrammar,
 	},
 	{
@@ -77,8 +76,32 @@ var LogonGrammar = []cli.Option{
 	},
 }
 
-// ServerGrammar handles command line options for the server subcommand
+// ServerGrammar contains the grammar of SERVER subcommands
 var ServerGrammar = []cli.Option{
+	{
+		LongName:    "run",
+		Description: "Run the rest server",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Server,
+		Value:       ServerRunGrammar,
+	},
+	{
+		LongName:    "start",
+		Description: "Start the rest server as a detached process",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Start,
+		Value:       ServerRunGrammar,
+	},
+	{
+		LongName:    "stop",
+		Description: "Stop the detached rest server",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Stop,
+	},
+}
+
+// ServerRunGrammar handles command line options for the server subcommand
+var ServerRunGrammar = []cli.Option{
 	{
 		LongName:            "port",
 		ShortName:           "p",
@@ -92,6 +115,12 @@ var ServerGrammar = []cli.Option{
 		OptionType:          cli.BooleanType,
 		Description:         "If set, use HTTP instead of HTTPS",
 		EnvironmentVariable: "EGO_INSECURE",
+	},
+	{
+		LongName:    "is-detached",
+		OptionType:  cli.BooleanType,
+		Description: "If set, server assumes it is already detached",
+		Private:     true,
 	},
 	{
 		LongName:    "no-log",
