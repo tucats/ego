@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/tables"
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/symbols"
 )
 
 type RestStatus struct {
@@ -28,15 +29,10 @@ type RestStatus struct {
 
 // Detach starts the sever as a detached process
 func Start(c *cli.Context) error {
-
-	// Figure out the operating-system-approprite pid file name
-	pidFile := "/tmp/ego-server.pid"
-	if strings.HasPrefix(runtime.GOOS, "windows") {
-		pidFile = "\\tmp\\ego-server.pid"
-	}
-
 	// Is something already running?
+	pidFile := getPidFile(c)
 	b, err := ioutil.ReadFile(pidFile)
+
 	if err == nil {
 		if pid, err := strconv.Atoi(string(b)); err == nil {
 			if _, err := os.FindProcess(pid); err == nil {
@@ -103,10 +99,7 @@ func Start(c *cli.Context) error {
 func Stop(c *cli.Context) error {
 
 	// Figure out the operating-system-approprite pid file name
-	pidFile := "/tmp/ego-server.pid"
-	if strings.HasPrefix(runtime.GOOS, "windows") {
-		pidFile = "\\tmp\\ego-server.pid"
-	}
+	pidFile := getPidFile(c)
 
 	// Is something already running?
 	b, err := ioutil.ReadFile(pidFile)
@@ -131,10 +124,12 @@ func Stop(c *cli.Context) error {
 // Server initializes the server
 func Server(c *cli.Context) error {
 
+	session, _ := symbols.RootSymbolTable.Get("_session")
+
 	// Set up the logger unless specifically told not to
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
-		ui.Debug(ui.ServerLogger, "*** Configuring REST server ***")
+		ui.Debug(ui.ServerLogger, "*** Starting server session %s", session)
 	}
 
 	// Do we enable the /code endpoint? This is off by default.
@@ -381,4 +376,23 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	return err
+}
+
+// Use the --port specifiation, if any, to create a platform-specific
+// filename for the pid
+func getPidFile(c *cli.Context) string {
+
+	port, ok := c.GetInteger("port")
+	portString := fmt.Sprintf("-%d", port)
+	if !ok {
+		portString = ""
+	}
+
+	// Figure out the operating-system-approprite pid file name
+	pidPath := "/tmp/"
+	if strings.HasPrefix(runtime.GOOS, "windows") {
+		pidPath = "\\tmp\\"
+	}
+	return filepath.Join(pidPath, "ego-server"+portString+".pid")
+
 }

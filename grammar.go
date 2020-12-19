@@ -146,6 +146,18 @@ var ServerGrammar = []cli.Option{
 		Description: "Stop the detached rest server",
 		OptionType:  cli.Subcommand,
 		Action:      commands.Stop,
+		Value:       ServerStopGrammar,
+	},
+}
+
+// ServerStopGrammar handles command line options for the server subcommand
+var ServerStopGrammar = []cli.Option{
+	{
+		LongName:            "port",
+		ShortName:           "p",
+		OptionType:          cli.IntType,
+		Description:         "Specify port number of server to stop",
+		EnvironmentVariable: "EGO_PORT",
 	},
 }
 
