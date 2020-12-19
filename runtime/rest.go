@@ -128,7 +128,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["headers"] = headerMap(response)
 
 	rb := string(response.Body())
-	if isJSON {
+	if isJSON && ((status >= 200 && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse

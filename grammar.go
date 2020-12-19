@@ -76,8 +76,57 @@ var LogonGrammar = []cli.Option{
 	},
 }
 
+var ServerDeleteGrammar = []cli.Option{
+	{
+		LongName:    "username",
+		ShortName:   "u",
+		Description: "Username to delete",
+		OptionType:  cli.StringType,
+	},
+}
+var ServerUserGrammar = []cli.Option{
+	{
+		LongName:    "username",
+		ShortName:   "u",
+		Description: "Username to create or update",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "password",
+		ShortName:   "p",
+		Description: "Password to assign to user",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "permissions",
+		Description: "Permissions to grant to user",
+		OptionType:  cli.StringListType,
+	},
+}
+
 // ServerGrammar contains the grammar of SERVER subcommands
 var ServerGrammar = []cli.Option{
+
+	{
+		LongName:    "add-user",
+		Description: "Add a new user to the server's user database",
+		OptionType:  cli.Subcommand,
+		Action:      commands.AddUser,
+		Value:       ServerUserGrammar,
+	},
+	{
+		LongName:    "delete-user",
+		Description: "Delete a user to the server's user database",
+		OptionType:  cli.Subcommand,
+		Action:      commands.DeleteUser,
+		Value:       ServerDeleteGrammar,
+	},
+	{
+		LongName:    "list-users",
+		Description: "List users in the server's user database",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ListUsers,
+	},
 	{
 		LongName:    "run",
 		Description: "Run the rest server",

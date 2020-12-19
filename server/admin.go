@@ -90,6 +90,62 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// UserListHandler is the rest handler for /admin/user endpoint
+// operations
+func UserListHandler(w http.ResponseWriter, r *http.Request) {
+
+	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
+	w.Header().Add("Content_Type", "application/json")
+
+	user, hasAdminPrivs := isAdminRequestor(r)
+	if !hasAdminPrivs {
+		ui.Debug(ui.ServerLogger, "User %s not authorized", user)
+		w.WriteHeader(403)
+		msg := `{ "status" : 403, "msg" : "Not authorized" }`
+		_, _ = io.WriteString(w, msg)
+		return
+	}
+
+	var err error
+	// Currently we only support POST & DELETE
+	if r.Method != "GET" {
+		w.WriteHeader(418)
+		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
+		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
+		return
+	}
+
+	type userData struct {
+		Name        string   `json:"name"`
+		Permissions []string `json:"permissions"`
+	}
+	type userList []userData
+	result := userList{}
+	for k, u := range userDatabase {
+		ud := userData{}
+		ud.Name = k
+		ud.Permissions = []string{}
+		for p, v := range u.Permissions {
+			if v {
+				ud.Permissions = append(ud.Permissions, p)
+			}
+		}
+		result = append(result, ud)
+	}
+
+	b, err := json.Marshal(result)
+	w.WriteHeader(200)
+	_, _ = w.Write(b)
+
+	// Clean up and go home
+	if err != nil {
+		w.WriteHeader(500)
+		msg := `{ "status" : 500, "msg" : "%s"`
+		_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
+		ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
+	}
+}
+
 // For a given userid, indicate if this user exists and has admin privileges
 func isAdminRequestor(r *http.Request) (string, bool) {
 	var user string
