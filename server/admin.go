@@ -136,6 +136,7 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(result)
 	w.WriteHeader(200)
 	_, _ = w.Write(b)
+	ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result))
 
 	// Clean up and go home
 	if err != nil {

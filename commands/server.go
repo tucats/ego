@@ -45,7 +45,7 @@ func Start(c *cli.Context) error {
 		}
 	}
 
-	// Construct the command line again, but replace the DETACH verb
+	// Construct the command line again, but replace the START verb
 	// with a RUN verb
 	args := []string{}
 	for _, v := range os.Args {
@@ -91,8 +91,6 @@ func Start(c *cli.Context) error {
 		},
 		//Sys: sysproc,
 	}
-
-	ui.Say("%v", args)
 	pid, err := syscall.ForkExec(args[0], args, &attr)
 	if err == nil {
 		ui.Say("Server started as process %d", pid)
