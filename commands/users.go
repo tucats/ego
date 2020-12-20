@@ -162,22 +162,28 @@ func ListUsers(c *cli.Context) error {
 			body := string(response.Body())
 			err = json.Unmarshal([]byte(body), &ud)
 			if err == nil {
-				t, _ := tables.New([]string{"User", "ID", "Permissions"})
-				for _, u := range ud.Items {
-					perms := ""
-					for i, p := range u.Permissions {
-						if i > 0 {
-							perms = perms + ", "
+				switch ui.OutputFormat {
+				case "text":
+					t, _ := tables.New([]string{"User", "ID", "Permissions"})
+					for _, u := range ud.Items {
+						perms := ""
+						for i, p := range u.Permissions {
+							if i > 0 {
+								perms = perms + ", "
+							}
+							perms = perms + p
 						}
-						perms = perms + p
+						if perms == "" {
+							perms = "."
+						}
+						_ = t.AddRowItems(u.Name, u.ID, perms)
 					}
-					if perms == "" {
-						perms = "."
-					}
-					_ = t.AddRowItems(u.Name, u.ID, perms)
+					_ = t.SortRows(0, true)
+					_ = t.Print("text")
+
+				case "json":
+					fmt.Printf("%s\n", body)
 				}
-				_ = t.SortRows(0, true)
-				_ = t.Print(ui.OutputFormat)
 			}
 		}
 	}
