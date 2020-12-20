@@ -515,7 +515,7 @@ and generate a commit with the commit message "increment build number".
 `Ego` uses the standard `persistence` package in `gopackages`. This allows the preferences
 to be set from within the language (using the `profile` package) or using the Ego command
 line `profile` subcommand. These preferences can be used to control the behavior of the Ego c
-ommand-line interface, and are also used by the other subcommands that run unit test, the 
+ommand-line interface, and are also used by the other subcommands that run unit tests, the 
 REST server, etc.
 
 The preferences are stored in ~/.org.fernwood/ego.json which is a JSON file that contains
@@ -604,6 +604,33 @@ Here's a simple example:
 You can start Ego as a REST server, which responds to standard REST calls on a given port.
 When a valid REST call is made, Ego programs located in the $EGO_PATH/services directory
 are used to respond to the request. Each program becomes an endpoint.
+### Server subcommands
+The `ego server` command has subcommands that describe the operations you can perform. The
+commands that start or stop a rest server or evaluate it's status must be run on the same
+computer that the server itself is running on. Commands that affect user credentials, etc.
+can be performed from any location if the logon-server preference is set to point to the
+server in question. For each of the commands below, you can specify the option `--port n` 
+to indicate that you want to control the server listening on the given port number, where
+`n` is an integer value for a publically available port number.
+
+| Subcommand | Description |
+|------------| ------------|
+| start | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
+| stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
+| restart | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
+| status | Report on the status of the server. |
+| add-user | Create a new user credential. Options specify username, password, and permissions |
+| delete-user | Delete a user credential. Option specifies the username |
+| list-users | List the user credentials (except password) |
+
+&nbsp;
+&nbsp;
+
+The commands that start and stop a server only required native operating system permissions to start or stop
+a process. The commands that affect user credentials in the server can only be executed when logged into the
+server with a process that has `root` privileges, as defined by the credentials database in that server.
+
+When a server is running, it generates a log file (in the current directory, by default) which tracks the server startup and status of requests made to the server.
 
 ### Authentication
 If you do nothing else, the server will start up and support a username of "admin" and a
