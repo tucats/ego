@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/tables"
@@ -29,46 +30,21 @@ func AddUser(c *cli.Context) error {
 		pass = ui.PromptPassword("Password: ")
 	}
 
-	path := persistence.Get("logon-server")
-	if path == "" {
-		path = "http://localhost:8080"
+	payload := reps.User{
+		Name:        user,
+		Password:    pass,
+		Permissions: permissions,
 	}
-	url := strings.TrimSuffix(path, "/") + "/admin/user"
-
-	payload := map[string]interface{}{
-		"name":        user,
-		"password":    pass,
-		"permissions": permissions,
-	}
-	b, err := json.Marshal(payload)
-
+	resp := reps.UserReponse{}
+	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
 	if err == nil {
-		client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-		if token := persistence.Get("logon-token"); token != "" {
-			client.SetAuthScheme("Token")
-			client.SetAuthToken(token)
-		}
-		r := client.NewRequest()
-		r.Header.Add("Accepts", "application/json")
-		r.SetBody(string(b))
-		var response *resty.Response
-		response, err = r.Post(url)
-		if response.StatusCode() == 404 && len(response.Body()) == 0 {
-			err = fmt.Errorf("%d %s", 404, "not found")
-		}
-		if response.StatusCode() == 403 {
-			err = fmt.Errorf("You do not have permission to delete a user")
-		}
-		if err == nil {
-			status := RestStatus{}
-			body := string(response.Body())
-			err = json.Unmarshal([]byte(body), &status)
+		if ui.OutputFormat == "text" {
+			ui.Say(resp.Message)
+		} else {
+			var b []byte
+			b, err = json.Marshal(resp)
 			if err == nil {
-				if status.Status < 200 || status.Status > 299 {
-					err = fmt.Errorf("%d %s", status.Status, status.Msg)
-				} else {
-					ui.Say(status.Msg)
-				}
+				fmt.Printf("%s\n", string(b))
 			}
 		}
 	}
@@ -84,45 +60,16 @@ func DeleteUser(c *cli.Context) error {
 	for user == "" {
 		user = ui.Prompt("Username: ")
 	}
-
-	path := persistence.Get("logon-server")
-	if path == "" {
-		path = "http://localhost:8080"
-	}
-	url := strings.TrimSuffix(path, "/") + "/admin/user"
-
-	payload := map[string]interface{}{
-		"name": user,
-	}
-
-	b, err := json.Marshal(payload)
+	resp := reps.UserReponse{}
+	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
 	if err == nil {
-		client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-		if token := persistence.Get("logon-token"); token != "" {
-			client.SetAuthScheme("Token")
-			client.SetAuthToken(token)
-		}
-		r := client.NewRequest()
-		r.Header.Add("Accepts", "application/json")
-		r.SetBody(string(b))
-		var response *resty.Response
-		response, err = r.Delete(url)
-		if response.StatusCode() == 404 && len(response.Body()) == 0 {
-			err = fmt.Errorf("%d %s", 404, "not found")
-		}
-		if response.StatusCode() == 403 {
-			err = fmt.Errorf("You do not have permission to for this operation user")
-		}
-		if err == nil {
-			status := RestStatus{}
-			body := string(response.Body())
-			err = json.Unmarshal([]byte(body), &status)
+		if ui.OutputFormat == "text" {
+			ui.Say(resp.Message)
+		} else {
+			var b []byte
+			b, err = json.Marshal(resp)
 			if err == nil {
-				if status.Status < 200 || status.Status > 299 {
-					err = fmt.Errorf("%d %s", status.Status, status.Msg)
-				} else {
-					ui.Say(status.Msg)
-				}
+				fmt.Printf("%s\n", string(b))
 			}
 		}
 	}
@@ -135,7 +82,7 @@ func ListUsers(c *cli.Context) error {
 	if path == "" {
 		path = "http://localhost:8080"
 	}
-	url := strings.TrimSuffix(path, "/") + "/admin/users"
+	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	if token := persistence.Get("logon-token"); token != "" {

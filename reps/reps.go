@@ -1,17 +1,54 @@
 package reps
 
-import "github.com/google/uuid"
+import (
+	"time"
 
-type User struct {
-	Name        string    `json:"name"`
-	ID          uuid.UUID `json:"id"`
-	Password    string    `json:"password"`
-	Permissions []string  `json:"permissions"`
+	"github.com/google/uuid"
+)
+
+// RestResponse describes the HTTP status result and any helpful
+// additional message. This must be part of all response objects.
+type RestResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"msg"`
 }
 
+// User describbes a single user in the user database. The password field
+// must be removed from response objects.
+type User struct {
+	Name        string    `json:"name"`
+	ID          uuid.UUID `json:"id,omitempty"`
+	Password    string    `json:"password,omitempty"`
+	Permissions []string  `json:"permissions,omitempty"`
+}
+
+// BaseCollection is a component of any collection type returned
+// as a response.
+type BaseCollection struct {
+	Count int `json:"count"`
+	Start int `json:"start"`
+}
+
+// UserCollection is a collection of User response objects
 type UserCollection struct {
+	BaseCollection
 	Count  int    `json:"count"`
 	Items  []User `json:"items"`
-	Status int    `json:"status"`
-	Msg    string `json:"msg"`
+	Status RestResponse
+}
+
+// UserResponse describes a user when the information is passed
+// back to a caller as a response object
+type UserReponse struct {
+	User
+	RestResponse
+}
+
+// ServerStatus describes the state of a running server. A json version
+// of this information is the contents of the pid file.
+type ServerStatus struct {
+	PID     int       `json:"pid"`
+	Started time.Time `json:"started"`
+	LogID   uuid.UUID `json:"logID"`
+	Args    []string  `json:"args"`
 }

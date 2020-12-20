@@ -7,10 +7,14 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/reps"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/symbols"
+	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
+
+const ApplicationJSON = "application/json"
 
 // RestOpen implements the open() rest function
 func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -303,4 +307,61 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 		return nil
 	}
 	return this
+}
+
+// Exchange is a helper wrapper around a rest call.
+func Exchange(endpoint, method string, body interface{}, response interface{}) error {
+
+	url := persistence.Get("application-server")
+	if url == "" {
+		url = persistence.Get("logon-server")
+	}
+	if url == "" {
+		url = "http://localhost:8080"
+	}
+
+	url = strings.TrimSuffix(url, "/") + endpoint
+
+	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+	if token := persistence.Get("logon-token"); token != "" {
+		client.SetAuthScheme("Token")
+		client.SetAuthToken(token)
+	}
+	r := client.NewRequest()
+	r.Header.Add("Accept", ApplicationJSON)
+	r.Header.Add("Content_Type", ApplicationJSON)
+
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		r.SetBody(b)
+	}
+	var resp *resty.Response
+	var err error
+	switch strings.ToUpper(method) {
+	case "GET":
+		resp, err = r.Get(url)
+	case "POST":
+		resp, err = r.Post(url)
+	case "DELETE":
+		resp, err = r.Delete(url)
+	default:
+		err = fmt.Errorf("unsupported REST method: %s", method)
+	}
+
+	if err == nil && response != nil {
+		body := string(resp.Body())
+		if !tokenizer.InList(body[0:1], []string{"{", "[", "\""}) {
+			r := reps.RestResponse{
+				Status:  resp.StatusCode(),
+				Message: strings.TrimSuffix(body, "\n"),
+			}
+			b, _ := json.Marshal(r)
+			body = string(b)
+		}
+		err = json.Unmarshal([]byte(body), response)
+	}
+	return err
 }

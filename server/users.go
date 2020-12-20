@@ -80,7 +80,7 @@ func setPermission(user, privilege string, enabled bool) error {
 	privname := strings.ToLower(privilege)
 	if u, ok := userDatabase[user]; ok {
 		if u.Permissions == nil {
-			u.Permissions = []string{}
+			u.Permissions = []string{"logon"}
 		}
 		pn := -1
 		for i, p := range u.Permissions {
@@ -239,30 +239,30 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 		r, ok := userDatabase[name]
 		if !ok {
-			r = reps.User{Permissions: []string{}}
+			r = reps.User{
+				Name:        name,
+				ID:          uuid.New(),
+				Permissions: []string{},
+			}
 		}
 		if n, ok := u["password"]; ok {
 			r.Password = HashString(util.GetString(n))
 		}
 		if n, ok := u["permissions"]; ok {
-			// If permissions are specified, we clear out all the existing
-			// ones and replace them with the new ones we get here.
-			r.Permissions = []string{}
 			if m, ok := n.([]interface{}); ok {
-				for _, p := range m {
-					r.Permissions = append(r.Permissions, util.GetString(p))
+				if len(m) > 0 {
+					r.Permissions = []string{}
+					for _, p := range m {
+						pname := util.GetString(p)
+						if pname != "." {
+							r.Permissions = append(r.Permissions, pname)
+						}
+					}
 				}
 			}
 		}
-
-		if old, found := userDatabase[name]; found {
-			r.ID = old.ID
-		} else {
-			r.ID = uuid.New()
-		}
 		userDatabase[name] = r
 		err = updateUserDatabase()
-
 	}
 	return true, err
 }

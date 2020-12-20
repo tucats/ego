@@ -2,16 +2,14 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -19,23 +17,14 @@ import (
 	"github.com/tucats/gopackages/symbols"
 )
 
-type RestStatus struct {
-	Status int    `json:"status"`
-	Msg    string `json:"msg"`
-}
-
 // Detach starts the sever as a detached process
 func Start(c *cli.Context) error {
-	// Is something already running?
-	pidFile := getPidFile(c)
-	b, err := ioutil.ReadFile(pidFile)
 
+	status, err := server.ReadPidFile(c)
 	if err == nil {
-		if pid, err := strconv.Atoi(string(b)); err == nil {
-			if _, err := os.FindProcess(pid); err == nil {
-				if !c.GetBool("force") {
-					return fmt.Errorf("server already running as pid %d", pid)
-				}
+		if _, err := os.FindProcess(status.PID); err == nil {
+			if !c.GetBool("force") {
+				return fmt.Errorf("server already running as pid %d", status.PID)
 			}
 		}
 	}
@@ -59,7 +48,6 @@ func Start(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	//var sysproc = &syscall.SysProcAttr{Setsid: true, Noctty: true}
 
 	logFileName := os.Getenv("EGO_LOG")
 	if logFileName == "" {
@@ -72,10 +60,14 @@ func Start(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = logf.WriteString(fmt.Sprintf("*** Log file initialized %s ***\n", time.Now().Format(time.UnixDate)))
-	if err != nil {
+	logID := uuid.New()
+	if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
+		logID.String(),
+		time.Now().Format(time.UnixDate)),
+	); err != nil {
 		return err
 	}
+
 	var attr = syscall.ProcAttr{
 		Dir: ".",
 		Env: os.Environ(),
@@ -88,34 +80,112 @@ func Start(c *cli.Context) error {
 	}
 	pid, err := syscall.ForkExec(args[0], args, &attr)
 	if err == nil {
+		status.Args = args
+		status.PID = pid
+		status.LogID = logID
+		err = server.WritePidFile(c, *status)
 		ui.Say("Server started as process %d", pid)
-		_ = ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0777)
+	} else {
+		_ = server.RemovePidFile(c)
 	}
 	return err
 }
 
 // Stop stops a running server if it exists
 func Stop(c *cli.Context) error {
-
-	// Figure out the operating-system-approprite pid file name
-	pidFile := getPidFile(c)
-
-	// Is something already running?
-	b, err := ioutil.ReadFile(pidFile)
-	var pid int
+	status, err := server.ReadPidFile(c)
 	var proc *os.Process
 	if err == nil {
-		pid, err = strconv.Atoi(string(b))
+		proc, err = os.FindProcess(status.PID)
 		if err == nil {
-			proc, err = os.FindProcess(pid)
+			err = proc.Kill()
 			if err == nil {
-				err = proc.Kill()
-				if err == nil {
-					ui.Say("Server (pid %d) stopped", pid)
-					err = os.Remove(pidFile)
-				}
+				ui.Say("Server (pid %d) stopped", status.PID)
+				err = server.RemovePidFile(c)
 			}
 		}
+	}
+	return err
+}
+
+// Stop stops a running server if it exists
+func Status(c *cli.Context) error {
+	running := false
+	msg := "Server not running"
+
+	status, err := server.ReadPidFile(c)
+	if err == nil {
+		if server.IsRunning(status.PID) {
+			msg = fmt.Sprintf("Server is running (pid %d) since %v", status.PID, status.Started)
+		} else {
+			_ = server.RemovePidFile(c)
+		}
+	}
+	if ui.OutputFormat == "json" {
+		fmt.Printf("%v\n", running)
+	} else {
+		fmt.Printf("%s\n", msg)
+	}
+	return nil
+}
+
+// Restart stops and then starts a server, using the information
+// from the previous start.
+func Restart(c *cli.Context) error {
+	status, err := server.ReadPidFile(c)
+	var proc *os.Process
+	if err == nil {
+		proc, err = os.FindProcess(status.PID)
+		if err == nil {
+			err = proc.Kill()
+			if err == nil {
+				ui.Say("Server (pid %d) stopped", status.PID)
+				err = server.RemovePidFile(c)
+			}
+		}
+	}
+	if err == nil {
+		args := status.Args
+
+		logFileName := os.Getenv("EGO_LOG")
+		if logFileName == "" {
+			logFileName = "ego-server.log"
+		}
+		if c.WasFound("log") {
+			logFileName, _ = c.GetString("log")
+		}
+		logf, err := os.Create(logFileName)
+		if err != nil {
+			return err
+		}
+		logID := uuid.New()
+
+		if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
+			logID.String(),
+			time.Now().Format(time.UnixDate)),
+		); err != nil {
+			return err
+		}
+
+		var attr = syscall.ProcAttr{
+			Dir: ".",
+			Env: os.Environ(),
+			Files: []uintptr{
+				os.Stdin.Fd(),
+				logf.Fd(),
+				logf.Fd(),
+			},
+		}
+		pid, err := syscall.ForkExec(args[0], args, &attr)
+		if err == nil {
+			status.PID = pid
+			status.LogID = logID
+			err = server.WritePidFile(c, *status)
+			ui.Say("Server re-started as process %d", pid)
+		} else {
+			_ = server.RemovePidFile(c)
+		}
+		return err
 	}
 	return err
 }
@@ -138,8 +208,8 @@ func Server(c *cli.Context) error {
 	}
 
 	// Establish the admin endpoints
-	http.HandleFunc("/admin/user", server.UserHandler)
-	http.HandleFunc("/admin/users", server.UserListHandler)
+	http.HandleFunc("/admin/users/", server.UserHandler)
+	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
 	// Set up tracing for the server, and enable the logger if
 	// needed.
@@ -201,23 +271,4 @@ func Server(c *cli.Context) error {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 	return err
-}
-
-// Use the --port specifiation, if any, to create a platform-specific
-// filename for the pid
-func getPidFile(c *cli.Context) string {
-
-	port, ok := c.GetInteger("port")
-	portString := fmt.Sprintf("-%d", port)
-	if !ok {
-		portString = ""
-	}
-
-	// Figure out the operating-system-approprite pid file name
-	pidPath := "/tmp/"
-	if strings.HasPrefix(runtime.GOOS, "windows") {
-		pidPath = "\\tmp\\"
-	}
-	return filepath.Join(pidPath, "ego-server"+portString+".pid")
-
 }

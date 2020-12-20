@@ -135,6 +135,20 @@ var ServerGrammar = []cli.Option{
 		Value:       ServerRunGrammar,
 	},
 	{
+		LongName:    "restart",
+		Description: "Restart an existing server",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Restart,
+		Value:       ServerStateGrammar,
+	},
+	{
+		LongName:    "status",
+		Description: "Display server status",
+		OptionType:  cli.Subcommand,
+		Action:      commands.Status,
+		Value:       ServerStateGrammar,
+	},
+	{
 		LongName:    "start",
 		Description: "Start the rest server as a detached process",
 		OptionType:  cli.Subcommand,
@@ -157,6 +171,16 @@ var ServerStopGrammar = []cli.Option{
 		ShortName:           "p",
 		OptionType:          cli.IntType,
 		Description:         "Specify port number of server to stop",
+		EnvironmentVariable: "EGO_PORT",
+	},
+}
+
+var ServerStateGrammar = []cli.Option{
+	{
+		LongName:            "port",
+		ShortName:           "p",
+		OptionType:          cli.IntType,
+		Description:         "Specify port number of server",
 		EnvironmentVariable: "EGO_PORT",
 	},
 }

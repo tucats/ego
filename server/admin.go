@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/reps"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
+	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
 
@@ -31,58 +33,163 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	// Currently we only support POST & DELETE
-	if r.Method != "POST" && r.Method != "DELETE" {
+	if !tokenizer.InList(r.Method, []string{"POST", "DELETE", "GET"}) {
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
 		return
 	}
-	// Get the payload which must be a user spec in JSON
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(r.Body)
 
-	u := reps.User{Permissions: []string{}}
-	err = json.Unmarshal(buf.Bytes(), &u)
-	verb := "made no change to"
+	var name string
+	var u = reps.User{Permissions: []string{}}
+
+	if r.Method == "POST" {
+		// Get the payload which must be a user spec in JSON
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+
+		err = json.Unmarshal(buf.Bytes(), &u)
+		name = u.Name
+		ui.Debug(ui.ServerLogger, "Payload = %#v", u)
+	} else {
+		name = strings.TrimPrefix(r.URL.Path, "/admin/users/")
+		if name != "" {
+			if ud, ok := userDatabase[name]; ok {
+				u = ud
+			}
+			u.Name = name
+		}
+	}
 
 	if err == nil {
 		s := symbols.NewSymbolTable(r.URL.Path)
 		_ = s.SetAlways("_superuser", true)
 		switch strings.ToUpper(r.Method) {
 
+		// UPDATE OR CREATE A USER
 		case "POST":
-			_, err = SetUser(s, []interface{}{map[string]interface{}{
-				"name":        u.Name,
-				"password":    u.Password,
-				"permissions": u.Permissions}})
-			verb = "updated"
+			args := map[string]interface{}{
+				"name":     u.Name,
+				"password": u.Password,
+			}
+			// Only replace permissions if the list is non-empty
+			if len(u.Permissions) > 0 {
+				// Have to convert this from string array to interface array.
+				perms := []interface{}{}
+				for _, p := range u.Permissions {
+					perms = append(perms, p)
+				}
+				args["permissions"] = perms
+			}
+			//i.Debug(ui.ServerLogger, "Post object %#v", args)
+			_, err = SetUser(s, []interface{}{args})
+			u := userDatabase[name]
+			u.Name = name
+			response := reps.UserReponse{
+				User: u,
+				RestResponse: reps.RestResponse{
+					Status:  200,
+					Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
+				},
+			}
+			if err == nil {
+				w.WriteHeader(200)
+				msg, _ := json.Marshal(response)
+				_, _ = io.WriteString(w, string(msg))
+				ui.Debug(ui.ServerLogger, "200 Success")
+				return
+			}
 
+		// DELETE A USER
 		case "DELETE":
+			u, exists := userDatabase[name]
+			if !exists {
+				w.WriteHeader(404)
+				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
+				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
+				ui.Debug(ui.ServerLogger, "404 No such user")
+				return
+			}
+			// Clear the password for the return response object
+			u.Password = ""
+			response := reps.UserReponse{
+				User: u,
+				RestResponse: reps.RestResponse{
+					Status:  200,
+					Message: fmt.Sprintf("successfully deleted user '%s'", name),
+				},
+			}
+
 			v, err := DeleteUser(s, []interface{}{u.Name})
 			if err == nil && !util.GetBool(v) {
 				w.WriteHeader(404)
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
-				_, _ = io.WriteString(w, fmt.Sprintf(msg, u.Name))
+				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
 				ui.Debug(ui.ServerLogger, "404 No such user")
 				return
 			}
-			verb = "deleted"
+			if err == nil {
+				b, _ := json.Marshal(response)
+				w.WriteHeader(200)
+				_, _ = w.Write(b)
+				ui.Debug(ui.ServerLogger, "200 Success")
+				return
+			}
+
+		// GET A COLLECTION OR A SPECIFIC USER
+		case "GET":
+			// If it's a single user, do that.
+
+			if name != "" {
+				status := 200
+				msg := "Success"
+				u.Password = ""
+				if u.ID == uuid.Nil {
+					status = 404
+					msg = "User not found"
+				}
+				result := reps.UserReponse{
+					User: u,
+					RestResponse: reps.RestResponse{
+						Status:  status,
+						Message: msg,
+					},
+				}
+
+				b, _ := json.Marshal(result)
+				w.WriteHeader(status)
+				_, _ = w.Write(b)
+				ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", status, msg))
+				return
+			}
+
+			result := reps.UserCollection{
+				Items:  []reps.User{},
+				Status: reps.RestResponse{Status: 200},
+			}
+			for k, u := range userDatabase {
+				ud := reps.User{}
+				ud.Name = k
+				ud.ID = u.ID
+				ud.Permissions = u.Permissions
+				result.Items = append(result.Items, ud)
+			}
+			result.Count = len(result.Items)
+			result.Start = 0
+
+			b, _ := json.Marshal(result)
+			w.WriteHeader(200)
+			_, _ = w.Write(b)
+			ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result.Items))
+			return
 		}
 	}
 
-	// Clean up and go home
-	if err != nil {
-		w.WriteHeader(500)
-		msg := `{ "status" : 500, "msg" : "%s"`
-		_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
-		ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
-	} else {
-		w.WriteHeader(200)
-		msg := `{ "status" : 200, "msg" : "Successfully %s entry for '%s'" }`
-		_, _ = io.WriteString(w, fmt.Sprintf(msg, verb, u.Name))
-		ui.Debug(ui.ServerLogger, "200 Success")
-	}
+	// We had some kind of error, so report that.
+	w.WriteHeader(500)
+	msg := `{ "status" : 500, "msg" : "%s"`
+	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
+	ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
 
 }
 
@@ -111,7 +218,10 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := reps.UserCollection{Items: []reps.User{}, Status: 200}
+	result := reps.UserCollection{
+		Items:  []reps.User{},
+		Status: reps.RestResponse{Status: 200},
+	}
 	for k, u := range userDatabase {
 		ud := reps.User{}
 		ud.Name = k
@@ -120,6 +230,8 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 		result.Items = append(result.Items, ud)
 	}
 	result.Count = len(result.Items)
+	result.Start = 0
+
 	b, err := json.Marshal(result)
 	w.WriteHeader(200)
 	_, _ = w.Write(b)

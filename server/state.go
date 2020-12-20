@@ -1,12 +1,20 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"syscall"
+	"time"
 
+	"github.com/tucats/ego/reps"
+	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/ui"
 )
 
@@ -55,4 +63,65 @@ func DefineLibHandlers(root string, subpath string) error {
 	}
 
 	return nil
+}
+
+// IsRunning determines, for a given process id (pid), is that process
+// actually running? On Windows systems, the FindProcess() will always
+// succeed, so this routine additionally sends a signal of zero to the
+// process, which validates if it actually exists.
+func IsRunning(pid int) bool {
+	proc, err := os.FindProcess(pid)
+	if err == nil {
+		err := proc.Signal(syscall.Signal(0))
+		if err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// RemovePidFile removes the existing pid file, regardless of
+// the server state. Don't call this unless you know the server
+// has stopped!
+func RemovePidFile(c *cli.Context) error {
+	return os.Remove(getPidFileName((c)))
+}
+
+// ReadPidFile reads the active pid file (if found) and returns
+// it's contents converted to a ServerStatus object.
+func ReadPidFile(c *cli.Context) (*reps.ServerStatus, error) {
+	var status = reps.ServerStatus{}
+	b, err := ioutil.ReadFile(getPidFileName(c))
+	if err == nil {
+		err = json.Unmarshal(b, &status)
+	}
+	return &status, err
+}
+
+// WritePidFile creates (or replaces) the pid file with the current
+// server status
+func WritePidFile(c *cli.Context, status reps.ServerStatus) error {
+	status.Started = time.Now()
+	b, _ := json.MarshalIndent(status, "", "  ")
+	err := ioutil.WriteFile(getPidFileName(c), b, 0777)
+	return err
+}
+
+// Use the --port specifiation, if any, to create a platform-specific
+// filename for the pid
+func getPidFileName(c *cli.Context) string {
+
+	port, ok := c.GetInteger("port")
+	portString := fmt.Sprintf("-%d", port)
+	if !ok {
+		portString = ""
+	}
+
+	// Figure out the operating-system-approprite pid file name
+	pidPath := "/tmp/"
+	if strings.HasPrefix(runtime.GOOS, "windows") {
+		pidPath = "\\tmp\\"
+	}
+	return filepath.Join(pidPath, "ego-server"+portString+".pid")
+
 }
