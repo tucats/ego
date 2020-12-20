@@ -16,15 +16,17 @@ import cipher
 	@assert cipher.Validate(t) == false "token is not invalid"
 }
 {
-	td := profile.Get("token-expiration")
+	const TokenExpirationSetting = "token-expiration"
+	
+	td := profile.Get(TokenExpirationSetting)
 	if td == "" {
 		td := "5m"
 	}
-	profile.Set("token-expiration", ".5s")
+	profile.Set(TokenExpirationSetting, ".5s")
 	t := cipher.Create("test")
 	call time.Sleep("1s")
 	@assert cipher.Validate(t) == false "token should have been invalid"
-	profile.Set("token-expiration", td)
+	profile.Set(TokenExpirationSetting, td)
 }
 
 @pass

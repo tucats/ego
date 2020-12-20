@@ -1,15 +1,10 @@
 {
    "admin": {
-      "name": "",
-      "id": "2d12ca95-bfd6-4b54-b9ff-dba28942503d",
+      "name": "admin",
+      "id": "2e34a894-8bdd-4d2b-b5e1-a32d9ac484f5",
       "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
       "permissions": [
          "root"
       ]
-   },
-   "mary": {
-      "name": "mary",
-      "id": "a96d5a18-7479-422c-b349-d7b475495a0c",
-      "password": "a33beaec9c1f9ec63b3bfcf3640e7191123af43eb29d348a0ed9398e2c1752e4"
    }
 }

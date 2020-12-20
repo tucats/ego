@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -19,7 +19,7 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
-var userDatabase map[string]reps.User
+var userDatabase map[string]defs.User
 var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
@@ -27,11 +27,11 @@ var userDatabaseFile = ""
 func LoadUserDatabase(c *cli.Context) error {
 
 	defaultUser := "admin"
-	defaultPassword := "{password}"
-	if up := persistence.Get("default-credential"); up != "" {
+	defaultPassword := "password"
+	if up := persistence.Get(defs.DefaultCredentialSetting); up != "" {
 		if pos := strings.Index(up, ":"); pos >= 0 {
 			defaultUser = up[:pos]
-			defaultPassword = up[pos+1:]
+			defaultPassword = strings.TrimSpace(up[pos+1:])
 		} else {
 			defaultUser = up
 			defaultPassword = ""
@@ -41,22 +41,42 @@ func LoadUserDatabase(c *cli.Context) error {
 	// Is there a user database to load?
 	userDatabaseFile, _ = c.GetString("users")
 	if userDatabaseFile == "" {
-		userDatabaseFile = persistence.Get("logon-userdata")
+		userDatabaseFile = persistence.Get(defs.LogonUserdataSetting)
 	}
+	if userDatabaseFile == "" {
+		userDatabaseFile = defs.DefaultUserdataFileName
+	}
+
 	if userDatabaseFile != "" {
 		b, err := ioutil.ReadFile(userDatabaseFile)
 		if err == nil {
-			err = json.Unmarshal(b, &userDatabase)
+			if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
+				r, err := util.Decrypt(string(b), key)
+				if err != nil {
+					return err
+				}
+				b = []byte(r)
+			}
+			if err == nil {
+				err = json.Unmarshal(b, &userDatabase)
+			}
+			if err != nil {
+				return err
+			}
+			ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
 		}
-		if err != nil {
-			return err
+	}
+	if userDatabase == nil {
+		// Make an initial version of the user database.
+		userDatabase = map[string]defs.User{
+			defaultUser: {
+				ID:          uuid.New(),
+				Name:        defaultUser,
+				Password:    HashString(defaultPassword),
+				Permissions: []string{"root"},
+			},
 		}
-		ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
-	} else {
-		userDatabase = map[string]reps.User{
-			defaultUser: {Password: defaultPassword},
-		}
-		ui.Debug(ui.ServerLogger, "Using default credentials with user %s", defaultUser)
+		ui.Debug(ui.ServerLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
 	}
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
@@ -64,7 +84,7 @@ func LoadUserDatabase(c *cli.Context) error {
 	var err error
 	su, ok := c.GetString("superuser")
 	if !ok {
-		su = persistence.Get("logon-superuser")
+		su = persistence.Get(defs.LogonSuperuserSetting)
 	}
 	if su != "" {
 		err = setPermission(su, "root", true)
@@ -120,7 +140,7 @@ func getPermission(user, privilege string) bool {
 	return false
 }
 
-func findPermission(u reps.User, perm string) int {
+func findPermission(u defs.User, perm string) int {
 	for i, p := range u.Permissions {
 		if p == perm {
 			return i
@@ -133,8 +153,8 @@ func findPermission(u reps.User, perm string) int {
 // returns true if the user exists and the password is valid
 func validatePassword(user, pass string) bool {
 	ok := false
-	if p, userExists := userDatabase[user]; userExists {
-		realPass := p.Password
+	if u, userExists := userDatabase[user]; userExists {
+		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
 			realPass = HashString(realPass[1 : len(realPass)-1])
@@ -239,7 +259,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 		r, ok := userDatabase[name]
 		if !ok {
-			r = reps.User{
+			r = defs.User{
 				Name:        name,
 				ID:          uuid.New(),
 				Permissions: []string{},
@@ -318,12 +338,20 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func updateUserDatabase() error {
 
 	// Convert the database to a json string
-
 	b, err := json.MarshalIndent(userDatabase, "", "   ")
 	if err != nil {
 		return err
 	}
 
+	if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
+		r, err := util.Encrypt(string(b), key)
+		if err != nil {
+			return err
+		}
+		b = []byte(r)
+	}
+
+	// Write to the database file.
 	err = ioutil.WriteFile(userDatabaseFile, b, os.ModePerm)
 	return err
 }

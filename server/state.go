@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/ui"
 )
@@ -21,10 +21,6 @@ import (
 var PathRoot string
 var Tracing bool
 var Realm string
-
-const (
-	AuthScheme = "token "
-)
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify ".ego" programs that can be defined as
@@ -89,8 +85,8 @@ func RemovePidFile(c *cli.Context) error {
 
 // ReadPidFile reads the active pid file (if found) and returns
 // it's contents converted to a ServerStatus object.
-func ReadPidFile(c *cli.Context) (*reps.ServerStatus, error) {
-	var status = reps.ServerStatus{}
+func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
+	var status = defs.ServerStatus{}
 	b, err := ioutil.ReadFile(getPidFileName(c))
 	if err == nil {
 		err = json.Unmarshal(b, &status)
@@ -100,7 +96,7 @@ func ReadPidFile(c *cli.Context) (*reps.ServerStatus, error) {
 
 // WritePidFile creates (or replaces) the pid file with the current
 // server status
-func WritePidFile(c *cli.Context, status reps.ServerStatus) error {
+func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	status.Started = time.Now()
 	b, _ := json.MarshalIndent(status, "", "  ")
 	err := ioutil.WriteFile(getPidFileName(c), b, 0777)

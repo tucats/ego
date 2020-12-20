@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
@@ -55,7 +56,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Add the builtin functions
 		comp.AddBuiltins("")
-		err := comp.AutoImport(persistence.GetBool("auto-import"))
+		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if err != nil {
 			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}

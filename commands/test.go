@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
@@ -45,7 +46,7 @@ func TestAction(c *cli.Context) error {
 	fileList := []string{}
 
 	if len(c.Parent.Parameters) == 0 {
-		path := persistence.Get("ego-path")
+		path := persistence.Get(defs.EgoPathSetting)
 		if path == "" {
 			path = os.Getenv("EGO_PATH")
 		}

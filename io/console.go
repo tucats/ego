@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/chzyer/readline"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
 )
@@ -17,7 +18,7 @@ var consoleLock sync.Mutex
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
 
-	mode := persistence.Get("use-readline")
+	mode := persistence.Get(defs.UseReadline)
 
 	// If readline has been explicitly disabled for some reason,
 	// do a more primitive input operation.

@@ -663,7 +663,7 @@ which are set with the `ego profile set` command or via program operation using 
 
 | item | description |
 |------| ------------|
-| default-credential | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| defs.DefaultCredentialSetting | A string value of "user:pass" describing the default credential to apply when there is no user database |
 | logon-userdata | the path to the JSON file containing the user data |
 | token-expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
 | token-key | A string used to encrypt tokens. This can be any string value |

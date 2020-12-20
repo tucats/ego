@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -225,7 +226,7 @@ func Server(c *cli.Context) error {
 	if server.PathRoot == "" {
 		server.PathRoot = os.Getenv("EGO_PATH")
 		if server.PathRoot == "" {
-			server.PathRoot = persistence.Get("ego-path")
+			server.PathRoot = persistence.Get(defs.EgoPathSetting)
 		}
 	}
 

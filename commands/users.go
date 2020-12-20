@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
-	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -30,12 +30,12 @@ func AddUser(c *cli.Context) error {
 		pass = ui.PromptPassword("Password: ")
 	}
 
-	payload := reps.User{
+	payload := defs.User{
 		Name:        user,
 		Password:    pass,
 		Permissions: permissions,
 	}
-	resp := reps.UserReponse{}
+	resp := defs.UserReponse{}
 	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
 	if err == nil {
 		if ui.OutputFormat == "text" {
@@ -60,7 +60,7 @@ func DeleteUser(c *cli.Context) error {
 	for user == "" {
 		user = ui.Prompt("Username: ")
 	}
-	resp := reps.UserReponse{}
+	resp := defs.UserReponse{}
 	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
 	if err == nil {
 		if ui.OutputFormat == "text" {
@@ -78,23 +78,23 @@ func DeleteUser(c *cli.Context) error {
 
 func ListUsers(c *cli.Context) error {
 
-	path := persistence.Get("logon-server")
+	path := persistence.Get(defs.LogonServerSetting)
 	if path == "" {
 		path = "http://localhost:8080"
 	}
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-	if token := persistence.Get("logon-token"); token != "" {
-		client.SetAuthScheme("Token")
+	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
+		client.SetAuthScheme(defs.AuthScheme)
 		client.SetAuthToken(token)
 	}
 
 	var err error
-	var ud = reps.UserCollection{}
+	var ud = defs.UserCollection{}
 
 	r := client.NewRequest()
-	r.Header.Add("Accepts", "application/json")
+	r.Header.Add("Accepts", defs.JSONMediaType)
 	var response *resty.Response
 	response, err = r.Get(url)
 	if response.StatusCode() == 404 && len(response.Body()) == 0 {

@@ -5,3 +5,4 @@ ego.exe
 test.ego
 ego-server.log
 ego-server.pid
+users.json

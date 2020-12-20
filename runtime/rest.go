@@ -7,14 +7,12 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
-	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
-
-const ApplicationJSON = "application/json"
 
 // RestOpen implements the open() rest function
 func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -27,9 +25,9 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
 	} else {
-		token := persistence.Get("logon-token")
+		token := persistence.Get(defs.LogonTokenSetting)
 		if token != "" {
-			client.SetAuthScheme("Token")
+			client.SetAuthScheme(defs.AuthScheme)
 			client.SetAuthToken(token)
 		}
 	}
@@ -43,7 +41,7 @@ func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Delete":     RestDelete,
 		"Base":       RestBase,
 		"Media":      RestMedia,
-		"media_type": "application/json",
+		"media_type": defs.JSONMediaType,
 		"baseURL":    "",
 		"response":   "",
 		"status":     0,
@@ -81,7 +79,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		base = util.GetString(args[0])
 	} else {
-		base = persistence.Get("logon-server")
+		base = persistence.Get(defs.LogonServerSetting)
 	}
 
 	this["baseURL"] = base
@@ -117,7 +115,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
-		isJSON = (strings.Contains(ms, "application/json"))
+		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
@@ -176,7 +174,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// into a json value for the request body.
 	if mt, ok := this["media_type"]; ok {
 		media := util.GetString(mt)
-		if strings.Contains(media, "application/json") {
+		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
 				return nil, err
@@ -189,7 +187,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
-		isJSON = (ms == "application/json")
+		isJSON = (ms == defs.JSONMediaType)
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
@@ -234,7 +232,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// into a json value for the request body.
 	if mt, ok := this["media_type"]; ok {
 		media := util.GetString(mt)
-		if strings.Contains(media, "application/json") {
+		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
 				return nil, err
@@ -247,7 +245,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
-		isJSON = (strings.Contains(ms, "application/json"))
+		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
@@ -312,9 +310,9 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 // Exchange is a helper wrapper around a rest call.
 func Exchange(endpoint, method string, body interface{}, response interface{}) error {
 
-	url := persistence.Get("application-server")
+	url := persistence.Get(defs.ApplicationServerSetting)
 	if url == "" {
-		url = persistence.Get("logon-server")
+		url = persistence.Get(defs.LogonServerSetting)
 	}
 	if url == "" {
 		url = "http://localhost:8080"
@@ -323,13 +321,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	url = strings.TrimSuffix(url, "/") + endpoint
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-	if token := persistence.Get("logon-token"); token != "" {
+	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthScheme("Token")
 		client.SetAuthToken(token)
 	}
 	r := client.NewRequest()
-	r.Header.Add("Accept", ApplicationJSON)
-	r.Header.Add("Content_Type", ApplicationJSON)
+	r.Header.Add("Accept", defs.JSONMediaType)
+	r.Header.Add("Content_Type", defs.JSONMediaType)
 
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -354,7 +352,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	if err == nil && response != nil {
 		body := string(resp.Body())
 		if !tokenizer.InList(body[0:1], []string{"{", "[", "\""}) {
-			r := reps.RestResponse{
+			r := defs.RestResponse{
 				Status:  resp.StatusCode(),
 				Message: strings.TrimSuffix(body, "\n"),
 			}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -18,10 +19,10 @@ const LogonEndpoint = "/services/logon"
 func Logon(c *cli.Context) error {
 
 	// Do we know where the logon server is?
-	url := persistence.Get("logon-server")
+	url := persistence.Get(defs.LogonServerSetting)
 	if c.WasFound("logon-server") {
 		url, _ = c.GetString("logon-server")
-		persistence.Set("logon-server", url)
+		persistence.Set(defs.LogonServerSetting, url)
 	}
 	if url == "" {
 		return fmt.Errorf("No --logon-server specified")
@@ -51,7 +52,7 @@ func Logon(c *cli.Context) error {
 		if strings.HasSuffix(token, "\n") {
 			token = token[:len(token)-1]
 		}
-		persistence.Set("logon-token", token)
+		persistence.Set(defs.LogonTokenSetting, token)
 		ui.Say("Successfully logged in as \"%s\"", user)
 		return nil
 	}

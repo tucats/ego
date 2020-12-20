@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -79,7 +80,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			for _, value := range values {
 				valueList = append(valueList, value)
 				// If this is the Accept header and it's the json indicator, store a flag
-				if strings.EqualFold(name, "Accept") && strings.Contains(value, "application/json") {
+				if strings.EqualFold(name, "Accept") && strings.Contains(value, defs.JSONMediaType) {
 					isJSON = true
 				}
 			}
@@ -163,16 +164,18 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if auth == "" {
 		ui.Debug(ui.ServerLogger, "No authentication credentials given")
 	} else {
-		if strings.HasPrefix(strings.ToLower(auth), AuthScheme) {
+		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 			ok = true
-			token := auth[len(AuthScheme):]
+			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
 			_ = syms.SetAlways("_token", token)
 			_ = syms.SetAlways("_token_valid", validateToken(token))
 			user = tokenUser(token)
 			ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 		} else {
 			user, pass, ok = r.BasicAuth()
-			if ok {
+			if !ok {
+				ui.Debug(ui.ServerLogger, "BasicAuth invalid")
+			} else {
 				ok = validatePassword(user, pass)
 			}
 			_ = syms.SetAlways("_token", "")
@@ -196,7 +199,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle built-ins and auto-import
 	compilerInstance.AddBuiltins("")
-	err = compilerInstance.AutoImport(persistence.GetBool("auto-import"))
+	err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 	if err != nil {
 		fmt.Printf("Unable to auto-import packages: " + err.Error())
 	}

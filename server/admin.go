@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/reps"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
@@ -21,7 +21,7 @@ import (
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-	w.Header().Add("Content_Type", "application/json")
+	w.Header().Add("Content_Type", defs.JSONMediaType)
 
 	user, hasAdminPrivs := isAdminRequestor(r)
 	if !hasAdminPrivs {
@@ -41,7 +41,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var name string
-	var u = reps.User{Permissions: []string{}}
+	var u = defs.User{Permissions: []string{}}
 
 	if r.Method == "POST" {
 		// Get the payload which must be a user spec in JSON
@@ -85,9 +85,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			_, err = SetUser(s, []interface{}{args})
 			u := userDatabase[name]
 			u.Name = name
-			response := reps.UserReponse{
+			response := defs.UserReponse{
 				User: u,
-				RestResponse: reps.RestResponse{
+				RestResponse: defs.RestResponse{
 					Status:  200,
 					Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
 				},
@@ -112,9 +112,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			// Clear the password for the return response object
 			u.Password = ""
-			response := reps.UserReponse{
+			response := defs.UserReponse{
 				User: u,
-				RestResponse: reps.RestResponse{
+				RestResponse: defs.RestResponse{
 					Status:  200,
 					Message: fmt.Sprintf("successfully deleted user '%s'", name),
 				},
@@ -148,9 +148,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 					status = 404
 					msg = "User not found"
 				}
-				result := reps.UserReponse{
+				result := defs.UserReponse{
 					User: u,
-					RestResponse: reps.RestResponse{
+					RestResponse: defs.RestResponse{
 						Status:  status,
 						Message: msg,
 					},
@@ -163,12 +163,12 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			result := reps.UserCollection{
-				Items:  []reps.User{},
-				Status: reps.RestResponse{Status: 200},
+			result := defs.UserCollection{
+				Items:  []defs.User{},
+				Status: defs.RestResponse{Status: 200},
 			}
 			for k, u := range userDatabase {
-				ud := reps.User{}
+				ud := defs.User{}
 				ud.Name = k
 				ud.ID = u.ID
 				ud.Permissions = u.Permissions
@@ -198,7 +198,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 func UserListHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-	w.Header().Add("Content_Type", "application/json")
+	w.Header().Add("Content_Type", defs.JSONMediaType)
 
 	user, hasAdminPrivs := isAdminRequestor(r)
 	if !hasAdminPrivs {
@@ -218,12 +218,12 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := reps.UserCollection{
-		Items:  []reps.User{},
-		Status: reps.RestResponse{Status: 200},
+	result := defs.UserCollection{
+		Items:  []defs.User{},
+		Status: defs.RestResponse{Status: 200},
 	}
 	for k, u := range userDatabase {
-		ud := reps.User{}
+		ud := defs.User{}
 		ud.Name = k
 		ud.ID = u.ID
 		ud.Permissions = u.Permissions
@@ -259,8 +259,8 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 
 	// IF the authorization header has the auth scheme prefix, extract and
 	// validate the token
-	if strings.HasPrefix(strings.ToLower(auth), AuthScheme) {
-		token := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(auth), AuthScheme))
+	if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
+		token := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(auth), defs.AuthScheme))
 		ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 		if validateToken(token) {
 			user := tokenUser(token)

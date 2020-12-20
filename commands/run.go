@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/gopackages/app-cli/cli"
@@ -35,9 +36,9 @@ func RunAction(c *cli.Context) error {
 	mainName := "main program"
 	prompt := c.MainProgram + "> "
 
-	autoImport := persistence.GetBool("auto-import")
-	if c.WasFound("auto-import") {
-		autoImport = c.GetBool("auto-import")
+	autoImport := persistence.GetBool(defs.AutoImportSetting)
+	if c.WasFound(defs.AutoImportSetting) {
+		autoImport = c.GetBool(defs.AutoImportSetting)
 	}
 
 	text := ""
@@ -48,7 +49,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	exitOnBlankLine := false
-	v := persistence.Get("exit-on-blank")
+	v := persistence.Get(defs.ExitOnBlankSetting)
 	if v == "true" {
 		exitOnBlankLine = true
 	}
@@ -91,7 +92,7 @@ func RunAction(c *cli.Context) error {
 		wasCommandLine = false
 		if !ui.IsConsolePipe() {
 			var banner string
-			if persistence.Get("no-copyright") != "true" {
+			if persistence.Get(defs.NoCopyrightSetting) != "true" {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
 			if exitOnBlankLine {
