@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/reps"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/tables"
@@ -130,10 +131,6 @@ func DeleteUser(c *cli.Context) error {
 
 func ListUsers(c *cli.Context) error {
 
-	type userData struct {
-		Name        string   `json:"name"`
-		Permissions []string `json:"permissions"`
-	}
 	path := persistence.Get("logon-server")
 	if path == "" {
 		path = "http://localhost:8080"
@@ -147,7 +144,7 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	var err error
-	var ud []userData
+	var ud = reps.UserCollection{}
 
 	r := client.NewRequest()
 	r.Header.Add("Accepts", "application/json")
@@ -165,8 +162,8 @@ func ListUsers(c *cli.Context) error {
 			body := string(response.Body())
 			err = json.Unmarshal([]byte(body), &ud)
 			if err == nil {
-				t, _ := tables.New([]string{"User", "Permissions"})
-				for _, u := range ud {
+				t, _ := tables.New([]string{"User", "ID", "Permissions"})
+				for _, u := range ud.Items {
 					perms := ""
 					for i, p := range u.Permissions {
 						if i > 0 {
@@ -177,10 +174,10 @@ func ListUsers(c *cli.Context) error {
 					if perms == "" {
 						perms = "."
 					}
-					_ = t.AddRowItems(u.Name, perms)
+					_ = t.AddRowItems(u.Name, u.ID, perms)
 				}
 				_ = t.SortRows(0, true)
-				_ = t.Print("text")
+				_ = t.Print(ui.OutputFormat)
 			}
 		}
 	}

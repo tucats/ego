@@ -1,16 +1,16 @@
 {
    "admin": {
+      "name": "",
+      "id": "2d12ca95-bfd6-4b54-b9ff-dba28942503d",
       "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-      "permissions": {
-         "root": true
-      }
+      "permissions": [
+         "root"
+      ]
    },
-   "bill": {
-      "password": "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b",
-      "permissions": {}
-   },
-   "fred": {
-      "password": "81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9",
-      "permissions": {}
+   "mary": {
+      "name": "",
+      "id": "470873fe-077e-4678-b578-afe1d6862d04",
+      "password": "aaf5ad63ac417e5002bdac202e07287cf90f35b1d419464d2c4fc79e508a1e4c",
+      "permissions": []
    }
 }

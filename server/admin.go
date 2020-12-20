@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tucats/ego/reps"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
@@ -41,12 +42,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	type userData struct {
-		Name        string   `json:"name"`
-		Password    string   `json:"password"`
-		Permissions []string `json:"permissions"`
-	}
-	u := userData{Permissions: []string{}}
+	u := reps.User{Permissions: []string{}}
 	err = json.Unmarshal(buf.Bytes(), &u)
 	verb := "made no change to"
 
@@ -115,28 +111,19 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type userData struct {
-		Name        string   `json:"name"`
-		Permissions []string `json:"permissions"`
-	}
-	type userList []userData
-	result := userList{}
+	result := reps.UserCollection{Items: []reps.User{}, Status: 200}
 	for k, u := range userDatabase {
-		ud := userData{}
+		ud := reps.User{}
 		ud.Name = k
-		ud.Permissions = []string{}
-		for p, v := range u.Permissions {
-			if v {
-				ud.Permissions = append(ud.Permissions, p)
-			}
-		}
-		result = append(result, ud)
+		ud.ID = u.ID
+		ud.Permissions = u.Permissions
+		result.Items = append(result.Items, ud)
 	}
-
+	result.Count = len(result.Items)
 	b, err := json.Marshal(result)
 	w.WriteHeader(200)
 	_, _ = w.Write(b)
-	ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result))
+	ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result.Items))
 
 	// Clean up and go home
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/tucats/ego/reps"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
@@ -17,12 +19,7 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
-type user struct {
-	Password    string          `json:"password"`
-	Permissions map[string]bool `json:"permissions"`
-}
-
-var userDatabase map[string]user
+var userDatabase map[string]reps.User
 var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
@@ -56,7 +53,7 @@ func LoadUserDatabase(c *cli.Context) error {
 		}
 		ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
 	} else {
-		userDatabase = map[string]user{
+		userDatabase = map[string]reps.User{
 			defaultUser: {Password: defaultPassword},
 		}
 		ui.Debug(ui.ServerLogger, "Using default credentials with user %s", defaultUser)
@@ -83,9 +80,23 @@ func setPermission(user, privilege string, enabled bool) error {
 	privname := strings.ToLower(privilege)
 	if u, ok := userDatabase[user]; ok {
 		if u.Permissions == nil {
-			u.Permissions = map[string]bool{}
+			u.Permissions = []string{}
 		}
-		u.Permissions[privname] = enabled
+		pn := -1
+		for i, p := range u.Permissions {
+			if p == privname {
+				pn = i
+			}
+		}
+		if enabled {
+			if pn == -1 {
+				u.Permissions = append(u.Permissions, privname)
+			}
+		} else {
+			if pn >= 0 {
+				u.Permissions = append(u.Permissions[:pn], u.Permissions[pn+1:]...)
+			}
+		}
 		userDatabase[user] = u
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
@@ -99,15 +110,23 @@ func setPermission(user, privilege string, enabled bool) error {
 func getPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 	if u, ok := userDatabase[user]; ok {
-		if u.Permissions != nil {
-			if p, ok := u.Permissions[privname]; ok {
-				ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (%v)", privilege, user, p)
-				return p
-			}
-		}
+		pn := findPermission(u, privname)
+		v := (pn >= 0)
+		ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (%v)", privilege, user, v)
+		return v
 	}
+
 	ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (false)", privilege, user)
 	return false
+}
+
+func findPermission(u reps.User, perm string) int {
+	for i, p := range u.Permissions {
+		if p == perm {
+			return i
+		}
+	}
+	return -1
 }
 
 // validatePassword checks a username and password against the databse and
@@ -220,7 +239,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 		r, ok := userDatabase[name]
 		if !ok {
-			r = user{Permissions: map[string]bool{}}
+			r = reps.User{Permissions: []string{}}
 		}
 		if n, ok := u["password"]; ok {
 			r.Password = HashString(util.GetString(n))
@@ -228,14 +247,19 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if n, ok := u["permissions"]; ok {
 			// If permissions are specified, we clear out all the existing
 			// ones and replace them with the new ones we get here.
-			r.Permissions = map[string]bool{}
+			r.Permissions = []string{}
 			if m, ok := n.([]interface{}); ok {
 				for _, p := range m {
-					r.Permissions[util.GetString(p)] = true
+					r.Permissions = append(r.Permissions, util.GetString(p))
 				}
 			}
 		}
 
+		if old, found := userDatabase[name]; found {
+			r.ID = old.ID
+		} else {
+			r.ID = uuid.New()
+		}
 		userDatabase[name] = r
 		err = updateUserDatabase()
 
@@ -285,18 +309,8 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return r, nil
 	}
 	r["name"] = name
-	su := false
-	perms := []interface{}{}
-	for p, f := range t.Permissions {
-		if strings.ToLower(p) == "root" {
-			su = true
-		}
-		if f {
-			perms = append(perms, p)
-		}
-	}
-	r["permissions"] = perms
-	r["superuser"] = su
+	r["permissions"] = t.Permissions
+	r["superuser"] = getPermission(name, "root")
 	return r, nil
 }
 
