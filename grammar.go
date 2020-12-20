@@ -184,6 +184,13 @@ var ServerRunGrammar = []cli.Option{
 		Private:     true,
 	},
 	{
+		LongName:    "force",
+		ShortName:   "f",
+		OptionType:  cli.BooleanType,
+		Description: "If set, override existing PID file",
+		Private:     true,
+	},
+	{
 		LongName:    "no-log",
 		Description: "Suppress server log",
 		OptionType:  cli.BooleanType,

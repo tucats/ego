@@ -33,7 +33,9 @@ func Start(c *cli.Context) error {
 	if err == nil {
 		if pid, err := strconv.Atoi(string(b)); err == nil {
 			if _, err := os.FindProcess(pid); err == nil {
-				return fmt.Errorf("server already running as pid %d", pid)
+				if !c.GetBool("force") {
+					return fmt.Errorf("server already running as pid %d", pid)
+				}
 			}
 		}
 	}
