@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
 
@@ -342,7 +341,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	resp, err = r.Execute(method, url)
 	if err == nil && response != nil {
 		body := string(resp.Body())
-		if !tokenizer.InList(body[0:1], []string{"{", "[", "\""}) {
+		if !util.InList(body[0:1], "{", "[", "\"") {
 			r := defs.RestResponse{
 				Status:  resp.StatusCode(),
 				Message: strings.TrimSuffix(body, "\n"),

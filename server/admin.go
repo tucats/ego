@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/tokenizer"
 	"github.com/tucats/gopackages/util"
 )
 
@@ -33,7 +32,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	if !tokenizer.InList(r.Method, []string{"POST", "DELETE", "GET"}) {
+	if !util.InList(r.Method, "POST", "DELETE", "GET") {
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
