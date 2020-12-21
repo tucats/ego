@@ -336,19 +336,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 		}
 		r.SetBody(b)
 	}
+
 	var resp *resty.Response
 	var err error
-	switch strings.ToUpper(method) {
-	case "GET":
-		resp, err = r.Get(url)
-	case "POST":
-		resp, err = r.Post(url)
-	case "DELETE":
-		resp, err = r.Delete(url)
-	default:
-		err = fmt.Errorf("unsupported REST method: %s", method)
-	}
-
+	resp, err = r.Execute(method, url)
 	if err == nil && response != nil {
 		body := string(resp.Body())
 		if !tokenizer.InList(body[0:1], []string{"{", "[", "\""}) {

@@ -29,7 +29,7 @@ if _json {
     // If there was a body, this was a POST so return the body as
     // a real value.
     if _body != "" {
-        r.posted = json.Unmarhsal(_body)
+        r.posted = json.Unmarshal(_body)
     }
     @response r
     return
@@ -49,4 +49,6 @@ print "A U T H E N T I C A T I O N"
 print "---------------------------"
 print "Authenticated:    ", authenticated()
 print "User token valid: ", cipher.Validate(_token)
-print "User data value:  ", cipher.GetUser(_token)
+try {
+    print "User data value:  ", cipher.Token(_token).name
+} catch { print "<none>"}

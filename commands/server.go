@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
@@ -210,6 +211,7 @@ func Server(c *cli.Context) error {
 
 	// Establish the admin endpoints
 	http.HandleFunc("/admin/users/", server.UserHandler)
+	http.HandleFunc("/admin/caches", server.CachesHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
 	// Set up tracing for the server, and enable the logger if
@@ -272,4 +274,8 @@ func Server(c *cli.Context) error {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 	return err
+}
+
+func FlushServerCaches(c *cli.Context) error {
+	return runtime.Exchange("/admin/caches", "DELETE", nil, nil)
 }

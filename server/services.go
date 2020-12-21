@@ -159,6 +159,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	user := ""
 	pass := ""
 	_ = syms.SetAlways("_token", "")
+	_ = syms.SetAlways("_token_valid", false)
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {

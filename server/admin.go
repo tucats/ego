@@ -50,7 +50,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = json.Unmarshal(buf.Bytes(), &u)
 		name = u.Name
-		ui.Debug(ui.ServerLogger, "Payload = %#v", u)
 	} else {
 		name = strings.TrimPrefix(r.URL.Path, "/admin/users/")
 		if name != "" {
@@ -193,9 +192,8 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// UserListHandler is the rest handler for /admin/user endpoint
-// operations
-func UserListHandler(w http.ResponseWriter, r *http.Request) {
+// FlushCacheHandler is the rest handler for /admin/caches endpoint
+func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
@@ -209,40 +207,21 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var err error
-	// Currently we only support POST & DELETE
-	if r.Method != "GET" {
+	switch r.Method {
+
+	// DELETE the cached service compilation units. In-flight services
+	// are unaffected.
+	case "DELETE":
+		serviceCache = map[string]cachedCompilationUnit{}
+		w.WriteHeader(200)
+		ui.Debug(ui.ServerLogger, "200 Success")
+		return
+
+	default:
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
 		return
-	}
-
-	result := defs.UserCollection{
-		Items:  []defs.User{},
-		Status: defs.RestResponse{Status: 200},
-	}
-	for k, u := range userDatabase {
-		ud := defs.User{}
-		ud.Name = k
-		ud.ID = u.ID
-		ud.Permissions = u.Permissions
-		result.Items = append(result.Items, ud)
-	}
-	result.Count = len(result.Items)
-	result.Start = 0
-
-	b, err := json.Marshal(result)
-	w.WriteHeader(200)
-	_, _ = w.Write(b)
-	ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result.Items))
-
-	// Clean up and go home
-	if err != nil {
-		w.WriteHeader(500)
-		msg := `{ "status" : 500, "msg" : "%s"`
-		_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
-		ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
 	}
 }
 

@@ -135,6 +135,14 @@ var ServerGrammar = []cli.Option{
 		Value:       ServerRunGrammar,
 	},
 	{
+		LongName:    "flush-caches",
+		Description: "Flush service caches",
+		OptionType:  cli.Subcommand,
+		Action:      commands.FlushServerCaches,
+		Value:       ServerStateGrammar,
+	},
+
+	{
 		LongName:    "restart",
 		Description: "Restart an existing server",
 		OptionType:  cli.Subcommand,
