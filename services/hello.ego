@@ -24,4 +24,6 @@ page := {
     Body : "Hello, world"
 }
 
-print strings.Template(html, page)
+// The text we print becomes the body of the reply, which in this
+// case is HTML code.
+fmt.Println( strings.Template(html, page))

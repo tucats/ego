@@ -1,0 +1,14 @@
+@test "Return multiple function values"
+
+{
+    func f() (int, int) {
+       return 55, "66"
+    }
+
+    a, b := f()
+    @assert a == 55 "A has wrong value"
+    @assert b == 66 "B has wrong value"
+}
+
+@pass
+

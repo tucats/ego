@@ -24,7 +24,7 @@ import cipher
 	}
 	profile.Set(TokenExpirationSetting, ".5s")
 	t := cipher.Create("test")
-	call time.Sleep("1s")
+	time.Sleep("1s")
 	@assert cipher.Validate(t) == false "token should have been invalid"
 	profile.Set(TokenExpirationSetting, td)
 }

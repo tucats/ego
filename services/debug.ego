@@ -6,7 +6,7 @@ import ( cipher util )
 tv := _token_valid
 
 if !authenticated() & !tv {
-    print "401 Forbidden"
+    fmt.Print( "401 Forbidden" )
     @status 401
     return
 }
@@ -35,20 +35,11 @@ if _json {
     return
 }
 
-print ;
-print "EGO Server ", _version
-print ;
-print;
-
-print "S Y M B O L   T A B L E"
-print "-----------------------"
-print util.Symbols()
-
-print ;
-print "A U T H E N T I C A T I O N"
-print "---------------------------"
-print "Authenticated:    ", authenticated()
-print "User token valid: ", cipher.Validate(_token)
+fmt.Printf("\nEGO Server %s\n\n", _version)
+fmt.Printf("S Y M B O L   T A B L E\n-----------------------\n%s\n", util.Symbols())
+fmt.Printf("\nA U T H E N T I C A T I O N\n---------------------------\n")
+fmt.Printf("Authenticated:    %v\n", authenticated())
+fmt.Printf("User token valid: %v\n, cipher.Validate(_token))
 try {
-    print "User data value:  ", cipher.Token(_token).name
-} catch { print "<none>"}
+    fmt.Printf( "User data value:  %s\n", cipher.Token(_token).name)
+} catch { fmt.Printf("<none>\n") }

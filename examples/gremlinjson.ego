@@ -8,26 +8,26 @@ g := 0
 try {
 	g = gremlin.Open(url)
 } catch {
-	print "Unable to connect to Gremlin server"
-	call util.Exit(1)
+	fmt.Println( "Unable to connect to Gremlin server")
+    exit 1
 }
 
 // Create some vertices in the database. Note that not all of them have the same
 // properties; any vertex missing a property will be considered to have a null value
 // for that property in the result set.
 
-call g.Query(`g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
-call g.Query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
-call g.Query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
-call g.Query( `g.addV("test1").property("name", "Bob").property("rate", 10.3).property("temp", true)`)
-call g.Query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
+g.Query( `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
+g.Query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
+g.Query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
+g.Query( `g.addV("test1").property("name", "Bob").property("rate", 10.3).property("temp", true)`)
+g.Query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
 
 // Run a query and coerce the result into a normalized table format
 query := `g.V().hasLabel("test1").order().by("name").valueMap()`
 
 // Generate json for that query
-print g.AsJSON(query)
+fmt.Println( g.AsJSON(query))
 
 // Clean up all our nodes
-call g.Query( `g.V().hasLabel("test1").drop()`)
+g.Query( `g.V().hasLabel("test1").drop()`)
 

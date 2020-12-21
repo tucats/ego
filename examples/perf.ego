@@ -7,5 +7,5 @@ count := 20
 for i := 0; i < count; i = i + 1 { x := math.factor(1234567890) }
 
 finish := time.Now()
-print "Finished, elapsed time ", time.Subtract(finish, start)
+fmt.Printf("Finished, elapsed time %s\n", time.Subtract(finish, start))
 

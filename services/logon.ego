@@ -9,18 +9,18 @@ import (
 
 // If no credentials give, allow the browser to prompt
 if ( _user == "" ) & ( _password == "" ) {
-    print "401 No credentials"
+    fmt.Print( "401 No credentials")
     @status 401
     return
 }
 
 // If not an authenticated user, forbidden
 if !_authenticated {
-    print "403 Forbidden"
+    fmt.Print( "403 Forbidden" )
     @status 403
     return
 }
 
 // Generate a token and return it as text to the caller
-print cipher.Create(_user)
+fmt.Print( cipher.Create(_user))
 @status 200
