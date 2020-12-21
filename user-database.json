@@ -1,0 +1,15 @@
+{
+   "admin": {
+      "name": "admin",
+      "id": "adad3c75-5ce6-4b5f-ae50-1ad7c7c84f9f",
+      "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "permissions": [
+         "root"
+      ]
+   },
+   "user": {
+      "name": "user",
+      "id": "df014e4b-f5e3-4bf4-8bd2-24ae71a7f8c1",
+      "password": "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
+   }
+}
