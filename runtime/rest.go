@@ -13,8 +13,8 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
-// RestOpen implements the open() rest function
-func RestOpen(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// RestNew implements the New() rest function
+func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	client := resty.New()
 
@@ -66,7 +66,7 @@ func applyBaseURL(url string, this map[string]interface{}) string {
 	return url
 }
 
-// RestBase implements the base() rest function
+// RestBase implements the Base() rest function
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
@@ -85,7 +85,43 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return this, nil
 }
 
-// RestMedia implements the media() function
+// RestAuth implements the Auth() rest function
+func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	r, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	this := getThis(s)
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments")
+	}
+	user := util.GetString(args[0])
+	pass := util.GetString(args[1])
+	r.SetBasicAuth(user, pass)
+	return this, nil
+}
+
+// RestToken implements the Token() rest function
+func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	r, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	this := getThis(s)
+	if len(args) > 1 {
+		return nil, errors.New("Incorrect number of arguments")
+	}
+
+	token := persistence.Get("logon-token")
+	if len(args) > 0 {
+		token = util.GetString(args[0])
+	}
+	r.SetAuthToken(token)
+	r.SetAuthScheme(defs.AuthScheme)
+	return this, nil
+}
+
+// RestMedia implements the Media() function
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
@@ -98,7 +134,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return this, nil
 }
 
-// RestGet implements the rest get() function
+// RestGet implements the rest Get() function
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -124,6 +160,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 
+	this["cookies"] = fetchCookies(s, response)
 	status := response.StatusCode()
 	this["status"] = status
 	this["headers"] = headerMap(response)
@@ -137,6 +174,23 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	this["response"] = rb
 	return rb, nil
+}
+
+// Extract the cookies from the response, and format them as an Ego array
+// of structs.
+func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
+	cookies := r.Cookies()
+	result := make([]interface{}, len(cookies))
+	for i, v := range r.Cookies() {
+		cookie := map[string]interface{}{}
+		cookie["expires"] = v.Expires.String()
+		cookie["name"] = v.Name
+		cookie["domain"] = v.Domain
+		cookie["value"] = v.Value
+		cookie["path"] = v.Path
+		result[i] = cookie
+	}
+	return result
 }
 
 // headerMap is a support function that extracts the header data from a
@@ -153,7 +207,7 @@ func headerMap(response *resty.Response) map[string]interface{} {
 	return headers
 }
 
-// RestPost implements the post() rest function
+// RestPost implements the Post() rest function
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -196,6 +250,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 
+	this["cookies"] = fetchCookies(s, response)
 	status := response.StatusCode()
 	this["status"] = status
 	this["headers"] = headerMap(response)
@@ -211,7 +266,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return rb, nil
 }
 
-// RestDelete implements the delete() rest function
+// RestDelete implements the Delete() rest function
 func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -254,6 +309,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 
+	this["cookies"] = fetchCookies(s, response)
 	status := response.StatusCode()
 	this["status"] = status
 	this["headers"] = headerMap(response)

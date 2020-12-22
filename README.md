@@ -564,26 +564,26 @@ The string is evaluated as an expression (using the `expressions` package in `go
 and the result is returned as the function value. This allows user input to contain complex
 expressions or function calls that are dynamically compiled at runtime. 
 
-### rest.open(<user, password>)
+### rest.New(<user, password>)
 This returns a rest connection handle (an opaque Go object represented by an Ego symbol
 value). If the optional username and password are specified, then the request will use
 Basic authentication with that username and password. Otherwise, if the logon-token 
 preference item is available, it is used as a Bearer token string for authentication.
 
 The resulting item can be used to make calls using the connection just created. For 
-example, if the value of `rest.open()` was stored in the variable `r`, the following
+example, if the value of `rest.New()` was stored in the variable `r`, the following
 functions would become available: 
 
 | Function | Description |
 |----------|-------------|
-| r.base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
-| r.get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
-| r.post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
+| r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
+| r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
+| r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
 
 &nbsp; 
 &nbsp;     
 
-Additionally, the values `r.status`, `r.headers`, and `r.response` can be used to examing the HTTP status
+Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used to examing the HTTP status
 code of the last request, the headers returned, and the value of the response body of the last request.
 The response body may be a string (if the media type was not json) or an actual object if the media type
 was json.
@@ -591,8 +591,8 @@ was json.
 Here's a simple example:
 
     
-    server := rest.open().base("http://localhost:8080")
-    call server.get("/services/debug")
+    server := rest.New().Base("http://localhost:8080")
+    server.Get("/services/debug")
      
     if server.status == 200 {
         print "Server session ID is ", server.response.session

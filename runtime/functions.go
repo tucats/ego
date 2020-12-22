@@ -19,7 +19,7 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 		"__readonly": true,
 	})
 	_ = syms.SetAlways("rest", map[string]interface{}{
-		"Open":       RestOpen,
+		"New":        RestNew,
 		"__readonly": true,
 	})
 }
