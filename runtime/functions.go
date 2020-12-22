@@ -15,7 +15,7 @@ import (
 func AddBuiltinPackages(syms *symbols.SymbolTable) {
 
 	_ = syms.SetAlways("gremlin", map[string]interface{}{
-		"Open":       GremlinOpen,
+		"New":        GremlinOpen,
 		"__readonly": true,
 	})
 	_ = syms.SetAlways("rest", map[string]interface{}{
