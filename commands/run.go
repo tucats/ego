@@ -32,6 +32,10 @@ const QuitCommand = "%quit"
 // RunAction is the command handler for the ego CLI
 func RunAction(c *cli.Context) error {
 
+	if err := runtime.InitProfileDefaults(); err != nil {
+		return err
+	}
+
 	programArgs := make([]interface{}, 0)
 	mainName := "main program"
 	prompt := c.MainProgram + "> "

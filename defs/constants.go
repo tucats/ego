@@ -26,6 +26,20 @@ const (
 	// and test directories
 	EgoPathSetting = "ego-path"
 
+	// Do we normalize the case of all symbols to a common
+	// (lower) case string. If not true, symbol names are
+	// case-sensitive.
+	CaseNormalizedSetting = "case-normalized"
+
+	// What is the output format that should be used by
+	// default for operations that could return either
+	// "text" or "json" output.
+	OutputFormatSetting = "output-format"
+
+	// If true, the script language includes the print
+	// verb.
+	PrintEnabledSetting = "print-enabled"
+
 	/////////////////////////////////////////////////////
 	//                                                 //
 	//        Settings used by the RUN command         //
@@ -93,5 +107,5 @@ const (
 
 	// A string indicating the duration of a token before it is
 	// considered expired. Examples are "15m" or "24h"
-	TokenExpirationSetting = "$token-expiration"
+	TokenExpirationSetting = "token-expiration"
 )

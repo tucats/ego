@@ -27,6 +27,10 @@ func TestAction(c *cli.Context) error {
 	var text string
 	var err error
 
+	if err := runtime.InitProfileDefaults(); err != nil {
+		return err
+	}
+
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("Unit Tests")
 

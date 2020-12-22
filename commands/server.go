@@ -195,6 +195,10 @@ func Restart(c *cli.Context) error {
 // Server initializes the server
 func Server(c *cli.Context) error {
 
+	if err := runtime.InitProfileDefaults(); err != nil {
+		return err
+	}
+
 	session, _ := symbols.RootSymbolTable.Get("_session")
 
 	// Set up the logger unless specifically told not to
