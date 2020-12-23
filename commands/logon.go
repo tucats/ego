@@ -7,10 +7,12 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/util"
 )
 
 const LogonEndpoint = "/services/logon"
@@ -67,7 +69,8 @@ func Logon(c *cli.Context) error {
 		case 404:
 			err = errors.New(defs.LogonEndpointNotFound)
 		default:
-			err = fmt.Errorf("HTTP %d", r.StatusCode())
+			text, _ := runtime.RestStatusMessage(nil, []interface{}{r.StatusCode()})
+			err = errors.New(util.GetString(text))
 		}
 	}
 
