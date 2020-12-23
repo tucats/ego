@@ -105,6 +105,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if cachedItem, ok := serviceCache[r.URL.Path]; ok {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c
+		cachedItem.age = time.Now()
+		serviceCache[r.URL.Path] = cachedItem
 		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
 		cacheMutext.Unlock()
 	} else {

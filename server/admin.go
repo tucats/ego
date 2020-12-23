@@ -213,10 +213,10 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		result := defs.CacheResponse{
 			Count: len(serviceCache),
 			Limit: MaxCachedEntries,
-			Items: []string{},
+			Items: []defs.CachedItem{},
 		}
-		for k := range serviceCache {
-			result.Items = append(result.Items, k)
+		for k, v := range serviceCache {
+			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
 		}
 
 		b, _ := json.Marshal(result)
@@ -232,7 +232,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		result := defs.CacheResponse{
 			Count: 0,
 			Limit: MaxCachedEntries,
-			Items: []string{},
+			Items: []defs.CachedItem{},
 		}
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)

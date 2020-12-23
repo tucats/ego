@@ -13,12 +13,17 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+type CachedItem struct {
+	Name     string    `json:"name"`
+	LastUsed time.Time `json:"last"`
+}
+
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint
 type CacheResponse struct {
-	Count  int      `json:"count"`
-	Limit  int      `json:"limit"`
-	Items  []string `json:"items"`
+	Count  int          `json:"count"`
+	Limit  int          `json:"limit"`
+	Items  []CachedItem `json:"items"`
 	Status RestResponse
 }
 

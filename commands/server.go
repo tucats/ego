@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/server"
 	"github.com/tucats/gopackages/app-cli/cli"
 	"github.com/tucats/gopackages/app-cli/persistence"
+	"github.com/tucats/gopackages/app-cli/tables"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
 )
@@ -292,6 +293,30 @@ func FlushServerCaches(c *cli.Context) error {
 		fmt.Println(string(b))
 	} else {
 		ui.Say("Server cache emptied")
+	}
+	return nil
+}
+
+func ListServerCaches(c *cli.Context) error {
+	cacheStatus := defs.CacheResponse{}
+	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)
+	if err != nil {
+		return err
+	}
+	if ui.OutputFormat == "json" {
+		b, _ := json.Marshal(cacheStatus)
+		fmt.Println(string(b))
+	} else {
+		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
+		if cacheStatus.Count > 0 {
+			fmt.Printf("\n")
+			t, _ := tables.New([]string{"Endpoint", "Last Used"})
+
+			for _, v := range cacheStatus.Items {
+				_ = t.AddRowItems(v.Name, v.LastUsed)
+			}
+			t.Print("text")
+		}
 	}
 	return nil
 }

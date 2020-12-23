@@ -108,15 +108,15 @@ var ServerUserGrammar = []cli.Option{
 var ServerGrammar = []cli.Option{
 
 	{
-		LongName:    "add-user",
-		Description: "Add a new user to the server's user database",
+		LongName:    "set-user",
+		Description: "Create or update user information",
 		OptionType:  cli.Subcommand,
 		Action:      commands.AddUser,
 		Value:       ServerUserGrammar,
 	},
 	{
 		LongName:    "delete-user",
-		Description: "Delete a user to the server's user database",
+		Description: "Delete a user from the server's user database",
 		OptionType:  cli.Subcommand,
 		Action:      commands.DeleteUser,
 		Value:       ServerDeleteGrammar,
@@ -141,7 +141,13 @@ var ServerGrammar = []cli.Option{
 		Action:      commands.FlushServerCaches,
 		Value:       ServerStateGrammar,
 	},
-
+	{
+		LongName:    "show-caches",
+		Description: "Show service caches",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ListServerCaches,
+		Value:       ServerStateGrammar,
+	},
 	{
 		LongName:    "restart",
 		Description: "Restart an existing server",
