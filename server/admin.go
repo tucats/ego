@@ -208,6 +208,37 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 
+	case "POST":
+		var result defs.CacheResponse
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+
+		err := json.Unmarshal(buf.Bytes(), &result)
+		if err == nil {
+			MaxCachedEntries = result.Limit
+		}
+		if err != nil {
+			result.Status.Status = 400
+			result.Status.Message = err.Error()
+		} else {
+
+			result = defs.CacheResponse{
+				Count: len(serviceCache),
+				Limit: MaxCachedEntries,
+				Items: []defs.CachedItem{},
+			}
+			result.Status.Status = 200
+			result.Status.Message = "Success"
+
+			for k, v := range serviceCache {
+				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
+			}
+		}
+		b, _ := json.Marshal(result)
+		_, _ = w.Write(b)
+		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status.Status, result.Status.Message))
+		return
+
 	// Get the list of cached items.
 	case "GET":
 		result := defs.CacheResponse{
@@ -215,6 +246,9 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
+		result.Status.Status = 200
+		result.Status.Message = "Success"
+
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
 		}
@@ -234,6 +268,9 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
+		result.Status.Status = 200
+		result.Status.Message = "Success"
+
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 		ui.Debug(ui.ServerLogger, "200 Success")

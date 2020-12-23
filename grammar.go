@@ -104,28 +104,73 @@ var ServerUserGrammar = []cli.Option{
 	},
 }
 
-// ServerGrammar contains the grammar of SERVER subcommands
-var ServerGrammar = []cli.Option{
-
+// UserGrammer contains the grammer for SERVER USERS subcommands
+var UserGrammar = []cli.Option{
 	{
-		LongName:    "set-user",
+		LongName:    "set",
 		Description: "Create or update user information",
 		OptionType:  cli.Subcommand,
 		Action:      commands.AddUser,
 		Value:       ServerUserGrammar,
 	},
 	{
-		LongName:    "delete-user",
+		LongName:    "delete",
 		Description: "Delete a user from the server's user database",
 		OptionType:  cli.Subcommand,
 		Action:      commands.DeleteUser,
 		Value:       ServerDeleteGrammar,
 	},
 	{
-		LongName:    "list-users",
+		LongName:    "list",
 		Description: "List users in the server's user database",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ListUsers,
+	},
+}
+
+// CachesGrammar defines the grammar for the SERVER CACHES subcommands
+var CachesGrammar = []cli.Option{
+	{
+		LongName:    "flush",
+		Description: "Flush service caches",
+		OptionType:  cli.Subcommand,
+		Action:      commands.FlushServerCaches,
+		Value:       ServerStateGrammar,
+	},
+	{
+		LongName:    "list",
+		Aliases:     []string{"show"},
+		Description: "List service caches",
+		OptionType:  cli.Subcommand,
+		Action:      commands.ListServerCaches,
+		Value:       ServerStateGrammar,
+	},
+	{
+		LongName:             "set-size",
+		Description:          "Set the server cache size",
+		ParametersExpected:   1,
+		ParameterDescription: "limit",
+		OptionType:           cli.Subcommand,
+		Action:               commands.SetCacheSize,
+		Value:                ServerStateGrammar,
+	},
+}
+
+// ServerGrammar contains the grammar of SERVER subcommands
+var ServerGrammar = []cli.Option{
+	{
+		LongName:    "users",
+		Aliases:     []string{"user"},
+		Description: "Manage server user database",
+		OptionType:  cli.Subcommand,
+		Value:       UserGrammar,
+	},
+	{
+		LongName:    "caches",
+		Aliases:     []string{"cache"},
+		Description: "Manage server caches",
+		OptionType:  cli.Subcommand,
+		Value:       CachesGrammar,
 	},
 	{
 		LongName:    "run",
@@ -133,20 +178,6 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.Server,
 		Value:       ServerRunGrammar,
-	},
-	{
-		LongName:    "flush-caches",
-		Description: "Flush service caches",
-		OptionType:  cli.Subcommand,
-		Action:      commands.FlushServerCaches,
-		Value:       ServerStateGrammar,
-	},
-	{
-		LongName:    "show-caches",
-		Description: "Show service caches",
-		OptionType:  cli.Subcommand,
-		Action:      commands.ListServerCaches,
-		Value:       ServerStateGrammar,
 	},
 	{
 		LongName:    "restart",

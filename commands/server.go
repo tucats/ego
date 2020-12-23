@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -280,6 +281,33 @@ func Server(c *cli.Context) error {
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 	return err
+}
+
+func SetCacheSize(c *cli.Context) error {
+	if c.GetParameterCount() == 0 {
+		return errors.New("Expected cache size value not found")
+	}
+	c.GetParameter(0)
+	size, err := strconv.Atoi(c.GetParameter(0))
+
+	if err != nil {
+		return err
+	}
+	cacheStatus := defs.CacheResponse{
+		Limit: size,
+	}
+
+	err = runtime.Exchange("/admin/caches", "POST", &cacheStatus, &cacheStatus)
+	if err != nil {
+		return err
+	}
+	if ui.OutputFormat == "json" {
+		b, _ := json.Marshal(cacheStatus)
+		fmt.Println(string(b))
+	} else {
+		ui.Say("Server cache size updated")
+	}
+	return nil
 }
 
 func FlushServerCaches(c *cli.Context) error {
