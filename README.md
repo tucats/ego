@@ -619,9 +619,8 @@ to indicate that you want to control the server listening on the given port numb
 | stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
 | restart | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
 | status | Report on the status of the server. |
-| set-user | Create or update a  user credential. Options specify username, password, and permissions |
-| delete-user | Delete a user credential. Option specifies the username |
-| list-users | List the user credentials (except password) |
+| users | Subcommands to create, delete, or list users |
+| caches | Subcommands to view, flush, and set the size of the endpoint service cache |
 
 &nbsp;
 &nbsp;
