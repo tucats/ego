@@ -40,6 +40,8 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Delete":     RestDelete,
 		"Base":       RestBase,
 		"Media":      RestMedia,
+		"Token":      RestToken,
+		"Auth":       RestAuth,
 		"media_type": defs.JSONMediaType,
 		"baseURL":    "",
 		"response":   "",

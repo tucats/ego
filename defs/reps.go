@@ -13,6 +13,15 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+// CacheResponse describes the response object returned from
+// the /admin/caches endpoint
+type CacheResponse struct {
+	Count  int      `json:"count"`
+	Limit  int      `json:"limit"`
+	Items  []string `json:"items"`
+	Status RestResponse
+}
+
 // User describbes a single user in the user database. The password field
 // must be removed from response objects.
 type User struct {

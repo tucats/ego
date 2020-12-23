@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -281,5 +282,16 @@ func Server(c *cli.Context) error {
 }
 
 func FlushServerCaches(c *cli.Context) error {
-	return runtime.Exchange("/admin/caches", "DELETE", nil, nil)
+	cacheStatus := defs.CacheResponse{}
+	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
+	if err != nil {
+		return err
+	}
+	if ui.OutputFormat == "json" {
+		b, _ := json.Marshal(cacheStatus)
+		fmt.Println(string(b))
+	} else {
+		ui.Say("Server cache emptied")
+	}
+	return nil
 }

@@ -120,9 +120,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		tokens := tokenizer.New(text)
 
 		// Compile the token stream
-		compilerInstance = compiler.New()
+		compilerInstance = compiler.New().PrintEnabled(true)
 		serviceCode, err = compilerInstance.Compile(tokens)
-
+		if err != nil {
+			w.WriteHeader(400)
+			_, _ = io.WriteString(w, "Error: "+err.Error())
+			cacheMutext.Unlock()
+			return
+		}
 		// If it compiled succesfully, then put it in the cache
 		if err == nil {
 			serviceCache[r.URL.Path] = cachedCompilationUnit{
@@ -155,7 +160,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Do we need to authenticate?
-	var ok bool
+	var authenticatedCredentials bool
 	user := ""
 	pass := ""
 	_ = syms.SetAlways("_token", "")
@@ -163,34 +168,35 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
+		authenticatedCredentials = false
 		ui.Debug(ui.ServerLogger, "No authentication credentials given")
 	} else {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
-			ok = true
 			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
+			authenticatedCredentials = validateToken(token)
 			_ = syms.SetAlways("_token", token)
-			_ = syms.SetAlways("_token_valid", validateToken(token))
+			_ = syms.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
 			ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 		} else {
-			user, pass, ok = r.BasicAuth()
-			if !ok {
+			user, pass, authenticatedCredentials = r.BasicAuth()
+			if !authenticatedCredentials {
 				ui.Debug(ui.ServerLogger, "BasicAuth invalid")
 			} else {
-				ok = validatePassword(user, pass)
+				authenticatedCredentials = validatePassword(user, pass)
 			}
 			_ = syms.SetAlways("_token", "")
 			_ = syms.SetAlways("_token_valid", false)
-			ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, ok)
+			ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, authenticatedCredentials)
 		}
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
 	_ = syms.SetAlways("_user", user)
 	_ = syms.SetAlways("_password", pass)
-	_ = syms.SetAlways("_authenticated", ok)
+	_ = syms.SetAlways("_authenticated", authenticatedCredentials)
 	_ = syms.SetGlobal("_rest_status", 200)
-	_ = syms.SetAlways("_superuser", getPermission(user, "root"))
+	_ = syms.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
 
 	// Get the body of the request as a string
 	byteBuffer := new(bytes.Buffer)
@@ -232,8 +238,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(status)
-	responseObject, ok := syms.Get("_rest_response")
-	if ok && responseObject != nil {
+	responseObject, authenticatedCredentials := syms.Get("_rest_response")
+	if authenticatedCredentials && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))
 		ui.Debug(ui.ServerLogger, "STATUS %d, sending JSON response", status)

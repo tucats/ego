@@ -208,11 +208,34 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 
+	// Get the list of cached items.
+	case "GET":
+		result := defs.CacheResponse{
+			Count: len(serviceCache),
+			Limit: MaxCachedEntries,
+			Items: []string{},
+		}
+		for k := range serviceCache {
+			result.Items = append(result.Items, k)
+		}
+
+		b, _ := json.Marshal(result)
+		_, _ = w.Write(b)
+		ui.Debug(ui.ServerLogger, "200 Success")
+		return
+
 	// DELETE the cached service compilation units. In-flight services
 	// are unaffected.
 	case "DELETE":
 		serviceCache = map[string]cachedCompilationUnit{}
 		w.WriteHeader(200)
+		result := defs.CacheResponse{
+			Count: 0,
+			Limit: MaxCachedEntries,
+			Items: []string{},
+		}
+		b, _ := json.Marshal(result)
+		_, _ = w.Write(b)
 		ui.Debug(ui.ServerLogger, "200 Success")
 		return
 

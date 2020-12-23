@@ -1,16 +1,11 @@
 /* Debugging service. This just dumps out the symbol table */
 
 import ( cipher util )
+
+@authenticated user
 @status 200
 
 tv := _token_valid
-
-if !authenticated() & !tv {
-    fmt.Print( "401 Forbidden" )
-    @status 401
-    return
-}
-
 
 if _json {
     r := {}
@@ -35,11 +30,4 @@ if _json {
     return
 }
 
-fmt.Printf("\nEGO Server %s\n\n", _version)
-fmt.Printf("S Y M B O L   T A B L E\n-----------------------\n%s\n", util.Symbols())
-fmt.Printf("\nA U T H E N T I C A T I O N\n---------------------------\n")
-fmt.Printf("Authenticated:    %v\n", authenticated())
-fmt.Printf("User token valid: %v\n, cipher.Validate(_token))
-try {
-    fmt.Printf( "User data value:  %s\n", cipher.Token(_token).name)
-} catch { fmt.Printf("<none>\n") }
+@response fmt.Sprintf("Healthy server, user=%s, session %s", _user, _session)

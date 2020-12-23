@@ -48,13 +48,13 @@ func Logon(c *cli.Context) error {
 	// Call the endpoint
 	r, err := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass).NewRequest().Get(url)
 	if err == nil && r.StatusCode() == 200 {
-		token := string(r.Body())
-		if strings.HasSuffix(token, "\n") {
-			token = token[:len(token)-1]
-		}
+		token := strings.TrimSuffix(string(r.Body()), "\n")
 		persistence.Set(defs.LogonTokenSetting, token)
-		ui.Say("Successfully logged in as \"%s\"", user)
-		return nil
+		err = persistence.Save()
+		if err == nil {
+			ui.Say("Successfully logged in as \"%s\"", user)
+		}
+		return err
 	}
 
 	// IF there was an error condition, let's report it now.

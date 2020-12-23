@@ -7,20 +7,9 @@ import (
     cipher 
 )
 
-// If no credentials give, allow the browser to prompt
-if ( _user == "" ) & ( _password == "" ) {
-    fmt.Print( "401 No credentials")
-    @status 401
-    return
-}
-
-// If not an authenticated user, forbidden
-if !_authenticated {
-    fmt.Print( "403 Forbidden" )
-    @status 403
-    return
-}
+// Can only proceed if authenticated and has admin privileges
+@authenticated admin
 
 // Generate a token and return it as text to the caller
-fmt.Print( cipher.Create(_user))
+@response cipher.Create(_user)
 @status 200
