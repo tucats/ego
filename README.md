@@ -619,8 +619,12 @@ to indicate that you want to control the server listening on the given port numb
 | stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
 | restart | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
 | status | Report on the status of the server. |
-| users | Subcommands to create, delete, or list users |
-| caches | Subcommands to view, flush, and set the size of the endpoint service cache |
+| users set | Create or update a user in the server database |
+| users delete | Remove a user from the server database |
+| users list | List users in the server database |
+| caches list | List the endpoints currently in the service cache |
+| caches flush | Flush the service cache on the server |
+| caches set-size | Set the number of service endpoints the cache can hold |
 
 &nbsp;
 &nbsp;
