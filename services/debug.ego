@@ -5,21 +5,21 @@ import ( cipher util )
 @authenticated user
 @status 200
 
-tv := _token_valid
-
 if _json {
-    r := {}
-    r.version = _version
-    r.valid_user = authenticated()
-    r.token_valid = tv
-    if tv {
+    r := {
+        valid_user:  authenticated(),
+        version:     _version,
+        token_valid: _token_valid,
+        session:     _session 
+    }
+
+    if _token_valid {
         // If the token was valid, get some additional info about the user it represents
         t := cipher.Token(_token)
         r.user = t.name
         r.data = t.data
         r.superuser = getuser(t.name).superuser
     }
-    r.session = _session
 
     // If there was a body, this was a POST so return the body as
     // a real value.
@@ -30,4 +30,4 @@ if _json {
     return
 }
 
-@response fmt.Sprintf("Healthy server, user=%s, session %s", _user, _session)
+@response fmt.Sprintf("Healthy server,\n\tversion=%s,\n\tuser=%s,\n\tsession %s", _version, _user, _session)

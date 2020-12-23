@@ -688,6 +688,38 @@ to control its operation.
 &nbsp; 
 &nbsp;     
 
+### Directives
+There are a few compiler directives that can be used in service programs that are executed by the
+server. These allow for more declarative code.
+
+`@authenticated type`
+This requires that the caller of the service be authenticated, and specifies the type of the authentication
+to be performed. This should be at the start of the service code; if the caller is not authenticated then the
+rest of the services does not run.  Valid types are:
+
+| Type | Description |
+| --- | --- |
+| any | User can be authenticated by username or token |
+| token | User must be authenticated by token only |
+| user | User must be authenticated with username/password only |
+| admin | The user (regardless of authentication) must have root privileges |
+| tokenadmin | The user must authenticated by token and have root privilieges |
+
+&nbsp;
+&nbsp;
+
+`@status n`
+This sets the REST return status code to the given integer value. By default, the status value is 200
+for "success" but can be set to any valid integer HTTP status code. For example, 404 means "not found"
+and 403 means "forbidden".
+
+`@response v`
+This adds the contents of the expression value `v` to the result set returned to the caller. You
+can have multiple `@response` directives, they are accumulated in the order executed. A primary 
+value of this is also that it automatically detects if the media type is meant to specify JSON
+results; in this case the value is automatically converted to a JSON string before being added
+to the response.
+
 ### Functions
 There are additional functions made available to the Ego programs run as services. These are generally used to support writing
 services for administrative or privileged functions. For example, a service that updates a password would use all of the following
