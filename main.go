@@ -15,7 +15,7 @@ import (
 var BuildVersion = "0"
 
 func main() {
-	app := app.New("ego: execute code in the ego language")
+	app := app.New("ego: execute code in the Ego language")
 
 	// Use the build number from the externally-generated build processor.
 	buildVer, _ := strconv.Atoi(BuildVersion)

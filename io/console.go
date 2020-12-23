@@ -18,13 +18,13 @@ var consoleLock sync.Mutex
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
 
-	mode := persistence.Get(defs.UseReadline)
+	useReadLine := persistence.GetBool(defs.UseReadline)
 
 	// If readline has been explicitly disabled for some reason,
 	// do a more primitive input operation.
 	// TODO this entire functionality could probably be moved
 	// into ui.Prompt() at some point.
-	if mode == "off" || mode == "false" {
+	if !useReadLine {
 
 		var b strings.Builder
 

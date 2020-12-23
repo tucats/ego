@@ -34,23 +34,27 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 
 	return map[string]interface{}{
-		"client":     client,
-		"Get":        RestGet,
-		"Post":       RestPost,
-		"Delete":     RestDelete,
-		"Base":       RestBase,
-		"Media":      RestMedia,
-		"Token":      RestToken,
-		"Auth":       RestAuth,
-		"media_type": defs.JSONMediaType,
-		"baseURL":    "",
-		"response":   "",
-		"status":     0,
-		"headers":    map[string]interface{}{},
-		"__readonly": true,
+		"client":        client,
+		"Get":           RestGet,
+		"Post":          RestPost,
+		"Delete":        RestDelete,
+		"Base":          RestBase,
+		"Media":         RestMedia,
+		"Token":         RestToken,
+		"Auth":          RestAuth,
+		"StatusMessage": RestStatusMessage,
+		"media_type":    defs.JSONMediaType,
+		"baseURL":       "",
+		"response":      "",
+		"status":        0,
+		"headers":       map[string]interface{}{},
+		"__readonly":    true,
 	}, nil
 }
 
+// utility function that prepends the base URL for this instance
+// of a rest service to the supplied URL string. If there is
+// no base URL defined, then nothing is changed.
 func applyBaseURL(url string, this map[string]interface{}) string {
 	if b, ok := this["baseURL"]; ok {
 		base := util.GetString(b)
@@ -66,6 +70,72 @@ func applyBaseURL(url string, this map[string]interface{}) string {
 		url = base + url
 	}
 	return url
+}
+
+// This maps HTTP status codes to a message string.
+var codes = map[int]string{
+	100: "Continue",
+	101: "Switching protocol",
+	102: "Processing",
+	103: "Early hints",
+	200: "OK",
+	201: "Created",
+	202: "Accepted",
+	203: "Non-authoritative information",
+	204: "No content",
+	205: "Reset content",
+	206: "Partial content",
+	207: "Multi-status",
+	208: "Already reported",
+	226: "IM Used",
+	300: "Multiple choice",
+	301: "Moved permanently",
+	302: "Found",
+	303: "See other",
+	304: "Not modified",
+	305: "Use proxy",
+	307: "Temporary redirect",
+	308: "Permanent redirect",
+	400: "Bad request",
+	401: "Unauthorized",
+	402: "Payment required",
+	403: "Forbidden",
+	404: "Not found",
+	405: "Method not allowed",
+	406: "Not acceptable",
+	407: "Proxy authorization required",
+	408: "Request timeout",
+	409: "Conflict",
+	410: "Gone",
+	411: "Length required",
+	412: "Precondition failed",
+	413: "Payload too large",
+	414: "URI too long",
+	415: "Unsupported media type",
+	416: "Range not satisfiable",
+	417: "Expectation failed",
+	418: "I'm a teapot",
+	421: "Misdirected request",
+	422: "Unprocessable entity",
+	423: "Locked",
+	424: "Failed dependency",
+	425: "Too early",
+	426: "Upgrade required",
+	428: "Precondition required",
+	429: "Too many requests",
+	431: "Request header fields too large",
+	451: "Unavilable for legal reasons",
+}
+
+func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.New("incorrect number of arguments")
+	}
+	code := util.GetInt(args[0])
+	if text, ok := codes[code]; ok {
+		return text, nil
+	}
+	return fmt.Sprintf("HTTP status %d", code), nil
 }
 
 // RestBase implements the Base() rest function

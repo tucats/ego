@@ -20,6 +20,7 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 	})
 	_ = syms.SetAlways("rest", map[string]interface{}{
 		"New":        RestNew,
+		"Status":     RestStatusMessage,
 		"__readonly": true,
 	})
 }
