@@ -197,7 +197,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		}
 	} else {
 		if len(args) != 2 {
-			return false, fmt.Errorf("incorrect number of arguments")
+			return false, errors.New(defs.IncorrectArgumentCount)
 		}
 		user = util.GetString(args[0])
 		pass = util.GetString(args[1])
@@ -218,7 +218,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	var user, priv string
 
 	if len(args) != 2 {
-		return false, fmt.Errorf("incorrect number of arguments")
+		return false, errors.New(defs.IncorrectArgumentCount)
 	}
 	user = util.GetString(args[0])
 	priv = strings.ToUpper(util.GetString(args[1]))
@@ -243,13 +243,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		superUser = util.GetBool(s)
 	}
 	if !superUser {
-		return nil, errors.New("no privilege for operation")
+		return nil, errors.New(defs.NoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
 	if u, ok := args[0].(map[string]interface{}); ok {
@@ -298,12 +298,12 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		superUser = util.GetBool(s)
 	}
 	if !superUser {
-		return nil, errors.New("no privilege for operation")
+		return nil, errors.New(defs.NoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is the username
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	name := strings.ToLower(util.GetString(args[0]))
 
@@ -319,7 +319,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
 	r := map[string]interface{}{}

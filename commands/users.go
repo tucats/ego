@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -98,11 +99,11 @@ func ListUsers(c *cli.Context) error {
 	var response *resty.Response
 	response, err = r.Get(url)
 	if response.StatusCode() == 404 && len(response.Body()) == 0 {
-		err = fmt.Errorf("%d %s", 404, "not found")
+		err = errors.New(defs.NotFound)
 	}
 	status := response.StatusCode()
 	if status == 403 {
-		err = fmt.Errorf("You do not have permission to list users")
+		err = errors.New(defs.NoPrivilegeForOperation)
 	}
 	if err == nil {
 		if status == 200 {

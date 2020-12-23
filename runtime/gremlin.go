@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/northwesternmutual/grammes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
@@ -90,7 +91,7 @@ func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}
 		return nil, err
 	}
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	query := util.GetString(args[0])
 	res, err := client.ExecuteStringQuery(query)
@@ -105,7 +106,7 @@ func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}
 func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
 	var m interface{}
@@ -150,7 +151,7 @@ type column struct {
 // generating JSON instead of a formatted text output.
 func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
 	// Get a normalized result set from the query.
@@ -161,7 +162,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(resultSet)
 	if len(a) == 0 {
-		return nil, errors.New("not a result set")
+		return nil, errors.New(defs.InvalidResultSet)
 	}
 
 	// Make a list of the sort key names
@@ -228,7 +229,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	includeHeadings := true
 	if len(args) == 2 {
@@ -238,7 +239,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(args[0])
 	if len(a) == 0 {
-		return nil, errors.New("not a result set")
+		return nil, errors.New(defs.InvalidResultSet)
 	}
 
 	// Make a list of the sort key names
@@ -329,19 +330,19 @@ func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
 
 	g, ok := symbols.Get("_this")
 	if !ok {
-		return nil, errors.New("no function reciver")
+		return nil, errors.New(defs.NoFunctionReceiver)
 	}
 	gc, ok := g.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("not a valid gremlin client struct")
+		return nil, errors.New(defs.InvalidGremlinClient)
 	}
 	client, ok := gc["client"]
 	if !ok {
-		return nil, errors.New("no 'client' member found")
+		return nil, errors.New(defs.InvalidGremlinClient)
 	}
 	cp, ok := client.(*grammes.Client)
 	if !ok {
-		return nil, errors.New("'client' is not a gremlin client pointer")
+		return nil, errors.New(defs.InvalidGremlinClient)
 	}
 	return cp, nil
 }
@@ -359,7 +360,7 @@ type GremlinColumn struct {
 func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	r := args[0]
 	var err error
@@ -376,7 +377,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	case []interface{}:
 		// do nothing
 	default:
-		return nil, errors.New("invalid result set type")
+		return nil, errors.New(defs.InvalidResultSetType)
 	}
 
 	columns := map[string]GremlinColumn{}
@@ -384,7 +385,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	for _, row := range r.([]interface{}) {
 		rowMap, ok := row.(map[string]interface{})
 		if !ok {
-			return nil, errors.New("invalid row")
+			return nil, errors.New(defs.InvalidRow)
 		}
 		for k, v := range rowMap {
 			gc := GremlinColumn{Name: k}
@@ -504,7 +505,7 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 func gremlinResultArray(i interface{}) (interface{}, error) {
 	a, ok := i.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("expected array not found")
+		return nil, errors.New(defs.InvalidResultSet)
 	}
 
 	r := []interface{}{}
@@ -523,7 +524,7 @@ func gremlinResultMapList(i interface{}) (interface{}, error) {
 
 	a, ok := i.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("expected map not found")
+		return nil, errors.New(defs.InvalidResultSet)
 	}
 
 	for i := 0; i < len(a); i = i + 2 {
@@ -542,7 +543,7 @@ func gremlinResultMap(i interface{}) (interface{}, error) {
 	r := map[string]interface{}{}
 	a, ok := i.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("expected map not found")
+		return nil, errors.New(defs.InvalidResultSet)
 	}
 	for k, v := range a {
 		r[k], err = gremlinResultValue(v)
@@ -557,11 +558,11 @@ func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
 	// Unwrap the parameters
 	rows := util.GetArray(r)
 	if rows == nil {
-		return nil, errors.New("rowset not an array")
+		return nil, errors.New(defs.InvalidRowSet)
 	}
 	columnList := util.GetArray(m)
 	if columnList == nil {
-		return nil, errors.New("map not a struct")
+		return nil, errors.New(defs.InvalidStruct)
 	}
 
 	columns := map[string]string{}

@@ -285,7 +285,7 @@ func Server(c *cli.Context) error {
 
 func SetCacheSize(c *cli.Context) error {
 	if c.GetParameterCount() == 0 {
-		return errors.New("Expected cache size value not found")
+		return errors.New(defs.CacheSizeNotSpecified)
 	}
 	c.GetParameter(0)
 	size, err := strconv.Atoi(c.GetParameter(0))

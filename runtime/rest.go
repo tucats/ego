@@ -129,7 +129,7 @@ var codes = map[int]string{
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	code := util.GetInt(args[0])
 	if text, ok := codes[code]; ok {
@@ -165,7 +165,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	this := getThis(s)
 	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	user := util.GetString(args[0])
 	pass := util.GetString(args[1])
@@ -181,7 +181,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 	this := getThis(s)
 	if len(args) > 1 {
-		return nil, errors.New("Incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
 	token := persistence.Get("logon-token")
@@ -215,7 +215,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 
 	if len(args) != 1 {
-		return nil, fmt.Errorf("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	url := applyBaseURL(util.GetString(args[0]), this)
 	r := client.NewRequest()
@@ -287,7 +287,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	this := getThis(s)
 	if len(args) < 1 || len(args) > 2 {
-		return nil, fmt.Errorf("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	url := applyBaseURL(util.GetString(args[0]), this)
 	var body interface{} = ""
@@ -346,7 +346,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 	this := getThis(s)
 	if len(args) < 1 || len(args) > 2 {
-		return nil, fmt.Errorf("incorrect number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	url := applyBaseURL(util.GetString(args[0]), this)
 	var body interface{} = ""
@@ -401,23 +401,18 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // variable, validates that it contains a REST client object, and returns
 // the native client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
-	g, ok := symbols.Get("_this")
-	if !ok {
-		return nil, errors.New("no function reciver")
+	if g, ok := symbols.Get("_this"); ok {
+		if gc, ok := g.(map[string]interface{}); ok {
+			if client, ok := gc["client"]; ok {
+				if cp, ok := client.(*resty.Client); ok {
+					return cp, nil
+				}
+			}
+		}
 	}
-	gc, ok := g.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("not a valid rest client struct")
-	}
-	client, ok := gc["client"]
-	if !ok {
-		return nil, errors.New("no 'client' member found")
-	}
-	cp, ok := client.(*resty.Client)
-	if !ok {
-		return nil, errors.New("'client' is not a rest client pointer")
-	}
-	return cp, nil
+
+	return nil, errors.New(defs.NoFunctionReceiver)
+
 }
 
 // getThis returns a map for the "this" object in the current

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/symbols"
@@ -48,7 +49,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // string expressions of structs or arrays
 func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New("wrong number of arguments")
+		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	return expressions.Evaluate(util.GetString(args[0]), symbols)
 }

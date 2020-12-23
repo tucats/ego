@@ -25,7 +25,7 @@ func Logon(c *cli.Context) error {
 		persistence.Set(defs.LogonServerSetting, url)
 	}
 	if url == "" {
-		return fmt.Errorf("No --logon-server specified")
+		return errors.New(defs.LogonEndpointNotSpecified)
 	}
 
 	user, _ := c.GetString("username")
@@ -61,11 +61,11 @@ func Logon(c *cli.Context) error {
 	if err == nil {
 		switch r.StatusCode() {
 		case 401:
-			err = errors.New("No credentials provided")
+			err = errors.New(defs.CredentialsNotProvided)
 		case 403:
-			err = errors.New("Invalid credentials")
+			err = errors.New(defs.CredentialsInvalid)
 		case 404:
-			err = errors.New("Logon endpoint not found on server")
+			err = errors.New(defs.LogonEndpointNotFound)
 		default:
 			err = fmt.Errorf("HTTP %d", r.StatusCode())
 		}

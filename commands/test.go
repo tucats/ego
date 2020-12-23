@@ -140,7 +140,7 @@ func TestAction(c *cli.Context) error {
 	}
 
 	if exitValue > 0 {
-		return errors.New("terminated with errors")
+		return errors.New(defs.TerminatedWithErrors)
 	}
 	return nil
 }
