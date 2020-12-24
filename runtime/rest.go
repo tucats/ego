@@ -31,8 +31,6 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-
 	return map[string]interface{}{
 		"client":        client,
 		"Get":           RestGet,
@@ -209,6 +207,8 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // RestGet implements the rest Get() function
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +282,7 @@ func headerMap(response *resty.Response) map[string]interface{} {
 // RestPost implements the Post() rest function
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
+	client.SetRedirectPolicy()
 	if err != nil {
 		return nil, err
 	}
@@ -305,6 +306,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				return nil, err
 			}
 			body = string(b)
+			fmt.Printf("DEBUG: POST body = %s\n", body)
 		}
 	}
 
@@ -312,7 +314,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
-		isJSON = (ms == defs.JSONMediaType)
+		isJSON = strings.Contains(ms, defs.JSONMediaType)
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}

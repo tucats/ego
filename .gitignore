@@ -5,4 +5,9 @@ ego.exe
 test.ego
 ego-server.log
 ego-server.pid
-users.json
+user-database.json
+https-server.crt
+https-server.key
+server.crt
+server.csr
+server.key.org
