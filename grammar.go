@@ -176,7 +176,7 @@ var ServerGrammar = []cli.Option{
 		LongName:    "run",
 		Description: "Run the rest server",
 		OptionType:  cli.Subcommand,
-		Action:      commands.Server,
+		Action:      commands.RunServer,
 		Value:       ServerRunGrammar,
 	},
 	{
@@ -227,6 +227,11 @@ var ServerStateGrammar = []cli.Option{
 		OptionType:          cli.IntType,
 		Description:         "Specify port number of server",
 		EnvironmentVariable: "EGO_PORT",
+	},
+	{
+		LongName:    "session-uuid",
+		Description: "Sets the optional session UUID value",
+		OptionType:  cli.UUIDType,
 	},
 }
 
@@ -300,6 +305,11 @@ var ServerRunGrammar = []cli.Option{
 		ShortName:   "c",
 		Description: "Enable /code endpoint",
 		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "session-uuid",
+		Description: "Sets the optional session UUID value",
+		OptionType:  cli.UUIDType,
 	},
 }
 

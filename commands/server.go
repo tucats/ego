@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/tables"
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
+	"github.com/tucats/gopackages/util"
 )
 
 // Detach starts the sever as a detached process
@@ -49,6 +50,19 @@ func Start(c *cli.Context) error {
 		}
 	}
 
+	logID := uuid.New()
+	found := false
+	for i, v := range args {
+		if v == "--session-uuid" {
+			logID = uuid.MustParse(args[i+1])
+			found = true
+			break
+		}
+	}
+	if !found {
+		args = append(args, "--session-uuid", logID.String())
+	}
+
 	args[0], err = filepath.Abs(args[0])
 	if err != nil {
 		return err
@@ -65,7 +79,6 @@ func Start(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	logID := uuid.New()
 	if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
 		logID.String(),
 		time.Now().Format(time.UnixDate)),
@@ -88,6 +101,7 @@ func Start(c *cli.Context) error {
 		status.Args = args
 		status.PID = pid
 		status.LogID = logID
+		status.Args = args
 		err = server.WritePidFile(c, *status)
 		ui.Say("Server started as process %d", pid)
 	} else {
@@ -163,7 +177,22 @@ func Restart(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+
+		// Set up the new ID. If there was one already (because this might be
+		// a restart operation) then update the UUID value. If not, add the uuid
+		// command line option.
 		logID := uuid.New()
+		found := false
+		for i, v := range args {
+			if v == "--session-uuid" {
+				args[i+1] = logID.String()
+				found = true
+				break
+			}
+		}
+		if !found {
+			args = append(args, "--session-uuid", logID.String())
+		}
 
 		if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
 			logID.String(),
@@ -185,6 +214,7 @@ func Restart(c *cli.Context) error {
 		if err == nil {
 			status.PID = pid
 			status.LogID = logID
+			status.Args = args
 			err = server.WritePidFile(c, *status)
 			ui.Say("Server re-started as process %d", pid)
 		} else {
@@ -195,20 +225,28 @@ func Restart(c *cli.Context) error {
 	return err
 }
 
-// Server initializes the server
-func Server(c *cli.Context) error {
+// RunServer initializes the server
+func RunServer(c *cli.Context) error {
 
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
 
-	session, _ := symbols.RootSymbolTable.Get("_session")
-
-	// Set up the logger unless specifically told not to
+	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
-		ui.Debug(ui.ServerLogger, "*** Starting server session %s", session)
 	}
+
+	// If we have an explicit session ID, override the default. Otherwise,
+	// we'll use the default value created during symbol table startup.
+	session, found := c.GetString("session-uuid")
+	if found {
+		_ = symbols.RootSymbolTable.SetAlways("_session", session)
+	} else {
+		s, _ := symbols.RootSymbolTable.Get("_session")
+		session = util.GetString(s)
+	}
+	ui.Debug(ui.ServerLogger, "*** Starting server session %s", session)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {
