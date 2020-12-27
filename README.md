@@ -607,10 +607,8 @@ are used to respond to the request. Each program becomes an endpoint.
 ### Server subcommands
 The `ego server` command has subcommands that describe the operations you can perform. The
 commands that start or stop a rest server or evaluate it's status must be run on the same
-computer that the server itself is running on. Commands that affect user credentials, etc.
-can be performed from any location if the logon-server preference is set to point to the
-server in question. For each of the commands below, you can specify the option `--port n` 
-to indicate that you want to control the server listening on the given port number, where
+computer that the server itself is running on. For each of the commands below, you can 
+specify the option `--port n` to indicate that you want to control the server listening on the given port number, where
 `n` is an integer value for a publically available port number.
 
 | Subcommand | Description |
@@ -666,7 +664,7 @@ which are set with the `ego profile set` command or via program operation using 
 
 | item | description |
 |------| ------------|
-| defs.DefaultCredentialSetting | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| logon-defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
 | logon-userdata | the path to the JSON file containing the user data |
 | token-expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
 | token-key | A string used to encrypt tokens. This can be any string value |
