@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/google/uuid"
@@ -352,7 +351,7 @@ func updateUserDatabase() error {
 	}
 
 	// Write to the database file.
-	err = ioutil.WriteFile(userDatabaseFile, b, os.ModePerm)
+	err = ioutil.WriteFile(userDatabaseFile, b, 0600)
 	return err
 }
 

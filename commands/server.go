@@ -52,35 +52,74 @@ func Start(c *cli.Context) error {
 
 	logID := uuid.New()
 	found := false
+	logNameArg := 0
+	userDatabaseArg := 0
+
 	for i, v := range args {
 		if v == "--session-uuid" {
 			logID = uuid.MustParse(args[i+1])
 			found = true
 			break
 		}
+		if v == "--users" {
+			userDatabaseArg = i + 1
+		}
+		if v == "--log" {
+			logNameArg = i + 1
+		}
 	}
+
+	// If no explicit session ID was specified, use the one we
+	// just generated.
 	if !found {
 		args = append(args, "--session-uuid", logID.String())
 	}
 
+	// If there was a userdatabase, make it fully-qualfied. IF not,
+	// add it as an option with the default name
+	if userDatabaseArg > 0 {
+		args[userDatabaseArg], _ = filepath.Abs(args[userDatabaseArg])
+	} else {
+		userDataBaseName, _ := filepath.Abs(defs.DefaultUserdataFileName)
+		args = append(args, "--users")
+		args = append(args, userDataBaseName)
+	}
+
+	// If there was a log name, make if fully-qualified
+	if logNameArg > 0 {
+		args[logNameArg], _ = filepath.Abs(args[logNameArg])
+	}
+
+	// Make sure the location of the server program is fully qualified
 	args[0], err = filepath.Abs(args[0])
 	if err != nil {
 		return err
 	}
 
-	logFileName := os.Getenv("EGO_LOG")
+	logFileName, _ := c.GetString("log")
+	if logFileName == "" {
+		logFileName = os.Getenv("EGO_LOG")
+	}
 	if logFileName == "" {
 		logFileName = "ego-server.log"
 	}
-	if c.WasFound("log") {
-		logFileName, _ = c.GetString("log")
+	logFileName, _ = filepath.Abs(logFileName)
+
+	// If the log file was specified on the command line,
+	// update it to the full path name. Otherwise, add the
+	// log option to the command line now for restarts.
+	if logNameArg > 0 {
+		args[logNameArg] = logFileName
+	} else {
+		args = append(args, "--log")
+		args = append(args, logFileName)
 	}
+
 	logf, err := os.Create(logFileName)
 	if err != nil {
 		return err
 	}
-	if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
-		logID.String(),
+	if _, err = logf.WriteString(fmt.Sprintf("*** Log file initialized %s ***\n",
 		time.Now().Format(time.UnixDate)),
 	); err != nil {
 		return err
@@ -135,7 +174,11 @@ func Status(c *cli.Context) error {
 	status, err := server.ReadPidFile(c)
 	if err == nil {
 		if server.IsRunning(status.PID) {
-			msg = fmt.Sprintf("Server is running (pid %d) since %v", status.PID, status.Started)
+			running = true
+			msg = fmt.Sprintf("Server is running (pid %d, session %s) since %v",
+				status.PID,
+				status.LogID,
+				status.Started)
 		} else {
 			_ = server.RemovePidFile(c)
 		}
@@ -166,18 +209,19 @@ func Restart(c *cli.Context) error {
 	if err == nil {
 		args := status.Args
 
-		logFileName := os.Getenv("EGO_LOG")
-		if logFileName == "" {
-			logFileName = "ego-server.log"
+		// Find the log file from the command-line args. If it's not
+		// found, use the default just so we can keep going.
+		logFileName := "ego-server.log"
+		for i, v := range args {
+			if v == "--log" {
+				logFileName = args[i+1]
+			}
 		}
-		if c.WasFound("log") {
-			logFileName, _ = c.GetString("log")
-		}
+		logFileName, _ = filepath.Abs(logFileName)
 		logf, err := os.Create(logFileName)
 		if err != nil {
 			return err
 		}
-
 		// Set up the new ID. If there was one already (because this might be
 		// a restart operation) then update the UUID value. If not, add the uuid
 		// command line option.
@@ -194,8 +238,7 @@ func Restart(c *cli.Context) error {
 			args = append(args, "--session-uuid", logID.String())
 		}
 
-		if _, err = logf.WriteString(fmt.Sprintf("*** Log file %s initialized %s ***\n",
-			logID.String(),
+		if _, err = logf.WriteString(fmt.Sprintf("*** Log file re-initialized %s ***\n",
 			time.Now().Format(time.UnixDate)),
 		); err != nil {
 			return err
@@ -246,7 +289,7 @@ func RunServer(c *cli.Context) error {
 		s, _ := symbols.RootSymbolTable.Get("_session")
 		session = util.GetString(s)
 	}
-	ui.Debug(ui.ServerLogger, "*** Starting server session %s", session)
+	ui.Debug(ui.ServerLogger, "Starting server, session %s", session)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {

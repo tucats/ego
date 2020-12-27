@@ -99,7 +99,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	status.Started = time.Now()
 	b, _ := json.MarshalIndent(status, "", "  ")
-	err := ioutil.WriteFile(getPidFileName(c), b, 0777)
+	err := ioutil.WriteFile(getPidFileName(c), b, 0600)
 	return err
 }
 

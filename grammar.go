@@ -228,6 +228,11 @@ var ServerRunGrammar = []cli.Option{
 		Private:     true,
 	},
 	{
+		LongName:    "log",
+		Description: "File path of server log",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "no-log",
 		Description: "Suppress server log",
 		OptionType:  cli.BooleanType,
@@ -253,6 +258,7 @@ var ServerRunGrammar = []cli.Option{
 	},
 	{
 		LongName:            "users",
+		Aliases:             []string{"user-database"},
 		ShortName:           "u",
 		Description:         "File with authentication JSON data",
 		OptionType:          cli.StringType,
