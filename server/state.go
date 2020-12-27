@@ -95,11 +95,16 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 }
 
 // WritePidFile creates (or replaces) the pid file with the current
-// server status
+// server status. It also forces the file to be read/write only for
+// the server process owner.
 func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
+	fn := getPidFileName(c)
 	status.Started = time.Now()
 	b, _ := json.MarshalIndent(status, "", "  ")
-	err := ioutil.WriteFile(getPidFileName(c), b, 0600)
+	err := ioutil.WriteFile(fn, b, 0600)
+	if err == nil {
+		err = os.Chmod(fn, 0600)
+	}
 	return err
 }
 
