@@ -1,0 +1,18 @@
+@test "defer statement"
+
+
+func defer_test() string {
+
+    defer { 
+        r = "better result"
+    }
+
+    r := "result string"
+
+    return r
+
+}
+
+result := defer_test() 
+@assert result=="better result" "Did not update result on defer"
+@pass
