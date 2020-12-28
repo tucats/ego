@@ -33,6 +33,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	return map[string]interface{}{
 		"client":        client,
+		"Close":         RestClose,
 		"Get":           RestGet,
 		"Post":          RestPost,
 		"Delete":        RestDelete,
@@ -136,6 +137,30 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 	return fmt.Sprintf("HTTP status %d", code), nil
 }
 
+func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	c, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	c.GetClient().CloseIdleConnections()
+
+	this := getThis(s)
+	c = nil
+	this["client"] = nil
+	this["Close"] = released
+	this["Get"] = released
+	this["Post"] = released
+	this["Delete"] = released
+	this["Base"] = released
+	this["Media"] = released
+	this["Auth"] = released
+	this["Token"] = released
+	this["StatusMessage"] = released
+	this["status"] = 0
+
+	return true, nil
+}
+
 // RestBase implements the Base() rest function
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
@@ -207,11 +232,10 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // RestGet implements the rest Get() function
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
-	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
-
 	if err != nil {
 		return nil, err
 	}
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	this := getThis(s)
 
 	if len(args) != 1 {
@@ -282,10 +306,11 @@ func headerMap(response *resty.Response) map[string]interface{} {
 // RestPost implements the Post() rest function
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
-	client.SetRedirectPolicy()
 	if err != nil {
 		return nil, err
 	}
+	client.SetRedirectPolicy()
+
 	this := getThis(s)
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
@@ -407,6 +432,9 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 		if gc, ok := g.(map[string]interface{}); ok {
 			if client, ok := gc["client"]; ok {
 				if cp, ok := client.(*resty.Client); ok {
+					if cp == nil {
+						return nil, errors.New("rest client was closed")
+					}
 					return cp, nil
 				}
 			}
@@ -415,6 +443,10 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 
 	return nil, errors.New(defs.NoFunctionReceiver)
 
+}
+
+func released(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	return nil, errors.New("rest client closed")
 }
 
 // getThis returns a map for the "this" object in the current
