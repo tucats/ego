@@ -6,7 +6,7 @@ import cipher
 {
 	msg := "hidden message"
 	t := cipher.Create(msg)
-	@assert cipher.Validate(t) == true "token is not valid"package cipher
+	@assert cipher.Validate(t) == true "token is not valid"
 	@assert cipher.Token(t).name == msg "token does not contain expected user data"
 }
 

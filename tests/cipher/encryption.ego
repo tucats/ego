@@ -17,12 +17,8 @@
     key := "gibberish"
 
     e := cipher.Encrypt(msg, key)
-    try {
-        d := cipher.Eecrypt(e, key+"a")
-        @fail "decryption with bad key did not error"
-    } catch {
-        // authentication failed, as expected
-    }
+    d, err := cipher.Decrypt(e, key+"a")
+    @assert err != nil "decryption with bad key did not error"
 }
 
 // Decryption with modified coded value 
@@ -31,12 +27,8 @@
     key := "gibberish"
 
     e := cipher.Encrypt(msg, key) + "X"
-    try {
-        d := cipher.Decrypt(e, key)
-        @fail "decryption with modified value did not error"
-    } catch {
-        // authentication failed, as expected
-    }
+    d, err := cipher.Decrypt(e, key)
+    @assert err != nil "decryption with modified value did not error"
 }
 
 @pass
