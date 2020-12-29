@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,11 +42,13 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Media":         RestMedia,
 		"Token":         RestToken,
 		"Auth":          RestAuth,
+		"Verify":        VerifyServer,
 		"StatusMessage": RestStatusMessage,
 		"media_type":    defs.JSONMediaType,
 		"baseURL":       "",
 		"response":      "",
 		"status":        0,
+		"verify":        true,
 		"headers":       map[string]interface{}{},
 		"__readonly":    true,
 	}, nil
@@ -155,10 +158,29 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this["Media"] = released
 	this["Auth"] = released
 	this["Token"] = released
+	this["Verify"] = released
 	this["StatusMessage"] = released
 	this["status"] = 0
 
 	return true, nil
+}
+
+// RestBase implements the Base() rest function
+func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	client, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+	this := getThis(s)
+
+	verify := true
+	if len(args) == 1 {
+		verify = util.GetBool(args[0])
+	}
+	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
+
+	this["verify"] = verify
+	return this, nil
 }
 
 // RestBase implements the Base() rest function

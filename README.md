@@ -579,6 +579,12 @@ functions would become available:
 | r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
 | r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
 | r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
+| r.Delete(url) | DELETE to the named URL
+| r.Media("type") | Specify the media/content type of the exchange
+| r.Verify(b) | Enable or disable TLS server certificate validation
+| r.Auth(u,p) | Estabish BasicAuth with the given username and password strings
+| r.Token(t) | Establish Bearer token auth with the given token value
+
 
 &nbsp; 
 &nbsp;     
