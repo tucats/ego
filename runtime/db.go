@@ -15,7 +15,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// DBNew implements the New() rest function
+// DBNew implements the New() db function. This allocated a new structure that
+// contains all the info needed to call the database, incuding the function pointers
+// for the functions available to a specific handle.
 func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) != 1 {
@@ -48,11 +50,15 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Close":      DBClose,
 		"constr":     connStr,
 		"asStruct":   false,
-		"status":     0,
+		"rowCount":   0,
 		"__readonly": true,
 	}, nil
 }
 
+// DBAsStruct sets the asStruct flag. When true, result sets from queries are an array
+// of structs, where the struct members are the same as the result set column names. When
+// not true, the result set is an array of arrays, where the inner array contains the
+// column data in the order of the result set, but with no labels, etc.
 func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getDBClient(s)
 	if err != nil {
@@ -67,6 +73,8 @@ func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return this, nil
 }
 
+// DBClose closes the database connection, frees up any resources held, and resets the
+// handle contents to prevent re-using the connection.
 func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getDBClient(s)
 	if err != nil {
@@ -80,11 +88,13 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["Execute"] = dbReleased
 	this["constr"] = ""
 	this["asStruct"] = false
-	this["status"] = -1
+	this["rowCount"] = -1
 
 	return true, nil
 }
 
+// DBQuery executes a query, with optional parameter substitution, and returns the
+// entire result set as an array.
 func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, err := getDBClient(s)
 	if err != nil {
@@ -92,6 +102,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	this := getThis(s)
 	asStruct := util.GetBool(this["asStruct"])
+	this["rowCount"] = -1
 
 	var rows *sql.Rows
 	query := util.GetString(args[0])
@@ -138,7 +149,6 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		size = len(mapResult)
 	}
 	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
-
 	rerr := rows.Close()
 	if rerr != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -150,6 +160,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Need to convert the results from a slice to an actual array
+	this["rowCount"] = size
 	r := make([]interface{}, size)
 	if asStruct {
 		for i, v := range mapResult {
@@ -160,10 +171,11 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			r[i] = v
 		}
 	}
-
 	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
 }
 
+// DBExecute executes a SQL statement, and returns the number of rows that were
+// affected by the statement (such as number of rows deleted for a DELETE statement)
 func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, err := getDBClient(s)
 	if err != nil {
@@ -182,13 +194,14 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, err
 	}
 	r, err := sqlResult.RowsAffected()
+	this := getThis(s)
+	this["rowCount"] = int(r)
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
-
-	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
+	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
 }
 
 // getClient searches the symbol table for the client receiver ("_this")
-// variable, validates that it contains a REST client object, and returns
+// variable, validates that it contains a database client object, and returns
 // the native client object.
 func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, error) {
 	if g, ok := symbols.Get("_this"); ok {
@@ -203,11 +216,11 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, error) {
 			}
 		}
 	}
-
 	return nil, errors.New(defs.NoFunctionReceiver)
-
 }
 
+// Utility function that becomes the db handle function pointer for a closed
+// db connection handle
 func dbReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.New("db client closed")
 }

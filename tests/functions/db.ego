@@ -16,12 +16,18 @@ _, e := d.Execute("create table members(id integer, name char varying(50))")
 names := [ "Tom", "Mary", "Sarah", "Chelsea", "Tony"]
 for i := 0; i < len(names) ; i = i + 1 {
     _, e := d.Execute("insert into members values($1, $2)", 101+i, names[i])
+    @assert d.rowCount == 1 "rowcount not updated correctly on insert"
     @assert e == nil "insert failed"
-
+    @assert d.rowCount == 1 "rowcount not updated correctly on insert"
 }
+
 r, e := d.Query("select * from members order by name")
 @assert e == nil "select failed"
 @assert len(r) == 5 "wrong number of rows returned"
+@assert d.rowCount == 5 "wrong number of rows in result handle"
 @assert r[0][1] == "Chelsea" "unexpected result set value(s)"
+
 d.Close()
+@assert d.rowCount == -1 "rowcount not updated after close"
+
 @pass
