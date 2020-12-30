@@ -42,13 +42,29 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 	return map[string]interface{}{
 		"client":     db,
+		"AsStruct":   DBAsStruct,
 		"Query":      DBQuery,
 		"Execute":    DBExecute,
 		"Close":      DBClose,
 		"constr":     connStr,
+		"asStruct":   false,
 		"status":     0,
 		"__readonly": true,
 	}, nil
+}
+
+func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	_, err := getDBClient(s)
+	if err != nil {
+		return nil, err
+	}
+
+	this := getThis(s)
+	if len(args) != 1 {
+		return nil, errors.New(defs.IncorrectArgumentCount)
+	}
+	this["asStruct"] = util.GetBool(args[0])
+	return this, nil
 }
 
 func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -59,9 +75,11 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	this := getThis(s)
 	this["client"] = nil
+	this["AsStruct"] = dbReleased
 	this["Query"] = dbReleased
 	this["Execute"] = dbReleased
 	this["constr"] = ""
+	this["asStruct"] = false
 	this["status"] = -1
 
 	return true, nil
@@ -70,8 +88,10 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, err := getDBClient(s)
 	if err != nil {
-		return nil, err
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
+	this := getThis(s)
+	asStruct := util.GetBool(this["asStruct"])
 
 	var rows *sql.Rows
 	query := util.GetString(args[0])
@@ -85,11 +105,11 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		defer rows.Close()
 	}
 	if err != nil {
-		return nil, err
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
-	result := make([][]interface{}, 0)
-
+	arrayResult := make([][]interface{}, 0)
+	mapResult := make([]map[string]interface{}, 0)
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
@@ -103,27 +123,45 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if err := rows.Scan(rowTemplate...); err != nil {
 			return nil, err
 		}
-		result = append(result, rowValues)
+		if asStruct {
+			rowMap := map[string]interface{}{}
+			for i, v := range columns {
+				rowMap[v] = rowValues[i]
+			}
+			mapResult = append(mapResult, rowMap)
+		} else {
+			arrayResult = append(arrayResult, rowValues)
+		}
 	}
-	ui.Debug(ui.DBLogger, "Scanned %d rows", len(result))
+	size := len(arrayResult)
+	if asStruct {
+		size = len(mapResult)
+	}
+	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	rerr := rows.Close()
 	if rerr != nil {
-		return nil, err
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
 	// Need to convert the results from a slice to an actual array
-	r := make([]interface{}, len(result))
-	for i, v := range result {
-		r[i] = v
+	r := make([]interface{}, size)
+	if asStruct {
+		for i, v := range mapResult {
+			r[i] = v
+		}
+	} else {
+		for i, v := range arrayResult {
+			r[i] = v
+		}
 	}
-	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
 
+	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
 }
 
 func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {

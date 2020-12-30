@@ -633,6 +633,7 @@ Once a database handle is created, here are the functions you can call using the
 | r.Query(q [, args...]) | Execute a query string with optional arguments. The result is the query result set.
 | r.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected.
 | r.Close() | Terminate the connection to the database and free up resources.
+| r.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
 
 &nbsp; 
 &nbsp;
