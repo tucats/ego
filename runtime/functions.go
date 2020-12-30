@@ -24,6 +24,10 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 		"Status":     RestStatusMessage,
 		"__readonly": true,
 	})
+	_ = syms.SetAlways("db", map[string]interface{}{
+		"New":        DBNew,
+		"__readonly": true,
+	})
 }
 
 // Prompt implements the prompt() function, which uses the console
