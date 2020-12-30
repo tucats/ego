@@ -1,10 +1,9 @@
 @test "db connection to local postgres server"
-constr := "postgres://root:secrete@localhost/defaultdb?sslmode=disable&logintimeout=2"
+constr := "postgres://tom:secret3@homebase.local/?sslmode=disable"
 d := db.New(constr)
-
 _, e := d.Query("select 0 where 1=0")
 if e != nil {
-    fmt.Println("Database not available")
+    fmt.Printf("Database not available, %v\n", e)
     @pass
     return
 }
@@ -27,6 +26,16 @@ r, e := d.QueryResult("select * from members order by name")
 @assert d.rowCount == 5 "wrong number of rows in result handle"
 @assert r[0][1] == "Chelsea" "unexpected result set value(s)"
 
+// Do a query with an argument, and in "struct" mode which returns
+// structures as the result instead of arrays...
+d.AsStruct(true)
+r, e := d.Query("select * from members where name = $1", "Tony")
+for r.Next() {
+    info := r.Scan()
+    @assert info.name == "Tony" "incorrect name returned from query"
+    @assert int(info.id) == 105 "incorrect id returned from query"
+}
+r.Close()
 d.Close()
 @assert d.rowCount == -1 "rowcount not updated after close"
 
