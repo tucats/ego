@@ -21,7 +21,7 @@ for i := 0; i < len(names) ; i = i + 1 {
     @assert d.rowCount == 1 "rowcount not updated correctly on insert"
 }
 
-r, e := d.Query("select * from members order by name")
+r, e := d.QueryResult("select * from members order by name")
 @assert e == nil "select failed"
 @assert len(r) == 5 "wrong number of rows returned"
 @assert d.rowCount == 5 "wrong number of rows in result handle"

@@ -43,15 +43,17 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 	return map[string]interface{}{
-		"client":     db,
-		"AsStruct":   DBAsStruct,
-		"Query":      DBQuery,
-		"Execute":    DBExecute,
-		"Close":      DBClose,
-		"constr":     connStr,
-		"asStruct":   false,
-		"rowCount":   0,
-		"__readonly": true,
+		"client":      db,
+		"AsStruct":    DBAsStruct,
+		"Query":       DBQueryRows,
+		"QueryResult": DBQuery,
+		"Execute":     DBExecute,
+		"Close":       DBClose,
+		"constr":      connStr,
+		"asStruct":    false,
+		"rowCount":    0,
+		"__readonly":  true,
+		"__type":      "DatabaseHandle",
 	}, nil
 }
 
@@ -85,6 +87,7 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["client"] = nil
 	this["AsStruct"] = dbReleased
 	this["Query"] = dbReleased
+	this["QueryRows"] = dbReleased
 	this["Execute"] = dbReleased
 	this["constr"] = ""
 	this["asStruct"] = false
@@ -172,6 +175,92 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
+}
+
+// DBQueryRows executes a query, with optional parameter substitution, and returns row object
+// for subsequent calls to fetch the data.
+func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	db, err := getDBClient(s)
+	if err != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	}
+	this := getThis(s)
+	this["rowCount"] = -1
+
+	var rows *sql.Rows
+	query := util.GetString(args[0])
+	ui.Debug(ui.DBLogger, "Query: %s", query)
+	if len(args) == 1 {
+		rows, err = db.Query(query)
+	} else {
+		rows, err = db.Query(query, args[1:]...)
+	}
+	if err != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	}
+
+	result := map[string]interface{}{}
+	result["rows"] = rows
+	result["client"] = db
+	result["db"] = this
+	result["Next"] = rowsNext
+	result["Scan"] = rowsScan
+	result["Close"] = rowsClose
+	result["__readonly"] = true
+	result["__type"] = "RowsHandle"
+
+	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
+}
+
+func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	this := getThis(s)
+	rows := this["rows"].(*sql.Rows)
+	err := rows.Close()
+	this["rows"] = nil
+	this["client"] = nil
+	this["Next"] = dbReleased
+	this["Scan"] = dbReleased
+	ui.Debug(ui.DBLogger, "rows.Close() called")
+	return err, nil
+}
+
+func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	this := getThis(s)
+	rows := this["rows"].(*sql.Rows)
+	active := rows.Next()
+	ui.Debug(ui.DBLogger, "rows.Next() = %v", active)
+	return active, nil
+}
+
+func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	this := getThis(s)
+	rows := this["rows"].(*sql.Rows)
+
+	db := this["db"].(map[string]interface{})
+	asStruct := util.GetBool(db["asStruct"])
+
+	columns, _ := rows.Columns()
+	colTypes, _ := rows.ColumnTypes()
+	colCount := len(columns)
+
+	rowTemplate := make([]interface{}, colCount)
+	rowValues := make([]interface{}, colCount)
+	for i := range colTypes {
+		rowTemplate[i] = &rowValues[i]
+	}
+	if err := rows.Scan(rowTemplate...); err != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	}
+
+	if asStruct {
+		rowMap := map[string]interface{}{}
+		for i, v := range columns {
+			rowMap[v] = rowValues[i]
+		}
+		return functions.MultiValueReturn{Value: []interface{}{rowMap, nil}}, nil
+	}
+
+	return functions.MultiValueReturn{Value: []interface{}{rowValues, nil}}, nil
 }
 
 // DBExecute executes a SQL statement, and returns the number of rows that were

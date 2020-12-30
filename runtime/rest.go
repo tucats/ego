@@ -51,6 +51,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"verify":        true,
 		"headers":       map[string]interface{}{},
 		"__readonly":    true,
+		"__type":        "RestHandle",
 	}, nil
 }
 
