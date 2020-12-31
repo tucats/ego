@@ -612,7 +612,7 @@ The result of the db.New() call is a database handle, which can be used to execu
 return results from queries.
 
      d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
-     r, e := d.Query("select * from foo")
+     r, e := d.QueryResult("select * from foo")
      d.Close()
 
 This example will open a database connection with the specified URL, and perform a query that returns
@@ -622,7 +622,7 @@ has no filtering. You can specify parameters to the query as additional argument
 substituted into the query, as in:
 
      age := 21
-     r, e := d.Query("select member where age >= $1", age)
+     r, e := d.QueryResult("select member where age >= $1", age)
 
 The parameter value of `age` is injected into the query where the $1 string is found.
 
@@ -630,10 +630,24 @@ Once a database handle is created, here are the functions you can call using the
 
 | Function | Description |
 |----------|-------------|
-| r.Query(q [, args...]) | Execute a query string with optional arguments. The result is the query result set.
-| r.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected.
-| r.Close() | Terminate the connection to the database and free up resources.
-| r.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
+| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
+| d.Commit() | Commit the active transation
+| d.Rollback() | Roll back the active transaction
+| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set.
+| d.Query(q, [, args...]) | Execute a query and return a row set object
+| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected.
+| d.Close() | Terminate the connection to the database and free up resources.
+| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
+
+When you use the Query() call it returns a rowset object. This object can be used to step through the
+result set a row at a time. This allows the underlying driver to manage buffers and large result sets
+without filling up memory with the entire result set at once.
+
+| Function | Description |
+|----------|-------------|
+| r.Next() | Prepare the next row for reading. Returns false if there are no more rows
+| r.Scan() | Read the next row and create either a struct or an array of the row data
+| r.Close() | End reading rows and release any resources consumed by the rowset read.
 
 &nbsp; 
 &nbsp;
