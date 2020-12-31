@@ -353,7 +353,7 @@ func RunServer(c *cli.Context) error {
 		server.MaxCachedEntries, _ = c.GetInteger("cache-size")
 	}
 
-	addr := ":" + strconv.Itoa(port)
+	addr := "localhost:" + strconv.Itoa(port)
 	if c.GetBool("not-secure") {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 		err = http.ListenAndServe(addr, nil)
