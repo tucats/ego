@@ -103,13 +103,16 @@ a field directly,
 
     pay := 40 * employee.rate
 
-If the member does not exist, an error is generated. You can however add
-new fields to a structure simply by naming them in an assignment, such as
+If the member does not exist, an error is generated. You cannot add a new
+member to a struct unless the struct was created as the empty struct, `{}`
 
+    employee := {}
     employee.weekly = pay
 
-If there isn't already a field named `weekly` in the structure, it is
-created automatically. The field is then set to the value of `pay`.
+Because there isn't already a field named `weekly` in the structure, it is
+created automatically. The field is then set to the value of `pay`. If the
+structure was initialized as anything other than an empty struct, adding
+fields is not possible.
 
 Note that structures and arrays are always passed around by reference.
 That is, if you create a structure `a`, assign it to `b`, and then change
