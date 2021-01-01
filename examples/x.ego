@@ -28,9 +28,8 @@ func c-> fullname() string {
     return c.name.first + " " + c.name.last 
 }
 
-func c-> setname(f, l) void {
+func c-> setname(f, l)  {
     c.name = {first:f, last:l}
-    return
 }
 
 func c->greet() string {
