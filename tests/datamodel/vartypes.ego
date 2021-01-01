@@ -1,0 +1,27 @@
+@test "var and type testing"
+
+{
+    var a1,a2,a3 int
+    @assert type(a1) == "int"  "a1 not int"
+    @assert type(a2) == "int"  "a2 not int"
+    @assert type(a3) == "int"  "a3 not int"
+
+    var i int 
+    var f float 
+    var s string 
+    var b bool 
+
+    type x struct {
+        name string,
+        age int,
+    }
+    var xx x
+
+    @assert type(i) == "int"  "var not int"
+    @assert type(f) == "float"  "var not int"
+    @assert type(s) == "string"  "var not int"
+    @assert type(b) == "bool"  "var not int"
+    @assert type(x) == "x"  "type not x"
+    @assert type(xx) == "x"  "type not x"
+}
+@pass
