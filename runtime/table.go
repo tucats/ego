@@ -9,11 +9,13 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
-
-	_ "github.com/lib/pq"
 )
 
-// TableNew implements the New() table package function.
+// TableNew implements the New() table package function. This accepts a list
+// of column names (as individual arguements or an array of strings) and allocates
+// a new table. Additionally, the column names can contain alignment information;
+// a name with a leading ":" is left-aligned, and a trailing ":" is right-
+// aligned. In either case the ":" is removed from the name.
 func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) == 0 {
@@ -33,6 +35,9 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
+	// Scan over the heading strings and look for alignment cues. If found,
+	// remove the ":" cue character, and record the specified (or default)
+	// alignmnt for each column.
 	align := make([]int, len(headings))
 	for i := 0; i < len(headings); i = i + 1 {
 		h := headings[i]
@@ -53,6 +58,8 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			}
 		}
 	}
+
+	// Create the new table object, and set the alignment for each column heading now.
 	t, err := tables.New(headings)
 	if err != nil {
 		return nil, err
@@ -74,7 +81,8 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}, nil
 }
 
-// TableClose closes the table handle
+// TableClose closes the table handle, and releases any memory resources
+// being held by the table.
 func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getTable(s)
 	if err != nil {
@@ -90,20 +98,28 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return true, err
 }
 
-// TableAddRow adds a row to the table.
+// TableAddRow adds a row to the table. This can either be a list of values, or
+// a struct. When it's a struct, each column name must match a struct member
+// name, and the associated value is used as the table cell value. If a list of
+// values is given, they are stored in the row in the same order that the columns
+// were defined when the table was created.
 func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {
 			if m, ok := args[0].(map[string]interface{}); ok {
-				values := make([]string, len(m))
-				for k, v := range m {
-					p, ok := t.FindColumn(k)
-					if ok {
-						values[p] = util.GetString(v)
+				if len(args) > 1 {
+					err = errors.New(defs.IncorrectArgumentCount)
+				} else {
+					values := make([]string, len(m))
+					for k, v := range m {
+						p, ok := t.FindColumn(k)
+						if ok {
+							values[p] = util.GetString(v)
+						}
 					}
+					err = t.AddRow(values)
 				}
-				err = t.AddRow(values)
 			} else {
 				err = t.AddRowItems(args...)
 			}
@@ -112,7 +128,12 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return err, err
 }
 
-// TableSort sorts the rows of the table.
+// TableSort sorts the rows of the table. If you specify multiple arguments
+// (column names) the sort is performed in the reverse order specified; that
+// is the least-significant sort is performed first, then the next-most-
+// significant sort, etc. until the first argument, which is the most
+// significant sort. The column names can start wiht a tilde ("~") character
+// to reverse the sort order from it's default value of ascending to descending.
 func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
@@ -135,8 +156,15 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return err, err
 }
 
-// TablePrint prints a table
+// TableFormat specifies the headings format. It accepts two values, which
+// are both booleans. The first indicates if a headings row is to be printed
+// in the output. The second is examined only if the headings value is true;
+// it controls whether an underline string is printed under the column names.
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 2 {
+		err = errors.New(defs.IncorrectArgumentCount)
+		return err, err
+	}
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
@@ -154,7 +182,8 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return err, err
 }
 
-// TablePrint prints a table
+// TablePrint prints a table to the default output, in the default --output-format
+// type (text or json)
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
@@ -164,8 +193,8 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // getTable searches the symbol table for the client receiver ("_this")
-// variable, validates that it contains a table  object, and returns
-// the native table object
+// variable, validates that it contains a table object, and returns the
+// native table object
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	if g, ok := symbols.Get("_this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
@@ -182,8 +211,8 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	return nil, errors.New(defs.NoFunctionReceiver)
 }
 
-// Utility function that becomes the db handle function pointer for a closed
-// db connection handle
+// Utility function that becomes the table handle function pointer for a closed
+// table handle
 func tableReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.New("table closed")
 }
