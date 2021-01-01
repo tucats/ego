@@ -136,7 +136,6 @@ func RunAction(c *cli.Context) error {
 
 	// Add local funcion(s) that extend the Ego function set.
 	_ = syms.SetAlways("eval", runtime.Eval)
-	_ = syms.SetAlways("table", runtime.Table)
 	_ = syms.SetAlways("prompt", runtime.Prompt)
 	runtime.AddBuiltinPackages(syms)
 

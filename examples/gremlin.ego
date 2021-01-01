@@ -27,6 +27,7 @@ query := `g.V().hasLabel("test1").order().by("name").valueMap()`
 data := g.QueryMap(query)
 
 // Generate formatted output, which is an array of strings
+
 fmt.Println(string(table(data)))
 
 // Clean up all our nodes

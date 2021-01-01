@@ -18,15 +18,23 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 	_ = syms.SetAlways("gremlin", map[string]interface{}{
 		"New":        GremlinOpen,
 		"__readonly": true,
+		"__type":     "package",
 	})
 	_ = syms.SetAlways("rest", map[string]interface{}{
 		"New":        RestNew,
 		"Status":     RestStatusMessage,
 		"__readonly": true,
+		"__type":     "package",
 	})
 	_ = syms.SetAlways("db", map[string]interface{}{
 		"New":        DBNew,
 		"__readonly": true,
+		"__type":     "package",
+	})
+	_ = syms.SetAlways("tables", map[string]interface{}{
+		"New":        TableNew,
+		"__readonly": true,
+		"__type":     "package",
 	})
 }
 

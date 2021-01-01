@@ -604,6 +604,8 @@ Here's a simple example:
         print "Server session ID is ", server.response.session
     }
 
+&nbsp; 
+&nbsp;
 ### db.New("connection-string-url")
 There is a simplified interface to SQL databases available. By default, the only provider supported
 is Postgres at this time.
@@ -648,6 +650,43 @@ without filling up memory with the entire result set at once.
 | r.Next() | Prepare the next row for reading. Returns false if there are no more rows
 | r.Scan() | Read the next row and create either a struct or an array of the row data
 | r.Close() | End reading rows and release any resources consumed by the rowset read.
+
+
+&nbsp; 
+&nbsp;
+### tables.New("colname" [, "colname"...])
+This gives access to the table formatting and printing subsystem for Ego programs. The
+arguments must be the names of the columns in the resulting table. These can be passed 
+as descrete arguments, or as an array of strings. The result is a TableHandle object 
+that can be used to insert data into the table structure, sort it, and format it for
+output.
+
+    
+    t := tables.New(":Identity", "Age:", "Address")
+    
+    t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"})
+    t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"})
+    t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"})
+    
+    t.Sort( "Age", "Identity" )
+    
+    t.Format(true,false)
+    t.Print()
+    t.Close()
+    
+This sample program creates a table with three column headings. The use of the ":" 
+character controls alignment for the column. If the colon is at the left or right
+side of the heading, that is how the heading is aligned. If no colon is used, then
+the default is left-aligned.
+
+The data is added
+for three rows. Note that data can be added as either a struct, where the column names
+must match the column names. Alternatively, the values can be added as separate arguments
+to the function, in which case they are added in the order of the column headings.
+
+The format of the table is further set by sorting the data by Age and then Identity, and 
+indicating that headings are to be printed, but underlines under those headings are not.
+The table is then printed to the default output and the memory structures are released.
 
 &nbsp; 
 &nbsp;
