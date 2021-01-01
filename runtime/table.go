@@ -162,7 +162,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // it controls whether an underline string is printed under the column names.
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		err = errors.New(defs.IncorrectArgumentCount)
+		err := errors.New(defs.IncorrectArgumentCount)
 		return err, err
 	}
 	t, err := getTable(s)
