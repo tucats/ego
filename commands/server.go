@@ -387,6 +387,9 @@ func SetCacheSize(c *cli.Context) error {
 		fmt.Println(string(b))
 	} else {
 		if cacheStatus.Status != 200 {
+			if cacheStatus.Status == 403 {
+				return errors.New(defs.NoPrivilegeForOperation)
+			}
 			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 		}
 		ui.Say("Server cache size updated")
@@ -405,6 +408,9 @@ func FlushServerCaches(c *cli.Context) error {
 		fmt.Println(string(b))
 	} else {
 		if cacheStatus.Status != 200 {
+			if cacheStatus.Status == 403 {
+				return errors.New(defs.NoPrivilegeForOperation)
+			}
 			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 		}
 		ui.Say("Server cache emptied")
@@ -426,6 +432,9 @@ func ListServerCaches(c *cli.Context) error {
 		fmt.Println(string(b))
 	} else {
 		if cacheStatus.Status != 200 {
+			if cacheStatus.Status == 403 {
+				return errors.New(defs.NoPrivilegeForOperation)
+			}
 			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 		}
 
