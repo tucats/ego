@@ -222,30 +222,34 @@ and a newline is added after all the items are printed.
 
     print "My name is ", name
 
+Using `print` without any arguments just prints a newline character. 
 
-Using `print` without any arguments just prints a newline character.
+Note that the print statement may not be available depending on the profile
+setting "print-enabled". You can always use the `fmt.Print()`, `fmt.Println()`,
+and `fmt.Printf()` functions to format output.
 
-### call
-The `call` statement is used to invoke a function that does not return
-a value. It is followed by a function name and arguments, and these are
-used to call the named function. However, even if the function uses a
-`return` statement to return a value, it is ignored by the `call` 
-statement. 
 
-    call profile("secret", "cookies")
+### calling a function
+To invoke a function that does not return
+a value, simply name the function and pass it any arguments. However, even if the function uses a
+`return` statement to return a value, it is ignored by the invocation of the function.
 
-This calls the `profile()` function. When that function gets two
-paramters, it sets the profile value named in the first argument to
-the string value of the second argument. The function returns true
-because all functions must return a value, but the `call` statement
-discards the result.  This is the same as using the statement:
+    profile.Set("secret", "cookies")
 
+This calls the `profile.Set()` function, which sets the profile value named in the first argument to
+the string value of the second argument. The function returns true if the profile key was created rather
+than just overwritten, but the function invocation discards the result.  
+
+When calling a function that accepts variable numbers of arguments, it is possible to send an
+array as the last argument and have it expanded to be individual arguments by appending the `...`
+operator. For example,
+
+    a := [1, 2, 3]
+    b := [10, 11]
+
+    a = append(a, b)     \\ Results in [1,2,3, [10, 11]]
+    a = append(a, b...)  \\ Results in [1,2,3,10,11]
     
-    x := profile("secret", "cookies")
-
-Where the "x" is the name of an ignored value.
-
-
 ### func
 The `func` statement defines a function. This must have a name
 which is a valid symbol, followed by an argument list. 
@@ -262,7 +266,7 @@ types (`int`, `float`, `string`, or `bool`). It can also be `[]` which
 denotes a return of an array type, or `{}` which denotes the return
 of a `struct` type. Finally, the type can be `any` which means any
 type can be returned, or `void` which means no value is returned from
-this function (it is intended to be invoked as a `call` statement).
+this function.
 
 The type declaration is then followed by
 a statement or block defining the code to execute when the function
