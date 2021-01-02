@@ -46,6 +46,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	_ = syms.SetAlways("_method", r.Method)
+	_ = syms.SetAlways("_mode", "server")
 
 	// Get the query parameters and store as a local varialble
 	queryParameters := r.URL.Query()

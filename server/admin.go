@@ -162,9 +162,10 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			result := defs.UserCollection{
-				Items:  []defs.User{},
-				Status: defs.RestResponse{Status: 200},
+				Items: []defs.User{},
 			}
+			result.Status = 200
+
 			for k, u := range userDatabase {
 				ud := defs.User{}
 				ud.Name = k
@@ -218,8 +219,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			MaxCachedEntries = result.Limit
 		}
 		if err != nil {
-			result.Status.Status = 400
-			result.Status.Message = err.Error()
+			result.Status = 400
+			result.Message = err.Error()
 		} else {
 
 			result = defs.CacheResponse{
@@ -227,8 +228,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 				Limit: MaxCachedEntries,
 				Items: []defs.CachedItem{},
 			}
-			result.Status.Status = 200
-			result.Status.Message = "Success"
+			result.Status = 200
+			result.Message = "Success"
 
 			for k, v := range serviceCache {
 				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
@@ -236,7 +237,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
-		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status.Status, result.Status.Message))
+		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status, result.Message))
 		return
 
 	// Get the list of cached items.
@@ -246,8 +247,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
-		result.Status.Status = 200
-		result.Status.Message = "Success"
+		result.Status = 200
+		result.Message = "Success"
 
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
@@ -268,8 +269,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
-		result.Status.Status = 200
-		result.Status.Message = "Success"
+		result.Status = 200
+		result.Message = "Success"
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)

@@ -386,6 +386,9 @@ func SetCacheSize(c *cli.Context) error {
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
 	} else {
+		if cacheStatus.Status != 200 {
+			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+		}
 		ui.Say("Server cache size updated")
 	}
 	return nil
@@ -401,6 +404,9 @@ func FlushServerCaches(c *cli.Context) error {
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
 	} else {
+		if cacheStatus.Status != 200 {
+			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+		}
 		ui.Say("Server cache emptied")
 	}
 	return nil
@@ -412,10 +418,17 @@ func ListServerCaches(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if cacheStatus.Status != 200 {
+		return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+	}
 	if ui.OutputFormat == "json" {
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
 	} else {
+		if cacheStatus.Status != 200 {
+			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+		}
+
 		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
 		if cacheStatus.Count > 0 {
 			fmt.Printf("\n")

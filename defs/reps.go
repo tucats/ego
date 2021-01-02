@@ -21,10 +21,10 @@ type CachedItem struct {
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint
 type CacheResponse struct {
-	Count  int          `json:"count"`
-	Limit  int          `json:"limit"`
-	Items  []CachedItem `json:"items"`
-	Status RestResponse
+	Count int          `json:"count"`
+	Limit int          `json:"limit"`
+	Items []CachedItem `json:"items"`
+	RestResponse
 }
 
 // User describbes a single user in the user database. The password field
@@ -46,9 +46,9 @@ type BaseCollection struct {
 // UserCollection is a collection of User response objects
 type UserCollection struct {
 	BaseCollection
-	Count  int    `json:"count"`
-	Items  []User `json:"items"`
-	Status RestResponse
+	Count int    `json:"count"`
+	Items []User `json:"items"`
+	RestResponse
 }
 
 // UserResponse describes a user when the information is passed

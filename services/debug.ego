@@ -30,4 +30,9 @@ if _json {
     return
 }
 
-@response fmt.Sprintf("Healthy server,\n\tversion=%s,\n\tuser=%s,\n\tsession %s", _version, _user, _session)
+r := `"Healthy %s mode at %s
+    version %s,
+    user    %s,
+    session %s
+`
+@response fmt.Sprintf(r, _mode, time.Now(), _version, _user, _session)

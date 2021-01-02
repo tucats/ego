@@ -120,6 +120,7 @@ func RunAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable(mainName)
 
 	_ = syms.SetAlways("_args", programArgs)
+	_ = syms.SetAlways("_mode", "run")
 	io.SetConfig(syms, ConfigDisassemble, disassemble)
 	traceLogging := ui.Loggers[ui.ByteCodeLogger]
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)

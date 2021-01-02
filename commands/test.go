@@ -37,6 +37,7 @@ func TestAction(c *cli.Context) error {
 	// Add local funcion(s)
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("table", runtime.Table)
+	_ = syms.SetAlways("_mode", "test")
 
 	runtime.AddBuiltinPackages(syms)
 
