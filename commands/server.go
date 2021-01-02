@@ -335,7 +335,6 @@ func RunServer(c *cli.Context) error {
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
-
 	err := server.DefineLibHandlers(server.PathRoot, "/services")
 	if err != nil {
 		return err
@@ -390,7 +389,7 @@ func SetCacheSize(c *cli.Context) error {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
-			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+			return errors.New(cacheStatus.Message)
 		}
 		ui.Say("Server cache size updated")
 	}
@@ -411,7 +410,7 @@ func FlushServerCaches(c *cli.Context) error {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
-			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+			return errors.New(cacheStatus.Message)
 		}
 		ui.Say("Server cache emptied")
 	}
@@ -435,7 +434,7 @@ func ListServerCaches(c *cli.Context) error {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
-			return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+			return errors.New(cacheStatus.Message)
 		}
 
 		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
