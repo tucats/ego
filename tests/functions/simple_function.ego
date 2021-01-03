@@ -6,10 +6,11 @@
 
 @test "simple function call"
 
-func dbl(x) any {
+func dbl(x interface{}) interface{} {
    return x * 2
 }
 
+@assert type(dbl(4.0)) == "float"
 @assert dbl(55) == 110
 @assert dbl(-2) == -4
 @pass

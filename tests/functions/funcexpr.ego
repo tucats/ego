@@ -2,7 +2,7 @@
 @test "function definitions as expressions"
 
 {
-   func x1( f any, v any ) any {
+   func x1( f interface{}, v interface{} ) interface{} {
       return f(v)
    }
 
