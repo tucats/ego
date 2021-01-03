@@ -48,6 +48,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_method", r.Method)
 	_ = syms.SetAlways("_mode", "server")
 
+	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	_ = syms.SetAlways("_static", staticTypes)
+
 	// Get the query parameters and store as a local varialble
 	queryParameters := r.URL.Query()
 	parameterStruct := map[string]interface{}{}

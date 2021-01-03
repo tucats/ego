@@ -352,6 +352,10 @@ func RunServer(c *cli.Context) error {
 		server.MaxCachedEntries, _ = c.GetInteger("cache-size")
 	}
 
+	if c.WasFound("static-types") {
+		persistence.SetDefault(defs.StaticTypesSetting, "true")
+	}
+
 	addr := "localhost:" + strconv.Itoa(port)
 	if c.GetBool("not-secure") {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)

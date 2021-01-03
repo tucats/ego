@@ -27,6 +27,9 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	syms := symbols.NewSymbolTable("REST /code")
 	_ = syms.SetAlways("_mode", "server")
 
+	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	_ = syms.SetAlways("_static", staticTypes)
+
 	u := r.URL.Query()
 	args := map[string]interface{}{}
 

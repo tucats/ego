@@ -1,0 +1,31 @@
+@test "static typing"
+
+// Outer variable set to string value
+a := "Tom"
+
+{
+    @static true
+
+    // Set a (locally scoped) version of the same variable to an integer
+    a := 3
+    try {
+
+        // Because static typing is enabled, this should fail since the 
+        // string value is the wrong type for `a`
+        a = "test"
+        @fail "Should have failed static type set"
+    } catch {
+        // Failed correctly
+    }
+    @static false
+}
+
+// Static typing now off, so we can set it to
+// a floating point value with no error
+try {
+    a = 55.5
+} catch {
+    @fail "Should not have failed dynamic type set"
+}
+
+@pass

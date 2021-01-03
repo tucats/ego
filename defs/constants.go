@@ -62,6 +62,10 @@ const (
 	// readline?
 	UseReadline = "use-readline"
 
+	// Should the Ego program(s) be run with static (true)
+	// or dynamic (false) types?
+	StaticTypesSetting = "static-types"
+
 	/////////////////////////////////////////////////////
 	//                                                 //
 	//       Settings used Ego server clients          //

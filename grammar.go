@@ -245,6 +245,12 @@ var ServerRunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_TRACE",
 	},
 	{
+		LongName:            "static-types",
+		Description:         "Enforce static typing on program execution",
+		OptionType:          cli.BooleanType,
+		EnvironmentVariable: "EGO_STATIC_TYPES",
+	},
+	{
 		LongName:            "realm",
 		ShortName:           "r",
 		Description:         "Name of authentication realm",
@@ -297,6 +303,12 @@ var RunGrammar = []cli.Option{
 		Description:         "Display trace of bytecode execution",
 		OptionType:          cli.BooleanType,
 		EnvironmentVariable: "EGO_TRACE",
+	},
+	{
+		LongName:            "static-types",
+		Description:         "Enforce static typing on program execution",
+		OptionType:          cli.BooleanType,
+		EnvironmentVariable: "EGO_STATIC_TYPES",
 	},
 	{
 		LongName:    "symbols",

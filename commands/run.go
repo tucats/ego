@@ -58,8 +58,12 @@ func RunAction(c *cli.Context) error {
 		exitOnBlankLine = true
 	}
 
-	argc := c.GetParameterCount()
+	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	if c.WasFound("static-types") {
+		staticTypes = c.GetBool("static-types")
+	}
 
+	argc := c.GetParameterCount()
 	if argc > 0 {
 		fname := c.GetParameter(0)
 
@@ -121,6 +125,7 @@ func RunAction(c *cli.Context) error {
 
 	_ = syms.SetAlways("_args", programArgs)
 	_ = syms.SetAlways("_mode", "run")
+	_ = syms.SetAlways("_static", staticTypes)
 	io.SetConfig(syms, ConfigDisassemble, disassemble)
 	traceLogging := ui.Loggers[ui.ByteCodeLogger]
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)

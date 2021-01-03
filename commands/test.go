@@ -34,11 +34,16 @@ func TestAction(c *cli.Context) error {
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("Unit Tests")
 
-	// Add local funcion(s)
+	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	if c.WasFound("static-types") {
+		staticTypes = c.GetBool("static-types")
+	}
+
+	// Add test-specific functions and values
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("table", runtime.Table)
 	_ = syms.SetAlways("_mode", "test")
-
+	_ = syms.SetAlways("_static", staticTypes)
 	runtime.AddBuiltinPackages(syms)
 
 	exitValue := 0
