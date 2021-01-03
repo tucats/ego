@@ -63,6 +63,7 @@ func RunAction(c *cli.Context) error {
 		staticTypes = c.GetBool("static-types")
 	}
 
+	interactive := false
 	argc := c.GetParameterCount()
 	if argc > 0 {
 		fname := c.GetParameter(0)
@@ -109,6 +110,7 @@ func RunAction(c *cli.Context) error {
 				fmt.Printf("%s\n", banner)
 			}
 			text = io.ReadConsoleText(prompt)
+			interactive = true
 		} else {
 			wasCommandLine = true // It is a pipe, so no prompting for more!
 			text = ""
@@ -124,8 +126,14 @@ func RunAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable(mainName)
 
 	_ = syms.SetAlways("_args", programArgs)
-	_ = syms.SetAlways("_mode", "run")
 	_ = syms.SetAlways("_static", staticTypes)
+
+	if interactive {
+		_ = syms.SetAlways("_mode", "interactive")
+	} else {
+		_ = syms.SetAlways("_mode", "run")
+	}
+
 	io.SetConfig(syms, ConfigDisassemble, disassemble)
 	traceLogging := ui.Loggers[ui.ByteCodeLogger]
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
