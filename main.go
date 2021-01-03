@@ -20,7 +20,7 @@ func main() {
 	// Use the build number from the externally-generated build processor.
 	buildVer, _ := strconv.Atoi(BuildVersion)
 	app.SetVersion(1, 0, buildVer)
-	app.SetCopyright("(C) Copyright Tom Cole 2020")
+	app.SetCopyright("(C) Copyright Tom Cole 2020, 2021")
 
 	// fF there aren't any arguments, default to "run"
 	args := os.Args
