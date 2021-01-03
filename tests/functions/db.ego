@@ -29,13 +29,13 @@ r, e := d.QueryResult("select * from members order by name")
 // Do a query with an argument, and in "struct" mode which returns
 // structures as the result instead of arrays...
 d.AsStruct(true)
-r, e := d.Query("select * from members where name = $1", "Tony")
-for r.Next() {
-    info := r.Scan()
+r2, e := d.Query("select * from members where name = $1", "Tony")
+for r2.Next() {
+    info := r2.Scan()
     @assert info.name == "Tony" "incorrect name returned from query"
     @assert int(info.id) == 105 "incorrect id returned from query"
 }
-r.Close()
+r2.Close()
 d.Close()
 @assert d.rowCount == -1 "rowcount not updated after close"
 
