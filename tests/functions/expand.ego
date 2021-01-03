@@ -9,8 +9,8 @@
 {
     want := "/Users/tom/go/src/github.com/tucats/ego/commands/path.go"
     got := io.Expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
-    got = got[0]
-    @assert want == got "single path name with .go extension"
+    gotf := got[0]
+    @assert want == gotf "single path name with .go extension"
 }
 
 {
