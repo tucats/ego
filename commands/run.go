@@ -194,6 +194,28 @@ func RunAction(c *cli.Context) error {
 			break
 		}
 
+		// Also, make sure we have a balanced {} count if we're in interactive
+		// mode.
+		for interactive && len(t.Tokens) > 0 {
+			count := 0
+			for _, v := range t.Tokens {
+				if v == "{" {
+					count++
+				} else {
+					if v == "}" {
+						count--
+					}
+				}
+			}
+			if count > 0 {
+				text = text + io.ReadConsoleText("...> ")
+				t = tokenizer.New(text)
+				continue
+			} else {
+				break
+			}
+		}
+
 		// Compile the token stream
 		comp := compiler.New().WithNormalization(persistence.GetBool("case-normalized"))
 
