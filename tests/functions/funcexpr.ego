@@ -9,8 +9,10 @@
    func x2( v float) float {
       return v * 2
    }
-   v1 := x1(x2, 55)
-   v2 := x1( func(x int) int { return x*3}, 10)
+   v1 := x1(x2, 55.)
+   v2 := x1( func(x int) int { 
+         return x*3 
+      }, 10)
 
    @assert v1 == 110 "Incorrect value for declared function"
    @assert v2 == 30  "Incorrect value for function expression"
