@@ -245,6 +245,11 @@ var ServerRunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_TRACE",
 	},
 	{
+		LongName:    "full-symbol-scope",
+		Description: "Blocks can access any symbol in call stack",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:            "static-types",
 		Description:         "Enforce static typing on program execution",
 		OptionType:          cli.BooleanType,
@@ -309,6 +314,11 @@ var RunGrammar = []cli.Option{
 		Description:         "Enforce static typing on program execution",
 		OptionType:          cli.BooleanType,
 		EnvironmentVariable: "EGO_STATIC_TYPES",
+	},
+	{
+		LongName:    "full-symbol-scope",
+		Description: "Blocks can access any symbol in call stack",
+		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:    "symbols",

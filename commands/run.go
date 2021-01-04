@@ -45,6 +45,11 @@ func RunAction(c *cli.Context) error {
 		autoImport = c.GetBool(defs.AutoImportSetting)
 	}
 
+	fullScope := false
+	if c.WasFound("full-symbol-scope") {
+		fullScope = c.GetBool("full-symbol-scope")
+	}
+
 	text := ""
 	wasCommandLine := true
 	disassemble := c.GetBool("disassemble")
@@ -127,6 +132,7 @@ func RunAction(c *cli.Context) error {
 
 	_ = syms.SetAlways("_args", programArgs)
 	_ = syms.SetAlways("_static_data_types", staticTypes)
+	//syms.ScopeBoundary = true
 
 	if interactive {
 		_ = syms.SetAlways("_mode", "interactive")
@@ -257,6 +263,8 @@ func RunAction(c *cli.Context) error {
 			if c.GetBool("source-tracing") {
 				ctx.SetTokenizer(t)
 			}
+
+			ctx.SetFullSymbolScope(fullScope)
 
 			err = ctx.Run()
 			ui.DebugMode = oldDebugMode

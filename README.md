@@ -50,8 +50,9 @@ differences. Some important attributes of _Ego_ programs are:
 
 * There are no pointer types, and no dynamic memory allocation.
 * All objects are passed by value in function calls.
-* Variables are untyped, but can be cast explicitly or will be type converted
-automatically when possible.
+* By default variables are untyped, but can be cast explicitly or will be type converted
+automatically when possible. Options exist which will cause Ego to require explicit
+type matching.
 
 The program stream executes at the topmost scope. You can define one or more
 functions in that topmost scope, or execute commands directly. Each function
@@ -456,6 +457,20 @@ files that all contribute to the same package. If the target of the
 import is a directory in the $EGO_PATH/lib location, then all the
 source files within that directory area read and processed as part
 of one package. 
+
+### @type static|dynamic
+You can temporarily change the langauge settings to allow static
+typing of data only. When in static mode,
+
+* All values in an array constant must be of the same type
+* You cannot store a value in a variable of a different type
+* You cannot create or delete structure members
+
+This mode is effective only within the current statement block
+(demarcated by "{" and "}" characters). When the block finishes,
+type enforcement returns to the state of the previous block. This
+value is controlled by the static-types preferences item or
+command-line option.
 
 ### @error
 You can generate a runtime error by adding in a `@error` directive, 
