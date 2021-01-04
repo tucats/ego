@@ -126,7 +126,7 @@ func RunAction(c *cli.Context) error {
 	syms := symbols.NewSymbolTable(mainName)
 
 	_ = syms.SetAlways("_args", programArgs)
-	_ = syms.SetAlways("_static", staticTypes)
+	_ = syms.SetGlobal("_static_data_types", staticTypes)
 
 	if interactive {
 		_ = syms.SetAlways("_mode", "interactive")

@@ -28,7 +28,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_mode", "server")
 
 	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
-	_ = syms.SetAlways("_static", staticTypes)
+	_ = syms.SetGlobal("_static_data_types", staticTypes)
 
 	u := r.URL.Query()
 	args := map[string]interface{}{}
