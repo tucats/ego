@@ -36,9 +36,9 @@ const (
 	// "text" or "json" output.
 	OutputFormatSetting = "output-format"
 
-	// If true, the script language includes the print
-	// verb.
-	PrintEnabledSetting = "print-enabled"
+	// If true, the script language includes language
+	// exteions such as print, call, try/catch.
+	ExtensionsEnabledSetting = "extensions-enabled"
 
 	/////////////////////////////////////////////////////
 	//                                                 //

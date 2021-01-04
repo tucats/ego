@@ -9,7 +9,7 @@ const (
 	CredentialsNotProvided    = "credentials not provided"
 	IncorrectArgumentCount    = "incorrect number of arguments"
 	InvalidGremlinClient      = "not a valid gremlin client"
-	InvalidRestClient         = "not a valud rest client"
+	InvalidRestClient         = "not a valid rest client"
 	InvalidResultSet          = "not a valid result set"
 	InvalidResultSetType      = "not a valid result set type"
 	InvalidRow                = "invalid row"
