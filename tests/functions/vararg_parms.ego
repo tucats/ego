@@ -1,0 +1,15 @@
+@test "varargs in function definition"
+
+func testf( base int, args... int ) int {
+    s := base
+    for i := range args {
+        s = s + i
+    }
+    return s 
+}
+
+got := testf(1,2,3)
+want := sum(1,2,3)
+
+@assert got == want "incorrect varargs function result returned"
+@pass
