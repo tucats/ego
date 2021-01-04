@@ -126,7 +126,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		tokens := tokenizer.New(text)
 
 		// Compile the token stream
-		compilerInstance = compiler.New().PrintEnabled(true)
+		compilerInstance = compiler.New().ExtensionsEnabled(true)
 		serviceCode, err = compilerInstance.Compile(tokens)
 		if err != nil {
 			w.WriteHeader(400)
