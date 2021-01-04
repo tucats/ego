@@ -4,7 +4,7 @@
 a := "Tom"
 
 {
-    @static true
+    @type static
 
     // Set a (locally scoped) version of the same variable to an integer
     a := 3
@@ -17,7 +17,7 @@ a := "Tom"
     } catch {
         // Failed correctly
     }
-    @static false
+    @type dynamic
 }
 
 // Static typing now off, so we can set it to
