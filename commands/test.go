@@ -43,7 +43,7 @@ func TestAction(c *cli.Context) error {
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("table", runtime.Table)
 	_ = syms.SetAlways("_mode", "test")
-	_ = syms.SetGlobal("_static_data_types", staticTypes)
+	_ = syms.SetAlways("_static_data_types", staticTypes)
 	runtime.AddBuiltinPackages(syms)
 
 	exitValue := 0
