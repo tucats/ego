@@ -269,6 +269,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	result["Next"] = rowsNext
 	result["Scan"] = rowsScan
 	result["Close"] = rowsClose
+	result["Headings"] = rowsHeadings
 	result["__readonly"] = true
 	result["__type"] = "RowsHandle"
 
@@ -283,8 +284,23 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this["client"] = nil
 	this["Next"] = dbReleased
 	this["Scan"] = dbReleased
+	this["Headings"] = dbReleased
 	ui.Debug(ui.DBLogger, "rows.Close() called")
 	return err, nil
+}
+
+func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	this := getThis(s)
+	rows := this["rows"].(*sql.Rows)
+
+	result := make([]interface{}, 0)
+	columns, err := rows.Columns()
+	if err == nil {
+		for _, name := range columns {
+			result = append(result, name)
+		}
+	}
+	return result, err
 }
 
 func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {

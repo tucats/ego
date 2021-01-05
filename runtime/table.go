@@ -68,6 +68,11 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		_ = t.SetAlignment(i, v)
 	}
 
+	headingsArray := make([]interface{}, len(headings))
+	for i, h := range headings {
+		headingsArray[i] = h
+	}
+
 	return map[string]interface{}{
 		"table":      &t,
 		"AddRow":     TableAddRow,
@@ -75,7 +80,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Sort":       TableSort,
 		"Print":      TablePrint,
 		"Format":     TableFormat,
-		"headings":   headings,
+		"headings":   headingsArray,
 		"__readonly": true,
 		"__type":     "TableHandle",
 	}, nil
@@ -121,7 +126,15 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 					err = t.AddRow(values)
 				}
 			} else {
-				err = t.AddRowItems(args...)
+				if m, ok := args[0].([]interface{}); ok {
+					if len(args) > 1 {
+						err = errors.New(defs.IncorrectArgumentCount)
+						return err, err
+					}
+					err = t.AddRowItems(m...)
+				} else {
+					err = t.AddRowItems(args...)
+				}
 			}
 		}
 	}
