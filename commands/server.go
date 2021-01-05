@@ -23,11 +23,15 @@ import (
 	"github.com/tucats/gopackages/util"
 )
 
+// String written at the start of each new log file.
+const logHeader = "*** Log file initialized %s ***\n"
+
 // Detach starts the sever as a detached process
 func Start(c *cli.Context) error {
 
+	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
-	if err == nil {
+	if err == nil && status != nil {
 		if _, err := os.FindProcess(status.PID); err == nil {
 			if !c.GetBool("force") {
 				return fmt.Errorf("server already running as pid %d", status.PID)
@@ -35,8 +39,8 @@ func Start(c *cli.Context) error {
 		}
 	}
 
-	// Construct the command line again, but replace the START verb
-	// with a RUN verb
+	// Construct the command line again, but replace the START verb with a RUN
+	// verb. Also, add the flag that says the process is running detached.
 	args := []string{}
 	for _, v := range os.Args {
 		detached := false
@@ -50,20 +54,26 @@ func Start(c *cli.Context) error {
 		}
 	}
 
+	// What do we knwo from the arguments that we might need to use?
 	logID := uuid.New()
-	found := false
+	hasSessionID := false
 	logNameArg := 0
 	userDatabaseArg := 0
 
 	for i, v := range args {
+		// Is there a specific session ID already assigned?
 		if v == "--session-uuid" {
 			logID = uuid.MustParse(args[i+1])
-			found = true
+			hasSessionID = true
 			break
 		}
+
+		// Is there a file of user authentication data specified?
 		if v == "--users" {
 			userDatabaseArg = i + 1
 		}
+
+		// Is there a log file to use as the server's stdout?
 		if v == "--log" {
 			logNameArg = i + 1
 		}
@@ -71,12 +81,12 @@ func Start(c *cli.Context) error {
 
 	// If no explicit session ID was specified, use the one we
 	// just generated.
-	if !found {
+	if !hasSessionID {
 		args = append(args, "--session-uuid", logID.String())
 	}
 
-	// If there was a userdatabase, make it fully-qualfied. IF not,
-	// add it as an option with the default name
+	// If there was a userdatabase, udpate it to be an absolute file path.
+	// If not specified, add it as a new option with the default name
 	if userDatabaseArg > 0 {
 		args[userDatabaseArg], _ = filepath.Abs(args[userDatabaseArg])
 	} else {
@@ -85,17 +95,19 @@ func Start(c *cli.Context) error {
 		args = append(args, userDataBaseName)
 	}
 
-	// If there was a log name, make if fully-qualified
+	// If there was a log name, make it a full absolute path.
 	if logNameArg > 0 {
 		args[logNameArg], _ = filepath.Abs(args[logNameArg])
 	}
 
-	// Make sure the location of the server program is fully qualified
+	// Make sure the location of the server program is a full absolute path
 	args[0], err = filepath.Abs(args[0])
 	if err != nil {
 		return err
 	}
 
+	// Is there a log file specified (either as a command-line option or as an
+	// environment variable)? If not, use the default name.
 	logFileName, _ := c.GetString("log")
 	if logFileName == "" {
 		logFileName = os.Getenv("EGO_LOG")
@@ -115,13 +127,13 @@ func Start(c *cli.Context) error {
 		args = append(args, logFileName)
 	}
 
+	// Create the log file and write the header to it. This open file will
+	// be passed to the forked process to use as its stdout and stderr.
 	logf, err := os.Create(logFileName)
-	if err != nil {
-		return err
+	if err == nil {
+		_, err = logf.WriteString(fmt.Sprintf(logHeader, time.Now().Format(time.UnixDate)))
 	}
-	if _, err = logf.WriteString(fmt.Sprintf("*** Log file initialized %s ***\n",
-		time.Now().Format(time.UnixDate)),
-	); err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -133,9 +145,11 @@ func Start(c *cli.Context) error {
 			logf.Fd(),
 			logf.Fd(),
 		},
-		//Sys: sysproc,
 	}
 	pid, err := syscall.ForkExec(args[0], args, &attr)
+
+	// If there were no errors, rewrite the PID file with the
+	// state of the newly-created server.
 	if err == nil {
 		status.Args = args
 		status.PID = pid
@@ -144,6 +158,8 @@ func Start(c *cli.Context) error {
 		err = server.WritePidFile(c, *status)
 		ui.Say("Server started as process %d", pid)
 	} else {
+		// If things did not go well starting the process, make sure the
+		// pid file is erased.
 		_ = server.RemovePidFile(c)
 	}
 	return err
@@ -166,7 +182,7 @@ func Stop(c *cli.Context) error {
 	return err
 }
 
-// Stop stops a running server if it exists
+// Status displays the status of a running server if it exists
 func Status(c *cli.Context) error {
 	running := false
 	msg := "Server not running"
@@ -192,7 +208,7 @@ func Status(c *cli.Context) error {
 }
 
 // Restart stops and then starts a server, using the information
-// from the previous start.
+// from the previous start that was stored in the pidfile.
 func Restart(c *cli.Context) error {
 	status, err := server.ReadPidFile(c)
 	var proc *os.Process
@@ -268,7 +284,8 @@ func Restart(c *cli.Context) error {
 	return err
 }
 
-// RunServer initializes the server
+// RunServer initializes and runs the server, which starts listenting for
+// new connections. This will never terminate until the process is killed.
 func RunServer(c *cli.Context) error {
 
 	if err := runtime.InitProfileDefaults(); err != nil {
@@ -367,6 +384,11 @@ func RunServer(c *cli.Context) error {
 	return err
 }
 
+// SetCacheSize is the administrative command that sets the server's cache size for
+// storing previously-compiled service handlers. If you specify a smaller number
+// that the current cache size, the next attempt to load a new service into the cache
+// will result in discarding the oldest cache entries until the cache is the correct
+// size. You must be an admin user with a valid token to perform this command.
 func SetCacheSize(c *cli.Context) error {
 	if c.GetParameterCount() == 0 {
 		return errors.New(defs.CacheSizeNotSpecified)
@@ -400,6 +422,11 @@ func SetCacheSize(c *cli.Context) error {
 	return nil
 }
 
+// FlushServerCaches is the administrative command that directs the server to
+// discard any cached compilation units for service code. Subsequent service
+// requests require that the service code be reloaded from disk. This is often
+// used when making changes to a service, to quickly force the server to pick up
+// the changes. You must be an admin user with a valid token to perform this command.
 func FlushServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
@@ -421,6 +448,10 @@ func FlushServerCaches(c *cli.Context) error {
 	return nil
 }
 
+// ListServerCahces is the administrative command that displays the information about
+// the server's cache of previously-compiled service programs. The current and maximum
+// size of the cache, and the endpoints that are cached are listed. You must be an
+// admin user with a valid token to perform this command.
 func ListServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)
