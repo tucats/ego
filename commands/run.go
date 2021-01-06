@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
+	"github.com/tucats/gopackages/debugger"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
 )
@@ -39,6 +40,7 @@ func RunAction(c *cli.Context) error {
 	programArgs := make([]interface{}, 0)
 	mainName := "main program"
 	prompt := c.MainProgram + "> "
+	debug := c.GetBool("debug")
 
 	autoImport := persistence.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
@@ -249,7 +251,7 @@ func RunAction(c *cli.Context) error {
 			ui.DebugMode = oldDebugMode
 
 			// Run the compiled code
-			ctx := bytecode.NewContext(syms, b)
+			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
 			oldDebugMode = ui.DebugMode
 			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
 			if ctx.Tracing {
@@ -260,13 +262,22 @@ func RunAction(c *cli.Context) error {
 			// If we are doing source tracing of execution, we'll need to link the tokenzier
 			// back to the execution context. If you don't need source tracing, you can use
 			// the simpler CompileString() function which doesn't require a discrete tokenizer.
-			if c.GetBool("source-tracing") {
+			if c.GetBool("source-tracing") || debug {
 				ctx.SetTokenizer(t)
 			}
 
 			ctx.SetFullSymbolScope(fullScope)
 
-			err = ctx.Run()
+			// This run loop checks for debugger signals and calls the debugger as needed.
+			for err == nil {
+				err = ctx.Resume()
+				line := ctx.GetLine()
+				text := ctx.GetTokenizer().GetLine(line)
+				if debug && debugger.InvokeDebugger(err) {
+					err = debugger.Debugger(syms, line, text)
+				}
+			}
+
 			ui.DebugMode = oldDebugMode
 
 			if err != nil {

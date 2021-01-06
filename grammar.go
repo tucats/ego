@@ -316,6 +316,11 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_STATIC_TYPES",
 	},
 	{
+		LongName:    "debug",
+		Description: "Run with interactive debugger",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    "full-symbol-scope",
 		Description: "Blocks can access any symbol in call stack",
 		OptionType:  cli.BooleanType,
