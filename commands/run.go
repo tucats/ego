@@ -276,6 +276,10 @@ func RunAction(c *cli.Context) error {
 				if debug && debugger.InvokeDebugger(err) {
 					err = debugger.Debugger(syms, line, text)
 				}
+				if err != nil && err.Error() == "exit from debugger" {
+					err = nil
+					break
+				}
 			}
 
 			ui.DebugMode = oldDebugMode
