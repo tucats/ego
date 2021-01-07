@@ -38,7 +38,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	programArgs := make([]interface{}, 0)
-	mainName := "main program"
+	mainName := "main"
 	prompt := c.MainProgram + "> "
 	debug := c.GetBool("debug")
 
@@ -78,7 +78,7 @@ func RunAction(c *cli.Context) error {
 		// If the input file is "." then we read all of stdin
 		if fname == "." {
 			text = ""
-			mainName = "<stdin>"
+			mainName = "console"
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				text = text + scanner.Text() + " "
@@ -223,11 +223,15 @@ func RunAction(c *cli.Context) error {
 				break
 			}
 		}
+		// If this is the exit command, turn off the debugger to prevent and endless loop
+		if t.Tokens[0] == "exit" {
+			debug = false
+		}
 
 		// Compile the token stream. Allow the EXIT command only if  we are in "run" mode interactively
 		comp := compiler.New().WithNormalization(persistence.GetBool("case-normalized")).ExitEnabled(interactive)
 
-		b, err := comp.Compile(t)
+		b, err := comp.Compile(mainName, t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			exitValue = 1
@@ -282,7 +286,11 @@ func RunAction(c *cli.Context) error {
 					text = tx.GetLine(line)
 				}
 				if debug && debugger.InvokeDebugger(err) {
-					err = debugger.Debugger(syms, line, text)
+					err = debugger.Debugger(ctx.GetSymbols(), ctx.GetName(), line, text)
+					if err != nil && err.Error() == "stop" {
+						err = nil
+						break
+					}
 				}
 			}
 

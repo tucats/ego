@@ -94,7 +94,8 @@ func TestAction(c *cli.Context) error {
 
 		// Compile the token stream
 		comp := compiler.New()
-		b, err := comp.Compile(t)
+		name := strings.ReplaceAll(fileOrPath, "/", "_")
+		b, err := comp.Compile(name, t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			exitValue = 1

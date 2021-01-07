@@ -21,7 +21,7 @@ func Factor(n int)[] {
         return [1,2]
     }
 
-    length := int(math.sqrt(n))
+    length := int(math.Sqrt(n))
     count := 0
     result := [1]
     for i:= 2; i <= length; i=i+1 {

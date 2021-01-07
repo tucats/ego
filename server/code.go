@@ -52,7 +52,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	// Compile the token stream
 	comp := compiler.New().ExtensionsEnabled(true)
 	comp.LowercaseIdentifiers = persistence.GetBool("case-normalized")
-	b, err := comp.Compile(t)
+	b, err := comp.Compile("code", t)
 	if err != nil {
 		w.WriteHeader(400)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
