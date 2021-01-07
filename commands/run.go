@@ -130,11 +130,10 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable(mainName)
+	syms := symbols.NewSymbolTable("file " + mainName)
 
 	_ = syms.SetAlways("_args", programArgs)
 	_ = syms.SetAlways("_static_data_types", staticTypes)
-	//syms.ScopeBoundary = true
 
 	if interactive {
 		_ = syms.SetAlways("_mode", "interactive")
@@ -281,12 +280,9 @@ func RunAction(c *cli.Context) error {
 				}
 
 				line := ctx.GetLine()
-				text := ""
-				if tx := ctx.GetTokenizer(); tx != nil {
-					text = tx.GetLine(line)
-				}
+				tx := ctx.GetTokenizer()
 				if debug && debugger.InvokeDebugger(err) {
-					err = debugger.Debugger(ctx.GetSymbols(), ctx.GetName(), line, text)
+					err = debugger.Debugger(ctx.GetSymbols(), ctx.GetName(), line, tx)
 					if err != nil && err.Error() == "stop" {
 						err = nil
 						break
