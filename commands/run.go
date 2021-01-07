@@ -271,14 +271,18 @@ func RunAction(c *cli.Context) error {
 			// This run loop checks for debugger signals and calls the debugger as needed.
 			for err == nil {
 				err = ctx.Resume()
-				line := ctx.GetLine()
-				text := ctx.GetTokenizer().GetLine(line)
-				if debug && debugger.InvokeDebugger(err) {
-					err = debugger.Debugger(syms, line, text)
-				}
-				if err != nil && err.Error() == "exit from debugger" {
+				if err != nil && err.Error() == "stop" {
 					err = nil
 					break
+				}
+
+				line := ctx.GetLine()
+				text := ""
+				if tx := ctx.GetTokenizer(); tx != nil {
+					text = tx.GetLine(line)
+				}
+				if debug && debugger.InvokeDebugger(err) {
+					err = debugger.Debugger(syms, line, text)
 				}
 			}
 

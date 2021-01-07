@@ -135,6 +135,9 @@ func TestAction(c *cli.Context) error {
 			}
 
 			err = ctx.Run()
+			if err != nil && err.Error() == "stop" {
+				err = nil
+			}
 			ui.DebugMode = oldDebugMode
 
 			if err != nil {

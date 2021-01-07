@@ -223,6 +223,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx.EnableConsoleOutput(false)
 	ctx.Tracing = Tracing
 	err = ctx.Run()
+	if err != nil && err.Error() == "stop" {
+		err = nil
+	}
 
 	// Determine the status of the REST call by looking for the
 	// variable _rest_status which is set using the @status

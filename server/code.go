@@ -71,6 +71,9 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()
+		if err != nil && err.Error() == "stop" {
+			err = nil
+		}
 
 		if err != nil {
 			w.WriteHeader(400)
