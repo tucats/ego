@@ -57,7 +57,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"rowCount":    0,
 		"transaction": nil,
 		"__readonly":  true,
-		"__type":      "DatabaseHandle",
+		"__type":      "database",
 	}, nil
 }
 
@@ -271,7 +271,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	result["Close"] = rowsClose
 	result["Headings"] = rowsHeadings
 	result["__readonly"] = true
-	result["__type"] = "RowsHandle"
+	result["__type"] = "rows"
 
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }

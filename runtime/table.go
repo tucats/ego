@@ -82,7 +82,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"Format":     TableFormat,
 		"headings":   headingsArray,
 		"__readonly": true,
-		"__type":     "TableHandle",
+		"__type":     "table",
 	}, nil
 }
 
