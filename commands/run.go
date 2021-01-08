@@ -57,6 +57,7 @@ func RunAction(c *cli.Context) error {
 	disassemble := c.GetBool("disassemble")
 	if disassemble {
 		ui.DebugMode = true
+		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
 	exitOnBlankLine := false

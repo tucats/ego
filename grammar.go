@@ -297,7 +297,7 @@ var ServerRunGrammar = []cli.Option{
 var RunGrammar = []cli.Option{
 	{
 		LongName:            "disassemble",
-		ShortName:           "d",
+		Aliases:             []string{"disasm"},
 		Description:         "Display a disassembly of the bytecode before execution",
 		OptionType:          cli.BooleanType,
 		EnvironmentVariable: "EGO_DISASM",
@@ -317,6 +317,7 @@ var RunGrammar = []cli.Option{
 	},
 	{
 		LongName:    "debug",
+		ShortName:   "d",
 		Description: "Run with interactive debugger",
 		OptionType:  cli.BooleanType,
 	},
