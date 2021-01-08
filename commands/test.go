@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/gopackages/app-cli/ui"
 	"github.com/tucats/gopackages/bytecode"
 	"github.com/tucats/gopackages/compiler"
+	"github.com/tucats/gopackages/debugger"
 	"github.com/tucats/gopackages/functions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/tokenizer"
@@ -136,7 +137,7 @@ func TestAction(c *cli.Context) error {
 			}
 
 			err = ctx.Run()
-			if err != nil && err.Error() == "stop" {
+			if err != nil && err.Error() == debugger.Stop.Error() {
 				err = nil
 			}
 			ui.DebugMode = oldDebugMode

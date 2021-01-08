@@ -266,30 +266,21 @@ func RunAction(c *cli.Context) error {
 			// back to the execution context. If you don't need source tracing, you can use
 			// the simpler CompileString() function which doesn't require a discrete tokenizer.
 			if c.GetBool("source-tracing") || debug {
-				ctx.SetTokenizer(t)
+				ctx.SetTracing(true)
 			}
+			ctx.SetTokenizer(t)
 
 			ctx.SetFullSymbolScope(fullScope)
 
-			// This run loop checks for debugger signals and calls the debugger as needed.
-			for err == nil {
-				err = ctx.Resume()
-				if err != nil && err.Error() == "stop" {
-					err = nil
-					break
-				}
-
-				line := ctx.GetLine()
-				tx := ctx.GetTokenizer()
-				if debug && debugger.InvokeDebugger(err) {
-					err = debugger.Debugger(ctx.GetSymbols(), ctx.GetName(), line, tx)
-					if err != nil && err.Error() == "stop" {
-						err = nil
-						break
-					}
-				}
+			// If we run under control of the debugger, do that, else just run the context.
+			if debug {
+				err = debugger.Run(ctx)
+			} else {
+				err = ctx.Run()
 			}
-
+			if err != nil && err.Error() == debugger.Stop.Error() {
+				err = nil
+			}
 			ui.DebugMode = oldDebugMode
 
 			if err != nil {
