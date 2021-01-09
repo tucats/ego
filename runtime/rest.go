@@ -447,11 +447,11 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return rb, nil
 }
 
-// getClient searches the symbol table for the client receiver ("_this")
+// getClient searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a REST client object, and returns
 // the native client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
-	if g, ok := symbols.Get("_this"); ok {
+	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
 			if client, ok := gc["client"]; ok {
 				if cp, ok := client.(*resty.Client); ok {
@@ -475,7 +475,7 @@ func released(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThis(s *symbols.SymbolTable) map[string]interface{} {
-	t, ok := s.Get("_this")
+	t, ok := s.Get("__this")
 	if !ok {
 		return nil
 	}

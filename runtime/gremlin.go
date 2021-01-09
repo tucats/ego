@@ -329,7 +329,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
 
-	g, ok := symbols.Get("_this")
+	g, ok := symbols.Get("__this")
 	if !ok {
 		return nil, errors.New(defs.NoFunctionReceiver)
 	}

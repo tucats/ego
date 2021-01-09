@@ -205,11 +205,11 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return err, err
 }
 
-// getTable searches the symbol table for the client receiver ("_this")
+// getTable searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a table object, and returns the
 // native table object
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
-	if g, ok := symbols.Get("_this"); ok {
+	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
 			if tbl, ok := gc["table"]; ok {
 				if tp, ok := tbl.(*tables.Table); ok {

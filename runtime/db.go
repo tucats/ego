@@ -370,11 +370,11 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
 }
 
-// getClient searches the symbol table for the client receiver ("_this")
+// getClient searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a database client object, and returns
 // the native client object.
 func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
-	if g, ok := symbols.Get("_this"); ok {
+	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
 			if client, ok := gc["client"]; ok {
 				if cp, ok := client.(*sql.DB); ok {

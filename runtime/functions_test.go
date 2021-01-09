@@ -48,7 +48,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 		t.Errorf("Error connecting to gremlin server: %v", err)
 	}
 
-	_ = syms.SetAlways("_this", client)
+	_ = syms.SetAlways("__this", client)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
