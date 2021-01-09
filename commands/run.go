@@ -133,13 +133,13 @@ func RunAction(c *cli.Context) error {
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("file " + mainName)
 
-	_ = syms.SetAlways("_args", programArgs)
+	_ = syms.SetAlways("__cli_args", programArgs)
 	_ = syms.SetAlways("__static_data_types", staticTypes)
 
 	if interactive {
-		_ = syms.SetAlways("_mode", "interactive")
+		_ = syms.SetAlways("__exec_mode", "interactive")
 	} else {
-		_ = syms.SetAlways("_mode", "run")
+		_ = syms.SetAlways("__exec_mode", "run")
 	}
 
 	io.SetConfig(syms, ConfigDisassemble, disassemble)

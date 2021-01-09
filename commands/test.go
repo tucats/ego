@@ -43,7 +43,7 @@ func TestAction(c *cli.Context) error {
 	// Add test-specific functions and values
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("table", runtime.Table)
-	_ = syms.SetAlways("_mode", "test")
+	_ = syms.SetAlways("__exec_mode", "test")
 	_ = syms.SetAlways("__static_data_types", staticTypes)
 	runtime.AddBuiltinPackages(syms)
 

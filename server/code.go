@@ -26,7 +26,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
 	syms := symbols.NewSymbolTable("REST /code")
-	_ = syms.SetAlways("_mode", "server")
+	_ = syms.SetAlways("__exec_mode", "server")
 
 	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
 	_ = syms.SetAlways("__static_data_types", staticTypes)

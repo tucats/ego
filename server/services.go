@@ -47,7 +47,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	_ = syms.SetAlways("_method", r.Method)
-	_ = syms.SetAlways("_mode", "server")
+	_ = syms.SetAlways("__exec_mode", "server")
 
 	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
 	_ = syms.SetAlways("__static_data_types", staticTypes)
