@@ -224,7 +224,7 @@ func RunAction(c *cli.Context) error {
 			}
 		}
 		// If this is the exit command, turn off the debugger to prevent and endless loop
-		if t.Tokens[0] == "exit" {
+		if t != nil && len(t.Tokens) > 0 && t.Tokens[0] == "exit" {
 			debug = false
 		}
 
