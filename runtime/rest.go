@@ -230,7 +230,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 
-	token := persistence.Get("logon-token")
+	token := persistence.Get(defs.LogonTokenSetting)
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}

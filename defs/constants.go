@@ -37,8 +37,8 @@ const (
 	OutputFormatSetting = "ego.output-format"
 
 	// If true, the script language includes language
-	// exteions such as print, call, try/catch.
-	ExtensionsEnabledSetting = "ego.extensions"
+	// extensions such as print, call, try/catch.
+	ExtensionsEnabledSetting = "ego.compiler.extensions"
 
 	/////////////////////////////////////////////////////
 	//                                                 //
@@ -52,19 +52,19 @@ const (
 
 	// Should the interactive RUN mode exit when the user
 	// enters a blank line on the console?
-	ExitOnBlankSetting = "ego.console.exit-on-blank"
+	ExitOnBlankSetting = "ego.console.exit.on.blank"
 
 	// Should the copyright message be omitted when in
 	// interactive prompt mode?
-	NoCopyrightSetting = "ego.console.no-copyright"
+	NoCopyrightSetting = "ego.console.no.copyright"
 
 	// Should the interactive command input processor use
 	// readline?
-	UseReadline = "ego.console.use-readline"
+	UseReadline = "ego.console.readline"
 
 	// Should the Ego program(s) be run with static (true)
 	// or dynamic (false) types?
-	StaticTypesSetting = "ego.compiler.static-types"
+	StaticTypesSetting = "ego.compiler.types.static"
 
 	/////////////////////////////////////////////////////
 	//                                                 //

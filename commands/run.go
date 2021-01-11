@@ -229,7 +229,7 @@ func RunAction(c *cli.Context) error {
 		}
 
 		// Compile the token stream. Allow the EXIT command only if  we are in "run" mode interactively
-		comp := compiler.New().WithNormalization(persistence.GetBool("case-normalized")).ExitEnabled(interactive)
+		comp := compiler.New().WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 		b, err := comp.Compile(mainName, t)
 		if err != nil {
