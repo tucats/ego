@@ -1,6 +1,6 @@
-/* Debugging service. This just dumps out the symbol table */
+/* Debugging service. This reports server status */
 
-import ( cipher util )
+import ( cipher util time )
 
 @authenticated user
 @status 200
@@ -30,9 +30,9 @@ if _json {
     return
 }
 
-r := `"Healthy %s mode at %s
+r := `Healthy %s mode at %s
     version %s,
     user    %s,
     session %s
 `
-@response fmt.Sprintf(r, util.Mode(), time.Now(), _version, _user, _session)
+@response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session)
