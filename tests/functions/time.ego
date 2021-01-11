@@ -1,0 +1,16 @@
+@test "time functions"
+
+{
+    pattern := "Jan 2 15:04:05 MST 2006"
+    t1, e := time.Parse( "Jan 11 10:15:01 EST 2021", pattern )
+    @assert t1.String() == "Mon Jan 11 10:15:01 EST 2021"  "Time parse error"
+
+    t2 := t1.Add("2h")
+    @assert t2.String() == "Mon Jan 11 12:15:01 EST 2021"  "Time add error"
+
+    t3, e := time.Parse( "Jan 11 10:15:01 EST 2021", pattern )
+    t4, e := time.Parse( "Jan 11 10:15:02 EST 2021", pattern )
+    @assert t4.Sub(t3) == "1s" "Time sub error"
+
+}
+@pass
