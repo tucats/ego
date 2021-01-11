@@ -16,6 +16,7 @@ type RestResponse struct {
 type CachedItem struct {
 	Name     string    `json:"name"`
 	LastUsed time.Time `json:"last"`
+	Count    int       `json:"count"`
 }
 
 // CacheResponse describes the response object returned from

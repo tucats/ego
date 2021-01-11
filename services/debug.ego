@@ -35,4 +35,4 @@ r := `"Healthy %s mode at %s
     user    %s,
     session %s
 `
-@response fmt.Sprintf(r, _mode, time.Now(), _version, _user, _session)
+@response fmt.Sprintf(r, util.Mode(), time.Now(), _version, _user, _session)

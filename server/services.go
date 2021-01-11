@@ -27,9 +27,10 @@ import (
 // Define a cache. This keeps a copy of the compiler and the bytecode
 // used to represent each service compilation.
 type cachedCompilationUnit struct {
-	age time.Time
-	c   *compiler.Compiler
-	b   *bytecode.ByteCode
+	age   time.Time
+	c     *compiler.Compiler
+	b     *bytecode.ByteCode
+	count int
 }
 
 var serviceCache = map[string]cachedCompilationUnit{}
@@ -111,6 +112,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c
 		cachedItem.age = time.Now()
+		cachedItem.count++
 		serviceCache[r.URL.Path] = cachedItem
 		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
 		cacheMutext.Unlock()
@@ -139,9 +141,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// If it compiled succesfully, then put it in the cache
 		if err == nil {
 			serviceCache[r.URL.Path] = cachedCompilationUnit{
-				age: time.Now(),
-				c:   compilerInstance,
-				b:   serviceCode,
+				age:   time.Now(),
+				c:     compilerInstance,
+				b:     serviceCode,
+				count: 0,
 			}
 			// Is the cache too large? If so, throw out the oldest
 			// item from the cache.

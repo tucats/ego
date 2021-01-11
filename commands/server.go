@@ -475,10 +475,10 @@ func ListServerCaches(c *cli.Context) error {
 		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
 		if cacheStatus.Count > 0 {
 			fmt.Printf("\n")
-			t, _ := tables.New([]string{"Endpoint", "Last Used"})
+			t, _ := tables.New([]string{"Endpoint", "Count", "Last Used"})
 
 			for _, v := range cacheStatus.Items {
-				_ = t.AddRowItems(v.Name, v.LastUsed)
+				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
 			}
 			t.Print("text")
 		}

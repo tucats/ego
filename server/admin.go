@@ -251,7 +251,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		result.Message = "Success"
 
 		for k, v := range serviceCache {
-			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
+			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age, Count: v.count})
 		}
 
 		b, _ := json.Marshal(result)

@@ -7,8 +7,8 @@ import (
     cipher 
 )
 
-// Can only proceed if authenticated and has admin privileges
-@authenticated admin
+// Can only proceed if authenticated with username
+@authenticated user
 
 // Generate a token and return it as text to the caller
 @response cipher.Create(_user)
