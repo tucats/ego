@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/tucats/ego/defs"
@@ -74,12 +75,13 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"table":      &t,
+		"table":      t,
 		"AddRow":     TableAddRow,
 		"Close":      TableClose,
 		"Sort":       TableSort,
 		"Print":      TablePrint,
 		"Format":     TableFormat,
+		"Align":      TableAlign,
 		"headings":   headingsArray,
 		"__readonly": true,
 		"__type":     "table",
@@ -191,6 +193,45 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 		t.ShowHeadings(headings)
 		t.ShowUnderlines(lines)
+	}
+	return err, err
+}
+
+// TableAlign specifies alignment for a given column.
+func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 2 {
+		err := errors.New(defs.IncorrectArgumentCount)
+		return err, err
+	}
+	t, err := getTable(s)
+	if err == nil {
+
+		column := 0
+		if columnName, ok := args[0].(string); ok {
+			column, ok = t.FindColumn(columnName)
+			if !ok {
+				err = fmt.Errorf("invalid column name: %s", columnName)
+				return err, err
+			}
+		} else {
+			column = util.GetInt(args[0])
+		}
+
+		mode := tables.AlignmentLeft
+		if modeName, ok := args[1].(string); ok {
+			switch strings.ToLower(modeName) {
+			case "left":
+				mode = tables.AlignmentLeft
+			case "right":
+				mode = tables.AlignmentRight
+			case "center":
+				mode = tables.AlignmentCenter
+			default:
+				err = fmt.Errorf("invalid alignment: %s", modeName)
+				return err, err
+			}
+		}
+		err = t.SetAlignment(column, mode)
 	}
 	return err, err
 }
