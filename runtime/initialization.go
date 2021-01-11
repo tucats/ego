@@ -19,6 +19,7 @@ func InitProfileDefaults() error {
 		defs.EgoPathSetting:           egopath,
 		defs.AutoImportSetting:        "true",
 		defs.CaseNormalizedSetting:    "false",
+		defs.StaticTypesSetting:       "false",
 		defs.OutputFormatSetting:      "text",
 		defs.ExtensionsEnabledSetting: "false",
 		defs.UseReadline:              "true",
