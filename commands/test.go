@@ -32,6 +32,9 @@ func TestAction(c *cli.Context) error {
 		return err
 	}
 
+	// Set extensions to be enabled for this run.
+	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
+
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("Unit Tests")
 
