@@ -1,0 +1,24 @@
+// dirlist.ego - sample program
+//
+// Reads the current directory (".") and prints out a formatted table of the
+// file names, sizes in bytes, and modification date
+
+// Get a list of the files. The result is an array of structs, where each 
+// struct contains information about one file or subdirectory in the path.
+d := io.ReadDir(".")
+
+// Create a table, which is a formatted output of rows and columns. Indicate
+// the column names when we create the table, and also set the size column
+// (which contains an integer number) to be right-aligned.
+t := tables.New("Name", "Size", "Modified")
+t.Align("size", "right")
+
+// Looping over the array of files and directories, add each file's info to
+// the table as a new row.
+for f := range d {
+   t.AddRow(f.name, f.size, f.modified)
+}
+
+// Print the table (in text format) to the console, and then the count of rows.
+t.Print("text")
+fmt.Printf("\n%d items\n", len(d))

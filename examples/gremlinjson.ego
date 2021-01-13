@@ -9,7 +9,7 @@ try {
 	g = gremlin.New(url)
 } catch {
 	fmt.Println( "Unable to connect to Gremlin server")
-    exit 1
+    util.Exit(1)
 }
 
 // Create some vertices in the database. Note that not all of them have the same
