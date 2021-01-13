@@ -1,0 +1,24 @@
+// goroutine.ego - sample program
+//
+// This illustrates creating a "go routine" using a function that can 
+// run asynchronously, and a channel object used to communicate between
+// the thread and the main program.
+
+// Define a function. This will be used as the "go routine" run as a thread.
+// It just waits a short while and then sends a message to the channel and
+// completes its work.
+func f(c chan) {
+   fmt.Println("Sleeping in a distant land")
+   time.Sleep("1s")
+   c <- "sent from afar"
+}
+
+// Make a channel, and share it with the function we then run
+// as an asynchronous routine
+var xc chan
+go f(xc)
+
+// Hang out until we get a value back from the channel
+fmt.Println("Waiting on a reply...")
+m <- xc
+fmt.Printf("Message was %s\n", m)
