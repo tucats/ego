@@ -1,0 +1,14 @@
+@test "go routine with channel"
+
+func gofn(c chan) {
+   time.Sleep("500ms")
+   c <- "sent from afar"
+}
+
+var xc chan
+go gofn(xc)
+time.Sleep("500ms")
+m <- xc
+@assert m == "sent from afar" "Failed to get correct value from channel"
+
+@pass
