@@ -1,0 +1,30 @@
+@test "channel with multiple messages"
+{
+   // Asynchronous routine that sends some messages, and then
+   // closes the channel so the receiver knows we're done
+   func sender(c chan) {
+      defer close(c)
+      c <- "sent from afar"
+      c <- "and another for good measure"
+   }
+
+   // Main code. Make a channel, and launch the sender thread
+   xc := make(chan,5)
+   go sender(xc)
+
+   // Drain the channel of messages by printing them out.
+   count := 1
+
+   for i := range xc {
+      if count == 1 {
+         @assert i == "sent from afar" "First message wrong"
+      } 
+      if count == 2 {
+         @assert i == "and another for good measure" "Second message wrong"
+      } 
+      count = count + 1
+   }
+
+   @assert count != 2 "Wrong number of messages"
+}
+@pass
