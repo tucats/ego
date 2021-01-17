@@ -240,7 +240,7 @@ and a newline is added after all the items are printed.
 Using `print` without any arguments just prints a newline character. 
 
 Note that the print statement may not be available depending on the profile
-setting "print-enabled". You can always use the `fmt.Print()`, `fmt.Println()`,
+setting "ego.compiler.extensions". You can always use the `fmt.Print()`, `fmt.Println()`,
 and `fmt.Printf()` functions to format output.
 
 
