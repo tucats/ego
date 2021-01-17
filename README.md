@@ -64,7 +64,7 @@ that function is running.
 &nbsp;
 
 ### Data types
-_Ego_ support six data types, plus limited support for function pointers
+_Ego_ support several native data types, plus limited support for function pointers
 as values.
 
 | type | description |
@@ -73,6 +73,7 @@ as values.
 |float| 64-bit floating point value |
 |string| Unicode string |
 |bool| Boolean value of true or false |
+|chan| Channel for communicating between threads |
 | [...] | Array of values |
 | {...} | Structure of fields |
 
@@ -81,7 +82,7 @@ type, including other arrays. The array elements are always indexed starting
 at a value of zero. You can also reference a range (slice) of an array by using
 the notation `a[b:e]` which returns an array containing elements from `b` to
 `e` from array `a`. You cannot reference a subscript that has not been allocated.
-You can use the `array` statement to initialize an array, and the `array()`
+You can use the `make` function to initialize an array, and the `array()`
 function to change the size of an existing array.
 
 You can also define an array constant, and assign it to a value, where
@@ -157,20 +158,6 @@ within the block) and the symbol `y` will not be defined (because it went
 out of scope at the end of the basic block.)
 
 
-### array
-The `array` statement is used to allocate an array. An array can also be
-created as an array constant and stored in a variable. The array statement
-identifies the name of the array and the size, and optionally an initial
-value for each member of the array.
-
-    array x[5]
-    array y[2] = 10
-
-The first example creates an array of 5 elements, but the elements are
-`<nil>` which means they do not have a usable value yet. The array elements
-must have a value stored in them before they can be used in an expression.
-The second example assigns an initial value to each element of the array,
-so the second statement is really identical to `y := [10,10]`.
 
 ### const
 The `const` statement can define constant values in the current scope. These
@@ -214,6 +201,33 @@ condition is false, as in
 
 If the value of `flag` does not equal the string "-d" then the 
 code will call the function `regular()` instead of `debug()`.
+
+
+### make
+The `make` pseud-function is used to allocate an array, or a channel with
+the capacity to hold multiple messages. This is called a pseudo-function
+because part of the parameter processing is handled by the compiler to
+identify the type of the array or channel to create. 
+
+The first argument must be a data type specification, and the second argument
+is the size of the item (array elements or channel messages)
+
+    a := make([]int, 5)
+    b := make(chan, 10)
+
+
+The first example creates an array of 5 elements, each of which is of type `int`,
+and initialized to the _zero value_ for the given type. This could have been
+done by using `a := [0,0,0,0,0]` as a statment, but by using the make() function
+you can specify the number of elements dynamically at runtime.
+
+The second example creates a channel object capable of holding up to 10 messages.
+Creating a channel like this is required if the channel is shared among many threads.
+If a channel variable is declare by default, it holds a single message. This means
+that before a thread can send a value, another thread must read the value; if there
+are multiple threads waiting to send they are effectively run one-at-a-time. By
+creating a channel that can hold multiple messages, up to 10 (in the above example)
+threads could send a message to the channel before the first message was read.
 
 ### print
 The `print` statement accepts a list of expressions, and displays them on
@@ -390,6 +404,20 @@ This loop run run only all ten times, but will only print the values
 at the top of the loop with the next index value.
 
 The `continue` statement cannot be used outside of a `for` loop.
+
+### var
+The `var` statement declares a variable of a given type. The variable
+has no value (it may be a nil value). 
+
+    var msgs chan
+    var salary float
+
+The first statement creates a channel variable. The message size is
+always one message (use the `make()` function to create a channel that
+can hold multiple messages).
+
+The second statement creates a floating point value called `salary` that
+is set to the zero value for the given type (0.0) as it's initial value.
 
 ### Error handling
 You can use the `try` statement to run a block of code (in the same
