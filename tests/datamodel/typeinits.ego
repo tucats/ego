@@ -1,0 +1,13 @@
+@test "initialize using types"
+{
+    type emp struct {
+        name string
+        age int
+    }
+
+    e := emp{name:"Bob", age:55}
+    @assert type(e) == "emp" "Wrong type of created struct"
+    @assert e.name == "Bob"  "Wrong name value in type"
+    @assert e.age == 55      "Wrong age value in type"
+}
+@pass
