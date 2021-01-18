@@ -1,16 +1,6 @@
-# Introduction to _Ego_ Language
-_Version 0.1_
-
-This document describes the language _Ego_, which is a scripting language and tool set patterned off of the _Go_ programming language. The _Ego_ language name is a portmanteaux for _Emulated Go_. The data types and language statements are very similar to _Go_ with a few exceptions:
-* If enabled by settings, _Ego_ offers a try/catch model for intercepting runtime errors
-* The language can be run with either dynamic or static typing.
-* The available set of packages that support runtime functionality is limited.
-
-The _Ego_ language is run using the `ego` command-line interface. This provides the ability to run a program from an external text file, to interactivly enter _Ego_ programming statements, or to run _Ego_ programs as web services. This functionality is documented elsewhere; this guide focusses on writing _Ego_ programs regardless of the runtime environment.
-
-The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely available for any use, public or private, including commercial software. The only requirement is that any software that incorporates or makes use of _Ego_ or the packages written by Tom Cole to support must include a statement attributing authorship to _Ego_ and it's runtime environment to Tom Cole.
 
 # Table of Contents
+1. [Introduction](#intro)
 1. [Data Types](#datatypes)
     1. [Base Types](#basetypes)
     2. [Arrays](#arrays)
@@ -25,27 +15,42 @@ The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely available 
 &nbsp;
 &nbsp;
 
+
+# Introduction to _Ego_ Language<a name="intro"></a>
+_Version 0.1_
+
+This document describes the language _Ego_, which is a scripting language and tool set patterned off of the _Go_ programming language. The _Ego_ language name is a portmanteaux for _Emulated Go_. The data types and language statements are very similar to _Go_ with a few exceptions:
+* If enabled by settings, _Ego_ offers a try/catch model for intercepting runtime errors
+* The language can be run with either dynamic or static typing.
+* The available set of packages that support runtime functionality is limited.
+
+The _Ego_ language is run using the `ego` command-line interface. This provides the ability to run a program from an external text file, to interactivly enter _Ego_ programming statements, or to run _Ego_ programs as web services. This functionality is documented elsewhere; this guide focusses on writing _Ego_ programs regardless of the runtime environment.
+
+The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely available for any use, public or private, including commercial software. The only requirement is that any software that incorporates or makes use of _Ego_ or the packages written by Tom Cole to support must include a statement attributing authorship to _Ego_ and it's runtime environment to Tom Cole.
+
+
 # Data Types<a name="datatypes"></a>
 The _Ego_ language supports a number of base types which express a single value of some type (string, integer, boolean, etc.). These base types can be members of complex types consisting of arrays (ordered lists) and structs (key/value pairs). Additionally, the user can create types based on the base or complex types, such as a type describing a structure that records information about an employee; this type can be used to create instances of the structure, etc.
 
-## Base Types
+## Base Types<a name="basetypes"></a>
 
 A value can be a base type; when it is a base type is contains only one value at a time, and that value has a specific type.  These are listed here.
 
-|  Type  | Example  |    Range         | Description  |
-| ------ | -------- | ---------------- | -------------|
+|   Type   | Example  |    Range         | Description  |
+| -------- | -------- | ---------------- | -------------|
 | `bool`   | true     | true, false      | A Boolean value that is either true or false |
 | `int`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
 | `float`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
-| `chan` |  chan      | any | A channel, used to communicate values between threads |
-(Note that the range values shown are approximate.)
+| `chan`   |  chan    | any              | A channel, used to communicate values between threads |
+
+_Note that the numeric range values shown are approximate._
 
 A value expressed in an _Ego_ program has an implied type. The language processor will attempt to determine the type of the value. For booelan values, the value can only be `true` or `false`. For numeric types, the language differentiates between integer and float value. The value `1573` will be intepreted as an int value because it has no exponent or factional part, but `-153.35` will be interpreted as a float value because it has a decimal point and a fractional value. A string value enclosed in double quotes (") cannot span multiple lines of text. A string value enclosed in back-quotes (`) are allowed to span multiple lines of text if needed.
 
 A `chan` value has no constant expression; it is a type that can be used to create a variable used to communicate between threads. See the section below on threads for more information.
 
-## Arrays
+## Arrays<a name="arrays"></a>
 
 An array is an ordered list of values. That is, it is a set where each value has a numerical position referred to as it's index. The first value in an array has an index value of 0; the second value in the array has an index of 1, and so on. An array has a fixed size; once it is created, you cannot add to the array directly.
 
@@ -57,19 +62,25 @@ Array constants are expressed using square brackets, which contain a list of val
 The first example is an array of integers. The value at position 0 is `101`. The value at position 1 is `335`, and so on.  The second example is a heterogenous array, where each value is of varying types. For example, the value at position 0 is the integer `123` and the value at position 1 is the string `"Fred"`.
 
 
-## Structures
+## Structures<a name="structures"></a>
+A structure (called `struct` in the _Ego_ language) is a set of key/value pairs. The key is an _Ego_ symbol, and the value is any supported value type. Each key must be unique. The values can be read or written in the struct based on the key name. Once a struct is created, it cannot have new keys added to it directly. A struct constant is indicated by braces, as in:
 
-## User Types
+    {  Name: "Tom", Age: 53 }
+
+This struct has two members, `Name` and `Age`. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member `Name` is a string value, and the struct member `Age` is an int value.
+
+## User Types<a name="usertypes"></a>
 
 # Symbols and Expressions<a name="symbolsexpressions"></a>
+This section covers symbols (named storage for values) and expressions (sequences of symbols, values, and operators that result in a computed value).
 
-## Symbols and Scope
+## Symbols and Scope<a name="symbolsscope"></a>
 
-## Operators
+## Operators<a name="operators"></a>
 
-## Type Conversions
+## Type Conversions<a name="typeconversion"></a>
 
-## Builtin Functions
+## Builtin Functions<a name="builtinfunctions"></a>
 
 # Conditional and Iterative Execution
 
