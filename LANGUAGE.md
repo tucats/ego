@@ -16,7 +16,7 @@
     2. [For &lt;condition&gt;](#forcond)
     3. [For &lt;index&gt;](#forindex)
     4. [For &lt;range&gt;](#forrange)
-    
+
 &nbsp;
 &nbsp;
 
@@ -199,8 +199,49 @@ The _Ego_ language includes a library of built-in functions which can also be us
 &nbsp;
 
 # Conditional and Iterative Execution <a name="flowcontrol"></a>
+We have discussed how variables are created, and how expressions are used to calculate values based on variables, constant values, and functions. However, most interesting programs require some decision making to control the flow of execution based on the values of variables. This section will describe how to make _either/or_ decisions in the code, and how to execute a block of code repeatedly until a condition is met.
 
 ## If-Else <a name="if"></a>
+
+The general nature of a conditional `if` statement is
+
+     if <condition> 
+         <statement>
+     else 
+         <statement>
+
+The `else` clause is optional, as described below. In all cases where the syntax says &lt;statement&gt;, it can be a single statement or a basic block which is a set of statements enclosed in braces ("{" and "}"). By convention, even when there is only a single statement in the block, a basic block is used for readability.
+
+Consider the following example code:
+
+    salary := hours * wage                  (1)
+    if salary < 100.0 {                     (2)
+        fmt.Println("Not paid enough!")     (3)
+    }                                       (4)
+    total = total + salary                  (5)
+This introduces a number of new elements to a program, so let's go over them line-by-line. The numbers is parenthesis are not part of the program, but are used to identify each line of the code.
+
+1. This first line calculates a new value by multiplying the `hours` times the `salary`, and store it in a new value called `salary`. This uses an assignment statement; the `:=` indicates the variable does not already exist and will be created by this operation. We assume the values of `hours` and `wage` were calculated already in the program.
+
+2. This statement performs a conditional evaluation. After the `if` statement, there is a relational expresssion thta can be converted to a boolean value. In this case, if `salary` has a value less than `100.0` then the code will execute some additional statement(s). After the expression, the `{` character defines the start of a _basic block_ which is a group of statements that are all executed together. 
+
+3. If salary is less than 100.0, then the fmt.Println() operation is performed. Don't worry that we haven't talked about this yet; its covered below in the section on the `fmt` package, but it is enough to know that this produces a line of output with the string `Not paid enough!`. If, however, the value of `salary` is not less than 100.0, then the basic block is not executed, and the program continues with the statement after the block. 
+
+4. The `}` character defines the end of the basic block. If the `if` statement condition is not met, execution continues after this end-of-block indicator.
+
+5. This statement will be executed next, regardless of whether `salary` was less than 100.0 or not. This statement updates the value of `total` to be the sum of `total` and the `salary`.
+
+Instead of having the `if` statement advance to the next statement if the condition is not true, a second _basic block_ can be defined that has the statements to execute if teh condition is false. That is, the result of the expression will result in one or the other of two basic blocks being executed.
+
+    salary := hours * wage
+    if salary < 100 {
+        scale = "small"
+    } else {
+        scale = "large"
+    }
+
+
+In this example, after calculating a value for `salary`, it is compared to see if it is less than 100. If so, then the value `scale` is set to the value `"small"`. But if the value of `salary` is not less than 100, the value of `scale` is set to `"large"`. Regardless of which basic block was executed, after the block executes, the program resumes with the next statement after the `if` statements.
 
 ## For _condition_ <a name="forcond"></a>
 
