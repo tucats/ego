@@ -11,7 +11,12 @@
     2. [Operators](#operators)
     3. [Type Conversion](#typeconversion)
     4. [Builtin Functions](#builtinfunctions)
-
+3. [Conditional and Iterative Execution](#flowcontrol)
+    1. [If/Else Conditional](#if)
+    2. [For &lt;condition&gt;](#forcond)
+    3. [For &lt;index&gt;](#forindex)
+    4. [For &lt;range&gt;](#forrange)
+    
 &nbsp;
 &nbsp;
 
@@ -38,6 +43,7 @@ A value can be a base type; when it is a base type is contains only one value at
 
 |   Type   | Example  |    Range         | Description  |
 | -------- | -------- | ---------------- | -------------|
+| `nil`    | nil      | nil | The `nil` value indicates no value or type specified |
 | `bool`   | true     | true, false      | A Boolean value that is either true or false |
 | `int`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
 | `float`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
@@ -70,27 +76,137 @@ A structure (called `struct` in the _Ego_ language) is a set of key/value pairs.
 This struct has two members, `Name` and `Age`. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member `Name` is a string value, and the struct member `Age` is an int value.
 
 ## User Types<a name="usertypes"></a>
+The _Ego_ language includes the ability to create use-defined types. These are limited to `struct` definitions. They allow the program to define a short-hand for a specific type, and then reference that type when creating a new variable of that type. The `type` statement is used to define the type. Here is an example:
 
-# Symbols and Expressions<a name="symbolsexpressions"></a>
-This section covers symbols (named storage for values) and expressions (sequences of symbols, values, and operators that result in a computed value).
+    type Employee struct {
+       Name    string
+       Age     int
+    }
+
+This creates a new type called `Employee` which is a struct with two members, `Name` and `Age`. A variable created with this type will always be a struct, and will always contain these two members. The use of this statement will be more clear later when we see how to create a variable of a given type.
+
+# Variables and Expressions<a name="symbolsexpressions"></a>
+This section covers variables (named storage for values) and expressions (sequences of variables, values, and operators that result in a computed value).
 
 ## Symbols and Scope<a name="symbolsscope"></a>
+A variable is a named storage location, identified by a _symbol_. The _Ego_ language is, by default, a case-senstive language, such that the variables `Age` and `age` are two different values. A symbol names can consist of letters, numbers, or the underscore ("_") character. The first character must be either an underscore or a alphabetic character. Here are some examples of valid and invalid names:
+
+| Name | Description |
+| ---- | ----------- |
+| a123 | Valid name |
+| user_name | Valid name |
+| A123 | Valid name, different than `a123`|
+| _egg | Valid name, but is a read-only variable |
+| 15States | Invalid name, does not start with an alphabetic character |
+| $name | Invalid name, `$` is not a valid symbol character |
+
+There is a reserved name that is just an underscore, "_". This name means _value we will ignore._ So anytime you need to referene a variable to conform to the syntax of the language, but you do not want or need the value for your particular program, you can specify "_" which is a short-hand value for "discard this value".
+
+A symbol name that starts with an underscore character is a read-only variable. That is, it's value can be set once when it is created, but can not be changed once it has its initial value. For example, when an _Ego_ program runs, there is always a read-only variable called `_version` that can be read to determine the version of the `ego` command line tool, but the value cannot be set by a user program.
+
+The term _scope_ refers to the mechanism by which a symbol name is resolved to a variable. When an _Ego_ program runs, each individual function, and in fact each basic block (code enclosed within `{...}` braces) has its own scope. A variable that is created at one scope is _visible_ to any scopes that are contained within that scope. For example, a variable created at the first line of a function is visible to all the code within the function. A variable created within a basic-block is only visible within the code inside that basic block. When a scope ends, any variables created in that scope are deleted and they no longer have a value.
+
+This will become clearer below when we talk about functions and basic blocks. In general, just know that you can reference (read or write) a value to any symbol in your same scope or an outer scope, but you can only create variables at the current scope, and once that scope is completed, the created variables no longer exist.
+A symbol can be assigned a value using an _assignment_ statement. This consists of the variable name that is to receive the value, and either `=` or `:=`, followed by the value to store in that variable. The difference between the two assignment operators is that `:=` will create a new value in the current scope, while `=` will locate a value that already exists, and write a new value to it.
+
+      name := "Bob"
+      name = "Mary"
+
+In this example, the first statement uses the `:=` operator, which cause the symbol `name` to be created, and then the string value "Bob" is stored in the variable. If the variable already exists, this is an error and you should use the `=` instead to update an existing value. The `=` operator looks for the named value in the current scope, and if it finds it, the value "Mary" is assigned to it. If the variable does not exist at this scope, but does in an outer scope level, then the variable at the outer scope is updated.
+
 
 ## Operators<a name="operators"></a>
+Operators is the term for language elements that allow you to perform mathmatical or other other operations using constant values as well as variable values, to produce a new computed value. Some operators can operate on a wide range of different value types, and some operators have more limited functionality.
+
+There are _dereference_ operators that are used to access members of a struct, values of a type, or index
+into an array.
+
+| Operator | Example | Description |
+| --- | --- | --- |
+| .   | emp.age | Find the menber named `age` in the struct named `emp` |
+| []  | items[5] | Find the value at index 5 of the array named `items` |
+| {}  | emp{} | Create an instance of a struct of the type `emp` |
+&nbsp;
+&nbsp;
+
+There are _monadic_ operators which precede an expression and operate on the single value given.
+| Operator | Example | Description |
+| --- | --- | --- |
+|  -  | -temp | Calculate the negative of the value in `temp` |
+| !  | !active | Calculate the boolean NOT of the value in `active` |
+&nbsp;
+&nbsp;
+
+There are _diadic_ operators that work on two values, one of which preceeds the operator and one of which follows the operator.
+
+| Operator | Example | Description |
+| --- | --- | --- |
+|  +  | a+b | Calculate the sum of numeric values, or the AND of two boolean values. For strings, concatenate the strings |
+| - | a-b | Calculate the difference of the integer or float values |
+| * | a*b | Calculate the product of the numeric value, or the OR of two boolean values |
+| / | a/b | Calculate the division of the numeric values |
+| ^ | 2^n | Calculate `2` to the power `n` |
+
+For division, integer values will result in the integer value of the division, so `10/3` will result in `3` as the expression value. A floating point value retains the fractional value of the conversion, so `10.0/3.0` results in `3.333333333` as the result.
+
+Expressions can be combined together, and follow normal mathematical order of precidence (multiplication and division are done before subtraction and addition). So the expression `a+b*c` will first multiply `b` and `c`, and then add the product to the value of `a`. You can use parenthesis to control the order of evaluation, so `(a+b)*c` will calculate the sum of `a+b` and then multiply that result by the value in `c`.
+&nbsp;
+&nbsp;
+
+There are _relational_ operators that work on two values, one of which preceeds the operator and one of which follows the operator. The result of the operator is always a boolean (`true` or `false`) value describing the relationship between the two values.
+
+| Operator | Example | Description |
+| --- | --- | --- |
+|  ==  | a == b | True if `a` is equal to `b` |
+|  !=  | a != b | True if `a` is not equal to `b` |
+|  &gt; | a &gt; b | True if `a` is less than `b` |
+|  &gt;= | a &gt;= b | True if `a` is less than or equal to `b` |
+|  &lt; | a &lt; b | True if `a` is greater than `b` |
+|  &lt;= | a &lt;= b | True if `a` is greater than or equal to `b` |
+
 
 ## Type Conversions<a name="typeconversion"></a>
+When an operation is done on two values (either a variable or a constant value) of the same type, no additional conversion is performed or required. If the operation is done on two values of different types, _Ego_ will convert the values to the same type if possible before performing the operation. For example, the expression `10.0/3` divides an integer value into a floating point value; the _Ego_ languae converts the integer to a floating point value before performing the division. In general, _Ego_ will convert the values to the value that will result in minimal or no loss of precision.
+
+These conversions happen automatically, though you can use type casting functions like `int()` or `string()` discussed later to force a specific type of conversion operation. For example, if a boolean value is used in an expression that requires a float value, then the boolean is converted such that `false` is converted to `0.0` and `true` is converted to `1.0`. Similarly, if a numeric or boolean value is needed as a string, the string value is the formatted version of the original value. So a value of `123.5` as a float becomes the string `"123.5"`.
 
 ## Builtin Functions<a name="builtinfunctions"></a>
 
-# Conditional and Iterative Execution
+The _Ego_ language includes a library of built-in functions which can also be used as elements of an expression, including having the function value be assigned to a variable. A function consists of a name, followed by a list of zero or more values in parenthesis, separated by commas. If there are no values, you still must specify the parenthesis. The function may accept a fixed or variable number of arguments, and typically returns a single value.
 
-## If-Else
+| Function | Example               | Description |
+| -------- | --------------------- | ----------- |
+| append() | append(list, 5, 6, 7) | Append the items together into an array. |
+| array()  | array(list, 5)        | Create a new array using the values of `list` that is `5` elements long |
+| bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
+| close()  | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
+| delete() | delete(emp, "Name")   | Remove the struct member Name from the `emp` struct |
+| error()  | error("panic") | Generate a runtime error named "panic". |
+| eval()   | eval("3 + 5")  | Evaluate the expression in the string value, and return the result, `8` |
+| float()  | float(33)      | Convert the value to a float, in this case `33.0` |
+| index()  | index(items, 55) | Return the array index of `items` that contains the value `55` |
+| int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
+| len()    | len(items)     | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
+| make()   | make([]int, 5) | Create an array of int values with `5` elements in the array |
+| max()    | max(11, 17, 3) | Return the mathmatically greatest value in the argument list, in this case `17`. |
+| members() | members(emp)  | Return an array of strings containing the struct member names of the argument |
+| min()    | min(5,2,33)    | Return the mathmatically smalles value in the argument list, in this case `2` |
+| sort()   | sort(items)    | Sort the array members of `items` from smallest to largest values |
+| string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
+| sum()    | sum(5,6,3)     | Return the arithmetic sum of the values, in this case `14` |
+| type()   | type(emp)      | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
+&nbsp;
+&nbsp;
 
-## For _condition_
+# Conditional and Iterative Execution <a name="flowcontrol"></a>
 
-## For _index_
+## If-Else <a name="if"></a>
 
-## For _range_
+## For _condition_ <a name="forcond"></a>
+
+## For _index_ <a name="forindex"></a>
+
+## For _range_ <a name="forrange"></a>
 
 # User Function Definitions
 
