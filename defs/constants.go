@@ -62,9 +62,9 @@ const (
 	// readline?
 	UseReadline = "ego.console.readline"
 
-	// Should the Ego program(s) be run with static (true)
-	// or dynamic (false) types?
-	StaticTypesSetting = "ego.compiler.types.static"
+	// Should the Ego program(s) be run with "static" or
+	// "dynamic" typing? The default is "dynamic"
+	StaticTypesSetting = "ego.compiler.types"
 
 	/////////////////////////////////////////////////////
 	//                                                 //

@@ -50,7 +50,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_method", r.Method)
 	_ = syms.SetAlways("__exec_mode", "server")
 
-	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = syms.SetAlways("__static_data_types", staticTypes)
 
 	// Get the query parameters and store as a local varialble

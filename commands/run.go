@@ -66,7 +66,7 @@ func RunAction(c *cli.Context) error {
 		exitOnBlankLine = true
 	}
 
-	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	if c.WasFound("static-types") {
 		staticTypes = c.GetBool("static-types")
 	}

@@ -38,7 +38,7 @@ func TestAction(c *cli.Context) error {
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("Unit Tests")
 
-	staticTypes := persistence.GetBool(defs.StaticTypesSetting)
+	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	if c.WasFound("static-types") {
 		staticTypes = c.GetBool("static-types")
 	}

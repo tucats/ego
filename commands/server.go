@@ -370,7 +370,7 @@ func RunServer(c *cli.Context) error {
 	}
 
 	if c.WasFound("static-types") {
-		persistence.SetDefault(defs.StaticTypesSetting, "true")
+		persistence.SetDefault(defs.StaticTypesSetting, "dynamic")
 	}
 
 	addr := "localhost:" + strconv.Itoa(port)
