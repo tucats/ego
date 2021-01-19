@@ -7,7 +7,7 @@
         age  int
     }
 
-    func (e Employee) setname(s string) {
+    func (e *Employee) setname(s string) {
         e.name = s
     }
 
