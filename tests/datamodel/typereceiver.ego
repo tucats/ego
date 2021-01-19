@@ -1,0 +1,24 @@
+
+@test "Type-based receiver function"
+
+{
+    type Employee struct {
+        name string
+        age  int
+    }
+
+    func (e Employee) setname(s string) {
+        e.name = s
+    }
+
+    emp := Employee{age:55}
+    emp.setname("Tom")
+
+    @assert emp.name == "Tom" "Failed to set name"
+    @assert emp.age == 55     "Failed to set age"
+    @assert type(emp)=="Employee" "Failed to set type correctly"
+}
+
+@pass
+
+
