@@ -16,6 +16,7 @@
     2. [For &lt;condition&gt;](#forcond)
     3. [For &lt;index&gt;](#forindex)
     4. [For &lt;range&gt;](#forrange)
+    5. [Break and Continue](#breakcont)
 
 &nbsp;
 &nbsp;
@@ -271,6 +272,8 @@ Note that in this example, without line number 4 the program would run forever, 
 ## For _index_ <a name="forindex"></a>
 
 ## For _range_ <a name="forrange"></a>
+
+## `break` and `continue` <a name="breakcont"></a>
 
 # User Function Definitions
 
