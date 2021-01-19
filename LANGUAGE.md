@@ -244,6 +244,29 @@ Instead of having the `if` statement advance to the next statement if the condit
 In this example, after calculating a value for `salary`, it is compared to see if it is less than 100. If so, then the value `scale` is set to the value `"small"`. But if the value of `salary` is not less than 100, the value of `scale` is set to `"large"`. Regardless of which basic block was executed, after the block executes, the program resumes with the next statement after the `if` statements.
 
 ## For _condition_ <a name="forcond"></a>
+The simplest form of iterative execution (also referred to as a "loop") is the `for` statement, followed by a condition, and a statement or basic block that is executed as long as the condition is true.
+
+     for <condition>
+        <statement>
+
+Here is an example
+
+    value := 0                  (1)
+    for value < 5 {             (2)
+        fmt.Println(value)      (3)
+        value = value + 1       (4)
+    }                           (5)
+
+1. This line initializes variable `value` to an integer zero.
+2. The `for` statement specifies that as long as the `value` variable contains a number less than `5` the following basic block will be executed over and over.
+3. This line of the basic block prints the current `value`
+4. This line increments the variable by adding one to itself. This causes `value` to increase each time the loop runs.
+5. This is the end of the basic block describing the body of the loop that will execute until the condition is no longer true.
+
+This program results in the numbers `0` through `4` being printed to the output. When `value` is incremented to be the value `5`, the condition on line #2 is no longer true, and the loop stops executing, and the program will continue with whatever follows line 5.
+
+Note that in this example, without line number 4 the program would run forever, because the variable `value` would be initialized to zero but then never change, so the condition will always be true.
+
 
 ## For _index_ <a name="forindex"></a>
 
