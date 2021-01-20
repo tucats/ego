@@ -12,6 +12,7 @@ import (
 	"github.com/northwesternmutual/grammes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
+	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
 )
@@ -73,13 +74,15 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	}
 
 	return map[string]interface{}{
-		"client":     client,
-		"Query":      GremlinQuery,
-		"Map":        GremlinMap,
-		"QueryMap":   GremlinQueryMap,
-		"AsJSON":     AsJSON,
-		"__readonly": true,
-		"__type":     "gremlin",
+		"client":   client,
+		"Query":    GremlinQuery,
+		"Map":      GremlinMap,
+		"QueryMap": GremlinQueryMap,
+		"AsJSON":   AsJSON,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "gremlin",
+			datatypes.ReadonlyMDKey: true,
+		},
 	}, err
 
 }

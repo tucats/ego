@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
+	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/expressions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
@@ -16,25 +17,33 @@ import (
 func AddBuiltinPackages(syms *symbols.SymbolTable) {
 
 	_ = syms.SetAlways("gremlin", map[string]interface{}{
-		"New":        GremlinOpen,
-		"__readonly": true,
-		"__type":     "package",
+		"New": GremlinOpen,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "package",
+			datatypes.ReadonlyMDKey: true,
+		},
 	})
 	_ = syms.SetAlways("rest", map[string]interface{}{
-		"New":        RestNew,
-		"Status":     RestStatusMessage,
-		"__readonly": true,
-		"__type":     "package",
+		"New":    RestNew,
+		"Status": RestStatusMessage,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "package",
+			datatypes.ReadonlyMDKey: true,
+		},
 	})
 	_ = syms.SetAlways("db", map[string]interface{}{
-		"New":        DBNew,
-		"__readonly": true,
-		"__type":     "package",
+		"New": DBNew,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "package",
+			datatypes.ReadonlyMDKey: true,
+		},
 	})
 	_ = syms.SetAlways("tables", map[string]interface{}{
-		"New":        TableNew,
-		"__readonly": true,
-		"__type":     "package",
+		"New": TableNew,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "package",
+			datatypes.ReadonlyMDKey: true,
+		},
 	})
 }
 

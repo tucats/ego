@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/tables"
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
 )
@@ -75,16 +76,18 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"table":      t,
-		"AddRow":     TableAddRow,
-		"Close":      TableClose,
-		"Sort":       TableSort,
-		"Print":      TablePrint,
-		"Format":     TableFormat,
-		"Align":      TableAlign,
-		"headings":   headingsArray,
-		"__readonly": true,
-		"__type":     "table",
+		"table":    t,
+		"AddRow":   TableAddRow,
+		"Close":    TableClose,
+		"Sort":     TableSort,
+		"Print":    TablePrint,
+		"Format":   TableFormat,
+		"Align":    TableAlign,
+		"headings": headingsArray,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "table",
+			datatypes.ReadonlyMDKey: true,
+		},
 	}, nil
 }
 

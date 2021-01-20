@@ -10,6 +10,7 @@ import (
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/persistence"
+	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
 )
@@ -50,8 +51,10 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"status":        0,
 		"verify":        true,
 		"headers":       map[string]interface{}{},
-		"__readonly":    true,
-		"__type":        "rest",
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey:     "rest",
+			datatypes.ReadonlyMDKey: true,
+		},
 	}, nil
 }
 

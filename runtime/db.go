@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/gopackages/app-cli/ui"
+	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/functions"
 	"github.com/tucats/gopackages/symbols"
 	"github.com/tucats/gopackages/util"
@@ -42,7 +43,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"client":      db,
 		"AsStruct":    DBAsStruct,
 		"Begin":       DBBegin,
@@ -56,9 +57,10 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"asStruct":    false,
 		"rowCount":    0,
 		"transaction": nil,
-		"__readonly":  true,
-		"__type":      "database",
-	}, nil
+	}
+	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, "database")
+	return result, nil
 }
 
 // DBBegin implements the Begin() db function. This allocated a new structure that
@@ -270,8 +272,9 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	result["Scan"] = rowsScan
 	result["Close"] = rowsClose
 	result["Headings"] = rowsHeadings
-	result["__readonly"] = true
-	result["__type"] = "rows"
+
+	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, "rows")
 
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }
