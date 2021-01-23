@@ -17,13 +17,19 @@
     3. [For &lt;index&gt;](#forindex)
     4. [For &lt;range&gt;](#forrange)
     5. [Break and Continue](#breakcont)
+4. [User Functions](#userfuncs)
+    1. [The `func` Statement](#funcstmt)
+    2. [The `return` Statement](#returnstmt)
+    3. [The `defer` Statement](#deferstmt)
+    4. [Function Variables](#funcvars)
+    5. [Function Receivers](#funcreceivers)
 
 &nbsp;
 &nbsp;
 
 
 # Introduction to _Ego_ Language<a name="intro"></a>
-_Version 0.1_
+_Version 0.2_
 
 This document describes the language _Ego_, which is a scripting language and tool set patterned off of the _Go_ programming language. The _Ego_ language name is a portmanteaux for _Emulated Go_. The data types and language statements are very similar to _Go_ with a few exceptions:
 * If enabled by settings, _Ego_ offers a try/catch model for intercepting runtime errors
@@ -115,6 +121,16 @@ A symbol can be assigned a value using an _assignment_ statement. This consists 
 
 In this example, the first statement uses the `:=` operator, which cause the symbol `name` to be created, and then the string value "Bob" is stored in the variable. If the variable already exists, this is an error and you should use the `=` instead to update an existing value. The `=` operator looks for the named value in the current scope, and if it finds it, the value "Mary" is assigned to it. If the variable does not exist at this scope, but does in an outer scope level, then the variable at the outer scope is updated.
 
+You can also create a variable using the `var` statement, which is followed by a comma-separated list of names and finally a type value. The variables are all created and set to the given type, with an appropriate "zero value" for that type.
+
+      var first, last string
+      var e1 Employee{}
+
+The second example creates a variable based on a user-defined type `Employee`.  The {} characters causes an instance of that type to be created and stored in the named variable `e1` in this example. The {} charaacters can contain field initializations for the type, such as
+
+      var e2 Employee{ Name: "Bob", Age: 55}
+
+The type of `e2` is `Employee` and it contains initialized values for the permitted fields for the type. If the initializer does not specify a value for all fields, the fields not explicitly named are set to zero values for their types.
 
 ## Operators<a name="operators"></a>
 Operators is the term for language elements that allow you to perform mathmatical or other other operations using constant values as well as variable values, to produce a new computed value. Some operators can operate on a wide range of different value types, and some operators have more limited functionality.
@@ -270,16 +286,176 @@ Note that in this example, without line number 4 the program would run forever, 
 
 
 ## For _index_ <a name="forindex"></a>
+You can create a `for` loop that explicitly specifies an expression that defines the starting value, ending condition, and how the value changes with each iteration of a loop. For example, 
+
+     for i := 0; i &lt; 10; i = i + 1 {
+         fmt.Println(i)
+     }
+
+This loop will print the values `0` through `9` to the standard console. The index variable `i` is first initialized with the value `0` from the first `for` statement clause. The second statement clause describes the condition that must be true for the loop body to be executed. This is evaluated before the loop body is run each time. The third clause is the statement that modifies the index value _after_ the body of the loop is run but _before_ the  next evaluation of the clause that determines if the loop continues.
+
+The variable `i` in the above example is scoped to the `for` statement and it's loop body. That is, after this loop runs, the variable `i` will no longer exist because it was created (using the `:=` operator) in the scope of the loop. You can use a simple assignment (`=`) of an existing variable if you want the updated index value available after the loop body ends.
+
+    var i int
+    for i = 0; i &lt; 10; i = i + 1 {
+        fmt.Println(i)
+    }
+    fmt.Println("The final value of i is ", i)
+
+This example uses a variable that already exists outside the scope of the `for` loop, so the value continues to exist after the loop runs. This allows the final statement to print the value of the index variable that terminated the loop.
 
 ## For _range_ <a name="forrange"></a>
+You can create a loop that indexes over all the values in an array, in sequential order. The index value is the value of the array element. For example,
+
+     ids := [ 101, 143, 202, 17]
+     for i := range ids {
+         fmt.Println(i)
+     }
+
+This example will print a line for each value in the array, in the order they appear in the array. During execution of the loop body, the value of `i` (the _index_ variable)` contains the next value of the array for each iteration of the loop.  You can also specify a second value, in which case the loop defines an index number as well as index value, as in:
+
+    for i, v := range ids {
+        fmt.Println("Array member ", i, " is ", v)
+    }
+
+In this example, for each iteration of the loop, the variable `i` will contain the numerical array index  and the variable `v` will contain the actual values from the array for each iteration of the loop body.
 
 ## `break` and `continue` <a name="breakcont"></a>
+Sometimes when running an loop, you may wish to change the flow of execution in the loop based on conditions unrelated to the index variable. For example, consider:
 
-# User Function Definitions
+    for i := 1; i &lt; 10; i = i + 1 {
+        if i == 5 {                      (1)
+            continue                     (2)
+        }
+        if i == 7 {                      (3)
+            break                        (4)
+        }
+        fmt.Println("The value is ", i)  (5)
+    }
+    
+This loop will print the values 1, 2, 3, 4, and 6. Here's what each statement is doing:
+1. During each execution of the loop body, the index value is compared to 5. If it is equal to 5 (using the `==` operator), the conditional statment is executed.
+2. The `continue` statement causes control to branch back to the top of the loop. The index value is incremented, and then tested again to see if the loop should run again. The `continue` statement means "stop executing the rest of this loop body, but continue looping".
+3. Similarly, the index is compared to 7, and if it equal to 7 then the conditional statment is executed.
+4. The `break` statement exits the loop entirely. It means "without changing any of the values, behave as if the loop condition had been met and resume execution after the loop body.
 
-## The `func` Statement
+&nbsp;
+&nbsp;
 
-## The `return` Statement
+
+# User Function Definitions <a href="userfuncs"></a>
+In addition to the [Builtin Functions](#builtinfunctions) listed previously, the user program can create functions that can be executed from the _Ego_ program. Just like variables, functions have scope, and can only be accessed from within the program in which they are declared. Most functions are defined in the program file before the body of the program.
+
+## The `func` Statement <a href="funcstmt"></a>
+
+Use the `func` statement to declare a function. The function must have a name, optionally a list of parameter values that are passed to the function, and a return type that indicates what the function is expected to return. This is followed by the function body which is executed, with the function arguments all available as local variables.  For example,
+
+    func addem( v1 float, v2 float) float {
+        x := v1 + v2
+        return x
+    }
+
+    // Calculate what a variable value (10.5) added to 3.8 is
+    a := 10.5
+    x := addem(a, 3.8)
+    fmt.Println("The sum is ", x)
+
+In this example, the function `addem` is created. It accepts two parameters; each is of type float in this example. The parameter values actually passed in by the caller will be stored in local variabels v1 and v2. The function defintiion also indicates that the result of the function will also be a float value.
+
+Parameter types and return type cause type _coercion_ to occur, where values are converted to the required type if they are not already the right value type. For example,
+
+    y := addem("15", 2)
+
+Would result in `y` containing the floating point value 17.0. This is because the string value "15" would be converted to a float value, and the integer value 2 would be converted to a float value before the body of the function is invoked. So `type(v1)` in the function will return "float" as the result, regardless of the type of the value passed in when the function was called.  
+
+The `func` statement allows for a special data type `interface{}` which really means "any type is allowed" and no conversion occurs. If the function body needs to know the actual type of the value passed, the `type()` function would be used.
+
+## The `return` Statement  <a href="returnstmt"></a>
+When a function is ready to return a value the `return` statement is used. This identifies an expression that defines what is to be returned. The `return` statement results in this expression being _coerced_ to the data type named in the `func` statement as the return value.  If the example above had a `string` result type,
+
+    func addem( v1 float, v2 float) string {
+        x := v1 + v2
+        return x
+    }
+
+    y := addem(true, 5)
+
+The resulting value  for `y` would be the string "6". This is because not only will the boolean `true` value and the integer 5 be converted to floating point values, bue the result will be converted to a string value when the function exits.
+
+Note that if the `func` statement does not specify a type for the result, the function is assumed not to return a result at all. In this case, the `return` statement cannot specify a function result, and if the `return` statement is the last statement then it is optional. For example,
+
+    func show( first string, last string) {
+        name := first + " " + last
+        fmt.Println("The name is ", name)
+    }
+
+    show("Bob", "Smith")
+  
+This example will run the function `show` with the two string values, and printe the formatted message "The name is Bob Smith". However, the function doesn't return a value (none specified after the parameter list before the function body) so there is no `return` statement needed in this case. 
+
+Also note that the invocation of the `show` function does not specify a variable in which to store the result, becuase there is none. In this way you can see that a function can be called with a value that can be used in an assignment statement or an expression, or just called and the result value ignored. Even if the `show` function returned a value, the invocation ignores the result and it is discarded.
+
+## The `defer` Statement  <a href="deferstmt"></a>
+Sometimes a function may have multiple places where it returns from, but always wants to execute the same block of code to clean up a function (for example, closing a file that had been opened). For example,
+
+    func getname() bool {
+        f := io.Open("name")
+        defer io.Close(f)
+
+        s := io.ReadLine(f)
+        if s == "" {
+            return false
+        }
+        return true
+    }
+
+In this example, the function opens a file (the `io` package is discussed later). Because we have opened a file, we want to be sure to close it when we're done. This function has two `return` statements. We could code it such that before each one, we also call the io.Close() function each time. But the `defer` statement allows the function to specify a statement that will be executed _whenever the function actually returns_ regardless of which branch(es) through the conditional code are executed.
+
+Each `defer` statement identifies a statement or a _basic block_ of statements (enclosed in "{" and "}") to be executed. If there are multiple `defer` statements, they are all executed in the reverse order that they were defined. So the first `defer` statement is always the last one executed before the function returns.
+
+Note that `defer` statements are executed when the function comes to the end of the function body even if there is no `return` statement, as in the case of a function that does not return a value.
+
+## Function Variable Values  <a href="funcvars"></a>
+Functions can be values themselves. For example, consider:
+
+    p := fmt.Println
+
+This statement gets the value of the function `fmt.Println` and stores it in the variable p. From this point on, if you wanted to call the package function that prints items to the console, instead o fusing `fmt.Println` you can use the variable `p` to invoke the function:
+
+    p("The answer is", x)
+
+This means that you can pass a function as a parameter to another function. Consider,
+
+    func show( fn interface{}, name string) {
+        fn("The name is ", name)
+    }
+    p := fmt.Println
+    show(p, "tom")
+
+In this example, the `show` function has a first parameter that is a function, and a second parameter that is a string.  In the body of the function, the variable `fn` is used to call the `fmt.Println` function. You might use this if you wanted to send output to either the console (using `fmt.Println`) or a file (using `io.WriteString`). The calling code could make the choice of which function is appropriate, and pass that directly into the `show` function which makes the call.
+
+You can even create a function literal value, which defines the body of the function, and either store it in a variable or pass it as a parameter. For example,
+
+    p := func(first string, last string) string {
+             return first + " " + last
+         }
+
+    name := p("Bob", "Smith")
+
+Note that when defined as a function literal, the `func` keyword is not followed by a function name, but instead contains the parameter list, return value type, and function body directly.  There is no meaningful difference between the above and declaring `func p(first string...` except that the variable `p` has scope that might be limited to the current _basic block_ of code.  You can even define a function as a parameter to another function directly, as in:
+
+    func compare( fn interface{}, v1 interface{}, v2 interface) bool {
+        return fn(v1, v2)
+    }
+
+    x := compare( func(a1 bool, a2 bool) bool { return a1 == a2 }, true, false)
+
+This somewhat artificial example shows a function named `compare` that has a first parameter that will be a function name, and two additional paramters of unknown type. The invocation of `compare` passes a function literal as the first parameter, which is a function that compares boolean values. Finally, the actual two boolean values are passed as the second and third parameters in the `compare` function call. The `compare` function will immediately invoke the function literal (stored in `fn`) to compare two boolean value, and return the result.
+
+A more complex example might be a function whose job is to sort a list of values. Sorting a list of scalar values is available as a built-in function, but sorting a list of complex types can't be done wih the builtin `sort()` function. You could write a sort function, that accepts as a parameter the comparision operation, and that function knows how to decide between two values as to which one sorts first. This lets the sort function you create be generic without regard for the data types.
+
+## Function Recivers  <a href="funcreceivers"></a>
+
 
 # Threads
 
@@ -305,5 +481,6 @@ Note that in this example, without line number 4 the program would run forever, 
 
 ## util
 
+# User Packages
 
 
