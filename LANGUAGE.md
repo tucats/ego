@@ -343,10 +343,10 @@ This loop will print the values 1, 2, 3, 4, and 6. Here's what each statement is
 &nbsp;
 
 
-# User Function Definitions <a href="userfuncs"></a>
+# User Function Definitions <a name="userfuncs"></a>
 In addition to the [Builtin Functions](#builtinfunctions) listed previously, the user program can create functions that can be executed from the _Ego_ program. Just like variables, functions have scope, and can only be accessed from within the program in which they are declared. Most functions are defined in the program file before the body of the program.
 
-## The `func` Statement <a href="funcstmt"></a>
+## The `func` Statement <a name="funcstmt"></a>
 
 Use the `func` statement to declare a function. The function must have a name, optionally a list of parameter values that are passed to the function, and a return type that indicates what the function is expected to return. This is followed by the function body which is executed, with the function arguments all available as local variables.  For example,
 
@@ -370,7 +370,7 @@ Would result in `y` containing the floating point value 17.0. This is because th
 
 The `func` statement allows for a special data type `interface{}` which really means "any type is allowed" and no conversion occurs. If the function body needs to know the actual type of the value passed, the `type()` function would be used.
 
-## The `return` Statement  <a href="returnstmt"></a>
+## The `return` Statement  <a name="returnstmt"></a>
 When a function is ready to return a value the `return` statement is used. This identifies an expression that defines what is to be returned. The `return` statement results in this expression being _coerced_ to the data type named in the `func` statement as the return value.  If the example above had a `string` result type,
 
     func addem( v1 float, v2 float) string {
@@ -395,7 +395,7 @@ This example will run the function `show` with the two string values, and printe
 
 Also note that the invocation of the `show` function does not specify a variable in which to store the result, becuase there is none. In this way you can see that a function can be called with a value that can be used in an assignment statement or an expression, or just called and the result value ignored. Even if the `show` function returned a value, the invocation ignores the result and it is discarded.
 
-## The `defer` Statement  <a href="deferstmt"></a>
+## The `defer` Statement  <a name="deferstmt"></a>
 Sometimes a function may have multiple places where it returns from, but always wants to execute the same block of code to clean up a function (for example, closing a file that had been opened). For example,
 
     func getname() bool {
@@ -415,7 +415,7 @@ Each `defer` statement identifies a statement or a _basic block_ of statements (
 
 Note that `defer` statements are executed when the function comes to the end of the function body even if there is no `return` statement, as in the case of a function that does not return a value.
 
-## Function Variable Values  <a href="funcvars"></a>
+## Function Variable Values  <a name="funcvars"></a>
 Functions can be values themselves. For example, consider:
 
     p := fmt.Println
@@ -454,7 +454,7 @@ This somewhat artificial example shows a function named `compare` that has a fir
 
 A more complex example might be a function whose job is to sort a list of values. Sorting a list of scalar values is available as a built-in function, but sorting a list of complex types can't be done wih the builtin `sort()` function. You could write a sort function, that accepts as a parameter the comparision operation, and that function knows how to decide between two values as to which one sorts first. This lets the sort function you create be generic without regard for the data types.
 
-## Function Recivers  <a href="funcreceivers"></a>
+## Function Recivers  <a name="funcreceivers"></a>
 
 
 # Threads
