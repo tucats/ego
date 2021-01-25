@@ -23,6 +23,10 @@
     3. [The `defer` Statement](#deferstmt)
     4. [Function Variables](#funcvars)
     5. [Function Receivers](#funcreceivers)
+5. [Error Handling](#errors)
+    1. [Try and Catch](#trycatch)
+    2. [Signalling Errors](#signalling)
+
 
 &nbsp;
 &nbsp;
@@ -56,6 +60,7 @@ A value can be a base type; when it is a base type is contains only one value at
 | `float`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
 | `chan`   |  chan    | any              | A channel, used to communicate values between threads |
+
 
 _Note that the numeric range values shown are approximate._
 
@@ -455,17 +460,131 @@ This somewhat artificial example shows a function named `compare` that has a fir
 A more complex example might be a function whose job is to sort a list of values. Sorting a list of scalar values is available as a built-in function, but sorting a list of complex types can't be done wih the builtin `sort()` function. You could write a sort function, that accepts as a parameter the comparision operation, and that function knows how to decide between two values as to which one sorts first. This lets the sort function you create be generic without regard for the data types.
 
 ## Function Recivers  <a name="funcreceivers"></a>
+A function can be written such that it can only be used when referenced via a variable of a specific type. This type is created by the user, and then the functions that 
+are written to operate on that type use any variable of the type as a _receiver_, which means that variable in the function gets the value of the item in the function
+invocation without it being an explicit parameter. This also allows multiple functions of the same name to exist which just reference different types.  For example,
+
+    type Employee struct {                        (1)
+        first string
+        last  string
+        age   int
+    }
+
+    func (e Employee) Name() string {             (2)
+        return e.first + " " e.last
+    }
+
+    var foo Employee{                             (3)
+        first: "Bob", 
+        last: "Smith"}
+    fmt.Println("The name is ", foo.Name())       (4)
+
+Let's take a look more closely at this example to see what's going on.
+
+1. This defines the type, called `Employee` which has a number of fields associated with it.
+2. This declares a function that has a variable `e` of type `Employee` as it's receiver. The
+   job of this function is to form a string of the employee name. Note that the name of the 
+   variable is not a parameter, but is considered the receiver.
+
+3. This creates an _instance_ of the type `Employee` and stores it in a variable `foo`.
+4. This prints out a label and the value of the `Name` function when called using `foo` as
+   the variable instance. The function `Name` cannot be called directly, it is an unknown 
+   symbol unless called with a receiver of type `Employee` in its invocation.
+
+In the declaration line line (2) above, you could use an asterisk ("*") character before the
+receiver's type of `Employee`, as in:
+
+    func (e *Employee) SetName(f string, l string)  { 
+        e.first = f
+        e.last = l
+    }
+
+This function can be used to set the names in the receiver variable. If the function was 
+declared without the "*" marker, the receiver would actually only be a copy of the instance.
+So the function `Name()` above can read any of the values from the receiver, if it sets them
+it is changing a copy of the instance that only exists while the function is executing, and
+the values in the `foo` instance are not changed.
+
+By using the "*" as in the `SetName` example, the receiver `e` isn't a copy of the instance,
+it is the actual instance. So changes made to the reciever `e` will actually be made in the
+instance variable `foo`. An easy way to remember this is that, without the "*", the receiver
+does not change the instance that makes the call, but with the "*" then changes will affect
+the instance that makes the call.
+
+Because specifying a receiver variable and type means the name of the function is scoped
+to the type itself, you can have multiple functions with the same name that each has a
+different receiver. An example would be to have each type define a `String()` method whose
+job is to format the information in the value to be read by a human. The program can then
+be written such that it doesn't matter was the type of an instance variable. By calling
+the `String()` function from any instance, it will execute the _appropriate_ `String()`
+function based on the type.
+
+# Error Handling <a name="errors"></a>
+
+There are two kinds of errors that can be managed in an _Ego_ program.
+
+The first are
+user- or runtime-generated errors, which are actually values of a data type called `error`.
+You can create a new error variable using the `error()` function, as in:
+
+    if v == 0 {
+        return error("invalid zero value")
+    }
+
+This code, executed in a function, would return a value of type `error` that, when printed,
+indicates the text string given. An `error` can also have value `nil` which means no error
+is stored in the value. Some runtime functions will return an error value, and your code can check to see if the
+result is nil versus being an actual error.
+
+The second kind are panic error, which are errors generated by _Ego_ itself while running 
+your program. For example, an attempt to divide by zero generates a panic error. By default,
+this causes the program to stop running and an error message to be printed out.
+
+## `try` and `catch` <a name="trycatch"></a>
+You can use the `try` statement to run a block of code (in the same
+scope as the enclosing statement) and catch any panic errors that
+occur during the execution of that block. The error causes the code
+to execute the code in the `catch` block of the statement.
+If there are no errors,  execution continues after the catch block.
+For example:
+
+    x := 0
+    try {
+        x = pay / hours
+    } catch {
+        print "Hours were zero!"
+    }
+    print "The result is ", x
+
+If the value of `hours` is non-zero, the assignment statement will assign
+the dividend to `x`. However, if hours is zero it will trigger a panic
+divide-by-zero error. When this happens, the remainder of the statements
+(if any) in the `try` block are skipped, and the `catch` block is executed.
+Within this block, there is a variable `_error_` that is set to the
+value of the error that was signalled. This can be used in the `catch`
+block if it needs handle more than one possible error, for example.
+
+## Signalling Errors <a name="signalling"></a>
+
+You can cause a panic error to be signalled from within your code, which
+would optionally be caught by a try/catch block, using the @error directive:
+
+    if x == 0 {
+        @error "Invalid value for x"
+    }
+
+When this code runs, if the value of `x` is zero, then a panic error is
+signalled with an error message of "Invalid value for x". This error is
+indistinguishable from a panic error generated by _Ego_ itself. If there
+is a `catch{}` block, the value of the `_error_` variable will be the
+string "Invalid value for x".
 
 
 # Threads
 
-# Error Handling
-
-## `try` and `catch`
-
-## Signalling Errors
-
 # Builtin Packages
+
+## fmt
 
 ## io
 
