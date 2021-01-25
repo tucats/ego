@@ -17,10 +17,10 @@
 
    for i := range xc {
       if count == 1 {
-         @assert i == "sent from afar" "First message wrong"
+         @assert i == "sent from afar"                "First message wrong"
       } 
       if count == 2 {
-         @assert i == "and another for good measure" "Second message wrong"
+         @assert i == "and another for good measure"  "Second message wrong"
       } 
       count = count + 1
    }

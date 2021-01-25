@@ -4,48 +4,40 @@
 @test "switch statement"
 
 {
-x := 5
+    x := 5
 
-// Select a specific single value
-switch x {
-    case 1:
-        @fail "Case 1 incorrectly taken"
+    // Select a specific single value
+    switch x {
+        case 1:
+            @fail "Case 1 incorrectly taken"
+        case 2:
+            @fail  "Case 2 incorrectly taken"
+        case 5:
+            // Successful case
+        default:
+            @fail "Case default incorrectly taken"
+    }
 
-    case 2:
-        @fail  "Case 2 incorrectly taken"
+    // Select the default because no match
+    x = 6
+    switch x {
+        case 1:
+            @fail "Case 2 incorrectly taken"
+        case 2:
+            @fail "Case 2 incorrectly taken"
+        case 5:
+            @fail "Case 5 incorrectly taken"
+        default:
+    }
 
-    case 5:
-        // Successful case
-
-    default:
-        @fail "Case default incorrectly taken"
-}
-
-// Select the default because no match
-x = 6
-switch x {
-    case 1:
-        @fail "Case 2 incorrectly taken"
-
-    case 2:
-        @fail "Case 2 incorrectly taken"
-
-    case 5:
-        @fail "Case 5 incorrectly taken"
-
-    default:
-}
-
-// Select nothing because no match.
-switch x {
-    case 1:
-        @fail "Case 1 incorrectly taken"
-
-    case 2:
-        @fail "Case 2 incorrectly taken"
-
-    case 5:
-        @fail "Case 5 incorrectly taken"
-}
+    // Select nothing because no match.
+    switch x {
+        case 1:
+            @fail "Case 1 incorrectly taken"
+        case 2:
+            @fail "Case 2 incorrectly taken"
+        case 5:
+            @fail "Case 5 incorrectly taken"
+    }
 }
 @pass

@@ -6,26 +6,26 @@ import cipher
 {
 	msg := "hidden message"
 	t := cipher.Create(msg)
-	@assert cipher.Validate(t) == true "token is not valid"
-	@assert cipher.Token(t).name == msg "token does not contain expected user data"
+	@assert cipher.Validate(t)   == true  "token is not valid"
+	@assert cipher.Token(t).name == msg   "token does not contain expected user data"
 }
 
 {
 	msg := "hidden message"
 	t := cipher.Create(msg) + "00"
-	@assert cipher.Validate(t) == false "token is not invalid"
+	@assert cipher.Validate(t) == false   "token is not invalid"
 }
 {
 	const TokenExpirationSetting = "token-expiration"
-	
 	td := profile.Get(TokenExpirationSetting)
 	if td == "" {
 		td := "5m"
 	}
 	profile.Set(TokenExpirationSetting, ".5s")
+
 	t := cipher.Create("test")
 	time.Sleep("1s")
-	@assert cipher.Validate(t) == false "token should have been invalid"
+	@assert cipher.Validate(t) == false  "token should have been invalid"
 	profile.Set(TokenExpirationSetting, td)
 }
 

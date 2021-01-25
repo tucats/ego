@@ -11,6 +11,6 @@ func dbl(x interface{}) interface{} {
 }
 
 @assert type(dbl(4.0)) == "float"
-@assert dbl(55) == 110
-@assert dbl(-2) == -4
+@assert dbl(55)        == 110
+@assert dbl(-2)        == -4
 @pass

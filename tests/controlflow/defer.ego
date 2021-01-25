@@ -8,7 +8,6 @@ func defer_test() string {
     }
 
     r := "result string"
-
     return r
 
 }

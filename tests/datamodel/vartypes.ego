@@ -17,11 +17,11 @@
     }
     var xx x
 
-    @assert type(i) == "int"  "var not int"
-    @assert type(f) == "float"  "var not float"
-    @assert type(s) == "string"  "var not string"
-    @assert type(b) == "bool"  "var not bool"
-    @assert type(x) == "type"  "type not type"
-    @assert type(xx) == "x"  "type not x"
+    @assert type(i)  == "int"     "var not int"
+    @assert type(f)  == "float"   "var not float"
+    @assert type(s)  == "string"  "var not string"
+    @assert type(b)  == "bool"    "var not bool"
+    @assert type(x)  == "type"    "type not type"
+    @assert type(xx) == "x"       "type not x"
 }
 @pass

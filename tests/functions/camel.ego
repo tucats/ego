@@ -5,8 +5,8 @@ import strings
 @assert strings.Camel("test") == "Test" 
 @assert strings.Camel("teST") == "Test"
 @assert strings.Camel("TEST") == "Test"
-@assert strings.Camel("") == ""
-@assert strings.Camel("a") == "A" 
-@assert strings.Camel("B") == "B" 
+@assert strings.Camel("")     == ""
+@assert strings.Camel("a")    == "A" 
+@assert strings.Camel("B")    == "B" 
 
 @pass
