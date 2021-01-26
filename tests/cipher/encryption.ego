@@ -8,7 +8,7 @@
     e := cipher.Encrypt(msg, key)
     d := cipher.Decrypt(e, key)
 
-    @assert msg == d "string did not decrypt correctly"
+    @assert T.Equal(msg, d)  "string did not decrypt correctly"
 }
 
 // Decryption with wrong key
@@ -18,7 +18,7 @@
 
     e := cipher.Encrypt(msg, key)
     d, err := cipher.Decrypt(e, key+"a")
-    @assert err != nil "decryption with bad key did not error"
+    @assert T.NotNil(err) "decryption with bad key did not error"
 }
 
 // Decryption with modified coded value 
@@ -28,7 +28,7 @@
 
     e := cipher.Encrypt(msg, key) + "X"
     d, err := cipher.Decrypt(e, key)
-    @assert err != nil "decryption with modified value did not error"
+    @assert T.NotNil(err) "decryption with modified value did not error"
 }
 
 @pass

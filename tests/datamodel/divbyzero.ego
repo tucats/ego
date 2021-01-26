@@ -14,5 +14,5 @@ func half(x) float {
    }
 }
 
-@assert half(1) == -55
+@assert T.Equal(half(1), -55.0) 
 @pass

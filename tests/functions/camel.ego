@@ -2,11 +2,11 @@ import strings
 
 @test "strings.Camel()"
 
-@assert strings.Camel("test") == "Test" 
-@assert strings.Camel("teST") == "Test"
-@assert strings.Camel("TEST") == "Test"
-@assert strings.Camel("")     == ""
-@assert strings.Camel("a")    == "A" 
-@assert strings.Camel("B")    == "B" 
+@assert T.Equal(strings.Camel("test") , "Test" )
+@assert T.Equal(strings.Camel("teST") , "Test" )
+@assert T.Equal(strings.Camel("TEST") , "Test" )
+@assert T.Equal(strings.Camel("")     , ""     )
+@assert T.Equal(strings.Camel("a")    , "A"    )
+@assert T.Equal(strings.Camel("B")    , "B"    )
 
 @pass

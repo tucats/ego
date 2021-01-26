@@ -9,6 +9,6 @@ var xc chan
 go gofn(xc)
 time.Sleep("500ms")
 m <- xc
-@assert m == "sent from afar" "Failed to get correct value from channel"
+@assert T.Equal( m, "sent from afar")  "Failed to get correct value from channel"
 
 @pass

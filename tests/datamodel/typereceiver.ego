@@ -14,9 +14,9 @@
     emp := Employee{age:55}
     emp.setname("Tom")
 
-    @assert emp.name  == "Tom"       "Failed to set name"
-    @assert emp.age   == 55          "Failed to set age"
-    @assert type(emp) == "Employee"  "Failed to set type correctly"
+    @assert T.Equal(emp.name, "Tom")
+    @assert T.Equal(emp.age, 55) 
+    @assert T.Equal(type(emp), "Employee")  
 }
 
 @pass

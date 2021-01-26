@@ -6,8 +6,8 @@
     }
 
     a, b := f()
-    @assert a == 55 "A has wrong value"
-    @assert b == 66 "B has wrong value"
+    @assert T.Equal(a, 55)
+    @assert T.Equal(b, 66)
 }
 
 @pass

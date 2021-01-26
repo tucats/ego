@@ -10,5 +10,5 @@ try {
 } catch {
     caught = true
 }
-@assert caught "Readonly not honored"
+@assert T.True(caught)
 @pass

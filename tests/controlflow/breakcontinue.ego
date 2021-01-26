@@ -14,5 +14,5 @@ for i := range x {
    t = t + i
 }
 
-@assert t == 12
+@assert T.Equal(t, 12);
 @pass

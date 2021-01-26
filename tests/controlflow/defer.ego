@@ -13,5 +13,5 @@ func defer_test() string {
 }
 
 result := defer_test() 
-@assert result=="better result" "Did not update result on defer"
+@assert T.Equal(result, "better result")
 @pass

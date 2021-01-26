@@ -4,6 +4,6 @@
 {
     x := {a:5, b:6}
     y := members(x)
-    @assert sort(y) == ["a","b"]  "members did not return expected values"
+    @assert T.Equal(sort(y), ["a","b"] )
 }
 @pass

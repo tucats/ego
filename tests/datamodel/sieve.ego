@@ -31,5 +31,5 @@ func primes(size) [] {
 
 // Calcuate the array containing the primes from 1..10
 p := primes(10)
-@assert p == [ 3, 5, 7]
+@assert T.Equal(p, [ 3, 5, 7])
 @pass
