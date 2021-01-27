@@ -17,14 +17,14 @@
 
    for i := range xc {
       if count == 1 {
-         @assert T.Equal( i, "sent from afar")                "First message wrong"
+         @assert T.Equal( i, "sent from afar", "First message wrong")
       } 
       if count == 2 {
-         @assert T.Equal(i, "and another for good measure")  "Second message wrong"
+         @assert T.Equal(i, "and another for good measure", "Second message wrong")
       } 
       count = count + 1
    }
 
-   @assert T.Equal(count,3)  "Wrong number of messages"
+   @assert T.Equal(count,3, "Wrong number of messages")
 }
 @pass

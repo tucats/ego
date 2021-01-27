@@ -14,7 +14,7 @@
          return x*3 
       }, 10)
 
-   @assert v1 == 110 "Incorrect value for declared function"
-   @assert v2 == 30  "Incorrect value for function expression"
+   @assert T.Equal(v1, 110.0, "Incorrect value for declared function")
+   @assert T.Equal(v2, 30,  "Incorrect value for function expression")
 }
 @pass
