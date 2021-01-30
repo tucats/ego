@@ -2,6 +2,8 @@ package io
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -53,7 +55,17 @@ func ReadConsoleText(prompt string) string {
 	// the reader, let's do so now (in a threadsafe fashion)
 	consoleLock.Lock()
 	if consoleReader == nil {
-		consoleReader, _ = readline.New(prompt)
+
+		historyFile := persistence.Get("ego.console.history")
+		if historyFile == "" {
+			historyFile = filepath.Join(os.TempDir(), "ego-commands.txt")
+		}
+		consoleReader, _ = readline.NewEx(&readline.Config{
+			Prompt:            prompt,
+			HistoryFile:       historyFile,
+			HistorySearchFold: true,
+			HistoryLimit:      100,
+		})
 	}
 	consoleLock.Unlock()
 
