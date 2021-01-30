@@ -87,7 +87,6 @@ func ListUsers(c *cli.Context) error {
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
-		client.SetAuthScheme(defs.AuthScheme)
 		client.SetAuthToken(token)
 	}
 

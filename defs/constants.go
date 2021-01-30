@@ -2,7 +2,7 @@ package defs
 
 // The authorization scheme attached to the bearer token
 // in REST calls
-const AuthScheme = "token "
+const AuthScheme = "bearer "
 
 // DefaultUserdataFileName is the default file system name of
 // the user database file, if not specified by the user.

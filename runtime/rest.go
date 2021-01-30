@@ -28,7 +28,6 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	} else {
 		token := persistence.Get(defs.LogonTokenSetting)
 		if token != "" {
-			client.SetAuthScheme(defs.AuthScheme)
 			client.SetAuthToken(token)
 		}
 	}
@@ -238,7 +237,6 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		token = util.GetString(args[0])
 	}
 	r.SetAuthToken(token)
-	r.SetAuthScheme(defs.AuthScheme)
 	return this, nil
 }
 
@@ -504,7 +502,6 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
-		client.SetAuthScheme("Token")
 		client.SetAuthToken(token)
 	}
 	r := client.NewRequest()
@@ -522,6 +519,16 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	var resp *resty.Response
 	var err error
 	resp, err = r.Execute(method, url)
+
+	status := resp.StatusCode()
+
+	switch status {
+	case 403:
+		err = errors.New(defs.NoPrivilegeForOperation)
+	case 404:
+		err = errors.New(defs.NotFound)
+	}
+
 	if err == nil && response != nil {
 		body := string(resp.Body())
 		if !util.InList(body[0:1], "{", "[", "\"") {
