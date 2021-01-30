@@ -300,7 +300,11 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 	// validate the token
 	if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 		token := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(auth), defs.AuthScheme))
-		ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
+		tstr := token
+		if len(tstr) > 20 {
+			tstr = tstr[:20] + "..."
+		}
+		ui.Debug(ui.ServerLogger, "Auth using token %s...", tstr)
 		if validateToken(token) {
 			user := tokenUser(token)
 			if user == "" {
