@@ -62,8 +62,10 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/tucats/gopackages v0.0.0-20210130005232-a740c06029b4 h1:UCSeZ+5t9vgGeQabfIIp2KabryGXUp9/FMYC+/kRW9g=
-github.com/tucats/gopackages v0.0.0-20210130005232-a740c06029b4/go.mod h1:Dsix+3Mjw/EzyPNOhf5snKdhnk3+2Q6v9fmXrywbp+Q=
+github.com/tucats/gopackages v0.0.0-20210130193408-dfac2a3cd2cc h1:VHWU95m5g1pQ4IJa9kI02fPsdQ5+w3F/G95Fnm1Na98=
+github.com/tucats/gopackages v0.0.0-20210130193408-dfac2a3cd2cc/go.mod h1:bCY3IBm9fHyFDezB2FAMO/FJUEs78VxTYrgvlrp2C3g=
+github.com/tucats/gopackages v0.0.0-20210130212301-e4090beb8778 h1:UsbFrm+Kv9afU60JpR5IaY2KrlhjMZrPQ1POm2vIDe0=
+github.com/tucats/gopackages v0.0.0-20210130212301-e4090beb8778/go.mod h1:7wIOzp+SLlnsbUnDrQT8cstMN5ocsl8Mkapkd30A/bs=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.uber.org/atomic v1.3.2 h1:2Oa65PReHzfn29GpvgsYwloV9AVFHPDk8tYxt2c2tr4=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=

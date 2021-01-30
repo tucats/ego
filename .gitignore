@@ -11,3 +11,4 @@ https-server.key
 server.crt
 server.csr
 server.key.org
+go.sum
