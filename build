@@ -7,6 +7,14 @@
 
 BUILDVER=$(cat buildver.txt)
 
+GO="go"
+GOARCH="amd64"
+
+if [ "$1" == "-a" ]; then
+   GO="go1.16rc1"
+   GOARCH=arm64
+fi
+
 if [ "$1" == "-i" ]; then
 
    CHANGES=$(git status --porcelain)
@@ -19,8 +27,8 @@ if [ "$1" == "-i" ]; then
    echo $BUILDVER >buildver.txt
 fi
 
-echo Build $BUILDVER
-go build -ldflags "-X main.BuildVersion=$BUILDVER"
+echo Build $BUILDVER on $GOARCH
+GOARCH=$GOARCH $GO build -ldflags "-X main.BuildVersion=$BUILDVER"
 
 if [ "$1" == "-i" ]; then
    git commit -a -m "increment build version"
