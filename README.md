@@ -35,77 +35,6 @@ Example:
 &nbsp;
 
 
-### make
-The `make` pseudo-function is used to allocate an array, or a channel with
-the capacity to hold multiple messages. This is called a pseudo-function
-because part of the parameter processing is handled by the compiler to
-identify the type of the array or channel to create. 
-
-The first argument must be a data type specification, and the second argument
-is the size of the item (array elements or channel messages)
-
-    a := make([]int, 5)
-    b := make(chan, 10)
-
-
-The first example creates an array of 5 elements, each of which is of type `int`,
-and initialized to the _zero value_ for the given type. This could have been
-done by using `a := [0,0,0,0,0]` as a statment, but by using the make() function
-you can specify the number of elements dynamically at runtime.
-
-The second example creates a channel object capable of holding up to 10 messages.
-Creating a channel like this is required if the channel is shared among many threads.
-If a channel variable is declare by default, it holds a single message. This means
-that before a thread can send a value, another thread must read the value; if there
-are multiple threads waiting to send they are effectively run one-at-a-time. By
-creating a channel that can hold multiple messages, up to 10 (in the above example)
-threads could send a message to the channel before the first message was read.
-
-
-### package
-Use the `package` statement to define a set of related functions in 
-a package in the current source file. A give source file can only
-contain one package statement and it must be the first statement.
-
-    package factor
-
-This defines that all the functions and constants in this module will
-be defined in the `factor` package, and must be referenced with the 
-`factor` prefix, as in
-
-    y := factor.intfact(55)
-
-This calls the function `intfact()` defined in the `factor` package.
-
-### import
-Use the `import` statement to include other files in the compilation
-of this program. The `import` statement cannot appear within any other
-block or function definition. Logically, the statement stops the
-current compilation, compiles the named object (adding any function
-and constant definitions to the named package) and then resuming the
-in-progress compilation.
-
-    import factor
-    import "factor"
-    import "factor.ego"
-
-All three of these have the same effect. The first assumes a file named
-"factor.ego" is found in the current directory. The second and third
-examples assume the quoted string contains a file path. If the suffix
-".ego" is not included it is assumed.
-
-If the import name cannot be found in the current directory, then the
-compiler uses the environment variables EGO_PATH to form a directory
-path, and adds the "lib" directory to that path to locate the import.
-So the above statement could resolve to `/Users/cole/ego/lib/factor.ego`
-if the EGO_PATH was set to "~/ego".
-
-Finally, the `import` statement can read an entire directory of source
-files that all contribute to the same package. If the target of the
-import is a directory in the $EGO_PATH/lib location, then all the
-source files within that directory area read and processed as part
-of one package. 
-
 ### @type static|dynamic
 You can temporarily change the langauge settings to allow static
 typing of data only. When in static mode,
@@ -194,14 +123,27 @@ the list of available profiles, the current contents of the profiles, and to set
 delete profile items in the active profile.
 
 Here are some common profile settings you might want to set.
+### ego.compiler.extensions
+This defaults to `false`. When set to `true`, it allows extensions to the language to be
+used in programs. Examples include the `print` statement and the `exit` statement.
 
-### auto-import
+### ego.compiler.import
 This defaults to `false`. If set to `true`, it directs the Ego command line to automatically
 import all the builtin packages so they are available for use without having to specify an
 explicit `import` statement. Note this only imports the packages that have builtin functions,
 so user-created packages will still need to be explicitly imported.
 
-### exit-on-blank
+## ego.compiler.normalized
+This defaults to `false`. When set to `true`, symbol names (variables, packages, functions)
+are not case-sensitive. When set to `true`, calling `fmt.Println()` is the same as `fmt.printLN()`.
+
+## ego.compiler.types
+This defaults to `dynamic` which means that a variable can take on different types during the
+execution of a program. When set to `static`, it means that once a variable is declared within
+a given scope, it can never contain a variable of a different type (that is, if declared as a
+string, it can not be set to an int value).
+
+### ego.console.exit.on.blank
 Normally the Ego command line interface will continue to prompt for input from the console
 when run interactively. Blank lines are ignored in this case, and you must use the `exit`
 command to terminate command-line input.
@@ -209,11 +151,13 @@ command to terminate command-line input.
 If this preference is set to `true` then a blank line causes the interactive input to end,
 as if an exit command was specified.
 
-### use-readline
+### ego.console.readline
 This defaults to `true`, which uses the full readline package for console input.This supports
 command line recall and command line editing. If this value is set to `false` or `off` then 
 the readline processor is not used, and input is read directly from stdin. This is intended 
 to be used if the terminal/console window is not compatible with readline.
+
+
 
 ## Ego-specific Functions
 The Ego program adds some additional functions to the standard suite in `gopackages`. These
@@ -424,10 +368,10 @@ which are set with the `ego profile set` command or via program operation using 
 
 | item | description |
 |------| ------------|
-| logon-defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
-| logon-userdata | the path to the JSON file containing the user data |
-| token-expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
-| token-key | A string used to encrypt tokens. This can be any string value |
+| ego.logon.defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| ego.logon.userdata | the path to the JSON file containing the user data |
+| ego.token.expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
+| ego.token.key | A string used to encrypt tokens. This can be any string value |
 &nbsp; 
 &nbsp;
 

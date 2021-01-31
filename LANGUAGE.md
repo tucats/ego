@@ -28,6 +28,12 @@
     1. [Try and Catch](#trycatch)
     2. [Signalling Errors](#signalling)
 
+6. [Threads](#threads)
+    1. [Go Routines](#goroutine)
+    2. [Channels](#channels)
+
+7. [Packages](#packages)
+   1. [The `import` statement](#import)
 
 &nbsp;
 &nbsp;
@@ -237,6 +243,34 @@ The _Ego_ language includes a library of built-in functions which can also be us
 | type()   | type(emp)      | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
 &nbsp;
 &nbsp;
+
+
+### make
+The `make` pseudo-function is used to allocate an array, or a channel with
+the capacity to hold multiple messages. This is called a pseudo-function
+because part of the parameter processing is handled by the compiler to
+identify the type of the array or channel to create. 
+
+The first argument must be a data type specification, and the second argument
+is the size of the item (array elements or channel messages)
+
+    a := make([]int, 5)
+    b := make(chan, 10)
+
+
+The first example creates an array of 5 elements, each of which is of type `int`,
+and initialized to the _zero value_ for the given type. This could have been
+done by using `a := [0,0,0,0,0]` as a statment, but by using the make() function
+you can specify the number of elements dynamically at runtime.
+
+The second example creates a channel object capable of holding up to 10 messages.
+Creating a channel like this is required if the channel is shared among many threads.
+If a channel variable is declare by default, it holds a single message. This means
+that before a thread can send a value, another thread must read the value; if there
+are multiple threads waiting to send they are effectively run one-at-a-time. By
+creating a channel that can hold multiple messages, up to 10 (in the above example)
+threads could send a message to the channel before the first message was read.
+
 
 # Conditional and Iterative Execution <a name="flowcontrol"></a>
 We have discussed how variables are created, and how expressions are used to calculate values based on variables, constant values, and functions. However, most interesting programs require some decision making to control the flow of execution based on the values of variables. This section will describe how to make _either/or_ decisions in the code, and how to execute a block of code repeatedly until a condition is met.
@@ -598,9 +632,46 @@ is a `catch{}` block, the value of the `_error_` variable will be the
 string "Invalid value for x".
 
 
-# Threads
+# Threads <a name="threads"></a>
 
-# Builtin Packages
+# Builtin Packages <a name="builtinpackages"></a>
+Packages are a mechanism for grouping related functions together. These
+functions are accessed using _dot notation_ to reference the package name
+and then locate the function within that package to call.
+
+Packages may be available to your program automatically if the `ego.compiler.auto-import`
+preference is set to true. If not, you must import each package before you can use it.
+Additionally, packages can be created by the user to extend the runtiem support for
+_Ego_; this is covered later.
+
+## import <a name="import"></a>
+Use the `import` statement to include other files in the compilation
+of this program. The `import` statement cannot appear within any other
+block or function definition. Logically, the statement stops the
+current compilation, compiles the named object (adding any function
+and constant definitions to the named package) and then resuming the
+in-progress compilation.
+
+    import factor
+    import "factor"
+    import "factor.ego"
+
+All three of these have the same effect. The first assumes a file named
+"factor.ego" is found in the current directory. The second and third
+examples assume the quoted string contains a file path. If the suffix
+".ego" is not included it is assumed.
+
+If the import name cannot be found in the current directory, then the
+compiler uses the environment variables EGO_PATH to form a directory
+path, and adds the "lib" directory to that path to locate the import.
+So the above statement could resolve to `/Users/cole/ego/lib/factor.ego`
+if the EGO_PATH was set to "~/ego".
+
+Finally, the `import` statement can read an entire directory of source
+files that all contribute to the same package. If the target of the
+import is a directory in the $EGO_PATH/lib location, then all the
+source files within that directory area read and processed as part
+of one package. 
 
 ## fmt
 
@@ -620,4 +691,18 @@ string "Invalid value for x".
 
 # User Packages
 
+### package
+Use the `package` statement to define a set of related functions in 
+a package in the current source file. A give source file can only
+contain one package statement and it must be the first statement.
+
+    package factor
+
+This defines that all the functions and constants in this module will
+be defined in the `factor` package, and must be referenced with the 
+`factor` prefix, as in
+
+    y := factor.intfact(55)
+
+This calls the function `intfact()` defined in the `factor` package.
 
