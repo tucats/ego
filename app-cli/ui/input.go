@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // Prompt prints a prompt string, and gets input from the console.
@@ -35,7 +35,7 @@ func PromptPassword(p string) string {
 	if !IsConsolePipe() {
 		fmt.Print(p)
 	}
-	bytePassword, _ := terminal.ReadPassword(int(syscall.Stdin))
+	bytePassword, _ := term.ReadPassword(int(syscall.Stdin))
 
 	password := string(bytePassword)
 	fmt.Println() // it's necessary to add a new line after user's input
