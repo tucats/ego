@@ -165,6 +165,9 @@ func StructImpl(c *Context, i interface{}) error {
 				return c.NewError(UnknownTypeError, typeName)
 			}
 		}
+	} else {
+		// No type, default it to a struct
+		datatypes.SetMetadata(m, datatypes.TypeMDKey, "struct")
 	}
 
 	_ = c.Push(m)

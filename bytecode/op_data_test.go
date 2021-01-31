@@ -50,6 +50,7 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"replica": 0,
 					"static":  true,
+					"type":    "struct",
 				}},
 			wantErr: false,
 		},
@@ -63,6 +64,7 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
+					"type":    "struct",
 				}},
 			wantErr: false,
 		},
@@ -75,6 +77,7 @@ func TestStructImpl(t *testing.T) {
 				"test":   123,
 				"__metadata": map[string]interface{}{
 					"static":  true,
+					"type":    "struct",
 					"replica": 0,
 				}},
 			wantErr: false,
@@ -88,6 +91,7 @@ func TestStructImpl(t *testing.T) {
 				"active": true,
 				"test":   123,
 				"__metadata": map[string]interface{}{
+					"type":   "struct",
 					"static": true,
 				}},
 			wantErr: true,

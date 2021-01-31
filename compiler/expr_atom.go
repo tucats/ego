@@ -37,7 +37,15 @@ func (c *Compiler) expressionAtom() error {
 	// Is an empty struct?
 	if t == "{}" {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, map[string]interface{}{})
+		c.b.Emit(bytecode.Push, map[string]interface{}{
+			"__metadata": map[string]interface{}{
+				datatypes.TypeMDKey:     "struct",
+				datatypes.BasetypeMDKey: "map",
+				datatypes.MembersMDKey:  []interface{}{},
+				datatypes.ReplicaMDKey:  0,
+				datatypes.StaticMDKey:   false,
+			},
+		})
 		return nil
 	}
 
@@ -225,9 +233,7 @@ func (c *Compiler) parseStruct() error {
 	for c.t.Peek(1) != listTerminator {
 
 		// First element: name
-
 		name := c.t.Next()
-
 		if len(name) > 2 && name[0:1] == "\"" {
 			name, err = strconv.Unquote(name)
 			if err != nil {

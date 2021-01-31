@@ -260,6 +260,7 @@ func TestNew(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
+					"type":    "struct",
 				}, "name": "Tom",
 				"age": 50},
 		},
