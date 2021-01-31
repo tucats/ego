@@ -40,7 +40,6 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			}
 		default:
 			return nil, NewError("min", InvalidTypeError)
-
 		}
 	}
 

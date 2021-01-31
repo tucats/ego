@@ -34,7 +34,6 @@ func (t *Table) AddRowItems(items ...interface{}) error {
 	row := make([]string, t.columnCount)
 	buffer := ""
 	for n, item := range items {
-
 		switch v := item.(type) {
 		case int:
 			buffer = strconv.Itoa(v)

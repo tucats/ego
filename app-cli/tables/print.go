@@ -109,7 +109,6 @@ func (t *Table) FormatJSON() string {
 			}
 		}
 		buffer.WriteRune('}')
-
 	}
 	buffer.WriteRune(']')
 

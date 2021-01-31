@@ -504,7 +504,6 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 
 // Exchange is a helper wrapper around a rest call.
 func Exchange(endpoint, method string, body interface{}, response interface{}) error {
-
 	url := persistence.Get(defs.ApplicationServerSetting)
 	if url == "" {
 		url = persistence.Get(defs.LogonServerSetting)

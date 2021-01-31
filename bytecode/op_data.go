@@ -865,7 +865,6 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 			default:
 				return c.NewError(InvalidTypeError)
 			}
-
 		}
 		_ = c.Push(v)
 	}

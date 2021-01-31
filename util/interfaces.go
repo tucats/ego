@@ -106,7 +106,6 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		return e
 	}
 	switch model.(type) {
-
 	case int64:
 		switch value := v.(type) {
 		case nil:
@@ -255,26 +254,30 @@ func Coerce(v interface{}, model interface{}) interface{} {
 // Normalize accepts two different values and promotes them to
 // the most compatable format
 func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
-
-	// Same type? we're done here
-
 	switch v1.(type) {
 	case nil:
 		switch v2.(type) {
 		case string:
 			return "", v2
+
 		case bool:
 			return false, v2
+
 		case int:
 			return 0, v2
+
 		case int64:
 			return int64(0), v2
+
 		case float32:
 			return float32(0), v2
+
 		case float64:
 			return float64(0), v2
+
 		case []interface{}:
 			return []interface{}{}, v2
+
 		case map[string]interface{}:
 			return map[string]interface{}{}, v2
 		}
@@ -283,10 +286,13 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 		switch vv := v2.(type) {
 		case string:
 			return v1, v2
+
 		case int:
 			return v1, strconv.Itoa(vv)
+
 		case float64:
 			return v1, fmt.Sprintf("%v", vv)
+
 		case bool:
 			return v1, vv
 		}
@@ -295,10 +301,13 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 		switch vv := v2.(type) {
 		case string:
 			return fmt.Sprintf("%v", v1.(float64)), v2
+
 		case int:
 			return v1, float64(vv)
+
 		case float64:
 			return v1, v2
+
 		case bool:
 			if vv {
 				return v1, 1.0

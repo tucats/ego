@@ -40,14 +40,12 @@ func (t *Table) ShowRowNumbers(flag bool) *Table {
 // SetMinimumWidth specifies the minimum width of a column. The column number is
 // always zero-based.
 func (t *Table) SetMinimumWidth(n int, w int) error {
-
 	if n < 0 || n >= t.columnCount {
 		return errors.New("Invalid column number specified")
 	}
 	if w < 0 {
 		return errors.New("Invalid column width specified")
 	}
-
 	if w > t.maxWidth[n] {
 		t.maxWidth[n] = w
 	}

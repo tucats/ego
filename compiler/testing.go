@@ -227,7 +227,6 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	}
 
 	return b, nil
-
 }
 
 // Assert implements the @assert directive

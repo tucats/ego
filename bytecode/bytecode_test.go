@@ -9,7 +9,6 @@ import (
 
 func TestByteCode_New(t *testing.T) {
 	t.Run("test", func(t *testing.T) {
-
 		b := New("testing")
 
 		want := ByteCode{

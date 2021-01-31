@@ -230,7 +230,6 @@ func RunAction(c *cli.Context) error {
 			fmt.Printf("Error: %s\n", err.Error())
 			exitValue = 1
 		} else {
-
 			if !builtinsAdded {
 				// Add the builtin functions
 				comp.AddBuiltins("")
@@ -287,7 +286,6 @@ func RunAction(c *cli.Context) error {
 
 		if c.GetBool("symbols") {
 			fmt.Println(syms.Format(false))
-
 		}
 		if wasCommandLine {
 			break

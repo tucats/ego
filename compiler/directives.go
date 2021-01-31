@@ -113,7 +113,6 @@ func (c *Compiler) Log() error {
 // RestStatus parses the @status directive which sets a symbol
 // value in the root symbol table with the REST calls tatus value
 func (c *Compiler) RestStatus() error {
-
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
 	}

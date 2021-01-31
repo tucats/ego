@@ -71,7 +71,6 @@ func SayImpl(c *Context, i interface{}) error {
 
 // NewlineImpl instruction processor generates a newline character to stdout
 func NewlineImpl(c *Context, i interface{}) error {
-
 	if c.output == nil {
 		fmt.Printf("\n")
 	} else {

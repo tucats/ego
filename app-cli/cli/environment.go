@@ -11,13 +11,11 @@ import (
 // looking for options that can be specified by an environment
 // variable, and marking those found as needed.
 func (c *Context) ResolveEnvironmentVariables() error {
-
 	var err error
 
 	// Search the current tree. Note that if we find the item,
 	// the updates have to be written back to the option array,
 	// not to the local entry which is a copy of the item...
-
 	for found, entry := range c.Grammar {
 		if !entry.Found && entry.EnvironmentVariable > "" {
 			value, wasFound := os.LookupEnv(entry.EnvironmentVariable)

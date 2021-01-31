@@ -65,7 +65,6 @@ func (c *Channel) Send(datum interface{}) error {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, error) {
-
 	if !c.isOpen && c.count == 0 {
 		return nil, errors.New(ChannelNotOpenError)
 	}
@@ -88,6 +87,7 @@ func (c *Channel) IsOpen() bool {
 func (c *Channel) IsEmpty() bool {
 	return !c.isOpen && c.count == 0
 }
+
 func (c *Channel) GetSize() int {
 	return c.size
 }

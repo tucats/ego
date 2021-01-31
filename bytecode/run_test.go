@@ -324,7 +324,6 @@ func TestByteCode_Run(t *testing.T) {
 				}
 				if !reflect.DeepEqual(tt.fields.result, v) {
 					t.Errorf("ByteCode Run() got %v, want %v ", v, tt.fields.result)
-
 				}
 			}
 		})

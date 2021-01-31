@@ -149,7 +149,6 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 	for name, f := range functions.FunctionDictionary {
-
 		if dot := strings.Index(name, "."); dot >= 0 {
 			f.Pkg = name[:dot]
 			name = name[dot+1:]

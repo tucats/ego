@@ -9,7 +9,6 @@ import (
 // invoking a function in an expression, except there is no
 // result value.
 func (c *Compiler) Call() error {
-
 	// Let's peek ahead to see if this is a legit function call
 	if !tokenizer.IsSymbol(c.t.Peek(1)) || (c.t.Peek(2) != "->" && c.t.Peek(2) != "(" && c.t.Peek(2) != ".") {
 		return c.NewError(InvalidFunctionCall)

@@ -108,15 +108,16 @@ func ShowBreaks() {
 			fmt.Printf("break %s\n", FormatBreakpoint(b))
 		}
 	}
-
 }
 
 func FormatBreakpoint(b breakPoint) string {
 	switch b.kind {
 	case BreakAlways:
 		return fmt.Sprintf("at %s:%d", b.module, b.line)
+
 	case BreakValue:
 		return fmt.Sprintf("when %s", b.text)
+
 	default:
 		return fmt.Sprintf("(undefined) %v", b)
 	}
@@ -131,7 +132,6 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 	for _, b := range breakPoints {
 		switch b.kind {
 		case BreakValue:
-
 			// fmt.Printf("DEBUG: break eval sym table\n%s\n", s.Format(true))
 			// If we already hit this, don't do it again on each statement. Pass.
 			if b.hit > 0 {

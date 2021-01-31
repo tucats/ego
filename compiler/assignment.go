@@ -2,7 +2,6 @@ package compiler
 
 // Assignment compiles an assignment statement.
 func (c *Compiler) Assignment() error {
-
 	storeLValue, err := c.LValue()
 	if err != nil {
 		return err
@@ -20,5 +19,4 @@ func (c *Compiler) Assignment() error {
 	c.b.Append(storeLValue)
 
 	return nil
-
 }

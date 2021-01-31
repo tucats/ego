@@ -5,9 +5,7 @@ import (
 )
 
 func TestNewChannel(t *testing.T) {
-
 	fakeID := "49473e93-9f74-4c88-9234-5e037f2bac13"
-
 	type args struct {
 		size int
 	}
@@ -40,7 +38,6 @@ func TestNewChannel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			got := NewChannel(tt.args.size)
 			// Compare what we can.
 			match := true

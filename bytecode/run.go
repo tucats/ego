@@ -162,7 +162,6 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ui.DebugMode = true
 			err = ctx.Run()
 		}
-
 	}
 	if err != nil && err.Error() != "stop" {
 		fmt.Printf("%v\n", err)

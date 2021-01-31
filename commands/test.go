@@ -102,11 +102,9 @@ func TestAction(c *cli.Context) error {
 			fmt.Printf("Error: %s\n", err.Error())
 			exitValue = 1
 		} else {
-
 			if !builtinsAdded {
 				// Add the builtin functions
 				comp.AddBuiltins("")
-
 				// Always autoimport
 				err := comp.AutoImport(true)
 				if err != nil {
@@ -148,7 +146,6 @@ func TestAction(c *cli.Context) error {
 				exitValue = 2
 			}
 		}
-
 	}
 
 	if exitValue > 0 {

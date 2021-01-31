@@ -215,7 +215,6 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	t, err := getTable(s)
 	if err == nil {
-
 		column := 0
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.FindColumn(columnName)

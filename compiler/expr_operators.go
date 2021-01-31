@@ -44,7 +44,6 @@ func (c *Compiler) relations() error {
 			case ">=":
 				c.b.Emit(bc.GreaterThanOrEqual)
 			}
-
 		} else {
 			parsing = false
 		}
@@ -127,7 +126,6 @@ func (c *Compiler) multDivide() error {
 			case "|":
 				c.b.Emit(bc.Or)
 			}
-
 		} else {
 			parsing = false
 		}

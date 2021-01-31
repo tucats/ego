@@ -152,7 +152,6 @@ func (c *Compiler) Function(literal bool) error {
 	// Generate the parameter assignments. These are extracted from the automatic
 	// array named __args which is generated as part of the bytecode function call.
 	for n, p := range parameters {
-
 		// is this the end of the fixed list? If so, emit the instruction that scoops
 		// up the remaining arguments and stores them as an array value.
 		//

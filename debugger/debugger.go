@@ -150,7 +150,6 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 // getLine reads a line of text from the console, and requires that it contain matching
 // tick-quotes and braces.
 func getLine() string {
-
 	text := io.ReadConsoleText("debug> ")
 	if len(strings.TrimSpace(text)) == 0 {
 		return ""

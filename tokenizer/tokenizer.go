@@ -166,7 +166,6 @@ func (t *Tokenizer) IsNext(test string) bool {
 // of tokens, and if so  advances and returns true, else does not
 // advance and returns false.
 func (t *Tokenizer) AnyNext(test ...string) bool {
-
 	n := t.Peek(1)
 	for _, v := range test {
 		if n == v {
@@ -184,7 +183,6 @@ func stripComments(source string) string {
 	ignore := false
 	startOfLine := true
 	for _, c := range source {
-
 		// Is this a # on the start of a line? If so, start
 		// ignoring characters. If it's the end of line, then
 		// reset to end-of-line and resume processing characters.

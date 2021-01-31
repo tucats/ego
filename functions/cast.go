@@ -32,10 +32,8 @@ func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // String implements the string() function
 func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	// Special case. Is the argument an array of strings? If so, restructure as a single
 	// string with line breaks.
-
 	if array, ok := args[0].([]interface{}); ok {
 		isString := true
 		for _, v := range array {
@@ -85,20 +83,24 @@ func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 
 // New implements the new() function
 func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {
 		case reflect.Int:
 			return 0, nil
+
 		case reflect.String:
 			return "", nil
+
 		case reflect.Bool:
 			return false, nil
+
 		case reflect.Float32:
 			return float32(0), nil
+
 		case reflect.Float64:
 			return float64(0), nil
+
 		default:
 			return nil, fmt.Errorf("unsupported new() type %d", typeValue)
 		}
@@ -109,14 +111,19 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		switch strings.ToLower(typeValue) {
 		case "int":
 			return 0, nil
+
 		case "string":
 			return "", nil
+
 		case "bool":
 			return false, nil
+
 		case "float32":
 			return float32(0), nil
+
 		case "float", "float64":
 			return float64(0), nil
+
 		default:
 			return nil, fmt.Errorf("unsupported new() type %s", typeValue)
 		}
@@ -127,7 +134,6 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// IF there was a type in the source, make the clone point back to it
 	switch v := r.(type) {
-
 	case nil:
 		return nil, NewError("new", InvalidNewValueError)
 
@@ -141,9 +147,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case string:
 	case float64:
 	case []interface{}:
-
 	case map[string]interface{}:
-
 		// Create the replica count if needed, and update it.
 		replica := 0
 		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
@@ -191,18 +195,19 @@ func DeepCopy(source interface{}, depth int) interface{} {
 		return nil
 	}
 	switch v := source.(type) {
-
 	case int:
 		return v
+
 	case string:
 		return v
+
 	case float64:
 		return v
+
 	case bool:
 		return v
 
 	case []interface{}:
-
 		r := make([]interface{}, 0)
 		for _, d := range v {
 			r = append(r, DeepCopy(d, depth-1))

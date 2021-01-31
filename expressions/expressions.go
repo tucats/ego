@@ -83,7 +83,6 @@ func (e *Expression) WithTokenizer(t *tokenizer.Tokenizer) *Expression {
 	e.b, e.err = cx.Expression()
 
 	return e
-
 }
 
 // WithBytecode allocates an expression object and

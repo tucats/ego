@@ -146,7 +146,6 @@ func (c *Compiler) expressionAtom() error {
 		}
 
 		return nil
-
 	}
 
 	return c.NewError(UnexpectedTokenError, t)

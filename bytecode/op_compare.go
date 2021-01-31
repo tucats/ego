@@ -58,7 +58,6 @@ func EqualImpl(c *Context, i interface{}) error {
 	_ = c.Push(r)
 
 	return nil
-
 }
 
 // NotEqualImpl instruction processor
@@ -149,7 +148,6 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 
 		default:
 			return c.NewError(InvalidTypeError)
-
 		}
 	}
 	_ = c.Push(r)

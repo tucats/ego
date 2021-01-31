@@ -157,7 +157,6 @@ func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 
 	return array, nil
-
 }
 
 // GetEnv implements the util.getenv() function which reads

@@ -7,7 +7,6 @@ import (
 
 // Array compiles the array statement
 func (c *Compiler) Array() error {
-
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		c.t.Advance(-1)

@@ -37,7 +37,6 @@ func (e *SymbolError) Error() string {
 
 // NewError creates an SymbolError object
 func (*SymbolTable) NewError(text string, args ...interface{}) error {
-
 	e := &SymbolError{Text: text}
 	if len(args) > 0 {
 		e.Parameter = fmt.Sprintf("%v", args[0])

@@ -15,7 +15,6 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	var err error
 	switch t {
-
 	case "breaks", "breakpoints":
 		ShowBreaks()
 
@@ -61,7 +60,6 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			_ = tokens.IsNext(":")
 			if err == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
 				end, err = strconv.Atoi(tokens.Next())
-
 			}
 		}
 		if err == nil {
@@ -72,6 +70,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				fmt.Printf("%-5d %s\n", i+1, t)
 			}
 		}
+
 	default:
 		err = fmt.Errorf("unreognized show command: %s", t)
 	}

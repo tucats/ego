@@ -28,6 +28,5 @@ func (c *Compiler) unary() error {
 
 	default:
 		return c.functionOrReference()
-
 	}
 }

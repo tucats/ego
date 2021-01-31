@@ -17,7 +17,6 @@ import (
 // are reported as an error. If there is an action routine associated
 // with an option or a subcommand, that action is executed.
 func (c *Context) Parse() error {
-
 	args := c.Args
 	c.MainProgram = filepath.Base(args[0])
 	c.Command = ""
@@ -37,14 +36,12 @@ func (c *Context) Parse() error {
 // definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
 // This is never called by the user directly.
 func (c *Context) parseGrammar(args []string) error {
-
 	lastArg := len(args)
 	var err error
 	parametersOnly := false
 	helpVerb := true
 
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
-
 		option := args[currentArg]
 		ui.Debug(ui.CLILogger, "Processing token: %s", option)
 
@@ -95,7 +92,6 @@ func (c *Context) parseGrammar(args []string) error {
 		location = nil
 		if name > "" {
 			for n, entry := range c.Grammar {
-
 				if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
 					location = &(c.Grammar[n])
 
@@ -118,10 +114,8 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 		// It could be a parameter, or a subcommand.
 		if location == nil {
-
 			// Is it a subcommand?
 			for _, entry := range c.Grammar {
-
 				// Is it one of the aliases permitted?
 				isAlias := false
 				for _, n := range entry.Aliases {
@@ -132,7 +126,6 @@ func (c *Context) parseGrammar(args []string) error {
 					}
 				}
 				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
-
 					// We're doing a subcommand! Create a new context that defines the
 					// next level down. It should include the current context information,
 					// and an updated grammar tree, command text, and description adapted

@@ -61,7 +61,6 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 		needLoad := true
 		// Until we get to the end of the lvalue...
 		for util.InList(c.t.Peek(1), ".", "[") {
-
 			if needLoad {
 				bc.Emit(bytecode.Load, name)
 				needLoad = false
@@ -70,7 +69,6 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 			if err != nil {
 				return nil, err
 			}
-
 		}
 
 		// Cheating here a bit; this opcode does an optional create
@@ -127,7 +125,6 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 	needLoad := true
 	// Until we get to the end of the lvalue...
 	for c.t.Peek(1) == "." || c.t.Peek(1) == "[" {
-
 		if needLoad {
 			bc.Emit(bytecode.Load, name)
 			needLoad = false
@@ -143,7 +140,6 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 	if name == "_" {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
-
 		if c.t.Peek(1) == ":=" {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}

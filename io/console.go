@@ -53,7 +53,6 @@ func ReadConsoleText(prompt string) string {
 	// the reader, let's do so now (in a threadsafe fashion)
 	consoleLock.Lock()
 	if consoleReader == nil {
-
 		historyFile := persistence.Get("ego.console.history")
 		if historyFile == "" {
 			historyFile = filepath.Join(os.TempDir(), "ego-commands.txt")

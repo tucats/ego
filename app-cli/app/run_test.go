@@ -186,7 +186,6 @@ func TestRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			app := New("tt.args.appName")
 			app.SetCopyright("(c) 2020 Tom Cole. All rights reserved.")
 			app.SetVersion(1, 1, 0)

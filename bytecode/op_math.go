@@ -141,7 +141,6 @@ func AndImpl(c *Context, i interface{}) error {
 	}
 
 	return c.Push(util.GetBool(v1) && util.GetBool(v2))
-
 }
 
 // OrImpl bytecode instruction processor
@@ -156,7 +155,6 @@ func OrImpl(c *Context, i interface{}) error {
 	}
 
 	return c.Push(util.GetBool(v1) || util.GetBool(v2))
-
 }
 
 // SubtractImpl instruction processor removes two items from the

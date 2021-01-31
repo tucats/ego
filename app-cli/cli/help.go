@@ -13,13 +13,11 @@ import (
 //
 // This function uses the tables package to create uniform columns of output.
 func ShowHelp(c *Context) {
-
 	if c.Copyright != "" {
 		fmt.Printf("%s\n", c.Copyright)
 	}
 
 	composedCommand := c.MainProgram + " " + c.Command
-
 	hasSubcommand := false
 	hasOptions := false
 
@@ -92,7 +90,6 @@ func ShowHelp(c *Context) {
 				headerShown = true
 				_ = tc.AddRowItems(option.Description)
 			}
-
 		}
 	}
 	if headerShown {
@@ -111,7 +108,6 @@ func ShowHelp(c *Context) {
 			continue
 		}
 		if option.OptionType != Subcommand {
-
 			name := ""
 			if option.LongName > "" {
 				name = "--" + option.LongName

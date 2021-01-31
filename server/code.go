@@ -20,7 +20,6 @@ import (
 // as the payload, compiles and runs it. Because this is a major
 // security risk surface, this mode is not enabled by default.
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
-
 	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
@@ -58,7 +57,6 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
-
 		// Add the builtin functions
 		comp.AddBuiltins("")
 		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
@@ -84,5 +82,4 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}
-
 }

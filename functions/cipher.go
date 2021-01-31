@@ -36,7 +36,6 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return hex.EncodeToString([]byte(b)), nil
-
 }
 
 // Decrypt implements the _cipher.hash() function

@@ -6,7 +6,6 @@ import (
 )
 
 func TestTable_SortRows(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		headers     []string
@@ -169,7 +168,6 @@ func TestTable_SortRows(t *testing.T) {
 }
 
 func TestTable_AddRow(t *testing.T) {
-
 	type args struct {
 		row []string
 	}
@@ -304,10 +302,8 @@ func TestTable_AddRow(t *testing.T) {
 }
 
 func TestTable_AddRowItems(t *testing.T) {
-
 	t.Run("Add row items", func(t *testing.T) {
 		tb, _ := New([]string{"Age", "Name", "Active", "Ratio"})
-
 		_ = tb.AddRowItems(60, "Tom", true, 28.5)
 		_ = tb.AddRowItems(59, "Mary", true, 23.5)
 		_ = tb.AddRowItems(62, "Tony", false, 35.9)
@@ -318,11 +314,8 @@ func TestTable_AddRowItems(t *testing.T) {
 			{"60", "Tom", "true", "28.5"},
 			{"59", "Mary", "true", "23.5"},
 		}
-
 		if !reflect.DeepEqual(tb.rows, expected) {
 			t.Errorf("Table.AddRowItems() got %v, want %v", tb.rows, expected)
 		}
-
 	})
-
 }

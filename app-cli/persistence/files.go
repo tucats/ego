@@ -50,9 +50,10 @@ var Configurations map[string]Configuration
 
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) error {
-
-	var c Configuration = Configuration{Description: "Default configuration", Items: map[string]string{}}
-
+	var c Configuration = Configuration{
+		Description: "Default configuration",
+		Items:       map[string]string{},
+	}
 	CurrentConfiguration = &c
 	Configurations = map[string]Configuration{"default": c}
 	ProfileFile = application + ".json"
@@ -100,7 +101,6 @@ func Load(application string, name string) error {
 
 // Save the current configuration.
 func Save() error {
-
 	// So we even need to do anything?
 	if !ProfileDirty {
 		return nil
@@ -141,7 +141,6 @@ func Save() error {
 // UseProfile specifies the name of the profile to use, if other
 // than the default.
 func UseProfile(name string) {
-
 	c, found := Configurations[name]
 	if !found {
 		c = Configuration{Description: name + " configuration", Items: map[string]string{}}
@@ -172,9 +171,7 @@ func SetDefault(key string, value string) {
 // Get gets a profile entry in the current configuration structure.
 // If the key does not exist, an empty string is returned.
 func Get(key string) string {
-
 	// First, search the default values that be explicitly set
-
 	v, found := explicitValues.Items[key]
 	if !found {
 		c := getCurrentConfiguration()
@@ -202,7 +199,6 @@ func GetBool(key string) bool {
 // a result of 0 is returned.
 func GetUsingList(key string, values ...string) int {
 	v := strings.TrimSpace(strings.ToLower(Get(key)))
-
 	for position, value := range values {
 		if v == value {
 			return position + 1
@@ -236,7 +232,6 @@ func Keys() []string {
 
 // Exists test to see if a key value exists or not
 func Exists(key string) bool {
-
 	_, exists := explicitValues.Items[key]
 	if !exists {
 		c := getCurrentConfiguration()
@@ -268,7 +263,6 @@ func DeleteProfile(key string) error {
 }
 
 func getCurrentConfiguration() *Configuration {
-
 	if CurrentConfiguration == nil {
 		var c Configuration = Configuration{Description: "Default configuration", Items: map[string]string{}}
 		CurrentConfiguration = &c

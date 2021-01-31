@@ -43,7 +43,6 @@ func (c *Compiler) Switch() error {
 			}
 			defaultBlock = c.b
 			c.b = savedBC
-
 		} else {
 			// Must be a "case" statement:
 			if !c.t.IsNext("case") {

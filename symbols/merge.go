@@ -27,7 +27,6 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 					ui.Debug(ui.SymbolLogger, "    overwriting duplicate key \"%s\" with %v", k, old)
 					_ = s.SetAlways(k, v)
 				}
-
 			} else {
 				ui.Debug(ui.SymbolLogger, "    creating new map \"%s\" with %v", k, v)
 				_ = s.SetAlways(k, v)

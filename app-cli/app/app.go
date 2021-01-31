@@ -49,7 +49,6 @@ func (app *App) SetVersion(major, minor, delta int) {
 func (app *App) SetCopyright(s string) {
 	app.Copyright = s
 	symbols.RootSymbolTable.Symbols["_copyright"] = app.Copyright
-
 }
 
 // Parse runs a grammar, and then calls the provided action routine. It is typically

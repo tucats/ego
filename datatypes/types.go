@@ -19,7 +19,6 @@ const (
 )
 
 func IsType(v interface{}, kind int) bool {
-
 	if kind == InterfaceType {
 		return true
 	}

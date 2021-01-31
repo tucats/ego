@@ -36,11 +36,9 @@ func FormatUnquoted(arg interface{}) string {
 // it puts commas in the array list output to match the syntax of an
 // array constant and puts quotes around string values.
 func Format(arg interface{}) string {
-
 	if arg == nil {
 		return "<nil>"
 	}
-
 	switch v := arg.(type) {
 	case *datatypes.Channel:
 		return v.String()

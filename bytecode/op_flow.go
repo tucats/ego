@@ -131,7 +131,6 @@ func LocalCallImpl(c *Context, i interface{}) error {
 	c.PushFrame("defer", c.bc, util.GetInt(i))
 
 	return nil
-
 }
 
 func GoImpl(c *Context, i interface{}) error {

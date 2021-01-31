@@ -36,7 +36,6 @@ func (c *Compiler) If() error {
 			return err
 		}
 		_ = c.b.SetAddressHere(b2)
-
 	} else {
 		_ = c.b.SetAddressHere(b1)
 	}

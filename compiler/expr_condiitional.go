@@ -44,5 +44,4 @@ func (c *Compiler) conditional() error {
 	_ = c.b.SetAddressHere(m2)
 
 	return nil
-
 }

@@ -338,7 +338,6 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // updateUserDatabase re-writes the user database file with updated values
 func updateUserDatabase() error {
-
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(userDatabase, "", "   ")
 	if err != nil {

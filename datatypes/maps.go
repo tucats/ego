@@ -9,7 +9,6 @@ type EgoMap struct {
 }
 
 func NewMap(keyType int, valueType int) *EgoMap {
-
 	m := &EgoMap{
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,

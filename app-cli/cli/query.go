@@ -22,7 +22,6 @@ func (c *Context) GetParameterCount() int {
 // the processed command line.
 func (c *Context) WasFound(name string) bool {
 	for _, entry := range c.Grammar {
-
 		if entry.OptionType == Subcommand && entry.Found {
 			subgrammar := entry.Value.(Context)
 
@@ -40,9 +39,7 @@ func (c *Context) WasFound(name string) bool {
 // parsed grammar, or a zero if not found. The boolean return
 // value confirms if the value was specified on the command line.
 func (c *Context) GetInteger(name string) (int, bool) {
-
 	for _, entry := range c.Grammar {
-
 		if entry.OptionType == Subcommand && entry.Found {
 			subContext := entry.Value.(Context)
 
