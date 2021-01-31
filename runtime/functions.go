@@ -17,7 +17,6 @@ import (
 // string for a call to the Ego prompt() function to cause it to suppress
 // keyboard echo for the input. The text after this prefix, if any, is used
 // as the prompt text.
-
 const passwordPromptPrefix = "password~"
 
 // AddBuiltinPackages adds in the pre-defined package receivers
