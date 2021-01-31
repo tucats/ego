@@ -12,16 +12,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/runtime"
-	"github.com/tucats/gopackages/app-cli/persistence"
-	"github.com/tucats/gopackages/app-cli/ui"
-	"github.com/tucats/gopackages/bytecode"
-	"github.com/tucats/gopackages/compiler"
-	"github.com/tucats/gopackages/debugger"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/tokenizer"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
 
 // Define a cache. This keeps a copy of the compiler and the bytecode

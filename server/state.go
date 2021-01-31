@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/cli"
-	"github.com/tucats/gopackages/app-cli/ui"
 )
 
 var PathRoot string

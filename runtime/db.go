@@ -6,12 +6,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/ui"
-	"github.com/tucats/gopackages/datatypes"
-	"github.com/tucats/gopackages/functions"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 
 	_ "github.com/lib/pq"
 )

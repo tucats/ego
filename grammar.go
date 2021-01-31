@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
-	"github.com/tucats/gopackages/app-cli/cli"
 )
 
 // EgoGrammar handles the command line options

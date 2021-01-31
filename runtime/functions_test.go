@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/io"
-	"github.com/tucats/gopackages/symbols"
+	"github.com/tucats/ego/symbols"
 )
 
 func TestFunctionGremlinQuery(t *testing.T) {

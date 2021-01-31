@@ -1,8 +1,8 @@
 package io
 
 import (
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 func SetConfig(s *symbols.SymbolTable, name string, value bool) {

@@ -2,7 +2,7 @@ package defs
 
 // The error message strings that can be generated from Ego,
 // independent of the messages that are returned from the
-// various gopackages support functions.
+// various support functions.
 const (
 	CacheSizeNotSpecified     = "expected cache size value not found"
 	CredentialsInvalid        = "credentials provided are not valid"

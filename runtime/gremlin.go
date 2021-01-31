@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/northwesternmutual/grammes"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/io"
-	"github.com/tucats/gopackages/datatypes"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 var typeMap map[reflect.Kind]string = map[reflect.Kind]string{

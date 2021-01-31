@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/cli"
-	"github.com/tucats/gopackages/app-cli/persistence"
 )
 
 // PathAction is the command handler for the ego PATH command

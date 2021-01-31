@@ -12,15 +12,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/tables"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
-	"github.com/tucats/gopackages/app-cli/cli"
-	"github.com/tucats/gopackages/app-cli/persistence"
-	"github.com/tucats/gopackages/app-cli/tables"
-	"github.com/tucats/gopackages/app-cli/ui"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // String written at the start of each new log file.

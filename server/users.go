@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/cli"
-	"github.com/tucats/gopackages/app-cli/persistence"
-	"github.com/tucats/gopackages/app-cli/ui"
-	"github.com/tucats/gopackages/functions"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 var userDatabase map[string]defs.User

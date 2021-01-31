@@ -5,8 +5,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/tucats/gopackages/app-cli/app"
-	"github.com/tucats/gopackages/app-cli/cli"
+	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/app-cli/cli"
 )
 
 // BuildVersion is the incremental build version that is
@@ -19,7 +19,7 @@ func main() {
 
 	// Use the build number from the externally-generated build processor.
 	buildVer, _ := strconv.Atoi(BuildVersion)
-	app.SetVersion(1, 0, buildVer)
+	app.SetVersion(1, 1, buildVer)
 	app.SetCopyright("(C) Copyright Tom Cole 2020, 2021")
 
 	// fF there aren't any arguments, default to "run"

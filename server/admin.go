@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/ui"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // UserHandler is the rest handler for /admin/user endpoint

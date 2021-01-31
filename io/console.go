@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/chzyer/readline"
+	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/persistence"
-	"github.com/tucats/gopackages/app-cli/ui"
 )
 
 // ReaderInstance is the readline Instance used for console input

@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/persistence"
-	"github.com/tucats/gopackages/datatypes"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // RestNew implements the New() rest function

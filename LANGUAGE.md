@@ -8,6 +8,7 @@
     3. [User Types](#usertypes)
 2. [Symbols and Expressions](#symbolsexpressions)
     1. [Symbols and Scope](#symbolsscope)
+    2. [Constants](#const)
     2. [Operators](#operators)
     3. [Type Conversion](#typeconversion)
     4. [Builtin Functions](#builtinfunctions)
@@ -136,6 +137,23 @@ The second example creates a variable based on a user-defined type `Employee`.  
       var e2 Employee{ Name: "Bob", Age: 55}
 
 The type of `e2` is `Employee` and it contains initialized values for the permitted fields for the type. If the initializer does not specify a value for all fields, the fields not explicitly named are set to zero values for their types.
+
+
+## Constants <a name="const"></a>
+The `const` statement can define constant values in the current scope. These
+values are always readonly values and you cannot use a constant name as a
+variable name. You can specify a single constant or a group of them; to specify
+more than one in a single statement enclose the list in parenthesis:
+
+    const answer = 42
+
+    const (
+        first = "a"
+        last = "z"
+    )
+
+This defines three constant values. Note that the value is set using an
+`=` character since a symbols is not actually being created.
 
 ## Operators<a name="operators"></a>
 Operators is the term for language elements that allow you to perform mathmatical or other other operations using constant values as well as variable values, to produce a new computed value. Some operators can operate on a wide range of different value types, and some operators have more limited functionality.

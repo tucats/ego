@@ -3,7 +3,7 @@ package io
 import (
 	"strings"
 
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/util"
 )
 
 // Pad the formatted value of a given object to the specified number

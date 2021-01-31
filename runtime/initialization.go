@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/gopackages/app-cli/persistence"
 )
 
 func InitProfileDefaults() error {

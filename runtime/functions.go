@@ -4,12 +4,12 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/io"
-	"github.com/tucats/gopackages/datatypes"
-	"github.com/tucats/gopackages/expressions"
-	"github.com/tucats/gopackages/symbols"
-	"github.com/tucats/gopackages/util"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // AddBuiltinPackages adds in the pre-defined package receivers
