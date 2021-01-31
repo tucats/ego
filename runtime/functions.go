@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/expressions"
@@ -11,6 +12,13 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+// passwordPromptPrefix is the string prefix you can put in the prompt
+// string for a call to the Ego prompt() function to cause it to suppress
+// keyboard echo for the input. The text after this prefix, if any, is used
+// as the prompt text.
+
+const passwordPromptPrefix = "password~"
 
 // AddBuiltinPackages adds in the pre-defined package receivers
 // for things like the gremlin and rest systems.
@@ -54,7 +62,14 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	if len(args) > 0 {
 		prompt = util.GetString(args[0])
 	}
-	text := io.ReadConsoleText(prompt)
+
+	var text string
+	if strings.HasPrefix(prompt, passwordPromptPrefix) {
+		text = ui.PromptPassword(prompt[len(passwordPromptPrefix):])
+	} else {
+		text = io.ReadConsoleText(prompt)
+	}
+
 	if text == "\n" {
 		text = ""
 	} else {
