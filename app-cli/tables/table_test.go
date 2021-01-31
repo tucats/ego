@@ -148,6 +148,7 @@ func TestNewCSV(t *testing.T) {
 			got, err := NewCSV(tt.args.h)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewCSV() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got.columns, tt.want.columns) {

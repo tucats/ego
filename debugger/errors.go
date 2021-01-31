@@ -23,5 +23,6 @@ func InvokeDebugger(e error) bool {
 	if text == StepOver.Error() {
 		return true
 	}
+
 	return false
 }

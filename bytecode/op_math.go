@@ -20,14 +20,12 @@ import (
 // negation. For an array, it reverses the order of the
 // array elements
 func NegateImpl(c *Context, i interface{}) error {
-
 	v, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
 	switch value := v.(type) {
-
 	case bool:
 		_ = c.Push(!value)
 
@@ -48,6 +46,7 @@ func NegateImpl(c *Context, i interface{}) error {
 	default:
 		return c.NewError(InvalidTypeError)
 	}
+
 	return nil
 }
 
@@ -57,7 +56,6 @@ func NegateImpl(c *Context, i interface{}) error {
 // strings or arrays, it concatenates the two items. For a struct,
 // it merges the addend into the first struct.
 func AddImpl(c *Context, i interface{}) error {
-
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -68,14 +66,11 @@ func AddImpl(c *Context, i interface{}) error {
 	}
 
 	switch vx := v1.(type) {
-
 	// Is it an array we are concatenating to?
 	case []interface{}:
-
 		switch vy := v2.(type) {
 		// Array requires a deep concatnation
 		case []interface{}:
-
 			// If we're in static type mode, each member of the
 			// array being added must match the type of the target
 			// array.
@@ -88,22 +83,24 @@ func AddImpl(c *Context, i interface{}) error {
 				}
 			}
 			newArray := append(vx, vy...)
+
 			return c.Push(newArray)
 
 		// Everything else is a simple append.
 		default:
 			newArray := append(vx, v2)
+
 			return c.Push(newArray)
 		}
 
 		// You can add a map to another map
 	case map[string]interface{}:
-
 		switch vy := v2.(type) {
 		case map[string]interface{}:
 			for k, v := range vy {
 				vx[k] = v
 			}
+
 			return c.Push(vx)
 
 		default:
@@ -116,12 +113,16 @@ func AddImpl(c *Context, i interface{}) error {
 		switch v1.(type) {
 		case int:
 			return c.Push(v1.(int) + v2.(int))
+
 		case float64:
 			return c.Push(v1.(float64) + v2.(float64))
+
 		case string:
 			return c.Push(v1.(string) + v2.(string))
+
 		case bool:
 			return c.Push(v1.(bool) && v2.(bool))
+
 		default:
 			return c.NewError(InvalidTypeError)
 		}
@@ -130,7 +131,6 @@ func AddImpl(c *Context, i interface{}) error {
 
 // AndImpl bytecode instruction processor
 func AndImpl(c *Context, i interface{}) error {
-
 	v1, err := c.Pop()
 	if err != nil {
 		return err
@@ -146,7 +146,6 @@ func AndImpl(c *Context, i interface{}) error {
 
 // OrImpl bytecode instruction processor
 func OrImpl(c *Context, i interface{}) error {
-
 	v1, err := c.Pop()
 	if err != nil {
 		return err
@@ -175,7 +174,6 @@ func SubtractImpl(c *Context, i interface{}) error {
 	}
 
 	switch vx := v1.(type) {
-
 	// For an array, make a copy removing the item to be subtracted.
 	case []interface{}:
 		newArray := make([]interface{}, 0)
@@ -184,6 +182,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 				newArray = append(newArray, v)
 			}
 		}
+
 		return c.Push(newArray)
 
 	// Everything else is a scalar subtraction
@@ -192,11 +191,15 @@ func SubtractImpl(c *Context, i interface{}) error {
 		switch v1.(type) {
 		case int:
 			return c.Push(v1.(int) - v2.(int))
+
 		case float64:
 			return c.Push(v1.(float64) - v2.(float64))
+
 		case string:
 			s := strings.ReplaceAll(v1.(string), v2.(string), "")
+
 			return c.Push(s)
+
 		default:
 			return c.NewError(InvalidTypeError)
 		}
@@ -205,7 +208,6 @@ func SubtractImpl(c *Context, i interface{}) error {
 
 // MultiplyImpl bytecode instruction processor
 func MultiplyImpl(c *Context, i interface{}) error {
-
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -219,10 +221,13 @@ func MultiplyImpl(c *Context, i interface{}) error {
 	switch v1.(type) {
 	case int:
 		return c.Push(v1.(int) * v2.(int))
+
 	case float64:
 		return c.Push(v1.(float64) * v2.(float64))
+
 	case bool:
 		return c.Push(v1.(bool) || v2.(bool))
+
 	default:
 		return c.NewError(InvalidTypeError)
 	}
@@ -230,7 +235,6 @@ func MultiplyImpl(c *Context, i interface{}) error {
 
 // ExponentImpl bytecode instruction processor
 func ExponentImpl(c *Context, i interface{}) error {
-
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -253,10 +257,12 @@ func ExponentImpl(c *Context, i interface{}) error {
 		for n := 2; n <= v2.(int); n = n + 1 {
 			prod = prod * v1.(int)
 		}
+
 		return c.Push(prod)
 
 	case float64:
 		return c.Push(math.Pow(v1.(float64), v2.(float64)))
+
 	default:
 		return c.NewError(InvalidTypeError)
 	}
@@ -264,7 +270,6 @@ func ExponentImpl(c *Context, i interface{}) error {
 
 // DivideImpl bytecode instruction processor
 func DivideImpl(c *Context, i interface{}) error {
-
 	if c.sp < 1 {
 		return c.NewError(StackUnderflowError)
 	}
@@ -283,12 +288,16 @@ func DivideImpl(c *Context, i interface{}) error {
 		if v2.(int) == 0 {
 			return c.NewError(DivisionByZeroError)
 		}
+
 		return c.Push(v1.(int) / v2.(int))
+
 	case float64:
 		if v2.(float64) == 0 {
 			return c.NewError(DivisionByZeroError)
 		}
+
 		return c.Push(v1.(float64) / v2.(float64))
+
 	default:
 		return c.NewError(InvalidTypeError)
 	}

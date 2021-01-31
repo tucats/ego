@@ -6,7 +6,6 @@ import (
 
 // Switch compiles a switch statement.
 func (c *Compiler) Switch() error {
-
 	fixups := make([]int, 0)
 	t := MakeSymbol()
 
@@ -26,11 +25,9 @@ func (c *Compiler) Switch() error {
 	var defaultBlock *bytecode.ByteCode
 	next := 0
 	for !c.t.IsNext("}") {
-
 		if next > 0 {
 			_ = c.b.SetAddressHere(next)
 		}
-
 		// Could be a default statement:
 		if c.t.IsNext("default") {
 			if !c.t.IsNext(":") {
@@ -93,5 +90,6 @@ func (c *Compiler) Switch() error {
 		_ = c.b.SetAddressHere(n)
 	}
 	c.b.Emit(bytecode.SymbolDelete, t)
+
 	return nil
 }

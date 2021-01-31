@@ -25,7 +25,7 @@ var EgoGrammar = []cli.Option{
 	},
 	{
 		LongName:    "server",
-		Description: "Accept REST calls",
+		Description: "Start to accept REST calls",
 		OptionType:  cli.Subcommand,
 		Value:       ServerGrammar,
 	},
@@ -67,7 +67,7 @@ var ServerUserGrammar = []cli.Option{
 	},
 }
 
-// UserGrammer contains the grammer for SERVER USERS subcommands
+// UserGrammar contains the grammar for SERVER USERS subcommands
 var UserGrammar = []cli.Option{
 	{
 		LongName:    "set",

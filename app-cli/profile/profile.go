@@ -112,10 +112,13 @@ func SetOutputAction(c *cli.Context) error {
 			ui.JSONFormat,
 			ui.JSONIndentedFormat) {
 			persistence.Set("ego.output-format", outputType)
+
 			return nil
 		}
+
 		return errors.New("Invalid output type: " + outputType)
 	}
+
 	return errors.New("Missing output type")
 }
 
@@ -152,8 +155,10 @@ func DeleteProfileAction(c *cli.Context) error {
 	err := persistence.DeleteProfile(key)
 	if err == nil {
 		ui.Say("Profile %s deleted", key)
+
 		return nil
 	}
+
 	return err
 }
 

@@ -29,5 +29,6 @@ func (c *Compiler) Block() error {
 	}
 	c.b.Emit(bytecode.PopScope)
 	c.blockDepth = c.blockDepth - 1
+
 	return nil
 }

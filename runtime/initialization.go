@@ -11,7 +11,6 @@ import (
 )
 
 func InitProfileDefaults() error {
-
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
 	// The default values we check for.
@@ -41,5 +40,6 @@ func InitProfileDefaults() error {
 	if dirty {
 		err = persistence.Save()
 	}
+
 	return err
 }

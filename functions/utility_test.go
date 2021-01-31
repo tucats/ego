@@ -49,6 +49,7 @@ func TestFunctionLen(t *testing.T) {
 			got, err := Length(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLen() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -98,6 +99,7 @@ func TestFunctionProfile(t *testing.T) {
 			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionProfile() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -151,6 +153,7 @@ func TestFunctionSort(t *testing.T) {
 			got, err := Sort(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSort() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -193,6 +196,7 @@ func TestFunctionMembers(t *testing.T) {
 			got, err := Members(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMembers() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -266,6 +270,7 @@ func TestReflect(t *testing.T) {
 			got, err := Reflect(tt.args.s, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Reflect() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

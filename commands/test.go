@@ -24,10 +24,8 @@ import (
 
 // TestAction is the command handler for the ego TEST command
 func TestAction(c *cli.Context) error {
-
 	var text string
 	var err error
-
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
@@ -156,20 +154,20 @@ func TestAction(c *cli.Context) error {
 	if exitValue > 0 {
 		return errors.New(defs.TerminatedWithErrors)
 	}
+
 	return nil
 }
 
 // ReadDirectory reads all the files in a directory into a single string.
 func ReadDirectory(name string) (string, error) {
-
 	var b strings.Builder
-
 	dirname := name
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Debug(ui.DebugLogger, "+++ No such directory")
 		}
+
 		return "", err
 	}
 
@@ -201,7 +199,6 @@ func ReadDirectory(name string) (string, error) {
 
 // ReadFile reads the text from a file into a string
 func ReadFile(name string) (string, error) {
-
 	s, err := ReadDirectory(name)
 	if err == nil {
 		return s, nil

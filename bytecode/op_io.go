@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"text/template"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -55,6 +56,7 @@ func LogImpl(c *Context, i interface{}) error {
 	if err == nil {
 		ui.Debug(logger, "%v", msg)
 	}
+
 	return err
 }
 
@@ -63,6 +65,7 @@ func LogImpl(c *Context, i interface{}) error {
 func SayImpl(c *Context, i interface{}) error {
 	ui.Say("%s\n", c.output.String())
 	c.output = nil
+
 	return nil
 }
 
@@ -74,6 +77,7 @@ func NewlineImpl(c *Context, i interface{}) error {
 	} else {
 		c.output.WriteString("\n")
 	}
+
 	return nil
 }
 
@@ -94,6 +98,7 @@ func TemplateImpl(c *Context, i interface{}) error {
 			err = c.Push(t)
 		}
 	}
+
 	return err
 }
 
@@ -125,22 +130,24 @@ func AuthImpl(c *Context, i interface{}) error {
 	}
 
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
-		_ = c.SetAlways("_rest_status", 403)
+		_ = c.SetAlways("_rest_status", http.StatusForbidden)
 		if c.output != nil {
 			c.output.WriteString("403 Forbidden")
 		}
 		c.running = false
 		ui.Debug(ui.ServerLogger, "@authenticated token: no valid token")
+
 		return nil
 	}
 
 	if kind == "user" && user == "" && pass == "" {
-		_ = c.SetAlways("_rest_status", 401)
+		_ = c.SetAlways("_rest_status", http.StatusUnauthorized)
 		if c.output != nil {
 			c.output.WriteString("401 Not authorized")
 		}
 		c.running = false
 		ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
+
 		return nil
 	} else {
 		kind = "any"
@@ -152,12 +159,13 @@ func AuthImpl(c *Context, i interface{}) error {
 			isAuth = util.GetBool(v)
 		}
 		if !isAuth {
-			_ = c.SetAlways("_rest_status", 403)
+			_ = c.SetAlways("_rest_status", http.StatusForbidden)
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
 			c.running = false
 			ui.Debug(ui.ServerLogger, "@authenticated any: not authenticated")
+
 			return nil
 		}
 	}
@@ -168,7 +176,7 @@ func AuthImpl(c *Context, i interface{}) error {
 			isAuth = util.GetBool(v)
 		}
 		if !isAuth {
-			_ = c.SetAlways("_rest_status", 403)
+			_ = c.SetAlways("_rest_status", http.StatusForbidden)
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
@@ -184,7 +192,6 @@ func AuthImpl(c *Context, i interface{}) error {
 // top of stack is formatted as JSON, otherwise it is formatted as text, and written to the
 // response.
 func ResponseImpl(c *Context, i interface{}) error {
-
 	// See if we have a media type specified.
 	isJSON := false
 	if v, found := c.Get("_json"); found {
@@ -213,6 +220,7 @@ func ResponseImpl(c *Context, i interface{}) error {
 		c.output.WriteString(output)
 		c.output.WriteRune('\n')
 	}
+
 	return nil
 }
 
@@ -234,5 +242,6 @@ func FromFileImpl(c *Context, i interface{}) error {
 	if err == nil {
 		c.tokenizer = tokenizer.New(string(b))
 	}
+
 	return err
 }

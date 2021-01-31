@@ -270,7 +270,7 @@ Here's a simple example:
     server := rest.New().Base("http://localhost:8080")
     server.Get("/services/debug")
      
-    if server.status == 200 {
+    if server.status == http.StatusOK {
         print "Server session ID is ", server.response.session
     }
 

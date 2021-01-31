@@ -14,7 +14,7 @@ func (c *Context) ResolveEnvironmentVariables() error {
 
 	var err error
 
-	// Search the curent tree. Note that if we find the item,
+	// Search the current tree. Note that if we find the item,
 	// the updates have to be written back to the option array,
 	// not to the local entry which is a copy of the item...
 

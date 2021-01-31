@@ -10,14 +10,12 @@ import (
 
 // Disasm prints out a representation of the bytecode for debugging purposes
 func (b *ByteCode) Disasm() {
-
 	ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 	for n := 0; n < b.emitPos; n++ {
 		i := b.opcodes[n]
 		op := FormatInstruction(i)
 		ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
 	}
-
 	ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", b.emitPos)
 }
 
@@ -32,7 +30,6 @@ func FormatInstruction(i I) string {
 			width = len(k)
 		}
 	}
-
 	if !found {
 		opname = fmt.Sprintf("Unknown %d", i.Operation)
 	}
@@ -45,6 +42,7 @@ func FormatInstruction(i I) string {
 	if i.Operation >= BranchInstructions {
 		f = "@" + f
 	}
+
 	return opname + " " + f
 }
 
@@ -53,12 +51,10 @@ func Format(opcodes []I) string {
 	var b strings.Builder
 	b.WriteRune('[')
 	for n, i := range opcodes {
-
 		if n > 0 {
 			b.WriteRune(',')
 		}
 		opname, found := instructionNames[i.Operation]
-
 		if !found {
 			opname = fmt.Sprintf("Unknown %d", i.Operation)
 		}
@@ -77,5 +73,6 @@ func Format(opcodes []I) string {
 		}
 	}
 	b.WriteRune(']')
+
 	return b.String()
 }

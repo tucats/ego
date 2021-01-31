@@ -19,6 +19,7 @@ func integerAction(c *Context) error {
 	if v != 42 {
 		return errors.New("Integer value not 42")
 	}
+
 	return nil
 }
 
@@ -30,6 +31,7 @@ func stringAction(c *Context) error {
 	if v != "foobar" {
 		return errors.New("String value not foobar")
 	}
+
 	return nil
 }
 
@@ -38,6 +40,7 @@ func booleanValueAction(c *Context) error {
 	if v != true {
 		return errors.New("Boolean value not true")
 	}
+
 	return nil
 }
 
@@ -46,6 +49,7 @@ func booleanAction(c *Context) error {
 	if v != true {
 		return errors.New("Boolean not present")
 	}
+
 	return nil
 }
 

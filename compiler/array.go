@@ -11,11 +11,13 @@ func (c *Compiler) Array() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		c.t.Advance(-1)
+
 		return c.NewError(InvalidSymbolError, name)
 	}
 	// See if it's a reserved word.
 	if tokenizer.IsReserved(name, c.extensionsEnabled) {
 		c.t.Advance(-1)
+
 		return c.NewError(InvalidSymbolError, name)
 	}
 	name = c.Normalize(name)
@@ -44,5 +46,6 @@ func (c *Compiler) Array() error {
 	}
 	c.b.Emit(bytecode.SymbolCreate, name)
 	c.b.Emit(bytecode.Store, name)
+
 	return nil
 }

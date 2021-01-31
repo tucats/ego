@@ -77,13 +77,13 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 	if !ok {
 		return nil
 	}
+
 	return this
 }
 
 // Helper function that gets the file handle for a all to a
 // handle-based function.
 func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
-
 	this := getThis(s)
 	if v, ok := this["valid"]; ok && util.GetBool(v) {
 		fh, ok := this[fileMemberName]
@@ -94,6 +94,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 			}
 		}
 	}
+
 	return nil, NewError(fn, InvalidFileIdentifierError)
 }
 
@@ -102,7 +103,6 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.New(ArgumentCountError)
 	}
-
 	f, err := getFile("Close", s)
 	if err == nil {
 		err = f.Close()
@@ -143,8 +143,8 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		scanner = scanX.(*bufio.Scanner)
 	}
 	scanner.Scan()
-	return MultiValueReturn{Value: []interface{}{scanner.Text(), err}}, err
 
+	return MultiValueReturn{Value: []interface{}{scanner.Text(), err}}, err
 }
 
 // WriteString writes a string value to a file
@@ -158,6 +158,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if err == nil {
 		length, err = f.WriteString(util.GetString(args[0]) + "\n")
 	}
+
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
@@ -179,6 +180,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err == nil {
 		length, err = f.Write(bytes)
 	}
+
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
@@ -194,11 +196,13 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	bytes := buf.Bytes()
 	length := len(bytes)
 	f, err := getFile("WriteAt", s)
 	if err == nil {
 		length, err = f.WriteAt(bytes, int64(offset))
 	}
+
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }

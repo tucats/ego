@@ -80,7 +80,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(400)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			_, _ = io.WriteString(w, ctx.GetOutput())
 		}
 	}

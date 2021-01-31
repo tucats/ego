@@ -15,6 +15,7 @@ func Encrypt(data, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(b), nil
 }
 
@@ -24,6 +25,7 @@ func Decrypt(data, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(b), err
 }
 
@@ -33,8 +35,10 @@ func Decrypt(data, password string) (string, error) {
 func Hash(key string) string {
 	hasher := md5.New()
 	_, _ = hasher.Write([]byte(key))
+
 	return hex.EncodeToString(hasher.Sum(nil))
 }
+
 func encrypt(data []byte, passphrase string) ([]byte, error) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
 	gcm, err := cipher.NewGCM(block)
@@ -46,6 +50,7 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 		return nil, err
 	}
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+
 	return ciphertext, nil
 }
 
@@ -68,5 +73,6 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return plaintext, nil
 }

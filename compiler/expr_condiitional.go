@@ -8,7 +8,6 @@ import (
 // converted to a boolean value, and if true the second term is returned, else
 // the third term. All terms must be present.
 func (c *Compiler) conditional() error {
-
 	// Parse the conditional
 	err := c.relations()
 	if err != nil {
@@ -16,7 +15,6 @@ func (c *Compiler) conditional() error {
 	}
 
 	// If this is not a conditional, we're done.
-
 	if c.t.AtEnd() || c.t.Peek(1) != "?" {
 		return nil
 	}
@@ -42,7 +40,6 @@ func (c *Compiler) conditional() error {
 	if err != nil {
 		return err
 	}
-
 	// Patch up the forward references.
 	_ = c.b.SetAddressHere(m2)
 

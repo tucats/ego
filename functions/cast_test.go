@@ -47,6 +47,7 @@ func TestFunctionInt(t *testing.T) {
 			got, err := Int(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionInt() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -93,6 +94,7 @@ func TestFunctionFloat(t *testing.T) {
 			got, err := Float(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionFloat() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -139,6 +141,7 @@ func TestFunctionString(t *testing.T) {
 			got, err := String(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionString() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -185,6 +188,7 @@ func TestFunctionBool(t *testing.T) {
 			got, err := Bool(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionBool() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

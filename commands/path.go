@@ -11,11 +11,11 @@ import (
 
 // PathAction is the command handler for the ego PATH command
 func PathAction(c *cli.Context) error {
-
 	p := os.Getenv("EGO_PATH")
 	if p == "" {
 		p = persistence.Get(defs.EgoPathSetting)
 	}
 	fmt.Println(p)
+
 	return nil
 }

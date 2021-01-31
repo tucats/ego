@@ -25,5 +25,6 @@ func (c *Compiler) Call() error {
 
 	// We don't care about the result values, so flush to the marker.
 	c.b.Emit(bytecode.DropToMarker)
+
 	return nil
 }

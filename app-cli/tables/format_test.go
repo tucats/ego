@@ -49,7 +49,7 @@ func TestTable_SetAlignment(t *testing.T) {
 			wantAlignment: []int{AlignmentLeft},
 		},
 		{
-			name: "Set formatting for non-existant column",
+			name: "Set formatting for non-existent column",
 			fields: fields{
 				columnCount: 1,
 				alignment:   make([]int, 1),

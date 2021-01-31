@@ -9,13 +9,10 @@ import (
 
 // Min implements the min() function
 func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 1 {
 		return args[0], nil
 	}
-
 	r := args[0]
-
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
@@ -46,18 +43,16 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 		}
 	}
+
 	return r, nil
 }
 
 // Max implements the max() function
 func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 1 {
 		return args[0], nil
 	}
-
 	r := args[0]
-
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
@@ -88,12 +83,12 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			return nil, NewError("max", InvalidTypeError)
 		}
 	}
+
 	return r, nil
 }
 
 // Sum implements the sum() function
 func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	base := args[0]
 	for _, addend := range args[1:] {
 		addend = util.Coerce(addend, base)
@@ -103,30 +98,35 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		switch addend.(type) {
 		case int:
 			base = base.(int) + addend.(int)
+
 		case float64:
 			base = base.(float64) + addend.(float64)
+
 		case string:
 			base = base.(string) + addend.(string)
 
 		case bool:
 			base = base.(bool) || addend.(bool)
+
 		default:
 			return nil, NewError("sum", InvalidTypeError)
-
 		}
 	}
+
 	return base, nil
 }
 
 // Sqrt implements the sqrt() function
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := util.GetFloat(args[0])
+
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := util.GetFloat(args[0])
+
 	return math.Abs(f), nil
 }
 

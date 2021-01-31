@@ -3,9 +3,7 @@ package compiler
 import bc "github.com/tucats/ego/bytecode"
 
 func (c *Compiler) unary() error {
-
 	// Check for unary negation or not before passing into top-level diadic operators.
-
 	t := c.t.Peek(1)
 	switch t {
 	case "-":
@@ -15,6 +13,7 @@ func (c *Compiler) unary() error {
 			return err
 		}
 		c.b.Emit(bc.Negate, 0)
+
 		return nil
 
 	case "!":
@@ -24,6 +23,7 @@ func (c *Compiler) unary() error {
 			return err
 		}
 		c.b.Emit(bc.Negate, 0)
+
 		return nil
 
 	default:

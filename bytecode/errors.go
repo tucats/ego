@@ -50,11 +50,11 @@ type Error struct {
 
 // NewError generates a new error
 func (c *Context) NewError(msg string, args ...interface{}) *Error {
-
 	token := ""
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
+
 	return &Error{
 		text:   msg,
 		module: c.Name,
@@ -65,9 +65,7 @@ func (c *Context) NewError(msg string, args ...interface{}) *Error {
 
 // Error produces an error string from this object.
 func (e Error) Error() string {
-
 	var b strings.Builder
-
 	b.WriteString("execution error ")
 
 	if len(e.module) > 0 {
@@ -84,5 +82,6 @@ func (e Error) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.token)
 	}
+
 	return b.String()
 }

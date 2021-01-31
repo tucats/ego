@@ -26,6 +26,7 @@ func SetMetadata(value interface{}, key string, v interface{}) bool {
 	mdx, ok := m[MetadataKey]
 	if !ok {
 		m[MetadataKey] = map[string]interface{}{key: v}
+
 		return true
 	}
 	mdxx, ok := mdx.(map[string]interface{})
@@ -33,6 +34,7 @@ func SetMetadata(value interface{}, key string, v interface{}) bool {
 		return false
 	}
 	mdxx[key] = v
+
 	return true
 }
 
@@ -44,9 +46,11 @@ func GetMetadata(value interface{}, key string) (interface{}, bool) {
 		if md, ok := m[MetadataKey]; ok {
 			if mdx, ok := md.(map[string]interface{}); ok {
 				v, ok := mdx[key]
+
 				return v, ok
 			}
 		}
 	}
+
 	return nil, false
 }

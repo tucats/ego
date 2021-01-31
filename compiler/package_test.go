@@ -37,6 +37,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 			got, err := c.ReadDirectory(tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compiler.ReadDirectory() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if tt.wantEmpty && len(got) > 0 {

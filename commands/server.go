@@ -28,7 +28,6 @@ const logHeader = "*** Log file initialized %s ***\n"
 
 // Detach starts the sever as a detached process
 func Start(c *cli.Context) error {
-
 	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
 	if err == nil && status != nil {
@@ -54,7 +53,7 @@ func Start(c *cli.Context) error {
 		}
 	}
 
-	// What do we knwo from the arguments that we might need to use?
+	// What do we know from the arguments that we might need to use?
 	logID := uuid.New()
 	hasSessionID := false
 	logNameArg := 0
@@ -65,6 +64,7 @@ func Start(c *cli.Context) error {
 		if v == "--session-uuid" {
 			logID = uuid.MustParse(args[i+1])
 			hasSessionID = true
+
 			break
 		}
 
@@ -162,6 +162,7 @@ func Start(c *cli.Context) error {
 		// pid file is erased.
 		_ = server.RemovePidFile(c)
 	}
+
 	return err
 }
 
@@ -179,6 +180,7 @@ func Stop(c *cli.Context) error {
 			}
 		}
 	}
+
 	return err
 }
 
@@ -206,6 +208,7 @@ func Status(c *cli.Context) error {
 		// no difference for json vs indented
 		fmt.Printf("%v\n", running)
 	}
+
 	return nil
 }
 
@@ -249,6 +252,7 @@ func Restart(c *cli.Context) error {
 			if v == "--session-uuid" {
 				args[i+1] = logID.String()
 				found = true
+
 				break
 			}
 		}
@@ -281,19 +285,19 @@ func Restart(c *cli.Context) error {
 		} else {
 			_ = server.RemovePidFile(c)
 		}
+
 		return err
 	}
+
 	return err
 }
 
 // RunServer initializes and runs the server, which starts listenting for
 // new connections. This will never terminate until the process is killed.
 func RunServer(c *cli.Context) error {
-
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
-
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
@@ -383,6 +387,7 @@ func RunServer(c *cli.Context) error {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
+
 	return err
 }
 
@@ -397,7 +402,6 @@ func SetCacheSize(c *cli.Context) error {
 	}
 	c.GetParameter(0)
 	size, err := strconv.Atoi(c.GetParameter(0))
-
 	if err != nil {
 		return err
 	}
@@ -414,18 +418,22 @@ func SetCacheSize(c *cli.Context) error {
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
+
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		fmt.Println(string(b))
+
 	case ui.TextFormat:
-		if cacheStatus.Status != 200 {
-			if cacheStatus.Status == 403 {
+		if cacheStatus.Status != http.StatusOK {
+			if cacheStatus.Status == http.StatusForbidden {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
+
 			return errors.New(cacheStatus.Message)
 		}
 		ui.Say("Server cache size updated")
 	}
+
 	return nil
 }
 
@@ -445,18 +453,22 @@ func FlushServerCaches(c *cli.Context) error {
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		fmt.Println(string(b))
+
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
+
 	case ui.TextFormat:
-		if cacheStatus.Status != 200 {
-			if cacheStatus.Status == 403 {
+		if cacheStatus.Status != http.StatusOK {
+			if cacheStatus.Status == http.StatusForbidden {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
+
 			return errors.New(cacheStatus.Message)
 		}
 		ui.Say("Server cache emptied")
 	}
+
 	return nil
 }
 
@@ -470,7 +482,7 @@ func ListServerCaches(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if cacheStatus.Status != 200 {
+	if cacheStatus.Status != http.StatusOK {
 		return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 	}
 
@@ -484,10 +496,11 @@ func ListServerCaches(c *cli.Context) error {
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
-		if cacheStatus.Status != 200 {
-			if cacheStatus.Status == 403 {
+		if cacheStatus.Status != http.StatusOK {
+			if cacheStatus.Status == http.StatusForbidden {
 				return errors.New(defs.NoPrivilegeForOperation)
 			}
+
 			return errors.New(cacheStatus.Message)
 		}
 
@@ -502,5 +515,6 @@ func ListServerCaches(c *cli.Context) error {
 			t.Print("text")
 		}
 	}
+
 	return nil
 }

@@ -44,7 +44,6 @@ var MaxCachedEntries = 10
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
-
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	_ = syms.SetAlways("_method", r.Method)
@@ -96,7 +95,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	_ = syms.SetAlways("_headers", headers)
 	_ = syms.SetAlways("_json", isJSON)
-
 	path := r.URL.Path
 	if path[:1] == "/" {
 		path = path[1:]
@@ -121,6 +119,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			cacheMutext.Unlock()
+
 			return
 		}
 
@@ -136,9 +135,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(400)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			cacheMutext.Unlock()
+
 			return
 		}
-		// If it compiled succesfully, then put it in the cache
+		// If it compiled successfully, then put it in the cache
 		if err == nil {
 			serviceCache[r.URL.Path] = cachedCompilationUnit{
 				age:   time.Now(),
@@ -168,8 +168,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(400)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
+
 		return
 	}
+
 	// Do we need to authenticate?
 	var authenticatedCredentials bool
 	user := ""
@@ -206,7 +208,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_user", user)
 	_ = syms.SetAlways("_password", pass)
 	_ = syms.SetAlways("_authenticated", authenticatedCredentials)
-	_ = syms.SetGlobal("_rest_status", 200)
+	_ = syms.SetGlobal("_rest_status", http.StatusOK)
 	_ = syms.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
 
 	// Get the body of the request as a string
@@ -236,10 +238,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
-	status := 200
+	status := http.StatusOK
 	if statusValue, ok := syms.Get("_rest_status"); ok {
 		status = util.GetInt(statusValue)
-		if status == 401 {
+		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+Realm+`"`)
 		}
 	}
@@ -248,6 +250,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 		ui.Debug(ui.ServerLogger, "STATUS %d", status)
+
 		return
 	}
 

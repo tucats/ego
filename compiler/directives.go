@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
@@ -21,29 +22,40 @@ func (c *Compiler) Directive() error {
 	switch name {
 	case "assert":
 		return c.Assert()
+
 	case "authenticated":
 		return c.Authenticated()
+
 	case "error":
 		return c.Error()
+
 	case "fail":
 		return c.Fail()
+
 	case "global":
 		return c.Global()
+
 	case "log":
 		return c.Log()
+
 	case "pass":
 		return c.TestPass()
+
 	case "response":
 		return c.RestResponse()
 
 	case "status":
 		return c.RestStatus()
+
 	case "template":
 		return c.Template()
+
 	case "test":
 		return c.Test()
+
 	case "type":
 		return c.TypeChecking()
+
 	default:
 		return c.NewError(InvalidDirectiveError, name)
 	}
@@ -70,6 +82,7 @@ func (c *Compiler) Global() error {
 		c.b.Append(bc)
 	}
 	c.b.Emit(bytecode.StoreGlobal, name)
+
 	return nil
 }
 
@@ -93,6 +106,7 @@ func (c *Compiler) Log() error {
 		c.b.Append(bc)
 	}
 	c.b.Emit(bytecode.Log, name)
+
 	return nil
 }
 
@@ -107,7 +121,7 @@ func (c *Compiler) RestStatus() error {
 
 	name := "_rest_status"
 	if c.t.AtEnd() {
-		c.b.Emit(bytecode.Push, 200)
+		c.b.Emit(bytecode.Push, http.StatusOK)
 	} else {
 		bc, err := c.Expression()
 		if err != nil {
@@ -116,13 +130,12 @@ func (c *Compiler) RestStatus() error {
 		c.b.Append(bc)
 	}
 	c.b.Emit(bytecode.StoreGlobal, name)
+
 	return nil
 }
 
 func (c *Compiler) Authenticated() error {
-
 	_ = c.modeCheck("server", true)
-
 	var token string
 	if c.t.AtEnd() {
 		token = "any"
@@ -133,6 +146,7 @@ func (c *Compiler) Authenticated() error {
 		return c.NewError("Invalid authentication type", token)
 	}
 	c.b.Emit(bytecode.Auth, token)
+
 	return nil
 }
 
@@ -149,12 +163,12 @@ func (c *Compiler) RestResponse() error {
 	}
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Response)
+
 	return nil
 }
 
 // Template implements the template compiler directive
 func (c *Compiler) Template() error {
-
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
@@ -213,6 +227,7 @@ func (c *Compiler) atStatementEnd() bool {
 	if token == tokenizer.EndOfTokens || token == ";" || token == "{" || token == "}" {
 		return true
 	}
+
 	return false
 }
 
@@ -221,7 +236,6 @@ func (c *Compiler) atStatementEnd() bool {
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
 func (c *Compiler) modeCheck(mode string, check bool) error {
-
 	c.b.Emit(bytecode.Load, "__exec_mode")
 	c.b.Emit(bytecode.Push, mode)
 	c.b.Emit(bytecode.Equal)
@@ -237,5 +251,6 @@ func (c *Compiler) modeCheck(mode string, check bool) error {
 	c.b.Emit(bytecode.Add)
 	c.b.Emit(bytecode.Add)
 	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
+
 	return c.b.SetAddressHere(branch)
 }

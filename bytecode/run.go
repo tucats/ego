@@ -29,6 +29,7 @@ func (c *Context) GetName() string {
 	if c.bc != nil {
 		return c.bc.Name
 	}
+
 	return "main"
 }
 
@@ -52,9 +53,7 @@ func (c *Context) Resume() error {
 
 // RunFromAddress executes a bytecode context from a given starting address.
 func (c *Context) RunFromAddress(addr int) error {
-
 	var err error
-
 	// Make sure globals are initialized. Because this updates a global, let's
 	// do it in a thread-safe fashion.
 	dispatchMux.Lock()
@@ -64,24 +63,16 @@ func (c *Context) RunFromAddress(addr int) error {
 	// Reset the runtime context
 	c.pc = addr
 	c.running = true
-
-	// Make sure the opcode array ends in a Stop operation so we can never
-	// shoot off the end of the bytecode.
-	//if c.bc.emitPos == 0 || c.bc.opcodes[c.bc.emitPos-1].Operation != Stop {
-	//	c.bc.Emit(Stop)
-	//}
-
 	if c.Tracing {
 		ui.Debug(ui.ByteCodeLogger, "*** Tracing "+c.Name)
 	}
-
 	fullStackListing := util.GetBool(c.GetConfig("full_stack_listing"))
 
 	// Loop over the bytecodes and run.
 	for c.running {
-
 		if c.pc >= len(c.bc.opcodes) {
 			c.running = false
+
 			break
 		}
 
@@ -96,14 +87,12 @@ func (c *Context) RunFromAddress(addr int) error {
 				c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
 		c.pc = c.pc + 1
-
 		imp, found := dispatch[i.Operation]
 		if !found {
 			return c.NewError(UnimplementedInstructionError, strconv.Itoa(int(i.Operation)))
 		}
 		err = imp(c, i.Operand)
 		if err != nil {
-
 			text := err.Error()
 
 			// See if we are in a try/catch block. IF there is a Try/Catch stack
@@ -127,6 +116,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				if text != "signal" && c.Tracing {
 					ui.Debug(ui.ByteCodeLogger, "*** Return error: %s", text)
 				}
+
 				return err
 			}
 		}
@@ -141,17 +131,14 @@ func (c *Context) RunFromAddress(addr int) error {
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
-
 	syms := parentCtx.symbols
 	err := errors.New(InvalidFunctionCallError)
-
 	ui.Debug(ui.ByteCodeLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.ByteCodeLogger, "--> Argument list: %#v\n", args)
 
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
 	if fCode, ok := syms.Get(fName); ok {
 		if bc, ok := fCode.(*ByteCode); ok {
-
 			if true {
 				ui.DebugMode = true
 				bc.Disasm()
@@ -168,7 +155,6 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			// symbol scope it was run from. But we need the function definitions, etc. so copy the
 			// function values from the previous symbol table.
 			funcSyms := symbols.NewChildSymbolTable("Go routine "+fName, syms)
-			//funcSyms.ScopeBoundary = true
 			funcSyms.Merge(syms)
 
 			ctx := NewContext(funcSyms, callCode)

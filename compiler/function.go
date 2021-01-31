@@ -9,19 +9,18 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// Descriptor of each parameter in the parameter list.
+type parameter struct {
+	name string
+	kind int
+}
+
 // Function compiles a function definition. The literal flag indicates if
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
 func (c *Compiler) Function(literal bool) error {
-
 	// List of type coercions that will be needed for any RETURN statement.
 	coercions := []*bytecode.ByteCode{}
-
-	// Descriptor of each parameter in the parameter list.
-	type parameter struct {
-		name string
-		kind int
-	}
 	parameters := []parameter{}
 	this := ""
 	fname := ""
@@ -32,7 +31,6 @@ func (c *Compiler) Function(literal bool) error {
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !literal {
 		fname = c.t.Next()
-
 		// Is this receiver notation?
 		if fname == "(" {
 			this = c.t.Next()
@@ -78,7 +76,7 @@ func (c *Compiler) Function(literal bool) error {
 			}
 
 			// Is there a type name that follows it? We have to check for "[]" and "{}"
-			// as two differnt tokens. Also note that you can use the word array or struct
+			// as two different tokens. Also note that you can use the word array or struct
 			// instead if you wish.
 			if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 				p.kind = datatypes.ArrayType
@@ -90,16 +88,22 @@ func (c *Compiler) Function(literal bool) error {
 				switch c.t.Next() {
 				case "int":
 					p.kind = datatypes.IntType
+
 				case "string":
 					p.kind = datatypes.StringType
+
 				case "bool":
 					p.kind = datatypes.BoolType
+
 				case "float", "double":
 					p.kind = datatypes.FloatType
+
 				case "struct":
 					p.kind = datatypes.StructType
+
 				case "array":
 					p.kind = datatypes.ArrayType
+
 				case "chan":
 					p.kind = datatypes.ChanType
 				}
@@ -111,9 +115,7 @@ func (c *Compiler) Function(literal bool) error {
 			_ = c.t.IsNext(",")
 		}
 	}
-
 	b := bytecode.New(fname)
-
 	// If we know our source file, mark it in the bytecode now.
 	if c.SourceFile != "" {
 		b.Emit(bytecode.FromFile, c.SourceFile)
@@ -194,33 +196,43 @@ func (c *Compiler) Function(literal bool) error {
 				// Start of block means no more types here.
 				case "{":
 					wasVoid = true
+
 				case "error":
 					c.t.Advance(1)
 					coercion.Emit(bytecode.Coerce, datatypes.ErrorType)
+
 				case "chan":
 					coercion.Emit(bytecode.Coerce, datatypes.ChanType)
 					c.t.Advance(1)
+
 				case "int":
 					coercion.Emit(bytecode.Coerce, datatypes.IntType)
 					c.t.Advance(1)
+
 				case "float", "double":
 					coercion.Emit(bytecode.Coerce, datatypes.FloatType)
 					c.t.Advance(1)
+
 				case "string":
 					coercion.Emit(bytecode.Coerce, datatypes.StringType)
 					c.t.Advance(1)
+
 				case "bool":
 					coercion.Emit(bytecode.Coerce, datatypes.BoolType)
 					c.t.Advance(1)
+
 				case "struct":
 					coercion.Emit(bytecode.Coerce, datatypes.StructType)
 					c.t.Advance(1)
+
 				case "array":
 					coercion.Emit(bytecode.Coerce, datatypes.ArrayType)
 					c.t.Advance(1)
+
 				case "interface{}":
 					coercion.Emit(bytecode.Coerce, datatypes.UndefinedType)
 					c.t.Advance(1)
+
 				case "void":
 					// Do nothing, there is no result.
 					wasVoid = true
@@ -234,7 +246,6 @@ func (c *Compiler) Function(literal bool) error {
 		if !wasVoid {
 			coercions = append(coercions, coercion)
 		}
-
 		if c.t.Peek(1) != "," {
 			break
 		}
@@ -282,12 +293,13 @@ func (c *Compiler) Function(literal bool) error {
 		}
 		c.b.Emit(bytecode.Push, fname)
 		c.b.Emit(bytecode.StoreIndex, true)
+
 		return nil
 	}
 
 	// If it was a literal, push the body of the function (really, a bytecode expression
 	// of the function code) on the stack. Otherwise, let's store it in the symbol table
-	// or package dictionary as appropraite.
+	// or package dictionary as appropriate.
 	if literal {
 		c.b.Emit(bytecode.Push, b)
 	} else {
@@ -299,5 +311,6 @@ func (c *Compiler) Function(literal bool) error {
 			_ = c.AddPackageFunction(c.PackageName, fname, b)
 		}
 	}
+
 	return nil
 }

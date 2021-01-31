@@ -8,9 +8,7 @@ import (
 
 // Constant compiles a constant block
 func (c *Compiler) Constant() error {
-
 	terminator := ""
-
 	if c.t.IsNext("(") {
 		terminator = ")"
 	}
@@ -46,7 +44,7 @@ func (c *Compiler) Constant() error {
 		if terminator == "" {
 			break
 		}
-
 	}
+
 	return nil
 }

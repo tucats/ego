@@ -6,17 +6,15 @@ import (
 	"github.com/tucats/ego/bytecode"
 )
 
-// Return handles the return statment compilation
+// Return handles the return statement compilation
 func (c *Compiler) Return() error {
-
-	returnExpressions := []*bytecode.ByteCode{}
-
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined.
 	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
 		c.b.Emit(bytecode.LocalCall, c.deferQueue[i])
 	}
 
+	returnExpressions := []*bytecode.ByteCode{}
 	hasReturnValue := false
 	returnCount := 0
 
@@ -58,12 +56,12 @@ func (c *Compiler) Return() error {
 
 	// Stop execution of this stream
 	c.b.Emit(bytecode.Return, hasReturnValue)
+
 	return nil
 }
 
-// Exit handles the exit statment compilation
+// Exit handles the exit statement compilation
 func (c *Compiler) Exit() error {
-
 	c.b.Emit(bytecode.Load, "util")
 	c.b.Emit(bytecode.Member, "Exit")
 
@@ -76,7 +74,6 @@ func (c *Compiler) Exit() error {
 		c.b.Append(bc)
 		argCount = 1
 	}
-
 	c.b.Emit(bytecode.Call, argCount)
 
 	return nil

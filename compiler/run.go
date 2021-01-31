@@ -13,7 +13,6 @@ func RunString(name string, s *symbols.SymbolTable, stmt string) error {
 
 // Given a token stream, compile and execute it immediately.
 func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
-
 	c := New()
 	c.ExtensionsEnabled(true)
 	bc, err := c.Compile(name, t)
@@ -21,5 +20,6 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 		ctx := bytecode.NewContext(s, bc)
 		err = ctx.Run()
 	}
+
 	return err
 }

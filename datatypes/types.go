@@ -43,6 +43,7 @@ func IsType(v interface{}, kind int) bool {
 		if _, ok := GetMetadata(v, TypeMDKey); ok {
 			return kind == UserType
 		}
+
 		return kind == StructType
 
 	case EgoMap:

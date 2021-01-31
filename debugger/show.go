@@ -75,5 +75,6 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	default:
 		err = fmt.Errorf("unreognized show command: %s", t)
 	}
+
 	return err
 }

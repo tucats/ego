@@ -57,6 +57,7 @@ func testAction1(c *cli.Context) error {
 	if v != "bob" {
 		return errors.New("Invalid explode name: " + v)
 	}
+
 	return nil
 }
 
@@ -66,6 +67,7 @@ func testAction2(c *cli.Context) error {
 	if v != 42 {
 		return errors.New("Invalid count: " + strconv.Itoa(v))
 	}
+
 	return nil
 }
 

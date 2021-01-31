@@ -22,7 +22,6 @@ const passwordPromptPrefix = "password~"
 // AddBuiltinPackages adds in the pre-defined package receivers
 // for things like the gremlin and rest systems.
 func AddBuiltinPackages(syms *symbols.SymbolTable) {
-
 	_ = syms.SetAlways("gremlin", map[string]interface{}{
 		"New": GremlinOpen,
 		datatypes.MetadataKey: map[string]interface{}{
@@ -76,15 +75,17 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			text = text[:len(text)-1]
 		}
 	}
+
 	return text, nil
 }
 
-// Eval implements the eval() function whcih accepts a string representation of
+// Eval implements the eval() function which accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays
 func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	return expressions.Evaluate(util.GetString(args[0]), symbols)
 }

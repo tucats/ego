@@ -14,12 +14,11 @@ import (
 )
 
 // TableNew implements the New() table package function. This accepts a list
-// of column names (as individual arguements or an array of strings) and allocates
+// of column names (as individual arguments or an array of strings) and allocates
 // a new table. Additionally, the column names can contain alignment information;
 // a name with a leading ":" is left-aligned, and a trailing ":" is right-
 // aligned. In either case the ":" is removed from the name.
 func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 0 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -134,6 +133,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 				if m, ok := args[0].([]interface{}); ok {
 					if len(args) > 1 {
 						err = errors.New(defs.IncorrectArgumentCount)
+
 						return err, err
 					}
 					err = t.AddRowItems(m...)
@@ -143,6 +143,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 			}
 		}
 	}
+
 	return err, err
 }
 
@@ -150,7 +151,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // (column names) the sort is performed in the reverse order specified; that
 // is the least-significant sort is performed first, then the next-most-
 // significant sort, etc. until the first argument, which is the most
-// significant sort. The column names can start wiht a tilde ("~") character
+// significant sort. The column names can start with a tilde ("~") character
 // to reverse the sort order from it's default value of ascending to descending.
 func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
@@ -171,6 +172,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			}
 		}
 	}
+
 	return err, err
 }
 
@@ -181,8 +183,10 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
 		err := errors.New(defs.IncorrectArgumentCount)
+
 		return err, err
 	}
+
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
@@ -197,6 +201,7 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		t.ShowHeadings(headings)
 		t.ShowUnderlines(lines)
 	}
+
 	return err, err
 }
 
@@ -204,8 +209,10 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
 		err := errors.New(defs.IncorrectArgumentCount)
+
 		return err, err
 	}
+
 	t, err := getTable(s)
 	if err == nil {
 
@@ -214,6 +221,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			column, ok = t.FindColumn(columnName)
 			if !ok {
 				err = fmt.Errorf("invalid column name: %s", columnName)
+
 				return err, err
 			}
 		} else {
@@ -225,24 +233,28 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			switch strings.ToLower(modeName) {
 			case "left":
 				mode = tables.AlignmentLeft
+
 			case "right":
 				mode = tables.AlignmentRight
+
 			case "center":
 				mode = tables.AlignmentCenter
+
 			default:
 				err = fmt.Errorf("invalid alignment: %s", modeName)
+
 				return err, err
 			}
 		}
 		err = t.SetAlignment(column, mode)
 	}
+
 	return err, err
 }
 
 // TablePrint prints a table to the default output, in the default --output-format
 // type (text or json)
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	fmt := ui.OutputFormat
 	if len(args) > 0 {
 		fmt = util.GetString(args[0])
@@ -251,6 +263,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if err == nil {
 		err = t.Print(fmt)
 	}
+
 	return err, err
 }
 
@@ -265,11 +278,13 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 					if tp == nil {
 						return nil, errors.New("table was closed")
 					}
+
 					return tp, nil
 				}
 			}
 		}
 	}
+
 	return nil, errors.New(defs.NoFunctionReceiver)
 }
 

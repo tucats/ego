@@ -168,6 +168,7 @@ func TestFunctionTable(t *testing.T) {
 			got, err := Table(tt.args.symbols, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionTable() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

@@ -43,7 +43,6 @@ type ByteCode struct {
 
 // New generates and initializes a new bytecode
 func New(name string) *ByteCode {
-
 	bc := ByteCode{
 		Name:    name,
 		opcodes: make([]I, InitialOpcodeSize),
@@ -81,20 +80,19 @@ func (b *ByteCode) SetAddressHere(mark int) error {
 // SetAddress sets the given value as the target of the marked
 // instruction
 func (b *ByteCode) SetAddress(mark int, address int) error {
-
 	if mark > b.emitPos || mark < 0 {
 		return errors.New(InvalidBytecodeAddress)
 	}
 	i := b.opcodes[mark]
 	i.Operand = address
 	b.opcodes[mark] = i
+
 	return nil
 }
 
 // Append appends another bytecode set to the current bytecode,
 // and updates all the link references.
 func (b *ByteCode) Append(a *ByteCode) {
-
 	base := b.emitPos
 	if a == nil {
 		return
@@ -111,7 +109,6 @@ func (b *ByteCode) Append(a *ByteCode) {
 // DefineInstruction adds a user-defined instruction to the bytecode
 // set.
 func DefineInstruction(opcode Instruction, name string, implementation OpcodeHandler) error {
-
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
 		return fmt.Errorf(OpcodeAlreadyDefinedError, opcode)
@@ -126,6 +123,7 @@ func DefineInstruction(opcode Instruction, name string, implementation OpcodeHan
 // Run generates a one-time context for executing this bytecode.
 func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 	c := NewContext(s, b)
+
 	return c.Run()
 }
 
@@ -150,7 +148,6 @@ func (b *ByteCode) Opcodes() []I {
 // >= 0 in which case it is absent, else if it is < 0 it is the offset
 // from the end of the bytecode.
 func (b *ByteCode) Remove(n int) {
-
 	if n >= 0 {
 		b.opcodes = append(b.opcodes[:n], b.opcodes[n+1:]...)
 	} else {

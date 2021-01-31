@@ -14,7 +14,6 @@ import (
 // as the format for tabular data output. Choices are "text", "json", "indent",
 // or default which means whatever was set by the command line or profile.
 const (
-
 	// DefaultTableFormat means use whatever the default is that may have been set
 	// by the global option --output-type, etc.
 	DefaultTableFormat = "default"
@@ -88,6 +87,7 @@ func SetLogger(logger string, mode bool) bool {
 			DebugMode = true
 		}
 	}
+
 	return true
 }
 
@@ -117,6 +117,7 @@ func LogMessage(class string, format string, args ...interface{}) string {
 	sequenceString := fmt.Sprintf("%d", sequence)
 	tf := "20060102150405"
 	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(tf), sequenceString, strings.ToUpper(class), s)
+
 	return s
 }
 

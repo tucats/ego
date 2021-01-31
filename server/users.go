@@ -24,7 +24,6 @@ var userDatabaseFile = ""
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
 func LoadUserDatabase(c *cli.Context) error {
-
 	defaultUser := "admin"
 	defaultPassword := "password"
 	if up := persistence.Get(defs.DefaultCredentialSetting); up != "" {
@@ -65,6 +64,7 @@ func LoadUserDatabase(c *cli.Context) error {
 			ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
 		}
 	}
+
 	if userDatabase == nil {
 		// Make an initial version of the user database.
 		userDatabase = map[string]defs.User{
@@ -121,6 +121,7 @@ func setPermission(user, privilege string, enabled bool) error {
 	} else {
 		err = fmt.Errorf("no such user: %s", user)
 	}
+
 	return err
 }
 
@@ -132,10 +133,11 @@ func getPermission(user, privilege string) bool {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
 		ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (%v)", privilege, user, v)
+
 		return v
 	}
-
 	ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (false)", privilege, user)
+
 	return false
 }
 
@@ -145,6 +147,7 @@ func findPermission(u defs.User, perm string) int {
 			return i
 		}
 	}
+
 	return -1
 }
 
@@ -161,6 +164,7 @@ func validatePassword(user, pass string) bool {
 		hashPass := HashString(pass)
 		ok = realPass == hashPass
 	}
+
 	return ok
 }
 
@@ -175,6 +179,7 @@ func HashString(s string) string {
 	for _, b := range v {
 		r.WriteString(fmt.Sprintf("%02x", b))
 	}
+
 	return r.String()
 }
 
@@ -182,7 +187,6 @@ func HashString(s string) string {
 // and password string, and determines if they are authenticated using the
 // users database.
 func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var user, pass string
 
 	// If there are no arguments, then we look for the _user and _password
@@ -213,9 +217,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 // Permission implements the Permission(user,priv) function.
 func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var user, priv string
-
 	if len(args) != 2 {
 		return false, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -233,9 +235,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // Implements the SetUser() function
 func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var err error
-
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 	if s, ok := s.Get("_superuser"); ok {
@@ -283,13 +283,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		userDatabase[name] = r
 		err = updateUserDatabase()
 	}
+
 	return true, err
 }
 
 // Implements the DeleteUser() function. Returns true if the name was deleted,
 // else false if it was not a valid username.
 func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var err error
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
@@ -309,8 +309,10 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if _, ok := userDatabase[name]; ok {
 		delete(userDatabase, name)
 		err = updateUserDatabase()
+
 		return true, err
 	}
+
 	return false, nil
 }
 
@@ -330,6 +332,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r["name"] = name
 	r["permissions"] = t.Permissions
 	r["superuser"] = getPermission(name, "root")
+
 	return r, nil
 }
 
@@ -352,6 +355,7 @@ func updateUserDatabase() error {
 
 	// Write to the database file.
 	err = ioutil.WriteFile(userDatabaseFile, b, 0600)
+
 	return err
 }
 
@@ -363,6 +367,7 @@ func validateToken(t string) bool {
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "Token validation error: "+err.Error())
 	}
+
 	return v.(bool)
 }
 
@@ -378,5 +383,6 @@ func tokenUser(t string) string {
 			}
 		}
 	}
+
 	return ""
 }

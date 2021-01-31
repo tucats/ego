@@ -32,9 +32,7 @@ type Error struct {
 
 // Error produces an error string from this object.
 func (e *Error) Error() string {
-
 	var b strings.Builder
-
 	b.WriteString("compile error ")
 	if e.line > 0 {
 		b.WriteString(fmt.Sprintf(util.LineColumnFormat, e.line, e.column))
@@ -45,5 +43,6 @@ func (e *Error) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.token)
 	}
+
 	return b.String()
 }

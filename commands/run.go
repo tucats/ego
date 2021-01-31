@@ -32,11 +32,9 @@ const QuitCommand = "%quit"
 
 // RunAction is the command handler for the ego CLI
 func RunAction(c *cli.Context) error {
-
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
-
 	programArgs := make([]interface{}, 0)
 	mainName := "main"
 	prompt := c.MainProgram + "> "
@@ -85,7 +83,6 @@ func RunAction(c *cli.Context) error {
 				text = text + scanner.Text() + " "
 			}
 		} else {
-
 			// Otherwise, use the parameter as a filename
 			content, err := ioutil.ReadFile(fname)
 			if err != nil {
@@ -132,10 +129,8 @@ func RunAction(c *cli.Context) error {
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("file " + mainName)
-
 	_ = syms.SetAlways("__cli_args", programArgs)
 	_ = syms.SetAlways("__static_data_types", staticTypes)
-
 	if interactive {
 		_ = syms.SetAlways("__exec_mode", "interactive")
 	} else {
@@ -160,20 +155,16 @@ func RunAction(c *cli.Context) error {
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("prompt", runtime.Prompt)
 	runtime.AddBuiltinPackages(syms)
-
 	exitValue := 0
 	builtinsAdded := false
 	for {
-
 		// Handle special cases.
 		if strings.TrimSpace(text) == QuitCommand {
 			break
 		}
-
 		if exitOnBlankLine && len(strings.TrimSpace(text)) == 0 {
 			break
 		}
-
 		if len(text) > 8 && text[:8] == "%include" {
 			fname := strings.TrimSpace(text[8:])
 			content, err := ioutil.ReadFile(fname)
@@ -197,8 +188,10 @@ func RunAction(c *cli.Context) error {
 			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
+
 				continue
 			}
+
 			break
 		}
 
@@ -218,6 +211,7 @@ func RunAction(c *cli.Context) error {
 			if count > 0 {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
+
 				continue
 			} else {
 				break
@@ -270,7 +264,6 @@ func RunAction(c *cli.Context) error {
 				ctx.SetTracing(true)
 			}
 			ctx.SetTokenizer(t)
-
 			ctx.SetFullSymbolScope(fullScope)
 
 			// If we run under control of the debugger, do that, else just run the context.
@@ -305,5 +298,6 @@ func RunAction(c *cli.Context) error {
 	if exitValue > 0 {
 		return errors.New(defs.TerminatedWithErrors)
 	}
+
 	return nil
 }

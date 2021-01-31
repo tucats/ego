@@ -18,6 +18,7 @@ func (t *Table) SortRows(column int, ascending bool) error {
 		if ascending {
 			return t.rows[i][column] < t.rows[j][column]
 		}
+
 		return t.rows[i][column] > t.rows[j][column]
 	})
 
@@ -37,8 +38,10 @@ func (t *Table) SetOrderBy(name string) error {
 		if strings.EqualFold(name, v) {
 			t.orderBy = n
 			t.ascending = ascending
+
 			return nil
 		}
 	}
+
 	return errors.New("Invalid order-by column name: " + name)
 }

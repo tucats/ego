@@ -7,7 +7,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/symbols"
-	sym "github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -29,7 +28,7 @@ type Context struct {
 	tracing         bool
 	line            int
 	fullSymbolScope bool
-	symbols         *sym.SymbolTable
+	symbols         *symbols.SymbolTable
 	Tracing         bool
 	tokenizer       *tokenizer.Tokenizer
 	try             []int
@@ -47,7 +46,6 @@ type Context struct {
 // @TOMCOLE Is this a good idea? Should a context take a snapshot of the bytecode at
 // the time so it is immutable?
 func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
-
 	name := ""
 	if b != nil {
 		name = b.Name
@@ -98,10 +96,12 @@ func (c *Context) GetLine() int {
 func (c *Context) SetDebug(b bool) *Context {
 	c.debugging = b
 	c.singleStep = true
+
 	return c
 }
 func (c *Context) SetFullSymbolScope(b bool) *Context {
 	c.fullSymbolScope = b
+
 	return c
 }
 
@@ -116,7 +116,6 @@ func (c *Context) SetGlobal(name string, value interface{}) error {
 // EnableConsoleOutput tells the context to begin capturing all output normally generated
 // from Print and Newline into a buffer instead of going to stdout
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
-
 	ui.Debug(ui.AppLogger, ">>> Console output set to %v", flag)
 	if !flag {
 		var b strings.Builder
@@ -124,6 +123,7 @@ func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	} else {
 		c.output = nil
 	}
+
 	return c
 }
 
@@ -132,6 +132,7 @@ func (c *Context) GetOutput() string {
 	if c.output != nil {
 		return c.output.String()
 	}
+
 	return ""
 }
 
@@ -142,6 +143,7 @@ func (c *Context) SetTracing(b bool) {
 // SetTokenizer sets a tokenizer in the current context for tracing and debugging.
 func (c *Context) SetTokenizer(t *tokenizer.Tokenizer) *Context {
 	c.tokenizer = t
+
 	return c
 }
 
@@ -152,6 +154,7 @@ func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 
 func (c *Context) SetDugging(b bool) *Context {
 	c.debugging = b
+
 	return c
 }
 
@@ -201,8 +204,8 @@ func (c *Context) IsConstant(name string) bool {
 // Get is a helper function that retrieves a symbol value from the associated
 // symbol table
 func (c *Context) Get(name string) (interface{}, bool) {
-
 	v, found := c.symbols.Get(name)
+
 	return v, found
 }
 
@@ -236,23 +239,23 @@ func (c *Context) Pop() (interface{}, error) {
 
 	c.sp = c.sp - 1
 	v := c.stack[c.sp]
+
 	return v, nil
 }
 
 // Push puts a new items on the stack
 func (c *Context) Push(v interface{}) error {
-
 	if c.sp >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
 	c.stack[c.sp] = v
 	c.sp = c.sp + 1
+
 	return nil
 }
 
 // FormatStack formats the stack for tracing output
 func FormatStack(s []interface{}, newlines bool) string {
-
 	if len(s) == 0 {
 		return "<EOS>"
 	}
@@ -262,7 +265,6 @@ func FormatStack(s []interface{}, newlines bool) string {
 	}
 
 	for n := len(s) - 1; n >= 0; n = n - 1 {
-
 		if n < len(s)-1 {
 			b.WriteString(", ")
 			if newlines {
@@ -275,6 +277,7 @@ func FormatStack(s []interface{}, newlines bool) string {
 			return b.String()[:50] + "..."
 		}
 	}
+
 	return b.String()
 }
 
@@ -283,7 +286,6 @@ func FormatStack(s []interface{}, newlines bool) string {
 // the persistence layer.
 func (c *Context) GetConfig(name string) interface{} {
 	var i interface{}
-
 	if config, ok := c.Get("_config"); ok {
 		if cfgMap, ok := config.(map[string]interface{}); ok {
 			if cfgValue, ok := cfgMap[name]; ok {
@@ -291,11 +293,11 @@ func (c *Context) GetConfig(name string) interface{} {
 			}
 		}
 	}
+
 	return i
 }
 
 func (c *Context) checkType(name string, value interface{}) error {
-
 	var err error
 	if !c.Static || value == nil {
 		return err
@@ -308,5 +310,6 @@ func (c *Context) checkType(name string, value interface{}) error {
 			err = errors.New(InvalidVarTypeError)
 		}
 	}
+
 	return err
 }

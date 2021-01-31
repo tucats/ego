@@ -14,7 +14,6 @@ import (
 // run. It is up to the caller (typically the main() function)
 // to handle any post-processing cleanup, etc.
 func runFromContext(context *cli.Context) error {
-
 	// Create a new grammar which prepends the default supplied options
 	// to the caller's grammar definition.
 	grammar := []cli.Option{

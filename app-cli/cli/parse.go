@@ -25,6 +25,7 @@ func (c *Context) Parse() error {
 	// If there are no arguments other than the main program name, dump out the help by default.
 	if len(args) == 1 && c.Action == nil {
 		ShowHelp(c)
+
 		return nil
 	}
 
@@ -58,17 +59,20 @@ func (c *Context) parseGrammar(args []string) error {
 			globalContext.Parameters = append(globalContext.Parameters, option)
 			count := len(globalContext.Parameters)
 			ui.Debug(ui.CLILogger, "added parameter %d", count)
+
 			continue
 		}
 
 		// Handle the special cases automatically.
 		if (helpVerb && option == "help") || option == "-h" || option == "--help" {
 			ShowHelp(c)
+
 			return nil
 		}
 		if option == "--" {
 			parametersOnly = true
 			helpVerb = false
+
 			continue
 		}
 
@@ -94,11 +98,13 @@ func (c *Context) parseGrammar(args []string) error {
 
 				if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
 					location = &(c.Grammar[n])
+
 					break
 				} else {
 					for _, a := range entry.Aliases {
 						if a == name {
 							location = &(c.Grammar[n])
+
 							break
 						}
 					}
@@ -121,6 +127,7 @@ func (c *Context) parseGrammar(args []string) error {
 				for _, n := range entry.Aliases {
 					if option == n {
 						isAlias = true
+
 						break
 					}
 				}
@@ -149,6 +156,7 @@ func (c *Context) parseGrammar(args []string) error {
 						ui.Debug(ui.CLILogger, "Saving action routine in subcommand context")
 					}
 					ui.Debug(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
+
 					return subContext.parseGrammar(args[currentArg+1:])
 				}
 			}
@@ -158,15 +166,11 @@ func (c *Context) parseGrammar(args []string) error {
 			g.Parameters = append(g.Parameters, option)
 			count := len(g.Parameters)
 			ui.Debug(ui.CLILogger, "Unclaimed token added parameter %d", count)
-
 		} else {
-
 			location.Found = true
-
 			// If it's not a boolean type, see it already has a value from the = construct.
 			// If not, claim the next argument as the value.
 			if location.OptionType != BooleanType {
-
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
@@ -179,7 +183,6 @@ func (c *Context) parseGrammar(args []string) error {
 
 			// Validate the argument type and store the appropriately typed value.
 			switch location.OptionType {
-
 			case KeywordType:
 				found := false
 				for _, validKeyword := range location.Keywords {
@@ -238,9 +241,9 @@ func (c *Context) parseGrammar(args []string) error {
 	// all required options were in fact found.
 
 	for _, entry := range c.Grammar {
-
 		if entry.Required && !entry.Found {
 			err = errors.New("Required option " + entry.LongName + " not found")
+
 			break
 		}
 	}
@@ -249,7 +252,6 @@ func (c *Context) parseGrammar(args []string) error {
 	// parameters, and then call the action if there is one.
 
 	if err == nil {
-
 		g := c.FindGlobal()
 		if g.ExpectedParameterCount == -99 {
 			ui.Debug(ui.CLILogger, "Parameters expected: <varying> found %d", g.GetParameterCount())
@@ -283,5 +285,6 @@ func (c *Context) parseGrammar(args []string) error {
 			ShowHelp(c)
 		}
 	}
+
 	return err
 }

@@ -12,24 +12,28 @@ func (t *Table) RowLimit(limit int) *Table {
 	} else {
 		t.rowLimit = limit
 	}
+
 	return t
 }
 
 // ShowUnderlines enables underlining of column headings when the parameter is true
 func (t *Table) ShowUnderlines(flag bool) *Table {
 	t.showUnderlines = flag
+
 	return t
 }
 
 // ShowHeadings disables printing of column headings when the parameter is true
 func (t *Table) ShowHeadings(flag bool) *Table {
 	t.showHeadings = flag
+
 	return t
 }
 
 // ShowRowNumbers enables printing of column headings when the parameter is true
 func (t *Table) ShowRowNumbers(flag bool) *Table {
 	t.showRowNumbers = flag
+
 	return t
 }
 
@@ -47,6 +51,7 @@ func (t *Table) SetMinimumWidth(n int, w int) error {
 	if w > t.maxWidth[n] {
 		t.maxWidth[n] = w
 	}
+
 	return nil
 }
 
@@ -57,6 +62,7 @@ func (t *Table) SetStartingRow(s int) error {
 		return errors.New("Invalid starting row specified")
 	}
 	t.startingRow = s - 1
+
 	return nil
 }
 
@@ -70,6 +76,7 @@ func (t *Table) SetSpacing(s int) error {
 		buffer.WriteRune(' ')
 	}
 	t.spacing = buffer.String()
+
 	return nil
 }
 
@@ -83,12 +90,12 @@ func (t *Table) SetIndent(s int) error {
 		buffer.WriteRune(' ')
 	}
 	t.indent = buffer.String()
+
 	return nil
 }
 
 // SetAlignment sets the alignment for a given column.
 func (t *Table) SetAlignment(column int, alignment int) error {
-
 	if column < 0 || column >= t.columnCount {
 		return errors.New("Invalid column number specified")
 	}
@@ -102,6 +109,7 @@ func (t *Table) SetAlignment(column int, alignment int) error {
 
 	case AlignmentCenter:
 		t.alignment[column] = AlignmentCenter
+
 	default:
 		return errors.New("Unsupported alignment specified for table")
 	}

@@ -9,7 +9,6 @@ import (
 )
 
 func TestStructImpl(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		stack   []interface{}

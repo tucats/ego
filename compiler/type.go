@@ -8,7 +8,6 @@ import (
 
 // Type compiles a type statement
 func (c *Compiler) Type() error {
-
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidSymbolError)
@@ -73,7 +72,6 @@ func (c *Compiler) Type() error {
 }
 
 func (c *Compiler) compileType() error {
-
 	// Skip over the optional struct type keyword
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		c.t.Advance(1)
@@ -107,14 +105,19 @@ func (c *Compiler) compileType() error {
 			case "chan":
 				channel := datatypes.NewChannel(1)
 				c.b.Emit(bytecode.Push, channel)
+
 			case "int":
 				c.b.Emit(bytecode.Push, 0)
+
 			case "float", "double":
 				c.b.Emit(bytecode.Push, 0.0)
+
 			case "bool":
 				c.b.Emit(bytecode.Push, false)
+
 			case "string":
 				c.b.Emit(bytecode.Push, "")
+
 			default:
 				return c.NewError(InvalidTypeNameError)
 			}
@@ -126,6 +129,7 @@ func (c *Compiler) compileType() error {
 		_ = c.t.IsNext(",")
 		if c.t.IsNext("}") {
 			c.b.Emit(bytecode.Struct, count)
+
 			return nil
 		}
 		if c.t.AtEnd() {

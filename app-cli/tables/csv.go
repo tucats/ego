@@ -26,11 +26,13 @@ func CsvSplit(data string) []string {
 	for _, c := range data {
 		if c == '"' {
 			inQuote = !inQuote
+
 			continue
 		}
 		if !inQuote && c == ',' {
 			headings = append(headings, strings.TrimSpace(currentHeading.String()))
 			currentHeading.Reset()
+
 			continue
 		}
 		currentHeading.WriteRune(rune(c))
@@ -39,5 +41,6 @@ func CsvSplit(data string) []string {
 	if currentHeading.Len() > 0 {
 		headings = append(headings, strings.TrimSpace(currentHeading.String()))
 	}
+
 	return headings
 }

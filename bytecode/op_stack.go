@@ -36,6 +36,7 @@ func DropToMarkerImpl(c *Context, i interface{}) error {
 		}
 		_, found = v.(StackMarker)
 	}
+
 	return nil
 }
 
@@ -54,6 +55,7 @@ func StackCheckImpl(c *Context, i interface{}) error {
 	if _, ok := v.(StackMarker); ok {
 		return nil
 	}
+
 	return c.NewError(IncorrectReturnValueCount)
 }
 
@@ -77,6 +79,7 @@ func DropImpl(c *Context, i interface{}) error {
 			return nil
 		}
 	}
+
 	return nil
 }
 
@@ -88,6 +91,7 @@ func DupImpl(c *Context, i interface{}) error {
 	}
 	_ = c.Push(v)
 	_ = c.Push(v)
+
 	return nil
 }
 
@@ -105,6 +109,7 @@ func SwapImpl(c *Context, i interface{}) error {
 	}
 	_ = c.Push(v1)
 	_ = c.Push(v2)
+
 	return nil
 }
 
@@ -122,25 +127,26 @@ func CopyImpl(c *Context, i interface{}) error {
 	var v2 interface{}
 	byt, _ := json.Marshal(v)
 	err = json.Unmarshal(byt, &v2)
-
 	_ = c.Push(2)
+
 	return err
 }
 
 func GetVarArgsImpl(c *Context, i interface{}) error {
 	err := c.NewError(VarArgError)
 	argPos := util.GetInt(i)
-
 	if arrayV, ok := c.Get("__args"); ok {
 		if args, ok := arrayV.([]interface{}); ok {
 			// If no more args in the list to satisfy, push empty array
 			if len(args) < argPos {
 				r := make([]interface{}, 0)
+
 				return c.Push(r)
 			} else {
 				return c.Push(args[argPos:])
 			}
 		}
 	}
+
 	return err
 }

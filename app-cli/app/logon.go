@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -20,7 +21,7 @@ const (
 	LogonServerSetting = "ego.logon.server"
 
 	// LogonTokenSetting is th ename of the profile item that
-	// contains the logon token recieved from a succesful logon
+	// contains the logon token received from a successful logon
 	LogonTokenSetting = "ego.logon.token"
 )
 
@@ -51,7 +52,6 @@ var LogonGrammar = []cli.Option{
 
 // Logon handles the logon subcommand
 func Logon(c *cli.Context) error {
-
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
@@ -84,25 +84,29 @@ func Logon(c *cli.Context) error {
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
-	if err == nil && r.StatusCode() == 200 {
+	if err == nil && r.StatusCode() == http.StatusOK {
 		token := strings.TrimSuffix(string(r.Body()), "\n")
 		persistence.Set(LogonTokenSetting, token)
 		err = persistence.Save()
 		if err == nil {
 			ui.Say("Successfully logged in as \"%s\"", user)
 		}
+
 		return err
 	}
 
 	// If there was an  HTTP error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
-		case 401:
+		case http.StatusUnauthorized:
 			err = errors.New("no credentials provided")
-		case 403:
+
+		case http.StatusForbidden:
 			err = errors.New("invalid credentials")
-		case 404:
+
+		case http.StatusNotFound:
 			err = errors.New("logon endpoint not found")
+
 		default:
 			err = fmt.Errorf("HTTP %d", r.StatusCode())
 		}

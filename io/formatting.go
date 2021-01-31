@@ -28,5 +28,6 @@ func Pad(v interface{}, w int) string {
 	if len(r) > count {
 		r = r[:count]
 	}
+
 	return string(r)
 }

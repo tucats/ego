@@ -8,12 +8,10 @@ import (
 
 // relations compiles a relationship expression.
 func (c *Compiler) relations() error {
-
 	err := c.addSubtract()
 	if err != nil {
 		return err
 	}
-
 	var parsing = true
 	for parsing {
 		if c.t.AtEnd() {
@@ -22,14 +20,12 @@ func (c *Compiler) relations() error {
 		op := c.t.Peek(1)
 		if op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" {
 			c.t.Advance(1)
-
 			err := c.addSubtract()
 			if err != nil {
 				return err
 			}
 
 			switch op {
-
 			case "==":
 				c.b.Emit(bc.Equal)
 
@@ -47,24 +43,22 @@ func (c *Compiler) relations() error {
 
 			case ">=":
 				c.b.Emit(bc.GreaterThanOrEqual)
-
 			}
 
 		} else {
 			parsing = false
 		}
 	}
+
 	return nil
 }
 
 // addSubtract commpiles an expression containing "+", "&", or "-" operators
 func (c *Compiler) addSubtract() error {
-
 	err := c.multDivide()
 	if err != nil {
 		return err
 	}
-
 	var parsing = true
 	for parsing {
 		if c.t.AtEnd() {
@@ -73,18 +67,15 @@ func (c *Compiler) addSubtract() error {
 		op := c.t.Peek(1)
 		if util.InList(op, "+", "-", "&") {
 			c.t.Advance(1)
-
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.NewError(MissingTermError)
 			}
-
 			err := c.multDivide()
 			if err != nil {
 				return err
 			}
 
 			switch op {
-
 			case "+":
 				c.b.Emit(bc.Add)
 
@@ -94,22 +85,20 @@ func (c *Compiler) addSubtract() error {
 			case "&":
 				c.b.Emit(bc.And)
 			}
-
 		} else {
 			parsing = false
 		}
 	}
+
 	return nil
 }
 
 // multDivide compiles an expression containing "*", "^", "|", or "/" operators.
 func (c *Compiler) multDivide() error {
-
 	err := c.unary()
 	if err != nil {
 		return err
 	}
-
 	var parsing = true
 	for parsing {
 		if c.t.AtEnd() {
@@ -117,18 +106,15 @@ func (c *Compiler) multDivide() error {
 		}
 		op := c.t.Peek(1)
 		if c.t.AnyNext("^", "*", "/", "|") {
-
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.NewError(MissingTermError)
 			}
-
 			err := c.unary()
 			if err != nil {
 				return err
 			}
 
 			switch op {
-
 			case "^":
 				c.b.Emit(bc.Exp)
 
@@ -140,12 +126,12 @@ func (c *Compiler) multDivide() error {
 
 			case "|":
 				c.b.Emit(bc.Or)
-
 			}
 
 		} else {
 			parsing = false
 		}
 	}
+
 	return nil
 }

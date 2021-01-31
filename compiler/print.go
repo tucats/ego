@@ -7,7 +7,6 @@ import (
 // Print compiles a print statement. The verb is already removed
 // from the token stream
 func (c *Compiler) Print() error {
-
 	newline := true
 	for !c.StatementEnd() {
 		if c.t.IsNext(",") {
@@ -29,5 +28,6 @@ func (c *Compiler) Print() error {
 	if newline {
 		c.b.Emit(bytecode.Newline)
 	}
+
 	return nil
 }

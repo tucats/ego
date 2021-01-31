@@ -69,6 +69,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			break
 		}
 	}
+
 	return err
 }
 
@@ -81,6 +82,7 @@ func breakAtLine(module string, line int) error {
 	}
 	breakPoints = append(breakPoints, b)
 	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
+
 	return nil
 }
 
@@ -94,6 +96,7 @@ func breakWhen(expression *bytecode.ByteCode, text string) error {
 	}
 	breakPoints = append(breakPoints, b)
 	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
+
 	return nil
 }
 
@@ -169,6 +172,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 				text := c.GetTokenizer().GetLine(line)
 				msg = fmt.Sprintf("%s:\n\t%5d, %s", breakAt, line, text)
 				b.hit++
+
 				break
 			}
 		}
@@ -176,5 +180,6 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 	if prompt {
 		fmt.Printf("%s\n", msg)
 	}
+
 	return prompt
 }

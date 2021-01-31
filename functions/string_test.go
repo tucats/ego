@@ -37,6 +37,7 @@ func TestFunctionLeft(t *testing.T) {
 			got, err := Left(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLeft() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -84,6 +85,7 @@ func TestFunctionRight(t *testing.T) {
 			got, err := Right(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionRight() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -135,6 +137,7 @@ func TestFunctionLower(t *testing.T) {
 			got, err := Lower(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLower() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -186,6 +189,7 @@ func TestFunctionUpper(t *testing.T) {
 			got, err := Upper(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionUpper() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -237,6 +241,7 @@ func TestFunctionSubstring(t *testing.T) {
 			got, err := Substring(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSubstring() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -308,6 +313,7 @@ func TestFunctionIndex(t *testing.T) {
 			got, err := Index(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionIndex() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

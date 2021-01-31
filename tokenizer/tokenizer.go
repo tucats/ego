@@ -23,21 +23,17 @@ const EndOfTokens = "<<end-of-tokens>>"
 // New creates a tokenizer instance and breaks the string
 // up into an array of tokens
 func New(src string) *Tokenizer {
-
 	t := Tokenizer{Source: splitLines(src), TokenP: 0}
 	t.Tokens = make([]string, 0)
 
 	var s scanner.Scanner
-
 	s.Init(strings.NewReader(src))
 	s.Error = func(s *scanner.Scanner, msg string) { /* suppress messaging */ }
 	s.Filename = "Input"
-
 	previousToken := ""
 	dots := 0
 
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-
 		// See if this is one of the special cases where we patch up the previous token
 		nextToken := s.TokenText()
 
@@ -46,6 +42,7 @@ func New(src string) *Tokenizer {
 			tlen := len(t.Tokens)
 			if t.Tokens[tlen-1] == "{" && t.Tokens[tlen-2] == "interface" {
 				t.Tokens = append(t.Tokens[:tlen-2], "interface{}")
+
 				continue
 			}
 		}
@@ -53,6 +50,7 @@ func New(src string) *Tokenizer {
 		// Make {} a single token
 		if nextToken == "}" && previousToken == "{" {
 			t.Tokens = append(t.Tokens[:len(t.Tokens)-1], "{}")
+
 			continue
 		}
 
@@ -62,6 +60,7 @@ func New(src string) *Tokenizer {
 			if dots == 3 {
 				t.Tokens = append(t.Tokens[:len(t.Tokens)-2], "...")
 				dots = 0
+
 				continue
 			}
 		} else {
@@ -73,6 +72,7 @@ func New(src string) *Tokenizer {
 			if util.InList(previousToken, "!", "<", ">", ":", "=") {
 				t.Tokens[len(t.Tokens)-1] = previousToken + nextToken
 				previousToken = ""
+
 				continue
 			}
 		}
@@ -81,6 +81,7 @@ func New(src string) *Tokenizer {
 		if nextToken == "-" && previousToken == "<" {
 			t.Tokens[len(t.Tokens)-1] = previousToken + nextToken
 			previousToken = ""
+
 			continue
 		}
 
@@ -88,6 +89,7 @@ func New(src string) *Tokenizer {
 			if previousToken == "-" {
 				t.Tokens[len(t.Tokens)-1] = previousToken + nextToken
 				previousToken = ""
+
 				continue
 			}
 		}
@@ -104,11 +106,11 @@ func New(src string) *Tokenizer {
 // PositionString reports the position of the current
 // token in terms of line and column information.
 func (t *Tokenizer) PositionString() string {
-
 	p := t.TokenP
 	if p >= len(t.Line) {
 		p = len(t.Line) - 1
 	}
+
 	return fmt.Sprintf(util.LineColumnFormat, t.Line[p], t.Pos[p])
 }
 
@@ -119,6 +121,7 @@ func (t *Tokenizer) Next() string {
 	}
 	token := t.Tokens[t.TokenP]
 	t.TokenP = t.TokenP + 1
+
 	return token
 }
 
@@ -127,6 +130,7 @@ func (t *Tokenizer) Peek(offset int) string {
 	if t.TokenP+(offset-1) >= len(t.Tokens) {
 		return EndOfTokens
 	}
+
 	return t.Tokens[t.TokenP+(offset-1)]
 }
 
@@ -151,8 +155,10 @@ func (t *Tokenizer) Advance(p int) {
 func (t *Tokenizer) IsNext(test string) bool {
 	if t.Peek(1) == test {
 		t.Advance(1)
+
 		return true
 	}
+
 	return false
 }
 
@@ -165,16 +171,16 @@ func (t *Tokenizer) AnyNext(test ...string) bool {
 	for _, v := range test {
 		if n == v {
 			t.Advance(1)
+
 			return true
 		}
 	}
+
 	return false
 }
 
 func stripComments(source string) string {
-
 	var result strings.Builder
-
 	ignore := false
 	startOfLine := true
 	for _, c := range source {
@@ -199,17 +205,17 @@ func stripComments(source string) string {
 
 // IsSymbol is a utility function to determine if a token is a symbol name.
 func IsSymbol(s string) bool {
-
 	for n, c := range s {
 		if isLetter(c) {
 			continue
 		}
-
 		if isDigit(c) && n > 0 {
 			continue
 		}
+
 		return false
 	}
+
 	return true
 }
 
@@ -219,16 +225,17 @@ func isLetter(c rune) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 func isDigit(c rune) bool {
-
 	for _, d := range "0123456789" {
 		if c == d {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -236,22 +243,20 @@ func isDigit(c rune) bool {
 // This actuals refers to the original line splits done when the
 // source was first received.
 func (t *Tokenizer) GetLine(line int) string {
-
 	if line < 1 || line > len(t.Source) {
 		return ""
 	}
+
 	return t.Source[line-1]
 }
 
 // splitLines splits a string by line endings, and returns the
 // source as an array of strings.
 func splitLines(src string) []string {
-
 	// Are we seeing Windows-style line endings? If so, use that as
 	// the split boundary.
 	if strings.Index(src, "\r\n") > 0 {
 		return strings.Split(src, "\r\n")
-
 	}
 
 	// Otherwise, simple split by new-line works fine.
@@ -264,6 +269,7 @@ func (t *Tokenizer) GetSource() string {
 	for _, line := range t.Source {
 		r = r + line + "\n"
 	}
+
 	return r
 }
 
@@ -293,5 +299,6 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 			s.WriteRune(' ')
 		}
 	}
+
 	return s.String()
 }

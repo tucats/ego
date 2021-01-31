@@ -26,7 +26,6 @@ var Realm string
 // the directorie(s) found to identify ".ego" programs that can be defined as
 // available service endpoints.
 func DefineLibHandlers(root string, subpath string) error {
-
 	paths := make([]string, 0)
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
@@ -73,6 +72,7 @@ func IsRunning(pid int) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -91,6 +91,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 	if err == nil {
 		err = json.Unmarshal(b, &status)
 	}
+
 	return &status, err
 }
 
@@ -105,13 +106,13 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	if err == nil {
 		err = os.Chmod(fn, 0600)
 	}
+
 	return err
 }
 
 // Use the --port specifiation, if any, to create a platform-specific
 // filename for the pid
 func getPidFileName(c *cli.Context) string {
-
 	port, ok := c.GetInteger("port")
 	portString := fmt.Sprintf("-%d", port)
 	if !ok {
@@ -123,6 +124,6 @@ func getPidFileName(c *cli.Context) string {
 	if strings.HasPrefix(runtime.GOOS, "windows") {
 		pidPath = "\\tmp\\"
 	}
-	return filepath.Join(pidPath, "ego-server"+portString+".pid")
 
+	return filepath.Join(pidPath, "ego-server"+portString+".pid")
 }

@@ -16,6 +16,7 @@ func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if v == nil {
 		return nil, NewError("int", InvalidTypeError)
 	}
+
 	return v.(int), nil
 }
 
@@ -25,6 +26,7 @@ func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if v == nil {
 		return nil, NewError("float", InvalidValueError, args[0])
 	}
+
 	return v.(float64), nil
 }
 
@@ -39,6 +41,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		for _, v := range array {
 			if _, ok := v.(string); !ok {
 				isString = false
+
 				break
 			}
 		}
@@ -50,9 +53,11 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				}
 				b.WriteString(v.(string))
 			}
+
 			return b.String(), nil
 		}
 	}
+
 	return util.GetString(args[0]), nil
 }
 
@@ -62,6 +67,7 @@ func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if v == nil {
 		return nil, NewError("bool", InvalidValueError, args[0])
 	}
+
 	return v.(bool), nil
 }
 
@@ -73,6 +79,7 @@ func Coerce(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // Normalize coerces a value to match the type of a model value
 func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := util.Normalize(args[0], args[1])
+
 	return []interface{}{v1, v2}, nil
 }
 
@@ -180,7 +187,6 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // DeepCopy makes a deep copy of an Ego data type
 func DeepCopy(source interface{}, depth int) interface{} {
-
 	if depth < 0 {
 		return nil
 	}
@@ -201,6 +207,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 		for _, d := range v {
 			r = append(r, DeepCopy(d, depth-1))
 		}
+
 		return r
 
 	case map[string]interface{}:
@@ -208,6 +215,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 		for k, d := range v {
 			r[k] = DeepCopy(d, depth-1)
 		}
+
 		return r
 
 	default:

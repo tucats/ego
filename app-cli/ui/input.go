@@ -47,5 +47,6 @@ func PromptPassword(p string) string {
 // is used to manage prompts, etc.
 func IsConsolePipe() bool {
 	fi, _ := os.Stdin.Stat() // get the FileInfo struct describing the standard input.
+
 	return (fi.Mode() & os.ModeCharDevice) == 0
 }

@@ -25,6 +25,7 @@ func FormatUnquoted(arg interface{}) string {
 	switch v := arg.(type) {
 	case string:
 		return v
+
 	default:
 		return Format(v)
 	}
@@ -43,19 +44,26 @@ func Format(arg interface{}) string {
 	switch v := arg.(type) {
 	case *datatypes.Channel:
 		return v.String()
+
 	case error:
 		return fmt.Sprintf("%v", v)
+
 	case int:
 		return fmt.Sprintf("%d", v)
+
 	case int64:
 		return fmt.Sprintf("%d", v)
+
 	case bool:
 		if v {
 			return "true"
 		}
+
 		return "false"
+
 	case float64:
 		return fmt.Sprintf("%v", v)
+
 	case map[string]interface{}:
 		var b strings.Builder
 		// Make a list of the keys, ignoring hidden members whose name
@@ -67,7 +75,6 @@ func Format(arg interface{}) string {
 			}
 		}
 		sort.Strings(keys)
-
 		b.WriteString("{")
 		for n, k := range keys {
 			i := v[k]
@@ -80,12 +87,12 @@ func Format(arg interface{}) string {
 			b.WriteString(Format(i))
 		}
 		b.WriteString(" }")
+
 		return b.String()
 
 	case []interface{}:
 		var b strings.Builder
 		b.WriteRune('[')
-
 		for n, i := range v {
 			if n > 0 {
 				b.WriteString(", ")
@@ -93,6 +100,7 @@ func Format(arg interface{}) string {
 			b.WriteString(Format(i))
 		}
 		b.WriteRune(']')
+
 		return b.String()
 
 	case string:
@@ -108,6 +116,7 @@ func Format(arg interface{}) string {
 				name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
 				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
+
 				return "builtin " + name
 			} else {
 				return "builtin"
@@ -123,17 +132,20 @@ func Format(arg interface{}) string {
 				e := reflect.ValueOf(v).Elem()
 				if ui.DebugMode {
 					name := GetString(e.Field(0).Interface())
+
 					return "func " + name
 				} else {
 					return "func"
 				}
 			}
+
 			return fmt.Sprintf("ptr %s", ts)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {
 			e := reflect.ValueOf(v).Field(0)
 			name := GetString(e.Interface())
+
 			return fmt.Sprintf("<%s>", name)
 		}
 
@@ -142,12 +154,14 @@ func Format(arg interface{}) string {
 			module := GetString(e.Interface())
 			e = reflect.ValueOf(v).Field(1)
 			line := GetInt(e.Interface())
+
 			return fmt.Sprintf("<frame %s:%d>", module, line)
 		}
 
 		if ui.DebugMode {
 			return fmt.Sprintf("kind %v %#v", vv.Kind(), v)
 		}
+
 		return fmt.Sprintf("kind %v %v", vv.Kind(), v)
 	}
 }

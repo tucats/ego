@@ -18,16 +18,16 @@ import (
 // UserHandler is the rest handler for /admin/user endpoint
 // operations
 func UserHandler(w http.ResponseWriter, r *http.Request) {
-
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
 
 	user, hasAdminPrivs := isAdminRequestor(r)
 	if !hasAdminPrivs {
 		ui.Debug(ui.ServerLogger, "User %s not authorized", user)
-		w.WriteHeader(403)
+		w.WriteHeader(http.StatusForbidden)
 		msg := `{ "status" : 403, "msg" : "Not authorized" }`
 		_, _ = io.WriteString(w, msg)
+
 		return
 	}
 
@@ -36,6 +36,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
+
 		return
 	}
 
@@ -46,7 +47,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		// Get the payload which must be a user spec in JSON
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(r.Body)
-
 		err = json.Unmarshal(buf.Bytes(), &u)
 		name = u.Name
 	} else {
@@ -63,7 +63,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		s := symbols.NewSymbolTable(r.URL.Path)
 		_ = s.SetAlways("_superuser", true)
 		switch strings.ToUpper(r.Method) {
-
 		// UPDATE OR CREATE A USER
 		case "POST":
 			args := map[string]interface{}{
@@ -79,22 +78,22 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				args["permissions"] = perms
 			}
-			//i.Debug(ui.ServerLogger, "Post object %#v", args)
 			_, err = SetUser(s, []interface{}{args})
 			u := userDatabase[name]
 			u.Name = name
 			response := defs.UserReponse{
 				User: u,
 				RestResponse: defs.RestResponse{
-					Status:  200,
+					Status:  http.StatusOK,
 					Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
 				},
 			}
 			if err == nil {
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				msg, _ := json.Marshal(response)
 				_, _ = io.WriteString(w, string(msg))
 				ui.Debug(ui.ServerLogger, "200 Success")
+
 				return
 			}
 
@@ -102,10 +101,11 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		case "DELETE":
 			u, exists := userDatabase[name]
 			if !exists {
-				w.WriteHeader(404)
+				w.WriteHeader(http.StatusNotFound)
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
 				ui.Debug(ui.ServerLogger, "404 No such user")
+
 				return
 			}
 			// Clear the password for the return response object
@@ -113,37 +113,38 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			response := defs.UserReponse{
 				User: u,
 				RestResponse: defs.RestResponse{
-					Status:  200,
+					Status:  http.StatusOK,
 					Message: fmt.Sprintf("successfully deleted user '%s'", name),
 				},
 			}
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
 			if err == nil && !util.GetBool(v) {
-				w.WriteHeader(404)
+				w.WriteHeader(http.StatusNotFound)
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
 				ui.Debug(ui.ServerLogger, "404 No such user")
+
 				return
 			}
 			if err == nil {
 				b, _ := json.Marshal(response)
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(b)
 				ui.Debug(ui.ServerLogger, "200 Success")
+
 				return
 			}
 
 		// GET A COLLECTION OR A SPECIFIC USER
 		case "GET":
 			// If it's a single user, do that.
-
 			if name != "" {
-				status := 200
+				status := http.StatusOK
 				msg := "Success"
 				u.Password = ""
 				if u.ID == uuid.Nil {
-					status = 404
+					status = http.StatusNotFound
 					msg = "User not found"
 				}
 				result := defs.UserReponse{
@@ -158,14 +159,14 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(status)
 				_, _ = w.Write(b)
 				ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", status, msg))
+
 				return
 			}
 
 			result := defs.UserCollection{
 				Items: []defs.User{},
 			}
-			result.Status = 200
-
+			result.Status = http.StatusOK
 			for k, u := range userDatabase {
 				ud := defs.User{}
 				ud.Name = k
@@ -177,9 +178,10 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			result.Start = 0
 
 			b, _ := json.Marshal(result)
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write(b)
 			ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result.Items))
+
 			return
 		}
 	}
@@ -189,26 +191,24 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	msg := `{ "status" : 500, "msg" : "%s"`
 	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
 	ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
-
 }
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint
 func CachesHandler(w http.ResponseWriter, r *http.Request) {
-
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
 
 	user, hasAdminPrivs := isAdminRequestor(r)
 	if !hasAdminPrivs {
 		ui.Debug(ui.ServerLogger, "User %s not authorized", user)
-		w.WriteHeader(403)
+		w.WriteHeader(http.StatusForbidden)
 		msg := `{ "status" : 403, "msg" : "Not authorized" }`
 		_, _ = io.WriteString(w, msg)
+
 		return
 	}
 
 	switch r.Method {
-
 	case "POST":
 		var result defs.CacheResponse
 		buf := new(bytes.Buffer)
@@ -222,22 +222,23 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			result.Status = 400
 			result.Message = err.Error()
 		} else {
-
 			result = defs.CacheResponse{
 				Count: len(serviceCache),
 				Limit: MaxCachedEntries,
 				Items: []defs.CachedItem{},
 			}
-			result.Status = 200
+			result.Status = http.StatusOK
 			result.Message = "Success"
 
 			for k, v := range serviceCache {
 				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
 			}
 		}
+
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status, result.Message))
+
 		return
 
 	// Get the list of cached items.
@@ -247,7 +248,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
-		result.Status = 200
+		result.Status = http.StatusOK
 		result.Message = "Success"
 
 		for k, v := range serviceCache {
@@ -257,30 +258,33 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 		ui.Debug(ui.ServerLogger, "200 Success")
+
 		return
 
 	// DELETE the cached service compilation units. In-flight services
 	// are unaffected.
 	case "DELETE":
 		serviceCache = map[string]cachedCompilationUnit{}
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		result := defs.CacheResponse{
 			Count: 0,
 			Limit: MaxCachedEntries,
 			Items: []defs.CachedItem{},
 		}
-		result.Status = 200
+		result.Status = http.StatusOK
 		result.Message = "Success"
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 		ui.Debug(ui.ServerLogger, "200 Success")
+
 		return
 
 	default:
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
+
 		return
 	}
 }
@@ -293,6 +297,7 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		ui.Debug(ui.ServerLogger, "No authentication credentials given")
+
 		return "<invalid>", false
 	}
 

@@ -46,7 +46,6 @@ var typeMap = []TypeDefinition{
 }
 
 func (c *Compiler) Make() error {
-
 	if !c.t.IsNext("make") {
 		return c.NewError(UnexpectedTokenError, c.t.Peek(1))
 	}
@@ -69,6 +68,7 @@ func (c *Compiler) Make() error {
 			if found {
 				c.t.Advance(len(typeDef.tokens))
 				c.b.Emit(bytecode.Push, typeDef.model)
+
 				break
 			}
 		}
@@ -85,5 +85,6 @@ func (c *Compiler) Make() error {
 	if err == nil && !c.t.IsNext(")") {
 		err = c.NewError(MissingParenthesisError)
 	}
+
 	return err
 }

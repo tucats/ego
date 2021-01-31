@@ -7,12 +7,12 @@ import (
 // ValidKeyword does a case-insensitive compare of a string containing
 // a keyword against a list of possible stirng values.
 func ValidKeyword(test string, valid []string) bool {
-
 	for _, v := range valid {
 		if strings.EqualFold(test, v) {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -21,12 +21,12 @@ func ValidKeyword(test string, valid []string) bool {
 // is found, it's position in the list is returned. If it was not found,
 // the value returned is -1
 func FindKeyword(test string, valid []string) int {
-
 	for n, v := range valid {
 		if strings.EqualFold(test, v) {
 			return n
 		}
 	}
+
 	return -1
 }
 
@@ -48,6 +48,7 @@ func ValidateBoolean(value string) (bool, bool) {
 			}
 		}
 	}
+
 	return false, false
 }
 
@@ -61,6 +62,7 @@ func MakeList(value string) []string {
 	for n := 0; n < len(list); n++ {
 		list[n] = strings.TrimSpace(list[n])
 	}
+
 	return list
 }
 
@@ -71,6 +73,6 @@ func (c *Context) FindGlobal() *Context {
 	if c.Parent == nil {
 		return c
 	}
-	return c.Parent.FindGlobal()
 
+	return c.Parent.FindGlobal()
 }

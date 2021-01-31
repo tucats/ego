@@ -19,7 +19,6 @@ var consoleLock sync.Mutex
 
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
-
 	useReadLine := persistence.GetBool(defs.UseReadline)
 
 	// If readline has been explicitly disabled for some reason,
@@ -27,9 +26,7 @@ func ReadConsoleText(prompt string) string {
 	// TODO this entire functionality could probably be moved
 	// into ui.Prompt() at some point.
 	if !useReadLine {
-
 		var b strings.Builder
-
 		reading := true
 		line := 1
 
@@ -48,6 +45,7 @@ func ReadConsoleText(prompt string) string {
 			b.WriteString(text)
 			b.WriteString("\n")
 		}
+
 		return b.String()
 	}
 
@@ -71,11 +69,12 @@ func ReadConsoleText(prompt string) string {
 
 	if len(prompt) > 1 && prompt[:1] == "~" {
 		b, _ := consoleReader.ReadPassword(prompt[1:])
+
 		return string(b)
 	}
 	// Set the prompt string and do the read. We ignore errors.
 	consoleReader.SetPrompt(prompt)
 	result, _ := consoleReader.Readline()
-	return result + "\n"
 
+	return result + "\n"
 }

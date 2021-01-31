@@ -16,7 +16,7 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"read existing config", args{application: "cli-driver", name: "default"}, false},
-		{"read non-existant config", args{application: "no-such-app", name: "default"}, true},
+		{"read non-existent config", args{application: "no-such-app", name: "default"}, true},
 		// TODO: Add test cases.
 	}
 

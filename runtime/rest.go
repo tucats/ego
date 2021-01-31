@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -15,11 +16,66 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// This maps HTTP status codes to a message string.
+var codes = map[int]string{
+	http.StatusContinue:                     "Continue",
+	http.StatusSwitchingProtocols:           "Switching protocol",
+	http.StatusProcessing:                   "Processing",
+	http.StatusEarlyHints:                   "Early hints",
+	http.StatusOK:                           "OK",
+	http.StatusCreated:                      "Created",
+	http.StatusAccepted:                     "Accepted",
+	http.StatusNonAuthoritativeInfo:         "Non-authoritative information",
+	http.StatusNoContent:                    "No content",
+	http.StatusResetContent:                 "Reset content",
+	http.StatusPartialContent:               "Partial content",
+	http.StatusMultiStatus:                  "Multi-status",
+	http.StatusAlreadyReported:              "Already reported",
+	http.StatusIMUsed:                       "IM Used",
+	http.StatusMultipleChoices:              "Multiple choice",
+	http.StatusMovedPermanently:             "Moved permanently",
+	http.StatusFound:                        "Found",
+	http.StatusSeeOther:                     "See other",
+	http.StatusNotModified:                  "Not modified",
+	http.StatusUseProxy:                     "Use proxy",
+	http.StatusTemporaryRedirect:            "Temporary redirect",
+	http.StatusPermanentRedirect:            "Permanent redirect",
+	http.StatusBadRequest:                   "Bad request",
+	http.StatusUnauthorized:                 "Unauthorized",
+	http.StatusPaymentRequired:              "Payment required",
+	http.StatusForbidden:                    "Forbidden",
+	http.StatusNotFound:                     "Not found",
+	http.StatusMethodNotAllowed:             "Method not allowed",
+	http.StatusNotAcceptable:                "Not acceptable",
+	http.StatusProxyAuthRequired:            "Proxy authorization required",
+	http.StatusRequestTimeout:               "Request timeout",
+	http.StatusConflict:                     "Conflict",
+	http.StatusGone:                         "Gone",
+	http.StatusLengthRequired:               "Length required",
+	http.StatusPreconditionFailed:           "Precondition failed",
+	http.StatusRequestEntityTooLarge:        "Payload too large",
+	http.StatusRequestURITooLong:            "URI too long",
+	http.StatusUnsupportedMediaType:         "Unsupported media type",
+	http.StatusRequestedRangeNotSatisfiable: "Range not satisfiable",
+	http.StatusExpectationFailed:            "Expectation failed",
+	http.StatusTeapot:                       "I'm a teapot",
+	http.StatusMisdirectedRequest:           "Misdirected request",
+	http.StatusUnprocessableEntity:          "Unprocessable entity",
+	http.StatusLocked:                       "Locked",
+	http.StatusFailedDependency:             "Failed dependency",
+	http.StatusTooEarly:                     "Too early",
+	http.StatusUpgradeRequired:              "Upgrade required",
+	http.StatusPreconditionRequired:         "Precondition required",
+	http.StatusTooManyRequests:              "Too many requests",
+	http.StatusRequestHeaderFieldsTooLarge:  "Request header fields too large",
+	http.StatusUnavailableForLegalReasons:   "Unavilable for legal reasons",
+	http.StatusInternalServerError:          "Internal server error",
+	http.StatusServiceUnavailable:           "Unavailable",
+}
+
 // RestNew implements the New() rest function
 func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	client := resty.New()
-
 	if len(args) == 2 {
 		username := util.GetString(args[0])
 		password := util.GetString(args[1])
@@ -74,62 +130,8 @@ func applyBaseURL(url string, this map[string]interface{}) string {
 		}
 		url = base + url
 	}
-	return url
-}
 
-// This maps HTTP status codes to a message string.
-var codes = map[int]string{
-	100: "Continue",
-	101: "Switching protocol",
-	102: "Processing",
-	103: "Early hints",
-	200: "OK",
-	201: "Created",
-	202: "Accepted",
-	203: "Non-authoritative information",
-	204: "No content",
-	205: "Reset content",
-	206: "Partial content",
-	207: "Multi-status",
-	208: "Already reported",
-	226: "IM Used",
-	300: "Multiple choice",
-	301: "Moved permanently",
-	302: "Found",
-	303: "See other",
-	304: "Not modified",
-	305: "Use proxy",
-	307: "Temporary redirect",
-	308: "Permanent redirect",
-	400: "Bad request",
-	401: "Unauthorized",
-	402: "Payment required",
-	403: "Forbidden",
-	404: "Not found",
-	405: "Method not allowed",
-	406: "Not acceptable",
-	407: "Proxy authorization required",
-	408: "Request timeout",
-	409: "Conflict",
-	410: "Gone",
-	411: "Length required",
-	412: "Precondition failed",
-	413: "Payload too large",
-	414: "URI too long",
-	415: "Unsupported media type",
-	416: "Range not satisfiable",
-	417: "Expectation failed",
-	418: "I'm a teapot",
-	421: "Misdirected request",
-	422: "Unprocessable entity",
-	423: "Locked",
-	424: "Failed dependency",
-	425: "Too early",
-	426: "Upgrade required",
-	428: "Precondition required",
-	429: "Too many requests",
-	431: "Request header fields too large",
-	451: "Unavilable for legal reasons",
+	return url
 }
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -140,6 +142,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 	if text, ok := codes[code]; ok {
 		return text, nil
 	}
+
 	return fmt.Sprintf("HTTP status %d", code), nil
 }
 
@@ -175,14 +178,13 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, err
 	}
 	this := getThis(s)
-
 	verify := true
 	if len(args) == 1 {
 		verify = util.GetBool(args[0])
 	}
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
-
 	this["verify"] = verify
+
 	return this, nil
 }
 
@@ -200,8 +202,8 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	} else {
 		base = persistence.Get(defs.LogonServerSetting)
 	}
-
 	this["baseURL"] = base
+
 	return this, nil
 }
 
@@ -218,6 +220,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	user := util.GetString(args[0])
 	pass := util.GetString(args[1])
 	r.SetBasicAuth(user, pass)
+
 	return this, nil
 }
 
@@ -231,12 +234,12 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if len(args) > 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
-
 	token := persistence.Get(defs.LogonTokenSetting)
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
 	r.SetAuthToken(token)
+
 	return this, nil
 }
 
@@ -248,8 +251,8 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 	this := getThis(s)
 	media := util.GetString(args[0])
-
 	this["media_type"] = media
+
 	return this, nil
 }
 
@@ -276,7 +279,8 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	response, err := r.Get(url)
 	if err != nil {
-		this["status"] = 503
+		this["status"] = http.StatusServiceUnavailable
+
 		return nil, err
 	}
 
@@ -286,13 +290,15 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["headers"] = headerMap(response)
 
 	rb := string(response.Body())
-	if isJSON && ((status >= 200 && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
+	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
+
 		return jsonResponse, err
 	}
 	this["response"] = rb
+
 	return rb, nil
 }
 
@@ -310,6 +316,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
 		cookie["path"] = v.Path
 		result[i] = cookie
 	}
+
 	return result
 }
 
@@ -324,6 +331,7 @@ func headerMap(response *resty.Response) map[string]interface{} {
 		vs = strings.TrimPrefix(strings.TrimSuffix(vs, "]"), "[")
 		headers[k] = vs
 	}
+
 	return headers
 }
 
@@ -369,7 +377,8 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	response, err := r.Post(url)
 	if err != nil {
-		this["status"] = 503
+		this["status"] = http.StatusServiceUnavailable
+
 		return nil, err
 	}
 
@@ -383,9 +392,11 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
+
 		return jsonResponse, err
 	}
 	this["response"] = rb
+
 	return rb, nil
 }
 
@@ -428,7 +439,8 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 	response, err := r.Delete(url)
 	if err != nil {
-		this["status"] = 503
+		this["status"] = http.StatusServiceUnavailable
+
 		return nil, err
 	}
 
@@ -442,9 +454,11 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
+
 		return jsonResponse, err
 	}
 	this["response"] = rb
+
 	return rb, nil
 }
 
@@ -459,6 +473,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 					if cp == nil {
 						return nil, errors.New("rest client was closed")
 					}
+
 					return cp, nil
 				}
 			}
@@ -466,7 +481,6 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 	}
 
 	return nil, errors.New(defs.NoFunctionReceiver)
-
 }
 
 func released(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -484,6 +498,7 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 	if !ok {
 		return nil
 	}
+
 	return this
 }
 
@@ -497,7 +512,6 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	if url == "" {
 		url = "http://localhost:8080"
 	}
-
 	url = strings.TrimSuffix(url, "/") + endpoint
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
@@ -523,9 +537,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	status := resp.StatusCode()
 
 	switch status {
-	case 403:
+	case http.StatusForbidden:
 		err = errors.New(defs.NoPrivilegeForOperation)
-	case 404:
+
+	case http.StatusNotFound:
 		err = errors.New(defs.NotFound)
 	}
 
@@ -541,5 +556,6 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 		}
 		err = json.Unmarshal([]byte(body), response)
 	}
+
 	return err
 }

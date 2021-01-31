@@ -18,6 +18,7 @@ func (c *Compiler) Assignment() error {
 	}
 	c.b.Append(expressionCode)
 	c.b.Append(storeLValue)
+
 	return nil
 
 }

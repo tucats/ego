@@ -121,6 +121,7 @@ func TestCompile(t *testing.T) {
 			bc, err := c.Compile("unit test", tokens)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compile() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			opcodes := bc.Opcodes()

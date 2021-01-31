@@ -15,7 +15,6 @@ import (
 
 // Print will output a table using current rows and format specifications.
 func (t *Table) Print(format string) error {
-
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
 		_ = t.SortRows(t.orderBy, t.ascending)
@@ -46,12 +45,12 @@ func (t *Table) Print(format string) error {
 	default:
 		return errors.New("Invalid table format value")
 	}
+
 	return nil
 }
 
 // FormatJSON will produce the text of the table as JSON
 func (t *Table) FormatJSON() string {
-
 	var buffer strings.Builder
 	var e *expressions.Expression
 	var firstRow = true
@@ -79,6 +78,7 @@ func (t *Table) FormatJSON() string {
 			v, err := e.Eval(symbols)
 			if err != nil {
 				buffer.WriteString(fmt.Sprintf("*** where clause error: %s", err.Error()))
+
 				break
 			}
 			if !util.GetBool(v) {
@@ -112,12 +112,12 @@ func (t *Table) FormatJSON() string {
 
 	}
 	buffer.WriteRune(']')
+
 	return buffer.String()
 }
 
 // FormatText will output a table using current rows and format specifications.
 func (t *Table) FormatText() []string {
-
 	ui.Debug(ui.AppLogger, "Print column order: %v", t.columnOrder)
 	output := make([]string, 0)
 
@@ -165,7 +165,6 @@ func (t *Table) FormatText() []string {
 	}
 
 	for i, r := range t.rows {
-
 		if i < t.startingRow {
 			continue
 		}
@@ -186,6 +185,7 @@ func (t *Table) FormatText() []string {
 			v, err := e.Eval(symbols)
 			if err != nil {
 				output = append(output, fmt.Sprintf("*** where clause error: %s", err.Error()))
+
 				break
 			}
 			if !util.GetBool(v) {
@@ -210,7 +210,6 @@ func (t *Table) FormatText() []string {
 }
 
 func AlignText(text string, width int, alignment int) string {
-
 	if len(text) >= width {
 		switch alignment {
 		case AlignmentLeft:
@@ -218,8 +217,10 @@ func AlignText(text string, width int, alignment int) string {
 
 		case AlignmentRight:
 			return text[len(text)-width:]
+
 		case AlignmentCenter:
 			pos := len(text)/2 - (width / 2)
+
 			return text[pos : pos+width]
 
 		default:
@@ -230,10 +231,12 @@ func AlignText(text string, width int, alignment int) string {
 	switch alignment {
 	case AlignmentRight:
 		r := pad + text
+
 		return r[len(r)-width:]
 
 	case AlignmentLeft:
 		r := text + pad
+
 		return r[:width]
 
 	case AlignmentCenter:
@@ -247,10 +250,12 @@ func AlignText(text string, width int, alignment int) string {
 			}
 			left = !left
 		}
+
 		return r
 
 	default: // same as AlignmentLeft
 		r := text + pad
+
 		return r[:width]
 	}
 }

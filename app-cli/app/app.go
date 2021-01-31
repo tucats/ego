@@ -34,6 +34,7 @@ func New(appName string) App {
 		appName = strings.TrimSpace(appName[:i])
 	}
 	app := App{Name: appName, Description: appDescription}
+
 	return app
 }
 
@@ -56,6 +57,7 @@ func (app *App) SetCopyright(s string) {
 // parsing options.
 func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) error) error {
 	app.Action = action
+
 	return app.Run(grammar, args)
 }
 
@@ -72,5 +74,6 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 		Args:        args,
 		Action:      app.Action,
 	}
+
 	return runFromContext(app.Context)
 }

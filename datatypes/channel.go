@@ -53,13 +53,15 @@ func (c *Channel) Send(datum interface{}) error {
 		ui.Debug(ui.ByteCodeLogger, "--> Sending on %s", c.String())
 		c.count++
 		c.channel <- datum
+
 		return nil
 	}
+
 	return errors.New(ChannelNotOpenError)
 }
 
 // Receive accepts an arbitrary data object through the channel, waiting
-// if there is no information avaialble yet. If it's not open, we also
+// if there is no information available yet. If it's not open, we also
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, error) {
@@ -70,6 +72,7 @@ func (c *Channel) Receive() (interface{}, error) {
 	ui.Debug(ui.ByteCodeLogger, "--> Receiving on %s", c.String())
 	datum := <-c.channel
 	c.count--
+
 	return datum, nil
 }
 
@@ -99,6 +102,7 @@ func (c *Channel) Close() bool {
 	wasActive := c.isOpen
 	close(c.channel)
 	c.isOpen = false
+
 	return wasActive
 }
 
@@ -107,6 +111,7 @@ func (c *Channel) String() string {
 	if !c.isOpen {
 		state = "closed"
 	}
+
 	return fmt.Sprintf("chan(%s, size %d(%d), id %s)",
 		state, c.size, c.count, c.id)
 }

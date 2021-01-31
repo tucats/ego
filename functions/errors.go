@@ -46,11 +46,11 @@ type Error struct {
 
 // NewError generates a new error
 func NewError(fn, msg string, args ...interface{}) *Error {
-
 	token := ""
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
+
 	return &Error{
 		text:   msg,
 		token:  token,
@@ -60,7 +60,6 @@ func NewError(fn, msg string, args ...interface{}) *Error {
 
 // Error produces an error string from this object.
 func (e Error) Error() string {
-
 	var b strings.Builder
 
 	b.WriteString("function error in ")
@@ -71,15 +70,15 @@ func (e Error) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.token)
 	}
+
 	return b.String()
 }
 
 func NewErrorFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	fmtString := util.GetString(args[0])
-
 	if len(args) == 1 {
 		return errors.New(fmtString), nil
 	}
+
 	return fmt.Errorf(fmtString, args[1:]...), nil
 }

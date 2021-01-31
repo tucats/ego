@@ -119,15 +119,12 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbols *symbols.SymbolTable) {
-
 	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbols.Name)
 	for n, d := range FunctionDictionary {
-
 		if dot := strings.Index(n, "."); dot >= 0 {
 			d.Pkg = n[:dot]
 			n = n[dot+1:]
 		}
-
 		if d.Pkg == "" {
 			_ = symbols.SetAlways(n, d.F)
 		} else {
@@ -159,9 +156,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 // FindFunction returns the function definition associated with the
 // provided function pointer, if one is found.
 func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) *FunctionDefinition {
-
 	sf1 := reflect.ValueOf(f)
-
 	for _, d := range FunctionDictionary {
 		if d.F != nil { // Only function entry points have an F value
 			sf2 := reflect.ValueOf(d.F)
@@ -170,14 +165,13 @@ func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, erro
 			}
 		}
 	}
+
 	return nil
 }
 
 // FindName returns the name of a function from the dictionary if one is found
 func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) string {
-
 	sf1 := reflect.ValueOf(f)
-
 	for name, d := range FunctionDictionary {
 		if d.F != nil {
 			sf2 := reflect.ValueOf(d.F)
@@ -191,7 +185,6 @@ func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) 
 }
 
 func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
-
 	// Search the dictionary for a name match
 	var fdef = FunctionDefinition{}
 	found := false
@@ -213,5 +206,6 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	if !ok {
 		return nil, fmt.Errorf("unable to convert %#v to function pointer", fdef.F)
 	}
+
 	return fn(s, args)
 }

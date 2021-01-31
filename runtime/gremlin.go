@@ -17,6 +17,27 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+type column struct {
+	Name           string `json:"name"`
+	FormattedWidth int    `json:"formattedWidth"`
+	Kind           int    `json:"kind"`
+	KindName       string `json:"kindName"`
+}
+
+type Row []interface{}
+
+type jsonData struct {
+	Columns []column `json:"columns"`
+	Rows    []Row    `json:"rows"`
+}
+
+// GremlinColumn describes everything we know about a column in a gremlin
+// result set.
+type GremlinColumn struct {
+	Name string
+	Type int
+}
+
 var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.Bool:          "bool",
 	reflect.Int:           "int",
@@ -48,9 +69,7 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 
 // GremlinOpen opens a gremlin connetion and stores it in the result value
 func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var username, password string
-
 	var url string
 	if len(args) == 0 {
 		url = "ws://localhost:8182/gremlin"
@@ -84,12 +103,10 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 			datatypes.ReadonlyMDKey: true,
 		},
 	}, err
-
 }
 
 // GremlinQuery executes a string query against an open client
 func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	client, err := getGremlinClient(symbols)
 	if err != nil {
 		return nil, err
@@ -102,17 +119,16 @@ func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}
 	if err != nil {
 		return nil, err
 	}
+
 	return gremlinResult(string(res[0]))
 }
 
 // GremlinQueryMap executes a string query against an open client. The
 // result is then normalized against a map provided by the user.
 func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
-
 	var m interface{}
 	var err error
 
@@ -143,13 +159,6 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 	return gremlinApplyMap(r, m)
 }
 
-type column struct {
-	Name           string `json:"name"`
-	FormattedWidth int    `json:"formattedWidth"`
-	Kind           int    `json:"kind"`
-	KindName       string `json:"kindName"`
-}
-
 // AsJSON executes a query and constructs a JSON string that represents the
 // resulting result set. This is similar to using QueryMap followed by Table but
 // generating JSON instead of a formatted text output.
@@ -176,14 +185,6 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-
-	type Row []interface{}
-
-	type jsonData struct {
-		Columns []column `json:"columns"`
-		Rows    []Row    `json:"rows"`
-	}
-
 	r := jsonData{}
 
 	// Construct a list of the columns.
@@ -224,14 +225,13 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		}
 		r.Rows = append(r.Rows, rs)
 	}
-
 	bytes, err := json.Marshal(r)
+
 	return string(bytes), err
 }
 
 // Table generates a string describing a rectangular result map
 func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -253,7 +253,6 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-
 	columns := []column{}
 	for _, k := range keys {
 		v := row[k]
@@ -331,7 +330,6 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
-
 	g, ok := symbols.Get("__this")
 	if !ok {
 		return nil, errors.New(defs.NoFunctionReceiver)
@@ -348,21 +346,14 @@ func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
 	if !ok {
 		return nil, errors.New(defs.InvalidGremlinClient)
 	}
-	return cp, nil
-}
 
-// GremlinColumn describes everything we know about a column in a gremlin
-// result set.
-type GremlinColumn struct {
-	Name string
-	Type int
+	return cp, nil
 }
 
 // GremlinMap accepts an opaque object and creates a map of the columns and most-compatible
 // types for the columns. This is a precursor to being able to view a gremlin result set as a
 // tabular result.
 func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -376,8 +367,10 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		if err != nil {
 			return nil, err
 		}
+
 	case map[string]interface{}:
 		r = []interface{}{r}
+
 	case []interface{}:
 		// do nothing
 	default:
@@ -385,7 +378,6 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 
 	columns := map[string]GremlinColumn{}
-
 	for _, row := range r.([]interface{}) {
 		rowMap, ok := row.(map[string]interface{})
 		if !ok {
@@ -410,7 +402,6 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// Convert the column array set to a normalized form
 	rv := []interface{}{}
 	for _, v := range columns {
-
 		ts, ok := typeMap[reflect.Kind(v.Type)]
 		if !ok {
 			ts = fmt.Sprintf("Type %d", v.Type)
@@ -421,17 +412,18 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		}
 		rv = append(rv, rm)
 	}
+
 	return rv, nil
 }
 
 // Utility functions for Gremlin support
 func gremlinResult(str string) (interface{}, error) {
-
 	var r interface{}
 	err := json.Unmarshal([]byte(str), &r)
 	if err != nil {
 		return nil, err
 	}
+
 	return gremlinResultValue(r)
 }
 
@@ -439,11 +431,11 @@ func isNumeric(t int) bool {
 	if t >= int(reflect.Int) && t <= int(reflect.Complex128) {
 		return true
 	}
+
 	return false
 }
 
 func gremlinResultValue(i interface{}) (interface{}, error) {
-
 	switch m := i.(type) {
 	// The nil value
 	case nil:
@@ -452,14 +444,19 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 	// Native Ego types
 	case string:
 		return m, nil
+
 	case bool:
 		return m, nil
+
 	case int:
 		return m, nil
+
 	case int64:
 		return m, nil
+
 	case float32:
 		return m, nil
+
 	case float64:
 		return m, nil
 
@@ -469,6 +466,7 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 		switch m["@type"] {
 		case "g:UUID":
 			return v, nil // treat as string in the Go code
+
 		case "g:List":
 			r, err := gremlinResultArray(v)
 			if err != nil {
@@ -478,29 +476,37 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 			if ok && len(ra) == 1 {
 				r = ra[0]
 			}
+
 			return r, nil
+
 		case "g:Map":
 			return gremlinResultMapList(v)
+
 		case "g:Vertex":
 			return gremlinResultMap(v)
+
 		case "g:Int32":
 			return util.GetInt(v), nil
+
 		case "g:Int64":
 			i := util.GetInt64(v)
 			if math.Abs(float64(i)) > math.MaxInt32 {
 				return i, nil
 			}
+
 			return int(i), nil
 
 		case "gx:BigDecimal":
 			if r, ok := v.(float64); ok {
 				return r, nil
 			}
+
 			return nil, fmt.Errorf("unexpected gx:BigDecimal type %#v", v)
 
 		default:
 			return nil, fmt.Errorf("unexpected item type %s", m["@type"])
 		}
+
 	default:
 		return nil, fmt.Errorf("unexpected value %#v", m)
 	}
@@ -520,12 +526,12 @@ func gremlinResultArray(i interface{}) (interface{}, error) {
 		}
 		r = append(r, v)
 	}
+
 	return r, nil
 }
 
 func gremlinResultMapList(i interface{}) (interface{}, error) {
 	r := map[string]interface{}{}
-
 	a, ok := i.([]interface{})
 	if !ok {
 		return nil, errors.New(defs.InvalidResultSet)
@@ -539,6 +545,7 @@ func gremlinResultMapList(i interface{}) (interface{}, error) {
 		}
 		r[k] = v
 	}
+
 	return r, nil
 }
 
@@ -555,6 +562,7 @@ func gremlinResultMap(i interface{}) (interface{}, error) {
 			return nil, err
 		}
 	}
+
 	return r, nil
 }
 
@@ -568,7 +576,6 @@ func gremlinApplyMap(r interface{}, m interface{}) (interface{}, error) {
 	if columnList == nil {
 		return nil, errors.New(defs.InvalidStruct)
 	}
-
 	columns := map[string]string{}
 	for _, v := range columnList {
 		columnMap := util.GetMap(v)

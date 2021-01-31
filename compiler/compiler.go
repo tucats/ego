@@ -78,24 +78,28 @@ func New() *Compiler {
 		LowercaseIdentifiers: false,
 		extensionsEnabled:    persistence.GetBool(ExtensionsSetting),
 	}
+
 	return &cInstance
 }
 
 // If set to true, the compiler allows the EXIT statement
 func (c *Compiler) ExitEnabled(b bool) *Compiler {
 	c.exitEnabled = b
+
 	return c
 }
 
 // If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements
 func (c *Compiler) ExtensionsEnabled(b bool) *Compiler {
 	c.extensionsEnabled = b
+
 	return c
 }
 
 // WithTokens supplies the token stream to a compiler
 func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 	c.t = t
+
 	return c
 }
 
@@ -103,6 +107,7 @@ func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 // onto a compiler.New...() operation
 func (c *Compiler) WithNormalization(f bool) *Compiler {
 	c.LowercaseIdentifiers = f
+
 	return c
 }
 
@@ -111,13 +116,13 @@ func (c *Compiler) WithNormalization(f bool) *Compiler {
 // to provide a tokenizer.
 func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, error) {
 	t := tokenizer.New(source)
+
 	return c.Compile(name, t)
 }
 
 // Compile starts a compilation unit, and returns a bytecode
 // of the compiled material.
 func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
-
 	c.b = bytecode.New(name)
 	c.t = t
 
@@ -142,7 +147,6 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name
 // is empty)
 func (c *Compiler) AddBuiltins(pkgname string) bool {
-
 	added := false
 	for name, f := range functions.FunctionDictionary {
 
@@ -160,6 +164,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 			}
 		}
 	}
+
 	return added
 }
 
@@ -174,6 +179,7 @@ func (c *Compiler) Normalize(name string) string {
 	if c.LowercaseIdentifiers {
 		return strings.ToLower(name)
 	}
+
 	return name
 }
 
@@ -181,7 +187,6 @@ func (c *Compiler) Normalize(name string) string {
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
 func (c *Compiler) AddPackageFunction(pkgname string, name string, function interface{}) error {
-
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -204,7 +209,6 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
 func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{}) error {
-
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -223,12 +227,9 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 
 // AddPackageToSymbols adds all the defined packages for this compilation to the named symbol table.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
-
 	for pkgname, dict := range c.packages {
-
 		m := map[string]interface{}{}
 		for k, v := range dict {
-
 			// If the package name is empty, we add the individual items
 			if pkgname == "" {
 				_ = s.SetConstant(k, v)
@@ -252,6 +253,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 // the end-of-statement boundary
 func (c *Compiler) StatementEnd() bool {
 	next := c.t.Peek(1)
+
 	return util.InList(next, tokenizer.EndOfTokens, ";", "}")
 }
 
@@ -265,7 +267,6 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool) error {
-
 	// Start by making a list of the packages. If we need all packages,
 	// scan all the built-in function names for package names. We ignore
 	// functions that don't have package names as those are already
@@ -307,7 +308,6 @@ func (c *Compiler) AutoImport(all bool) error {
 		if err == nil {
 			firstError = err
 		}
-
 	}
 	c.b = savedBC
 	c.t = savedT

@@ -66,7 +66,6 @@ const (
 
 // NewError generates a new compiler error
 func (c *Compiler) NewError(msg string, args ...interface{}) *Error {
-
 	p := c.t.TokenP
 	if p < 0 {
 		p = 0
@@ -87,14 +86,13 @@ func (c *Compiler) NewError(msg string, args ...interface{}) *Error {
 		e.line = c.t.Line[p]
 		e.column = c.t.Pos[p]
 	}
+
 	return e
 }
 
 // Error produces an error string from this object.
 func (e Error) Error() string {
-
 	var b strings.Builder
-
 	b.WriteString("compile error ")
 	if e.pkg != "" {
 		b.WriteString("in package ")
@@ -110,5 +108,6 @@ func (e Error) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.token)
 	}
+
 	return b.String()
 }

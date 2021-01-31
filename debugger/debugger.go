@@ -35,6 +35,7 @@ func RunFrom(c *bytecode.Context, pc int) error {
 			return nil
 		}
 	}
+
 	return err
 }
 
@@ -134,6 +135,7 @@ func Debugger(c *bytecode.Context) error {
 			}
 		}
 	}
+
 	return err
 }
 
@@ -141,6 +143,7 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text)
+
 	return compiler.Run("debugger", s, t2)
 }
 
@@ -184,10 +187,12 @@ func getLine() string {
 		if braceCount > 0 || parenCount > 0 || bracketCount > 0 || openTick {
 			text = text + io.ReadConsoleText(".....> ")
 			t = tokenizer.New(text)
+
 			continue
 		} else {
 			break
 		}
 	}
+
 	return text
 }

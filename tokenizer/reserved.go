@@ -39,5 +39,6 @@ func IsReserved(name string, includeExtensions bool) bool {
 	if includeExtensions {
 		r = r || util.InList(name, ExtendedReservedWords...)
 	}
+
 	return r
 }

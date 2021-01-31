@@ -35,5 +35,6 @@ func Help() error {
 		_ = table.SetOrderBy("Command")
 		_ = table.Print("text")
 	}
+
 	return err
 }

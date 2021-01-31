@@ -23,14 +23,15 @@ func Sleep(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err == nil {
 		time.Sleep(duration)
 	}
+
 	return true, err
 }
 
 // ProfileGet implements the profile.get() function
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := util.GetString(args[0])
-	return persistence.Get(key), nil
 
+	return persistence.Get(key), nil
 }
 
 // ProfileSet implements the profile.set() function
@@ -61,6 +62,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := util.GetString(args[0])
 	persistence.Delete(key)
+
 	return nil, nil
 }
 
@@ -71,12 +73,14 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	for i, key := range keys {
 		result[i] = key
 	}
+
 	return result, nil
 }
 
 // UUID implements the uuid() function
 func UUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	u := uuid.New()
+
 	return u.String(), nil
 }
 
@@ -87,13 +91,13 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	}
 
 	switch arg := args[0].(type) {
-
 	// For a channel, it's length either zero if it's drained, or bottomless
 	case *datatypes.Channel:
 		size := int(math.MaxInt32)
 		if arg.IsEmpty() {
 			size = 0
 		}
+
 		return size, nil
 
 	case error:
@@ -106,6 +110,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				keys = append(keys, k)
 			}
 		}
+
 		return len(keys), nil
 
 	case []interface{}:
@@ -119,6 +124,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		if v == nil {
 			return 0, nil
 		}
+
 		return len(v.(string)), nil
 	}
 }
@@ -130,7 +136,6 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var array []interface{}
 	count := 0
-
 	if len(args) == 2 {
 		switch v := args[0].(type) {
 		case []interface{}:
@@ -142,6 +147,7 @@ func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 			} else {
 				array = append(v, make([]interface{}, count-len(v))...)
 			}
+
 		default:
 			return nil, NewError("array", InvalidTypeError)
 		}
@@ -149,6 +155,7 @@ func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		count = util.GetInt(args[0])
 		array = make([]interface{}, count)
 	}
+
 	return array, nil
 
 }
@@ -165,6 +172,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	if !ok {
 		m = "run"
 	}
+
 	return m, nil
 }
 
@@ -179,6 +187,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 				keys = append(keys, k)
 			}
 		}
+
 		return util.MakeSortedArray(keys), nil
 
 	default:
@@ -194,6 +203,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		switch v := a.(type) {
 		case []interface{}:
 			array = append(array, v...)
+
 		default:
 			array = append(array, v)
 		}
@@ -205,7 +215,6 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	v1 := array[0]
 	switch v1.(type) {
-
 	case int:
 		intArray := make([]int, 0)
 		for _, i := range array {
@@ -216,6 +225,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		for n, i := range intArray {
 			resultArray[n] = i
 		}
+
 		return resultArray, nil
 
 	case float64:
@@ -228,6 +238,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		for n, i := range floatArray {
 			resultArray[n] = i
 		}
+
 		return resultArray, nil
 
 	case string:
@@ -240,6 +251,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		for n, i := range stringArray {
 			resultArray[n] = i
 		}
+
 		return resultArray, nil
 
 	default:
@@ -249,14 +261,12 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // Exit implements the util.exit() function
 func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
 		os.Exit(0)
 	}
 
 	switch v := args[0].(type) {
-
 	case int:
 		os.Exit(v)
 
@@ -277,26 +287,32 @@ func FormatSymbols(syms *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 // Type implements the type() function
 func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	switch v := args[0].(type) {
 	case nil:
 		return "nil", nil
+
 	case error:
 		return "error", nil
+
 	case *datatypes.Channel:
 		return "chan", nil
+
 	case int:
 		return "int", nil
+
 	case float64, float32:
 		return "float", nil
+
 	case string:
 		return "string", nil
+
 	case bool:
 		return "bool", nil
+
 	case []interface{}:
 		return "array", nil
-	case map[string]interface{}:
 
+	case map[string]interface{}:
 		// IF the parent is a string instead of a map, this is the actual type object
 		if typeName, ok := datatypes.GetMetadata(v, datatypes.ParentMDKey); ok {
 			if _, ok := typeName.(string); ok {
@@ -322,8 +338,10 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			if ts == "<*bytecode.ByteCode Value>" {
 				return "func", nil
 			}
+
 			return fmt.Sprintf("ptr %s", ts), nil
 		}
+
 		return "unknown", nil
 	}
 }
@@ -346,6 +364,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			result = append(result, j)
 		}
 	}
+
 	return result, nil
 }
 
@@ -354,7 +373,6 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if _, ok := args[0].(string); ok && len(args) != 1 {
 		return nil, errors.New(ArgumentCountError)
 	} else {
@@ -363,13 +381,13 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 	switch v := args[0].(type) {
-
 	case string:
 		return nil, s.Delete(v)
 
 	case map[string]interface{}:
 		key := util.GetString(args[1])
 		delete(v, key)
+
 		return v, nil
 
 	case []interface{}:
@@ -378,6 +396,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return nil, errors.New(InvalidArrayIndexError)
 		}
 		r := append(v[:i], v[i+1:]...)
+
 		return r, nil
 
 	default:
@@ -392,13 +411,13 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if !found {
 		r = []interface{}{}
 	}
+
 	return r, nil
 }
 
 // Make implements the make() function. The first argument must be a model of the
 // array type (using the Go native version), and the second argument is the size.
 func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	kind := args[0]
 	size := util.GetInt(args[1])
 	array := make([]interface{}, size)
@@ -419,18 +438,22 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		for i := range array {
 			array[i] = 0
 		}
+
 	case []bool, bool:
 		for i := range array {
 			array[i] = false
 		}
+
 	case []string, string:
 		for i := range array {
 			array[i] = ""
 		}
+
 	case []float64, float64:
 		for i := range array {
 			array[i] = 0.0
 		}
+
 	case map[string]interface{}:
 		for i := range array {
 			array[i] = map[string]interface{}{}
@@ -439,14 +462,12 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	default:
 		fmt.Printf("DEBUG: v = %#v\n", kind)
 	}
-	return array, nil
 
+	return array, nil
 }
 
 func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if m, ok := args[0].(map[string]interface{}); ok {
-
 		// Make a list of the visible member names
 		memberList := []string{}
 		for k := range m {
@@ -469,6 +490,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				mm[datatypes.BasetypeMDKey] = "map"
 			}
 		}
+
 		return result, nil
 	}
 
@@ -488,13 +510,16 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					types = tsx
 				} else if types != tsx {
 					types = "mixed"
+
 					break
 				}
 			}
 			result[datatypes.BasetypeMDKey] = "array"
 			result[datatypes.ElementTypesMDKey] = types
 		}
+
 		return result, nil
 	}
+
 	return map[string]interface{}{}, err
 }

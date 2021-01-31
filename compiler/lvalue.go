@@ -37,6 +37,7 @@ func (c *Compiler) IsLValue() bool {
 			return false
 		}
 	}
+
 	return false
 }
 
@@ -81,6 +82,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 		if c.t.Peek(1) == "," {
 			c.t.Advance(1)
 			isLvalueList = true
+
 			continue
 		}
 		if util.InList(c.t.Peek(1), "=", ":=", "<-") {
@@ -104,6 +106,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 		return bc, nil
 	}
 	c.t.TokenP = savedPosition
+
 	return nil, errors.New("not an lvalue list")
 }
 
@@ -111,14 +114,11 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 // an assignment. This information is used later to store the
 // data in the named object.
 func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
-
 	if bc, err := lvalueList(c); err == nil {
 		return bc, nil
 	}
-
 	bc := bytecode.New("lvalue")
 	name := c.t.Next()
-
 	if !tokenizer.IsSymbol(name) {
 		return nil, c.NewError(InvalidSymbolError, name)
 	}
@@ -149,6 +149,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 		}
 		patchStore(bc, name, c.t.Peek(1) == "<-")
 	}
+
 	return bc, nil
 }
 
@@ -157,7 +158,6 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 // storagebytecode, convert the last operation to a Store which writes
 // the value back.
 func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
-
 	// Is the last operation in the stack referecing
 	// a parent object? If so, convert the last one to
 	// a store operation.
@@ -176,10 +176,8 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 
 // lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences)
 func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
-
 	term := c.t.Peek(1)
 	if term == "[" {
-
 		c.t.Advance(1)
 		ix, err := c.Expression()
 		if err != nil {
@@ -190,6 +188,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 			return c.NewError(MissingBracketError)
 		}
 		bc.Emit(bytecode.LoadIndex)
+
 		return nil
 	}
 
@@ -202,6 +201,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 
 		bc.Emit(bytecode.Push, c.Normalize(member))
 		bc.Emit(bytecode.LoadIndex)
+
 		return nil
 	}
 

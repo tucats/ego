@@ -23,6 +23,7 @@ import (
 // stop executing immediately.
 func StopImpl(c *Context, i interface{}) error {
 	c.running = false
+
 	return errors.New("stop")
 }
 
@@ -35,6 +36,7 @@ func PanicImpl(c *Context, i interface{}) error {
 		return err
 	}
 	msg := util.GetString(strValue)
+
 	return c.NewError(msg)
 }
 
@@ -54,6 +56,7 @@ func AtLineImpl(c *Context, i interface{}) error {
 	if c.tracing && c.tokenizer != nil {
 		fmt.Printf("%d:  %s\n", c.line, c.tokenizer.GetLine(c.line))
 	}
+
 	return nil
 }
 
@@ -61,7 +64,6 @@ func AtLineImpl(c *Context, i interface{}) error {
 // the operand if the top-of-stack item is a boolean FALSE value. Otherwise,
 // execution continues with the next instruction.
 func BranchFalseImpl(c *Context, i interface{}) error {
-
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {
@@ -77,20 +79,20 @@ func BranchFalseImpl(c *Context, i interface{}) error {
 	if !util.GetBool(v) {
 		c.pc = address
 	}
+
 	return nil
 }
 
 // BranchImpl instruction processor branches to the instruction named in
 // the operand.
 func BranchImpl(c *Context, i interface{}) error {
-
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
 		return c.NewError(InvalidBytecodeAddress)
 	}
-
 	c.pc = address
+
 	return nil
 }
 
@@ -98,7 +100,6 @@ func BranchImpl(c *Context, i interface{}) error {
 // the operand if the top-of-stack item is a boolean TRUE value. Otherwise,
 // execution continues with the next instruction.
 func BranchTrueImpl(c *Context, i interface{}) error {
-
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {
@@ -114,6 +115,7 @@ func BranchTrueImpl(c *Context, i interface{}) error {
 	if util.GetBool(v) {
 		c.pc = address
 	}
+
 	return nil
 }
 
@@ -123,17 +125,16 @@ func BranchTrueImpl(c *Context, i interface{}) error {
 // example, so when defers have been generated then a local call is added to
 // the return statement(s) for the block.
 func LocalCallImpl(c *Context, i interface{}) error {
-
-	// Make a new symbol table for the fucntion to run with,
+	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
 	c.PushFrame("defer", c.bc, util.GetInt(i))
+
 	return nil
 
 }
 
 func GoImpl(c *Context, i interface{}) error {
-
 	argc := i.(int) + c.argCountDelta
 	c.argCountDelta = 0
 
@@ -155,6 +156,7 @@ func GoImpl(c *Context, i interface{}) error {
 	// Launch the function call as a separate thread.
 	ui.Debug(ui.ByteCodeLogger, "--> Launching go routine \"%s\"", fName)
 	go GoRoutine(util.GetString(fName), c, args)
+
 	return nil
 }
 
@@ -165,7 +167,6 @@ func GoImpl(c *Context, i interface{}) error {
 // etiher a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
 func CallImpl(c *Context, i interface{}) error {
-
 	var err error
 	var funcPointer interface{}
 
@@ -198,7 +199,6 @@ func CallImpl(c *Context, i interface{}) error {
 	// Depends on the type here as to what we call...
 	switch af := funcPointer.(type) {
 	case *ByteCode:
-
 		// Find the top of this scope level (typically)
 		parentTable := c.symbols
 		if !c.fullSymbolScope {
@@ -206,7 +206,6 @@ func CallImpl(c *Context, i interface{}) error {
 				parentTable = parentTable.Parent
 			}
 		}
-
 		funcSymbols := symbols.NewChildSymbolTable("function "+af.Name, parentTable)
 		funcSymbols.ScopeBoundary = true
 
@@ -221,7 +220,6 @@ func CallImpl(c *Context, i interface{}) error {
 		}
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-
 		// First, can we check the argument count on behalf of the caller?
 		df := functions.FindFunction(af)
 		fname := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
@@ -238,6 +236,7 @@ func CallImpl(c *Context, i interface{}) error {
 		if df != nil {
 			if len(args) < df.Min || len(args) > df.Max {
 				name := functions.FindName(af)
+
 				return functions.NewError(name, ArgumentCountError)
 			}
 		}
@@ -265,6 +264,7 @@ func CallImpl(c *Context, i interface{}) error {
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.Push(r.Value[i])
 			}
+
 			return nil
 		}
 		// If there was an error but this function allows it, then
@@ -273,6 +273,7 @@ func CallImpl(c *Context, i interface{}) error {
 			_ = c.Push(StackMarker{Desc: "builtin result"})
 			_ = c.Push(err)
 			_ = c.Push(result)
+
 			return nil
 		}
 
@@ -296,6 +297,7 @@ func CallImpl(c *Context, i interface{}) error {
 	if result != nil {
 		_ = c.Push(result)
 	}
+
 	return nil
 }
 
@@ -313,6 +315,7 @@ func ReturnImpl(c *Context, i interface{}) error {
 		// runtime state
 		err = c.PopFrame()
 	}
+
 	return err
 }
 
@@ -322,11 +325,9 @@ func ReturnImpl(c *Context, i interface{}) error {
 // an array of objects, which are the minimum count, maximum count, and
 // function name
 func ArgCheckImpl(c *Context, i interface{}) error {
-
 	min := 0
 	max := 0
 	name := "function call"
-
 	switch v := i.(type) {
 	case []interface{}:
 		if len(v) < 2 || len(v) > 3 {
@@ -337,6 +338,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 		if len(v) == 3 {
 			name = util.GetString(v[2])
 		}
+
 	case int:
 		if v >= 0 {
 			min = v
@@ -383,6 +385,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	if len(va) < min || len(va) > max {
 		return functions.NewError(name, ArgumentCountError)
 	}
+
 	return nil
 }
 
@@ -390,6 +393,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 func TryImpl(c *Context, i interface{}) error {
 	addr := util.GetInt(i)
 	c.try = append(c.try, addr)
+
 	return nil
 }
 
@@ -403,7 +407,7 @@ func TryPopImpl(c *Context, i interface{}) error {
 	} else {
 		c.try = c.try[:len(c.try)-1]
 	}
-
 	_ = c.symbols.DeleteAlways("_error")
+
 	return nil
 }

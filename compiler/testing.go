@@ -13,9 +13,7 @@ import (
 
 // Test compiles the @test directive
 func (c *Compiler) Test() error {
-
 	_ = c.modeCheck("test", true)
-
 	s := c.t.Next()
 	if s[:1] == "\"" {
 		s = s[1 : len(s)-1]
@@ -31,7 +29,6 @@ func (c *Compiler) Test() error {
 	test["False"] = TestFalse
 	test["Equal"] = TestEqual
 	test["NotEqual"] = TestNotEqual
-
 	test["description"] = s
 
 	_ = c.s.SetAlways("T", test)
@@ -78,6 +75,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		b := util.GetBool(array[0])
 		if !b {
 			msg := util.GetString(array[1])
+
 			return nil, fmt.Errorf("@assert, %s in %s", msg, name)
 		} else {
 			return true, nil
@@ -92,8 +90,10 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if len(args) > 1 {
 			msg = util.GetString(args[1])
 		}
+
 		return nil, fmt.Errorf("%s in %s", msg, name)
 	}
+
 	return true, nil
 }
 
@@ -122,8 +122,10 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if len(args) > 2 {
 			msg = util.GetString(args[2])
 		}
+
 		return nil, fmt.Errorf("%s in %s", msg, name)
 	}
+
 	return true, nil
 }
 
@@ -159,6 +161,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 2 {
 		return []interface{}{args[0] == nil, util.GetString(args[1])}, nil
 	}
+
 	return args[0] == nil, nil
 }
 
@@ -195,6 +198,7 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if len(args) == 2 {
 		return []interface{}{!util.GetBool(args[0]), util.GetString(args[1])}, nil
 	}
+
 	return !util.GetBool(args[0]), nil
 }
 
@@ -229,7 +233,6 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // Assert implements the @assert directive
 func (c *Compiler) Assert() error {
 	_ = c.modeCheck("test", true)
-
 	c.b.Emit(bytecode.Load, "T")
 	c.b.Emit(bytecode.Push, "assert")
 	c.b.Emit(bytecode.Member)
@@ -248,7 +251,6 @@ func (c *Compiler) Assert() error {
 // Fail implements the @fail directive
 func (c *Compiler) Fail() error {
 	_ = c.modeCheck("test", true)
-
 	next := c.t.Peek(1)
 	if next != "@" && next != ";" && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
@@ -260,20 +262,20 @@ func (c *Compiler) Fail() error {
 		c.b.Emit(bytecode.Push, "@fail error signal")
 	}
 	c.b.Emit(bytecode.Panic, true)
+
 	return nil
 }
 
 // TestPass implements the @pass directive
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test", true)
-
 	c.b.Emit(bytecode.Push, "PASS: ")
 	c.b.Emit(bytecode.Print)
-
 	c.b.Emit(bytecode.Load, "T")
 	c.b.Emit(bytecode.Push, "description")
 	c.b.Emit(bytecode.Member)
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Newline)
+
 	return nil
 }

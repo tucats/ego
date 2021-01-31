@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -49,6 +50,7 @@ func AddUser(c *cli.Context) error {
 			}
 		}
 	}
+
 	return err
 }
 
@@ -74,11 +76,11 @@ func DeleteUser(c *cli.Context) error {
 			}
 		}
 	}
+
 	return err
 }
 
 func ListUsers(c *cli.Context) error {
-
 	path := persistence.Get(defs.LogonServerSetting)
 	if path == "" {
 		path = "http://localhost:8080"
@@ -97,15 +99,15 @@ func ListUsers(c *cli.Context) error {
 	r.Header.Add("Accepts", defs.JSONMediaType)
 	var response *resty.Response
 	response, err = r.Get(url)
-	if response.StatusCode() == 404 && len(response.Body()) == 0 {
+	if response.StatusCode() == http.StatusNotFound && len(response.Body()) == 0 {
 		err = errors.New(defs.NotFound)
 	}
 	status := response.StatusCode()
-	if status == 403 {
+	if status == http.StatusForbidden {
 		err = errors.New(defs.NoPrivilegeForOperation)
 	}
 	if err == nil {
-		if status == 200 {
+		if status == http.StatusOK {
 			body := string(response.Body())
 			err = json.Unmarshal([]byte(body), &ud)
 			if err == nil {

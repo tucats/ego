@@ -7,7 +7,6 @@ import (
 // If compiles conditional statments. The verb is already
 // removed from the token stream.
 func (c *Compiler) If() error {
-
 	// Compile the conditional expression
 	bc, err := c.Expression()
 	if err != nil {
@@ -41,5 +40,6 @@ func (c *Compiler) If() error {
 	} else {
 		_ = c.b.SetAddressHere(b1)
 	}
+
 	return nil
 }

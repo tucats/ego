@@ -9,13 +9,12 @@ import (
 
 // Var compiles the var statement
 func (c *Compiler) Var() error {
-
 	names := []string{}
-
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
 			c.t.Advance(-1)
+
 			return c.NewError(InvalidSymbolError, name)
 		}
 		// See if it's a reserved word.
@@ -25,6 +24,7 @@ func (c *Compiler) Var() error {
 			if len(names) > 0 {
 				break
 			}
+
 			return c.NewError(InvalidSymbolError, name)
 		}
 		name = c.Normalize(name)
@@ -48,14 +48,19 @@ func (c *Compiler) Var() error {
 			case "chan":
 				channel := datatypes.NewChannel(1)
 				c.b.Emit(bytecode.Push, channel)
+
 			case "int":
 				c.b.Emit(bytecode.Push, int(0))
+
 			case "float", "double":
 				c.b.Emit(bytecode.Push, 0.0)
+
 			case "string":
 				c.b.Emit(bytecode.Push, "")
+
 			case "bool":
 				c.b.Emit(bytecode.Push, false)
+
 			case "uuid":
 				c.b.Emit(bytecode.Push, uuid.Nil)
 
@@ -67,8 +72,8 @@ func (c *Compiler) Var() error {
 			}
 		}
 		c.b.Emit(bytecode.SymbolCreate, name)
-		// c.b.Emit(bytecode.SymbolOptCreate, name)
 		c.b.Emit(bytecode.Store, name)
 	}
+
 	return nil
 }

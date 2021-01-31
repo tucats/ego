@@ -13,7 +13,6 @@ const (
 
 // Statement compiles a single statement
 func (c *Compiler) Statement() error {
-
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
 	if c.t.IsNext(";") {
@@ -21,6 +20,7 @@ func (c *Compiler) Statement() error {
 	}
 	if c.t.IsNext("{}") {
 		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+
 		return nil
 	}
 	if c.t.IsNext(tokenizer.EndOfTokens) {
@@ -30,7 +30,6 @@ func (c *Compiler) Statement() error {
 	// Is it a directive token? These really just store data in the compiler
 	// symbol table that is used to extend features. These symbols end up in
 	// the runtime context of the running code
-
 	if c.t.IsNext("@") {
 		return c.Directive()
 	}
@@ -46,9 +45,7 @@ func (c *Compiler) Statement() error {
 	// At this point, we know we're trying to compile a statement,
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
-
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
-
 	if c.IsFunctionCall() {
 		return c.Call()
 	}
@@ -65,58 +62,77 @@ func (c *Compiler) Statement() error {
 	switch c.t.Next() {
 	case "{":
 		return c.Block()
+
 	case "array":
 		if c.extensionsEnabled {
 			return c.Array()
 		}
+
 		return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
 
 	case "assert":
 		if c.extensionsEnabled {
 			return c.Assert()
 		}
+
 		return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
 
 	case "break":
 		return c.Break()
+
 	case "call":
 		if c.extensionsEnabled {
 			return c.Call()
 		}
+
 	case "const":
 		return c.Constant()
+
 	case "continue":
 		return c.Continue()
+
 	case "defer":
 		return c.Defer()
+
 	case "exit":
 		if c.exitEnabled {
 			return c.Exit()
 		}
+
 	case "for":
 		return c.For()
+
 	case "go":
 		return c.Go()
+
 	case "if":
 		return c.If()
+
 	case "import":
 		return c.Import()
+
 	case "package":
 		return c.Package()
+
 	case "print":
 		if c.extensionsEnabled {
 			return c.Print()
 		}
+
 	case "return":
 		return c.Return()
+
 	case "switch":
 		return c.Switch()
+
 	case "try":
 		if c.extensionsEnabled {
 			return c.Try()
 		}
+
 	case "type":
 		return c.Type()
+
 	case "var":
 		return c.Var()
 	}
@@ -127,15 +143,12 @@ func (c *Compiler) Statement() error {
 
 // IsFunctionCall indicates if the token stream points to a function call
 func (c *Compiler) IsFunctionCall() bool {
-
 	// Skip through any referencing tokens to see if we find a function
 	// invocation.
 	pos := 1
 	subexpr := 0
 	lastWasSymbol := false
-
 	for pos < len(c.t.Tokens) {
-
 		// Are we at the end?
 		t := c.t.Peek(pos)
 		if t == tokenizer.EndOfTokens {
@@ -202,6 +215,7 @@ func (c *Compiler) IsFunctionCall() bool {
 			}
 			pos++
 			lastWasSymbol = true
+
 			continue
 		} else {
 			lastWasSymbol = false
@@ -212,6 +226,7 @@ func (c *Compiler) IsFunctionCall() bool {
 		if t == "]" {
 			subexpr--
 			pos++
+
 			continue
 		}
 
@@ -220,23 +235,27 @@ func (c *Compiler) IsFunctionCall() bool {
 		if t == "[" {
 			subexpr++
 			pos++
+
 			continue
 		}
 
 		// If it's a member dereference, keep on going.
 		if t == "." {
 			pos++
+
 			continue
 		}
 
 		// If we're just in a subexpression, keep consuming tokens.
 		if subexpr > 0 {
 			pos++
+
 			continue
 		}
 
 		// Nope, not a (valid) function invocation
 		return false
 	}
+
 	return false
 }

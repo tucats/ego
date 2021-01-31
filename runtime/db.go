@@ -17,10 +17,9 @@ import (
 )
 
 // DBNew implements the New() db function. This allocated a new structure that
-// contains all the info needed to call the database, incuding the function pointers
+// contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
 func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) != 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -60,14 +59,14 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(result, datatypes.TypeMDKey, "database")
+
 	return result, nil
 }
 
 // DBBegin implements the Begin() db function. This allocated a new structure that
-// contains all the info needed to call the database, incuding the function pointers
+// contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
 func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var tx *sql.Tx
 	d, tx, err := getDBClient(s)
 	if err == nil {
@@ -81,6 +80,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			err = errors.New("transaction already active")
 		}
 	}
+
 	return nil, err
 }
 
@@ -97,6 +97,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		}
 		this["transaction"] = nil
 	}
+
 	return nil, err
 }
 
@@ -113,6 +114,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 		this["transaction"] = nil
 	}
+
 	return nil, err
 }
 
@@ -131,6 +133,7 @@ func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
 	this["asStruct"] = util.GetBool(args[0])
+
 	return this, nil
 }
 
@@ -238,6 +241,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			r[i] = v
 		}
 	}
+
 	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
 }
 
@@ -272,7 +276,6 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	result["Scan"] = rowsScan
 	result["Close"] = rowsClose
 	result["Headings"] = rowsHeadings
-
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(result, datatypes.TypeMDKey, "rows")
 
@@ -289,13 +292,13 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this["Scan"] = dbReleased
 	this["Headings"] = dbReleased
 	ui.Debug(ui.DBLogger, "rows.Close() called")
+
 	return err, nil
 }
 
 func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
-
 	result := make([]interface{}, 0)
 	columns, err := rows.Columns()
 	if err == nil {
@@ -303,6 +306,7 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			result = append(result, name)
 		}
 	}
+
 	return result, err
 }
 
@@ -311,13 +315,13 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	rows := this["rows"].(*sql.Rows)
 	active := rows.Next()
 	ui.Debug(ui.DBLogger, "rows.Next() = %v", active)
+
 	return active, nil
 }
 
 func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
-
 	db := this["db"].(map[string]interface{})
 	asStruct := util.GetBool(db["asStruct"])
 
@@ -339,6 +343,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		for i, v := range columns {
 			rowMap[v] = rowValues[i]
 		}
+
 		return functions.MultiValueReturn{Value: []interface{}{rowMap, nil}}, nil
 	}
 
@@ -370,6 +375,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this := getThis(s)
 	this["rowCount"] = int(r)
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
+
 	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
 }
 
@@ -394,6 +400,7 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 			}
 		}
 	}
+
 	return nil, nil, errors.New(defs.NoFunctionReceiver)
 }
 

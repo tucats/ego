@@ -31,6 +31,7 @@ func (e *SymbolError) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.Parameter)
 	}
+
 	return b.String()
 }
 
@@ -41,5 +42,6 @@ func (*SymbolTable) NewError(text string, args ...interface{}) error {
 	if len(args) > 0 {
 		e.Parameter = fmt.Sprintf("%v", args[0])
 	}
+
 	return e
 }

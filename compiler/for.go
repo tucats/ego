@@ -26,12 +26,9 @@ import (
 //    form _requires_ that there be at least one break statement
 //    inside the loop, which algorithmically stops the loop
 func (c *Compiler) For() error {
-
 	c.b.Emit(bytecode.PushScope)
-
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1) == "{" {
-
 		// Make a new scope and emit the test expression.
 		c.PushLoop(forLoopType)
 
@@ -59,6 +56,7 @@ func (c *Compiler) For() error {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
 		c.PopLoop()
+
 		return err
 	}
 
@@ -69,10 +67,8 @@ func (c *Compiler) For() error {
 		c.t.Advance(1)
 	}
 	indexName = c.Normalize(indexName)
-
 	// if not an lvalue, assume conditional mode
 	if !c.IsLValue() {
-
 		bc, err := c.Expression()
 		if err != nil {
 			return c.NewError(MissingForLoopInitializerError)
@@ -91,13 +87,12 @@ func (c *Compiler) For() error {
 				b.Operation == bytecode.Member ||
 				b.Operation == bytecode.ClassMember {
 				isConstant = false
+
 				break
 			}
 		}
-
 		// Make a new scope and emit the test expression.
 		c.PushLoop(conditionalLoopType)
-
 		// Remember top of loop and generate test
 		b1 := c.b.Mark()
 		c.b.Append(bc)
@@ -154,8 +149,7 @@ func (c *Compiler) For() error {
 
 	// Do we compile a range?
 	if c.t.IsNext("range") {
-
-		// This is wierd, but the LValue compiler will have inserted a "SymbolCreate" in the
+		// This is weird, but the LValue compiler will have inserted a "SymbolCreate" in the
 		// lValue due to the syntax, but we don't really want to create it as it will have already
 		// been generated once. So use it once to create a value, and then remove the store.
 		c.b.Emit(bytecode.Push, nil)
@@ -242,7 +236,6 @@ func (c *Compiler) For() error {
 	}
 	c.b.Append(initializerCode)
 	c.b.Append(indexStore)
-
 	if !c.t.IsNext(";") {
 		return c.NewError(MissingSemicolonError)
 	}
@@ -304,6 +297,7 @@ func (c *Compiler) For() error {
 	}
 	c.b.Emit(bytecode.PopScope)
 	c.PopLoop()
+
 	return nil
 }
 
@@ -318,6 +312,7 @@ func (c *Compiler) Break() error {
 	fixAddr := c.b.Mark()
 	c.b.Emit(bytecode.Branch, 0)
 	c.loops.breaks = append(c.loops.breaks, fixAddr)
+
 	return nil
 }
 
@@ -332,6 +327,7 @@ func (c *Compiler) Continue() error {
 	fixAddr := c.b.Mark()
 	c.b.Emit(bytecode.Branch, 0)
 	c.loops.continues = append(c.loops.continues, fixAddr)
+
 	return nil
 }
 
@@ -341,7 +337,6 @@ func (c *Compiler) Continue() error {
 // this loop body.  A break or continue _only_ applies to the loop scope
 // in which it occurs.
 func (c *Compiler) PushLoop(loopType int) {
-
 	loop := Loop{
 		Type:      loopType,
 		breaks:    make([]int, 0),

@@ -133,8 +133,8 @@ func Save() error {
 		}
 	}
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
-
 	err = ioutil.WriteFile(path.String(), byteBuffer, os.ModePerm)
+
 	return err
 }
 
@@ -181,6 +181,7 @@ func Get(key string) string {
 		v = c.Items[key]
 	}
 	ui.Debug(ui.AppLogger, "Reading profile key \"%s\" : \"%s\"", key, v)
+
 	return v
 }
 
@@ -191,6 +192,7 @@ func GetBool(key string) bool {
 	if s == "y" || s == "yes" || s == "true" || s == "t" || s == "1" {
 		return true
 	}
+
 	return false
 }
 
@@ -206,6 +208,7 @@ func GetUsingList(key string, values ...string) int {
 			return position + 1
 		}
 	}
+
 	return 0
 }
 
@@ -227,6 +230,7 @@ func Keys() []string {
 	for key := range c.Items {
 		result = append(result, key)
 	}
+
 	return result
 }
 
@@ -238,6 +242,7 @@ func Exists(key string) bool {
 		c := getCurrentConfiguration()
 		_, exists = c.Items[key]
 	}
+
 	return exists
 }
 
@@ -245,6 +250,7 @@ func DeleteProfile(key string) error {
 	if cfg, ok := Configurations[key]; ok {
 		if cfg.ID == getCurrentConfiguration().ID {
 			ui.Debug(ui.AppLogger, "cannot delete active profile")
+
 			return fmt.Errorf("cannot delete active profile")
 		}
 		delete(Configurations, key)
@@ -253,9 +259,11 @@ func DeleteProfile(key string) error {
 		if err == nil {
 			ui.Debug(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
 		}
+
 		return err
 	}
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
+
 	return fmt.Errorf("no such profile: %s", key)
 }
 
@@ -265,5 +273,6 @@ func getCurrentConfiguration() *Configuration {
 		var c Configuration = Configuration{Description: "Default configuration", Items: map[string]string{}}
 		CurrentConfiguration = &c
 	}
+
 	return CurrentConfiguration
 }

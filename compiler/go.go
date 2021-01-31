@@ -1,19 +1,16 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/tokenizer"
 )
 
 func (c *Compiler) Go() error {
-
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
 		return c.NewError(InvalidSymbolError, fName)
 	}
 	c.b.Emit(bc.Push, fName)
-
 	if !c.t.IsNext("(") {
 		return c.NewError(MissingParenthesisError)
 	}
@@ -32,7 +29,8 @@ func (c *Compiler) Go() error {
 		}
 		// Could be the "..." flatten operator
 		if c.t.IsNext("...") {
-			c.b.Emit(bytecode.Flatten)
+			c.b.Emit(bc.Flatten)
+
 			break
 		}
 		if c.t.Peek(1) != "," {
@@ -46,8 +44,7 @@ func (c *Compiler) Go() error {
 		return c.NewError(MissingParenthesisError)
 	}
 	c.t.Advance(1)
-
-	// Call the function
 	c.b.Emit(bc.Go, argc)
+
 	return nil
 }

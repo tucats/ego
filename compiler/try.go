@@ -5,7 +5,6 @@ import "github.com/tucats/ego/bytecode"
 // Try compiles the try statement which allows the program to catch error
 // conditions instead of stopping execution on an error.
 func (c *Compiler) Try() error {
-
 	// Generate start of a try block.
 	b1 := c.b.Mark()
 	c.b.Emit(bytecode.Try, 0)

@@ -11,9 +11,7 @@ import (
 
 // Decode reads a string as JSON data
 func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var v interface{}
-
 	jsonBuffer := util.GetString(args[0])
 	err := json.Unmarshal([]byte(jsonBuffer), &v)
 
@@ -24,36 +22,37 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Seal(i interface{}) interface{} {
-	switch ii := i.(type) {
+	switch actualValue := i.(type) {
 	case map[string]interface{}:
-		for k, v := range ii {
-			ii[k] = Seal(v)
+		for k, v := range actualValue {
+			actualValue[k] = Seal(v)
 		}
-		datatypes.SetMetadata(ii, datatypes.StaticMDKey, true)
-		return ii
+		datatypes.SetMetadata(actualValue, datatypes.StaticMDKey, true)
+
+		return actualValue
 
 	case []interface{}:
-		for k, v := range ii {
-			ii[k] = Seal(v)
+		for k, v := range actualValue {
+			actualValue[k] = Seal(v)
 		}
-		return ii
+
+		return actualValue
 
 	default:
-		return ii
+		return actualValue
 	}
 }
 
 // Encode writes a  JSON string from arbitrary data
 func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(args[0])
+
 		return string(jsonBuffer), err
 	}
 
 	var b strings.Builder
 	b.WriteString("[")
-
 	for n, v := range args {
 		if n > 0 {
 			b.WriteString(", ")
@@ -65,20 +64,20 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		b.WriteString(string(jsonBuffer))
 	}
 	b.WriteString("]")
+
 	return b.String(), nil
 }
 
 // EncodeFormatted writes a  JSON string from arbitrary data
 func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 1 {
 		jsonBuffer, err := json.MarshalIndent(args[0], "", "  ")
+
 		return string(jsonBuffer), err
 	}
 
 	var b strings.Builder
 	b.WriteString("[")
-
 	for n, v := range args {
 		if n > 0 {
 			b.WriteString(", ")
@@ -90,5 +89,6 @@ func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 		b.WriteString(string(jsonBuffer))
 	}
 	b.WriteString("]")
+
 	return b.String(), nil
 }

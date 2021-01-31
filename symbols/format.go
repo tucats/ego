@@ -11,9 +11,7 @@ import (
 
 // Format formats a symbol table into a string for printing/display
 func (s *SymbolTable) Format(includeBuiltins bool) string {
-
 	var b strings.Builder
-
 	b.WriteString("Symbol table")
 	if s.Name != "" {
 		b.WriteString(" \"")
@@ -84,5 +82,6 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString("\n")
 		b.WriteString(sp)
 	}
+
 	return b.String()
 }

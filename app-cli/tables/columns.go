@@ -15,6 +15,7 @@ func (t *Table) FindColumn(name string) (int, bool) {
 			return n, true
 		}
 	}
+
 	return -1, false
 }
 
@@ -40,6 +41,7 @@ func (t *Table) SetColumnOrder(order []int) error {
 		newOrder[n] = v - 1
 	}
 	t.columnOrder = newOrder
+
 	return nil
 }
 
@@ -59,5 +61,6 @@ func (t *Table) SetColumnOrderByName(order []string) error {
 		newOrder[n] = v
 	}
 	t.columnOrder = newOrder
+
 	return nil
 }

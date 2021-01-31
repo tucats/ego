@@ -15,7 +15,6 @@ import (
 
 // ReadFile reads a file contents into a string value
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	name := util.GetString(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -32,14 +31,12 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Split splits a string into lines
 func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	src := util.GetString(args[0])
 
 	// Are we seeing Windows-style line endings? If so, use that as
 	// the split boundary.
 	if strings.Index(src, "\r\n") > 0 {
 		return strings.Split(src, "\r\n"), nil
-
 	}
 
 	// Otherwise, simple split by new-line works fine.
@@ -50,12 +47,12 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for _, n := range v {
 		r = append(r, n)
 	}
+
 	return r, nil
 }
 
 // Tokenize splits a string into tokens
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
 
@@ -64,16 +61,16 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for _, n := range t.Tokens {
 		r = append(r, n)
 	}
+
 	return r, nil
 }
 
 // WriteFile writes a string to a file
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	fname := util.GetString(args[0])
 	text := util.GetString(args[1])
-
 	err := ioutil.WriteFile(fname, []byte(text), 0777)
+
 	return len(text), err
 }
 
@@ -81,6 +78,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fname := util.GetString(args[0])
 	err := os.Remove(fname)
+
 	return err == nil, err
 }
 
@@ -98,14 +96,13 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for _, item := range list {
 		result = append(result, item)
 	}
+
 	return result, err
 }
 
 // ExpandPath is used to expand a path into a list of fie names
 func ExpandPath(path, ext string) ([]string, error) {
-
 	names := []string{}
-
 	// Can we read this as a directory?
 	fi, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -123,6 +120,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 			return names, nil
 		}
 		names = append(names, fn)
+
 		return names, nil
 	}
 
@@ -135,15 +133,14 @@ func ExpandPath(path, ext string) ([]string, error) {
 		}
 		names = append(names, list...)
 	}
+
 	return names, nil
 }
 
 // ReadDir implmeents the io.readdir() function
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	path := util.GetString(args[0])
 	result := []interface{}{}
-
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return result, err
@@ -158,15 +155,14 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		entry["modified"] = file.ModTime().String()
 		result = append(result, entry)
 	}
+
 	return result, nil
 }
 
 // This is the generic close() which can be used to close a channel, and maybe
 // later other items as well.
 func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	switch arg := args[0].(type) {
-
 	case *datatypes.Channel:
 		return arg.Close(), nil
 

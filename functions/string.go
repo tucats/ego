@@ -24,49 +24,48 @@ func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Left implements the left() function
 func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	v := util.GetString(args[0])
 	p := util.GetInt(args[1])
-
 	if p <= 0 {
 		return "", nil
 	}
 	if p >= len(v) {
 		return v, nil
 	}
+
 	return v[:p], nil
 }
 
 // Right implements the right() function
 func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	v := util.GetString(args[0])
 	p := util.GetInt(args[1])
-
 	if p <= 0 {
 		return "", nil
 	}
 	if p >= len(v) {
 		return v, nil
 	}
+
 	return v[len(v)-p:], nil
 }
 
 // Index implements the index() function
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
-
 	case []interface{}:
 		for n, v := range arg {
 			if reflect.DeepEqual(v, args[1]) {
 				return n + 1, nil
 			}
 		}
+
 		return 0, nil
 
 	case map[string]interface{}:
 		key := util.GetString(args[1])
 		_, found := arg[key]
+
 		return found, nil
 
 	default:
@@ -92,18 +91,16 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	if p2+p1 > len(v) {
 		p2 = len(v) - p1 + 1
 	}
-
 	s := v[p1-1 : p1+p2-1]
+
 	return s, nil
 }
 
 // Format implements the strings.format() function
 func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	if len(args) == 0 {
 		return "", nil
 	}
-
 	if len(args) == 1 {
 		return util.GetString(args[0]), nil
 	}
@@ -114,20 +111,19 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
 func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	v := util.GetString(args[0])
 	r := make([]interface{}, 0)
 
 	for n := 0; n < len(v); n = n + 1 {
 		r = append(r, v[n:n+1])
 	}
+
 	return r, nil
 }
 
 // Ints implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
 func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	v := util.GetString(args[0])
 	r := make([]interface{}, 0)
 	i := []rune(v)
@@ -135,6 +131,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for n := 0; n < len(i); n = n + 1 {
 		r = append(r, int(i[n]))
 	}
+
 	return r, nil
 }
 
@@ -142,11 +139,8 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // of items and converts it to a single long string of each item. Normally , this is
 // an array of characters.
 func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var b strings.Builder
-
 	for _, v := range args {
-
 		switch a := v.(type) {
 		case string:
 			b.WriteString(a)
@@ -159,18 +153,21 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				switch k := c.(type) {
 				case int:
 					b.WriteRune(rune(k))
+
 				case string:
 					b.WriteString(util.GetString(c))
+
 				default:
 					return nil, NewError("string", InvalidTypeError)
 				}
 			}
+
 		default:
 			return nil, NewError("string", ArgumentCountError)
 		}
 	}
-	return b.String(), nil
 
+	return b.String(), nil
 }
 
 // Template implements the strings.template() function
@@ -211,11 +208,11 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	} else {
 		err = tree.Execute(&r, args[1])
 	}
+
 	return r.String(), err
 }
 
 func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	name := util.GetString(args[0])
 	maxWidth := util.GetInt(args[1])
 	if len(name) <= maxWidth {
@@ -228,9 +225,11 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, er
 	for i := range name {
 		if chars >= limit {
 			result = name[:i] + `...`
+
 			break
 		}
 		chars++
 	}
+
 	return result, nil
 }

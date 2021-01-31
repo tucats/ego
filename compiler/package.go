@@ -15,12 +15,10 @@ import (
 
 // Package compiles a package statement
 func (c *Compiler) Package() error {
-
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError("invalid package name", name)
 	}
-
 	name = strings.ToLower(name)
 
 	if (c.PackageName != "") && (c.PackageName != name) {
@@ -45,14 +43,12 @@ func (c *Compiler) Package() error {
 
 // Import handles the import statement
 func (c *Compiler) Import() error {
-
 	if c.blockDepth > 0 {
 		return c.NewError(InvalidImportError)
 	}
 	if c.loops != nil {
 		return c.NewError(InvalidImportError)
 	}
-
 	isList := false
 	if c.t.IsNext("(") {
 		isList = true
@@ -61,7 +57,6 @@ func (c *Compiler) Import() error {
 
 	parsing := true
 	for parsing {
-
 		// Make sure that if this isn't the list format of an import, we only do this once.
 		if !isList {
 			parsing = false
@@ -90,6 +85,7 @@ func (c *Compiler) Import() error {
 		// If this is an import of a package already processed, no work to do.
 		if _, found := c.s.Get(packageName); found {
 			ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
+
 			continue
 		}
 
@@ -124,6 +120,7 @@ func (c *Compiler) Import() error {
 				if !isList || c.t.IsNext(")") {
 					break
 				}
+
 				continue
 			}
 
@@ -163,19 +160,18 @@ func (c *Compiler) Import() error {
 			break
 		}
 	}
+
 	return nil
 }
 
 // ReadFile reads the text from a file into a string
 func (c *Compiler) ReadFile(name string) (string, error) {
-
 	s, err := c.ReadDirectory(name)
 	if err == nil {
 		return s, nil
 	}
 	ui.Debug(ui.CompilerLogger, "+++ Reading package file %s", name)
 	// Not a directory, try to read the file
-
 	fn := name
 	content, err := ioutil.ReadFile(fn)
 	if err != nil {
@@ -186,6 +182,7 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 			content, err = ioutil.ReadFile(fn)
 			if err != nil {
 				c.t.Advance(-1)
+
 				return "", c.NewError("unable to read import file", err.Error())
 			}
 		} else {
@@ -202,7 +199,6 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 
 // ReadDirectory reads all the files in a directory into a single string.
 func (c *Compiler) ReadDirectory(name string) (string, error) {
-
 	var b strings.Builder
 	r := os.Getenv("EGO_PATH")
 	if r == "" {
@@ -220,6 +216,7 @@ func (c *Compiler) ReadDirectory(name string) (string, error) {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Debug(ui.CompilerLogger, "+++ No such directory")
 		}
+
 		return "", err
 	}
 

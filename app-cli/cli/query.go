@@ -9,6 +9,7 @@ func (c *Context) GetParameter(i int) string {
 	if i < g.GetParameterCount() {
 		return g.Parameters[i]
 	}
+
 	return ""
 }
 
@@ -24,12 +25,14 @@ func (c *Context) WasFound(name string) bool {
 
 		if entry.OptionType == Subcommand && entry.Found {
 			subgrammar := entry.Value.(Context)
+
 			return subgrammar.WasFound(name)
 		}
 		if entry.Found && name == entry.LongName {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -42,12 +45,14 @@ func (c *Context) GetInteger(name string) (int, bool) {
 
 		if entry.OptionType == Subcommand && entry.Found {
 			subContext := entry.Value.(Context)
+
 			return subContext.GetInteger(name)
 		}
 		if entry.Found && entry.OptionType == IntType && name == entry.LongName {
 			return entry.Value.(int), true
 		}
 	}
+
 	return 0, false
 }
 
@@ -55,17 +60,17 @@ func (c *Context) GetInteger(name string) (int, bool) {
 // was found during processing, this routine returns true. Otherwise it
 // returns false.
 func (c *Context) GetBool(name string) bool {
-
 	for _, entry := range c.Grammar {
-
 		if entry.OptionType == Subcommand && entry.Found {
 			subContext := entry.Value.(Context)
+
 			return subContext.GetBool(name)
 		}
 		if entry.Found && (entry.OptionType == BooleanType || entry.OptionType == BooleanValueType) && name == entry.LongName {
 			return entry.Value.(bool)
 		}
 	}
+
 	return false
 }
 
@@ -74,15 +79,13 @@ func (c *Context) GetBool(name string) bool {
 // value indicates if the value was explicitly specified. This is used
 // to differentiate between "not specified" and "specified as empty".
 func (c *Context) GetString(name string) (string, bool) {
-
 	for _, entry := range c.Grammar {
-
 		if entry.OptionType == Subcommand && entry.Found {
 			subContext := entry.Value.(Context)
+
 			return subContext.GetString(name)
 		}
 		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {
-
 			if entry.OptionType == StringType || entry.OptionType == UUIDType {
 				return entry.Value.(string), true
 			}
@@ -94,10 +97,11 @@ func (c *Context) GetString(name string) (string, bool) {
 				}
 				b.WriteString(n)
 			}
-			return b.String(), true
 
+			return b.String(), true
 		}
 	}
+
 	return "", false
 }
 
@@ -107,14 +111,15 @@ func (c *Context) GetString(name string) (string, bool) {
 // specified in the command line.
 func (c *Context) GetStringList(name string) ([]string, bool) {
 	for _, entry := range c.Grammar {
-
 		if entry.OptionType == Subcommand && entry.Found {
 			subContext := entry.Value.(Context)
+
 			return subContext.GetStringList(name)
 		}
 		if entry.Found && entry.OptionType == StringListType && name == entry.LongName {
 			return entry.Value.([]string), true
 		}
 	}
+
 	return make([]string, 0), false
 }

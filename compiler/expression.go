@@ -8,7 +8,7 @@ import (
 // returns a bytecode segment as it's result. This lets code compile
 // an expression, but save the generated code to emit later.
 //
-// The function grammer considers a conditional to be the top of the
+// The function grammar considers a conditional to be the top of the
 // parse tree, so we start evaluating there.
 func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx := New()
@@ -19,5 +19,6 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	if err == nil {
 		c.t = cx.t
 	}
+
 	return cx.b, err
 }

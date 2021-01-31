@@ -54,6 +54,7 @@ func TestFunctionMin(t *testing.T) {
 			got, err := Min(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMin() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -112,6 +113,7 @@ func TestFunctionMax(t *testing.T) {
 			got, err := Max(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMax() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -170,6 +172,7 @@ func TestFunctionSum(t *testing.T) {
 			got, err := Sum(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSum() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

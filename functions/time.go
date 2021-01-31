@@ -14,6 +14,7 @@ const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 // TimeNow implements time.now()
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()
+
 	return makeTime(&t), nil
 }
 
@@ -42,9 +43,11 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		d, err := time.ParseDuration(util.GetString(args[0]))
 		if err == nil {
 			t2 := t.Add(d)
+
 			return makeTime(&t2), nil
 		}
 	}
+
 	return nil, err
 }
 
@@ -58,9 +61,11 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		d, err := getTimeV(args[0])
 		if err == nil && d != nil {
 			t2 := t.Sub(*d)
+
 			return t2.String(), nil
 		}
 	}
+
 	return nil, err
 }
 
@@ -74,6 +79,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 	layout := util.GetString(args[0])
+
 	return t.Format(layout), nil
 }
 
@@ -88,6 +94,7 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 	d := time.Until(*t)
 	time.Sleep(d)
+
 	return d.String(), nil
 }
 
@@ -101,6 +108,7 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 	layout := basicLayout
+
 	return t.Format(layout), nil
 }
 
@@ -110,6 +118,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 	if t, ok := symbols.Get("__this"); ok {
 		return getTimeV(t)
 	}
+
 	return nil, errors.New(NoFunctionReceiver)
 }
 
@@ -123,6 +132,7 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 			}
 		}
 	}
+
 	return nil, errors.New(NoFunctionReceiver)
 }
 

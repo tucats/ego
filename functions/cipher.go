@@ -34,17 +34,18 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return b, err
 	}
+
 	return hex.EncodeToString([]byte(b)), nil
 
 }
 
 // Decrypt implements the _cipher.hash() function
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if err != nil {
 		return nil, err
 	}
+
 	return util.Decrypt(string(b), util.GetString(args[1]))
 }
 
@@ -150,7 +151,6 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // CreateToken creates a new token with a username and a data payload
 func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-
 	var err error
 
 	// Create a new token object, with the username and an ID. If there was a
@@ -196,6 +196,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if err != nil {
 		return b, err
 	}
+
 	return hex.EncodeToString([]byte(encryptedString)), nil
 }
 
@@ -208,5 +209,6 @@ func getTokenKey() string {
 		persistence.Set(TokenKeySetting, key)
 		_ = persistence.Save()
 	}
+
 	return key
 }
