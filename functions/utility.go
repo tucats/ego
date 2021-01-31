@@ -447,26 +447,26 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if m, ok := args[0].(map[string]interface{}); ok {
 
-		// Make a list of the member names
-		memnames := []string{}
+		// Make a list of the visible member names
+		memberList := []string{}
 		for k := range m {
 			if !strings.HasPrefix(k, "__") {
-				memnames = append(memnames, k)
+				memberList = append(memberList, k)
 			}
 		}
-		members := util.MakeSortedArray(memnames)
+		members := util.MakeSortedArray(memberList)
 
 		result := m[datatypes.MetadataKey]
 		if result == nil {
 			result = map[string]interface{}{
 				datatypes.MembersMDKey:  members,
 				datatypes.TypeMDKey:     "struct",
-				datatypes.BasetypeMDKey: "map[string]interface{}",
+				datatypes.BasetypeMDKey: "map",
 			}
 		} else {
 			if mm, ok := result.(map[string]interface{}); ok {
 				mm[datatypes.MembersMDKey] = members
-				mm[datatypes.BasetypeMDKey] = "map[string]interface{}"
+				mm[datatypes.BasetypeMDKey] = "map"
 			}
 		}
 		return result, nil
@@ -491,7 +491,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					break
 				}
 			}
-			result[datatypes.BasetypeMDKey] = "[]interface{}"
+			result[datatypes.BasetypeMDKey] = "array"
 			result[datatypes.ElementTypesMDKey] = types
 		}
 		return result, nil

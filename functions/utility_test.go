@@ -222,7 +222,7 @@ func TestReflect(t *testing.T) {
 				},
 			}},
 			want: map[string]interface{}{
-				"basetype": "map[string]interface{}",
+				"basetype": "map",
 				"type":     "struct",
 				"members":  []interface{}{"age", "name"},
 			},
@@ -252,7 +252,7 @@ func TestReflect(t *testing.T) {
 				[]interface{}{1, 2, 3},
 			}},
 			want: map[string]interface{}{
-				"basetype": "[]interface{}",
+				"basetype": "array",
 				"type":     "array",
 				"elements": "int",
 				"size":     3,
