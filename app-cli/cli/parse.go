@@ -179,6 +179,19 @@ func (c *Context) parseGrammar(args []string) error {
 
 			// Validate the argument type and store the appropriately typed value.
 			switch location.OptionType {
+
+			case KeywordType:
+				found := false
+				for _, validKeyword := range location.Keywords {
+					if strings.EqualFold(value, validKeyword) {
+						found = true
+						location.Value = validKeyword
+					}
+				}
+				if !found {
+					return errors.New("option --" + location.LongName + ": invalid keyword value \"" + value + "\"")
+				}
+
 			case BooleanType:
 				location.Value = true
 

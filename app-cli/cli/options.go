@@ -26,6 +26,9 @@ const (
 	// UUIDType defines a value that must be a valid (parsable) UUID, though the value is stored
 	// as a string datum.
 	UUIDType = 9
+
+	// KeywordType is a string that must be from an approved list of keyword values
+	KeywordType = 10
 )
 
 // Option defines the structure of each option that can be parsed.
@@ -33,6 +36,7 @@ type Option struct {
 	ShortName            string
 	LongName             string
 	Aliases              []string
+	Keywords             []string
 	Description          string
 	OptionType           int
 	ParametersExpected   int

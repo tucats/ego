@@ -15,7 +15,7 @@ import (
 // OutputFormatAction sets the default output format to use.
 func OutputFormatAction(c *cli.Context) error {
 
-	if formatString, present := c.FindGlobal().GetString("output-format"); present {
+	if formatString, present := c.FindGlobal().GetString("format"); present {
 
 		if util.InList(strings.ToLower(formatString),
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
