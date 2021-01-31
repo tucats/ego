@@ -76,7 +76,7 @@ func ShowHelp(c *Context) {
 	}
 	if headerShown {
 		_ = tc.SortRows(0, true)
-		tc.Print(ui.TextTableFormat)
+		tc.Print(ui.TextFormat)
 		fmt.Printf("\n")
 	}
 
@@ -147,5 +147,5 @@ func ShowHelp(c *Context) {
 	fmt.Printf("Options:\n")
 	_ = to.AddRow([]string{"--help, -h", "Show this help text"})
 	_ = to.SortRows(0, true)
-	_ = to.Print(ui.TextTableFormat)
+	_ = to.Print(ui.TextFormat)
 }

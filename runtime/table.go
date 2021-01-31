@@ -242,9 +242,14 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TablePrint prints a table to the default output, in the default --output-format
 // type (text or json)
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+
+	fmt := ui.OutputFormat
+	if len(args) > 0 {
+		fmt = util.GetString(args[0])
+	}
 	t, err := getTable(s)
 	if err == nil {
-		err = t.Print(ui.OutputFormat)
+		err = t.Print(fmt)
 	}
 	return err, err
 }

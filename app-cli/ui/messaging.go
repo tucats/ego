@@ -11,8 +11,8 @@ import (
 )
 
 // Formatted output types for data more complex than individual messages, such
-// as the format for tabular data output. Choices are "text", "json", or default
-// which means whatever was set by the command line or profile.
+// as the format for tabular data output. Choices are "text", "json", "indent",
+// or default which means whatever was set by the command line or profile.
 const (
 
 	// DefaultTableFormat means use whatever the default is that may have been set
@@ -20,15 +20,21 @@ const (
 	DefaultTableFormat = "default"
 
 	// TextTableFormat indicates the output format should be human-readable text
-	TextTableFormat = "text"
+	TextFormat = "text"
 
 	// JSONTableFormat indicates the output format should be machine-readable JSON
-	JSONTableFormat = "json"
+	JSONFormat = "json"
+
+	// JSONIndentedTableFormat indicates JSON output that is indented for readability.
+	JSONIndentedFormat = "indented"
+
+	JSONIndentPrefix = ""
+	JSONIndentSpacer = "   "
 )
 
 // OutputFormat is the default output format if not overridden by a global option
 // or explicit call from the user.
-var OutputFormat = TextTableFormat
+var OutputFormat = "text"
 
 // DebugMode determines if "debug" style messages are output.
 var DebugMode = false

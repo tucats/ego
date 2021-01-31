@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/util"
 )
 
 // Grammar describes profile subcommands
@@ -81,7 +82,7 @@ func ShowAction(c *cli.Context) error {
 	}
 	_ = t.SetOrderBy("key")
 	t.ShowUnderlines(false)
-	t.Print(ui.TextTableFormat)
+	t.Print(ui.TextFormat)
 
 	return nil
 }
@@ -96,7 +97,7 @@ func ListAction(c *cli.Context) error {
 	}
 	_ = t.SetOrderBy("name")
 	t.ShowUnderlines(false)
-	t.Print(ui.TextTableFormat)
+	t.Print(ui.TextFormat)
 
 	return nil
 }
@@ -106,7 +107,10 @@ func SetOutputAction(c *cli.Context) error {
 
 	if c.GetParameterCount() == 1 {
 		outputType := c.GetParameter(0)
-		if outputType == "text" || outputType == "json" {
+		if util.InList(outputType,
+			ui.TextFormat,
+			ui.JSONFormat,
+			ui.JSONIndentedFormat) {
 			persistence.Set("ego.output-format", outputType)
 			return nil
 		}

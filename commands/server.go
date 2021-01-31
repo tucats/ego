@@ -199,10 +199,12 @@ func Status(c *cli.Context) error {
 			_ = server.RemovePidFile(c)
 		}
 	}
-	if ui.OutputFormat == "json" {
-		fmt.Printf("%v\n", running)
-	} else {
+
+	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s\n", msg)
+	} else {
+		// no difference for json vs indented
+		fmt.Printf("%v\n", running)
 	}
 	return nil
 }
@@ -407,10 +409,15 @@ func SetCacheSize(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if ui.OutputFormat == "json" {
+
+	switch ui.OutputFormat {
+	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
-	} else {
+	case ui.JSONIndentedFormat:
+		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		fmt.Println(string(b))
+	case ui.TextFormat:
 		if cacheStatus.Status != 200 {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)
@@ -433,10 +440,15 @@ func FlushServerCaches(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if ui.OutputFormat == "json" {
+
+	switch ui.OutputFormat {
+	case ui.JSONIndentedFormat:
+		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		fmt.Println(string(b))
+	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
-	} else {
+	case ui.TextFormat:
 		if cacheStatus.Status != 200 {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)
@@ -461,10 +473,17 @@ func ListServerCaches(c *cli.Context) error {
 	if cacheStatus.Status != 200 {
 		return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 	}
-	if ui.OutputFormat == "json" {
+
+	switch ui.OutputFormat {
+	case ui.JSONIndentedFormat:
+		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		fmt.Println(string(b))
+
+	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
 		fmt.Println(string(b))
-	} else {
+
+	case ui.TextFormat:
 		if cacheStatus.Status != 200 {
 			if cacheStatus.Status == 403 {
 				return errors.New(defs.NoPrivilegeForOperation)

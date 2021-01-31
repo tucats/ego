@@ -1,6 +1,7 @@
 package tables
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -21,19 +22,26 @@ func (t *Table) Print(format string) error {
 	}
 
 	if format == "" {
-		format = ui.TextTableFormat
+		format = ui.TextFormat
 	}
 
 	// Based on the selected format, generate the output
 	switch format {
-	case ui.TextTableFormat:
+	case ui.TextFormat:
 		s := t.FormatText()
 		for _, line := range s {
 			fmt.Printf("%s\n", line)
 		}
 
-	case ui.JSONTableFormat:
+	case ui.JSONFormat:
 		fmt.Printf("%s\n", t.FormatJSON())
+
+	case ui.JSONIndentedFormat:
+		text := t.FormatJSON()
+		var i interface{}
+		_ = json.Unmarshal([]byte(text), &i)
+		b, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		fmt.Printf("%s\n", string(b))
 
 	default:
 		return errors.New("Invalid table format value")

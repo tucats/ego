@@ -110,7 +110,7 @@ func ListUsers(c *cli.Context) error {
 			err = json.Unmarshal([]byte(body), &ud)
 			if err == nil {
 				switch ui.OutputFormat {
-				case "text":
+				case ui.TextFormat:
 					t, _ := tables.New([]string{"User", "ID", "Permissions"})
 					for _, u := range ud.Items {
 						perms := ""
@@ -128,8 +128,12 @@ func ListUsers(c *cli.Context) error {
 					_ = t.SortRows(0, true)
 					_ = t.Print("text")
 
-				case "json":
+				case ui.JSONFormat:
 					fmt.Printf("%s\n", body)
+
+				case ui.JSONIndentedFormat:
+					b, _ := json.MarshalIndent(ud, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+					fmt.Printf("%s\n", string(b))
 				}
 			}
 		}

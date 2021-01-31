@@ -50,6 +50,7 @@ func runFromContext(context *cli.Context) error {
 		},
 		{
 			LongName:            "output-format",
+			ShortName:           "f",
 			Description:         "Specify text or json output format",
 			OptionType:          cli.StringType,
 			Action:              OutputFormatAction,

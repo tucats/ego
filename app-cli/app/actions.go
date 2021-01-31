@@ -9,20 +9,18 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/util"
 )
 
 // OutputFormatAction sets the default output format to use.
 func OutputFormatAction(c *cli.Context) error {
 
-	if formatString, present := c.FindGlobal().GetString("ego.output-format"); present {
-		switch strings.ToLower(formatString) {
-		case "text":
-			ui.OutputFormat = ui.TextTableFormat
+	if formatString, present := c.FindGlobal().GetString("output-format"); present {
 
-		case "json":
-			ui.OutputFormat = ui.JSONTableFormat
-
-		default:
+		if util.InList(strings.ToLower(formatString),
+			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
+			ui.OutputFormat = formatString
+		} else {
 			return errors.New("Invalid output format specified: " + formatString)
 		}
 		persistence.SetDefault("ego.output-format", strings.ToLower(formatString))

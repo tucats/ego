@@ -33,7 +33,7 @@ const (
 
 	// What is the output format that should be used by
 	// default for operations that could return either
-	// "text" or "json" output.
+	// "text" , "indent", or "json" output.
 	OutputFormatSetting = "ego.output-format"
 
 	// If true, the script language includes language
