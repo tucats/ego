@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 )
 
@@ -380,4 +381,15 @@ func InList(s string, test ...string) bool {
 		}
 	}
 	return false
+}
+
+// Given a list of strings, convert them to a sorted list in
+// Ego array format.
+func MakeSortedArray(array []string) []interface{} {
+	sort.Strings(array)
+	result := make([]interface{}, len(array))
+	for i, v := range array {
+		result[i] = v
+	}
+	return result
 }

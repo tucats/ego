@@ -7,7 +7,7 @@
 }
 
 {
-    want := "/Users/tom/go/src/github.com/tucats/ego/commands/path.go"
+    want := "/Users/tom/go/src/github.com/tucats/ego/app-cli/app/actions.go"
     got := io.Expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
     gotf := got[0]
     @assert T.Equal(want, gotf,  "single path name with .go extension")

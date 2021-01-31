@@ -179,13 +179,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 				keys = append(keys, k)
 			}
 		}
-		sort.Strings(keys)
-
-		a := make([]interface{}, len(keys))
-		for n, k := range keys {
-			a[n] = k
-		}
-		return a, nil
+		return util.MakeSortedArray(keys), nil
 
 	default:
 		return nil, NewError("members", InvalidTypeError)
@@ -453,22 +447,14 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if m, ok := args[0].(map[string]interface{}); ok {
 
-		// Make a list of the names as a string, and then
-		// sort it alphabetically. This is required so the
-		// member list has a predictable order.
+		// Make a list of the member names
 		memnames := []string{}
 		for k := range m {
 			if !strings.HasPrefix(k, "__") {
 				memnames = append(memnames, k)
 			}
 		}
-		sort.Strings(memnames)
-
-		// Convert the sorted list into an Ego array
-		members := make([]interface{}, len(memnames))
-		for i, v := range memnames {
-			members[i] = v
-		}
+		members := util.MakeSortedArray(memnames)
 
 		result := m[datatypes.MetadataKey]
 		if result == nil {
