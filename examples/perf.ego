@@ -1,11 +1,11 @@
-import time
-import math
 
 start := time.Now()
 count := 20
 
-for i := 0; i < count; i = i + 1 { x := math.factor(1234567890) }
+for i := 0; i < count; i = i + 1 {
+  x := math.Factor(1234567890)
+}
 
 finish := time.Now()
-fmt.Printf("Finished, elapsed time %s\n", time.Subtract(finish, start))
+fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
 
