@@ -8,6 +8,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+/*  TEST ONLY IF YOU HAVE A LOCAL GREMLIN SERVER
+
 func TestFunctionGremlinQuery(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -46,6 +48,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 	client, err := GremlinOpen(syms, []interface{}{"ws://localhost:8182/gremlin"})
 	if err != nil {
 		t.Errorf("Error connecting to gremlin server: %v", err)
+		t.Fail()
 	}
 
 	_ = syms.SetAlways("__this", client)
@@ -65,6 +68,7 @@ func TestFunctionGremlinQuery(t *testing.T) {
 		})
 	}
 }
+*/
 
 func Test_pad(t *testing.T) {
 	type args struct {

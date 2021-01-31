@@ -452,12 +452,24 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if m, ok := args[0].(map[string]interface{}); ok {
-		members := []interface{}{}
+
+		// Make a list of the names as a string, and then
+		// sort it alphabetically. This is required so the
+		// member list has a predictable order.
+		memnames := []string{}
 		for k := range m {
 			if !strings.HasPrefix(k, "__") {
-				members = append(members, k)
+				memnames = append(memnames, k)
 			}
 		}
+		sort.Strings(memnames)
+
+		// Convert the sorted list into an Ego array
+		members := make([]interface{}, len(memnames))
+		for i, v := range memnames {
+			members[i] = v
+		}
+
 		result := m[datatypes.MetadataKey]
 		if result == nil {
 			result = map[string]interface{}{
