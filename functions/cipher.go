@@ -3,7 +3,6 @@ package functions
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,8 +11,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const TokenExpirationSetting = "token-expiration"
-const TokenKeySetting = "token-key"
+const TokenExpirationSetting = "ego.token.expiration"
+const TokenKeySetting = "ego.token.key"
 
 type Token struct {
 	Name    string
@@ -23,12 +22,12 @@ type Token struct {
 	AuthID  uuid.UUID
 }
 
-// Hash implements the _cipher.hash() function
+// Hash implements the cipher.hash() function
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.Hash(util.GetString(args[0])), nil
 }
 
-// Encrypt implements the _cipher.hash() function
+// Encrypt implements the cipher.hash() function
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b, err := util.Encrypt(util.GetString(args[0]), util.GetString(args[1]))
 	if err != nil {
@@ -38,7 +37,7 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return hex.EncodeToString([]byte(b)), nil
 }
 
-// Decrypt implements the _cipher.hash() function
+// Decrypt implements the cipher.hash() function
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if err != nil {
@@ -48,7 +47,7 @@ func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.Decrypt(string(b), util.GetString(args[1]))
 }
 
-// Validate creates a new token with a username and a data payload
+// Validate determines if a token is valid and returns true/false
 func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
@@ -72,7 +71,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err == nil && len(j) == 0 {
-		err = errors.New("invalid token encryption")
+		err = NewError("validate", InvalidTokenEncryption)
 	}
 	if err != nil {
 		if reportErr {
@@ -96,7 +95,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		if reportErr {
-			return false, errors.New("token expired")
+			return false, NewError("validate", ExpiredTokenError)
 		} else {
 			return false, nil
 		}
@@ -123,7 +122,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 	if len(j) == 0 {
-		return nil, errors.New("invalid token encryption")
+		return nil, NewError("extract", InvalidTokenEncryption)
 	}
 
 	var t = Token{}
@@ -135,7 +134,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		return nil, errors.New("token expired")
+		return nil, NewError("extract", ExpiredTokenError)
 	}
 
 	r := map[string]interface{}{}

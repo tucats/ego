@@ -16,7 +16,7 @@ import cipher
 	@assert T.False(cipher.Validate(t), "token is not invalid")
 }
 {
-	const TokenExpirationSetting = "token-expiration"
+	const TokenExpirationSetting = "ego.token.expiration"
 	td := profile.Get(TokenExpirationSetting)
 	if td == "" {
 		td := "5m"
