@@ -103,6 +103,9 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	case error:
 		return len(arg.Error()), nil
 
+	case *datatypes.EgoMap:
+		return len(arg.Keys()), nil
+
 	case map[string]interface{}:
 		keys := make([]string, 0)
 		for k := range arg {
@@ -190,6 +193,9 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Members gets an array of the names of the fields in a structure
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
+	case datatypes.EgoMap:
+		return v.Keys(), nil
+
 	case map[string]interface{}:
 		keys := make([]string, 0)
 		for k := range v {
@@ -395,6 +401,10 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case string:
 		return nil, s.Delete(v)
+
+	case *datatypes.EgoMap:
+		_, err := v.Delete(args[1])
+		return v, err
 
 	case map[string]interface{}:
 		key := util.GetString(args[1])

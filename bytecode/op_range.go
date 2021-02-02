@@ -7,6 +7,26 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// RangeInitImpl impelments the RangeInit opcode
+//
+// Inputs:
+//    operand    - an array of two strings containing
+//                 the names of the index and value
+//                 variables.
+//    stack+0    - The item to be "ranged" is stored
+//                 on the stack. This can be a map,
+//                 an array, a structure, or a channel
+//
+// The RangeInit opcode sets up the runtime context for
+// a for..range operation. The index and value variables
+// create created in a new symbol scope for the range,
+// and for map types, a keyset is derived that will be
+// used to step through the map.
+//
+// This information describing the range operation is
+// pushed on a stack in the runtime context where it
+// can be accessed by the RangeNext opcode. The stack
+// allows nested for...range statements.
 func RangeInitImpl(c *Context, i interface{}) error {
 	r := Range{}
 	var v interface{}
@@ -59,6 +79,25 @@ func RangeInitImpl(c *Context, i interface{}) error {
 	return err
 }
 
+// RangeNextImpl impelments the RangeNext opcode
+//
+// Inputs:
+//    operand    - The bytecode address to branch to
+//                 when the range is exhausted.
+//
+// The RangeNext opcode fetches the top of the range
+// stack from the runtime context, and evaluates the
+// type of the item being ranged. For each type, the
+// operations are similar:
+//
+// 1. Determine if the index is already outside the
+//    range, in which case the branch is taken. The
+//    topmost item on the range stack is discarded.
+//
+// 2. The range is incremented and the associated
+//    value (map member, array index, channel value)
+//    is read and stored in the value variable. The
+//    index number is also stored in the index variable.
 func RangeNextImpl(c *Context, i interface{}) error {
 	var err error
 	destination := util.GetInt(i)

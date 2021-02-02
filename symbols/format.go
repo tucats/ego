@@ -41,6 +41,9 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		skip := false
 		typeString := "package"
 		switch actual := v.(type) {
+		case *datatypes.EgoMap:
+			typeString = actual.TypeString()
+
 		case func(*SymbolTable, []interface{}) (interface{}, error):
 			if !includeBuiltins {
 				continue

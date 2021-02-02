@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+
+	"github.com/tucats/ego/datatypes"
 )
 
 // GetMap extracts a struct from an abstract interface. Returns nil
@@ -71,9 +73,12 @@ func GetBool(v interface{}) bool {
 // GetString takes a generic interface and returns the string value, using
 // type coercion if needed.
 func GetString(v interface{}) string {
-	switch v.(type) {
+	switch actual := v.(type) {
 	case error:
 		return ""
+
+	case *datatypes.EgoMap:
+		return actual.String()
 
 	case map[string]interface{}:
 		return Format(v)

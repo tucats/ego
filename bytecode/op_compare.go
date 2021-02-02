@@ -3,6 +3,7 @@ package bytecode
 import (
 	"reflect"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/util"
 )
 
@@ -31,6 +32,9 @@ func EqualImpl(c *Context, i interface{}) error {
 		r = (v2 == nil)
 
 	case map[string]interface{}:
+		r = reflect.DeepEqual(v1, v2)
+
+	case *datatypes.EgoMap:
 		r = reflect.DeepEqual(v1, v2)
 
 	case []interface{}:
@@ -79,6 +83,9 @@ func NotEqualImpl(c *Context, i interface{}) error {
 		r = (v2 != nil)
 
 	case error:
+		r = !reflect.DeepEqual(v1, v2)
+
+	case *datatypes.EgoMap:
 		r = !reflect.DeepEqual(v1, v2)
 
 	case map[string]interface{}:

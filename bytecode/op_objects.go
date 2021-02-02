@@ -98,7 +98,7 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 		return err
 	}
 
-	// The only the type that is supported is a map
+	// The only the type that is supported is a struct type
 	switch mv := m.(type) {
 	case map[string]interface{}:
 		if _, found := datatypes.GetMetadata(mv, datatypes.ParentMDKey); found {

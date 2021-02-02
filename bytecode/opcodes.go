@@ -148,7 +148,7 @@ var instructionNames = map[Instruction]string{
 	Print:              "Print",
 	Push:               "Push",
 	PushScope:          "PushScope",
-	RangeInit:          "Range",
+	RangeInit:          "RangeInit",
 	RangeNext:          "RangeNext",
 	RequiredType:       "RequiredType",
 	Response:           "Response",

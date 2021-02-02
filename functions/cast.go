@@ -215,6 +215,15 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
+	case *datatypes.EgoMap:
+		r := datatypes.NewMap(v.KeyType(), v.ValueType())
+		for _, k := range v.Keys() {
+			d, _, _ := v.Get(k)
+			_, _ = r.Set(k, DeepCopy(d, depth-1))
+		}
+
+		return r
+
 	case map[string]interface{}:
 		r := map[string]interface{}{}
 		for k, d := range v {

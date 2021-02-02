@@ -8,6 +8,7 @@ import (
 	"text/template"
 	tparse "text/template/parse"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -80,6 +81,10 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 
 		return 0, nil
+
+	case datatypes.EgoMap:
+		_, found, err := arg.Get(args[1])
+		return found, err
 
 	case map[string]interface{}:
 		key := util.GetString(args[1])

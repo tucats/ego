@@ -36,6 +36,9 @@ func StoreImpl(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
+		case *datatypes.EgoMap:
+			a.ImmutableKeys(true)
+
 		case map[string]interface{}:
 			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
 		}
@@ -116,6 +119,8 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
+		case *datatypes.EgoMap:
+			a.ImmutableKeys(true)
 		case map[string]interface{}:
 			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
 		}
@@ -142,6 +147,9 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
+		case *datatypes.EgoMap:
+			a.ImmutableKeys(true)
+
 		case map[string]interface{}:
 			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
 		}
