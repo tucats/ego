@@ -5,6 +5,7 @@
     1. [Base Types](#basetypes)
     2. [Arrays](#arrays)
     2. [Structures](#structures)
+    3. [Maps](#maps)
     3. [User Types](#usertypes)
 2. [Symbols and Expressions](#symbolsexpressions)
     1. [Symbols and Scope](#symbolsscope)
@@ -93,6 +94,25 @@ A structure (called `struct` in the _Ego_ language) is a set of key/value pairs.
     {  Name: "Tom", Age: 53 }
 
 This struct has two members, `Name` and `Age`. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member `Name` is a string value, and the struct member `Age` is an int value.
+
+## Maps<a name="maps"></a>
+A `map` in the _Ego_ language functions the same as it does in Go. A map is declared as having a key type and a value type, and a hashmap is constructed based on that inforation. You can set a value in the map and you can fetch a value from the map.
+
+Current, it is a limitation that the only way to create a map is by setting a value to an empty map constant. Map initialization syntax is not yet supported.  For example,
+
+    staff := map[int]string{}
+
+This creates a map (stored in `staff`) that has an integer value as the key, and stores a string value for each unique key. A map can contain only one key of a given value; setting the key value a second time just replaces the value of the map for that key.
+
+    staff[101] = "Jeff"
+    staff[102] = "Susan"
+
+This adds members to the map. Note that the key  _must_ be an integer value, and the value _must_ be a string value because that's how the map was declared. Unlike a variable, a map has a static definition once it is created and cannot contain values of a different type. Attempting to store a boolean in the map results in a runtime error, for example.
+
+    id := 102
+    name := staff[id]
+
+This uses an integer variable to retrieve a value from the map. In this case, the value of `name` will be set to "Susan". If there is nothing in the map with the given key, the value of the exprssion is `nil`.
 
 ## User Types<a name="usertypes"></a>
 The _Ego_ language includes the ability to create use-defined types. These are limited to `struct` definitions. They allow the program to define a short-hand for a specific type, and then reference that type when creating a new variable of that type. The `type` statement is used to define the type. Here is an example:
@@ -365,17 +385,47 @@ This example uses a variable that already exists outside the scope of the `for` 
 You can create a loop that indexes over all the values in an array, in sequential order. The index value is the value of the array element. For example,
 
      ids := [ 101, 143, 202, 17]
-     for i := range ids {
-         fmt.Println(i)
+     for i, j := range ids {
+        fmt.Println("Array member ", i, " is ", v)
      }
 
-This example will print a line for each value in the array, in the order they appear in the array. During execution of the loop body, the value of `i` (the _index_ variable)` contains the next value of the array for each iteration of the loop.  You can also specify a second value, in which case the loop defines an index number as well as index value, as in:
+This example will print a line for each value in the array, in the order they appear in the array. 
+During each iteration of the loop, the variable `i` will contain the numerical array index  and the variable `v` will contain the actual values from the array for each iteration of the loop body.
+During execution of the loop body, the value of `i` (the _index_ variable)` contains the next value of the array for each iteration of the loop.  You can also specify a second value, in which case the loop defines an index number as well as index value, as in:
 
-    for i, v := range ids {
-        fmt.Println("Array member ", i, " is ", v)
+    for _, v := range ids {
+        fmt.Println(v)
     }
 
-In this example, for each iteration of the loop, the variable `i` will contain the numerical array index  and the variable `v` will contain the actual values from the array for each iteration of the loop body.
+In this example, for each iteration of the loop, the variable `v` will contain the actual values from the array for each iteration of the loop body. By using the reserved name `_` for the index variable, the index value for each loop is not available.  Similarly, you can use the range to get all the index values of an array:
+
+    for i := range ids {
+        fmt.Println(v)
+    }
+
+In this case, if the array `ids` has 5 values, then this will print the numbers 1 through 5. The value of the array can be accessed inside the body of the loop as `ids[i]`.
+
+Similarly, you can use the `range` construct to step through the values of a map data type. For example,
+
+    inventory := map[string]int{}
+    inventory["wrenches"] = 5
+    inventory["pliers"] = 12
+    inventory["hammers"] = 2
+
+    for product, count := range inventory {
+        fmt.Println("There are ", count, " ", product, " in stock.")
+    }
+
+When the loop runs, the value of `product` is set to each key in the map, and `count` is set to the value associated with that key. These variables exist only within the body of the loop. Note that if you omit either one and use the `_` variable instead, that item (key or value) is not read from the map. You can use this to generate a list of the keys, for example:
+
+    names := []string{}
+    for name := range inventory {
+        names = names + name
+    }
+    fmt.Println("The products are all named", names)
+
+This creates an array of string values, and stores the name of each key in the list by appending them.
+
 
 ## `break` and `continue` <a name="breakcont"></a>
 Sometimes when running an loop, you may wish to change the flow of execution in the loop based on conditions unrelated to the index variable. For example, consider:
