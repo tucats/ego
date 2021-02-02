@@ -15,6 +15,10 @@ func (c *Compiler) expressionAtom() error {
 	if t == "make" && c.t.Peek(2) == "(" {
 		return c.Make()
 	}
+	// Is this a map declaration?
+	if t == "map" && c.t.Peek(2) == "[" {
+		return c.Map()
+	}
 	// Is this the "nil" constant?
 	if t == "nil" {
 		c.t.Advance(1)

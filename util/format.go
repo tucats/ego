@@ -104,6 +104,9 @@ func Format(arg interface{}) string {
 	case string:
 		return "\"" + v + "\""
 
+	case *datatypes.EgoMap:
+		return v.String()
+
 	default:
 		vv := reflect.ValueOf(v)
 

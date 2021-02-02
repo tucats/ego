@@ -528,6 +528,13 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	}
 
 	switch a := array.(type) {
+	case *datatypes.EgoMap:
+		var err error
+		var v interface{}
+		if v, _, err = a.Get(index); err == nil {
+			err = c.Push(v)
+		}
+
 	// Reading from a channel ignores the index value
 	case *datatypes.Channel:
 		//ui.Debug(ui.ByteCodeLogger, "--> Planning to read %s", a.String())
@@ -661,6 +668,13 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		return err
 	}
 	switch a := destination.(type) {
+	case *datatypes.EgoMap:
+		if _, err = a.Set(index, v); err == nil {
+			err = c.Push(a)
+		}
+		if err != nil {
+			return c.NewError(err.Error())
+		}
 	// Index into map is just member access. Make sure it's not
 	// a read-only member or a function pointer...
 	case map[string]interface{}:

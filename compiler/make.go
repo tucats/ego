@@ -5,46 +5,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 )
 
-type TypeDefinition struct {
-	tokens []string
-	model  interface{}
-}
-
-var typeMap = []TypeDefinition{
-	{
-		[]string{"chan"},
-		&datatypes.Channel{},
-	},
-	{
-		[]string{"[", "]", "int"},
-		1,
-	},
-	{
-		[]string{"[", "]", "bool"},
-		true,
-	},
-	{
-		[]string{"[", "]", "float"},
-		0.0,
-	},
-	{
-		[]string{"[", "]", "string"},
-		"",
-	},
-	{
-		[]string{"[", "]", "interface", "{", "}"},
-		nil,
-	},
-	{
-		[]string{"[", "]", "struct"},
-		map[string]interface{}{},
-	},
-	{
-		[]string{"[", "]", "{", "}"},
-		map[string]interface{}{},
-	},
-}
-
 func (c *Compiler) Make() error {
 	if !c.t.IsNext("make") {
 		return c.NewError(UnexpectedTokenError, c.t.Peek(1))
@@ -58,16 +18,16 @@ func (c *Compiler) Make() error {
 		c.b.Emit(bytecode.Push, &datatypes.Channel{})
 	} else {
 		found := false
-		for _, typeDef := range typeMap {
+		for _, typeDef := range datatypes.TypeDeclarationMap {
 			found = true
-			for pos, token := range typeDef.tokens {
+			for pos, token := range typeDef.Tokens {
 				if c.t.Peek(1+pos) != token {
 					found = false
 				}
 			}
 			if found {
-				c.t.Advance(len(typeDef.tokens))
-				c.b.Emit(bytecode.Push, typeDef.model)
+				c.t.Advance(len(typeDef.Tokens))
+				c.b.Emit(bytecode.Push, typeDef.Model)
 
 				break
 			}

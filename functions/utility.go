@@ -297,6 +297,9 @@ func FormatSymbols(syms *symbols.SymbolTable, args []interface{}) (interface{}, 
 // Type implements the type() function
 func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
+	case *datatypes.EgoMap:
+		return v.TypeString(), nil
+
 	case nil:
 		return "nil", nil
 
@@ -498,6 +501,17 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				mm[datatypes.MembersMDKey] = members
 				mm[datatypes.BasetypeMDKey] = "map"
 			}
+		}
+
+		return result, nil
+	}
+
+	if m, ok := args[0].(*datatypes.EgoMap); ok {
+		// Make a list of the visible member names
+		result := map[string]interface{}{
+			datatypes.SizeMDKey:     len(m.Keys()),
+			datatypes.TypeMDKey:     m.TypeString(),
+			datatypes.BasetypeMDKey: "map[interface{}]interface{}",
 		}
 
 		return result, nil

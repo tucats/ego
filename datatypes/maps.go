@@ -1,11 +1,16 @@
 package datatypes
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 type EgoMap struct {
 	data      map[interface{}]interface{}
 	keyType   int
 	valueType int
+	immutable int
 }
 
 func NewMap(keyType int, valueType int) *EgoMap {
@@ -13,9 +18,18 @@ func NewMap(keyType int, valueType int) *EgoMap {
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,
 		valueType: valueType,
+		immutable: 0,
 	}
 
 	return m
+}
+
+func (m *EgoMap) ImmutableKeys(b bool) {
+	if b {
+		m.immutable++
+	} else {
+		m.immutable--
+	}
 }
 
 func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
@@ -29,8 +43,14 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 }
 
 func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
-	if !IsType(key, m.keyType) || !IsType(value, m.valueType) {
+	if m.immutable > 0 {
+		return false, errors.New(ImmutableMapError)
+	}
+	if !IsType(key, m.keyType) {
 		return false, errors.New(WrongMapKeyType)
+	}
+	if !IsType(value, m.valueType) {
+		return false, errors.New(WrongMapValueType)
 	}
 	_, found := m.data[key]
 	m.data[key] = value
@@ -45,4 +65,29 @@ func (m *EgoMap) Keys() []interface{} {
 	}
 
 	return r
+}
+
+func (m *EgoMap) TypeString() string {
+	return fmt.Sprintf("map[%s]%s", TypeString(m.keyType), TypeString(m.valueType))
+}
+
+func (m *EgoMap) String() string {
+	var b strings.Builder
+	b.WriteString("{")
+
+	for i, k := range m.Keys() {
+		v, _, _ := m.Get(k)
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		if s, ok := v.(string); ok {
+			b.WriteString(fmt.Sprintf("%v: \"%s\"", k, s))
+		} else {
+			b.WriteString(fmt.Sprintf("%v: %v", k, v))
+		}
+	}
+	b.WriteString("}")
+
+	return b.String()
 }
