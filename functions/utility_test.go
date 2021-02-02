@@ -318,10 +318,6 @@ func TestStrLen(t *testing.T) {
 }
 
 func TestLength(t *testing.T) {
-	type args struct {
-		symbols *symbols.SymbolTable
-		args    []interface{}
-	}
 	tests := []struct {
 		name    string
 		args    []interface{}

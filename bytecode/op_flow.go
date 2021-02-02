@@ -421,11 +421,11 @@ func RangeInitImpl(c *Context, i interface{}) error {
 		r.indexName = util.GetString(list[0])
 		r.valueName = util.GetString(list[1])
 		if r.indexName != "" && r.indexName != "_" {
-			c.symbols.Create(r.indexName)
+			_ = c.symbols.Create(r.indexName)
 		}
 
 		if r.valueName != "" && r.valueName != "_" {
-			c.symbols.Create(r.valueName)
+			_ = c.symbols.Create(r.valueName)
 		}
 	}
 	if v, err = c.Pop(); err == nil {
@@ -472,10 +472,10 @@ func RangeNextImpl(c *Context, i interface{}) error {
 			} else {
 				key := r.keySet[r.index]
 				if r.indexName != "" && r.indexName != "_" {
-					c.symbols.Set(r.indexName, key)
+					err = c.symbols.Set(r.indexName, key)
 				}
-				if r.valueName != "" && r.valueName != "_" {
-					c.symbols.Set(r.valueName, actual[util.GetString(key)])
+				if err == nil && r.valueName != "" && r.valueName != "_" {
+					err = c.symbols.Set(r.valueName, actual[util.GetString(key)])
 				}
 				r.index++
 			}
@@ -490,10 +490,10 @@ func RangeNextImpl(c *Context, i interface{}) error {
 				datum, err = actual.Receive()
 				if err == nil {
 					if r.indexName != "" && r.indexName != "_" {
-						c.symbols.Set(r.indexName, r.index)
+						err = c.symbols.Set(r.indexName, r.index)
 					}
-					if r.valueName != "" && r.valueName != "_" {
-						c.symbols.Set(r.valueName, datum)
+					if err == nil && r.valueName != "" && r.valueName != "_" {
+						err = c.symbols.Set(r.valueName, datum)
 					}
 					r.index++
 				} else {
@@ -508,10 +508,10 @@ func RangeNextImpl(c *Context, i interface{}) error {
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				if r.indexName != "" && r.indexName != "_" {
-					c.symbols.Set(r.indexName, r.index)
+					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if r.valueName != "" && r.valueName != "_" {
-					c.symbols.Set(r.valueName, actual[r.index])
+				if err == nil && r.valueName != "" && r.valueName != "_" {
+					err = c.symbols.Set(r.valueName, actual[r.index])
 				}
 				r.index++
 			}

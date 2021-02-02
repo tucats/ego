@@ -280,9 +280,6 @@ func TestFunctionIndex(t *testing.T) {
 }
 
 func TestSubstring(t *testing.T) {
-	type args struct {
-		args []interface{}
-	}
 	tests := []struct {
 		name    string
 		args    []interface{}
