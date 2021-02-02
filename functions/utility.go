@@ -191,7 +191,6 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case map[string]interface{}:
-
 		keys := make([]string, 0)
 		for k := range v {
 			if !strings.HasPrefix(k, "__") {
@@ -219,7 +218,6 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			array = append(array, v)
 		}
 	}
-
 	if len(array) == 0 {
 		return array, nil
 	}

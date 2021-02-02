@@ -30,6 +30,11 @@ func TestFunctionLeft(t *testing.T) {
 			args: args{[]interface{}{"Abraham", 50}},
 			want: "Abraham",
 		},
+		{
+			name: "unicode string",
+			args: args{[]interface{}{"\u2318foo\u2318", 3}},
+			want: "\u2318fo",
+		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
@@ -77,8 +82,11 @@ func TestFunctionRight(t *testing.T) {
 			args: args{[]interface{}{"", 3}},
 			want: "",
 		},
-
-		// TODO: Add test cases.
+		{
+			name: "unicode string",
+			args: args{[]interface{}{"\u2318foo\u2318", 3}},
+			want: "oo\u2318",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -199,58 +207,6 @@ func TestFunctionUpper(t *testing.T) {
 	}
 }
 
-func TestFunctionSubstring(t *testing.T) {
-	type args struct {
-		args []interface{}
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "left case",
-			args: args{[]interface{}{"simple", 1, 3}},
-			want: "sim",
-		},
-		{
-			name: "right case",
-			args: args{[]interface{}{"simple", 3, 4}},
-			want: "mple",
-		},
-		{
-			name: "middle case",
-			args: args{[]interface{}{"simple", 3, 1}},
-			want: "m",
-		},
-		{
-			name: "invalid start case",
-			args: args{[]interface{}{"simple", -5, 3}},
-			want: "sim",
-		},
-		{
-			name: "invalid len case",
-			args: args{[]interface{}{"simple", 1, 355}},
-			want: "simple",
-		},
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Substring(nil, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FunctionSubstring() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionSubstring() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestFunctionIndex(t *testing.T) {
 	type args struct {
 		args []interface{}
@@ -333,6 +289,31 @@ func TestSubstring(t *testing.T) {
 		want    interface{}
 		wantErr bool
 	}{
+		{
+			name: "left case",
+			args: []interface{}{"simple", 1, 3},
+			want: "sim",
+		},
+		{
+			name: "right case",
+			args: []interface{}{"simple", 3, 4},
+			want: "mple",
+		},
+		{
+			name: "middle case",
+			args: []interface{}{"simple", 3, 1},
+			want: "m",
+		},
+		{
+			name: "invalid start case",
+			args: []interface{}{"simple", -5, 3},
+			want: "sim",
+		},
+		{
+			name: "invalid len case",
+			args: []interface{}{"simple", 1, 355},
+			want: "simple",
+		},
 		{
 			name: "simple ASCII string starting at 1",
 			args: []interface{}{"foobar", 1, 3},
