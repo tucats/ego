@@ -61,12 +61,15 @@ func (c *Compiler) For() error {
 	}
 
 	// Is this the two-value range thing?
-	indexName := ""
-	if tokenizer.IsSymbol(c.t.Peek(1)) && (c.t.Peek(2) == ",") {
-		indexName = c.t.Next()
-		c.t.Advance(1)
+	indexName := c.t.Peek(1)
+	valueName := ""
+	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == ",") {
+		c.t.Advance(2)
+		valueName = c.t.Peek(1)
 	}
 	indexName = c.Normalize(indexName)
+	valueName = c.Normalize(valueName)
+
 	// if not an lvalue, assume conditional mode
 	if !c.IsLValue() {
 		bc, err := c.Expression()
@@ -149,74 +152,49 @@ func (c *Compiler) For() error {
 
 	// Do we compile a range?
 	if c.t.IsNext("range") {
-		// This is weird, but the LValue compiler will have inserted a "SymbolCreate" in the
-		// lValue due to the syntax, but we don't really want to create it as it will have already
-		// been generated once. So use it once to create a value, and then remove the store.
-		c.b.Emit(bytecode.Push, nil)
-		c.b.Append(indexStore)
-		indexStore.Remove(0)
-
-		// Make a new scope and get the array we will range over
 		c.PushLoop(rangeLoopType)
-		arrayCode, err := c.Expression()
-		if err != nil {
-			return err
-		}
 
-		// Initialize index
-		if indexName == "" {
-			indexName = MakeSymbol()
+		// For a range, the index and value targets must be simple names, and cannot
+		// be real lvalues. The actual thing we range is on the stack.
+		bc, err := c.Expression()
+		if err != nil {
+			return c.NewError(err.Error())
 		}
-		c.b.Emit(bytecode.Push, 0)
-		c.b.Emit(bytecode.SymbolCreate, indexName)
-		c.b.Emit(bytecode.Store, indexName)
+		c.b.Append(bc)
+		c.b.Emit(bytecode.RangeInit, []interface{}{indexName, valueName})
 
 		// Remember top of loop
 		b1 := c.b.Mark()
 
-		// Is index >= len of array?
-		c.b.Emit(bytecode.Load, "len")
-		c.b.Append(arrayCode)
-		c.b.Emit(bytecode.Call, 1)
-		c.b.Emit(bytecode.Load, indexName)
-		c.b.Emit(bytecode.LessThanOrEqual)
+		// Get new index and value. Destination is as-yet unknown.
+		c.b.Emit(bytecode.RangeNext, 0)
 
-		b2 := c.b.Mark()
-		c.b.Emit(bytecode.BranchTrue, 0)
-
-		// Load element of array
-		c.b.Emit(bytecode.Push, nil)
-		c.b.Append(indexStore)
-		c.b.Append(arrayCode)
-		c.b.Emit(bytecode.Load, indexName)
-		c.b.Emit(bytecode.LoadIndex)
-		c.b.Append(indexStore)
-
+		// Loop body
 		err = c.Statement()
 		if err != nil {
 			return err
 		}
 
-		// Increment the index
+		// Make note of the loop end point where continues fall.
 		b3 := c.b.Mark()
-		c.b.Emit(bytecode.Load, indexName)
-		c.b.Emit(bytecode.Push, 1)
-		c.b.Emit(bytecode.Add)
-		c.b.Emit(bytecode.Store, indexName)
-
 		// Branch back to start of loop
 		c.b.Emit(bytecode.Branch, b1)
 		for _, fixAddr := range c.loops.continues {
 			_ = c.b.SetAddress(fixAddr, b3)
 		}
 
-		_ = c.b.SetAddressHere(b2)
+		_ = c.b.SetAddressHere(b1)
 
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
 		c.PopLoop()
-		c.b.Emit(bytecode.SymbolDelete, indexName)
+		if indexName != "" && indexName != "_" {
+			c.b.Emit(bytecode.SymbolDelete, indexName)
+		}
+		if valueName != "" && valueName != "_" {
+			c.b.Emit(bytecode.SymbolDelete, valueName)
+		}
 		c.b.Emit(bytecode.PopScope)
 
 		return nil
@@ -224,7 +202,7 @@ func (c *Compiler) For() error {
 
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
-	if indexName != "" {
+	if indexName == "" && valueName != "" {
 		return c.NewError(InvalidLoopIndexError)
 	}
 	c.PushLoop(indexLoopType)

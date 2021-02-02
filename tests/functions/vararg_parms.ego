@@ -2,7 +2,7 @@
 
 func testf( base int, args... int ) int {
     s := base
-    for i := range args {
+    for _, i := range args {
         s = s + i
     }
     return s 

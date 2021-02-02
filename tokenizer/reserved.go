@@ -8,6 +8,7 @@ var ReservedWords []string = []string{
 	"break",
 	"chan",
 	"const",
+	"continue",
 	"defer",
 	"else",
 	"float",

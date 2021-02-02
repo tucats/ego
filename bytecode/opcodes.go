@@ -63,6 +63,8 @@ const (
 	Print
 	Push
 	PushScope
+	RangeInit
+	RangeNext
 	RequiredType
 	Response
 	Return
@@ -146,6 +148,8 @@ var instructionNames = map[Instruction]string{
 	Print:              "Print",
 	Push:               "Push",
 	PushScope:          "PushScope",
+	RangeInit:          "Range",
+	RangeNext:          "RangeNext",
 	RequiredType:       "RequiredType",
 	Response:           "Response",
 	Return:             "Return",
@@ -219,6 +223,8 @@ func initializeDispatch() {
 			Print:              PrintImpl,
 			Push:               PushImpl,
 			PushScope:          PushScopeImpl,
+			RangeInit:          RangeInitImpl,
+			RangeNext:          RangeNextImpl,
 			RequiredType:       RequiredTypeImpl,
 			Response:           ResponseImpl,
 			Return:             ReturnImpl,

@@ -15,7 +15,7 @@
    // Drain the channel of messages by printing them out.
    count := 1
 
-   for i := range xc {
+   for _, i := range xc {
       if count == 1 {
          @assert T.Equal( i, "sent from afar", "First message wrong")
       } 

@@ -11,6 +11,14 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+type Range struct {
+	indexName string
+	valueName string
+	value     interface{}
+	keySet    []interface{}
+	index     int
+}
+
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
@@ -36,6 +44,7 @@ type Context struct {
 	this            interface{}
 	lastStruct      interface{}
 	result          interface{}
+	rangeStack      []*Range
 	argCountDelta   int
 }
 
@@ -70,6 +79,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		Tracing:         false,
 		this:            "",
 		try:             make([]int, 0),
+		rangeStack:      make([]*Range, 0),
 	}
 	ctxp := &ctx
 	ctxp.SetByteCode(b)
