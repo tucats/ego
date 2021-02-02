@@ -93,6 +93,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.Index":        {Min: 2, Max: 2, F: Index},
 	"strings.Ints":         {Min: 1, Max: 1, F: Ints},
 	"strings.Left":         {Min: 2, Max: 2, F: Left},
+	"strings.Length":       {Min: 1, Max: 1, F: StrLen},
 	"strings.ToLower":      {Min: 1, Max: 1, F: Lower},
 	"strings.Right":        {Min: 2, Max: 2, F: Right},
 	"strings.String":       {Min: 1, Max: Any, F: ToString},

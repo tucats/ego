@@ -322,3 +322,65 @@ func TestFunctionIndex(t *testing.T) {
 		})
 	}
 }
+
+func TestSubstring(t *testing.T) {
+	type args struct {
+		args []interface{}
+	}
+	tests := []struct {
+		name    string
+		args    []interface{}
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "simple ASCII string starting at 1",
+			args: []interface{}{"foobar", 1, 3},
+			want: "foo",
+		},
+		{
+			name: "simple ASCII string starting at 3",
+			args: []interface{}{"foobar", 3, 2},
+			want: "ob",
+		},
+		{
+			name: "simple ASCII string with zero len",
+			args: []interface{}{"foobar", 3, 0},
+			want: "",
+		},
+		{
+			name: "simple ASCII string with len too big",
+			args: []interface{}{"foobar", 3, 10},
+			want: "obar",
+		},
+		{
+			name: "Unicode string with zero len",
+			args: []interface{}{"\u2318foo\u2318", 3, 0},
+			want: "",
+		},
+		{
+			name: "Unicode string starting at 1",
+			args: []interface{}{"\u2318foo\u2318", 1, 3},
+			want: "\u2318fo",
+		},
+		{
+			name: "Unicode string starting at 2",
+			args: []interface{}{"\u2318foo\u2318", 2, 3},
+			want: "foo",
+		},
+
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Substring(nil, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Substring() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Substring() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

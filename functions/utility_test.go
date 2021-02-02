@@ -278,3 +278,100 @@ func TestReflect(t *testing.T) {
 		})
 	}
 }
+
+func TestStrLen(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []interface{}
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "length of ASCII string",
+			args: []interface{}{"foo"},
+			want: 3,
+		},
+		{
+			name: "length of empty string",
+			args: []interface{}{""},
+			want: 0,
+		},
+		{
+			name: "length of Unicode string",
+			args: []interface{}{"\u2318Foo\u2318"},
+			want: 5,
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := StrLen(nil, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StrLen() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLength(t *testing.T) {
+	type args struct {
+		symbols *symbols.SymbolTable
+		args    []interface{}
+	}
+	tests := []struct {
+		name    string
+		args    []interface{}
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "simple string",
+			args: []interface{}{"foo"},
+			want: 3,
+		},
+		{
+			name: "unicode string",
+			args: []interface{}{"\u2318foo\u2318"},
+			want: 9,
+		},
+		{
+			name: "simple array",
+			args: []interface{}{
+				[]interface{}{1, 2, 3, 4},
+			},
+			want: 4,
+		},
+		{
+			name: "simple map",
+			args: []interface{}{
+				map[string]interface{}{
+					"name": "Bob",
+					"age":  35,
+				},
+			},
+			want: 2,
+		},
+		{
+			name: "int converted to string",
+			args: []interface{}{"123456"},
+			want: 6,
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Length(nil, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Length() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Length() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

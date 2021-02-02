@@ -29,11 +29,19 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if p <= 0 {
 		return "", nil
 	}
-	if p >= len(v) {
-		return v, nil
+	var b strings.Builder
+	count := 0
+
+	for _, ch := range v {
+		if count < p {
+			b.WriteRune(ch)
+			count++
+		} else {
+			break
+		}
 	}
 
-	return v[:p], nil
+	return b.String(), nil
 }
 
 // Right implements the right() function
@@ -43,11 +51,22 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if p <= 0 {
 		return "", nil
 	}
-	if p >= len(v) {
-		return v, nil
+
+	// What's the actual length?
+	count := 0
+	for range v {
+		count++
 	}
 
-	return v[len(v)-p:], nil
+	var cpos int
+	var b strings.Builder
+	for _, ch := range v {
+		if cpos >= count-p {
+			b.WriteRune(ch)
+		}
+		cpos++
+	}
+	return b.String(), nil
 }
 
 // Index implements the index() function
@@ -79,8 +98,8 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Substring implements the substring() function
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := util.GetString(args[0])
-	p1 := util.GetInt(args[1])
-	p2 := util.GetInt(args[2])
+	p1 := util.GetInt(args[1]) // Starting character position
+	p2 := util.GetInt(args[2]) // Number of characters
 
 	if p1 < 1 {
 		p1 = 1
@@ -88,12 +107,31 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	if p2 == 0 {
 		return "", nil
 	}
-	if p2+p1 > len(v) {
-		p2 = len(v) - p1 + 1
-	}
-	s := v[p1-1 : p1+p2-1]
 
-	return s, nil
+	// Calculate length of v in characters
+	count := 0
+	for range v {
+		count++
+	}
+
+	// Limit the ending bounds by the actual length
+	if p2+p1 > count {
+		p2 = count - p1 + 1
+	}
+
+	var b strings.Builder
+	pos := 1
+	for _, ch := range v {
+		if pos >= p1+p2 {
+			break
+		}
+		if pos >= p1 {
+			b.WriteRune(ch)
+		}
+		pos++
+	}
+
+	return b.String(), nil
 }
 
 // Format implements the strings.format() function
@@ -114,8 +152,8 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := util.GetString(args[0])
 	r := make([]interface{}, 0)
 
-	for n := 0; n < len(v); n = n + 1 {
-		r = append(r, v[n:n+1])
+	for _, ch := range v {
+		r = append(r, ch)
 	}
 
 	return r, nil

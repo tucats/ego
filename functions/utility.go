@@ -129,6 +129,18 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	}
 }
 
+// StrLen is the strings.Length() function, whih counts characters/runes instead of
+// bytes like len() does.
+func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	v := util.GetString(args[0])
+	count := 0
+	for range v {
+		count++
+	}
+
+	return count, nil
+}
+
 // Array implements the array() function, which creates
 // an empty array of the given size. IF there are two parameters,
 // the first must be an existing array which is resized to match
