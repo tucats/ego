@@ -60,9 +60,11 @@ func (c *Context) PopFrame() error {
 	// indicated by the fp (frame pointer)
 	c.sp = c.fp
 	cx, err := c.Pop()
+
 	if err != nil {
 		return err
 	}
+
 	if callFrame, ok := cx.(CallFrame); ok {
 		c.line = callFrame.Line
 		c.symbols = callFrame.Symbols
@@ -101,6 +103,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 
 	for (maxDepth < 0 || depth < maxDepth) && f > 0 {
 		fx := c.stack[f-1]
+
 		if frame, ok := fx.(CallFrame); ok {
 			r = r + fmt.Sprintf("from: %12s  (%s)\n",
 				formatLocation(frame.Module, frame.Line), frame.Symbols.Name)

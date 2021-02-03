@@ -325,11 +325,13 @@ func RunServer(c *cli.Context) error {
 		s, _ := symbols.RootSymbolTable.Get("_session")
 		session = util.GetString(s)
 	}
+
 	ui.Debug(ui.ServerLogger, "Starting server, session %s", session)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {
 		http.HandleFunc("/code", server.CodeHandler)
+
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
@@ -423,6 +425,7 @@ func SetCacheSize(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	cacheStatus := defs.CacheResponse{
 		Limit: size,
 	}
@@ -435,10 +438,12 @@ func SetCacheSize(c *cli.Context) error {
 	switch ui.OutputFormat {
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
+
 		fmt.Println(string(b))
 
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
@@ -463,6 +468,7 @@ func SetCacheSize(c *cli.Context) error {
 // the changes. You must be an admin user with a valid token to perform this command.
 func FlushServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
+
 	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
 	if err != nil {
 		return err
@@ -471,10 +477,12 @@ func FlushServerCaches(c *cli.Context) error {
 	switch ui.OutputFormat {
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
 		fmt.Println(string(b))
 
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
+
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
@@ -498,10 +506,12 @@ func FlushServerCaches(c *cli.Context) error {
 // admin user with a valid token to perform this command.
 func ListServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
+
 	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)
 	if err != nil {
 		return err
 	}
+
 	if cacheStatus.Status != http.StatusOK {
 		return fmt.Errorf("HTTP error %d", cacheStatus.Status)
 	}
@@ -525,8 +535,10 @@ func ListServerCaches(c *cli.Context) error {
 		}
 
 		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
+
 		if cacheStatus.Count > 0 {
 			fmt.Printf("\n")
+
 			t, _ := tables.New([]string{"Endpoint", "Count", "Last Used"})
 
 			for _, v := range cacheStatus.Items {

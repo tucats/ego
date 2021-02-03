@@ -235,6 +235,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	for _, rowElement := range a {
 		rowMap := util.GetMap(rowElement)
 		rs := make([]interface{}, len(r.Columns))
+
 		for i, c := range r.Columns {
 			v := rowMap[c.Name]
 			rs[i] = v
@@ -266,16 +267,21 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	// Make a list of the sort key names
 	row := util.GetMap(a[0])
 	keys := []string{}
+
 	for k := range row {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
+
 	columns := []column{}
+
 	for _, k := range keys {
 		v := row[k]
 		c := column{}
 		c.Name = k
 		c.Kind = int(reflect.TypeOf(v).Kind())
+
 		if includeHeadings {
 			c.FormattedWidth = len(k)
 		}
@@ -289,6 +295,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 		for n := 0; n < len(columns); n = n + 1 {
 			c := columns[n]
+
 			v, ok := row[c.Name]
 			if ok {
 				width := len(util.FormatUnquoted(v))

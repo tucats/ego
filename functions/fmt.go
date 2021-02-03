@@ -10,8 +10,9 @@ import (
 
 // Printf implements fmt.printf() and is a wrapper around the native Go function
 func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str, err := Sprintf(s, args)
 	len := 0
+
+	str, err := Sprintf(s, args)
 	if err == nil {
 		len, _ = fmt.Printf("%s", util.GetString(str))
 	}
@@ -24,7 +25,9 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return 0, nil
 	}
+
 	fmtString := util.GetString(args[0])
+
 	if len(args) == 1 {
 		return fmtString, nil
 	}
@@ -40,6 +43,7 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if i > 0 {
 			b.WriteString(" ")
 		}
+
 		b.WriteString(util.FormatUnquoted(v))
 	}
 
@@ -54,6 +58,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if i > 0 {
 			b.WriteString(" ")
 		}
+
 		b.WriteString(util.FormatUnquoted(v))
 	}
 

@@ -54,6 +54,7 @@ func Load(application string, name string) error {
 		Description: "Default configuration",
 		Items:       map[string]string{},
 	}
+
 	CurrentConfiguration = &c
 	Configurations = map[string]Configuration{"default": c}
 	ProfileFile = application + ".json"
@@ -87,6 +88,7 @@ func Load(application string, name string) error {
 		if name == "" {
 			name = ProfileName
 		}
+
 		c, found := Configurations[name]
 
 		if !found {
@@ -94,6 +96,7 @@ func Load(application string, name string) error {
 			Configurations[name] = c
 			ProfileDirty = true
 		}
+
 		ProfileName = name
 		CurrentConfiguration = &c
 	}
@@ -110,6 +113,7 @@ func Save() error {
 
 	// Does the directory exist?
 	var path strings.Builder
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -131,10 +135,12 @@ func Save() error {
 		c := Configurations[n]
 		if c.ID == "" {
 			c.ID = uuid.New().String()
-			ui.Debug(ui.AppLogger, "Creating configuration \"%s\" with id %s", n, c.ID)
 			Configurations[n] = c
+
+			ui.Debug(ui.AppLogger, "Creating configuration \"%s\" with id %s", n, c.ID)
 		}
 	}
+
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
 	err = ioutil.WriteFile(path.String(), byteBuffer, os.ModePerm)
 
@@ -150,6 +156,7 @@ func UseProfile(name string) {
 		Configurations[name] = c
 		ProfileDirty = true
 	}
+
 	ProfileName = name
 	CurrentConfiguration = &c
 }
@@ -169,6 +176,7 @@ func Set(key string, value string) {
 // to update on account of this setting.
 func SetDefault(key string, value string) {
 	explicitValues.Items[key] = value
+
 	ui.Debug(ui.AppLogger, "Setting default key \"%s\" = \"%s\"", key, value)
 }
 
@@ -204,6 +212,7 @@ func GetBool(key string) bool {
 // a result of 0 is returned.
 func GetUsingList(key string, values ...string) int {
 	v := strings.TrimSpace(strings.ToLower(Get(key)))
+
 	for position, value := range values {
 		if v == value {
 			return position + 1
@@ -258,6 +267,7 @@ func DeleteProfile(key string) error {
 
 		delete(Configurations, key)
 		ProfileDirty = true
+
 		err := Save()
 		if err == nil {
 			ui.Debug(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)

@@ -12,6 +12,7 @@ import (
 // Decode reads a string as JSON data
 func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v interface{}
+
 	jsonBuffer := util.GetString(args[0])
 	err := json.Unmarshal([]byte(jsonBuffer), &v)
 
@@ -27,6 +28,7 @@ func Seal(i interface{}) interface{} {
 		for k, v := range actualValue {
 			actualValue[k] = Seal(v)
 		}
+
 		datatypes.SetMetadata(actualValue, datatypes.StaticMDKey, true)
 
 		return actualValue
@@ -59,12 +61,15 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if n > 0 {
 			b.WriteString(", ")
 		}
+
 		jsonBuffer, err := json.Marshal(v)
 		if err != nil {
 			return "", err
 		}
+
 		b.WriteString(string(jsonBuffer))
 	}
+
 	b.WriteString("]")
 
 	return b.String(), nil
@@ -86,12 +91,15 @@ func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 		if n > 0 {
 			b.WriteString(", ")
 		}
+
 		jsonBuffer, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {
 			return "", err
 		}
+
 		b.WriteString(string(jsonBuffer))
 	}
+
 	b.WriteString("]")
 
 	return b.String(), nil

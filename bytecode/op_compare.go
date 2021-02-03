@@ -174,6 +174,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if v1 == nil || v2 == nil {
 		_ = c.Push(false)
 
@@ -261,10 +262,12 @@ func LessThanOrEqualImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	if v1 == nil || v2 == nil {
 		_ = c.Push(false)
 

@@ -78,6 +78,7 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 	if !ok {
 		return nil
 	}
+
 	this, ok := t.(map[string]interface{})
 	if !ok {
 		return nil
@@ -108,11 +109,13 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.New(ArgumentCountError)
 	}
+
 	f, err := getFile("Close", s)
 	if err == nil {
-		err = f.Close()
 		this := getThis(s)
 		this["valid"] = false
+
+		err = f.Close()
 		if err == nil {
 			delete(this, "Close")
 			delete(this, "ReadString")
@@ -133,13 +136,16 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) > 0 {
 		return nil, errors.New(ArgumentCountError)
 	}
+
 	f, err := getFile("ReadString", s)
 	if err != nil {
 		return MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
 	var scanner *bufio.Scanner
+
 	this := getThis(s)
+
 	scanX, found := this["scanner"]
 	if !found {
 		scanner = bufio.NewScanner(f)
@@ -147,6 +153,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	} else {
 		scanner = scanX.(*bufio.Scanner)
 	}
+
 	scanner.Scan()
 
 	return MultiValueReturn{Value: []interface{}{scanner.Text(), err}}, err
@@ -159,6 +166,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 
 	length := 0
+
 	f, err := getFile("WriteString", s)
 	if err == nil {
 		length, err = f.WriteString(util.GetString(args[0]) + "\n")
@@ -174,13 +182,17 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	var buf bytes.Buffer
+
 	enc := gob.NewEncoder(&buf)
+
 	err := enc.Encode(args[0])
 	if err != nil {
 		return nil, err
 	}
+
 	bytes := buf.Bytes()
 	length := len(bytes)
+
 	f, err := getFile("Write", s)
 	if err == nil {
 		length, err = f.Write(bytes)
@@ -196,8 +208,10 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
 		return nil, errors.New(ArgumentCountError)
 	}
+
 	offset := util.GetInt(args[1])
 	enc := gob.NewEncoder(&buf)
+
 	err := enc.Encode(args[0])
 	if err != nil {
 		return nil, err
@@ -205,6 +219,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	bytes := buf.Bytes()
 	length := len(bytes)
+
 	f, err := getFile("WriteAt", s)
 	if err == nil {
 		length, err = f.WriteAt(bytes, int64(offset))

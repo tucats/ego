@@ -41,6 +41,7 @@ func (t *Table) Print(format string) error {
 
 		_ = json.Unmarshal([]byte(text), &i)
 		b, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
 		fmt.Printf("%s\n", string(b))
 
 	default:
@@ -67,6 +68,7 @@ func (t *Table) FormatJSON() string {
 		if n < t.startingRow {
 			continue
 		}
+
 		if t.rowLimit > 0 && n >= t.startingRow+t.rowLimit {
 			break
 		}
@@ -79,6 +81,7 @@ func (t *Table) FormatJSON() string {
 			for i, n := range t.columns {
 				_ = symbols.SetAlways(strings.ToLower(n), row[i])
 			}
+
 			v, err := e.Eval(symbols)
 			if err != nil {
 				buffer.WriteString(fmt.Sprintf("*** where clause error: %s", err.Error()))
@@ -103,6 +106,7 @@ func (t *Table) FormatJSON() string {
 			if ith > 0 {
 				buffer.WriteRune(',')
 			}
+
 			buffer.WriteRune('"')
 			buffer.WriteString(header)
 			buffer.WriteString("\":")
@@ -115,8 +119,10 @@ func (t *Table) FormatJSON() string {
 				buffer.WriteString("\"" + row[i] + "\"")
 			}
 		}
+
 		buffer.WriteRune('}')
 	}
+
 	buffer.WriteRune(']')
 
 	return buffer.String()
@@ -124,10 +130,16 @@ func (t *Table) FormatJSON() string {
 
 // FormatText will output a table using current rows and format specifications.
 func (t *Table) FormatText() []string {
+	var e *expressions.Expression
+
+	var buffer strings.Builder
+
+	var rowLimit = t.rowLimit
+
 	ui.Debug(ui.AppLogger, "Print column order: %v", t.columnOrder)
+
 	output := make([]string, 0)
 
-	var e *expressions.Expression
 	if t.where != "" {
 		e = expressions.New().WithText(t.where)
 
@@ -136,16 +148,13 @@ func (t *Table) FormatText() []string {
 		}
 	}
 
-	var buffer strings.Builder
-
-	var rowLimit = t.rowLimit
-
 	if rowLimit < 0 {
 		rowLimit = len(t.rows)
 	}
 
 	if t.showHeadings {
 		buffer.WriteString(t.indent)
+
 		if t.showRowNumbers {
 			buffer.WriteString("Row")
 			buffer.WriteString(t.spacing)
@@ -161,6 +170,7 @@ func (t *Table) FormatText() []string {
 		if t.showUnderlines {
 			buffer.Reset()
 			buffer.WriteString(t.indent)
+
 			if t.showRowNumbers {
 				buffer.WriteString("===")
 				buffer.WriteString(t.spacing)
@@ -170,6 +180,7 @@ func (t *Table) FormatText() []string {
 				for pad := 0; pad < t.maxWidth[n]; pad++ {
 					buffer.WriteRune('=')
 				}
+
 				buffer.WriteString(t.spacing)
 			}
 
@@ -181,6 +192,7 @@ func (t *Table) FormatText() []string {
 		if i < t.startingRow {
 			continue
 		}
+
 		if i >= t.startingRow+rowLimit {
 			break
 		}
@@ -196,16 +208,19 @@ func (t *Table) FormatText() []string {
 			for i, n := range t.columns {
 				_ = symbols.SetAlways(strings.ToLower(n), r[i])
 			}
+
 			v, err := e.Eval(symbols)
 			if err != nil {
 				output = append(output, fmt.Sprintf("*** where clause error: %s", err.Error()))
 
 				break
 			}
+
 			if !util.GetBool(v) {
 				continue
 			}
 		}
+
 		if t.showRowNumbers {
 			buffer.WriteString(fmt.Sprintf("%3d", i+1))
 			buffer.WriteString(t.spacing)

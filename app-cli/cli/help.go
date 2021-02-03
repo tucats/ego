@@ -37,6 +37,7 @@ func ShowHelp(c *Context) {
 
 	g := c.FindGlobal()
 	e := g.ExpectedParameterCount
+
 	if g.ParameterDescription > "" {
 		composedCommand = composedCommand + " [" + g.ParameterDescription + "]"
 	} else if e == 1 {
@@ -49,15 +50,19 @@ func ShowHelp(c *Context) {
 	if minimumFirstColumnWidth < 26 {
 		minimumFirstColumnWidth = 26
 	}
+
 	if c.Parent == nil && c.Version != "" {
 		c.Description = c.Description + ", " + c.Version
 	}
 
 	fmt.Printf("\nUsage:\n   %-26s   %s\n\n", composedCommand, c.Description)
+
 	headerShown := false
 
 	tc, _ := tables.New([]string{"subcommand", "description"})
+
 	tc.ShowHeadings(false)
+
 	_ = tc.SetIndent(3)
 	_ = tc.SetSpacing(3)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
@@ -66,21 +71,27 @@ func ShowHelp(c *Context) {
 		if option.OptionType == Subcommand && !option.Private {
 			if !headerShown {
 				fmt.Printf("Commands:\n")
+
 				_ = tc.AddRow([]string{"help", "Display help text"})
 				headerShown = true
 			}
+
 			_ = tc.AddRow([]string{option.LongName, option.Description})
 		}
 	}
+
 	if headerShown {
 		_ = tc.SortRows(0, true)
+
 		tc.Print(ui.TextFormat)
 		fmt.Printf("\n")
 	}
 
 	headerShown = false
 	tc, _ = tables.New([]string{"Parameter"})
+
 	tc.ShowHeadings(false)
+
 	_ = tc.SetIndent(3)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
 
@@ -88,18 +99,22 @@ func ShowHelp(c *Context) {
 		if option.OptionType == ParameterType {
 			if !headerShown {
 				fmt.Printf("Parameters:\n")
+
 				headerShown = true
 				_ = tc.AddRowItems(option.Description)
 			}
 		}
 	}
+
 	if headerShown {
 		tc.Print("text")
 		fmt.Printf("\n")
 	}
 
 	to, _ := tables.New([]string{"option", "description"})
+
 	to.ShowHeadings(false)
+
 	_ = to.SetIndent(3)
 	_ = to.SetSpacing(3)
 	_ = to.SetMinimumWidth(0, minimumFirstColumnWidth)
@@ -108,15 +123,18 @@ func ShowHelp(c *Context) {
 		if option.Private {
 			continue
 		}
+
 		if option.OptionType != Subcommand {
 			name := ""
 			if option.LongName > "" {
 				name = "--" + option.LongName
 			}
+
 			if option.ShortName > "" {
 				if name > "" {
 					name = name + ", "
 				}
+
 				name = name + "-" + option.ShortName
 			}
 
@@ -135,14 +153,17 @@ func ShowHelp(c *Context) {
 			}
 
 			fullDescription := option.Description
+
 			if option.EnvironmentVariable != "" {
 				fullDescription = fullDescription + " [" + option.EnvironmentVariable + "]"
 			}
+
 			_ = to.AddRow([]string{name, fullDescription})
 		}
 	}
 
 	fmt.Printf("Options:\n")
+
 	_ = to.AddRow([]string{"--help, -h", "Show this help text"})
 	_ = to.SortRows(0, true)
 	_ = to.Print(ui.TextFormat)

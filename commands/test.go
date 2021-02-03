@@ -114,24 +114,31 @@ func TestAction(c *cli.Context) error {
 			if !builtinsAdded {
 				// Add the builtin functions
 				comp.AddBuiltins("")
+
 				// Always autoimport
 				err := comp.AutoImport(true)
 				if err != nil {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
+
 				comp.AddPackageToSymbols(syms)
+
 				builtinsAdded = true
 			}
+
 			oldDebugMode := ui.DebugMode
+
 			if io.GetConfig(syms, ConfigDisassemble) {
 				ui.DebugMode = true
 				b.Disasm()
 			}
+
 			ui.DebugMode = oldDebugMode
 
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b)
 			oldDebugMode = ui.DebugMode
+
 			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
@@ -148,10 +155,12 @@ func TestAction(c *cli.Context) error {
 			if err != nil && err.Error() == debugger.Stop.Error() {
 				err = nil
 			}
+
 			ui.DebugMode = oldDebugMode
 
 			if err != nil {
 				fmt.Printf("Error: %s\n", err.Error())
+
 				exitValue = 2
 			}
 		}
@@ -168,6 +177,7 @@ func TestAction(c *cli.Context) error {
 func ReadDirectory(name string) (string, error) {
 	var b strings.Builder
 	dirname := name
+
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
@@ -178,6 +188,7 @@ func ReadDirectory(name string) (string, error) {
 	}
 
 	ui.Debug(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
+
 	if len(fi) == 0 {
 		ui.Debug(ui.DebugLogger, "+++ Directory is empty")
 	} else {
@@ -191,10 +202,12 @@ func ReadDirectory(name string) (string, error) {
 	for _, f := range fi {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
 			fname := filepath.Join(dirname, f.Name())
+
 			t, err := ReadFile(fname)
 			if err != nil {
 				return "", err
 			}
+
 			b.WriteString(t)
 			b.WriteString("\n")
 		}
@@ -209,7 +222,9 @@ func ReadFile(name string) (string, error) {
 	if err == nil {
 		return s, nil
 	}
+
 	ui.Debug("+++ Reading test file %s", name)
+
 	// Not a directory, try to read the file
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
@@ -217,6 +232,7 @@ func ReadFile(name string) (string, error) {
 		if err != nil {
 			r := os.Getenv("EGO_PATH")
 			fn := filepath.Join(r, "lib", name+".ego")
+
 			content, err = ioutil.ReadFile(fn)
 			if err != nil {
 				return "", fmt.Errorf("unable to read test file: %s", err.Error())

@@ -89,10 +89,12 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 1 {
 		ext = util.GetString(args[1])
 	}
+
 	list, err := ExpandPath(path, ext)
 
 	// Rewrap as an interface array
 	result := []interface{}{}
+
 	for _, item := range list {
 		result = append(result, item)
 	}

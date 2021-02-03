@@ -188,6 +188,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
+
 	t.Expires = time.Now().Add(duration)
 
 	// Make the token into a json string

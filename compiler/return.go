@@ -31,8 +31,9 @@ func (c *Compiler) Return() error {
 		bc.Append(c.coerce[returnCount])
 
 		returnCount++
-		returnExpressions = append(returnExpressions, bc)
 		hasReturnValue = true
+
+		returnExpressions = append(returnExpressions, bc)
 
 		if !c.t.IsNext(",") {
 			break

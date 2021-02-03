@@ -52,6 +52,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				if i > 0 {
 					b.WriteString("\n")
 				}
+
 				b.WriteString(v.(string))
 			}
 

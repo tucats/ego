@@ -130,6 +130,7 @@ func SetAction(c *cli.Context) error {
 		value = key[equals+1:]
 		key = key[:equals]
 	}
+
 	persistence.Set(key, value)
 	ui.Say("Profile key %s written", key)
 

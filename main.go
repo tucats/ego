@@ -27,6 +27,7 @@ func main() {
 	if len(args) == 1 {
 		args = append(args, "run")
 	}
+
 	err := app.Run(EgoGrammar, args)
 
 	// If something went wrong, report it to the user and force an exit
@@ -36,6 +37,7 @@ func main() {
 		if e2, ok := err.(cli.ExitError); ok {
 			os.Exit(e2.ExitStatus)
 		}
+
 		os.Exit(1)
 	}
 }

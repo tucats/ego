@@ -138,11 +138,13 @@ func (c *Context) parseGrammar(args []string) error {
 					// for this subcommand.
 					subContext := *c
 					subContext.Parent = c
+
 					if entry.Value != nil {
 						subContext.Grammar = entry.Value.([]Option)
 					} else {
 						subContext.Grammar = []Option{}
 					}
+
 					subContext.Command = c.Command + entry.LongName + " "
 					subContext.Description = entry.Description
 
@@ -155,6 +157,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 						ui.Debug(ui.CLILogger, "Saving action routine in subcommand context")
 					}
+
 					ui.Debug(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
 
 					return subContext.parseGrammar(args[currentArg+1:])

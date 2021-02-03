@@ -79,9 +79,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// header is omitted.
 	headers := map[string]interface{}{}
 	isJSON := false
+
 	for name, values := range r.Header {
 		if strings.ToLower(name) != "authorization" {
 			valueList := []interface{}{}
+
 			for _, value := range values {
 				valueList = append(valueList, value)
 				// If this is the Accept header and it's the json indicator, store a flag
@@ -89,12 +91,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 					isJSON = true
 				}
 			}
+
 			headers[name] = valueList
 		}
 	}
 
 	_ = syms.SetAlways("_headers", headers)
 	_ = syms.SetAlways("_json", isJSON)
+
 	path := r.URL.Path
 	if path[:1] == "/" {
 		path = path[1:]
@@ -231,6 +235,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("Unable to auto-import packages: " + err.Error())
 	}
+
 	compilerInstance.AddPackageToSymbols(syms)
 
 	// Run the service code

@@ -26,20 +26,24 @@ func FormatInstruction(i I) string {
 
 	// What is the maximum opcode name length?
 	width := 0
+
 	for _, k := range instructionNames {
 		if len(k) > width {
 			width = len(k)
 		}
 	}
+
 	if !found {
 		opname = fmt.Sprintf("Unknown %d", i.Operation)
 	}
-	opname = (opname + strings.Repeat(" ", width))[:width]
 
+	opname = (opname + strings.Repeat(" ", width))[:width]
 	f := util.Format(i.Operand)
+
 	if i.Operand == nil {
 		f = ""
 	}
+
 	if i.Operation >= BranchInstructions {
 		f = "@" + f
 	}
@@ -57,6 +61,7 @@ func Format(opcodes []I) string {
 		if n > 0 {
 			b.WriteRune(',')
 		}
+
 		opname, found := instructionNames[i.Operation]
 		if !found {
 			opname = fmt.Sprintf("Unknown %d", i.Operation)
@@ -66,6 +71,7 @@ func Format(opcodes []I) string {
 		if i.Operand == nil {
 			f = ""
 		}
+
 		if i.Operation >= BranchInstructions {
 			f = "@" + f
 		}

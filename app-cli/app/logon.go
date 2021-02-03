@@ -85,6 +85,7 @@ func Logon(c *cli.Context) error {
 	if err == nil && r.StatusCode() == http.StatusOK {
 		token := strings.TrimSuffix(string(r.Body()), "\n")
 		persistence.Set(LogonTokenSetting, token)
+
 		err = persistence.Save()
 		if err == nil {
 			ui.Say("Successfully logged in as \"%s\"", user)

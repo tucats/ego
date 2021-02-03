@@ -20,6 +20,7 @@ func OutputFormatAction(c *cli.Context) error {
 		} else {
 			return NewAppError(InvalidOutputFormatErr, formatString)
 		}
+
 		persistence.SetDefault("ego.output-format", strings.ToLower(formatString))
 	}
 

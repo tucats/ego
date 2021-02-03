@@ -32,6 +32,7 @@ func PathAction(c *cli.Context) error {
 			p = p[:len(p)-3]
 		}
 	}
+
 	fmt.Println(p)
 
 	return nil

@@ -263,6 +263,7 @@ func FormatStack(s []interface{}, newlines bool) string {
 	if len(s) == 0 {
 		return "<EOS>"
 	}
+
 	if newlines {
 		b.WriteString("\n")
 	}
@@ -270,12 +271,14 @@ func FormatStack(s []interface{}, newlines bool) string {
 	for n := len(s) - 1; n >= 0; n = n - 1 {
 		if n < len(s)-1 {
 			b.WriteString(", ")
+
 			if newlines {
 				b.WriteString("\n")
 			}
 		}
 
 		b.WriteString(util.Format(s[n]))
+
 		if !newlines && b.Len() > 50 {
 			return b.String()[:50] + "..."
 		}
@@ -307,10 +310,12 @@ func (c *Context) checkType(name string, value interface{}) error {
 	if !c.Static || value == nil {
 		return err
 	}
+
 	if oldValue, ok := c.Get(name); ok {
 		if oldValue == nil {
 			return err
 		}
+
 		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
 			err = c.NewError(InvalidVarTypeError)
 		}

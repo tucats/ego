@@ -77,6 +77,7 @@ func (e Error) Error() string {
 		b.WriteString(e.module)
 		b.WriteString(" ")
 	}
+
 	if e.line > 0 {
 		b.WriteString(fmt.Sprintf(util.LineFormat, e.line))
 	}

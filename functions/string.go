@@ -29,6 +29,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	count := 0
 	v := util.GetString(args[0])
+
 	p := util.GetInt(args[1])
 	if p <= 0 {
 		return "", nil
@@ -53,6 +54,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	var b strings.Builder
 
 	v := util.GetString(args[0])
+
 	p := util.GetInt(args[1])
 	if p <= 0 {
 		return "", nil
@@ -151,6 +153,7 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return "", nil
 	}
+
 	if len(args) == 1 {
 		return util.GetString(args[0]), nil
 	}

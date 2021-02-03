@@ -289,6 +289,7 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 			p1 = len(t.Tokens)
 		}
 	}
+
 	p2 := pos2
 	if p2 < p1 {
 		p2 = p1

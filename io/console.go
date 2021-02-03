@@ -27,6 +27,7 @@ func ReadConsoleText(prompt string) string {
 	// into ui.Prompt() at some point.
 	if !useReadLine {
 		var b strings.Builder
+
 		reading := true
 		line := 1
 
@@ -35,6 +36,7 @@ func ReadConsoleText(prompt string) string {
 			if len(text) == 0 {
 				break
 			}
+
 			line = line + 1
 
 			if text[len(text)-1:] == "\\" {

@@ -17,6 +17,7 @@ func (c *Compiler) functionCall() error {
 		}
 
 		argc = argc + 1
+
 		if c.t.AtEnd() {
 			break
 		}

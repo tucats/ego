@@ -102,6 +102,7 @@ func Test_pad(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := io.Pad(tt.args.s, tt.args.w); got != tt.want {

@@ -63,6 +63,7 @@ func TestTable_FormatJSON(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tx := &Table{
@@ -133,6 +134,7 @@ func TestAlignText(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := AlignText(tt.args.text, tt.args.width, tt.args.alignment); got != tt.want {

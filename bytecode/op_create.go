@@ -23,19 +23,23 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		sv, err := c.Pop()
 		if err != nil {
 			return err
 		}
+
 		size := util.GetInt(sv)
 		if size < 0 {
 			size = 0
 		}
+
 		array := make([]interface{}, size)
 
 		for n := 0; n < size; n++ {
 			array[n] = initialValue
 		}
+
 		_ = c.Push(array)
 
 		return nil
@@ -52,6 +56,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 	if size < 0 {
 		size = 0
 	}
+
 	array := make([]interface{}, size)
 	_ = c.Push(array)
 
@@ -61,6 +66,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 // ArrayImpl instruction processor
 func ArrayImpl(c *Context, i interface{}) error {
 	var arrayType reflect.Type
+
 	count := util.GetInt(i)
 	array := make([]interface{}, count)
 
@@ -69,6 +75,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		// If we are in static mode, array must be homogeneous
 		if c.Static {
 			if n == 0 {
@@ -82,6 +89,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 		// All good, load it into the array
 		array[(count-n)-1] = v
 	}
+
 	_ = c.Push(array)
 
 	return nil
@@ -100,6 +108,7 @@ func StructImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		name := util.GetString(nx)
 
 		value, err := c.Pop()
@@ -125,6 +134,7 @@ func StructImpl(c *Context, i interface{}) error {
 	// If this has a custom type, validate the fields against the fields in the type model.
 	if kind, ok := datatypes.GetMetadata(m, datatypes.TypeMDKey); ok {
 		typeName, _ := kind.(string)
+
 		if model, ok := c.Get(typeName); ok {
 			if modelMap, ok := model.(map[string]interface{}); ok {
 				// Store a pointer to the model object now.
@@ -152,6 +162,7 @@ func StructImpl(c *Context, i interface{}) error {
 							continue
 						}
 					}
+
 					if _, found := m[k]; !found {
 						m[k] = v
 					}
@@ -164,6 +175,7 @@ func StructImpl(c *Context, i interface{}) error {
 		// No type, default it to a struct
 		datatypes.SetMetadata(m, datatypes.TypeMDKey, "struct")
 	}
+
 	_ = c.Push(m)
 
 	return nil

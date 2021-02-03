@@ -24,10 +24,12 @@ func StoreImpl(c *Context, i interface{}) error {
 	if varname == "_" {
 		return nil
 	}
+
 	err = c.checkType(varname, v)
 	if err == nil {
 		err = c.Set(varname, v)
 	}
+
 	if err != nil {
 		return c.NewError(err.Error())
 	}
@@ -70,6 +72,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 		} else {
 			err = c.NewError(UnknownIdentifierError, x)
 		}
+
 		if err != nil {
 			return err
 		}
@@ -79,11 +82,13 @@ func StoreChanImpl(c *Context, i interface{}) error {
 	if _, ok := x.(*datatypes.Channel); ok {
 		destChan = true
 	}
+
 	if !sourceChan && !destChan {
 		return c.NewError(InvalidChannel)
 	}
 
 	var datum interface{}
+
 	if sourceChan {
 		datum, err = v.(*datatypes.Channel).Receive()
 	} else {
@@ -110,6 +115,7 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 
 	// Get the name.
 	varname := util.GetString(i)
+
 	err = c.SetGlobal(varname, v)
 	if err != nil {
 		return c.NewError(err.Error())
@@ -121,6 +127,7 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 		switch a := v.(type) {
 		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
+
 		case map[string]interface{}:
 			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
 		}
@@ -138,6 +145,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 
 	// Get the name.
 	varname := util.GetString(i)
+
 	err = c.SetAlways(varname, v)
 	if err != nil {
 		return c.NewError(err.Error())
@@ -164,10 +172,12 @@ func LoadImpl(c *Context, i interface{}) error {
 	if len(name) == 0 {
 		return c.NewError(InvalidIdentifierError, name)
 	}
+
 	v, found := c.Get(util.GetString(i))
 	if !found {
 		return c.NewError(UnknownIdentifierError, name)
 	}
+
 	_ = c.Push(v)
 
 	return nil

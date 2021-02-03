@@ -95,6 +95,7 @@ func (c *Context) GetString(name string) (string, bool) {
 				if i > 0 {
 					b.WriteRune(',')
 				}
+
 				b.WriteString(n)
 			}
 

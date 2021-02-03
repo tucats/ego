@@ -94,7 +94,6 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 		}
 	}
 	if isLvalueList {
-
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == "<-" {
 			return nil, c.NewError(InvalidChannelList)

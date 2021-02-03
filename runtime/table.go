@@ -67,6 +67,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	for i, v := range align {
 		_ = t.SetAlignment(i, v)
 	}
@@ -200,6 +201,7 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		if len(args) > 1 {
 			lines = util.GetBool(args[1])
 		}
+
 		t.ShowHeadings(headings)
 		t.ShowUnderlines(lines)
 	}

@@ -70,6 +70,7 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	nonceSize := gcm.NonceSize()
 	if nonceSize > len(data) {
 		return []byte(""), nil

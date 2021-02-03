@@ -390,6 +390,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	if max < 0 {
 		max = len(va)
 	}
+
 	if len(va) < min || len(va) > max {
 		return functions.NewError(name, ArgumentCountError)
 	}
@@ -410,11 +411,13 @@ func TryPopImpl(c *Context, i interface{}) error {
 	if len(c.try) == 0 {
 		return c.NewError(TryCatchMismatchError)
 	}
+
 	if len(c.try) == 1 {
 		c.try = make([]int, 0)
 	} else {
 		c.try = c.try[:len(c.try)-1]
 	}
+
 	_ = c.symbols.DeleteAlways("_error")
 
 	return nil

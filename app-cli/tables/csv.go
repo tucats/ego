@@ -37,6 +37,7 @@ func CsvSplit(data string) []string {
 
 			continue
 		}
+
 		currentHeading.WriteRune(rune(c))
 	}
 

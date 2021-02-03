@@ -109,6 +109,7 @@ func TestFindKeyword(t *testing.T) {
 			want: -1,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := FindKeyword(tt.args.test, tt.args.valid); got != tt.want {
@@ -180,6 +181,7 @@ func TestValidateBoolean(t *testing.T) {
 			name: "Invalid7", args: args{value: "00"}, want: false, want1: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1 := ValidateBoolean(tt.args.value)
@@ -231,6 +233,7 @@ func TestMakeList(t *testing.T) {
 			want: []string{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := MakeList(tt.args.value); !reflect.DeepEqual(got, tt.want) {

@@ -54,6 +54,7 @@ func (c *Context) Resume() error {
 // RunFromAddress executes a bytecode context from a given starting address.
 func (c *Context) RunFromAddress(addr int) error {
 	var err error
+
 	// Make sure globals are initialized. Because this updates a global, let's
 	// do it in a thread-safe fashion.
 	dispatchMux.Lock()
@@ -66,6 +67,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	if c.Tracing {
 		ui.Debug(ui.ByteCodeLogger, "*** Tracing "+c.Name)
 	}
+
 	fullStackListing := util.GetBool(c.GetConfig("full_stack_listing"))
 
 	// Loop over the bytecodes and run.
@@ -80,10 +82,12 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		if c.Tracing {
 			s := FormatInstruction(i)
+
 			s2 := FormatStack(c.stack[:c.sp], fullStackListing)
 			if !fullStackListing && len(s2) > 50 {
 				s2 = s2[:50]
 			}
+
 			ui.Debug(ui.ByteCodeLogger, "%8s%3d: %-30s stack[%2d]: %s",
 				c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
@@ -92,6 +96,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		if !found {
 			return c.NewError(UnimplementedInstructionError, strconv.Itoa(int(i.Operation)))
 		}
+
 		err = imp(c, i.Operand)
 		if err != nil {
 			text := err.Error()
@@ -123,6 +128,7 @@ func (c *Context) RunFromAddress(addr int) error {
 			}
 		}
 	}
+
 	if c.Tracing {
 		ui.Debug(ui.ByteCodeLogger, "*** End tracing "+c.Name)
 	}
@@ -154,6 +160,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			for _, arg := range args {
 				callCode.Emit(Push, arg)
 			}
+
 			callCode.Emit(Call, len(args))
 
 			// Only the root symbol table is thread-safe, so each go routine is isolated from the

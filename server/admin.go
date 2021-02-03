@@ -326,12 +326,15 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 		if len(tstr) > 20 {
 			tstr = tstr[:20] + "..."
 		}
+
 		ui.Debug(ui.ServerLogger, "Auth using token %s...", tstr)
+
 		if validateToken(token) {
 			user := tokenUser(token)
 			if user == "" {
 				ui.Debug(ui.ServerLogger, "No username associated with token")
 			}
+
 			hasAdminPrivs = getPermission(user, "root")
 		} else {
 			ui.Debug(ui.ServerLogger, "No valid token presented")
@@ -341,6 +344,7 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 		user, pass, ok := r.BasicAuth()
 		if ok {
 			ui.Debug(ui.ServerLogger, "Auth using user %s", user)
+
 			if ok := validatePassword(user, pass); ok {
 				hasAdminPrivs = getPermission(user, "root")
 			}

@@ -124,12 +124,15 @@ func applyBaseURL(url string, this map[string]interface{}) string {
 		if base == "" {
 			return url
 		}
+
 		if strings.HasSuffix(base, "/") {
 			base = base[:len(base)-1]
 		}
+
 		if !strings.HasPrefix(url, "/") {
 			url = "/" + url
 		}
+
 		url = base + url
 	}
 
@@ -140,6 +143,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 	if len(args) != 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	code := util.GetInt(args[0])
 	if text, ok := codes[code]; ok {
 		return text, nil
@@ -153,6 +157,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	c.GetClient().CloseIdleConnections()
 
 	this := getThis(s)
@@ -184,6 +189,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	if len(args) == 1 {
 		verify = util.GetBool(args[0])
 	}
+
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
 	this["verify"] = verify
 
@@ -240,6 +246,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
+
 	r.SetAuthToken(token)
 
 	return this, nil
@@ -251,6 +258,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
 	media := util.GetString(args[0])
 	this["media_type"] = media
@@ -264,21 +272,25 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	this := getThis(s)
 
 	if len(args) != 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	url := applyBaseURL(util.GetString(args[0]), this)
 	r := client.NewRequest()
 	isJSON := false
+
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
+
 	response, err := r.Get(url)
 	if err != nil {
 		this["status"] = http.StatusServiceUnavailable
@@ -292,13 +304,16 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this["headers"] = headerMap(response)
 
 	rb := string(response.Body())
+
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse interface{}
+
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
 
 		return jsonResponse, err
 	}
+
 	this["response"] = rb
 
 	return rb, nil
@@ -309,6 +324,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
 	cookies := r.Cookies()
 	result := make([]interface{}, len(cookies))
+
 	for i, v := range r.Cookies() {
 		cookie := map[string]interface{}{}
 		cookie["expires"] = v.Expires.String()
@@ -350,6 +366,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	client.SetRedirectPolicy()
 
 	this := getThis(s)
@@ -367,6 +384,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			body = string(b)
 		}
 	}
@@ -377,9 +395,11 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
+
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
+
 	response, err := r.Post(url)
 	if err != nil {
 		this["status"] = http.StatusServiceUnavailable
@@ -395,11 +415,13 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if isJSON {
 		var jsonResponse interface{}
+
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
 
 		return jsonResponse, err
 	}
+
 	this["response"] = rb
 
 	return rb, nil
@@ -444,6 +466,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
+
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
@@ -463,6 +486,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	if isJSON {
 		var jsonResponse interface{}
+
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		this["response"] = jsonResponse
 
@@ -505,6 +529,7 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 	if !ok {
 		return nil
 	}
+
 	this, ok := t.(map[string]interface{})
 	if !ok {
 		return nil
@@ -523,11 +548,12 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	if url == "" {
 		url = persistence.Get(defs.LogonServerSetting)
 	}
+
 	if url == "" {
 		url = "http://localhost:8080"
 	}
-	url = strings.TrimSuffix(url, "/") + endpoint
 
+	url = strings.TrimSuffix(url, "/") + endpoint
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
@@ -535,6 +561,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	}
 
 	r := client.NewRequest()
+
 	r.Header.Add("Accept", defs.JSONMediaType)
 	r.Header.Add("Content_Type", defs.JSONMediaType)
 
@@ -543,11 +570,11 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 		if err != nil {
 			return err
 		}
+
 		r.SetBody(b)
 	}
 
 	resp, err = r.Execute(method, url)
-
 	status := resp.StatusCode()
 
 	switch status {
@@ -568,6 +595,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 			b, _ := json.Marshal(r)
 			body = string(b)
 		}
+
 		err = json.Unmarshal([]byte(body), response)
 	}
 

@@ -229,6 +229,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			array = append(array, v)
 		}
 	}
+
 	if len(array) == 0 {
 		return array, nil
 	}
@@ -238,10 +239,13 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	switch v1.(type) {
 	case int:
 		intArray := make([]int, 0)
+
 		for _, i := range array {
 			intArray = append(intArray, util.GetInt(i))
 		}
+
 		sort.Ints(intArray)
+
 		resultArray := make([]interface{}, len(array))
 
 		for n, i := range intArray {
@@ -252,10 +256,13 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	case float64:
 		floatArray := make([]float64, 0)
+
 		for _, i := range array {
 			floatArray = append(floatArray, util.GetFloat(i))
 		}
+
 		sort.Float64s(floatArray)
+
 		resultArray := make([]interface{}, len(array))
 
 		for n, i := range floatArray {
@@ -266,10 +273,13 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	case string:
 		stringArray := make([]string, 0)
+
 		for _, i := range array {
 			stringArray = append(stringArray, util.GetString(i))
 		}
+
 		sort.Strings(stringArray)
+
 		resultArray := make([]interface{}, len(array))
 
 		for n, i := range stringArray {
@@ -360,6 +370,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if vv.Kind() == reflect.Func {
 			return "builtin", nil
 		}
+
 		if vv.Kind() == reflect.Ptr {
 			ts := vv.String()
 			if ts == "<*bytecode.ByteCode Value>" {

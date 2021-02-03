@@ -203,14 +203,18 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for rows.Next() {
 		rowTemplate := make([]interface{}, colCount)
 		rowValues := make([]interface{}, colCount)
+
 		for i := range colTypes {
 			rowTemplate[i] = &rowValues[i]
 		}
+
 		if err := rows.Scan(rowTemplate...); err != nil {
 			return nil, err
 		}
+
 		if asStruct {
 			rowMap := map[string]interface{}{}
+
 			for i, v := range columns {
 				rowMap[v] = rowValues[i]
 			}
@@ -220,11 +224,14 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			arrayResult = append(arrayResult, rowValues)
 		}
 	}
+
 	size := len(arrayResult)
 	if asStruct {
 		size = len(mapResult)
 	}
+
 	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
+
 	rerr := rows.Close()
 	if rerr != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -238,6 +245,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Need to convert the results from a slice to an actual array
 	this["rowCount"] = size
 	r := make([]interface{}, size)
+
 	if asStruct {
 		for i, v := range mapResult {
 			r[i] = v
@@ -258,18 +266,23 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
+
 	this := getThis(s)
 	this["rowCount"] = -1
+	query := util.GetString(args[0])
 
 	var rows *sql.Rows
-	query := util.GetString(args[0])
+
 	if tx == nil {
 		ui.Debug(ui.DBLogger, "QueryRows: %s", query)
+
 		rows, err = db.Query(query, args[1:]...)
 	} else {
 		ui.Debug(ui.DBLogger, "(Tx) QueryRows: %s", query)
+
 		rows, err = tx.Query(query, args[1:]...)
 	}
+
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
@@ -291,7 +304,9 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
+
 	err := rows.Close()
+
 	this["rows"] = nil
 	this["client"] = nil
 	this["Next"] = dbReleased
@@ -307,6 +322,7 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 	result := make([]interface{}, 0)
+
 	columns, err := rows.Columns()
 	if err == nil {
 		for _, name := range columns {
@@ -321,6 +337,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 	active := rows.Next()
+
 	ui.Debug(ui.DBLogger, "rows.Next() = %v", active)
 
 	return active, nil
@@ -331,22 +348,23 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	rows := this["rows"].(*sql.Rows)
 	db := this["db"].(map[string]interface{})
 	asStruct := util.GetBool(db["asStruct"])
-
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
-
 	rowTemplate := make([]interface{}, colCount)
 	rowValues := make([]interface{}, colCount)
+
 	for i := range colTypes {
 		rowTemplate[i] = &rowValues[i]
 	}
+
 	if err := rows.Scan(rowTemplate...); err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
 	if asStruct {
 		rowMap := map[string]interface{}{}
+
 		for i, v := range columns {
 			rowMap[v] = rowValues[i]
 		}
@@ -366,21 +384,29 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	var sqlResult sql.Result
+
 	query := util.GetString(args[0])
+
 	ui.Debug(ui.DBLogger, "Executing: %s", query)
+
 	if tx == nil {
 		ui.Debug(ui.DBLogger, "Execute: %s", query)
+
 		sqlResult, err = db.Exec(query, args[1:]...)
 	} else {
 		ui.Debug(ui.DBLogger, "(Tx) Execute: %s", query)
+
 		sqlResult, err = tx.Exec(query, args[1:]...)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	r, err := sqlResult.RowsAffected()
 	this := getThis(s)
 	this["rowCount"] = int(r)
+
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
 
 	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err

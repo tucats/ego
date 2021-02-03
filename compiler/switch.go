@@ -100,6 +100,7 @@ func (c *Compiler) Switch() error {
 	for _, n := range fixups {
 		_ = c.b.SetAddressHere(n)
 	}
+
 	c.b.Emit(bytecode.SymbolDelete, t)
 
 	return nil

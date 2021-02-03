@@ -61,6 +61,7 @@ func LoadUserDatabase(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
+
 			ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
 		}
 	}
@@ -81,10 +82,12 @@ func LoadUserDatabase(c *cli.Context) error {
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
 	var err error
+
 	su, ok := c.GetString("superuser")
 	if !ok {
 		su = persistence.Get(defs.LogonSuperuserSetting)
 	}
+
 	if su != "" {
 		err = setPermission(su, "root", true)
 	}
@@ -96,17 +99,22 @@ func LoadUserDatabase(c *cli.Context) error {
 // if the username does not exist.
 func setPermission(user, privilege string, enabled bool) error {
 	var err error
+
 	privname := strings.ToLower(privilege)
+
 	if u, ok := userDatabase[user]; ok {
 		if u.Permissions == nil {
 			u.Permissions = []string{"logon"}
 		}
+
 		pn := -1
+
 		for i, p := range u.Permissions {
 			if p == privname {
 				pn = i
 			}
 		}
+
 		if enabled {
 			if pn == -1 {
 				u.Permissions = append(u.Permissions, privname)
@@ -116,6 +124,7 @@ func setPermission(user, privilege string, enabled bool) error {
 				u.Permissions = append(u.Permissions[:pn], u.Permissions[pn+1:]...)
 			}
 		}
+
 		userDatabase[user] = u
 
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
@@ -134,6 +143,7 @@ func getPermission(user, privilege string) bool {
 	if u, ok := userDatabase[user]; ok {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
+
 		ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (%v)", privilege, user, v)
 
 		return v
@@ -165,6 +175,7 @@ func validatePassword(user, pass string) bool {
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
 			realPass = HashString(realPass[1 : len(realPass)-1])
 		}
+
 		hashPass := HashString(pass)
 		ok = realPass == hashPass
 	}

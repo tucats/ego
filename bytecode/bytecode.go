@@ -57,10 +57,13 @@ func (b *ByteCode) Emit(opcode Instruction, operand ...interface{}) {
 	if b.emitPos >= len(b.opcodes) {
 		b.opcodes = append(b.opcodes, make([]I, GrowOpcodesBy)...)
 	}
+
 	i := I{Operation: opcode}
+
 	if len(operand) > 0 {
 		i.Operand = operand[0]
 	}
+
 	b.opcodes[b.emitPos] = i
 	b.emitPos = b.emitPos + 1
 }
@@ -132,6 +135,7 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 // and returns a value as well as an error.
 func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 	c := NewContext(s, b)
+
 	err := c.Run()
 	if err != nil {
 		return nil, err
