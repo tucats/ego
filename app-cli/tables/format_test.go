@@ -24,10 +24,12 @@ func TestTable_SetAlignment(t *testing.T) {
 		spacing        string
 		indent         string
 	}
+
 	type args struct {
 		column    int
 		alignment int
 	}
+
 	tests := []struct {
 		name          string
 		fields        fields
@@ -153,9 +155,11 @@ func TestTable_SetSpacing(t *testing.T) {
 		spacing        string
 		indent         string
 	}
+
 	type args struct {
 		s int
 	}
+
 	tests := []struct {
 		name        string
 		fields      fields
@@ -228,9 +232,11 @@ func TestTable_SetIndent(t *testing.T) {
 		spacing        string
 		indent         string
 	}
+
 	type args struct {
 		s int
 	}
+
 	tests := []struct {
 		name        string
 		fields      fields

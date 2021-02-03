@@ -67,6 +67,7 @@ func TestContext_ParseGrammar(t *testing.T) {
 		ExpectedParameterCount int
 		ParameterDescription   string
 	}
+
 	type args struct {
 		args []string
 	}
@@ -146,6 +147,7 @@ func TestContext_ParseGrammar(t *testing.T) {
 			Action:      stringAction,
 		},
 	}
+
 	var fields1 = fields{
 		AppName:     "unit test",
 		MainProgram: "unit-test",
@@ -153,6 +155,7 @@ func TestContext_ParseGrammar(t *testing.T) {
 		Command:     "unit-test",
 		Grammar:     grammar1,
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields

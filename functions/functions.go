@@ -127,6 +127,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			d.Pkg = n[:dot]
 			n = n[dot+1:]
 		}
+
 		if d.Pkg == "" {
 			_ = symbols.SetAlways(n, d.F)
 		} else {
@@ -136,20 +137,23 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			p, found := symbols.Get(d.Pkg)
 			if !found {
 				p = map[string]interface{}{}
+
 				ui.Debug(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
 			// Is this a value bound to the package, or a function?
 			if d.V != nil {
 				p.(map[string]interface{})[n] = d.V
-				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
+
 				_ = symbols.SetAlways(d.Pkg, p)
+				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				p.(map[string]interface{})[n] = d.F
 				datatypes.SetMetadata(p, datatypes.TypeMDKey, "package")
 				datatypes.SetMetadata(p, datatypes.ReadonlyMDKey, true)
-				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 				_ = symbols.SetAlways(d.Pkg, p)
+
+				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
 		}
 	}
@@ -159,6 +163,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 // provided function pointer, if one is found.
 func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) *FunctionDefinition {
 	sf1 := reflect.ValueOf(f)
+
 	for _, d := range FunctionDictionary {
 		if d.F != nil { // Only function entry points have an F value
 			sf2 := reflect.ValueOf(d.F)
@@ -174,6 +179,7 @@ func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, erro
 // FindName returns the name of a function from the dictionary if one is found
 func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) string {
 	sf1 := reflect.ValueOf(f)
+
 	for name, d := range FunctionDictionary {
 		if d.F != nil {
 			sf2 := reflect.ValueOf(d.F)
@@ -187,8 +193,8 @@ func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) 
 }
 
 func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
-	// Search the dictionary for a name match
 	var fdef = FunctionDefinition{}
+
 	found := false
 
 	for fn, d := range FunctionDictionary {
@@ -197,6 +203,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 			found = true
 		}
 	}
+
 	if !found {
 		return nil, errors.New("no such function: " + name)
 	}

@@ -43,7 +43,9 @@ func (c *Context) parseGrammar(args []string) error {
 
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
 		var location *Option
+
 		var name string
+
 		var value string
 
 		option := args[currentArg]

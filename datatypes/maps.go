@@ -117,6 +117,7 @@ func (m *EgoMap) String() string {
 			b.WriteString(fmt.Sprintf("%v: %v", k, v))
 		}
 	}
+
 	b.WriteString("}")
 
 	return b.String()

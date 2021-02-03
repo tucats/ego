@@ -44,6 +44,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				break
 			}
 		}
+
 		if isString {
 			var b strings.Builder
 
@@ -155,6 +156,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
 			replica = util.GetInt(replicaX) + 1
 		}
+
 		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
 
 		// Organize the new item by removing things that are handled via the parent.

@@ -20,7 +20,10 @@ const fileMemberName = "file"
 func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var mask os.FileMode = 0644
 
+	var f *os.File
+
 	mode := os.O_RDONLY
+
 	fname, err := filepath.Abs(util.GetString(args[0]))
 	if err != nil {
 		return nil, err
@@ -41,11 +44,11 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			mode = os.O_APPEND | os.O_WRONLY
 		}
 	}
+
 	if len(args) > 2 {
 		mask = os.FileMode(util.GetInt(args[2]))
 	}
 
-	var f *os.File
 	f, err = os.OpenFile(fname, mode, mask)
 	if err != nil {
 		return nil, err
@@ -61,6 +64,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"valid":        true,
 		"name":         fname,
 	}
+
 	datatypes.SetMetadata(fobj, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(fobj, datatypes.TypeMDKey, "file")
 

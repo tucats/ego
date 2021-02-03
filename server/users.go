@@ -175,11 +175,12 @@ func validatePassword(user, pass string) bool {
 // HashString converts a given string to it's hash. This is used to manage
 // passwords
 func HashString(s string) string {
+	var r strings.Builder
+
 	h := sha256.New()
 	_, _ = h.Write([]byte(s))
-	v := h.Sum(nil)
 
-	var r strings.Builder
+	v := h.Sum(nil)
 	for _, b := range v {
 		r.WriteString(fmt.Sprintf("%02x", b))
 	}
@@ -199,6 +200,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		if ux, ok := s.Get("_user"); ok {
 			user = util.GetString(ux)
 		}
+
 		if px, ok := s.Get("_password"); ok {
 			pass = util.GetString(px)
 		}
@@ -206,6 +208,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		if len(args) != 2 {
 			return false, errors.New(defs.IncorrectArgumentCount)
 		}
+
 		user = util.GetString(args[0])
 		pass = util.GetString(args[1])
 	}
@@ -226,6 +229,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) != 2 {
 		return false, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	user = util.GetString(args[0])
 	priv = strings.ToUpper(util.GetString(args[1]))
 
@@ -244,6 +248,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
+
 	if s, ok := s.Get("_superuser"); ok {
 		superUser = util.GetBool(s)
 	}
@@ -262,6 +267,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if n, ok := u["name"]; ok {
 			name = strings.ToLower(util.GetString(n))
 		}
+
 		r, ok := userDatabase[name]
 		if !ok {
 			r = defs.User{
@@ -270,13 +276,16 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				Permissions: []string{},
 			}
 		}
+
 		if n, ok := u["password"]; ok {
 			r.Password = HashString(util.GetString(n))
 		}
+
 		if n, ok := u["permissions"]; ok {
 			if m, ok := n.([]interface{}); ok {
 				if len(m) > 0 {
 					r.Permissions = []string{}
+
 					for _, p := range m {
 						pname := util.GetString(p)
 						if pname != "." {
@@ -286,6 +295,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				}
 			}
 		}
+
 		userDatabase[name] = r
 		err = updateUserDatabase()
 	}
@@ -332,10 +342,12 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	r := map[string]interface{}{}
 	name := strings.ToLower(util.GetString(args[0]))
+
 	t, ok := userDatabase[name]
 	if !ok {
 		return r, nil
 	}
+
 	r["name"] = name
 	r["permissions"] = t.Permissions
 	r["superuser"] = getPermission(name, "root")
@@ -356,6 +368,7 @@ func updateUserDatabase() error {
 		if err != nil {
 			return err
 		}
+
 		b = []byte(r)
 	}
 

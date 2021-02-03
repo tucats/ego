@@ -80,8 +80,10 @@ func (e Error) Error() string {
 	if e.line > 0 {
 		b.WriteString(fmt.Sprintf(util.LineFormat, e.line))
 	}
+
 	b.WriteString(", ")
 	b.WriteString(e.text)
+
 	if len(e.token) > 0 {
 		b.WriteString(": ")
 		b.WriteString(e.token)

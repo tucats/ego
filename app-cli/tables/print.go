@@ -36,7 +36,9 @@ func (t *Table) Print(format string) error {
 
 	case ui.JSONIndentedFormat:
 		text := t.FormatJSON()
+
 		var i interface{}
+
 		_ = json.Unmarshal([]byte(text), &i)
 		b, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		fmt.Printf("%s\n", string(b))
@@ -135,7 +137,9 @@ func (t *Table) FormatText() []string {
 	}
 
 	var buffer strings.Builder
+
 	var rowLimit = t.rowLimit
+
 	if rowLimit < 0 {
 		rowLimit = len(t.rows)
 	}
@@ -188,6 +192,7 @@ func (t *Table) FormatText() []string {
 			// Load up the symbol tables with column values and the row number
 			symbols := symbols.NewSymbolTable("rowset")
 			_ = symbols.SetAlways("_row_", i+1)
+
 			for i, n := range t.columns {
 				_ = symbols.SetAlways(strings.ToLower(n), r[i])
 			}

@@ -88,6 +88,7 @@ func (c *Context) GetString(name string) (string, bool) {
 			}
 
 			var b strings.Builder
+
 			var v = entry.Value.([]string)
 
 			for i, n := range v {

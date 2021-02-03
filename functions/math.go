@@ -93,6 +93,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // Sum implements the sum() function
 func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := args[0]
+
 	for _, addend := range args[1:] {
 		addend = util.Coerce(addend, base)
 		if addend == nil {

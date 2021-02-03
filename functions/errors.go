@@ -68,6 +68,7 @@ func (e Error) Error() string {
 	b.WriteString(e.module)
 	b.WriteString("(), ")
 	b.WriteString(e.text)
+
 	if len(e.token) > 0 {
 		b.WriteString(": ")
 		b.WriteString(e.token)

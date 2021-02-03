@@ -53,6 +53,7 @@ func New(headings []string) (*Table, error) {
 	t.ascending = true
 	t.showUnderlines = true
 	t.showHeadings = true
+
 	for n, h := range headings {
 		t.maxWidth[n] = len(h)
 		t.columns[n] = h

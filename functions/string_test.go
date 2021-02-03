@@ -37,6 +37,7 @@ func TestFunctionLeft(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Left(nil, tt.args.args)
@@ -88,6 +89,7 @@ func TestFunctionRight(t *testing.T) {
 			want: "oo\u2318",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Right(nil, tt.args.args)
@@ -140,6 +142,7 @@ func TestFunctionLower(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Lower(nil, tt.args.args)
@@ -192,6 +195,7 @@ func TestFunctionUpper(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Upper(nil, tt.args.args)
@@ -264,6 +268,7 @@ func TestFunctionIndex(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Index(nil, tt.args.args)

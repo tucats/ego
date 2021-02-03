@@ -38,6 +38,7 @@ func (c *Compiler) Var() error {
 	// We'll need to use this token string over and over for each name
 	// in the list, so remember where to start.
 	mark := c.t.Mark()
+
 	for _, name := range names {
 		c.t.Set(mark)
 		if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
@@ -45,6 +46,7 @@ func (c *Compiler) Var() error {
 			c.b.Emit(bytecode.Array, 0)
 		} else {
 			typename := c.t.Next()
+
 			switch typename {
 			case "chan":
 				channel := datatypes.NewChannel(1)
@@ -72,6 +74,7 @@ func (c *Compiler) Var() error {
 				c.b.Emit(bytecode.Call, 1)
 			}
 		}
+
 		c.b.Emit(bytecode.SymbolCreate, name)
 		c.b.Emit(bytecode.Store, name)
 	}

@@ -26,6 +26,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Fetch the arguments as column headings. If the value is passed by array,
 	// go ahead and extract each array member as a column name.
 	headings := []string{}
+
 	for _, h := range args {
 		if list, ok := h.([]interface{}); ok {
 			for _, hh := range list {

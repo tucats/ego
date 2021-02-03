@@ -42,6 +42,7 @@ func TestFunctionInt(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Int(nil, tt.args.args)
@@ -89,6 +90,7 @@ func TestFunctionFloat(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Float(nil, tt.args.args)
@@ -136,6 +138,7 @@ func TestFunctionString(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := String(nil, tt.args.args)
@@ -183,6 +186,7 @@ func TestFunctionBool(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Bool(nil, tt.args.args)

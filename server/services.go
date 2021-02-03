@@ -102,7 +102,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Is this endpoint already in the cache of compiled services?
 	var serviceCode *bytecode.ByteCode
+
 	var compilerInstance *compiler.Compiler
+
 	var err error
 
 	cacheMutext.Lock()
@@ -131,6 +133,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Compile the token stream
 		compilerInstance = compiler.New().ExtensionsEnabled(true)
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
+
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if err != nil {
 			w.WriteHeader(400)
@@ -152,6 +155,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			for len(serviceCache) > MaxCachedEntries {
 				key := ""
 				oldestAge := 0.0
+
 				for k, v := range serviceCache {
 					thisAge := time.Since(v.age).Seconds()
 					if thisAge > oldestAge {
@@ -233,6 +237,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := bytecode.NewContext(syms, serviceCode)
 	ctx.EnableConsoleOutput(false)
 	ctx.Tracing = Tracing
+
 	err = ctx.Run()
 	if err != nil && err.Error() == debugger.Stop.Error() {
 		err = nil

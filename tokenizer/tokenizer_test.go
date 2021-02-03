@@ -9,6 +9,7 @@ func TestTokenize(t *testing.T) {
 	type args struct {
 		src string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -69,6 +70,7 @@ func Test_stripComments(t *testing.T) {
 	type args struct {
 		source string
 	}
+
 	tests := []struct {
 		name string
 		args args

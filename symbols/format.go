@@ -20,6 +20,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString(s.Name)
 		b.WriteString("\"")
 	}
+
 	b.WriteString(":\n")
 
 	// Iterate over the members to get a list of the keys. Discard invisible
@@ -31,6 +32,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			keys = append(keys, k)
 		}
 	}
+
 	sort.Strings(keys)
 
 	// Now iterate over the keys in sorted order

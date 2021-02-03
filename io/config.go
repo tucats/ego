@@ -11,6 +11,7 @@ func SetConfig(s *symbols.SymbolTable, name string, value bool) {
 		m := map[string]interface{}{name: value}
 		_ = s.SetAlways("_config", m)
 	}
+
 	if m, ok := v.(map[string]interface{}); ok {
 		m[name] = value
 	}
@@ -18,6 +19,7 @@ func SetConfig(s *symbols.SymbolTable, name string, value bool) {
 
 func GetConfig(s *symbols.SymbolTable, name string) bool {
 	f := false
+
 	v, found := s.Get("_config")
 	if found {
 		if m, ok := v.(map[string]interface{}); ok {

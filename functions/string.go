@@ -113,6 +113,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	if p1 < 1 {
 		p1 = 1
 	}
+
 	if p2 == 0 {
 		return "", nil
 	}
@@ -135,6 +136,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 		if pos >= p1+p2 {
 			break
 		}
+
 		if pos >= p1 {
 			b.WriteRune(ch)
 		}
@@ -188,6 +190,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // an array of characters.
 func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
+
 	for _, v := range args {
 		switch a := v.(type) {
 		case string:

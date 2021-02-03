@@ -25,7 +25,9 @@ import (
 // TestAction is the command handler for the ego TEST command
 func TestAction(c *cli.Context) error {
 	var text string
+
 	var err error
+
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
@@ -35,8 +37,8 @@ func TestAction(c *cli.Context) error {
 
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("Unit Tests")
-
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+
 	if c.WasFound("static-types") {
 		staticTypes = c.GetBool("static-types")
 	}
@@ -46,6 +48,7 @@ func TestAction(c *cli.Context) error {
 	_ = syms.SetAlways("table", runtime.Table)
 	_ = syms.SetAlways("__exec_mode", "test")
 	_ = syms.SetAlways("__static_data_types", staticTypes)
+
 	runtime.AddBuiltinPackages(syms)
 
 	exitValue := 0
@@ -62,10 +65,13 @@ func TestAction(c *cli.Context) error {
 		if path == "" {
 			path = os.Getenv("EGO_PATH")
 		}
+
 		defaultName := "tests"
+
 		if path != "" {
 			defaultName = filepath.Join(path, "tests")
 		}
+
 		locations = []string{defaultName}
 	} else {
 		locations = append(locations, c.Parent.Parameters...)
@@ -98,9 +104,11 @@ func TestAction(c *cli.Context) error {
 		// Compile the token stream
 		comp := compiler.New()
 		name := strings.ReplaceAll(fileOrPath, "/", "_")
+
 		b, err := comp.Compile(name, t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
+
 			exitValue = 1
 		} else {
 			if !builtinsAdded {

@@ -109,6 +109,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	case map[string]interface{}:
 		keys := make([]string, 0)
+
 		for k := range arg {
 			if !strings.HasPrefix(k, "__") {
 				keys = append(keys, k)
@@ -200,6 +201,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	case map[string]interface{}:
 		keys := make([]string, 0)
+
 		for k := range v {
 			if !strings.HasPrefix(k, "__") {
 				keys = append(keys, k)
@@ -217,6 +219,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Make a master array of the values presented
 	var array []interface{}
+
 	for _, a := range args {
 		switch v := a.(type) {
 		case []interface{}:
@@ -231,6 +234,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	v1 := array[0]
+
 	switch v1.(type) {
 	case int:
 		intArray := make([]int, 0)
@@ -380,6 +384,7 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := []interface{}{}
+
 	for i, j := range args {
 		if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
@@ -499,6 +504,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if m, ok := args[0].(map[string]interface{}); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
+
 		for k := range m {
 			if !strings.HasPrefix(k, "__") {
 				memberList = append(memberList, k)

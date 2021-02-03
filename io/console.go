@@ -36,12 +36,14 @@ func ReadConsoleText(prompt string) string {
 				break
 			}
 			line = line + 1
+
 			if text[len(text)-1:] == "\\" {
 				text = text[:len(text)-1]
 				prompt = fmt.Sprintf("ego[%d]> ", line)
 			} else {
 				reading = false
 			}
+
 			b.WriteString(text)
 			b.WriteString("\n")
 		}
@@ -57,6 +59,7 @@ func ReadConsoleText(prompt string) string {
 		if historyFile == "" {
 			historyFile = filepath.Join(os.TempDir(), "ego-commands.txt")
 		}
+
 		consoleReader, _ = readline.NewEx(&readline.Config{
 			Prompt:            prompt,
 			HistoryFile:       historyFile,
@@ -73,6 +76,7 @@ func ReadConsoleText(prompt string) string {
 	}
 	// Set the prompt string and do the read. We ignore errors.
 	consoleReader.SetPrompt(prompt)
+
 	result, _ := consoleReader.Readline()
 
 	return result + "\n"

@@ -41,6 +41,7 @@ func Start(c *cli.Context) error {
 	// Construct the command line again, but replace the START verb with a RUN
 	// verb. Also, add the flag that says the process is running detached.
 	args := []string{}
+
 	for _, v := range os.Args {
 		detached := false
 
@@ -172,8 +173,9 @@ func Start(c *cli.Context) error {
 
 // Stop stops a running server if it exists
 func Stop(c *cli.Context) error {
-	status, err := server.ReadPidFile(c)
 	var proc *os.Process
+
+	status, err := server.ReadPidFile(c)
 	if err == nil {
 		proc, err = os.FindProcess(status.PID)
 		if err == nil {
@@ -219,8 +221,9 @@ func Status(c *cli.Context) error {
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
 func Restart(c *cli.Context) error {
-	status, err := server.ReadPidFile(c)
 	var proc *os.Process
+
+	status, err := server.ReadPidFile(c)
 	if err == nil {
 		proc, err = os.FindProcess(status.PID)
 		if err == nil {
@@ -231,17 +234,20 @@ func Restart(c *cli.Context) error {
 			}
 		}
 	}
+
 	if err == nil {
 		args := status.Args
 
 		// Find the log file from the command-line args. If it's not
 		// found, use the default just so we can keep going.
 		logFileName := "ego-server.log"
+
 		for i, v := range args {
 			if v == "--log" {
 				logFileName = args[i+1]
 			}
 		}
+
 		logFileName, _ = filepath.Abs(logFileName)
 		logf, err := os.Create(logFileName)
 		if err != nil {
@@ -252,6 +258,7 @@ func Restart(c *cli.Context) error {
 		// command line option.
 		logID := uuid.New()
 		found := false
+
 		for i, v := range args {
 			if v == "--session-uuid" {
 				args[i+1] = logID.String()
@@ -270,7 +277,7 @@ func Restart(c *cli.Context) error {
 			return err
 		}
 
-		var attr = syscall.ProcAttr{
+		attr := syscall.ProcAttr{
 			Dir: ".",
 			Env: os.Environ(),
 			Files: []uintptr{
@@ -279,6 +286,7 @@ func Restart(c *cli.Context) error {
 				logf.Fd(),
 			},
 		}
+
 		pid, err := syscall.ForkExec(args[0], args, &attr)
 		if err == nil {
 			status.PID = pid
@@ -335,6 +343,7 @@ func RunServer(c *cli.Context) error {
 	if c.WasFound("trace") {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
+
 	server.Tracing = ui.Loggers[ui.ByteCodeLogger]
 
 	// Figure out the root location of the services, which will
@@ -353,6 +362,7 @@ func RunServer(c *cli.Context) error {
 	if c.WasFound("realm") {
 		server.Realm, _ = c.GetString("realm")
 	}
+
 	if server.Realm == "" {
 		server.Realm = "Ego Server"
 	}
@@ -408,7 +418,7 @@ func SetCacheSize(c *cli.Context) error {
 	if c.GetParameterCount() == 0 {
 		return errors.New(defs.CacheSizeNotSpecified)
 	}
-	c.GetParameter(0)
+
 	size, err := strconv.Atoi(c.GetParameter(0))
 	if err != nil {
 		return err
@@ -439,6 +449,7 @@ func SetCacheSize(c *cli.Context) error {
 
 			return errors.New(cacheStatus.Message)
 		}
+
 		ui.Say("Server cache size updated")
 	}
 
@@ -474,6 +485,7 @@ func FlushServerCaches(c *cli.Context) error {
 
 			return errors.New(cacheStatus.Message)
 		}
+
 		ui.Say("Server cache emptied")
 	}
 
@@ -520,6 +532,7 @@ func ListServerCaches(c *cli.Context) error {
 			for _, v := range cacheStatus.Items {
 				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
 			}
+
 			t.Print("text")
 		}
 	}

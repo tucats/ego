@@ -125,6 +125,7 @@ func (c *Compiler) For() error {
 		}
 		// Branch back to start of loop
 		c.b.Emit(bytecode.Branch, b1)
+
 		for _, fixAddr := range c.loops.continues {
 			_ = c.b.SetAddress(fixAddr, b1)
 		}
@@ -135,6 +136,7 @@ func (c *Compiler) For() error {
 		if isConstant && len(c.loops.breaks) == 0 {
 			return c.NewError(LoopExitError)
 		}
+
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
@@ -181,6 +183,7 @@ func (c *Compiler) For() error {
 		b3 := c.b.Mark()
 		// Branch back to start of loop
 		c.b.Emit(bytecode.Branch, b1)
+
 		for _, fixAddr := range c.loops.continues {
 			_ = c.b.SetAddress(fixAddr, b3)
 		}

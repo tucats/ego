@@ -175,6 +175,7 @@ func RunAction(c *cli.Context) error {
 		// mode.
 		for interactive && len(t.Tokens) > 0 {
 			count := 0
+
 			for _, v := range t.Tokens {
 				if v == "{" {
 					count++
@@ -184,6 +185,7 @@ func RunAction(c *cli.Context) error {
 					}
 				}
 			}
+
 			if count > 0 {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
@@ -209,18 +211,22 @@ func RunAction(c *cli.Context) error {
 			if !builtinsAdded {
 				// Add the builtin functions
 				comp.AddBuiltins("")
+
 				err := comp.AutoImport(autoImport)
 				if err != nil {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
 				comp.AddPackageToSymbols(syms)
+
 				builtinsAdded = true
 			}
 			oldDebugMode := ui.DebugMode
+
 			if io.GetConfig(syms, ConfigDisassemble) {
 				ui.DebugMode = true
 				b.Disasm()
 			}
+
 			ui.DebugMode = oldDebugMode
 
 			// Run the compiled code

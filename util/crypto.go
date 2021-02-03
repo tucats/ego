@@ -46,10 +46,13 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	nonce := make([]byte, gcm.NonceSize())
+
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, err
 	}
+
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
 
 	return ciphertext, nil
@@ -58,6 +61,7 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 func decrypt(data []byte, passphrase string) ([]byte, error) {
 	key := []byte(Hash(passphrase))
 	block, err := aes.NewCipher(key)
+
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,9 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 	if nonceSize > len(data) {
 		return []byte(""), nil
 	}
+
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return nil, err

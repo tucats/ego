@@ -41,11 +41,13 @@ func (c *Compiler) Map() error {
 func (c *Compiler) ParseType() int {
 	for _, typeDef := range datatypes.TypeDeclarationMap {
 		found := true
+
 		for pos, token := range typeDef.Tokens {
 			if c.t.Peek(1+pos) != token {
 				found = false
 			}
 		}
+
 		if found {
 			c.t.Advance(len(typeDef.Tokens))
 			return typeDef.Kind

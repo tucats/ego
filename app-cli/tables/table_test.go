@@ -69,12 +69,14 @@ func TestNew(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := New(tt.args.headings)
 			if err != nil && !tt.wantError {
 				t.Errorf("New() resulted in unexpected error %v", err)
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
@@ -86,6 +88,7 @@ func TestNewCSV(t *testing.T) {
 	type args struct {
 		h string
 	}
+
 	tests := []struct {
 		name    string
 		args    args

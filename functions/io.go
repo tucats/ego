@@ -41,9 +41,9 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Otherwise, simple split by new-line works fine.
 	v := strings.Split(src, "\n")
+	r := make([]interface{}, 0)
 
 	// We must recopy this into an array of interfaces to adopt Ego typelessness.
-	r := make([]interface{}, 0)
 	for _, n := range v {
 		r = append(r, n)
 	}
@@ -55,9 +55,9 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
+	r := make([]interface{}, 0)
 
 	// We must recopy this into an array of interfaces to adopt Ego typelessness.
-	r := make([]interface{}, 0)
 	for _, n := range t.Tokens {
 		r = append(r, n)
 	}
@@ -107,11 +107,13 @@ func ExpandPath(path, ext string) ([]string, error) {
 	fi, err := ioutil.ReadDir(path)
 	if err != nil {
 		fn := path
+
 		_, err := ioutil.ReadFile(fn)
 		if err != nil {
 			fn = path + ext
 			_, err = ioutil.ReadFile(fn)
 		}
+
 		if err != nil {
 			return names, err
 		}
@@ -128,6 +130,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 	// Read as a directory
 	for _, f := range fi {
 		fn := filepath.Join(path, f.Name())
+
 		list, err := ExpandPath(fn, ext)
 		if err != nil {
 			return names, err
@@ -143,6 +146,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := util.GetString(args[0])
 	result := []interface{}{}
+
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return result, err

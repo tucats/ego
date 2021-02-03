@@ -73,6 +73,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err == nil && len(j) == 0 {
 		err = NewError("validate", InvalidTokenEncryption)
 	}
+
 	if err != nil {
 		if reportErr {
 			return false, err
@@ -82,6 +83,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	var t = Token{}
+
 	err = json.Unmarshal([]byte(j), &t)
 	if err != nil {
 		if reportErr {
@@ -117,15 +119,18 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Decrypt the token into a json string. We use the token key stored in
 	// the preferences data. If there isn't one, generate a new random key.
 	key := getTokenKey()
+
 	j, err := util.Decrypt(string(b), key)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(j) == 0 {
 		return nil, NewError("extract", InvalidTokenEncryption)
 	}
 
 	var t = Token{}
+
 	err = json.Unmarshal([]byte(j), &t)
 	if err != nil {
 		return nil, err
@@ -157,6 +162,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		Name:    util.GetString(args[0]),
 		TokenID: uuid.New(),
 	}
+
 	if len(args) == 2 {
 		t.Data = util.GetString(args[1])
 	}
@@ -177,6 +183,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if interval == "" {
 		interval = "15m"
 	}
+
 	duration, err := time.ParseDuration(interval)
 	if err != nil {
 		return nil, err
@@ -204,6 +211,7 @@ func getTokenKey() string {
 	key := persistence.Get(TokenKeySetting)
 	if key == "" {
 		key = uuid.New().String() + "-" + uuid.New().String()
+
 		persistence.Set(TokenKeySetting, key)
 		_ = persistence.Save()
 	}

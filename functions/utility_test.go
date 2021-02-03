@@ -44,6 +44,7 @@ func TestFunctionLen(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Length(nil, tt.args.args)
@@ -87,6 +88,7 @@ func TestFunctionProfile(t *testing.T) {
 			want: nil,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got interface{}
@@ -147,6 +149,7 @@ func TestFunctionSort(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Sort(nil, tt.args.args)
@@ -190,6 +193,7 @@ func TestFunctionMembers(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Members(nil, tt.args.args)
@@ -264,6 +268,7 @@ func TestReflect(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Reflect(tt.args.s, tt.args.args)

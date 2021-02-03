@@ -12,9 +12,11 @@ import (
 func Pad(v interface{}, w int) string {
 	s := util.FormatUnquoted(v)
 	count := w
+
 	if count < 0 {
 		count = -count
 	}
+
 	padString := ""
 	if count > len(s) {
 		padString = strings.Repeat(" ", count-len(s))
@@ -27,6 +29,7 @@ func Pad(v interface{}, w int) string {
 	} else {
 		r = s + padString
 	}
+
 	if len(r) > count {
 		r = r[:count]
 	}

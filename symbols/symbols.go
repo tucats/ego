@@ -77,6 +77,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	v, f := s.Symbols[name]
 
 	constLock.Lock()
+
 	if !f {
 		v, f = s.Constants[name]
 	}
@@ -93,10 +94,13 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	constLock.Lock()
+
 	if s.Constants == nil {
 		s.Constants = map[string]interface{}{}
 	}
+
 	s.Constants[name] = v
+
 	constLock.Unlock()
 
 	return nil
@@ -124,6 +128,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 	if syms.IsConstant(name) {
 		return s.NewError(ReadOnlyValueError, name)
 	}
+
 	syms.Symbols[name] = v
 
 	return nil
@@ -134,6 +139,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	if s.Symbols == nil {
 		s.Symbols = map[string]interface{}{}
 	}
+
 	old, found := s.Symbols[name]
 
 	// If it was already there, we hae some additional checks to do
@@ -154,6 +160,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 		// Otherwise, ask the parent to try to set the value.
 		return s.Parent.Set(name, v)
 	}
+
 	s.Symbols[name] = v
 
 	return nil
@@ -165,12 +172,15 @@ func (s *SymbolTable) Delete(name string) error {
 	if len(name) == 0 {
 		return s.NewError(InvalidSymbolError)
 	}
+
 	if name[:1] == "_" {
 		return s.NewError(ReadOnlyValueError, name)
 	}
+
 	if s.Symbols == nil {
 		return s.NewError(UnknownSymbolError, name)
 	}
+
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
@@ -179,6 +189,7 @@ func (s *SymbolTable) Delete(name string) error {
 
 		return s.Parent.Delete(name)
 	}
+
 	delete(s.Symbols, name)
 
 	return nil
@@ -190,9 +201,11 @@ func (s *SymbolTable) DeleteAlways(name string) error {
 	if len(name) == 0 {
 		return s.NewError(InvalidSymbolError)
 	}
+
 	if s.Symbols == nil {
 		return s.NewError(UnknownSymbolError, name)
 	}
+
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
@@ -201,6 +214,7 @@ func (s *SymbolTable) DeleteAlways(name string) error {
 
 		return s.Parent.DeleteAlways(name)
 	}
+
 	delete(s.Symbols, name)
 
 	return nil
@@ -227,9 +241,11 @@ func (s *SymbolTable) IsConstant(name string) bool {
 		constLock.Lock()
 		_, found := s.Constants[name]
 		constLock.Unlock()
+
 		if found {
 			return true
 		}
+
 		if s.Parent != nil {
 			return s.Parent.IsConstant(name)
 		}

@@ -327,6 +327,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
 // struct member names so "-" is converted to "_"
 func headerMap(response *resty.Response) map[string]interface{} {
 	headers := map[string]interface{}{}
+
 	for k, v := range response.Header() {
 		k = strings.ReplaceAll(k, "-", "_")
 		vs := fmt.Sprintf("%v", v)
@@ -515,6 +516,7 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 // Exchange is a helper wrapper around a rest call.
 func Exchange(endpoint, method string, body interface{}, response interface{}) error {
 	var resp *resty.Response
+
 	var err error
 
 	url := persistence.Get(defs.ApplicationServerSetting)

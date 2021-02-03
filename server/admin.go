@@ -19,6 +19,7 @@ import (
 // operations
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
+
 	var name string
 
 	var u = defs.User{Permissions: []string{}}
