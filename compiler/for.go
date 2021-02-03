@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"errors"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/tokenizer"
@@ -147,7 +145,7 @@ func (c *Compiler) For() error {
 		return err
 	}
 	if !c.t.IsNext(":=") {
-		return errors.New(MissingLoopAssignmentError)
+		return c.NewError(MissingLoopAssignmentError)
 	}
 
 	// Do we compile a range?
@@ -238,7 +236,7 @@ func (c *Compiler) For() error {
 	}
 
 	if !c.t.IsNext("=") {
-		return errors.New(MissingEqualError)
+		return c.NewError(MissingEqualError)
 	}
 	incrementCode, err := c.Expression()
 	if err != nil {

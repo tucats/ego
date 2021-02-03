@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"errors"
 	"sort"
 	"strings"
 )
@@ -11,7 +10,7 @@ import (
 // in ascending order, and false if a descending sort is required.
 func (t *Table) SortRows(column int, ascending bool) error {
 	if column < 0 || column >= t.columnCount {
-		return errors.New("Invalid column number for sort")
+		return NewTableErr(InvalidColumnNumberError, column)
 	}
 
 	sort.SliceStable(t.rows, func(i, j int) bool {
@@ -43,5 +42,5 @@ func (t *Table) SetOrderBy(name string) error {
 		}
 	}
 
-	return errors.New("Invalid order-by column name: " + name)
+	return NewTableErr(InvalidColumnNameError, name)
 }

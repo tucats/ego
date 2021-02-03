@@ -1,9 +1,5 @@
 package tables
 
-import (
-	"errors"
-)
-
 const (
 	// AlignmentLeft aligns the column to the left
 	AlignmentLeft = -1
@@ -40,7 +36,7 @@ type Table struct {
 func New(headings []string) (*Table, error) {
 	t := &Table{}
 	if len(headings) == 0 {
-		return t, errors.New("cannot create table with zero columns")
+		return t, NewTableErr(EmptyColumnListError)
 	}
 
 	t.rowLimit = -1

@@ -1,8 +1,6 @@
 package tables
 
 import (
-	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -30,13 +28,12 @@ func (t *Table) GetHeadings() []string {
 // to set the order in which columns of output are printed.
 func (t *Table) SetColumnOrder(order []int) error {
 	if len(order) == 0 {
-		return errors.New("invalid empty column order specification")
+		return NewTableErr(EmptyColumnListError)
 	}
-
 	newOrder := make([]int, len(order))
 	for n, v := range order {
 		if v < 1 || v > t.columnCount {
-			return errors.New("invalid column order specification: " + strconv.Itoa(v))
+			return NewTableErr("invalid column number", v)
 		}
 		newOrder[n] = v - 1
 	}
@@ -49,14 +46,14 @@ func (t *Table) SetColumnOrder(order []int) error {
 // to set the order in which columns of output are printed.
 func (t *Table) SetColumnOrderByName(order []string) error {
 	if len(order) == 0 {
-		return errors.New("invalid empty column order specification")
+		return NewTableErr(EmptyColumnListError)
 	}
 
 	newOrder := make([]int, len(order))
 	for n, name := range order {
 		v, found := t.FindColumn(name)
 		if !found {
-			return errors.New("invalid column order specification: " + name)
+			return NewTableErr(InvalidColumnNameError, name)
 		}
 		newOrder[n] = v
 	}

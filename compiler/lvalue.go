@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"errors"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -105,7 +103,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 	}
 	c.t.TokenP = savedPosition
 
-	return nil, errors.New("not an lvalue list")
+	return nil, c.NewError(NotAnLValueListError)
 }
 
 // LValue compiles the information on the left side of

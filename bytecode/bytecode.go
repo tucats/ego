@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tucats/ego/symbols"
@@ -81,7 +80,7 @@ func (b *ByteCode) SetAddressHere(mark int) error {
 // instruction
 func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.emitPos || mark < 0 {
-		return errors.New(InvalidBytecodeAddress)
+		return b.NewError(InvalidBytecodeAddress)
 	}
 	i := b.opcodes[mark]
 	i.Operand = address
@@ -155,4 +154,18 @@ func (b *ByteCode) Remove(n int) {
 		b.opcodes = append(b.opcodes[:n], b.opcodes[n+1:]...)
 	}
 	b.emitPos = b.emitPos - 1
+}
+
+type ByteCodeErr struct {
+	err error
+}
+
+func (b *ByteCode) NewError(msg string, args ...interface{}) ByteCodeErr {
+	return ByteCodeErr{
+		err: fmt.Errorf(msg, args...),
+	}
+}
+
+func (be ByteCodeErr) Error() string {
+	return fmt.Sprintf("bytecode generation, %s", be.err.Error())
 }

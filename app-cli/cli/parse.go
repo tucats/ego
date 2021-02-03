@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -110,7 +109,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return errors.New("Unknown command line option: " + option)
+			return NewCLIError(UnknownOptionError, option)
 		}
 		// It could be a parameter, or a subcommand.
 		if location == nil {
@@ -185,7 +184,7 @@ func (c *Context) parseGrammar(args []string) error {
 					}
 				}
 				if !found {
-					return errors.New("option --" + location.LongName + ": invalid keyword value \"" + value + "\"")
+					return NewCLIError(InvalidKeywordError, location.LongName, value)
 				}
 
 			case BooleanType:
@@ -194,7 +193,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return errors.New("option --" + location.LongName + ": invalid boolean value \"" + value + "\"")
+					return NewCLIError(InvalidBooleanValueError, location.LongName, value)
 				}
 				location.Value = b
 
@@ -214,7 +213,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case IntType:
 				i, err := strconv.Atoi(value)
 				if err != nil {
-					return errors.New("option --" + location.LongName + ": invalid integer")
+					return NewCLIError(InvalidIntegerError, location.LongName, value)
 				}
 				location.Value = i
 			}
@@ -235,7 +234,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.New("Required option " + entry.LongName + " not found")
+			err = NewCLIError(RequiredNotFoundError, entry.LongName)
 
 			break
 		}
@@ -252,15 +251,15 @@ func (c *Context) parseGrammar(args []string) error {
 			ui.Debug(ui.CLILogger, "Parameters expected: %d  found %d", g.ExpectedParameterCount, g.GetParameterCount())
 		}
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return errors.New("unexpected parameters on command line")
+			return NewCLIError(UnexpectedParametersError)
 		}
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return errors.New("too many parameters on command line")
+				return NewCLIError(TooManyParametersError)
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return errors.New("incorrect number of parameters on command line")
+				return NewCLIError(WrongParameterCountError)
 			}
 		}
 

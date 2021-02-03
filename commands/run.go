@@ -42,17 +42,17 @@ func RunAction(c *cli.Context) error {
 
 	autoImport := persistence.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
-		autoImport = c.GetBool(defs.AutoImportSetting)
+		autoImport = c.GetBool(defs.AutoImportOption)
 	}
 
 	fullScope := false
-	if c.WasFound("full-symbol-scope") {
-		fullScope = c.GetBool("full-symbol-scope")
+	if c.WasFound(defs.FullSymbolScopeOption) {
+		fullScope = c.GetBool(defs.FullSymbolScopeOption)
 	}
 
 	text := ""
 	wasCommandLine := true
-	disassemble := c.GetBool("disassemble")
+	disassemble := c.GetBool(defs.DisassembleOption)
 	if disassemble {
 		ui.DebugMode = true
 		ui.SetLogger(ui.ByteCodeLogger, true)
@@ -65,8 +65,8 @@ func RunAction(c *cli.Context) error {
 	}
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	if c.WasFound("static-types") {
-		staticTypes = c.GetBool("static-types")
+	if c.WasFound(defs.StaticTypesOption) {
+		staticTypes = c.GetBool(defs.StaticTypesOption)
 	}
 
 	interactive := false
@@ -92,7 +92,6 @@ func RunAction(c *cli.Context) error {
 				}
 			}
 			mainName = fname
-			// Convert []byte to string
 			text = string(content)
 		}
 		// Remaining command line arguments are stored
@@ -127,34 +126,9 @@ func RunAction(c *cli.Context) error {
 		}
 	}
 
-	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable("file " + mainName)
-	_ = syms.SetAlways("__cli_args", programArgs)
-	_ = syms.SetAlways("__static_data_types", staticTypes)
-	if interactive {
-		_ = syms.SetAlways("__exec_mode", "interactive")
-	} else {
-		_ = syms.SetAlways("__exec_mode", "run")
-	}
+	// Set up the symbol table.
+	syms := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
 
-	io.SetConfig(syms, ConfigDisassemble, disassemble)
-	traceLogging := ui.Loggers[ui.ByteCodeLogger]
-	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
-
-	// Get a list of all the environment variables and make
-	// a symbol map of their lower-case names
-	if c.GetBool("environment") {
-		list := os.Environ()
-		for _, env := range list {
-			pair := strings.SplitN(env, "=", 2)
-			_ = syms.SetAlways(pair[0], pair[1])
-		}
-	}
-
-	// Add local funcion(s) that extend the Ego function set.
-	_ = syms.SetAlways("eval", runtime.Eval)
-	_ = syms.SetAlways("prompt", runtime.Prompt)
-	runtime.AddBuiltinPackages(syms)
 	exitValue := 0
 	builtinsAdded := false
 	for {
@@ -298,4 +272,38 @@ func RunAction(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes, interactive, disassemble bool) *symbols.SymbolTable {
+
+	// Create an empty symbol table and store the program arguments.
+	syms := symbols.NewSymbolTable("file " + mainName)
+	_ = syms.SetAlways("__cli_args", programArgs)
+	_ = syms.SetAlways("__static_data_types", staticTypes)
+	if interactive {
+		_ = syms.SetAlways("__exec_mode", "interactive")
+	} else {
+		_ = syms.SetAlways("__exec_mode", "run")
+	}
+
+	io.SetConfig(syms, ConfigDisassemble, disassemble)
+	traceLogging := ui.Loggers[ui.ByteCodeLogger]
+	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
+
+	// Get a list of all the environment variables and make
+	// a symbol map of their lower-case names
+	if c.GetBool(defs.EnvironmentOption) {
+		list := os.Environ()
+		for _, env := range list {
+			pair := strings.SplitN(env, "=", 2)
+			_ = syms.SetAlways(pair[0], pair[1])
+		}
+	}
+
+	// Add local funcion(s) that extend the Ego function set.
+	_ = syms.SetAlways("eval", runtime.Eval)
+	_ = syms.SetAlways("prompt", runtime.Prompt)
+	runtime.AddBuiltinPackages(syms)
+
+	return syms
 }

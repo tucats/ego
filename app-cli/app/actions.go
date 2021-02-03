@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -19,7 +18,7 @@ func OutputFormatAction(c *cli.Context) error {
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
 			ui.OutputFormat = formatString
 		} else {
-			return errors.New("Invalid output format specified: " + formatString)
+			return NewAppError(InvalidOutputFormatErr, formatString)
 		}
 		persistence.SetDefault("ego.output-format", strings.ToLower(formatString))
 	}
@@ -34,7 +33,7 @@ func DebugAction(c *cli.Context) error {
 	for _, v := range loggers {
 		valid := ui.SetLogger(strings.ToUpper(v), true)
 		if !valid {
-			return fmt.Errorf("invalid logger name: %s", v)
+			return NewAppError(InvalidLoggerName, v)
 		}
 	}
 

@@ -1,7 +1,6 @@
 package profile
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -111,10 +110,10 @@ func SetOutputAction(c *cli.Context) error {
 			return nil
 		}
 
-		return errors.New("Invalid output type: " + outputType)
+		return NewProfileErr(InvalidOutputError, outputType)
 	}
 
-	return errors.New("Missing output type")
+	return NewProfileErr(MissingOutputTypeError)
 }
 
 // SetAction uses the first two parameters as a key and value

@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/tucats/ego/functions"
@@ -308,7 +309,7 @@ func TestByteCode_Run(t *testing.T) {
 			functions.AddBuiltins(c.symbols)
 
 			err := c.Run()
-			if err != nil && err.Error() == "stop" {
+			if err != nil && strings.HasSuffix(err.Error(), "stop") {
 				err = nil
 			}
 			if (err != nil) != tt.wantErr {

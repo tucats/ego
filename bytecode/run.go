@@ -1,10 +1,10 @@
 package bytecode
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -132,7 +132,7 @@ func (c *Context) RunFromAddress(addr int) error {
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	syms := parentCtx.symbols
-	err := errors.New(InvalidFunctionCallError)
+	err := parentCtx.NewError(InvalidFunctionCallError)
 	ui.Debug(ui.ByteCodeLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.ByteCodeLogger, "--> Argument list: %#v\n", args)
 
@@ -160,10 +160,10 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ctx := NewContext(funcSyms, callCode)
 			ctx.Tracing = true
 			ui.DebugMode = true
-			err = ctx.Run()
+			err = parentCtx.NewError(ctx.Run().Error())
 		}
 	}
-	if err != nil && err.Error() != "stop" {
+	if err != nil && !strings.HasSuffix(err.Error(), "stop") {
 		fmt.Printf("%v\n", err)
 		ui.Debug(ui.ByteCodeLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)

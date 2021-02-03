@@ -13,7 +13,6 @@ import (
 
 // PathAction is the command handler for the ego PATH command
 func PathAction(c *cli.Context) error {
-
 	// If there is already an envrionment variable, use that. Else get the
 	// preference setting.
 	p := os.Getenv("EGO_PATH")

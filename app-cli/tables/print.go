@@ -2,7 +2,6 @@ package tables
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -43,7 +42,7 @@ func (t *Table) Print(format string) error {
 		fmt.Printf("%s\n", string(b))
 
 	default:
-		return errors.New("Invalid table format value")
+		return NewTableErr(InvalidOutputFormatError, format)
 	}
 
 	return nil

@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 )
@@ -10,7 +9,7 @@ import (
 // where each object represents a column of the data.
 func (t *Table) AddRow(row []string) error {
 	if len(row) != t.columnCount {
-		return errors.New("Invalid column count in added row")
+		return NewTableErr(IncorrectColumnCountError, len(row))
 	}
 
 	for n, h := range row {
@@ -28,7 +27,7 @@ func (t *Table) AddRow(row []string) error {
 // formatted values are added to the table as a row.
 func (t *Table) AddRowItems(items ...interface{}) error {
 	if len(items) != t.columnCount {
-		return errors.New("Invalid column count in added row")
+		return NewTableErr(IncorrectColumnCountError, len(items))
 	}
 
 	row := make([]string, t.columnCount)

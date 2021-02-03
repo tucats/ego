@@ -113,3 +113,15 @@ const (
 	// considered expired. Examples are "15m" or "24h"
 	TokenExpirationSetting = "ego.token.expiration"
 )
+
+// This section contains the names of the command-line options. These often
+// (but not always) have parallels in the settings above. Settings typically
+// have a structured name (ego.compiler.autoimport) while the option name is
+// Unix shell-friendly (auto-import)
+const (
+	AutoImportOption      = "auto-import"
+	DisassembleOption     = "disassemble"
+	EnvironmentOption     = "environment"
+	FullSymbolScopeOption = "full-symbol-scope"
+	StaticTypesOption     = "static-types"
+)

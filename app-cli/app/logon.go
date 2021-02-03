@@ -1,8 +1,6 @@
 package app
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -61,7 +59,7 @@ func Logon(c *cli.Context) error {
 		persistence.Set(LogonServerSetting, url)
 	}
 	if url == "" {
-		return errors.New("no --logon-server specified")
+		return NewAppError(NoLogonServerError)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -99,16 +97,16 @@ func Logon(c *cli.Context) error {
 	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = errors.New("no credentials provided")
+			err = NewAppError(NoCredentialsError)
 
 		case http.StatusForbidden:
-			err = errors.New("invalid credentials")
+			err = NewAppError(InvalidCredentialsError)
 
 		case http.StatusNotFound:
-			err = errors.New("logon endpoint not found")
+			err = NewAppError(LogonEndpointError)
 
 		default:
-			err = fmt.Errorf("HTTP %d", r.StatusCode())
+			err = NewAppError(HTTPError, r.StatusCode())
 		}
 	}
 

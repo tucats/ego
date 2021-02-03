@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"errors"
 	"strings"
 )
 
@@ -41,10 +40,10 @@ func (t *Table) ShowRowNumbers(flag bool) *Table {
 // always zero-based.
 func (t *Table) SetMinimumWidth(n int, w int) error {
 	if n < 0 || n >= t.columnCount {
-		return errors.New("Invalid column number specified")
+		return NewTableErr(InvalidColumnNumberError, n)
 	}
 	if w < 0 {
-		return errors.New("Invalid column width specified")
+		return NewTableErr(InvalidColumnWidthError, w)
 	}
 	if w > t.maxWidth[n] {
 		t.maxWidth[n] = w
@@ -57,7 +56,7 @@ func (t *Table) SetMinimumWidth(n int, w int) error {
 // printed. A value less than zero is an error.
 func (t *Table) SetStartingRow(s int) error {
 	if s < 1 {
-		return errors.New("Invalid starting row specified")
+		return NewTableErr(InvalidRowNumberError, s)
 	}
 	t.startingRow = s - 1
 
@@ -67,7 +66,7 @@ func (t *Table) SetStartingRow(s int) error {
 // SetSpacing specifies the spaces between columns in output
 func (t *Table) SetSpacing(s int) error {
 	if s < 0 {
-		return errors.New("Invalid spacing value specified")
+		return NewTableErr(InvalidSpacingError, s)
 	}
 	var buffer strings.Builder
 	for i := 0; i < s; i++ {
@@ -81,7 +80,7 @@ func (t *Table) SetSpacing(s int) error {
 // SetIndent specifies the spaces to indent each heading and row
 func (t *Table) SetIndent(s int) error {
 	if s < 0 {
-		return errors.New("Invalid spacing value specified")
+		return NewTableErr(InvalidSpacingError, s)
 	}
 	var buffer strings.Builder
 	for i := 0; i < s; i++ {
@@ -95,7 +94,7 @@ func (t *Table) SetIndent(s int) error {
 // SetAlignment sets the alignment for a given column.
 func (t *Table) SetAlignment(column int, alignment int) error {
 	if column < 0 || column >= t.columnCount {
-		return errors.New("Invalid column number specified")
+		return NewTableErr(InvalidColumnNumberError, column)
 	}
 
 	switch alignment {
@@ -109,7 +108,7 @@ func (t *Table) SetAlignment(column int, alignment int) error {
 		t.alignment[column] = AlignmentCenter
 
 	default:
-		return errors.New("Unsupported alignment specified for table")
+		return NewTableErr(InvalidAlignmentError, alignment)
 	}
 
 	return nil

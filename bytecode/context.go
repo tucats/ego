@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 
@@ -309,7 +308,7 @@ func (c *Context) checkType(name string, value interface{}) error {
 			return err
 		}
 		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
-			err = errors.New(InvalidVarTypeError)
+			err = c.NewError(InvalidVarTypeError)
 		}
 	}
 

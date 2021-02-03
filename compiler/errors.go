@@ -56,6 +56,7 @@ const (
 	MissingReturnValues            = "missing return values"
 	MissingSemicolonError          = "missing ';'"
 	MissingTermError               = "missing term"
+	NotAnLValueListError           = "not an lvalue list"
 	PackageRedefinitionError       = "cannot redefine existing package"
 	TestingAssertError             = "testing @assert failure"
 	TooManyReturnValues            = "too many return values"
