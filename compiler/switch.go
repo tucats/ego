@@ -6,6 +6,9 @@ import (
 
 // Switch compiles a switch statement.
 func (c *Compiler) Switch() error {
+	var defaultBlock *bytecode.ByteCode
+
+	next := 0
 	fixups := make([]int, 0)
 	t := MakeSymbol()
 
@@ -14,6 +17,7 @@ func (c *Compiler) Switch() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(tx)
 	c.b.Emit(bytecode.SymbolCreate, t)
 	c.b.Emit(bytecode.Store, t)
@@ -22,18 +26,17 @@ func (c *Compiler) Switch() error {
 		return c.NewError(MissingBlockError)
 	}
 
-	var defaultBlock *bytecode.ByteCode
-	next := 0
-
 	for !c.t.IsNext("}") {
 		if next > 0 {
 			_ = c.b.SetAddressHere(next)
 		}
+
 		// Could be a default statement:
 		if c.t.IsNext("default") {
 			if !c.t.IsNext(":") {
 				return c.NewError(MissingColonError)
 			}
+
 			savedBC := c.b
 			c.b = bytecode.New("default switch")
 
@@ -43,6 +46,7 @@ func (c *Compiler) Switch() error {
 					return err
 				}
 			}
+
 			defaultBlock = c.b
 			c.b = savedBC
 		} else {
@@ -50,15 +54,20 @@ func (c *Compiler) Switch() error {
 			if !c.t.IsNext("case") {
 				return c.NewError(MissingCaseError)
 			}
+
 			cx, err := c.Expression()
 			if err != nil {
 				return err
 			}
+
 			c.b.Append(cx)
 			c.b.Emit(bytecode.Load, t)
 			c.b.Emit(bytecode.Equal)
+
 			next = c.b.Mark()
+
 			c.b.Emit(bytecode.BranchFalse, 0)
+
 			if !c.t.IsNext(":") {
 				return c.NewError(MissingColonError)
 			}
@@ -72,6 +81,7 @@ func (c *Compiler) Switch() error {
 
 			// Emit the code that will jump to the exit point of the statement
 			fixups = append(fixups, c.b.Mark())
+
 			c.b.Emit(bytecode.Branch, 0)
 		}
 	}

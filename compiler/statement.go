@@ -18,11 +18,13 @@ func (c *Compiler) Statement() error {
 	if c.t.IsNext(";") {
 		return nil
 	}
+
 	if c.t.IsNext("{}") {
 		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 
 		return nil
 	}
+
 	if c.t.IsNext(tokenizer.EndOfTokens) {
 		return nil
 	}
@@ -33,6 +35,7 @@ func (c *Compiler) Statement() error {
 	if c.t.IsNext("@") {
 		return c.Directive()
 	}
+
 	c.statementCount = c.statementCount + 1
 
 	// Is it a function definition? These aren't compiled inline,
@@ -46,6 +49,7 @@ func (c *Compiler) Statement() error {
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+
 	if c.IsFunctionCall() {
 		return c.Call()
 	}
@@ -214,6 +218,7 @@ func (c *Compiler) IsFunctionCall() bool {
 			if lastWasSymbol {
 				return false
 			}
+
 			pos++
 			lastWasSymbol = true
 

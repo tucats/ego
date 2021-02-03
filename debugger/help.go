@@ -26,9 +26,11 @@ var helpText = [][]string{
 
 func Help() error {
 	table, err := tables.New([]string{"Command", "Description"})
+
 	for _, helpItem := range helpText {
 		err = table.AddRow(helpItem)
 	}
+
 	if err == nil {
 		fmt.Println("Commands:")
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(3)

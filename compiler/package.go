@@ -19,17 +19,20 @@ func (c *Compiler) Package() error {
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError("invalid package name", name)
 	}
+
 	name = strings.ToLower(name)
 
 	if (c.PackageName != "") && (c.PackageName != name) {
 		return c.NewError(PackageRedefinitionError)
 	}
+
 	c.PackageName = name
 
 	// Create a named struct that can be initialized with the symbol names.
 	// This is done by creating a source table and then merging it with the
 	// active table.
 	tmp := symbols.NewSymbolTable("")
+
 	_ = tmp.SetAlways(name, map[string]interface{}{
 		datatypes.MetadataKey: map[string]interface{}{
 			datatypes.ParentMDKey:   name,
@@ -47,9 +50,11 @@ func (c *Compiler) Import() error {
 	if c.blockDepth > 0 {
 		return c.NewError(InvalidImportError)
 	}
+
 	if c.loops != nil {
 		return c.NewError(InvalidImportError)
 	}
+
 	isList := false
 	if c.t.IsNext("(") {
 		isList = true
@@ -73,6 +78,7 @@ func (c *Compiler) Import() error {
 		if len(fileName) > 2 && fileName[:1] == "\"" {
 			fileName = fileName[1 : len(fileName)-1]
 		}
+
 		if c.loops != nil {
 			return c.NewError(InvalidImportError)
 		}
@@ -83,6 +89,7 @@ func (c *Compiler) Import() error {
 		if filepath.Ext(packageName) != "" {
 			packageName = packageName[:len(filepath.Ext(packageName))]
 		}
+
 		packageName = strings.ToLower(packageName)
 
 		// If this is an import of a package already processed, no work to do.
@@ -118,6 +125,7 @@ func (c *Compiler) Import() error {
 			// Skip past the filename that was rejected by c.Readfile()...
 			if builtinsAdded {
 				c.t.Advance(1)
+
 				if !isList || c.t.IsNext(")") {
 					break
 				}
@@ -170,15 +178,19 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 	if err == nil {
 		return s, nil
 	}
+
 	ui.Debug(ui.CompilerLogger, "+++ Reading package file %s", name)
+
 	// Not a directory, try to read the file
 	fn := name
+
 	content, err := ioutil.ReadFile(fn)
 	if err != nil {
 		content, err = ioutil.ReadFile(name + ".ego")
 		if err != nil {
 			r := os.Getenv("EGO_PATH")
 			fn = filepath.Join(r, "lib", name+".ego")
+
 			content, err = ioutil.ReadFile(fn)
 			if err != nil {
 				c.t.Advance(-1)
@@ -189,6 +201,7 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 			fn = name + ".ego"
 		}
 	}
+
 	if err == nil {
 		c.SourceFile = fn
 	}
@@ -200,17 +213,21 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 // ReadDirectory reads all the files in a directory into a single string.
 func (c *Compiler) ReadDirectory(name string) (string, error) {
 	var b strings.Builder
+
 	r := os.Getenv("EGO_PATH")
 	if r == "" {
 		r = persistence.Get(EgoPathSetting)
 	}
+
 	r = filepath.Join(r, "lib")
 
 	dirname := name
 	if !strings.HasPrefix(dirname, r) {
 		dirname = filepath.Join(r, name)
+
 		ui.Debug(ui.CompilerLogger, "+++ Applying EGO_PATH, %s", dirname)
 	}
+
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
@@ -221,6 +238,7 @@ func (c *Compiler) ReadDirectory(name string) (string, error) {
 	}
 
 	ui.Debug(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)
+
 	if len(fi) == 0 {
 		ui.Debug(ui.CompilerLogger, "+++ Directory is empty")
 	} else {
@@ -234,10 +252,12 @@ func (c *Compiler) ReadDirectory(name string) (string, error) {
 	for _, f := range fi {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
 			fname := filepath.Join(dirname, f.Name())
+
 			t, err := c.ReadFile(fname)
 			if err != nil {
 				return "", err
 			}
+
 			b.WriteString(t)
 			b.WriteString("\n")
 		}

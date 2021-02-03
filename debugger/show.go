@@ -11,6 +11,7 @@ import (
 
 func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
 	var err error
+
 	t := tokens.Peek(2)
 	tx := c.GetTokenizer()
 
@@ -23,10 +24,12 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	case "line":
 		text := tx.GetLine(line)
+
 		fmt.Printf("%s:\n\t%5d, %s\n", stepTo, line, text)
 
 	case "frames", "calls":
 		depth := -1
+
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tx != "all" {
@@ -45,12 +48,14 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 		for syms != nil {
 			idx := "local"
+
 			if depth > 0 {
 				idx = fmt.Sprintf("%5d", depth)
 			}
-			depth++
 
 			fmt.Printf("\t%s:  %s, %d symbols\n", idx, syms.Name, len(syms.Symbols))
+
+			depth++
 			syms = syms.Parent
 		}
 
@@ -72,6 +77,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				if i < start-1 || i > end-1 {
 					continue
 				}
+
 				fmt.Printf("%-5d %s\n", i+1, t)
 			}
 		}

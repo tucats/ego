@@ -38,22 +38,28 @@ func (c *Compiler) Function(literal bool) error {
 			if c.t.IsNext("*") {
 				byValue = false
 			}
+
 			class = c.t.Next()
+
 			if !tokenizer.IsSymbol(this) {
 				return c.NewError(InvalidSymbolError, this)
 			}
+
 			if !tokenizer.IsSymbol(class) {
 				return c.NewError(InvalidSymbolError, class)
 			}
+
 			if !c.t.IsNext(")") {
 				return c.NewError(MissingParenthesisError)
 			}
+
 			fname = c.t.Next()
 		}
 
 		if !tokenizer.IsSymbol(fname) {
 			return c.NewError(InvalidFunctionName, fname)
 		}
+
 		fname = c.Normalize(fname)
 	}
 
@@ -65,15 +71,19 @@ func (c *Compiler) Function(literal bool) error {
 			if c.t.AtEnd() {
 				break
 			}
-			name := c.t.Next()
+
 			p := parameter{kind: datatypes.UndefinedType}
+
+			name := c.t.Next()
 			if tokenizer.IsSymbol(name) {
 				p.name = name
 			} else {
 				return c.NewError(InvalidFunctionArgument)
 			}
+
 			if c.t.Peek(1) == "..." {
 				c.t.Advance(1)
+
 				varargs = true
 			}
 
@@ -120,6 +130,7 @@ func (c *Compiler) Function(literal bool) error {
 			_ = c.t.IsNext(",")
 		}
 	}
+
 	b := bytecode.New(fname)
 	// If we know our source file, mark it in the bytecode now.
 	if c.SourceFile != "" {
@@ -132,6 +143,7 @@ func (c *Compiler) Function(literal bool) error {
 		len(parameters),
 		fname,
 	}
+
 	if varargs {
 		p[0] = len(parameters)
 		p[1] = -1
@@ -241,6 +253,7 @@ func (c *Compiler) Function(literal bool) error {
 				case "void":
 					// Do nothing, there is no result.
 					wasVoid = true
+
 					c.t.Advance(1)
 
 				default:
@@ -248,16 +261,20 @@ func (c *Compiler) Function(literal bool) error {
 				}
 			}
 		}
+
 		if !wasVoid {
 			coercions = append(coercions, coercion)
 		}
+
 		if c.t.Peek(1) != "," {
 			break
 		}
+
 		// If we got here, but never had a () around this list, it's an error
 		if !hasReturnList {
 			return c.NewError(InvalidReturnTypeList)
 		}
+
 		c.t.Advance(1)
 	}
 
@@ -274,10 +291,12 @@ func (c *Compiler) Function(literal bool) error {
 	cx.t = c.t
 	cx.b = b
 	cx.coerce = coercions
+
 	err := cx.Statement()
 	if err != nil {
 		return err
 	}
+
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined.
 	for i := len(cx.deferQueue) - 1; i >= 0; i = i - 1 {
@@ -290,12 +309,14 @@ func (c *Compiler) Function(literal bool) error {
 	// If there was a receiver, make sure this function is added to the type structure
 	if class != "" {
 		c.b.Emit(bytecode.Push, b)
+
 		if c.PackageName != "" {
 			c.b.Emit(bytecode.Load, c.PackageName)
 			c.b.Emit(bytecode.Member, class)
 		} else {
 			c.b.Emit(bytecode.Load, class)
 		}
+
 		c.b.Emit(bytecode.Push, fname)
 		c.b.Emit(bytecode.StoreIndex, true)
 

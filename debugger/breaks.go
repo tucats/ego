@@ -42,6 +42,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
 			ec := compiler.New().WithTokens(tokenizer.New(text))
+
 			bc, err := ec.Expression()
 			if err == nil {
 				err = breakWhen(bc, text)
@@ -59,12 +60,14 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 				t.Advance(1)
 			} else {
 				name = c.GetModuleName()
+
 				t.Advance(-1)
 			}
 			line, err = strconv.Atoi(t.Next())
 			if err == nil {
 				err = breakAtLine(name, line)
 			}
+
 		default:
 			err = errors.New(InvalidBreakClauseError)
 		}
@@ -85,6 +88,7 @@ func breakAtLine(module string, line int) error {
 		kind:   BreakAlways,
 	}
 	breakPoints = append(breakPoints, b)
+
 	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
 
 	return nil
@@ -99,6 +103,7 @@ func breakWhen(expression *bytecode.ByteCode, text string) error {
 		text:   text,
 	}
 	breakPoints = append(breakPoints, b)
+
 	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
 
 	return nil
@@ -142,8 +147,11 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			if b.hit > 0 {
 				break
 			}
+
 			ctx := bytecode.NewContext(s, b.expr)
+
 			ctx.SetDebug(false)
+
 			err := ctx.Run()
 			if err != nil {
 				if err.Error() == StepOver.Error() {
@@ -151,10 +159,12 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 
 					ctx.StepOver(true)
 				}
+
 				if err.Error() == SignalDebugger.Error() {
 					err = nil
 				}
 			}
+
 			//fmt.Printf("Break expression status = %v\n", err)
 			if err == nil {
 				if v, err := ctx.Pop(); err == nil {
@@ -167,11 +177,13 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 					}
 				}
 			}
+
 			msg = "Break when " + b.text
 
 		case BreakAlways:
 			line := c.GetLine()
 			module := c.GetModuleName()
+
 			// fmt.Printf("Evaluating %s:%d = %s\n", module, line, text)
 			if module == b.module && line == b.line {
 				prompt = true

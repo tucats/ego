@@ -7,9 +7,11 @@ func (c *Compiler) Defer() error {
 	c.b.Emit(bytecode.Branch, 0)
 
 	code := c.b.Mark()
+
 	err := c.Statement()
 	if err == nil {
 		c.b.Emit(bytecode.Return)
+
 		c.deferQueue = append(c.deferQueue, code)
 		err = c.b.SetAddressHere(start)
 	}

@@ -64,10 +64,12 @@ func (c *Compiler) expressionAtom() error {
 	// Is this a parenthesis expression?
 	if t == "(" {
 		c.t.Advance(1)
+
 		err := c.conditional()
 		if err != nil {
 			return err
 		}
+
 		if c.t.Next() != ")" {
 			return c.NewError(MissingParenthesisError)
 		}
@@ -109,20 +111,25 @@ func (c *Compiler) expressionAtom() error {
 	runeValue := t[0:1]
 	if runeValue == "\"" {
 		c.t.Advance(1)
+
 		s, err := strconv.Unquote(t)
+
 		c.b.Emit(bytecode.Push, s)
 
 		return err
 	}
 	if runeValue == "`" {
 		c.t.Advance(1)
+
 		s, err := c.unLit(t)
+
 		c.b.Emit(bytecode.Push, s)
 
 		return err
 	}
 	if tokenizer.IsSymbol(t) {
 		c.t.Advance(1)
+
 		t = c.Normalize(t)
 		// Is it a generator for a type?
 		if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
@@ -130,10 +137,12 @@ func (c *Compiler) expressionAtom() error {
 			c.b.Emit(bytecode.Push, "__type")
 			c.b.Emit(bytecode.LoadIndex)
 			c.b.Emit(bytecode.Push, "__type")
+
 			err := c.expressionAtom()
 			if err != nil {
 				return err
 			}
+
 			i := c.b.Opcodes()
 			ix := i[len(i)-1]
 			ix.Operand = util.GetInt(ix.Operand) + 1
@@ -162,14 +171,18 @@ func (c *Compiler) parseArray() error {
 
 	if c.t.Peek(1) == "(" {
 		listTerminator = ")"
+	} else {
+		if c.t.Peek(1) == "[" {
+			listTerminator = "]"
+		}
 	}
-	if c.t.Peek(1) == "[" {
-		listTerminator = "]"
-	}
+
 	if listTerminator == "" {
 		return nil
 	}
+
 	c.t.Advance(1)
+
 	count := 0
 	t1 := 1
 
@@ -184,11 +197,13 @@ func (c *Compiler) parseArray() error {
 	} else {
 		t1, err = strconv.Atoi(c.t.Peek(1))
 	}
+
 	if err == nil {
 		if c.t.Peek(2) == ":" {
 			t2, err := strconv.Atoi(c.t.Peek(3))
 			if err == nil {
 				c.t.Advance(3)
+
 				count := t2 - t1 + 1
 				if count < 0 {
 					count = (-count) + 2
@@ -201,7 +216,9 @@ func (c *Compiler) parseArray() error {
 						c.b.Emit(bytecode.Push, n)
 					}
 				}
+
 				c.b.Emit(bytecode.Array, count)
+
 				if !c.t.IsNext("]") {
 					return c.NewError(InvalidRangeError)
 				}
@@ -216,18 +233,24 @@ func (c *Compiler) parseArray() error {
 		if err != nil {
 			return err
 		}
+
 		count = count + 1
+
 		if c.t.AtEnd() {
 			break
 		}
+
 		if c.t.Peek(1) == listTerminator {
 			break
 		}
+
 		if c.t.Peek(1) != "," {
 			return c.NewError(InvalidListError)
 		}
+
 		c.t.Advance(1)
 	}
+
 	c.b.Emit(bytecode.Array, count)
 	c.t.Advance(1)
 
@@ -255,7 +278,9 @@ func (c *Compiler) parseStruct() error {
 				return c.NewError(InvalidSymbolError, name)
 			}
 		}
+
 		name = c.Normalize(name)
+
 		// Second element: colon
 		if c.t.Next() != ":" {
 			return c.NewError(MissingColonError)
@@ -266,20 +291,27 @@ func (c *Compiler) parseStruct() error {
 		if err != nil {
 			return err
 		}
+
 		// Now write the name as a string.
 		c.b.Emit(bytecode.Push, name)
+
 		count = count + 1
+
 		if c.t.AtEnd() {
 			break
 		}
+
 		if c.t.Peek(1) == listTerminator {
 			break
 		}
+
 		if c.t.Peek(1) != "," {
 			return c.NewError(InvalidListError)
 		}
+
 		c.t.Advance(1)
 	}
+
 	c.b.Emit(bytecode.Struct, count)
 	c.t.Advance(1)
 

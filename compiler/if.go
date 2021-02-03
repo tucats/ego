@@ -12,11 +12,13 @@ func (c *Compiler) If() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Emit(bytecode.Load, "bool")
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Call, 1)
 
 	b1 := c.b.Mark()
+
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the statement to be executed if true
@@ -28,6 +30,7 @@ func (c *Compiler) If() error {
 	// If there's an else clause, branch around it.
 	if c.t.IsNext("else") {
 		b2 := c.b.Mark()
+
 		c.b.Emit(bytecode.Branch, 0)
 		_ = c.b.SetAddressHere(b1)
 
@@ -35,6 +38,7 @@ func (c *Compiler) If() error {
 		if err != nil {
 			return err
 		}
+
 		_ = c.b.SetAddressHere(b2)
 	} else {
 		_ = c.b.SetAddressHere(b1)

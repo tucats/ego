@@ -30,6 +30,7 @@ func NewChannel(size int) *Channel {
 	if size < 1 {
 		size = 1
 	}
+
 	c := &Channel{
 		isOpen: true,
 		size:   size,
@@ -38,6 +39,7 @@ func NewChannel(size int) *Channel {
 		id:     uuid.New().String(),
 	}
 	c.channel = make(chan interface{}, size)
+
 	ui.Debug(ui.ByteCodeLogger, "--> Created  %s", c.String())
 
 	return c
@@ -47,10 +49,12 @@ func NewChannel(size int) *Channel {
 // is open.
 func (c *Channel) Send(datum interface{}) error {
 	c.mutex.Lock()
+
 	defer c.mutex.Unlock()
 
 	if c.isOpen {
 		ui.Debug(ui.ByteCodeLogger, "--> Sending on %s", c.String())
+
 		c.count++
 		c.channel <- datum
 
@@ -98,11 +102,15 @@ func (c *Channel) GetSize() int {
 // the receiver can test for channel completion
 func (c *Channel) Close() bool {
 	c.mutex.Lock()
+
 	defer c.mutex.Unlock()
 
 	ui.Debug(ui.ByteCodeLogger, "--> Closing %s", c.String())
+
 	wasActive := c.isOpen
+
 	close(c.channel)
+
 	c.isOpen = false
 
 	return wasActive
@@ -110,6 +118,7 @@ func (c *Channel) Close() bool {
 
 func (c *Channel) String() string {
 	state := "open"
+
 	if !c.isOpen {
 		state = "closed"
 	}

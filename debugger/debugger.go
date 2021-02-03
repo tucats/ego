@@ -32,6 +32,7 @@ func RunFrom(c *bytecode.Context, pc int) error {
 		if err != nil && err.Error() == SignalDebugger.Error() {
 			err = Debugger(c)
 		}
+
 		if err != nil && err.Error() == Stop.Error() {
 			return nil
 		}
@@ -47,11 +48,12 @@ func Debugger(c *bytecode.Context) error {
 	line := c.GetLine()
 	text := c.GetTokenizer().GetLine(line)
 	s := c.GetSymbols()
-
 	prompt := false
+
 	// Are we in single-step mode?
 	if c.SingleStep() {
 		fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, c.GetModuleName(), line, text)
+
 		prompt = true
 	} else {
 		prompt = EvaluateBreakpoint(c)
@@ -66,6 +68,7 @@ func Debugger(c *bytecode.Context) error {
 			if len(strings.TrimSpace(cmd)) == 0 {
 				cmd = "step"
 			}
+
 			tokens = tokenizer.New(cmd)
 			if !tokens.AtEnd() {
 				break
@@ -81,12 +84,15 @@ func Debugger(c *bytecode.Context) error {
 
 			case "go", "continue":
 				c.SetSingleStep(false)
+
 				prompt = false
 
 			case "step":
 				c.SetSingleStep(true)
 				c.SetStepOver(false)
+
 				prompt = false
+
 				if tokens.Peek(2) == "over" {
 					c.SetStepOver(true)
 				} else {
@@ -94,9 +100,9 @@ func Debugger(c *bytecode.Context) error {
 						c.SetStepOver(false)
 					} else {
 						if tokens.Peek(2) != tokenizer.EndOfTokens {
+							prompt = true
 							err = fmt.Errorf("unrecognized step type: %s", tokens.Peek(2))
 							c.SetSingleStep(false)
-							prompt = true
 						}
 					}
 				}
@@ -113,10 +119,12 @@ func Debugger(c *bytecode.Context) error {
 			case "print":
 				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
 				t2 := tokenizer.New(text)
+
 				err = compiler.Run("debugger", s, t2)
 				if err != nil && err.Error() == Stop.Error() {
 					err = nil
 				}
+
 			case "break":
 				err = Break(c, tokens)
 
@@ -126,10 +134,13 @@ func Debugger(c *bytecode.Context) error {
 			default:
 				err = fmt.Errorf("unrecognized command: %s", t)
 			}
+
 			if err != nil && err.Error() != Stop.Error() && err.Error() != StepOver.Error() {
 				fmt.Printf("Debugger error, %v\n", err)
+
 				err = nil
 			}
+
 			if err != nil && err.Error() == Stop.Error() {
 				err = nil
 				prompt = false
@@ -163,28 +174,36 @@ func getLine() string {
 		parenCount := 0
 		bracketCount := 0
 		openTick := false
+
 		lastToken := t.Tokens[len(t.Tokens)-1]
 		if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
 			openTick = true
 		}
+
 		if !openTick {
 			for _, v := range t.Tokens {
 				switch v {
 				case "[":
 					bracketCount++
+
 				case "]":
 					bracketCount--
+
 				case "(":
 					parenCount++
+
 				case ")":
 					parenCount--
+
 				case "{":
 					braceCount++
+
 				case "}":
 					braceCount--
 				}
 			}
 		}
+
 		if braceCount > 0 || parenCount > 0 || bracketCount > 0 || openTick {
 			text = text + io.ReadConsoleText(".....> ")
 			t = tokenizer.New(text)

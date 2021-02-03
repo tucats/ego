@@ -14,6 +14,7 @@ func (c *Compiler) Block() error {
 		if c.t.IsNext("}") {
 			break
 		}
+
 		err := c.Statement()
 		if err != nil {
 			return err
@@ -26,6 +27,7 @@ func (c *Compiler) Block() error {
 			return c.NewError(MissingEndOfBlockError)
 		}
 	}
+
 	c.b.Emit(bytecode.PopScope)
 	c.blockDepth = c.blockDepth - 1
 

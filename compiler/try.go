@@ -7,6 +7,7 @@ import "github.com/tucats/ego/bytecode"
 func (c *Compiler) Try() error {
 	// Generate start of a try block.
 	b1 := c.b.Mark()
+
 	c.b.Emit(bytecode.Try, 0)
 
 	// Statement to try
@@ -15,6 +16,7 @@ func (c *Compiler) Try() error {
 		return err
 	}
 	b2 := c.b.Mark()
+
 	c.b.Emit(bytecode.Branch, 0)
 	_ = c.b.SetAddressHere(b1)
 

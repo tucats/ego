@@ -14,11 +14,12 @@ func RunString(name string, s *symbols.SymbolTable, stmt string) error {
 // Given a token stream, compile and execute it immediately.
 func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 	c := New()
+
 	c.ExtensionsEnabled(true)
+
 	bc, err := c.Compile(name, t)
 	if err == nil {
-		ctx := bytecode.NewContext(s, bc)
-		err = ctx.Run()
+		err = bytecode.NewContext(s, bc).Run()
 	}
 
 	return err

@@ -17,6 +17,7 @@ func (c *Compiler) Directive() error {
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidDirectiveError, name)
 	}
+
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
 
 	switch name {
@@ -67,11 +68,14 @@ func (c *Compiler) Global() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
 	}
+
 	name := c.t.Next()
 	if strings.HasPrefix(name, "_") || !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidSymbolError, name)
 	}
+
 	name = c.Normalize(name)
+
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, "")
 	} else {
@@ -79,8 +83,10 @@ func (c *Compiler) Global() error {
 		if err != nil {
 			return err
 		}
+
 		c.b.Append(bc)
 	}
+
 	c.b.Emit(bytecode.StoreGlobal, name)
 
 	return nil
@@ -91,6 +97,7 @@ func (c *Compiler) Log() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
 	}
+
 	name := strings.ToUpper(c.t.Next())
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidSymbolError, name)
@@ -103,8 +110,10 @@ func (c *Compiler) Log() error {
 		if err != nil {
 			return err
 		}
+
 		c.b.Append(bc)
 	}
+
 	c.b.Emit(bytecode.Log, name)
 
 	return nil
@@ -116,8 +125,8 @@ func (c *Compiler) RestStatus() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
 	}
-	_ = c.modeCheck("server", true)
 
+	_ = c.modeCheck("server", true)
 	name := "_rest_status"
 
 	if c.t.AtEnd() {
@@ -127,8 +136,10 @@ func (c *Compiler) RestStatus() error {
 		if err != nil {
 			return err
 		}
+
 		c.b.Append(bc)
 	}
+
 	c.b.Emit(bytecode.StoreGlobal, name)
 
 	return nil
@@ -136,6 +147,7 @@ func (c *Compiler) RestStatus() error {
 
 func (c *Compiler) Authenticated() error {
 	var token string
+
 	_ = c.modeCheck("server", true)
 
 	if c.t.AtEnd() {
@@ -143,6 +155,7 @@ func (c *Compiler) Authenticated() error {
 	} else {
 		token = strings.ToLower(c.t.Next())
 	}
+
 	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
 		return c.NewError("Invalid authentication type", token)
 	}
@@ -157,12 +170,14 @@ func (c *Compiler) RestResponse() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
 	}
+
 	_ = c.modeCheck("server", true)
 
 	bc, err := c.Expression()
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Response)
 
@@ -176,6 +191,7 @@ func (c *Compiler) Template() error {
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidSymbolError, name)
 	}
+
 	name = c.Normalize(name)
 
 	// Get the template string definition
@@ -183,6 +199,7 @@ func (c *Compiler) Template() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Template, name)
 	c.b.Emit(bytecode.SymbolCreate, name)
@@ -201,6 +218,7 @@ func (c *Compiler) Error() error {
 	} else {
 		c.b.Emit(bytecode.Push, GenericError)
 	}
+
 	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
 
 	return nil
@@ -217,6 +235,7 @@ func (c *Compiler) TypeChecking() error {
 	} else {
 		err = c.NewError(InvalidTypeCheckError, t)
 	}
+
 	c.b.Emit(bytecode.StaticTyping)
 
 	return err
@@ -225,12 +244,7 @@ func (c *Compiler) TypeChecking() error {
 // atStatementEnd checks the next token in the stream to see if it indicates
 // that we have parsed all of the statement.
 func (c *Compiler) atStatementEnd() bool {
-	token := c.t.Peek(1)
-	if token == tokenizer.EndOfTokens || token == ";" || token == "{" || token == "}" {
-		return true
-	}
-
-	return false
+	return util.InList(c.t.Peek(1), ";", "{", "}", tokenizer.EndOfTokens)
 }
 
 // modeCheck emits the code to verify that we are running
@@ -241,12 +255,15 @@ func (c *Compiler) modeCheck(mode string, check bool) error {
 	c.b.Emit(bytecode.Load, "__exec_mode")
 	c.b.Emit(bytecode.Push, mode)
 	c.b.Emit(bytecode.Equal)
+
 	branch := c.b.Mark()
+
 	if check {
 		c.b.Emit(bytecode.BranchTrue, 0)
 	} else {
 		c.b.Emit(bytecode.BranchFalse, 0)
 	}
+
 	c.b.Emit(bytecode.Push, WrongModeError)
 	c.b.Emit(bytecode.Push, ": ")
 	c.b.Emit(bytecode.Load, "__exec_mode")

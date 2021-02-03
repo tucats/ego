@@ -71,18 +71,23 @@ func (c *Compiler) NewError(msg string, args ...interface{}) *Error {
 	if p < 0 {
 		p = 0
 	}
+
 	if p >= len(c.t.Tokens) {
 		p = len(c.t.Tokens) - 1
 	}
+
 	token := ""
+
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
+
 	e := &Error{
 		text:  msg,
 		token: token,
 		pkg:   c.PackageName,
 	}
+
 	if p >= 0 {
 		e.line = c.t.Line[p]
 		e.column = c.t.Pos[p]
@@ -102,11 +107,14 @@ func (e Error) Error() string {
 		b.WriteString(e.pkg)
 		b.WriteString(" ")
 	}
+
 	if e.line > 0 {
 		b.WriteString(fmt.Sprintf(util.LineColumnFormat, e.line, e.column))
 	}
+
 	b.WriteString(", ")
 	b.WriteString(e.text)
+
 	if len(e.token) > 0 {
 		b.WriteString(": ")
 		b.WriteString(e.token)

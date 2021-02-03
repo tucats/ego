@@ -18,6 +18,7 @@ func (c *Compiler) Var() error {
 
 			return c.NewError(InvalidSymbolError, name)
 		}
+
 		// See if it's a reserved word.
 		if tokenizer.IsReserved(name, c.extensionsEnabled) {
 			c.t.Advance(-1)
@@ -28,8 +29,10 @@ func (c *Compiler) Var() error {
 
 			return c.NewError(InvalidSymbolError, name)
 		}
+
 		name = c.Normalize(name)
 		names = append(names, name)
+
 		if !c.t.IsNext(",") {
 			break
 		}
@@ -41,6 +44,7 @@ func (c *Compiler) Var() error {
 
 	for _, name := range names {
 		c.t.Set(mark)
+
 		if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 			c.t.Advance(2)
 			c.b.Emit(bytecode.Array, 0)
@@ -49,8 +53,7 @@ func (c *Compiler) Var() error {
 
 			switch typename {
 			case "chan":
-				channel := datatypes.NewChannel(1)
-				c.b.Emit(bytecode.Push, channel)
+				c.b.Emit(bytecode.Push, datatypes.NewChannel(1))
 
 			case "int":
 				c.b.Emit(bytecode.Push, int(0))

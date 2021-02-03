@@ -15,22 +15,27 @@ func (c *Compiler) functionCall() error {
 		if err != nil {
 			return err
 		}
+
 		argc = argc + 1
 		if c.t.AtEnd() {
 			break
 		}
+
 		if c.t.Peek(1) == ")" {
 			break
 		}
+
 		// Could be the "..." flatten operator
 		if c.t.IsNext("...") {
 			c.b.Emit(bc.Flatten)
 
 			break
 		}
+
 		if c.t.Peek(1) != "," {
 			return c.NewError(InvalidListError)
 		}
+
 		c.t.Advance(1)
 	}
 
@@ -38,6 +43,7 @@ func (c *Compiler) functionCall() error {
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
 		return c.NewError(MissingParenthesisError)
 	}
+
 	c.t.Advance(1)
 	// Call the function
 	c.b.Emit(bc.Call, argc)
@@ -53,6 +59,7 @@ func (c *Compiler) functionOrReference() error {
 	if err != nil {
 		return err
 	}
+
 	// Peek ahead to see if it's the start of a function call...
 	if c.t.IsNext("(") {
 		return c.functionCall()

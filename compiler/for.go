@@ -55,6 +55,7 @@ func (c *Compiler) For() error {
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
+
 		c.PopLoop()
 
 		return err
@@ -63,10 +64,12 @@ func (c *Compiler) For() error {
 	// Is this the two-value range thing?
 	indexName := c.t.Peek(1)
 	valueName := ""
+
 	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == ",") {
 		c.t.Advance(2)
 		valueName = c.t.Peek(1)
 	}
+
 	indexName = c.Normalize(indexName)
 	valueName = c.Normalize(valueName)
 
@@ -95,12 +98,16 @@ func (c *Compiler) For() error {
 				break
 			}
 		}
+
 		// Make a new scope and emit the test expression.
 		c.PushLoop(conditionalLoopType)
 		// Remember top of loop and generate test
 		b1 := c.b.Mark()
+
 		c.b.Append(bc)
+
 		b2 := c.b.Mark()
+
 		c.b.Emit(bytecode.BranchFalse, 0)
 
 		// Compile loop body
@@ -140,6 +147,7 @@ func (c *Compiler) For() error {
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
+
 		c.b.Emit(bytecode.PopScope)
 		c.PopLoop()
 
@@ -164,6 +172,7 @@ func (c *Compiler) For() error {
 		if err != nil {
 			return c.NewError(err.Error())
 		}
+
 		c.b.Append(bc)
 		c.b.Emit(bytecode.RangeInit, []interface{}{indexName, valueName})
 
@@ -193,13 +202,17 @@ func (c *Compiler) For() error {
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
+
 		c.PopLoop()
+
 		if indexName != "" && indexName != "_" {
 			c.b.Emit(bytecode.SymbolDelete, indexName)
 		}
+
 		if valueName != "" && valueName != "_" {
 			c.b.Emit(bytecode.SymbolDelete, valueName)
 		}
+
 		c.b.Emit(bytecode.PopScope)
 
 		return nil
@@ -210,6 +223,7 @@ func (c *Compiler) For() error {
 	if indexName == "" && valueName != "" {
 		return c.NewError(InvalidLoopIndexError)
 	}
+
 	c.PushLoop(indexLoopType)
 
 	// The expression is the initial value of the loop.
@@ -217,8 +231,10 @@ func (c *Compiler) For() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(initializerCode)
 	c.b.Append(indexStore)
+
 	if !c.t.IsNext(";") {
 		return c.NewError(MissingSemicolonError)
 	}
@@ -245,6 +261,7 @@ func (c *Compiler) For() error {
 	if !c.t.IsNext("=") {
 		return c.NewError(MissingEqualError)
 	}
+
 	incrementCode, err := c.Expression()
 	if err != nil {
 		return err
@@ -255,7 +272,9 @@ func (c *Compiler) For() error {
 
 	// Emit the test condition
 	c.b.Append(condition)
+
 	b2 := c.b.Mark()
+
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Loop body goes next
@@ -278,6 +297,7 @@ func (c *Compiler) For() error {
 	for _, fixAddr := range c.loops.breaks {
 		_ = c.b.SetAddressHere(fixAddr)
 	}
+
 	c.b.Emit(bytecode.PopScope)
 	c.PopLoop()
 
@@ -292,7 +312,9 @@ func (c *Compiler) Break() error {
 	if c.loops == nil {
 		return c.NewError(InvalidLoopControlError)
 	}
+
 	fixAddr := c.b.Mark()
+
 	c.b.Emit(bytecode.Branch, 0)
 	c.loops.breaks = append(c.loops.breaks, fixAddr)
 
@@ -307,9 +329,10 @@ func (c *Compiler) Continue() error {
 	if c.loops == nil {
 		return c.NewError(InvalidLoopControlError)
 	}
-	fixAddr := c.b.Mark()
+
+	c.loops.continues = append(c.loops.continues, c.b.Mark())
+
 	c.b.Emit(bytecode.Branch, 0)
-	c.loops.continues = append(c.loops.continues, fixAddr)
 
 	return nil
 }

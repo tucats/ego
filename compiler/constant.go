@@ -9,6 +9,7 @@ import (
 // Constant compiles a constant block
 func (c *Compiler) Constant() error {
 	terminator := ""
+
 	if c.t.IsNext("(") {
 		terminator = ")"
 	}
@@ -18,11 +19,13 @@ func (c *Compiler) Constant() error {
 		if !tokenizer.IsSymbol(name) {
 			return c.NewError(InvalidSymbolError)
 		}
+
 		name = c.Normalize(name)
 
 		if !c.t.IsNext("=") {
 			return c.NewError(MissingEqualError)
 		}
+
 		vx, err := c.Expression()
 		if err != nil {
 			return err

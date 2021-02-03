@@ -39,13 +39,9 @@ type Expression struct {
 	err error
 }
 
-// New creates a new Expression object. The expression to evaluate is
-// provided.
+// New creates a new Expression object.
 func New() *Expression {
-	// Start with an Expression structure.
-	e := &Expression{}
-
-	return e
+	return &Expression{}
 }
 
 // WithNormalization expresses whether case normalization is to be used

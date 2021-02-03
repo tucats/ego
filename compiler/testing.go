@@ -14,6 +14,7 @@ import (
 // Test compiles the @test directive
 func (c *Compiler) Test() error {
 	_ = c.modeCheck("test", true)
+
 	s := c.t.Next()
 	if s[:1] == "\"" {
 		s = s[1 : len(s)-1]
@@ -88,6 +89,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	b := util.GetBool(args[0])
 	if !b {
 		msg := TestingAssertError
+
 		if len(args) > 1 {
 			msg = util.GetString(args[1])
 		}
@@ -118,6 +120,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// Use the Type() function to get a string representation of the type
 	got, _ := functions.Type(s, args[0:1])
 	expected := util.GetString(args[1])
+
 	b := (expected == got)
 	if !b {
 		msg := fmt.Sprintf("T.isType(\"%s\" != \"%s\") failure", got, expected)
@@ -135,6 +138,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // error.
 func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	msg := "T.fail()"
+
 	if len(args) == 1 {
 		msg = util.GetString(args[0])
 	}
@@ -144,8 +148,10 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if m, ok := s.Get("T"); ok {
 		fmt.Printf("DEBUG: found testing package\n")
+
 		if structMap, ok := m.(map[string]interface{}); ok {
 			fmt.Printf("DEBUG: found map\n")
+
 			if nameString, ok := structMap["description"]; ok {
 				fmt.Printf("DEBUG: found name member\n")
 				name = util.GetString(nameString)
@@ -161,6 +167,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("Nil", functions.ArgumentCountError)
 	}
+
 	if len(args) == 2 {
 		return []interface{}{args[0] == nil, util.GetString(args[1])}, nil
 	}
@@ -173,6 +180,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("NotNil", functions.ArgumentCountError)
 	}
+
 	if len(args) == 2 {
 		return []interface{}{args[0] != nil, util.GetString(args[1])}, nil
 	}
@@ -185,6 +193,7 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("True", functions.ArgumentCountError)
 	}
+
 	if len(args) == 2 {
 		return []interface{}{util.GetBool(args[0]), util.GetString(args[1])}, nil
 	}
@@ -225,7 +234,9 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	if len(args) < 2 || len(args) > 3 {
 		return nil, functions.NewError("NotEqual", functions.ArgumentCountError)
 	}
+
 	b := !reflect.DeepEqual(args[0], args[1])
+
 	if len(args) == 3 {
 		return []interface{}{b, util.GetString(args[2])}, nil
 	}
@@ -241,10 +252,12 @@ func (c *Compiler) Assert() error {
 	c.b.Emit(bytecode.Member)
 
 	argCount := 1
+
 	code, err := c.Expression()
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(code)
 	c.b.Emit(bytecode.Call, argCount)
 
@@ -254,16 +267,19 @@ func (c *Compiler) Assert() error {
 // Fail implements the @fail directive
 func (c *Compiler) Fail() error {
 	_ = c.modeCheck("test", true)
+
 	next := c.t.Peek(1)
 	if next != "@" && next != ";" && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
 		if err != nil {
 			return err
 		}
+
 		c.b.Append(code)
 	} else {
 		c.b.Emit(bytecode.Push, "@fail error signal")
 	}
+
 	c.b.Emit(bytecode.Panic, true)
 
 	return nil

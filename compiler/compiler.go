@@ -199,6 +199,7 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 	if _, found := fd[name]; found {
 		return c.NewError(FunctionAlreadyExistsError)
 	}
+
 	fd[name] = function
 	c.packages[pkgname] = fd
 
@@ -219,6 +220,7 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 	if _, found := fd[name]; found {
 		return c.NewError(FunctionAlreadyExistsError)
 	}
+
 	fd[name] = value
 	c.packages[pkgname] = fd
 
@@ -294,9 +296,11 @@ func (c *Compiler) AutoImport(all bool) error {
 
 	// Make the order stable
 	sortedPackageNames := []string{}
+
 	for k := range uniqueNames {
 		sortedPackageNames = append(sortedPackageNames, k)
 	}
+
 	sort.Strings(sortedPackageNames)
 
 	savedBC := c.b
@@ -307,11 +311,13 @@ func (c *Compiler) AutoImport(all bool) error {
 
 	for _, packageName := range sortedPackageNames {
 		text := "import " + packageName
+
 		_, err := c.CompileString(packageName, text)
 		if err == nil {
 			firstError = err
 		}
 	}
+
 	c.b = savedBC
 	c.t = savedT
 	c.SourceFile = savedSource

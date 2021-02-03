@@ -20,6 +20,7 @@ func (c *Compiler) Call() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(bc)
 
 	// We don't care about the result values, so flush to the marker.

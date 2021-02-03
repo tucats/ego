@@ -13,10 +13,12 @@ func (c *Compiler) Print() error {
 		if c.t.IsNext(",") {
 			return c.NewError(UnexpectedTokenError, c.t.Peek(1))
 		}
+
 		bc, err := c.Expression()
 		if err != nil {
 			return err
 		}
+
 		newline = true
 
 		c.b.Append(bc)
@@ -25,8 +27,10 @@ func (c *Compiler) Print() error {
 		if !c.t.IsNext(",") {
 			break
 		}
+
 		newline = false
 	}
+
 	if newline {
 		c.b.Emit(bytecode.Newline)
 	}

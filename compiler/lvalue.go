@@ -28,9 +28,11 @@ func (c *Compiler) IsLValue() bool {
 		if util.InList(t, ":=", "=", "<-") {
 			return true
 		}
+
 		if tokenizer.IsReserved(t, c.extensionsEnabled) {
 			return false
 		}
+
 		if util.InList(t, "{", ";", tokenizer.EndOfTokens) {
 			return false
 		}
@@ -43,27 +45,29 @@ func (c *Compiler) IsLValue() bool {
 // in a multi-part assignment.
 func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 	bc := bytecode.New("lvalue list")
-	bc.Emit(bytecode.StackCheck, 1)
-
 	count := 0
 	savedPosition := c.t.TokenP
 	isLvalueList := false
 
+	bc.Emit(bytecode.StackCheck, 1)
+
 	for {
 		name := c.t.Next()
-
 		if !tokenizer.IsSymbol(name) {
 			return nil, c.NewError(InvalidSymbolError, name)
 		}
-		name = c.Normalize(name)
 
+		name = c.Normalize(name)
 		needLoad := true
+
 		// Until we get to the end of the lvalue...
 		for util.InList(c.t.Peek(1), ".", "[") {
 			if needLoad {
 				bc.Emit(bytecode.Load, name)
+
 				needLoad = false
 			}
+
 			err := c.lvalueTerm(bc)
 			if err != nil {
 				return nil, err
@@ -74,23 +78,28 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 		// if it's not found anywhere in the tree already.
 		bc.Emit(bytecode.SymbolOptCreate, name)
 		patchStore(bc, name, false)
+
 		count++
 
 		if c.t.Peek(1) == "," {
 			c.t.Advance(1)
+
 			isLvalueList = true
 
 			continue
 		}
+
 		if util.InList(c.t.Peek(1), "=", ":=", "<-") {
 			break
 		}
 	}
 	if isLvalueList {
+
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == "<-" {
 			return nil, c.NewError(InvalidChannelList)
 		}
+
 		// Patch up the stack size check. We can use the SetAddress
 		// operator to do this because it really just updates the
 		// integer instruction argument.
@@ -102,6 +111,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 
 		return bc, nil
 	}
+
 	c.t.TokenP = savedPosition
 
 	return nil, c.NewError(NotAnLValueListError)
@@ -114,20 +124,24 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 	if bc, err := lvalueList(c); err == nil {
 		return bc, nil
 	}
+
 	bc := bytecode.New("lvalue")
+
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return nil, c.NewError(InvalidSymbolError, name)
 	}
-	name = c.Normalize(name)
 
+	name = c.Normalize(name)
 	needLoad := true
+
 	// Until we get to the end of the lvalue...
 	for c.t.Peek(1) == "." || c.t.Peek(1) == "[" {
 		if needLoad {
 			bc.Emit(bytecode.Load, name)
 			needLoad = false
 		}
+
 		err := c.lvalueTerm(bc)
 		if err != nil {
 			return nil, err
@@ -142,6 +156,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 		if c.t.Peek(1) == ":=" {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
+
 		patchStore(bc, name, c.t.Peek(1) == "<-")
 	}
 
@@ -157,6 +172,7 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 	// a parent object? If so, convert the last one to
 	// a store operation.
 	ops := bc.Opcodes()
+
 	opsPos := bc.Mark() - 1
 	if opsPos > 0 && ops[opsPos].Operation == bytecode.LoadIndex {
 		ops[opsPos].Operation = bytecode.StoreIndex
@@ -174,14 +190,18 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	term := c.t.Peek(1)
 	if term == "[" {
 		c.t.Advance(1)
+
 		ix, err := c.Expression()
 		if err != nil {
 			return err
 		}
+
 		bc.Append(ix)
+
 		if !c.t.IsNext("]") {
 			return c.NewError(MissingBracketError)
 		}
+
 		bc.Emit(bytecode.LoadIndex)
 
 		return nil
@@ -189,6 +209,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 
 	if term == "." {
 		c.t.Advance(1)
+
 		member := c.t.Next()
 		if !tokenizer.IsSymbol(member) {
 			return c.NewError(InvalidSymbolError, member)

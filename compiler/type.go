@@ -12,8 +12,10 @@ func (c *Compiler) Type() error {
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(InvalidSymbolError)
 	}
+
 	name = c.Normalize(name)
 	parent := name
+
 	if c.PackageName != "" {
 		parent = c.PackageName
 	}
@@ -22,6 +24,7 @@ func (c *Compiler) Type() error {
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		c.t.Advance(1)
 	}
+
 	if c.t.Peek(1) != "{" {
 		return c.NewError(MissingBlockError)
 	}
@@ -89,13 +92,15 @@ func (c *Compiler) compileType() error {
 		if !tokenizer.IsSymbol(name) {
 			return c.NewError(InvalidSymbolError, name)
 		}
-		name = c.Normalize(name)
 
+		name = c.Normalize(name)
 		count = count + 1
+
 		// Skip over the optional struct type keyword
 		if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 			c.t.Advance(1)
 		}
+
 		if c.t.Peek(1) == "{" {
 			err := c.compileType()
 			if err != nil {
@@ -105,6 +110,7 @@ func (c *Compiler) compileType() error {
 			switch c.t.Next() {
 			case "chan":
 				channel := datatypes.NewChannel(1)
+
 				c.b.Emit(bytecode.Push, channel)
 
 			case "int":

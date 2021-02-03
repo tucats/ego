@@ -16,10 +16,12 @@ func InvokeDebugger(e error) bool {
 	if e == nil {
 		return false
 	}
+
 	text := e.Error()
 	if text == SignalDebugger.Error() {
 		return true
 	}
+
 	if text == StepOver.Error() {
 		return true
 	}

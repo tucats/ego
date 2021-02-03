@@ -29,7 +29,9 @@ func (c *Compiler) Array() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(bc)
+
 	if !c.t.IsNext("]") {
 		return c.NewError(MissingBracketError)
 	}
@@ -38,11 +40,13 @@ func (c *Compiler) Array() error {
 		if err != nil {
 			return nil
 		}
+
 		c.b.Append(bc)
 		c.b.Emit(bytecode.MakeArray, 2)
 	} else {
 		c.b.Emit(bytecode.MakeArray, 1)
 	}
+
 	c.b.Emit(bytecode.SymbolCreate, name)
 	c.b.Emit(bytecode.Store, name)
 

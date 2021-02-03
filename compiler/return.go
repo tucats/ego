@@ -23,21 +23,26 @@ func (c *Compiler) Return() error {
 		if err != nil {
 			return err
 		}
+
 		if returnCount >= len(c.coerce) {
 			return c.NewError(TooManyReturnValues)
 		}
-		bc.Append(c.coerce[returnCount])
-		returnCount++
 
+		bc.Append(c.coerce[returnCount])
+
+		returnCount++
 		returnExpressions = append(returnExpressions, bc)
 		hasReturnValue = true
+
 		if !c.t.IsNext(",") {
 			break
 		}
 	}
+
 	if returnCount < len(c.coerce) {
 		return c.NewError(MissingReturnValues)
 	}
+
 	// If there was a return value, the return values must be
 	// pushed on the stack in reverse order so they match up
 	// with any multiple-assignment calls.
@@ -73,9 +78,12 @@ func (c *Compiler) Exit() error {
 		if err != nil {
 			return err
 		}
+
 		c.b.Append(bc)
+
 		argCount = 1
 	}
+
 	c.b.Emit(bytecode.Call, argCount)
 
 	return nil

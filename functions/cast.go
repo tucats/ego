@@ -153,15 +153,16 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case map[string]interface{}:
 		// Create the replica count if needed, and update it.
 		replica := 0
+
 		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
 			replica = util.GetInt(replicaX) + 1
 		}
 
 		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
 
-		// Organize the new item by removing things that are handled via the parent.
 		dropList := []string{}
 
+		// Organize the new item by removing things that are handled via the parent.
 		for k, vv := range v {
 			// IF it's an internal function, we don't want to copy it; it can be found via the
 			// __parent link to the type
@@ -182,6 +183,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		for _, name := range dropList {
 			delete(r.(map[string]interface{}), name)
 		}
+
 		// If there is a parent key, override it with this item.
 		if _, ok := datatypes.GetMetadata(r, datatypes.ParentMDKey); ok {
 			datatypes.SetMetadata(r, datatypes.ParentMDKey, args[0])

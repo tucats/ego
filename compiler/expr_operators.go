@@ -18,9 +18,11 @@ func (c *Compiler) relations() error {
 		if c.t.AtEnd() {
 			break
 		}
+
 		op := c.t.Peek(1)
 		if op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" {
 			c.t.Advance(1)
+
 			err := c.addSubtract()
 			if err != nil {
 				return err
@@ -65,12 +67,15 @@ func (c *Compiler) addSubtract() error {
 		if c.t.AtEnd() {
 			break
 		}
+
 		op := c.t.Peek(1)
 		if util.InList(op, "+", "-", "&") {
 			c.t.Advance(1)
+
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.NewError(MissingTermError)
 			}
+
 			err := c.multDivide()
 			if err != nil {
 				return err
@@ -107,10 +112,12 @@ func (c *Compiler) multDivide() error {
 			break
 		}
 		op := c.t.Peek(1)
+
 		if c.t.AnyNext("^", "*", "/", "|") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.NewError(MissingTermError)
 			}
+
 			err := c.unary()
 			if err != nil {
 				return err

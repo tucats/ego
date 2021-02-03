@@ -10,10 +10,13 @@ func (c *Compiler) Go() error {
 	if !tokenizer.IsSymbol(fName) {
 		return c.NewError(InvalidSymbolError, fName)
 	}
+
 	c.b.Emit(bc.Push, fName)
+
 	if !c.t.IsNext("(") {
 		return c.NewError(MissingParenthesisError)
 	}
+
 	argc := 0
 
 	for c.t.Peek(1) != ")" {
@@ -21,22 +24,28 @@ func (c *Compiler) Go() error {
 		if err != nil {
 			return err
 		}
+
 		argc = argc + 1
+
 		if c.t.AtEnd() {
 			break
 		}
+
 		if c.t.Peek(1) == ")" {
 			break
 		}
+
 		// Could be the "..." flatten operator
 		if c.t.IsNext("...") {
 			c.b.Emit(bc.Flatten)
 
 			break
 		}
+
 		if c.t.Peek(1) != "," {
 			return c.NewError(InvalidListError)
 		}
+
 		c.t.Advance(1)
 	}
 
@@ -44,6 +53,7 @@ func (c *Compiler) Go() error {
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
 		return c.NewError(MissingParenthesisError)
 	}
+
 	c.t.Advance(1)
 	c.b.Emit(bc.Go, argc)
 

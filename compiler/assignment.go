@@ -15,6 +15,7 @@ func (c *Compiler) Assignment() error {
 	if err != nil {
 		return err
 	}
+
 	c.b.Append(expressionCode)
 	c.b.Append(storeLValue)
 

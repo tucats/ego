@@ -11,6 +11,7 @@ func (c *Compiler) Map() error {
 	if !c.t.IsNext("map") {
 		return c.NewError(UnexpectedTokenError, c.t.Peek(1))
 	}
+
 	if !c.t.IsNext("[") {
 		return c.NewError(MissingBracketError)
 	}
