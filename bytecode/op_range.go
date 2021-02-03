@@ -7,6 +7,19 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// Range describes what we know about the (current) for..range loop. This
+// is created by the RangeInit instruction and pushed on a stack in the
+// context. The RangeNext instruction uses this information to advance
+// through the range, and determine when the range is exhausted.
+type Range struct {
+	indexName string
+	valueName string
+	value     interface{}
+	keySet    []interface{}
+	runes     []rune
+	index     int
+}
+
 // RangeInitImpl impelments the RangeInit opcode
 //
 // Inputs:
@@ -47,6 +60,16 @@ func RangeInitImpl(c *Context, i interface{}) error {
 		if v, err = c.Pop(); err == nil {
 			r.value = v
 			switch actual := v.(type) {
+			case string:
+				keySet := make([]interface{}, 0)
+				runes := make([]rune, 0)
+				for i, ch := range actual {
+					keySet = append(keySet, i)
+					runes = append(runes, ch)
+				}
+				r.keySet = keySet
+				r.runes = runes
+
 			case map[string]interface{}:
 				r.keySet = []interface{}{}
 				i := 0
@@ -107,6 +130,22 @@ func RangeNextImpl(c *Context, i interface{}) error {
 	} else {
 		r := c.rangeStack[stackSize-1]
 		switch actual := r.value.(type) {
+		case string:
+			if r.index >= len(r.keySet) {
+				c.pc = destination
+				c.rangeStack = c.rangeStack[:stackSize-1]
+			} else {
+				key := r.keySet[r.index]
+				value := r.runes[r.index]
+				if r.indexName != "" && r.indexName != "_" {
+					err = c.symbols.Set(r.indexName, key)
+				}
+				if err == nil && r.valueName != "" && r.valueName != "_" {
+					err = c.symbols.Set(r.valueName, string(value))
+				}
+				r.index++
+			}
+
 		case map[string]interface{}:
 			if r.index >= len(r.keySet) {
 				c.pc = destination

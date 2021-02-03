@@ -11,14 +11,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-type Range struct {
-	indexName string
-	valueName string
-	value     interface{}
-	keySet    []interface{}
-	index     int
-}
-
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {

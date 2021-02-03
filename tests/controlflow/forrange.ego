@@ -1,0 +1,55 @@
+@test "for loops with ranges"
+
+{
+    // Range over an array
+    a := [10, 20, 30, 40, 50]
+    n := 0
+    for i, j := range a {
+        n = n + j + i
+    }
+    want := sum(10,21,32,43,54)
+    @assert T.Equal(want, n, "range over array failed")
+}
+
+{
+    // Range over an array, using just indexes
+    a := [10, 20, 30, 40, 50]
+    n := 0
+    for i := range a {
+        n = n  + i
+    }
+    want := sum(0,1,2,3,4)
+    @assert T.Equal(want, n, "range over array with just indexes failed")
+}
+
+{
+    // Range over a string. For each iteration, provides the next
+    // unicode rune. The index variable advances to the byte position
+    // of the character in the underlying slice.
+    a := "\u2318foo\u2318"
+    b := ["\u2318", "f", "o", "o", "\u2318"]
+    c := [0, 3, 4, 5, 6]
+    p := 0
+    for i, ch := range a {
+        @assert T.Equal(ch, b[p], "range over string failed")
+        @assert T.Equal(i,  c[p], "range over string failed")
+        p = p + 1
+    }
+}
+
+{
+    // Range over a map
+    a := map[int]string{}
+    a[101] = "abc"
+    a[102] = "def"
+    a[103] = "ghi"
+    n := 0
+    for k, v := range a {
+        if k == 101 @assert T.Equal(v, "abc", "range over map failed")
+        if k == 102 @assert T.Equal(v, "def", "range over map failed")
+        if k == 103 @assert T.Equal(v, "ghi", "range over map failed")
+        n = n + 1
+    }
+    @assert T.Equal(n, 3, "range over map failed")
+}
+@pass
