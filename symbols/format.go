@@ -12,7 +12,9 @@ import (
 // Format formats a symbol table into a string for printing/display
 func (s *SymbolTable) Format(includeBuiltins bool) string {
 	var b strings.Builder
+
 	b.WriteString("Symbol table")
+
 	if s.Name != "" {
 		b.WriteString(" \"")
 		b.WriteString(s.Name)
@@ -23,6 +25,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
 	keys := make([]string, 0)
+
 	for k := range s.Symbols {
 		if !strings.HasPrefix(k, "__") {
 			keys = append(keys, k)
@@ -40,6 +43,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		v := s.Symbols[k]
 		skip := false
 		typeString := "package"
+
 		switch actual := v.(type) {
 		case *datatypes.EgoMap:
 			typeString = actual.TypeString()
@@ -53,18 +57,22 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
 				typeString = util.GetString(tsx)
 			}
+
 			for _, k2 := range actual {
 				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 					skip = true
 				}
 			}
+
 			if skip && !includeBuiltins {
 				continue
 			}
 		}
+
 		b.WriteString("   ")
 		b.WriteString(k)
 		b.WriteString(" = ")
+
 		if skip {
 			b.WriteString("(")
 			b.WriteString(typeString)
@@ -77,11 +85,13 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		} else {
 			b.WriteString(util.Format(v))
 		}
+
 		b.WriteString("\n")
 	}
 
 	if s.Parent != nil {
 		sp := s.Parent.Format(includeBuiltins)
+
 		b.WriteString("\n")
 		b.WriteString(sp)
 	}

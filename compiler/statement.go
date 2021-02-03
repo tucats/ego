@@ -148,6 +148,7 @@ func (c *Compiler) IsFunctionCall() bool {
 	pos := 1
 	subexpr := 0
 	lastWasSymbol := false
+
 	for pos < len(c.t.Tokens) {
 		// Are we at the end?
 		t := c.t.Peek(pos)

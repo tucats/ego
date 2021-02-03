@@ -54,6 +54,7 @@ func NewCLIError(msg string, args ...interface{}) CLIError {
 	e := CLIError{
 		err: fmt.Errorf(msg, args...),
 	}
+
 	return e
 }
 

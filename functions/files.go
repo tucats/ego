@@ -18,12 +18,13 @@ const fileMemberName = "file"
 
 // OpenFile opens a file
 func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var mask os.FileMode = 0644
+
+	mode := os.O_RDONLY
 	fname, err := filepath.Abs(util.GetString(args[0]))
 	if err != nil {
 		return nil, err
 	}
-	mode := os.O_RDONLY
-	var mask os.FileMode = 0644
 
 	if len(args) > 1 {
 		modeValue := strings.ToLower(util.GetString(args[1]))
@@ -186,11 +187,12 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Write writes an arbitrary binary object to a file at an offset
 func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var buf bytes.Buffer
+
 	if len(args) != 2 {
 		return nil, errors.New(ArgumentCountError)
 	}
 	offset := util.GetInt(args[1])
-	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(args[0])
 	if err != nil {

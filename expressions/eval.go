@@ -26,6 +26,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 
 	// Run the generated code to get a result
 	ctx := bytecode.NewContext(s, e.b)
+
 	err := ctx.Run()
 	if err != nil && !strings.HasSuffix(err.Error(), "stop") {
 		return nil, err

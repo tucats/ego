@@ -65,10 +65,12 @@ func (c *Channel) Send(datum interface{}) error {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, error) {
+	ui.Debug(ui.ByteCodeLogger, "--> Receiving on %s", c.String())
+
 	if !c.isOpen && c.count == 0 {
 		return nil, errors.New(ChannelNotOpenError)
 	}
-	ui.Debug(ui.ByteCodeLogger, "--> Receiving on %s", c.String())
+
 	datum := <-c.channel
 	c.count--
 

@@ -10,6 +10,7 @@ import (
 // Var compiles the var statement
 func (c *Compiler) Var() error {
 	names := []string{}
+
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {

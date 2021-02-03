@@ -66,7 +66,6 @@ func LoadUserDatabase(c *cli.Context) error {
 	}
 
 	if userDatabase == nil {
-		// Make an initial version of the user database.
 		userDatabase = map[string]defs.User{
 			defaultUser: {
 				ID:          uuid.New(),
@@ -75,6 +74,7 @@ func LoadUserDatabase(c *cli.Context) error {
 				Permissions: []string{"root"},
 			},
 		}
+
 		ui.Debug(ui.ServerLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
 	}
 
@@ -117,6 +117,7 @@ func setPermission(user, privilege string, enabled bool) error {
 			}
 		}
 		userDatabase[user] = u
+
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
 		err = fmt.Errorf("no such user: %s", user)
@@ -129,6 +130,7 @@ func setPermission(user, privilege string, enabled bool) error {
 // set. If the username or privilege does not exist, then the reply is always false
 func getPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
+
 	if u, ok := userDatabase[user]; ok {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
@@ -136,6 +138,7 @@ func getPermission(user, privilege string) bool {
 
 		return v
 	}
+
 	ui.Debug(ui.ServerLogger, "Check %s permission for user \"%s\" (false)", privilege, user)
 
 	return false
@@ -155,6 +158,7 @@ func findPermission(u defs.User, perm string) int {
 // returns true if the user exists and the password is valid
 func validatePassword(user, pass string) bool {
 	ok := false
+
 	if u, userExists := userDatabase[user]; userExists {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
@@ -218,6 +222,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Permission implements the Permission(user,priv) function.
 func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var user, priv string
+
 	if len(args) != 2 {
 		return false, errors.New(defs.IncorrectArgumentCount)
 	}
@@ -236,6 +241,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // Implements the SetUser() function
 func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
+
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 	if s, ok := s.Get("_superuser"); ok {
@@ -291,6 +297,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // else false if it was not a valid username.
 func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
+
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 	if s, ok := s.Get("_superuser"); ok {

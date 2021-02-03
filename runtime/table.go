@@ -40,6 +40,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// remove the ":" cue character, and record the specified (or default)
 	// alignmnt for each column.
 	align := make([]int, len(headings))
+
 	for i := 0; i < len(headings); i = i + 1 {
 		h := headings[i]
 		if strings.HasPrefix(h, ":") && strings.HasSuffix(h, ":") {
@@ -228,6 +229,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		}
 
 		mode := tables.AlignmentLeft
+
 		if modeName, ok := args[1].(string); ok {
 			switch strings.ToLower(modeName) {
 			case "left":

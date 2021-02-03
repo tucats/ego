@@ -70,6 +70,7 @@ func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{
 func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	keys := persistence.Keys()
 	result := make([]interface{}, len(keys))
+
 	for i, key := range keys {
 		result[i] = key
 	}
@@ -135,8 +136,9 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // StrLen is the strings.Length() function, whih counts characters/runes instead of
 // bytes like len() does.
 func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := util.GetString(args[0])
 	count := 0
+	v := util.GetString(args[0])
+
 	for range v {
 		count++
 	}
@@ -237,6 +239,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		}
 		sort.Ints(intArray)
 		resultArray := make([]interface{}, len(array))
+
 		for n, i := range intArray {
 			resultArray[n] = i
 		}
@@ -250,6 +253,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		}
 		sort.Float64s(floatArray)
 		resultArray := make([]interface{}, len(array))
+
 		for n, i := range floatArray {
 			resultArray[n] = i
 		}
@@ -263,6 +267,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		}
 		sort.Strings(stringArray)
 		resultArray := make([]interface{}, len(array))
+
 		for n, i := range stringArray {
 			resultArray[n] = i
 		}
@@ -398,6 +403,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return nil, errors.New(ArgumentCountError)
 		}
 	}
+
 	switch v := args[0].(type) {
 	case string:
 		return nil, s.Delete(v)
@@ -417,6 +423,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if i < 0 || i >= len(v) {
 			return nil, errors.New(InvalidArrayIndexError)
 		}
+
 		r := append(v[:i], v[i+1:]...)
 
 		return r, nil
@@ -536,6 +543,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if array, ok := args[0].([]interface{}); ok {
 			result[datatypes.SizeMDKey] = len(array)
 			types := "nil"
+
 			for _, a := range array {
 				ts, _ := Type(s, []interface{}{a})
 				tsx := util.GetString(ts)

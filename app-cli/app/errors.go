@@ -24,6 +24,7 @@ func NewAppError(msg string, args ...interface{}) AppError {
 	a := AppError{
 		err: fmt.Errorf(msg, args...),
 	}
+
 	return a
 }
 

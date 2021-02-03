@@ -64,6 +64,7 @@ func Load(application string, name string) error {
 	}
 
 	var path strings.Builder
+
 	path.WriteString(home)
 	path.WriteRune(os.PathSeparator)
 	path.WriteString(ProfileDirectory)
@@ -87,6 +88,7 @@ func Load(application string, name string) error {
 			name = ProfileName
 		}
 		c, found := Configurations[name]
+
 		if !found {
 			c = Configuration{Description: "Default configuration", Items: map[string]string{}}
 			Configurations[name] = c
@@ -112,6 +114,7 @@ func Save() error {
 	if err != nil {
 		return err
 	}
+
 	path.WriteString(home)
 	path.WriteRune(os.PathSeparator)
 	path.WriteString(ProfileDirectory)
@@ -157,6 +160,7 @@ func Set(key string, value string) {
 	c := getCurrentConfiguration()
 	c.Items[key] = value
 	ProfileDirty = true
+
 	ui.Debug(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
 }
 
@@ -177,6 +181,7 @@ func Get(key string) string {
 		c := getCurrentConfiguration()
 		v = c.Items[key]
 	}
+
 	ui.Debug(ui.AppLogger, "Reading profile key \"%s\" : \"%s\"", key, v)
 
 	return v
@@ -215,6 +220,7 @@ func Delete(key string) {
 	delete(c.Items, key)
 	delete(explicitValues.Items, key)
 	ProfileDirty = true
+
 	ui.Debug(ui.AppLogger, "Deleting profile key \"%s\"", key)
 }
 
@@ -223,6 +229,7 @@ func Delete(key string) {
 func Keys() []string {
 	c := getCurrentConfiguration()
 	result := []string{}
+
 	for key := range c.Items {
 		result = append(result, key)
 	}
@@ -248,6 +255,7 @@ func DeleteProfile(key string) error {
 
 			return fmt.Errorf("cannot delete active profile")
 		}
+
 		delete(Configurations, key)
 		ProfileDirty = true
 		err := Save()
@@ -257,6 +265,7 @@ func DeleteProfile(key string) error {
 
 		return err
 	}
+
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
 
 	return fmt.Errorf("no such profile: %s", key)

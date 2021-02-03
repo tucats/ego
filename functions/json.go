@@ -52,7 +52,9 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	var b strings.Builder
+
 	b.WriteString("[")
+
 	for n, v := range args {
 		if n > 0 {
 			b.WriteString(", ")
@@ -77,7 +79,9 @@ func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 	}
 
 	var b strings.Builder
+
 	b.WriteString("[")
+
 	for n, v := range args {
 		if n > 0 {
 			b.WriteString(", ")

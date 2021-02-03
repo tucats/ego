@@ -135,6 +135,7 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 
 		return nil
 	}
+
 	var r bool
 
 	switch v1.(type) {
@@ -180,6 +181,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 	}
 
 	var r bool
+
 	switch v1.(type) {
 	case []interface{}:
 		return c.NewError(InvalidTypeError)
@@ -226,6 +228,7 @@ func LessThanImpl(c *Context, i interface{}) error {
 
 	// Nope, going to have to do type-sensitive compares.
 	var r bool
+
 	switch v1.(type) {
 	case []interface{}:
 		return c.NewError(InvalidTypeError)
@@ -269,6 +272,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) error {
 	}
 
 	var r bool
+
 	switch v1.(type) {
 	case []interface{}:
 		return c.NewError(InvalidTypeError)

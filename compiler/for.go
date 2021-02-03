@@ -42,6 +42,7 @@ func (c *Compiler) For() error {
 
 		// Branch back to start of loop
 		c.b.Emit(bytecode.Branch, b1)
+
 		for _, fixAddr := range c.loops.continues {
 			_ = c.b.SetAddress(fixAddr, b1)
 		}
@@ -50,6 +51,7 @@ func (c *Compiler) For() error {
 		if len(c.loops.breaks) == 0 {
 			return c.NewError(LoopExitError)
 		}
+
 		for _, fixAddr := range c.loops.breaks {
 			_ = c.b.SetAddressHere(fixAddr)
 		}
@@ -80,6 +82,7 @@ func (c *Compiler) For() error {
 		// loads any symbols or calls any functions.
 		ops := bc.Opcodes()
 		isConstant := true
+
 		for _, b := range ops {
 			if b.Operation == bytecode.Load ||
 				b.Operation == bytecode.LoadIndex ||
@@ -128,6 +131,7 @@ func (c *Compiler) For() error {
 
 		// Update the loop exit instruction, and any breaks
 		_ = c.b.SetAddressHere(b2)
+
 		if isConstant && len(c.loops.breaks) == 0 {
 			return c.NewError(LoopExitError)
 		}

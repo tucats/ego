@@ -6,9 +6,11 @@ import (
 
 func TestNewChannel(t *testing.T) {
 	fakeID := "49473e93-9f74-4c88-9234-5e037f2bac13"
+
 	type args struct {
 		size int
 	}
+
 	tests := []struct {
 		name string
 		args args

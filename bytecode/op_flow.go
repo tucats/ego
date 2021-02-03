@@ -139,6 +139,7 @@ func GoImpl(c *Context, i interface{}) error {
 
 	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
+
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
 		if err != nil {
@@ -154,6 +155,7 @@ func GoImpl(c *Context, i interface{}) error {
 
 	// Launch the function call as a separate thread.
 	ui.Debug(ui.ByteCodeLogger, "--> Launching go routine \"%s\"", fName)
+
 	go GoRoutine(util.GetString(fName), c, args)
 
 	return nil
@@ -167,7 +169,10 @@ func GoImpl(c *Context, i interface{}) error {
 // function implementation.
 func CallImpl(c *Context, i interface{}) error {
 	var err error
+
 	var funcPointer interface{}
+
+	var result interface{}
 
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
@@ -177,6 +182,7 @@ func CallImpl(c *Context, i interface{}) error {
 
 	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
+
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
 		if err != nil {
@@ -193,13 +199,13 @@ func CallImpl(c *Context, i interface{}) error {
 	if funcPointer == nil {
 		return c.NewError(InvalidFunctionCallError, "<nil>")
 	}
-	var result interface{}
 
 	// Depends on the type here as to what we call...
 	switch af := funcPointer.(type) {
 	case *ByteCode:
 		// Find the top of this scope level (typically)
 		parentTable := c.symbols
+
 		if !c.fullSymbolScope {
 			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
 				parentTable = parentTable.Parent
@@ -243,6 +249,7 @@ func CallImpl(c *Context, i interface{}) error {
 		// Note special exclusion for the case of the util.Symbols function which must be
 		// able to see the entire tree...
 		parentTable := c.symbols
+
 		if !fullSymbolVisibility {
 			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
 				parentTable = parentTable.Parent
@@ -327,6 +334,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	min := 0
 	max := 0
 	name := "function call"
+
 	switch v := i.(type) {
 	case []interface{}:
 		if len(v) < 2 || len(v) > 3 {
@@ -378,6 +386,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
 	va := v.([]interface{})
+
 	if max < 0 {
 		max = len(va)
 	}

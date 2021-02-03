@@ -13,11 +13,13 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return args[0], nil
 	}
 	r := args[0]
+
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
 			return nil, NewError("min", InvalidTypeError)
 		}
+
 		switch r.(type) {
 		case int:
 			if v.(int) < r.(int) {
@@ -52,11 +54,13 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return args[0], nil
 	}
 	r := args[0]
+
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
 			return nil, NewError("max", InvalidTypeError)
 		}
+
 		switch rr := r.(type) {
 		case int:
 			if v.(int) > rr {
@@ -94,6 +98,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		if addend == nil {
 			return nil, NewError("sum", InvalidTypeError)
 		}
+
 		switch addend.(type) {
 		case int:
 			base = base.(int) + addend.(int)

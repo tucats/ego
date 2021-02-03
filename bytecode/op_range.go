@@ -41,9 +41,11 @@ type Range struct {
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
 func RangeInitImpl(c *Context, i interface{}) error {
-	r := Range{}
 	var v interface{}
+
 	var err error
+
+	r := Range{}
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
 		r.indexName = util.GetString(list[0])
@@ -59,10 +61,12 @@ func RangeInitImpl(c *Context, i interface{}) error {
 	if err == nil {
 		if v, err = c.Pop(); err == nil {
 			r.value = v
+
 			switch actual := v.(type) {
 			case string:
 				keySet := make([]interface{}, 0)
 				runes := make([]rune, 0)
+
 				for i, ch := range actual {
 					keySet = append(keySet, i)
 					runes = append(runes, ch)
@@ -73,6 +77,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 			case map[string]interface{}:
 				r.keySet = []interface{}{}
 				i := 0
+
 				for k := range actual {
 					if !strings.HasPrefix(k, "__") {
 						r.keySet = append(r.keySet, k)
@@ -174,7 +179,7 @@ func RangeNextImpl(c *Context, i interface{}) error {
 				if err == nil && r.valueName != "" && r.valueName != "_" {
 					var value interface{}
 					ok := false
-					if value, ok, err = actual.Get(key); ok {
+					if value, ok, err = actual.Get(key); ok && err == nil {
 						err = c.symbols.Set(r.valueName, value)
 					} else {
 						// If the key was deleted inside the loop, we set the value to nil

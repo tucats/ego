@@ -82,6 +82,7 @@ func AddImpl(c *Context, i interface{}) error {
 					}
 				}
 			}
+
 			newArray := append(vx, vy...)
 
 			return c.Push(newArray)
@@ -175,6 +176,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 	// For an array, make a copy removing the item to be subtracted.
 	case []interface{}:
 		newArray := make([]interface{}, 0)
+
 		for _, v := range vx {
 			if !reflect.DeepEqual(v2, v) {
 				newArray = append(newArray, v)
@@ -252,6 +254,7 @@ func ExponentImpl(c *Context, i interface{}) error {
 			return c.Push(v1)
 		}
 		prod := v1.(int)
+
 		for n := 2; n <= v2.(int); n = n + 1 {
 			prod = prod * v1.(int)
 		}

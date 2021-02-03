@@ -35,6 +35,7 @@ type Table struct {
 // New creates a new table object, given a list of headings
 func New(headings []string) (*Table, error) {
 	t := &Table{}
+
 	if len(headings) == 0 {
 		return t, NewTableErr(EmptyColumnListError)
 	}

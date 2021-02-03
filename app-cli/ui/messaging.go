@@ -78,10 +78,10 @@ func SetLogger(logger string, mode bool) bool {
 	if _, ok := Loggers[logger]; !ok {
 		return false
 	}
-	Loggers[logger] = mode
 
-	// If any loggers are on, enable logging mode.
+	Loggers[logger] = mode
 	DebugMode = false
+
 	for _, v := range Loggers {
 		if v {
 			DebugMode = true

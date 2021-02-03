@@ -86,8 +86,10 @@ func (c *Context) GetString(name string) (string, bool) {
 			if entry.OptionType == StringType || entry.OptionType == UUIDType {
 				return entry.Value.(string), true
 			}
+
 			var b strings.Builder
 			var v = entry.Value.([]string)
+
 			for i, n := range v {
 				if i > 0 {
 					b.WriteRune(',')

@@ -11,6 +11,7 @@ func TestLogMessage(t *testing.T) {
 		format string
 		args   []interface{}
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -36,6 +37,7 @@ func TestLogMessage(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := LogMessage(tt.args.class, tt.args.format, tt.args.args...)

@@ -35,6 +35,7 @@ func FindKeyword(test string, valid []string) int {
 // value, and the second indicates if it was valid.
 func ValidateBoolean(value string) (bool, bool) {
 	valid := false
+
 	for _, x := range []string{"1", "true", "t", "yes", "y"} {
 		if strings.ToLower(value) == x {
 			return true, true
@@ -59,6 +60,7 @@ func MakeList(value string) []string {
 		return []string{}
 	}
 	list := strings.Split(value, ",")
+
 	for n := 0; n < len(list); n++ {
 		list[n] = strings.TrimSpace(list[n])
 	}

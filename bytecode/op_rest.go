@@ -20,39 +20,47 @@ import (
 // The operand determines what kind of authentication is required; i.e. via token
 // or username or either, and whether the user must be an admin (root) user.
 func AuthImpl(c *Context, i interface{}) error {
+	var user, pass string
+
 	if _, ok := c.Get("_authenticated"); !ok {
 		return c.NewError(NotAServiceError)
 	}
+
 	kind := util.GetString(i)
-	var user, pass string
+
 	if v, ok := c.Get("_user"); ok {
 		user = util.GetString(v)
 	}
+
 	if v, ok := c.Get("_password"); ok {
 		user = util.GetString(v)
 	}
+
 	tokenValid := false
+
 	if v, ok := c.Get("_token_valid"); ok {
 		tokenValid = util.GetBool(v)
 	}
 
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
+		c.running = false
 		_ = c.SetAlways("_rest_status", http.StatusForbidden)
 		if c.output != nil {
 			c.output.WriteString("403 Forbidden")
 		}
-		c.running = false
+
 		ui.Debug(ui.ServerLogger, "@authenticated token: no valid token")
 
 		return nil
 	}
 
 	if kind == "user" && user == "" && pass == "" {
+		c.running = false
 		_ = c.SetAlways("_rest_status", http.StatusUnauthorized)
 		if c.output != nil {
 			c.output.WriteString("401 Not authorized")
 		}
-		c.running = false
+
 		ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
 
 		return nil
@@ -67,10 +75,12 @@ func AuthImpl(c *Context, i interface{}) error {
 		}
 		if !isAuth {
 			_ = c.SetAlways("_rest_status", http.StatusForbidden)
+
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
 			c.running = false
+
 			ui.Debug(ui.ServerLogger, "@authenticated any: not authenticated")
 
 			return nil
@@ -84,10 +94,12 @@ func AuthImpl(c *Context, i interface{}) error {
 		}
 		if !isAuth {
 			_ = c.SetAlways("_rest_status", http.StatusForbidden)
+
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
 			c.running = false
+
 			ui.Debug(ui.ServerLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
 		}
 	}

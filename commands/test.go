@@ -77,6 +77,7 @@ func TestAction(c *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("unable to read file or path: %s", fileOrPath)
 		}
+
 		fileList = append(fileList, files...)
 	}
 

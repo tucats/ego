@@ -61,6 +61,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Figure out the test name. If not found, use "test"
 	name := "test"
+
 	if m, ok := s.Get("T"); ok {
 		if structMap, ok := m.(map[string]interface{}); ok {
 			if nameString, ok := structMap["description"]; ok {
@@ -105,6 +106,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Figure out the test name. If not found, use "test"
 	name := "test"
+
 	if m, ok := s.Get("T"); ok {
 		if structMap, ok := m.(map[string]interface{}); ok {
 			if nameString, ok := structMap["name"]; ok {
@@ -139,6 +141,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Figure out the test name. If not found, use "test"
 	name := "test"
+
 	if m, ok := s.Get("T"); ok {
 		fmt.Printf("DEBUG: found testing package\n")
 		if structMap, ok := m.(map[string]interface{}); ok {
@@ -209,6 +212,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	b := reflect.DeepEqual(args[0], args[1])
+
 	if len(args) == 3 {
 		return []interface{}{b, util.GetString(args[2])}, nil
 	}

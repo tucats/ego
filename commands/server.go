@@ -43,10 +43,12 @@ func Start(c *cli.Context) error {
 	args := []string{}
 	for _, v := range os.Args {
 		detached := false
+
 		if v == "start" {
 			v = "run"
 			detached = true
 		}
+
 		args = append(args, v)
 		if detached {
 			args = append(args, "--is-detached")
@@ -146,6 +148,7 @@ func Start(c *cli.Context) error {
 			logf.Fd(),
 		},
 	}
+
 	pid, err := syscall.ForkExec(args[0], args, &attr)
 
 	// If there were no errors, rewrite the PID file with the
@@ -156,6 +159,7 @@ func Start(c *cli.Context) error {
 		status.LogID = logID
 		status.Args = args
 		err = server.WritePidFile(c, *status)
+
 		ui.Say("Server started as process %d", pid)
 	} else {
 		// If things did not go well starting the process, make sure the
@@ -281,6 +285,7 @@ func Restart(c *cli.Context) error {
 			status.LogID = logID
 			status.Args = args
 			err = server.WritePidFile(c, *status)
+
 			ui.Say("Server re-started as process %d", pid)
 		} else {
 			_ = server.RemovePidFile(c)
@@ -380,11 +385,14 @@ func RunServer(c *cli.Context) error {
 	}
 
 	addr := "localhost:" + strconv.Itoa(port)
+
 	if c.GetBool("not-secure") {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
+
 		err = http.ListenAndServe(addr, nil)
 	} else {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
+
 		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 

@@ -35,6 +35,7 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Print implements fmt.Print() and is a wrapper around the native Go function
 func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
+
 	for i, v := range args {
 		if i > 0 {
 			b.WriteString(" ")
@@ -48,6 +49,7 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Println implements fmt.Println() and is a wrapper around the native Go function
 func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
+
 	for i, v := range args {
 		if i > 0 {
 			b.WriteString(" ")

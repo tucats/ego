@@ -83,6 +83,7 @@ func (c *Compiler) compileType() error {
 	}
 
 	count := 0
+
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
@@ -127,6 +128,7 @@ func (c *Compiler) compileType() error {
 
 		// Eat any trailing commas, and the see if we're at the end
 		_ = c.t.IsNext(",")
+
 		if c.t.IsNext("}") {
 			c.b.Emit(bytecode.Struct, count)
 

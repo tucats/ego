@@ -73,6 +73,7 @@ func DropImpl(c *Context, i interface{}) error {
 	if i != nil {
 		count = util.GetInt(i)
 	}
+
 	for n := 0; n < count; n = n + 1 {
 		_, err := c.Pop()
 		if err != nil {

@@ -51,14 +51,16 @@ func (t *Table) Print(format string) error {
 // FormatJSON will produce the text of the table as JSON
 func (t *Table) FormatJSON() string {
 	var buffer strings.Builder
+
 	var e *expressions.Expression
-	var firstRow = true
 
 	if t.where != "" {
 		e = expressions.New().WithText(t.where)
 	}
 
 	buffer.WriteRune('[')
+	firstRow := true
+
 	for n, row := range t.rows {
 		if n < t.startingRow {
 			continue
@@ -71,6 +73,7 @@ func (t *Table) FormatJSON() string {
 			// Load up the symbol tables with column values and the row number
 			symbols := symbols.NewSymbolTable("rowset")
 			_ = symbols.SetAlways("_row_", n+1)
+
 			for i, n := range t.columns {
 				_ = symbols.SetAlways(strings.ToLower(n), row[i])
 			}
@@ -89,9 +92,12 @@ func (t *Table) FormatJSON() string {
 			buffer.WriteRune(',')
 		}
 		firstRow = false
+
 		buffer.WriteRune('{')
+
 		for ith, i := range t.columnOrder {
 			header := t.columns[i]
+
 			if ith > 0 {
 				buffer.WriteRune(',')
 			}
@@ -122,6 +128,7 @@ func (t *Table) FormatText() []string {
 	var e *expressions.Expression
 	if t.where != "" {
 		e = expressions.New().WithText(t.where)
+
 		if ui.DebugMode {
 			e.Disasm()
 		}
@@ -139,10 +146,12 @@ func (t *Table) FormatText() []string {
 			buffer.WriteString("Row")
 			buffer.WriteString(t.spacing)
 		}
+
 		for _, n := range t.columnOrder {
 			buffer.WriteString(AlignText(t.columns[n], t.maxWidth[n], t.alignment[n]))
 			buffer.WriteString(t.spacing)
 		}
+
 		output = append(output, buffer.String())
 
 		if t.showUnderlines {
@@ -152,12 +161,14 @@ func (t *Table) FormatText() []string {
 				buffer.WriteString("===")
 				buffer.WriteString(t.spacing)
 			}
+
 			for _, n := range t.columnOrder {
 				for pad := 0; pad < t.maxWidth[n]; pad++ {
 					buffer.WriteRune('=')
 				}
 				buffer.WriteString(t.spacing)
 			}
+
 			output = append(output, buffer.String())
 		}
 	}
@@ -201,6 +212,7 @@ func (t *Table) FormatText() []string {
 			buffer.WriteString(AlignText(r[n], t.maxWidth[n], t.alignment[n]))
 			buffer.WriteString(t.spacing)
 		}
+
 		output = append(output, buffer.String())
 	}
 
@@ -226,6 +238,7 @@ func AlignText(text string, width int, alignment int) string {
 		}
 	}
 	pad := strings.Repeat(" ", width)
+
 	switch alignment {
 	case AlignmentRight:
 		r := pad + text
@@ -240,6 +253,7 @@ func AlignText(text string, width int, alignment int) string {
 	case AlignmentCenter:
 		r := text
 		left := true
+
 		for len(r) < width {
 			if left {
 				r = " " + r

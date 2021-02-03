@@ -20,7 +20,9 @@ func (t *Table) AddCSVRow(items string) error {
 // values are trimmed of extra spaces.
 func CsvSplit(data string) []string {
 	var headings []string
+
 	var inQuote = false
+
 	var currentHeading strings.Builder
 
 	for _, c := range data {

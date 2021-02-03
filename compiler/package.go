@@ -36,6 +36,7 @@ func (c *Compiler) Package() error {
 			datatypes.ReadonlyMDKey: true,
 			datatypes.TypeMDKey:     "package",
 		}})
+
 	c.s.Merge(tmp)
 
 	return nil
@@ -52,6 +53,7 @@ func (c *Compiler) Import() error {
 	isList := false
 	if c.t.IsNext("(") {
 		isList = true
+
 		ui.Debug(ui.CompilerLogger, "*** Processing import list")
 	}
 
@@ -61,9 +63,10 @@ func (c *Compiler) Import() error {
 		if !isList {
 			parsing = false
 		}
+
 		fileName := c.t.Next()
+
 		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
-		// End of the list? If so, break out
 		if isList && fileName == ")" {
 			break
 		}
@@ -148,9 +151,8 @@ func (c *Compiler) Import() error {
 		c.t = savedTokenizer
 		c.PackageName = savedPackageName
 		c.SourceFile = savedSourceFile
-
-		//	c.blockDepth = savedBlockDepth
 		c.statementCount = savedStatementCount
+
 		if !isList {
 			break
 		}

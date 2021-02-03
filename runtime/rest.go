@@ -76,9 +76,11 @@ var codes = map[int]string{
 // RestNew implements the New() rest function
 func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client := resty.New()
+
 	if len(args) == 2 {
 		username := util.GetString(args[0])
 		password := util.GetString(args[1])
+
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
 	} else {
@@ -337,6 +339,12 @@ func headerMap(response *resty.Response) map[string]interface{} {
 
 // RestPost implements the Post() rest function
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var body interface{} = ""
+
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.New(defs.IncorrectArgumentCount)
+	}
+
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -344,11 +352,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client.SetRedirectPolicy()
 
 	this := getThis(s)
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
-	}
 	url := applyBaseURL(util.GetString(args[0]), this)
-	var body interface{} = ""
 	if len(args) > 1 {
 		body = args[1]
 	}
@@ -363,12 +367,12 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				return nil, err
 			}
 			body = string(b)
-			fmt.Printf("DEBUG: POST body = %s\n", body)
 		}
 	}
 
 	r := client.NewRequest().SetBody(body)
 	isJSON := false
+
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
@@ -382,12 +386,12 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	this["cookies"] = fetchCookies(s, response)
 	status := response.StatusCode()
+	this["cookies"] = fetchCookies(s, response)
 	this["status"] = status
 	this["headers"] = headerMap(response)
-
 	rb := string(response.Body())
+
 	if isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
@@ -402,16 +406,20 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // RestDelete implements the Delete() rest function
 func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var body interface{} = ""
+
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.New(defs.IncorrectArgumentCount)
+	}
+
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
-	}
 	url := applyBaseURL(util.GetString(args[0]), this)
-	var body interface{} = ""
+
 	if len(args) > 1 {
 		body = args[1]
 	}
@@ -431,12 +439,14 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	r := client.NewRequest().SetBody(body)
 	isJSON := false
+
 	if media, ok := this["media_type"]; ok {
 		ms := util.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content_Type", ms)
 	}
+
 	response, err := r.Delete(url)
 	if err != nil {
 		this["status"] = http.StatusServiceUnavailable
@@ -444,12 +454,12 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 
-	this["cookies"] = fetchCookies(s, response)
 	status := response.StatusCode()
+	this["cookies"] = fetchCookies(s, response)
 	this["status"] = status
 	this["headers"] = headerMap(response)
-
 	rb := string(response.Body())
+
 	if isJSON {
 		var jsonResponse interface{}
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
@@ -504,6 +514,9 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 
 // Exchange is a helper wrapper around a rest call.
 func Exchange(endpoint, method string, body interface{}, response interface{}) error {
+	var resp *resty.Response
+	var err error
+
 	url := persistence.Get(defs.ApplicationServerSetting)
 	if url == "" {
 		url = persistence.Get(defs.LogonServerSetting)
@@ -514,9 +527,11 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 	url = strings.TrimSuffix(url, "/") + endpoint
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
 	}
+
 	r := client.NewRequest()
 	r.Header.Add("Accept", defs.JSONMediaType)
 	r.Header.Add("Content_Type", defs.JSONMediaType)
@@ -529,8 +544,6 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) e
 		r.SetBody(b)
 	}
 
-	var resp *resty.Response
-	var err error
 	resp, err = r.Execute(method, url)
 
 	status := resp.StatusCode()

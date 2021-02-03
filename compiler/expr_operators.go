@@ -12,7 +12,8 @@ func (c *Compiler) relations() error {
 	if err != nil {
 		return err
 	}
-	var parsing = true
+
+	parsing := true
 	for parsing {
 		if c.t.AtEnd() {
 			break
@@ -58,7 +59,8 @@ func (c *Compiler) addSubtract() error {
 	if err != nil {
 		return err
 	}
-	var parsing = true
+
+	parsing := true
 	for parsing {
 		if c.t.AtEnd() {
 			break
@@ -98,7 +100,8 @@ func (c *Compiler) multDivide() error {
 	if err != nil {
 		return err
 	}
-	var parsing = true
+
+	parsing := true
 	for parsing {
 		if c.t.AtEnd() {
 			break

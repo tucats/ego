@@ -24,9 +24,11 @@ type SymbolError struct {
 // Required interface to format an error string.
 func (e *SymbolError) Error() string {
 	var b strings.Builder
+
 	b.WriteString(Prefix)
 	b.WriteString(", ")
 	b.WriteString(e.Text)
+
 	if len(e.Parameter) > 0 {
 		b.WriteString(": ")
 		b.WriteString(e.Parameter)

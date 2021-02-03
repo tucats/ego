@@ -77,6 +77,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 
 		i := c.bc.opcodes[c.pc]
+
 		if c.Tracing {
 			s := FormatInstruction(i)
 			s2 := FormatStack(c.stack[:c.sp], fullStackListing)
@@ -109,6 +110,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 				// Implicit pop-scope done here
 				_ = c.symbols.SetAlways("_error", text)
+
 				if c.Tracing {
 					ui.Debug(ui.ByteCodeLogger, "*** Branch to %d on error: %s", c.pc, text)
 				}
@@ -133,6 +135,7 @@ func (c *Context) RunFromAddress(addr int) error {
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	syms := parentCtx.symbols
 	err := parentCtx.NewError(InvalidFunctionCallError)
+
 	ui.Debug(ui.ByteCodeLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.ByteCodeLogger, "--> Argument list: %#v\n", args)
 
@@ -141,11 +144,13 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 		if bc, ok := fCode.(*ByteCode); ok {
 			if true {
 				ui.DebugMode = true
+
 				bc.Disasm()
 			}
 			// Create a new stream whose job is to invoke the function by name
 			callCode := New("go " + fName)
 			callCode.Emit(Load, fName)
+
 			for _, arg := range args {
 				callCode.Emit(Push, arg)
 			}

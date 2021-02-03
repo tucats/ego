@@ -13,6 +13,7 @@ func TestExpression_Parse(t *testing.T) {
 		Tokens []string
 		TokenP int
 	}
+
 	tests := []struct {
 		name       string
 		fields     fields
@@ -45,6 +46,7 @@ func TestExpression_Parse(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &Expression{}

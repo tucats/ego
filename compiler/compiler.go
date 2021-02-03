@@ -148,6 +148,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 // is empty)
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
+
 	for name, f := range functions.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot >= 0 {
 			f.Pkg = name[:dot]
@@ -228,6 +229,7 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 	for pkgname, dict := range c.packages {
 		m := map[string]interface{}{}
+
 		for k, v := range dict {
 			// If the package name is empty, we add the individual items
 			if pkgname == "" {
@@ -274,6 +276,7 @@ func (c *Compiler) AutoImport(all bool) error {
 	// If we aren't loading all packages, at least always load "util"
 	// which is required for the exit command to function.
 	uniqueNames := map[string]bool{}
+
 	if all {
 		for fn := range functions.FunctionDictionary {
 			dot := strings.Index(fn, ".")
@@ -301,6 +304,7 @@ func (c *Compiler) AutoImport(all bool) error {
 	savedSource := c.SourceFile
 
 	var firstError error
+
 	for _, packageName := range sortedPackageNames {
 		text := "import " + packageName
 		_, err := c.CompileString(packageName, text)

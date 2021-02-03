@@ -54,12 +54,15 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
 	if m.immutable > 0 {
 		return false, errors.New(ImmutableMapError)
 	}
+
 	if !IsType(key, m.keyType) {
 		return false, errors.New(WrongMapKeyType)
 	}
+
 	if !IsType(value, m.valueType) {
 		return false, errors.New(WrongMapValueType)
 	}
+
 	_, found := m.data[key]
 	m.data[key] = value
 
@@ -79,13 +82,16 @@ func (m *EgoMap) Delete(key interface{}) (bool, error) {
 	if m.immutable > 0 {
 		return false, errors.New(ImmutableMapError)
 	}
+
 	if !IsType(key, m.keyType) {
 		return false, errors.New(WrongMapKeyType)
 	}
+
 	_, found, err := m.Get(key)
 	if err == nil {
 		delete(m.data, key)
 	}
+
 	return found, err
 }
 
@@ -95,10 +101,12 @@ func (m *EgoMap) TypeString() string {
 
 func (m *EgoMap) String() string {
 	var b strings.Builder
+
 	b.WriteString("{")
 
 	for i, k := range m.Keys() {
 		v, _, _ := m.Get(k)
+
 		if i > 0 {
 			b.WriteString(", ")
 		}

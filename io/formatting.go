@@ -19,7 +19,9 @@ func Pad(v interface{}, w int) string {
 	if count > len(s) {
 		padString = strings.Repeat(" ", count-len(s))
 	}
+
 	var r string
+
 	if w < 0 {
 		r = padString + s
 	} else {

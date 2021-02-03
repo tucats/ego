@@ -118,6 +118,7 @@ func (c *Context) SetGlobal(name string, value interface{}) error {
 // from Print and Newline into a buffer instead of going to stdout
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	ui.Debug(ui.AppLogger, ">>> Console output set to %v", flag)
+
 	if !flag {
 		var b strings.Builder
 		c.output = &b
@@ -257,10 +258,11 @@ func (c *Context) Push(v interface{}) error {
 
 // FormatStack formats the stack for tracing output
 func FormatStack(s []interface{}, newlines bool) string {
+	var b strings.Builder
+
 	if len(s) == 0 {
 		return "<EOS>"
 	}
-	var b strings.Builder
 	if newlines {
 		b.WriteString("\n")
 	}
@@ -287,6 +289,7 @@ func FormatStack(s []interface{}, newlines bool) string {
 // the persistence layer.
 func (c *Context) GetConfig(name string) interface{} {
 	var i interface{}
+
 	if config, ok := c.Get("_config"); ok {
 		if cfgMap, ok := config.(map[string]interface{}); ok {
 			if cfgValue, ok := cfgMap[name]; ok {
@@ -300,6 +303,7 @@ func (c *Context) GetConfig(name string) interface{} {
 
 func (c *Context) checkType(name string, value interface{}) error {
 	var err error
+
 	if !c.Static || value == nil {
 		return err
 	}

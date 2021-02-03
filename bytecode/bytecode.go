@@ -92,15 +92,17 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 // Append appends another bytecode set to the current bytecode,
 // and updates all the link references.
 func (b *ByteCode) Append(a *ByteCode) {
-	base := b.emitPos
 	if a == nil {
 		return
 	}
+
+	base := b.emitPos
 
 	for _, i := range a.opcodes[:a.emitPos] {
 		if i.Operation > BranchInstructions {
 			i.Operand = util.GetInt(i.Operand) + base
 		}
+
 		b.Emit(i.Operation, i.Operand)
 	}
 }

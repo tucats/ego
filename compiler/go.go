@@ -15,6 +15,7 @@ func (c *Compiler) Go() error {
 		return c.NewError(MissingParenthesisError)
 	}
 	argc := 0
+
 	for c.t.Peek(1) != ")" {
 		err := c.conditional()
 		if err != nil {

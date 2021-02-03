@@ -17,6 +17,7 @@ func (t *Table) AddRow(row []string) error {
 			t.maxWidth[n] = len(h)
 		}
 	}
+
 	t.rows = append(t.rows, row)
 
 	return nil

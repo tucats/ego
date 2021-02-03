@@ -110,6 +110,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 	if e, ok := v.(error); ok {
 		return e
 	}
+
 	switch model.(type) {
 	case int64:
 		switch value := v.(type) {
@@ -224,7 +225,6 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		}
 
 	case bool:
-
 		switch vv := v.(type) {
 		case nil:
 			return false
@@ -436,6 +436,7 @@ func InList(s string, test ...string) bool {
 func MakeSortedArray(array []string) []interface{} {
 	sort.Strings(array)
 	result := make([]interface{}, len(array))
+
 	for i, v := range array {
 		result[i] = v
 	}

@@ -53,6 +53,7 @@ func TestTokenize(t *testing.T) {
 
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tk := New(tt.args.src)
@@ -92,6 +93,7 @@ And if there were, you wouldn't find them.`,
 And if there were, you wouldn't find them.`,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := stripComments(tt.args.source); got != tt.want {
@@ -143,6 +145,7 @@ func TestIsSymbol(t *testing.T) {
 
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsSymbol(tt.args.s); got != tt.want {

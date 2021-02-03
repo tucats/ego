@@ -78,6 +78,7 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	}
 	if len(args) > 1 {
 		username = util.GetString(args[1])
+
 		if len(args) > 2 {
 			password = util.GetString(args[2])
 		}
@@ -202,6 +203,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	// Determine the column width of each column of the result set
 	for _, rowValue := range a {
 		rowMap := util.GetMap(rowValue)
+
 		for n := 0; n < len(r.Columns); n = n + 1 {
 			c := r.Columns[n]
 			v, ok := rowMap[c.Name]
@@ -223,6 +225,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			v := rowMap[c.Name]
 			rs[i] = v
 		}
+
 		r.Rows = append(r.Rows, rs)
 	}
 	bytes, err := json.Marshal(r)
@@ -262,12 +265,14 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		if includeHeadings {
 			c.FormattedWidth = len(k)
 		}
+
 		columns = append(columns, c)
 	}
 
 	// Scan all rows to get maximum length values
 	for _, r := range a {
 		row := util.GetMap(r)
+
 		for n := 0; n < len(columns); n = n + 1 {
 			c := columns[n]
 			v, ok := row[c.Name]
@@ -306,6 +311,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 			h.WriteString(strings.Repeat("=", w))
 			h.WriteRune(' ')
 		}
+
 		result = append(result, b.String())
 		result = append(result, h.String())
 	}
@@ -323,6 +329,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 				b.WriteString(strings.Repeat(" ", c.FormattedWidth+1))
 			}
 		}
+
 		result = append(result, b.String())
 	}
 
@@ -463,6 +470,7 @@ func gremlinResultValue(i interface{}) (interface{}, error) {
 	// Complex results
 	case map[string]interface{}:
 		v := m["@value"]
+
 		switch m["@type"] {
 		case "g:UUID":
 			return v, nil // treat as string in the Go code
@@ -524,6 +532,7 @@ func gremlinResultArray(i interface{}) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		r = append(r, v)
 	}
 

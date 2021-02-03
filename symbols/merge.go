@@ -5,6 +5,7 @@ import "github.com/tucats/ego/app-cli/ui"
 // Merge merges the contents of a table into the current table.
 func (s *SymbolTable) Merge(st *SymbolTable) {
 	ui.Debug(ui.SymbolLogger, "+++ Merging symbols from %s", st.Name)
+
 	for k, v := range st.Symbols {
 		// Is it a struct? If so we may need to merge to it...
 		switch vv := v.(type) {
@@ -40,6 +41,7 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 
 	// Do it again with the constants
 	ui.Debug(ui.SymbolLogger, "+++ Merging constants from  %s", st.Name)
+
 	for k, v := range st.Constants {
 		// Is it a struct? If so we may need to merge to it...
 		switch vv := v.(type) {

@@ -24,6 +24,7 @@ func Run(c *bytecode.Context) error {
 
 func RunFrom(c *bytecode.Context, pc int) error {
 	var err error
+
 	c.SetPC(pc)
 
 	for err == nil {
@@ -156,6 +157,7 @@ func getLine() string {
 	}
 
 	t := tokenizer.New(text)
+
 	for {
 		braceCount := 0
 		parenCount := 0

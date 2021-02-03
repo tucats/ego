@@ -18,6 +18,11 @@ import (
 // UserHandler is the rest handler for /admin/user endpoint
 // operations
 func UserHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var name string
+
+	var u = defs.User{Permissions: []string{}}
+
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
 
@@ -31,7 +36,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var err error
 	if !util.InList(r.Method, "POST", "DELETE", "GET") {
 		w.WriteHeader(418)
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
@@ -39,9 +43,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	var name string
-	var u = defs.User{Permissions: []string{}}
 
 	if r.Method == "POST" {
 		// Get the payload which must be a user spec in JSON
@@ -62,6 +63,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		s := symbols.NewSymbolTable(r.URL.Path)
 		_ = s.SetAlways("_superuser", true)
+
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
 		case "POST":
@@ -92,6 +94,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				msg, _ := json.Marshal(response)
 				_, _ = io.WriteString(w, string(msg))
+
 				ui.Debug(ui.ServerLogger, "200 Success")
 
 				return
@@ -104,6 +107,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
+
 				ui.Debug(ui.ServerLogger, "404 No such user")
 
 				return
@@ -123,14 +127,17 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
+
 				ui.Debug(ui.ServerLogger, "404 No such user")
 
 				return
 			}
 			if err == nil {
 				b, _ := json.Marshal(response)
+
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(b)
+
 				ui.Debug(ui.ServerLogger, "200 Success")
 
 				return
@@ -156,8 +163,10 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				b, _ := json.Marshal(result)
+
 				w.WriteHeader(status)
 				_, _ = w.Write(b)
+
 				ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", status, msg))
 
 				return
@@ -167,6 +176,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				Items: []defs.User{},
 			}
 			result.Status = http.StatusOK
+
 			for k, u := range userDatabase {
 				ud := defs.User{}
 				ud.Name = k
@@ -178,8 +188,10 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			result.Start = 0
 
 			b, _ := json.Marshal(result)
+
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write(b)
+
 			ui.Debug(ui.ServerLogger, "200 returned info on %d users", len(result.Items))
 
 			return
@@ -237,6 +249,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
+
 		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status, result.Message))
 
 		return
@@ -257,6 +270,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
+
 		ui.Debug(ui.ServerLogger, "200 Success")
 
 		return
@@ -265,6 +279,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	// are unaffected.
 	case "DELETE":
 		serviceCache = map[string]cachedCompilationUnit{}
+
 		w.WriteHeader(http.StatusOK)
 		result := defs.CacheResponse{
 			Count: 0,
@@ -276,6 +291,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
+
 		ui.Debug(ui.ServerLogger, "200 Success")
 
 		return

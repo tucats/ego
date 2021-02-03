@@ -28,6 +28,7 @@ func (t *Table) SortRows(column int, ascending bool) error {
 // sorting the output data.
 func (t *Table) SetOrderBy(name string) error {
 	ascending := true
+
 	if name[0] == '~' {
 		name = name[1:]
 		ascending = false

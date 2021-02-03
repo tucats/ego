@@ -65,9 +65,9 @@ func ShowHelp(c *Context) {
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
 			if !headerShown {
-				headerShown = true
 				fmt.Printf("Commands:\n")
 				_ = tc.AddRow([]string{"help", "Display help text"})
+				headerShown = true
 			}
 			_ = tc.AddRow([]string{option.LongName, option.Description})
 		}
@@ -83,6 +83,7 @@ func ShowHelp(c *Context) {
 	tc.ShowHeadings(false)
 	_ = tc.SetIndent(3)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
+
 	for _, option := range c.Grammar {
 		if option.OptionType == ParameterType {
 			if !headerShown {
@@ -118,6 +119,7 @@ func ShowHelp(c *Context) {
 				}
 				name = name + "-" + option.ShortName
 			}
+
 			switch option.OptionType {
 			case IntType:
 				name = name + " <integer>"

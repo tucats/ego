@@ -36,6 +36,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	// string with line breaks.
 	if array, ok := args[0].([]interface{}); ok {
 		isString := true
+
 		for _, v := range array {
 			if _, ok := v.(string); !ok {
 				isString = false
@@ -45,6 +46,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		}
 		if isString {
 			var b strings.Builder
+
 			for i, v := range array {
 				if i > 0 {
 					b.WriteString("\n")
@@ -157,10 +159,10 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 		// Organize the new item by removing things that are handled via the parent.
 		dropList := []string{}
+
 		for k, vv := range v {
 			// IF it's an internal function, we don't want to copy it; it can be found via the
 			// __parent link to the type
-
 			vx := reflect.ValueOf(vv)
 
 			if vx.Kind() == reflect.Ptr {
@@ -174,6 +176,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				}
 			}
 		}
+
 		for _, name := range dropList {
 			delete(r.(map[string]interface{}), name)
 		}
@@ -194,6 +197,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 	if depth < 0 {
 		return nil
 	}
+
 	switch v := source.(type) {
 	case int:
 		return v
@@ -209,6 +213,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	case []interface{}:
 		r := make([]interface{}, 0)
+
 		for _, d := range v {
 			r = append(r, DeepCopy(d, depth-1))
 		}
@@ -217,6 +222,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	case *datatypes.EgoMap:
 		r := datatypes.NewMap(v.KeyType(), v.ValueType())
+
 		for _, k := range v.Keys() {
 			d, _, _ := v.Get(k)
 			_, _ = r.Set(k, DeepCopy(d, depth-1))
@@ -226,6 +232,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	case map[string]interface{}:
 		r := map[string]interface{}{}
+
 		for k, d := range v {
 			r[k] = DeepCopy(d, depth-1)
 		}

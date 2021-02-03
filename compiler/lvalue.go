@@ -48,6 +48,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 	count := 0
 	savedPosition := c.t.TokenP
 	isLvalueList := false
+
 	for {
 		name := c.t.Next()
 

@@ -22,12 +22,14 @@ func SetMetadata(value interface{}, key string, v interface{}) bool {
 	if !ok {
 		return false
 	}
+
 	mdx, ok := m[MetadataKey]
 	if !ok {
 		m[MetadataKey] = map[string]interface{}{key: v}
 
 		return true
 	}
+
 	mdxx, ok := mdx.(map[string]interface{})
 	if !ok {
 		return false

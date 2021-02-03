@@ -156,7 +156,10 @@ func (c *Compiler) expressionAtom() error {
 }
 
 func (c *Compiler) parseArray() error {
+	var err error
+
 	var listTerminator = ""
+
 	if c.t.Peek(1) == "(" {
 		listTerminator = ")"
 	}
@@ -169,7 +172,6 @@ func (c *Compiler) parseArray() error {
 	c.t.Advance(1)
 	count := 0
 	t1 := 1
-	var err error
 
 	// Let's experimenally see if this is a range constant expression. This can be
 	// of the form [start:end] which creates an array of integers between the start
@@ -177,6 +179,7 @@ func (c *Compiler) parseArray() error {
 	// a start number of 1.
 	if c.t.Peek(1) == ":" {
 		err = nil
+
 		c.t.Advance(-1)
 	} else {
 		t1, err = strconv.Atoi(c.t.Peek(1))
@@ -189,6 +192,7 @@ func (c *Compiler) parseArray() error {
 				count := t2 - t1 + 1
 				if count < 0 {
 					count = (-count) + 2
+
 					for n := t1; n >= t2; n = n - 1 {
 						c.b.Emit(bytecode.Push, n)
 					}
@@ -232,7 +236,9 @@ func (c *Compiler) parseArray() error {
 
 func (c *Compiler) parseStruct() error {
 	var listTerminator = "}"
+
 	var err error
+
 	c.t.Advance(1)
 	count := 0
 

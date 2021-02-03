@@ -69,6 +69,7 @@ func (c *Context) NewError(msg string, args ...interface{}) *Error {
 // Error produces an error string from this object.
 func (e Error) Error() string {
 	var b strings.Builder
+
 	b.WriteString("execution error ")
 
 	if len(e.module) > 0 {

@@ -75,6 +75,7 @@ func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
 // table that exists
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	v, f := s.Symbols[name]
+
 	constLock.Lock()
 	if !f {
 		v, f = s.Constants[name]
@@ -113,6 +114,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 	// to find the right table to put it in, which may be different
 	// that were we started.
 	syms := s
+
 	if name == "_rest_response" {
 		for syms.Parent != nil && syms.Parent.Parent != nil {
 			syms = syms.Parent
@@ -209,6 +211,7 @@ func (s *SymbolTable) Create(name string) error {
 	if len(name) == 0 {
 		return s.NewError(InvalidSymbolError)
 	}
+
 	_, found := s.Symbols[name]
 	if found {
 		return s.NewError(SymbolExistsError, name)

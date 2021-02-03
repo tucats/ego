@@ -112,6 +112,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		cachedItem.age = time.Now()
 		cachedItem.count++
 		serviceCache[r.URL.Path] = cachedItem
+
 		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
 		cacheMutext.Unlock()
 	} else {
@@ -182,6 +183,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		authenticatedCredentials = false
+
 		ui.Debug(ui.ServerLogger, "No authentication credentials given")
 	} else {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
@@ -190,6 +192,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = syms.SetAlways("_token", token)
 			_ = syms.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
+
 			ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
 		} else {
 			user, pass, authenticatedCredentials = r.BasicAuth()
@@ -200,6 +203,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			_ = syms.SetAlways("_token", "")
 			_ = syms.SetAlways("_token_valid", false)
+
 			ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, authenticatedCredentials)
 		}
 	}
@@ -249,6 +253,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
+
 		ui.Debug(ui.ServerLogger, "STATUS %d", status)
 
 		return
@@ -259,10 +264,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if authenticatedCredentials && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))
+
 		ui.Debug(ui.ServerLogger, "STATUS %d, sending JSON response", status)
 	} else {
 		// Otherwise, capture the print buffer.
 		_, _ = io.WriteString(w, ctx.GetOutput())
+
 		ui.Debug(ui.ServerLogger, "STATUS %d, sending TEXT response", status)
 	}
 }

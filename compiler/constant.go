@@ -36,6 +36,7 @@ func (c *Compiler) Constant() error {
 				return c.NewError(InvalidConstantError)
 			}
 		}
+
 		c.constants = append(c.constants, name)
 
 		c.b.Append(vx)

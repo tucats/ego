@@ -78,6 +78,7 @@ func (e Error) Error() string {
 
 func NewErrorFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmtString := util.GetString(args[0])
+
 	if len(args) == 1 {
 		return errors.New(fmtString), nil
 	}

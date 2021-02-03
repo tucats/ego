@@ -68,7 +68,9 @@ func (t *Table) SetSpacing(s int) error {
 	if s < 0 {
 		return NewTableErr(InvalidSpacingError, s)
 	}
+
 	var buffer strings.Builder
+
 	for i := 0; i < s; i++ {
 		buffer.WriteRune(' ')
 	}
@@ -79,10 +81,12 @@ func (t *Table) SetSpacing(s int) error {
 
 // SetIndent specifies the spaces to indent each heading and row
 func (t *Table) SetIndent(s int) error {
+	var buffer strings.Builder
+
 	if s < 0 {
 		return NewTableErr(InvalidSpacingError, s)
 	}
-	var buffer strings.Builder
+
 	for i := 0; i < s; i++ {
 		buffer.WriteRune(' ')
 	}

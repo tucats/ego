@@ -15,12 +15,13 @@ import (
 // returned as a string.
 func Prompt(p string) string {
 	reader := bufio.NewReader(os.Stdin)
+
 	if !IsConsolePipe() {
 		fmt.Printf("%s", p)
 	}
-	buffer, _ := reader.ReadString('\n')
 
 	//Remove any extra line endings (CRLF or LF)
+	buffer, _ := reader.ReadString('\n')
 	buffer = strings.Replace(buffer, "\r\n", "", -1)
 	buffer = strings.Replace(buffer, "\n", "", -1)
 
@@ -35,9 +36,10 @@ func PromptPassword(p string) string {
 	if !IsConsolePipe() {
 		fmt.Print(p)
 	}
-	bytePassword, _ := term.ReadPassword(int(syscall.Stdin))
 
+	bytePassword, _ := term.ReadPassword(int(syscall.Stdin))
 	password := string(bytePassword)
+
 	fmt.Println() // it's necessary to add a new line after user's input
 
 	return password

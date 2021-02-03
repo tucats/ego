@@ -88,6 +88,7 @@ func ListUsers(c *cli.Context) error {
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
 	}

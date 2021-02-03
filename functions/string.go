@@ -25,13 +25,14 @@ func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Left implements the left() function
 func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var b strings.Builder
+
+	count := 0
 	v := util.GetString(args[0])
 	p := util.GetInt(args[1])
 	if p <= 0 {
 		return "", nil
 	}
-	var b strings.Builder
-	count := 0
 
 	for _, ch := range v {
 		if count < p {
@@ -47,6 +48,10 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // Right implements the right() function
 func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var cpos int
+
+	var b strings.Builder
+
 	v := util.GetString(args[0])
 	p := util.GetInt(args[1])
 	if p <= 0 {
@@ -59,14 +64,13 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		count++
 	}
 
-	var cpos int
-	var b strings.Builder
 	for _, ch := range v {
 		if cpos >= count-p {
 			b.WriteRune(ch)
 		}
 		cpos++
 	}
+
 	return b.String(), nil
 }
 
@@ -126,6 +130,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 
 	var b strings.Builder
 	pos := 1
+
 	for _, ch := range v {
 		if pos >= p1+p2 {
 			break
@@ -216,6 +221,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Template implements the strings.template() function
 func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
+
 	if len(args) == 0 {
 		return nil, NewError("template", ArgumentCountError)
 	}
@@ -246,6 +252,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	var r bytes.Buffer
+
 	if len(args) == 1 {
 		err = tree.Execute(&r, nil)
 	} else {

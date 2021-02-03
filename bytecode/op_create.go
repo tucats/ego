@@ -32,6 +32,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 			size = 0
 		}
 		array := make([]interface{}, size)
+
 		for n := 0; n < size; n++ {
 			array[n] = initialValue
 		}
@@ -59,10 +60,10 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 
 // ArrayImpl instruction processor
 func ArrayImpl(c *Context, i interface{}) error {
+	var arrayType reflect.Type
 	count := util.GetInt(i)
 	array := make([]interface{}, count)
 
-	var arrayType reflect.Type
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
 		if err != nil {
@@ -93,6 +94,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 func StructImpl(c *Context, i interface{}) error {
 	count := util.GetInt(i)
 	m := map[string]interface{}{}
+
 	for n := 0; n < count; n++ {
 		nx, err := c.Pop()
 		if err != nil {

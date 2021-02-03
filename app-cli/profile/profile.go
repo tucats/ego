@@ -71,12 +71,14 @@ var Grammar = []cli.Option{
 // ShowAction Displays the current contents of the active profile
 func ShowAction(c *cli.Context) error {
 	t, _ := tables.New([]string{"Key", "Value"})
+
 	for k, v := range persistence.CurrentConfiguration.Items {
 		if len(fmt.Sprintf("%v", v)) > 60 {
 			v = fmt.Sprintf("%v", v)[:60] + "..."
 		}
 		_ = t.AddRowItems(k, v)
 	}
+
 	_ = t.SetOrderBy("key")
 	t.ShowUnderlines(false)
 	t.Print(ui.TextFormat)
@@ -87,9 +89,11 @@ func ShowAction(c *cli.Context) error {
 // ListAction Displays the current contents of the active profile
 func ListAction(c *cli.Context) error {
 	t, _ := tables.New([]string{"Name", "Description"})
+
 	for k, v := range persistence.Configurations {
 		_ = t.AddRowItems(k, v.Description)
 	}
+
 	_ = t.SetOrderBy("name")
 	t.ShowUnderlines(false)
 	t.Print(ui.TextFormat)
@@ -144,6 +148,7 @@ func DeleteAction(c *cli.Context) error {
 // DeleteProfileAction deletes a named profile.
 func DeleteProfileAction(c *cli.Context) error {
 	key := c.GetParameter(0)
+
 	err := persistence.DeleteProfile(key)
 	if err == nil {
 		ui.Say("Profile %s deleted", key)

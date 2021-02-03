@@ -29,9 +29,11 @@ func TestByteCode_Emit2(t *testing.T) {
 		opcodes []I
 		emitPos int
 	}
+
 	type args struct {
 		emit []I
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -74,6 +76,7 @@ func TestByteCode_Emit2(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
@@ -100,9 +103,11 @@ func TestByteCode_Append(t *testing.T) {
 		opcodes []I
 		emitPos int
 	}
+
 	type args struct {
 		a *ByteCode
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -162,6 +167,7 @@ func TestByteCode_Append(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{

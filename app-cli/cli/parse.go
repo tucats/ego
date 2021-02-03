@@ -35,25 +35,28 @@ func (c *Context) Parse() error {
 // definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
 // This is never called by the user directly.
 func (c *Context) parseGrammar(args []string) error {
-	lastArg := len(args)
 	var err error
+
+	lastArg := len(args)
 	parametersOnly := false
 	helpVerb := true
 
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
-		option := args[currentArg]
-		ui.Debug(ui.CLILogger, "Processing token: %s", option)
-
 		var location *Option
 		var name string
 		var value string
+
+		option := args[currentArg]
 		isShort := false
+
+		ui.Debug(ui.CLILogger, "Processing token: %s", option)
 
 		// Are we now only eating parameter values?
 		if parametersOnly {
 			globalContext := c.FindGlobal()
 			globalContext.Parameters = append(globalContext.Parameters, option)
 			count := len(globalContext.Parameters)
+
 			ui.Debug(ui.CLILogger, "added parameter %d", count)
 
 			continue
@@ -89,6 +92,7 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 
 		location = nil
+
 		if name > "" {
 			for n, entry := range c.Grammar {
 				if (isShort && entry.ShortName == name) || (!isShort && entry.LongName == name) {
@@ -117,6 +121,7 @@ func (c *Context) parseGrammar(args []string) error {
 			for _, entry := range c.Grammar {
 				// Is it one of the aliases permitted?
 				isAlias := false
+
 				for _, n := range entry.Aliases {
 					if option == n {
 						isAlias = true
@@ -145,6 +150,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 					if entry.Action != nil {
 						subContext.Action = entry.Action
+
 						ui.Debug(ui.CLILogger, "Saving action routine in subcommand context")
 					}
 					ui.Debug(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
@@ -157,6 +163,7 @@ func (c *Context) parseGrammar(args []string) error {
 			g := c.FindGlobal()
 			g.Parameters = append(g.Parameters, option)
 			count := len(g.Parameters)
+
 			ui.Debug(ui.CLILogger, "Unclaimed token added parameter %d", count)
 		} else {
 			location.Found = true

@@ -119,6 +119,7 @@ func (c *Compiler) RestStatus() error {
 	_ = c.modeCheck("server", true)
 
 	name := "_rest_status"
+
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, http.StatusOK)
 	} else {
@@ -134,8 +135,9 @@ func (c *Compiler) RestStatus() error {
 }
 
 func (c *Compiler) Authenticated() error {
-	_ = c.modeCheck("server", true)
 	var token string
+	_ = c.modeCheck("server", true)
+
 	if c.t.AtEnd() {
 		token = "any"
 	} else {
@@ -144,6 +146,7 @@ func (c *Compiler) Authenticated() error {
 	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
 		return c.NewError("Invalid authentication type", token)
 	}
+
 	c.b.Emit(bytecode.Auth, token)
 
 	return nil
@@ -206,9 +209,9 @@ func (c *Compiler) Error() error {
 // TypeChecking implements the @type directive which must be followed by the
 // keyword "static" or "dynamic", indicating the type of type checking.
 func (c *Compiler) TypeChecking() error {
-	t := c.t.Next()
 	var err error
 
+	t := c.t.Next()
 	if util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {

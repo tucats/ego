@@ -34,6 +34,7 @@ func (c *Compiler) Function(literal bool) error {
 		// Is this receiver notation?
 		if fname == "(" {
 			this = c.t.Next()
+
 			if c.t.IsNext("*") {
 				byValue = false
 			}
@@ -58,6 +59,7 @@ func (c *Compiler) Function(literal bool) error {
 
 	// Process the function parameter specification
 	varargs := false
+
 	if c.t.IsNext("(") {
 		for !c.t.IsNext(")") {
 			if c.t.AtEnd() {
@@ -80,9 +82,11 @@ func (c *Compiler) Function(literal bool) error {
 			// instead if you wish.
 			if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 				p.kind = datatypes.ArrayType
+
 				c.t.Advance(2)
 			} else if c.t.Peek(1) == "{}" {
 				p.kind = datatypes.StructType
+
 				c.t.Advance(1)
 			} else if util.InList(c.t.Peek(1), "chan", "interface{}", "int", "string", "bool", "double", "float", "array", "struct") {
 				switch c.t.Next() {
@@ -111,6 +115,7 @@ func (c *Compiler) Function(literal bool) error {
 			if varargs {
 				p.kind = datatypes.VarArgs
 			}
+
 			parameters = append(parameters, p)
 			_ = c.t.IsNext(",")
 		}
@@ -183,6 +188,7 @@ func (c *Compiler) Function(literal bool) error {
 	// Loop over the (possibly singular) return type specification
 	for {
 		coercion := bytecode.New(fmt.Sprintf("%s return item %d", fname, returnValueCount))
+
 		if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 			coercion.Emit(bytecode.Coerce, datatypes.ArrayType)
 			c.t.Advance(2)

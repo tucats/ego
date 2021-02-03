@@ -41,6 +41,7 @@ func Hash(key string) string {
 
 func encrypt(data []byte, passphrase string) ([]byte, error) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
+
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
@@ -60,6 +61,7 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err

@@ -24,6 +24,7 @@ func (c *Compiler) Switch() error {
 
 	var defaultBlock *bytecode.ByteCode
 	next := 0
+
 	for !c.t.IsNext("}") {
 		if next > 0 {
 			_ = c.b.SetAddressHere(next)
@@ -35,6 +36,7 @@ func (c *Compiler) Switch() error {
 			}
 			savedBC := c.b
 			c.b = bytecode.New("default switch")
+
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "}" {
 				err := c.Statement()
 				if err != nil {

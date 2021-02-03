@@ -6,8 +6,10 @@ import "github.com/tucats/ego/bytecode"
 // been parsed.
 func (c *Compiler) Block() error {
 	parsing := true
-	c.b.Emit(bytecode.PushScope)
 	c.blockDepth = c.blockDepth + 1
+
+	c.b.Emit(bytecode.PushScope)
+
 	for parsing {
 		if c.t.IsNext("}") {
 			break
@@ -19,6 +21,7 @@ func (c *Compiler) Block() error {
 
 		// Skip over a semicolon if found
 		_ = c.t.IsNext(";")
+
 		if c.t.AtEnd() {
 			return c.NewError(MissingEndOfBlockError)
 		}

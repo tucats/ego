@@ -22,13 +22,17 @@ func (c *Context) ResolveEnvironmentVariables() error {
 			if wasFound {
 				ui.Debug(ui.CLILogger, "resolving env %s = \"%s\"", entry.EnvironmentVariable, value)
 				c.Grammar[found].Found = true
+
 				switch c.Grammar[found].OptionType {
 				case BooleanType:
 					c.Grammar[found].Value = value != ""
+
 				case BooleanValueType:
 					c.Grammar[found].Value, _ = ValidateBoolean(value)
+
 				case IntType:
 					c.Grammar[found].Value, _ = strconv.Atoi(value)
+
 				default:
 					c.Grammar[found].Value = value
 				}

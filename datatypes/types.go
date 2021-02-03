@@ -98,11 +98,13 @@ var TypeDeclarationMap = []TypeDefinition{
 
 func TypeString(kind int) string {
 	r := "interface{}"
+
 	for _, t := range TypeDeclarationMap {
 		if kind == t.Kind {
 			r = strings.Join(t.Tokens, "")
 		}
 	}
+
 	return r
 }
 
@@ -110,6 +112,7 @@ func IsType(v interface{}, kind int) bool {
 	if kind == InterfaceType {
 		return true
 	}
+
 	switch v.(type) {
 	case int, int32, int64:
 		return kind == IntType

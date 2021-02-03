@@ -121,6 +121,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // suffix for the key.
 func AddBuiltins(symbols *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbols.Name)
+
 	for n, d := range FunctionDictionary {
 		if dot := strings.Index(n, "."); dot >= 0 {
 			d.Pkg = n[:dot]
@@ -189,6 +190,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	// Search the dictionary for a name match
 	var fdef = FunctionDefinition{}
 	found := false
+
 	for fn, d := range FunctionDictionary {
 		if fn == name {
 			fdef = d

@@ -23,13 +23,15 @@ const EndOfTokens = "<<end-of-tokens>>"
 // New creates a tokenizer instance and breaks the string
 // up into an array of tokens
 func New(src string) *Tokenizer {
+	var s scanner.Scanner
+
 	t := Tokenizer{Source: splitLines(src), TokenP: 0}
 	t.Tokens = make([]string, 0)
 
-	var s scanner.Scanner
 	s.Init(strings.NewReader(src))
 	s.Error = func(s *scanner.Scanner, msg string) { /* suppress messaging */ }
 	s.Filename = "Input"
+
 	previousToken := ""
 	dots := 0
 
@@ -119,6 +121,7 @@ func (t *Tokenizer) Next() string {
 	if t.TokenP >= len(t.Tokens) {
 		return EndOfTokens
 	}
+
 	token := t.Tokens[t.TokenP]
 	t.TokenP = t.TokenP + 1
 
@@ -145,6 +148,7 @@ func (t *Tokenizer) Advance(p int) {
 	if t.TokenP < 0 {
 		t.TokenP = 0
 	}
+
 	if t.TokenP >= len(t.Tokens) {
 		t.TokenP = len(t.Tokens)
 	}
@@ -180,8 +184,10 @@ func (t *Tokenizer) AnyNext(test ...string) bool {
 
 func stripComments(source string) string {
 	var result strings.Builder
+
 	ignore := false
 	startOfLine := true
+
 	for _, c := range source {
 		// Is this a # on the start of a line? If so, start
 		// ignoring characters. If it's the end of line, then
@@ -207,6 +213,7 @@ func IsSymbol(s string) bool {
 		if isLetter(c) {
 			continue
 		}
+
 		if isDigit(c) && n > 0 {
 			continue
 		}
@@ -290,9 +297,12 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 			p2 = len(t.Tokens)
 		}
 	}
+
 	var s strings.Builder
+
 	for _, t := range t.Tokens[p1:p2] {
 		s.WriteString(t)
+
 		if spacing {
 			s.WriteRune(' ')
 		}

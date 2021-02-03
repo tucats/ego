@@ -31,9 +31,10 @@ func (t *Table) SetColumnOrder(order []int) error {
 		return NewTableErr(EmptyColumnListError)
 	}
 	newOrder := make([]int, len(order))
+
 	for n, v := range order {
 		if v < 1 || v > t.columnCount {
-			return NewTableErr("invalid column number", v)
+			return NewTableErr(InvalidColumnNumberError, v)
 		}
 		newOrder[n] = v - 1
 	}
@@ -50,6 +51,7 @@ func (t *Table) SetColumnOrderByName(order []string) error {
 	}
 
 	newOrder := make([]int, len(order))
+
 	for n, name := range order {
 		v, found := t.FindColumn(name)
 		if !found {

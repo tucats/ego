@@ -10,9 +10,11 @@ func (t *Tokenizer) Set(mark int) {
 	if mark < 0 {
 		mark = 0
 	}
+
 	if mark > len(t.Tokens) {
 		mark = len(t.Tokens)
 	}
+
 	t.TokenP = mark
 }
 

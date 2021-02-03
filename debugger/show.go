@@ -10,10 +10,10 @@ import (
 )
 
 func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
+	var err error
 	t := tokens.Peek(2)
 	tx := c.GetTokenizer()
 
-	var err error
 	switch t {
 	case "breaks", "breakpoints":
 		ShowBreaks()
@@ -40,13 +40,16 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	case "scope":
 		syms := s
 		depth := 0
+
 		fmt.Printf("Symbol table scope:\n")
+
 		for syms != nil {
 			idx := "local"
 			if depth > 0 {
 				idx = fmt.Sprintf("%5d", depth)
 			}
 			depth++
+
 			fmt.Printf("\t%s:  %s, %d symbols\n", idx, syms.Name, len(syms.Symbols))
 			syms = syms.Parent
 		}
@@ -54,7 +57,9 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	case "source":
 		start := 1
 		end := len(tx.Source)
+
 		tokens.Advance(2)
+
 		if tokens.Peek(1) != tokenizer.EndOfTokens {
 			start, err = strconv.Atoi(tokens.Next())
 			_ = tokens.IsNext(":")

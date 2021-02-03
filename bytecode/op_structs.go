@@ -24,8 +24,8 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 
 	switch a := array.(type) {
 	case *datatypes.EgoMap:
-		var err error
 		var v interface{}
+
 		if v, _, err = a.Get(index); err == nil {
 			err = c.Push(v)
 		}
@@ -34,6 +34,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	case *datatypes.Channel:
 		//ui.Debug(ui.ByteCodeLogger, "--> Planning to read %s", a.String())
 		var datum interface{}
+
 		datum, err = a.Receive()
 		if err == nil {
 			err = c.Push(datum)
@@ -43,12 +44,15 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	case map[string]interface{}:
 		subscript := util.GetString(index)
 		isPackage := false
+
 		if t, found := datatypes.GetMetadata(a, datatypes.TypeMDKey); found {
 			isPackage = (util.GetString(t) == "package")
 		}
 
 		var v interface{}
+
 		var f bool
+
 		// If it's a metadata key name, redirect
 		if strings.HasPrefix(subscript, "__") {
 			v, f = datatypes.GetMetadata(a, subscript[2:])
@@ -162,6 +166,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); err == nil {
@@ -170,6 +175,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return c.NewError(err.Error())
 		}
+
 	// Index into map is just member access. Make sure it's not
 	// a read-only member or a function pointer...
 	case map[string]interface{}:

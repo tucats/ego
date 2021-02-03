@@ -79,6 +79,7 @@ func RunAction(c *cli.Context) error {
 			text = ""
 			mainName = "console"
 			scanner := bufio.NewScanner(os.Stdin)
+
 			for scanner.Scan() {
 				text = text + scanner.Text() + " "
 			}
@@ -131,6 +132,7 @@ func RunAction(c *cli.Context) error {
 
 	exitValue := 0
 	builtinsAdded := false
+
 	for {
 		// Handle special cases.
 		if strings.TrimSpace(text) == QuitCommand {
@@ -275,11 +277,11 @@ func RunAction(c *cli.Context) error {
 }
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes, interactive, disassemble bool) *symbols.SymbolTable {
-
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("file " + mainName)
 	_ = syms.SetAlways("__cli_args", programArgs)
 	_ = syms.SetAlways("__static_data_types", staticTypes)
+
 	if interactive {
 		_ = syms.SetAlways("__exec_mode", "interactive")
 	} else {

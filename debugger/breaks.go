@@ -32,7 +32,9 @@ var breakPoints = []breakPoint{}
 
 func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 	var err error
+
 	var line int
+
 	t.Advance(1)
 
 	for t.Peek(1) != tokenizer.EndOfTokens {
@@ -47,10 +49,12 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 					return err
 				}
 			}
+
 			t.Advance(999)
 
 		case "at":
 			name := t.Next()
+
 			if t.Peek(1) == ":" {
 				t.Advance(1)
 			} else {
@@ -129,6 +133,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 	s := c.GetSymbols()
 	msg := ""
 	prompt := false
+
 	for _, b := range breakPoints {
 		switch b.kind {
 		case BreakValue:
@@ -143,6 +148,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			if err != nil {
 				if err.Error() == StepOver.Error() {
 					err = nil
+
 					ctx.StepOver(true)
 				}
 				if err.Error() == SignalDebugger.Error() {
@@ -177,6 +183,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			}
 		}
 	}
+
 	if prompt {
 		fmt.Printf("%s\n", msg)
 	}

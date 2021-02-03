@@ -49,6 +49,7 @@ func (c *Compiler) Return() error {
 				Desc: fmt.Sprintf("%s(),%d]", c.b.Name, returnCount),
 			})
 		}
+
 		for i := len(returnExpressions) - 1; i >= 0; i = i - 1 {
 			c.b.Append(returnExpressions[i])
 		}
@@ -66,6 +67,7 @@ func (c *Compiler) Exit() error {
 	c.b.Emit(bytecode.Member, "Exit")
 
 	argCount := 0
+
 	if !c.StatementEnd() {
 		bc, err := c.Expression()
 		if err != nil {

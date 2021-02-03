@@ -39,6 +39,7 @@ func Format(arg interface{}) string {
 	if arg == nil {
 		return "<nil>"
 	}
+
 	switch v := arg.(type) {
 	case *datatypes.Channel:
 		return v.String()
@@ -64,39 +65,50 @@ func Format(arg interface{}) string {
 
 	case map[string]interface{}:
 		var b strings.Builder
+
 		// Make a list of the keys, ignoring hidden members whose name
 		// starts with "__"
 		keys := make([]string, 0)
+
 		for k := range v {
 			if len(k) < 2 || k[0:2] != "__" {
 				keys = append(keys, k)
 			}
 		}
+
 		sort.Strings(keys)
 		b.WriteString("{")
+
 		for n, k := range keys {
 			i := v[k]
+
 			if n > 0 {
 				b.WriteString(",")
 			}
+
 			b.WriteRune(' ')
 			b.WriteString(k)
 			b.WriteString(": ")
 			b.WriteString(Format(i))
 		}
+
 		b.WriteString(" }")
 
 		return b.String()
 
 	case []interface{}:
 		var b strings.Builder
+
 		b.WriteRune('[')
+
 		for n, i := range v {
 			if n > 0 {
 				b.WriteString(", ")
 			}
+
 			b.WriteString(Format(i))
 		}
+
 		b.WriteRune(']')
 
 		return b.String()
@@ -131,6 +143,7 @@ func Format(arg interface{}) string {
 			ts := vv.String()
 			if ts == "<*bytecode.ByteCode Value>" {
 				e := reflect.ValueOf(v).Elem()
+
 				if ui.DebugMode {
 					name := GetString(e.Field(0).Interface())
 

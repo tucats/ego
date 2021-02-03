@@ -119,6 +119,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		if ext != "" && !strings.HasSuffix(fn, ext) {
 			return names, nil
 		}
+
 		names = append(names, fn)
 
 		return names, nil
@@ -131,6 +132,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		if err != nil {
 			return names, err
 		}
+
 		names = append(names, list...)
 	}
 

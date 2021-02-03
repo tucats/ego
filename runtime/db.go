@@ -71,6 +71,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	d, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
+
 		if tx == nil {
 			tx, err = d.Begin()
 			if err == nil {
@@ -90,11 +91,13 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	_, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
+
 		if tx != nil {
 			err = tx.Rollback()
 		} else {
 			err = errors.New("no transaction active")
 		}
+
 		this["transaction"] = nil
 	}
 
@@ -107,6 +110,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
+
 		if tx != nil {
 			err = tx.Commit()
 		} else {
@@ -123,15 +127,16 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
 func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.New(defs.IncorrectArgumentCount)
+	}
+
 	_, _, err := getDBClient(s)
 	if err != nil {
 		return nil, err
 	}
 
 	this := getThis(s)
-	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
-	}
 	this["asStruct"] = util.GetBool(args[0])
 
 	return this, nil
@@ -209,6 +214,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			for i, v := range columns {
 				rowMap[v] = rowValues[i]
 			}
+
 			mapResult = append(mapResult, rowMap)
 		} else {
 			arrayResult = append(arrayResult, rowValues)
@@ -291,6 +297,7 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this["Next"] = dbReleased
 	this["Scan"] = dbReleased
 	this["Headings"] = dbReleased
+
 	ui.Debug(ui.DBLogger, "rows.Close() called")
 
 	return err, nil
