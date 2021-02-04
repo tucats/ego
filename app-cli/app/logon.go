@@ -48,7 +48,15 @@ var LogonGrammar = []cli.Option{
 	},
 }
 
-// Logon handles the logon subcommand.
+// Logon handles the logon subcommand. This accepts a username and
+// password string from the user via the command line, or console
+// input if not provided on the command line. These credentials are
+// used to connect to an Ego logon server and request an authentication
+// token to be used for subsequent operations.
+//
+// If the user credentials are valid and a token is returned, it is
+// stored in the user's active profile where it can be accessed by
+// other Ego commands as needed.
 func Logon(c *cli.Context) error {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
@@ -95,7 +103,7 @@ func Logon(c *cli.Context) error {
 		return err
 	}
 
-	// If there was an  HTTP error condition, let's report it now.
+	// If there was an HTTP error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:

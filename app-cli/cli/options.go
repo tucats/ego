@@ -35,23 +35,23 @@ const (
 type Option struct {
 	ShortName            string
 	LongName             string
-	Aliases              []string
-	Keywords             []string
 	Description          string
-	OptionType           int
-	ParametersExpected   int
 	ParameterDescription string
 	EnvironmentVariable  string
-	Found                bool
-	Required             bool
-	Private              bool
+	Aliases              []string
+	Keywords             []string
 	SubGrammar           []Option
 	Value                interface{}
 	Action               func(c *Context) error
+	OptionType           int
+	ParametersExpected   int
+	Found                bool
+	Required             bool
+	Private              bool
 }
 
 // Context is a simple array of Option types, and is used to express
-// a grammar.
+// a grammar at a given level (root, subcommand, etc.).
 type Context struct {
 	AppName                string
 	MainProgram            string
@@ -59,12 +59,12 @@ type Context struct {
 	Copyright              string
 	Version                string
 	Command                string
+	ParameterDescription   string
 	Grammar                []Option
 	Args                   []string
-	Parent                 *Context
 	Parameters             []string
+	Parent                 *Context
+	Action                 func(c *Context) error
 	ParameterCount         int
 	ExpectedParameterCount int
-	ParameterDescription   string
-	Action                 func(c *Context) error
 }

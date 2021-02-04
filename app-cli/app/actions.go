@@ -11,7 +11,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// OutputFormatAction sets the default output format to use.
+// OutputFormatAction sets the default output format to use. This must be one of
+// the supported types ("text", "json", or "indented").
 func OutputFormatAction(c *cli.Context) error {
 	if formatString, present := c.FindGlobal().GetString("format"); present {
 		if util.InList(strings.ToLower(formatString),
@@ -27,7 +28,9 @@ func OutputFormatAction(c *cli.Context) error {
 	return nil
 }
 
-// DebugAction is an action routine to set the global debug status if specified.
+// DebugAction is an action routine to set the loggers that will get debug messages
+// during execution. This must be a string list, and each named logger is enabled.
+// If a logger name is not valid, an error is returned.
 func DebugAction(c *cli.Context) error {
 	loggers, mode := c.FindGlobal().GetStringList("debug")
 	ui.DebugMode = mode
@@ -50,7 +53,7 @@ func QuietAction(c *cli.Context) error {
 }
 
 // UseProfileAction is the action routine when --profile is specified as a global
-// option. It's string value is used as the name of the active profile.
+// option. Its string value is used as the name of the active profile.
 func UseProfileAction(c *cli.Context) error {
 	name, _ := c.GetString("profile")
 	persistence.UseProfile(name)

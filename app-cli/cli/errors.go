@@ -34,6 +34,7 @@ func (e ExitError) Exit() {
 	os.Exit(e.ExitStatus)
 }
 
+// CLI error message strings.
 const (
 	CLIErrorPrefix            = "during command line processing"
 	InvalidBooleanValueError  = "option --%s invalid boolean value: %s"
@@ -46,10 +47,13 @@ const (
 	WrongParameterCountError  = "incorrect number of parameters"
 )
 
+// Wrapper for CLI errors
 type CLIError struct {
 	err error
 }
 
+// NewCLIError generates a new CLIError object using the message string and optional
+// values that are formatted using the message string.
 func NewCLIError(msg string, args ...interface{}) CLIError {
 	e := CLIError{
 		err: fmt.Errorf(msg, args...),
@@ -58,6 +62,7 @@ func NewCLIError(msg string, args ...interface{}) CLIError {
 	return e
 }
 
+// Error returns a string representation of the CLIError
 func (ce CLIError) Error() string {
 	return fmt.Sprintf("%s, %s", CLIErrorPrefix, ce.err.Error())
 }
