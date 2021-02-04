@@ -111,6 +111,7 @@ func (c *Compiler) multDivide() error {
 		if c.t.AtEnd() {
 			break
 		}
+
 		op := c.t.Peek(1)
 
 		if c.t.AnyNext("^", "*", "/", "|") {

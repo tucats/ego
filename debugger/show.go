@@ -36,6 +36,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				depth, err = strconv.Atoi(tx)
 			}
 		}
+
 		if err == nil {
 			fmt.Print(c.FormatFrames(depth))
 		}
@@ -56,6 +57,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			fmt.Printf("\t%s:  %s, %d symbols\n", idx, syms.Name, len(syms.Symbols))
 
 			depth++
+
 			syms = syms.Parent
 		}
 
@@ -68,10 +70,12 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		if tokens.Peek(1) != tokenizer.EndOfTokens {
 			start, err = strconv.Atoi(tokens.Next())
 			_ = tokens.IsNext(":")
+
 			if err == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
 				end, err = strconv.Atoi(tokens.Next())
 			}
 		}
+
 		if err == nil {
 			for i, t := range tx.Source {
 				if i < start-1 || i > end-1 {

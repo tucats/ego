@@ -23,6 +23,7 @@ func TestTable_FormatJSON(t *testing.T) {
 		spacing        string
 		indent         string
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -97,6 +98,7 @@ func TestAlignText(t *testing.T) {
 		width     int
 		alignment int
 	}
+
 	tests := []struct {
 		name string
 		args args

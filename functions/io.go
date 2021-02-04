@@ -86,6 +86,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := util.GetString(args[0])
 	ext := ""
+	
 	if len(args) > 1 {
 		ext = util.GetString(args[1])
 	}
@@ -105,6 +106,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // ExpandPath is used to expand a path into a list of fie names
 func ExpandPath(path, ext string) ([]string, error) {
 	names := []string{}
+
 	// Can we read this as a directory?
 	fi, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -119,6 +121,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		if err != nil {
 			return names, err
 		}
+		
 		// If we have a default suffix, make sure the pattern matches
 		if ext != "" && !strings.HasSuffix(fn, ext) {
 			return names, nil

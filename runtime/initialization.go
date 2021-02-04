@@ -36,6 +36,7 @@ func InitProfileDefaults() error {
 	for k, v := range settings {
 		if !persistence.Exists(k) {
 			persistence.Set(k, v)
+
 			dirty = true
 		}
 	}

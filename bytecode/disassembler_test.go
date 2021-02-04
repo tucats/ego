@@ -6,6 +6,7 @@ func TestFormatStack(t *testing.T) {
 	type args struct {
 		s []interface{}
 	}
+
 	tests := []struct {
 		name string
 		args args

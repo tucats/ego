@@ -16,6 +16,7 @@ func integerAction(c *Context) error {
 	if !found {
 		return errors.New("No integer option found")
 	}
+
 	if v != 42 {
 		return errors.New("Integer value not 42")
 	}
@@ -28,6 +29,7 @@ func stringAction(c *Context) error {
 	if !found {
 		return errors.New("No string option found")
 	}
+
 	if v != "foobar" {
 		return errors.New("String value not foobar")
 	}

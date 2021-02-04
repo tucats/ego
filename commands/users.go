@@ -20,6 +20,7 @@ import (
 // running server.
 func AddUser(c *cli.Context) error {
 	var err error
+
 	user, _ := c.GetString("username")
 	pass, _ := c.GetString("password")
 	permissions, _ := c.GetStringList("permissions")
@@ -38,12 +39,14 @@ func AddUser(c *cli.Context) error {
 		Permissions: permissions,
 	}
 	resp := defs.UserReponse{}
+
 	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
 	if err == nil {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
+
 			b, err = json.Marshal(resp)
 			if err == nil {
 				fmt.Printf("%s\n", string(b))
@@ -58,18 +61,22 @@ func AddUser(c *cli.Context) error {
 // running server.
 func DeleteUser(c *cli.Context) error {
 	var err error
+
 	user, _ := c.GetString("username")
 
 	for user == "" {
 		user = ui.Prompt("Username: ")
 	}
+
 	resp := defs.UserReponse{}
+
 	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
 	if err == nil {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
+
 			b, err = json.Marshal(resp)
 			if err == nil {
 				fmt.Printf("%s\n", string(b))
@@ -85,6 +92,7 @@ func ListUsers(c *cli.Context) error {
 	if path == "" {
 		path = "http://localhost:8080"
 	}
+
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
@@ -100,7 +108,9 @@ func ListUsers(c *cli.Context) error {
 	var response *resty.Response
 
 	r := client.NewRequest()
+
 	r.Header.Add("Accepts", defs.JSONMediaType)
+
 	response, err = r.Get(url)
 	if response.StatusCode() == http.StatusNotFound && len(response.Body()) == 0 {
 		err = errors.New(defs.NotFound)
@@ -113,6 +123,7 @@ func ListUsers(c *cli.Context) error {
 
 	if err == nil && status == http.StatusOK {
 		body := string(response.Body())
+
 		err = json.Unmarshal([]byte(body), &ud)
 		if err == nil {
 			switch ui.OutputFormat {
@@ -126,12 +137,14 @@ func ListUsers(c *cli.Context) error {
 						if i > 0 {
 							perms = perms + ", "
 						}
+
 						perms = perms + p
 					}
 
 					if perms == "" {
 						perms = "."
 					}
+
 					_ = t.AddRowItems(u.Name, u.ID, perms)
 				}
 

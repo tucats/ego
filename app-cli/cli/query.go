@@ -27,6 +27,7 @@ func (c *Context) WasFound(name string) bool {
 
 			return subgrammar.WasFound(name)
 		}
+
 		if entry.Found && name == entry.LongName {
 			return true
 		}
@@ -45,6 +46,7 @@ func (c *Context) GetInteger(name string) (int, bool) {
 
 			return subContext.GetInteger(name)
 		}
+
 		if entry.Found && entry.OptionType == IntType && name == entry.LongName {
 			return entry.Value.(int), true
 		}
@@ -63,6 +65,7 @@ func (c *Context) GetBool(name string) bool {
 
 			return subContext.GetBool(name)
 		}
+
 		if entry.Found && (entry.OptionType == BooleanType || entry.OptionType == BooleanValueType) && name == entry.LongName {
 			return entry.Value.(bool)
 		}
@@ -82,6 +85,7 @@ func (c *Context) GetString(name string) (string, bool) {
 
 			return subContext.GetString(name)
 		}
+
 		if entry.Found && (entry.OptionType == StringListType || entry.OptionType == UUIDType || entry.OptionType == StringType) && name == entry.LongName {
 			if entry.OptionType == StringType || entry.OptionType == UUIDType {
 				return entry.Value.(string), true
@@ -117,6 +121,7 @@ func (c *Context) GetStringList(name string) ([]string, bool) {
 
 			return subContext.GetStringList(name)
 		}
+
 		if entry.Found && entry.OptionType == StringListType && name == entry.LongName {
 			return entry.Value.([]string), true
 		}

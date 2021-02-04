@@ -64,6 +64,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	// Reset the runtime context
 	c.pc = addr
 	c.running = true
+
 	if c.Tracing {
 		ui.Debug(ui.ByteCodeLogger, "*** Tracing "+c.Name)
 	}
@@ -91,7 +92,9 @@ func (c *Context) RunFromAddress(addr int) error {
 			ui.Debug(ui.ByteCodeLogger, "%8s%3d: %-30s stack[%2d]: %s",
 				c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
+
 		c.pc = c.pc + 1
+
 		imp, found := dispatch[i.Operation]
 		if !found {
 			return c.NewError(UnimplementedInstructionError, strconv.Itoa(int(i.Operation)))
@@ -175,6 +178,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			err = parentCtx.NewError(ctx.Run().Error())
 		}
 	}
+
 	if err != nil && !strings.HasSuffix(err.Error(), "stop") {
 		fmt.Printf("%v\n", err)
 		ui.Debug(ui.ByteCodeLogger, "--> Go routine invocation ends with %v", err)

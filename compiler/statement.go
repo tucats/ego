@@ -220,6 +220,7 @@ func (c *Compiler) IsFunctionCall() bool {
 			}
 
 			pos++
+
 			lastWasSymbol = true
 
 			continue

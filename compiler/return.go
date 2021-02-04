@@ -31,6 +31,7 @@ func (c *Compiler) Return() error {
 		bc.Append(c.coerce[returnCount])
 
 		returnCount++
+
 		hasReturnValue = true
 
 		returnExpressions = append(returnExpressions, bc)

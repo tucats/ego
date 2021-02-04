@@ -9,6 +9,7 @@ func TestFunctionMin(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -69,6 +70,7 @@ func TestFunctionMax(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -129,6 +131,7 @@ func TestFunctionSum(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args

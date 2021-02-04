@@ -115,9 +115,11 @@ func Start(c *cli.Context) error {
 	if logFileName == "" {
 		logFileName = os.Getenv("EGO_LOG")
 	}
+
 	if logFileName == "" {
 		logFileName = "ego-server.log"
 	}
+
 	logFileName, _ = filepath.Abs(logFileName)
 
 	// If the log file was specified on the command line,
@@ -136,6 +138,7 @@ func Start(c *cli.Context) error {
 	if err == nil {
 		_, err = logf.WriteString(fmt.Sprintf(logHeader, time.Now().Format(time.UnixDate)))
 	}
+
 	if err != nil {
 		return err
 	}
@@ -182,6 +185,7 @@ func Stop(c *cli.Context) error {
 			err = proc.Kill()
 			if err == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
+
 				err = server.RemovePidFile(c)
 			}
 		}
@@ -230,6 +234,7 @@ func Restart(c *cli.Context) error {
 			err = proc.Kill()
 			if err == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
+
 				err = server.RemovePidFile(c)
 			}
 		}
@@ -249,10 +254,12 @@ func Restart(c *cli.Context) error {
 		}
 
 		logFileName, _ = filepath.Abs(logFileName)
+
 		logf, err := os.Create(logFileName)
 		if err != nil {
 			return err
 		}
+
 		// Set up the new ID. If there was one already (because this might be
 		// a restart operation) then update the UUID value. If not, add the uuid
 		// command line option.
@@ -267,6 +274,7 @@ func Restart(c *cli.Context) error {
 				break
 			}
 		}
+
 		if !found {
 			args = append(args, "--session-uuid", logID.String())
 		}

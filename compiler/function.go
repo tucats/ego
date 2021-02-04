@@ -122,6 +122,7 @@ func (c *Compiler) Function(literal bool) error {
 					p.kind = datatypes.ChanType
 				}
 			}
+
 			if varargs {
 				p.kind = datatypes.VarArgs
 			}

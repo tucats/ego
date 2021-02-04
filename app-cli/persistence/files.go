@@ -226,8 +226,10 @@ func GetUsingList(key string, values ...string) int {
 // active defaults.
 func Delete(key string) {
 	c := getCurrentConfiguration()
+
 	delete(c.Items, key)
 	delete(explicitValues.Items, key)
+
 	ProfileDirty = true
 
 	ui.Debug(ui.AppLogger, "Deleting profile key \"%s\"", key)
@@ -236,9 +238,9 @@ func Delete(key string) {
 // Keys returns the list of keys in the profile as an array
 // of strings.
 func Keys() []string {
-	c := getCurrentConfiguration()
 	result := []string{}
 
+	c := getCurrentConfiguration()
 	for key := range c.Items {
 		result = append(result, key)
 	}
@@ -266,6 +268,7 @@ func DeleteProfile(key string) error {
 		}
 
 		delete(Configurations, key)
+
 		ProfileDirty = true
 
 		err := Save()
@@ -283,8 +286,7 @@ func DeleteProfile(key string) error {
 
 func getCurrentConfiguration() *Configuration {
 	if CurrentConfiguration == nil {
-		var c Configuration = Configuration{Description: "Default configuration", Items: map[string]string{}}
-		CurrentConfiguration = &c
+		CurrentConfiguration = &Configuration{Description: "Default configuration", Items: map[string]string{}}
 	}
 
 	return CurrentConfiguration

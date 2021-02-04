@@ -17,6 +17,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	array, err := c.Pop()
 	if err != nil {
 		return err
@@ -32,7 +33,6 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 
 	// Reading from a channel ignores the index value
 	case *datatypes.Channel:
-		//ui.Debug(ui.ByteCodeLogger, "--> Planning to read %s", a.String())
 		var datum interface{}
 
 		datum, err = a.Receive()
@@ -59,6 +59,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 		} else {
 			v, f = a[subscript]
 		}
+
 		if !f {
 			if isPackage {
 				return c.NewError(UnknownPackageMemberError, subscript)
@@ -66,6 +67,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 
 			return c.NewError(UnknownMemberError, subscript)
 		}
+
 		err = c.Push(v)
 		c.lastStruct = a
 
@@ -74,6 +76,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 		if subscript < 0 || subscript >= len(a) {
 			return c.NewError(InvalidArrayIndexError, subscript)
 		}
+
 		v := a[subscript]
 		err = c.Push(v)
 
@@ -90,10 +93,12 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	index1, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	array, err := c.Pop()
 	if err != nil {
 		return err
@@ -106,10 +111,12 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 		if subscript1 < 0 || subscript1 >= len(a) {
 			return c.NewError(InvalidSliceIndexError, subscript1)
 		}
+
 		subscript2 := util.GetInt(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
 			return c.NewError(InvalidSliceIndexError, subscript2)
 		}
+
 		v := a[subscript1 : subscript2+1]
 		_ = c.Push(v)
 
@@ -123,6 +130,7 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 // StoreMetadataImpl instruction processor
 func StoreMetadataImpl(c *Context, i interface{}) error {
 	var key string
+
 	if i != nil {
 		key = util.GetString(i)
 	} else {
@@ -130,6 +138,7 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		key = util.GetString(keyx)
 	}
 
@@ -137,14 +146,17 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	m, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	_, ok := m.(map[string]interface{})
 	if !ok {
 		return c.NewError(InvalidTypeError)
 	}
+
 	_ = datatypes.SetMetadata(m, key, value)
 
 	return c.Push(m)
@@ -153,10 +165,12 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 // StoreIndexImpl instruction processor
 func StoreIndexImpl(c *Context, i interface{}) error {
 	storeAlways := util.GetBool(i)
+
 	index, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	destination, err := c.Pop()
 	if err != nil {
 		return err
@@ -172,6 +186,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		if _, err = a.Set(index, v); err == nil {
 			err = c.Push(a)
 		}
+
 		if err != nil {
 			return c.NewError(err.Error())
 		}
@@ -197,8 +212,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 			}
 
 			// Check to be sure this isn't a restricted (function code) type
-			switch old.(type) {
-			case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
+			if _, ok := old.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
 				return c.NewError(ReadOnlyError)
 			}
 		}
@@ -210,6 +224,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 				return c.NewError(UnknownMemberError, subscript)
 			}
 		}
+
 		if c.Static {
 			if vv, ok := a[subscript]; ok && vv != nil {
 				if reflect.TypeOf(vv) != reflect.TypeOf(v) {
@@ -217,6 +232,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 				}
 			}
 		}
+
 		if strings.HasPrefix(subscript, "__") {
 			datatypes.SetMetadata(a, subscript[2:], v)
 		} else {
@@ -242,6 +258,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 				return c.NewError(InvalidVarTypeError)
 			}
 		}
+
 		a[subscript] = v
 		_ = c.Push(a)
 
@@ -253,8 +270,9 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 }
 
 func FlattenImpl(c *Context, i interface{}) error {
-	v, err := c.Pop()
 	c.argCountDelta = 0
+
+	v, err := c.Pop()
 	if err == nil {
 		if array, ok := v.([]interface{}); ok {
 			for _, vv := range array {

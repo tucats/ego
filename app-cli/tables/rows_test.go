@@ -171,6 +171,7 @@ func TestTable_AddRow(t *testing.T) {
 	type args struct {
 		row []string
 	}
+
 	tests := []struct {
 		name    string
 		table   Table

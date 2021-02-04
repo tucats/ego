@@ -9,6 +9,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		headings []string
 	}
+
 	tests := []struct {
 		name      string
 		args      args

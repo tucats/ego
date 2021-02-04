@@ -27,6 +27,7 @@ var Realm string
 // available service endpoints.
 func DefineLibHandlers(root string, subpath string) error {
 	paths := make([]string, 0)
+
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
 		return err
@@ -34,17 +35,21 @@ func DefineLibHandlers(root string, subpath string) error {
 
 	for _, f := range fids {
 		fullname := f.Name()
+
 		slash := strings.LastIndex(fullname, "/")
 		if slash > 0 {
 			fullname = fullname[:slash]
 		}
+
 		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
 
 		if !f.IsDir() {
 			paths = append(paths, path.Join(subpath, fullname))
 		} else {
 			newpath := filepath.Join(subpath, fullname)
+
 			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
+
 			err := DefineLibHandlers(root, newpath)
 			if err != nil {
 				return err
@@ -87,6 +92,7 @@ func RemovePidFile(c *cli.Context) error {
 // it's contents converted to a ServerStatus object.
 func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 	var status = defs.ServerStatus{}
+
 	b, err := ioutil.ReadFile(getPidFileName(c))
 	if err == nil {
 		err = json.Unmarshal(b, &status)
@@ -102,6 +108,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	fn := getPidFileName(c)
 	status.Started = time.Now()
 	b, _ := json.MarshalIndent(status, "", "  ")
+
 	err := ioutil.WriteFile(fn, b, 0600)
 	if err == nil {
 		err = os.Chmod(fn, 0600)
@@ -115,12 +122,14 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 func getPidFileName(c *cli.Context) string {
 	port, ok := c.GetInteger("port")
 	portString := fmt.Sprintf("-%d", port)
+
 	if !ok {
 		portString = ""
 	}
 
 	// Figure out the operating-system-approprite pid file name
 	pidPath := "/tmp/"
+
 	if strings.HasPrefix(runtime.GOOS, "windows") {
 		pidPath = "\\tmp\\"
 	}

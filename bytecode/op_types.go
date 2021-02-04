@@ -95,6 +95,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 				return c.NewError(InvalidTypeError)
 			}
 		}
+
 		_ = c.Push(v)
 	}
 
@@ -104,6 +105,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 // CoerceImpl instruction processor
 func CoerceImpl(c *Context, i interface{}) error {
 	t := util.GetInt(i)
+
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -143,6 +145,7 @@ func CoerceImpl(c *Context, i interface{}) error {
 	default:
 		return c.NewError(InvalidTypeError)
 	}
+
 	_ = c.Push(v)
 
 	return nil

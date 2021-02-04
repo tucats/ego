@@ -11,6 +11,7 @@ import (
 // and puts back on the stack.
 func MemberImpl(c *Context, i interface{}) error {
 	var name string
+
 	if i != nil {
 		name = util.GetString(i)
 	} else {
@@ -18,6 +19,7 @@ func MemberImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		name = util.GetString(v)
 	}
 
@@ -28,14 +30,17 @@ func MemberImpl(c *Context, i interface{}) error {
 
 	// The only the type that is supported is a map
 	var v interface{}
+
 	found := false
 
 	mv, ok := m.(map[string]interface{})
 	if ok {
 		isPackage := false
+
 		if t, found := datatypes.GetMetadata(mv, datatypes.TypeMDKey); found {
 			isPackage = (util.GetString(t) == "package")
 		}
+
 		v, found = findMember(mv, name)
 		if !found {
 			if isPackage {
@@ -54,6 +59,7 @@ func MemberImpl(c *Context, i interface{}) error {
 	} else {
 		return c.NewError(InvalidTypeError)
 	}
+
 	_ = c.Push(v)
 
 	return nil
@@ -63,6 +69,7 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 	if v, ok := m[name]; ok {
 		return v, true
 	}
+
 	if p, ok := datatypes.GetMetadata(m, datatypes.ParentMDKey); ok {
 		if pmap, ok := p.(map[string]interface{}); ok {
 			return findMember(pmap, name)
@@ -83,6 +90,7 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 // a given object value.
 func ClassMemberImpl(c *Context, i interface{}) error {
 	var name string
+
 	if i != nil {
 		name = util.GetString(i)
 	} else {
@@ -90,6 +98,7 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		name = util.GetString(v)
 	}
 
@@ -104,6 +113,7 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 		if _, found := datatypes.GetMetadata(mv, datatypes.ParentMDKey); found {
 			return c.NewError(NotATypeError)
 		}
+
 		v, found := mv[name]
 		if !found {
 			v, found := searchParents(mv, name)
@@ -113,6 +123,7 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 
 			return c.NewError(UnknownMemberError, name)
 		}
+
 		_ = c.Push(v)
 
 	default:
@@ -155,6 +166,7 @@ func ThisImpl(c *Context, i interface{}) error {
 	}
 
 	this := util.GetString(i)
+
 	v, ok := c.Get("__this")
 	if !ok {
 		v = c.this

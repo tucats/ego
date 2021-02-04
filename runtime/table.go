@@ -100,6 +100,7 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
 	this["table"] = nil
 	this["AddRow"] = tableReleased
@@ -161,12 +162,14 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if err == nil {
 		for i := len(args) - 1; i >= 0; i = i - 1 {
 			v := args[i]
-			heading := util.GetString(v)
 			ascending := true
+
+			heading := util.GetString(v)
 			if strings.HasPrefix(heading, "~") {
 				ascending = false
 				heading = heading[1:]
 			}
+
 			pos, found := t.FindColumn(heading)
 			if !found {
 				err = errors.New("Invalid column name:" + heading)
@@ -194,10 +197,12 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if err == nil {
 		headings := true
 		lines := true
+
 		if len(args) > 0 {
 			headings = util.GetBool(args[0])
 			lines = headings
 		}
+
 		if len(args) > 1 {
 			lines = util.GetBool(args[1])
 		}
@@ -220,6 +225,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	t, err := getTable(s)
 	if err == nil {
 		column := 0
+
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.FindColumn(columnName)
 			if !ok {
@@ -250,6 +256,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 				return err, err
 			}
 		}
+
 		err = t.SetAlignment(column, mode)
 	}
 
@@ -260,9 +267,11 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // type (text or json)
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
+
 	if len(args) > 0 {
 		fmt = util.GetString(args[0])
 	}
+
 	t, err := getTable(s)
 	if err == nil {
 		err = t.Print(fmt)

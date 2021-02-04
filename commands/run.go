@@ -35,41 +35,46 @@ func RunAction(c *cli.Context) error {
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
+
 	programArgs := make([]interface{}, 0)
 	mainName := "main"
 	prompt := c.MainProgram + "> "
 	debug := c.GetBool("debug")
+	text := ""
+	wasCommandLine := true
+	fullScope := false
 
 	autoImport := persistence.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
 		autoImport = c.GetBool(defs.AutoImportOption)
 	}
 
-	fullScope := false
 	if c.WasFound(defs.FullSymbolScopeOption) {
 		fullScope = c.GetBool(defs.FullSymbolScopeOption)
 	}
 
-	text := ""
-	wasCommandLine := true
 	disassemble := c.GetBool(defs.DisassembleOption)
 	if disassemble {
 		ui.DebugMode = true
+
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
 	exitOnBlankLine := false
+
 	v := persistence.Get(defs.ExitOnBlankSetting)
 	if v == "true" {
 		exitOnBlankLine = true
 	}
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+
 	if c.WasFound(defs.StaticTypesOption) {
 		staticTypes = c.GetBool(defs.StaticTypesOption)
 	}
 
 	interactive := false
+
 	argc := c.GetParameterCount()
 	if argc > 0 {
 		fname := c.GetParameter(0)
@@ -78,8 +83,8 @@ func RunAction(c *cli.Context) error {
 		if fname == "." {
 			text = ""
 			mainName = "console"
-			scanner := bufio.NewScanner(os.Stdin)
 
+			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				text = text + scanner.Text() + " "
 			}
@@ -92,34 +97,41 @@ func RunAction(c *cli.Context) error {
 					return fmt.Errorf("unable to read file: %s", fname)
 				}
 			}
+
 			mainName = fname
 			text = string(content)
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
 			programArgs = make([]interface{}, argc-1)
+
 			for n := 1; n < argc; n = n + 1 {
 				programArgs[n-1] = c.GetParameter(n)
 			}
 		}
 	} else if argc == 0 {
 		wasCommandLine = false
+
 		if !ui.IsConsolePipe() {
 			var banner string
+
 			if persistence.Get(defs.NoCopyrightSetting) != "true" {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
+
 			if exitOnBlankLine {
 				fmt.Printf("%s\nEnter a blank line to exit\n", banner)
 			} else {
 				fmt.Printf("%s\n", banner)
 			}
+
 			text = io.ReadConsoleText(prompt)
 			interactive = true
 		} else {
 			wasCommandLine = true // It is a pipe, so no prompting for more!
 			text = ""
 			mainName = "<stdin>"
+
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				text = text + scanner.Text() + " "
@@ -138,11 +150,14 @@ func RunAction(c *cli.Context) error {
 		if strings.TrimSpace(text) == QuitCommand {
 			break
 		}
+
 		if exitOnBlankLine && len(strings.TrimSpace(text)) == 0 {
 			break
 		}
+
 		if len(text) > 8 && text[:8] == "%include" {
 			fname := strings.TrimSpace(text[8:])
+
 			content, err := ioutil.ReadFile(fname)
 			if err != nil {
 				content, err = ioutil.ReadFile(fname + ".ego")
@@ -206,6 +221,7 @@ func RunAction(c *cli.Context) error {
 		b, err := comp.Compile(mainName, t)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
+
 			exitValue = 1
 		} else {
 			if !builtinsAdded {
@@ -216,6 +232,7 @@ func RunAction(c *cli.Context) error {
 				if err != nil {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
+
 				comp.AddPackageToSymbols(syms)
 
 				builtinsAdded = true
@@ -224,6 +241,7 @@ func RunAction(c *cli.Context) error {
 
 			if io.GetConfig(syms, ConfigDisassemble) {
 				ui.DebugMode = true
+
 				b.Disasm()
 			}
 
@@ -232,6 +250,7 @@ func RunAction(c *cli.Context) error {
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
 			oldDebugMode = ui.DebugMode
+
 			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
 			if ctx.Tracing {
 				ui.DebugMode = true
@@ -244,6 +263,7 @@ func RunAction(c *cli.Context) error {
 			if c.GetBool("source-tracing") || debug {
 				ctx.SetTracing(true)
 			}
+
 			ctx.SetTokenizer(t)
 			ctx.SetFullSymbolScope(fullScope)
 
@@ -253,13 +273,16 @@ func RunAction(c *cli.Context) error {
 			} else {
 				err = ctx.Run()
 			}
+
 			if err != nil && err.Error() == debugger.Stop.Error() {
 				err = nil
 			}
+
 			ui.DebugMode = oldDebugMode
 
 			if err != nil {
 				fmt.Printf("Error: %s\n", err.Error())
+
 				exitValue = 2
 			} else {
 				exitValue = 0
@@ -269,9 +292,11 @@ func RunAction(c *cli.Context) error {
 		if c.GetBool("symbols") {
 			fmt.Println(syms.Format(false))
 		}
+
 		if wasCommandLine {
 			break
 		}
+
 		text = io.ReadConsoleText(prompt)
 	}
 
@@ -285,6 +310,7 @@ func RunAction(c *cli.Context) error {
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	syms := symbols.NewSymbolTable("file " + mainName)
+
 	_ = syms.SetAlways("__cli_args", programArgs)
 	_ = syms.SetAlways("__static_data_types", staticTypes)
 
@@ -294,9 +320,10 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 		_ = syms.SetAlways("__exec_mode", "run")
 	}
 
-	io.SetConfig(syms, ConfigDisassemble, disassemble)
 	traceLogging := ui.Loggers[ui.ByteCodeLogger]
+
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
+	io.SetConfig(syms, ConfigDisassemble, disassemble)
 
 	// Get a list of all the environment variables and make
 	// a symbol map of their lower-case names
@@ -311,6 +338,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	// Add local funcion(s) that extend the Ego function set.
 	_ = syms.SetAlways("eval", runtime.Eval)
 	_ = syms.SetAlways("prompt", runtime.Prompt)
+
 	runtime.AddBuiltinPackages(syms)
 
 	return syms

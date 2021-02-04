@@ -72,9 +72,11 @@ func (c *Compiler) Import() error {
 		fileName := c.t.Next()
 
 		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
+
 		if isList && fileName == ")" {
 			break
 		}
+
 		if len(fileName) > 2 && fileName[:1] == "\"" {
 			fileName = fileName[1 : len(fileName)-1]
 		}
@@ -164,6 +166,7 @@ func (c *Compiler) Import() error {
 		if !isList {
 			break
 		}
+
 		if isList && c.t.Next() == ")" {
 			break
 		}

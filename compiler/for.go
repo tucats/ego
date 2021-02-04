@@ -158,6 +158,7 @@ func (c *Compiler) For() error {
 	if err != nil {
 		return err
 	}
+
 	if !c.t.IsNext(":=") {
 		return c.NewError(MissingLoopAssignmentError)
 	}

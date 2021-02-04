@@ -45,6 +45,7 @@ func AuthImpl(c *Context, i interface{}) error {
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
 		c.running = false
 		_ = c.SetAlways("_rest_status", http.StatusForbidden)
+
 		if c.output != nil {
 			c.output.WriteString("403 Forbidden")
 		}
@@ -57,6 +58,7 @@ func AuthImpl(c *Context, i interface{}) error {
 	if kind == "user" && user == "" && pass == "" {
 		c.running = false
 		_ = c.SetAlways("_rest_status", http.StatusUnauthorized)
+
 		if c.output != nil {
 			c.output.WriteString("401 Not authorized")
 		}
@@ -70,15 +72,18 @@ func AuthImpl(c *Context, i interface{}) error {
 
 	if kind == "any" {
 		isAuth := false
+
 		if v, ok := c.Get("_authenticated"); ok {
 			isAuth = util.GetBool(v)
 		}
+
 		if !isAuth {
 			_ = c.SetAlways("_rest_status", http.StatusForbidden)
 
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
+
 			c.running = false
 
 			ui.Debug(ui.ServerLogger, "@authenticated any: not authenticated")
@@ -89,15 +94,18 @@ func AuthImpl(c *Context, i interface{}) error {
 
 	if kind == "admin" || kind == "admintoken" {
 		isAuth := false
+
 		if v, ok := c.Get("_superuser"); ok {
 			isAuth = util.GetBool(v)
 		}
+
 		if !isAuth {
 			_ = c.SetAlways("_rest_status", http.StatusForbidden)
 
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
 			}
+
 			c.running = false
 
 			ui.Debug(ui.ServerLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
@@ -113,11 +121,13 @@ func AuthImpl(c *Context, i interface{}) error {
 func ResponseImpl(c *Context, i interface{}) error {
 	// See if we have a media type specified.
 	isJSON := false
+
 	if v, found := c.Get("_json"); found {
 		isJSON = util.GetBool(v)
 	}
 
 	var output string
+
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -128,6 +138,7 @@ func ResponseImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		output = string(b)
 	} else {
 		output = util.FormatUnquoted(v)

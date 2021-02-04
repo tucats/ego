@@ -10,6 +10,7 @@ func TestLoad(t *testing.T) {
 		application string
 		name        string
 	}
+
 	tests := []struct {
 		name    string
 		args    args

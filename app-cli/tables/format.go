@@ -42,9 +42,11 @@ func (t *Table) SetMinimumWidth(n int, w int) error {
 	if n < 0 || n >= t.columnCount {
 		return NewTableErr(InvalidColumnNumberError, n)
 	}
+	
 	if w < 0 {
 		return NewTableErr(InvalidColumnWidthError, w)
 	}
+	
 	if w > t.maxWidth[n] {
 		t.maxWidth[n] = w
 	}
@@ -58,6 +60,7 @@ func (t *Table) SetStartingRow(s int) error {
 	if s < 1 {
 		return NewTableErr(InvalidRowNumberError, s)
 	}
+
 	t.startingRow = s - 1
 
 	return nil
@@ -74,6 +77,7 @@ func (t *Table) SetSpacing(s int) error {
 	for i := 0; i < s; i++ {
 		buffer.WriteRune(' ')
 	}
+
 	t.spacing = buffer.String()
 
 	return nil
@@ -90,6 +94,7 @@ func (t *Table) SetIndent(s int) error {
 	for i := 0; i < s; i++ {
 		buffer.WriteRune(' ')
 	}
+	
 	t.indent = buffer.String()
 
 	return nil

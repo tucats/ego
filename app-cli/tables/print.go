@@ -62,6 +62,7 @@ func (t *Table) FormatJSON() string {
 	}
 
 	buffer.WriteRune('[')
+
 	firstRow := true
 
 	for n, row := range t.rows {
@@ -88,6 +89,7 @@ func (t *Table) FormatJSON() string {
 
 				break
 			}
+
 			if !util.GetBool(v) {
 				continue
 			}
@@ -96,6 +98,7 @@ func (t *Table) FormatJSON() string {
 		if !firstRow {
 			buffer.WriteRune(',')
 		}
+
 		firstRow = false
 
 		buffer.WriteRune('{')
@@ -257,6 +260,7 @@ func AlignText(text string, width int, alignment int) string {
 			return text[:width]
 		}
 	}
+
 	pad := strings.Repeat(" ", width)
 
 	switch alignment {
@@ -280,6 +284,7 @@ func AlignText(text string, width int, alignment int) string {
 			} else {
 				r = r + " "
 			}
+
 			left = !left
 		}
 

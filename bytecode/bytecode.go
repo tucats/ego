@@ -85,6 +85,7 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.emitPos || mark < 0 {
 		return b.NewError(InvalidBytecodeAddress)
 	}
+
 	i := b.opcodes[mark]
 	i.Operand = address
 	b.opcodes[mark] = i
@@ -159,6 +160,7 @@ func (b *ByteCode) Remove(n int) {
 		n = b.emitPos - n
 		b.opcodes = append(b.opcodes[:n], b.opcodes[n+1:]...)
 	}
+
 	b.emitPos = b.emitPos - 1
 }
 

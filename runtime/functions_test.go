@@ -75,6 +75,7 @@ func Test_pad(t *testing.T) {
 		s string
 		w int
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -117,6 +118,7 @@ func TestFunctionTable(t *testing.T) {
 		symbols *symbols.SymbolTable
 		args    []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args

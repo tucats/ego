@@ -26,6 +26,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Get the connection string, which MUST be in URL format.
 	connStr := util.GetString(args[0])
+
 	url, err := url.Parse(connStr)
 	if err != nil {
 		return nil, err
@@ -42,6 +43,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
+
 	result := map[string]interface{}{
 		"client":      db,
 		"AsStruct":    DBAsStruct,
@@ -57,6 +59,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		"rowCount":    0,
 		"transaction": nil,
 	}
+
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(result, datatypes.TypeMDKey, "database")
 
@@ -68,6 +71,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // for the functions available to a specific handle.
 func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var tx *sql.Tx
+
 	d, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
@@ -88,6 +92,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DBCommit implements the Commit() db function.
 func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var tx *sql.Tx
+
 	_, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
@@ -107,6 +112,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // DBCommit implements the Commit() db function.
 func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var tx *sql.Tx
+
 	_, tx, err := getDBClient(s)
 	if err == nil {
 		this := getThis(s)
@@ -116,6 +122,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		} else {
 			err = errors.New("no transaction active")
 		}
+
 		this["transaction"] = nil
 	}
 
@@ -149,9 +156,11 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if tx != nil {
 		err = tx.Rollback()
 	}
+
 	this := getThis(s)
 	this["client"] = nil
 	this["AsStruct"] = dbReleased
@@ -173,23 +182,30 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
+
 	this := getThis(s)
 	asStruct := util.GetBool(this["asStruct"])
 	this["rowCount"] = -1
 
 	var rows *sql.Rows
+
 	query := util.GetString(args[0])
 	ui.Debug(ui.DBLogger, "Query: %s", query)
+
 	if tx == nil {
 		ui.Debug(ui.DBLogger, "Query: %s", query)
+
 		rows, err = db.Query(query, args[1:]...)
 	} else {
 		ui.Debug(ui.DBLogger, "(Tx) Query: %s", query)
+
 		rows, err = tx.Query(query, args[1:]...)
 	}
+
 	if rows != nil {
 		defer rows.Close()
 	}
+
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
@@ -226,6 +242,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	size := len(arrayResult)
+
 	if asStruct {
 		size = len(mapResult)
 	}
@@ -423,6 +440,7 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 					if cp == nil {
 						return nil, nil, errors.New("db client was closed")
 					}
+
 					tx := gc["transaction"]
 					if tx == nil {
 						return cp, nil, nil

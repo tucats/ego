@@ -19,6 +19,7 @@ import (
 )
 
 var userDatabase map[string]defs.User
+
 var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
@@ -26,6 +27,7 @@ var userDatabaseFile = ""
 func LoadUserDatabase(c *cli.Context) error {
 	defaultUser := "admin"
 	defaultPassword := "password"
+
 	if up := persistence.Get(defs.DefaultCredentialSetting); up != "" {
 		if pos := strings.Index(up, ":"); pos >= 0 {
 			defaultUser = up[:pos]
@@ -41,6 +43,7 @@ func LoadUserDatabase(c *cli.Context) error {
 	if userDatabaseFile == "" {
 		userDatabaseFile = persistence.Get(defs.LogonUserdataSetting)
 	}
+
 	if userDatabaseFile == "" {
 		userDatabaseFile = defs.DefaultUserdataFileName
 	}
@@ -53,11 +56,14 @@ func LoadUserDatabase(c *cli.Context) error {
 				if err != nil {
 					return err
 				}
+
 				b = []byte(r)
 			}
+
 			if err == nil {
 				err = json.Unmarshal(b, &userDatabase)
 			}
+
 			if err != nil {
 				return err
 			}
@@ -263,6 +269,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if s, ok := s.Get("_superuser"); ok {
 		superUser = util.GetBool(s)
 	}
+
 	if !superUser {
 		return nil, errors.New(defs.NoPrivilegeForOperation)
 	}
@@ -317,13 +324,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Implements the DeleteUser() function. Returns true if the name was deleted,
 // else false if it was not a valid username.
 func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	var err error
-
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
+
 	if s, ok := s.Get("_superuser"); ok {
 		superUser = util.GetBool(s)
 	}
+
 	if !superUser {
 		return nil, errors.New(defs.NoPrivilegeForOperation)
 	}
@@ -332,13 +339,13 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) != 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	name := strings.ToLower(util.GetString(args[0]))
 
 	if _, ok := userDatabase[name]; ok {
 		delete(userDatabase, name)
-		err = updateUserDatabase()
 
-		return true, err
+		return true, updateUserDatabase()
 	}
 
 	return false, nil

@@ -58,6 +58,7 @@ func Logon(c *cli.Context) error {
 		url, _ = c.GetString("logon-server")
 		persistence.Set(LogonServerSetting, url)
 	}
+
 	if url == "" {
 		return NewAppError(NoLogonServerError)
 	}

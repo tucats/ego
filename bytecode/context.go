@@ -55,6 +55,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	if s, ok := s.Get("__static_data_types"); ok {
 		static = util.GetBool(s)
 	}
+
 	ctx := Context{
 		Name:            name,
 		bc:              b,
@@ -250,6 +251,7 @@ func (c *Context) Push(v interface{}) error {
 	if c.sp >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
+
 	c.stack[c.sp] = v
 	c.sp = c.sp + 1
 

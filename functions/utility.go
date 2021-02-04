@@ -153,7 +153,9 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // the new array
 func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var array []interface{}
+
 	count := 0
+
 	if len(args) == 2 {
 		switch v := args[0].(type) {
 		case []interface{}:
@@ -521,6 +523,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				memberList = append(memberList, k)
 			}
 		}
+
 		members := util.MakeSortedArray(memberList)
 
 		result := m[datatypes.MetadataKey]
@@ -564,6 +567,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			for _, a := range array {
 				ts, _ := Type(s, []interface{}{a})
 				tsx := util.GetString(ts)
+
 				if types == "nil" {
 					types = tsx
 				} else if types != tsx {
@@ -572,6 +576,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					break
 				}
 			}
+
 			result[datatypes.BasetypeMDKey] = "array"
 			result[datatypes.ElementTypesMDKey] = types
 		}

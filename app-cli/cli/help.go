@@ -28,9 +28,11 @@ func ShowHelp(c *Context) {
 			hasOptions = true
 		}
 	}
+
 	if hasOptions {
 		composedCommand = composedCommand + "[options] "
 	}
+
 	if hasSubcommand {
 		composedCommand = composedCommand + "[command] "
 	}

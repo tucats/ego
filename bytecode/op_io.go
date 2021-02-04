@@ -29,7 +29,9 @@ func PrintImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		s := util.FormatUnquoted(v)
+
 		if c.output == nil {
 			fmt.Printf("%s", s)
 		} else {
@@ -50,6 +52,7 @@ func PrintImpl(c *Context, i interface{}) error {
 // item to the logger named in the operand.
 func LogImpl(c *Context, i interface{}) error {
 	logger := util.GetString(i)
+
 	msg, err := c.Pop()
 	if err == nil {
 		ui.Debug(logger, "%v", msg)
@@ -88,6 +91,7 @@ func NewlineImpl(c *Context, i interface{}) error {
 // the template manager for the execution context.
 func TemplateImpl(c *Context, i interface{}) error {
 	name := util.GetString(i)
+
 	t, err := c.Pop()
 	if err == nil {
 		t, err = template.New(name).Parse(util.GetString(t))

@@ -16,6 +16,7 @@ func TestByteCode_Run(t *testing.T) {
 		emitPos int
 		result  interface{}
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields

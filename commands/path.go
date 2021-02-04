@@ -23,11 +23,11 @@ func PathAction(c *cli.Context) error {
 	// If it's not an environment variable or a preference, see if we can infer
 	// it from the location of the program that launched us.
 	if p == "" {
-		p = c.FindGlobal().Args[0]
-		p, _ = filepath.Abs(p)
+		p, _ = filepath.Abs(c.FindGlobal().Args[0])
 		if strings.HasSuffix(p, ".exe") {
 			p = p[:len(p)-4]
 		}
+
 		if strings.HasSuffix(p, "ego") {
 			p = p[:len(p)-3]
 		}

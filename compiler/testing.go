@@ -154,6 +154,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 			if nameString, ok := structMap["description"]; ok {
 				fmt.Printf("DEBUG: found name member\n")
+
 				name = util.GetString(nameString)
 			}
 		}

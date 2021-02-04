@@ -34,6 +34,7 @@ func DropToMarkerImpl(c *Context, i interface{}) error {
 		if err != nil {
 			break
 		}
+
 		_, found = v.(StackMarker)
 	}
 
@@ -90,6 +91,7 @@ func DupImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	_ = c.Push(v)
 	_ = c.Push(v)
 
@@ -104,10 +106,12 @@ func SwapImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v2, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	_ = c.Push(v1)
 	_ = c.Push(v2)
 
@@ -122,10 +126,12 @@ func CopyImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	_ = c.Push(v)
 
 	// Use JSON as a reflection-based cloner
 	var v2 interface{}
+
 	byt, _ := json.Marshal(v)
 	err = json.Unmarshal(byt, &v2)
 	_ = c.Push(2)
@@ -136,6 +142,7 @@ func CopyImpl(c *Context, i interface{}) error {
 func GetVarArgsImpl(c *Context, i interface{}) error {
 	err := c.NewError(VarArgError)
 	argPos := util.GetInt(i)
+
 	if arrayV, ok := c.Get("__args"); ok {
 		if args, ok := arrayV.([]interface{}); ok {
 			// If no more args in the list to satisfy, push empty array

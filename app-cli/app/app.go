@@ -33,6 +33,7 @@ func New(appName string) App {
 		appDescription = strings.TrimSpace(appName[i+1:])
 		appName = strings.TrimSpace(appName[:i])
 	}
+
 	app := App{Name: appName, Description: appDescription}
 
 	return app

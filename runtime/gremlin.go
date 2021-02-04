@@ -123,6 +123,7 @@ func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}
 	}
 
 	query := util.GetString(args[0])
+
 	res, err := client.ExecuteStringQuery(query)
 	if err != nil {
 		return nil, err
@@ -157,6 +158,7 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 	}
 
 	query := util.GetString(args[0])
+
 	res, err := client.ExecuteStringQuery(query)
 	if err != nil {
 		return nil, err
@@ -199,6 +201,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	}
 
 	sort.Strings(keys)
+
 	r := jsonData{}
 
 	// Construct a list of the columns.
@@ -220,6 +223,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		for n := 0; n < len(r.Columns); n = n + 1 {
 			c := r.Columns[n]
+
 			v, ok := rowMap[c.Name]
 			if ok {
 				width := len(util.FormatUnquoted(v))
@@ -243,6 +247,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		r.Rows = append(r.Rows, rs)
 	}
+
 	bytes, err := json.Marshal(r)
 
 	return string(bytes), err
@@ -253,7 +258,9 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	includeHeadings := true
+
 	if len(args) == 2 {
 		includeHeadings = util.GetBool(args[1])
 	}
@@ -368,14 +375,17 @@ func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, error) {
 	if !ok {
 		return nil, errors.New(defs.NoFunctionReceiver)
 	}
+
 	gc, ok := g.(map[string]interface{})
 	if !ok {
 		return nil, errors.New(defs.InvalidGremlinClient)
 	}
+
 	client, ok := gc["client"]
 	if !ok {
 		return nil, errors.New(defs.InvalidGremlinClient)
 	}
+
 	cp, ok := client.(*grammes.Client)
 	if !ok {
 		return nil, errors.New(defs.InvalidGremlinClient)
@@ -395,6 +405,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 
 	r := args[0]
+
 	switch r.(type) {
 	case string:
 		// We were given a query to execute
@@ -578,6 +589,7 @@ func gremlinResultArray(i interface{}) (interface{}, error) {
 
 func gremlinResultMapList(i interface{}) (interface{}, error) {
 	r := map[string]interface{}{}
+
 	a, ok := i.([]interface{})
 	if !ok {
 		return nil, errors.New(defs.InvalidResultSet)

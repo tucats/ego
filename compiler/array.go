@@ -19,6 +19,7 @@ func (c *Compiler) Array() error {
 
 		return c.NewError(InvalidSymbolError, name)
 	}
+
 	name = c.Normalize(name)
 
 	if !c.t.IsNext("[") {
@@ -35,6 +36,7 @@ func (c *Compiler) Array() error {
 	if !c.t.IsNext("]") {
 		return c.NewError(MissingBracketError)
 	}
+
 	if c.t.IsNext("=") {
 		bc, err = c.Expression()
 		if err != nil {

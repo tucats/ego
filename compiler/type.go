@@ -140,6 +140,7 @@ func (c *Compiler) compileType() error {
 
 			return nil
 		}
+
 		if c.t.AtEnd() {
 			return c.NewError(MissingEndOfBlockError)
 		}

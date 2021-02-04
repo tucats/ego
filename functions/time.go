@@ -21,9 +21,11 @@ func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := util.GetString(args[0])
 	fmt := basicLayout
+
 	if len(args) > 1 {
 		fmt = util.GetString(args[1])
 	}
+
 	t, err := time.Parse(fmt, str)
 	if err != nil {
 		return nil, err
@@ -37,6 +39,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, NewError("Add", ArgumentCountError)
 	}
+
 	t, err := getTime(s)
 	if err == nil {
 		d, err := time.ParseDuration(util.GetString(args[0]))
@@ -55,6 +58,7 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, NewError("Sub", ArgumentCountError)
 	}
+
 	t, err := getTime(s)
 	if err == nil {
 		d, err := getTimeV(args[0])
@@ -73,10 +77,12 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) != 1 {
 		return nil, NewError("Format", ArgumentCountError)
 	}
+
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
 	}
+
 	layout := util.GetString(args[0])
 
 	return t.Format(layout), nil
@@ -87,10 +93,12 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if len(args) != 0 {
 		return nil, NewError("Sleep", ArgumentCountError)
 	}
+
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
 	}
+
 	d := time.Until(*t)
 	time.Sleep(d)
 
@@ -102,10 +110,12 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if len(args) != 0 {
 		return nil, NewError("String", ArgumentCountError)
 	}
+
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
 	}
+
 	layout := basicLayout
 
 	return t.Format(layout), nil

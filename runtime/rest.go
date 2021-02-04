@@ -184,13 +184,16 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
 	verify := true
+
 	if len(args) == 1 {
 		verify = util.GetBool(args[0])
 	}
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
+
 	this["verify"] = verify
 
 	return this, nil
@@ -202,14 +205,16 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	this := getThis(s)
 
+	this := getThis(s)
 	base := ""
+
 	if len(args) > 0 {
 		base = util.GetString(args[0])
 	} else {
 		base = persistence.Get(defs.LogonServerSetting)
 	}
+
 	this["baseURL"] = base
 
 	return this, nil
@@ -221,12 +226,16 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
+
 	if len(args) != 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	user := util.GetString(args[0])
 	pass := util.GetString(args[1])
+
 	r.SetBasicAuth(user, pass)
 
 	return this, nil
@@ -238,11 +247,15 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	this := getThis(s)
+
 	if len(args) > 1 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
 	}
+
 	token := persistence.Get(defs.LogonTokenSetting)
+
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}
@@ -274,6 +287,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+
 	this := getThis(s)
 
 	if len(args) != 1 {
@@ -371,6 +385,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	this := getThis(s)
 	url := applyBaseURL(util.GetString(args[0]), this)
+
 	if len(args) > 1 {
 		body = args[1]
 	}
@@ -456,6 +471,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			if err != nil {
 				return nil, err
 			}
+
 			body = string(b)
 		}
 	}
@@ -492,6 +508,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		return jsonResponse, err
 	}
+
 	this["response"] = rb
 
 	return rb, nil

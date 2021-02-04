@@ -54,6 +54,7 @@ func testAction0(c *cli.Context) error {
 func testAction1(c *cli.Context) error {
 	v, _ := c.GetString("explode")
 	fmt.Printf("Found the option value %s\n", v)
+
 	if v != "bob" {
 		return errors.New("Invalid explode name: " + v)
 	}
@@ -64,6 +65,7 @@ func testAction1(c *cli.Context) error {
 func testAction2(c *cli.Context) error {
 	v, _ := c.GetInteger("count")
 	fmt.Printf("Found the option value %v\n", v)
+
 	if v != 42 {
 		return errors.New("Invalid count: " + strconv.Itoa(v))
 	}
@@ -77,6 +79,7 @@ func TestRun(t *testing.T) {
 		args    []string
 		appName string
 	}
+
 	tests := []struct {
 		name    string
 		args    args

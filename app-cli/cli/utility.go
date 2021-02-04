@@ -59,8 +59,8 @@ func MakeList(value string) []string {
 	if len(strings.TrimSpace(value)) == 0 {
 		return []string{}
 	}
-	list := strings.Split(value, ",")
 
+	list := strings.Split(value, ",")
 	for n := 0; n < len(list); n++ {
 		list[n] = strings.TrimSpace(list[n])
 	}

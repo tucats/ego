@@ -52,6 +52,7 @@ func (t *Table) AddRowItems(items ...interface{}) error {
 		default:
 			buffer = fmt.Sprintf("%v", item)
 		}
+
 		row[n] = buffer
 	}
 

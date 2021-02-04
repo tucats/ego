@@ -50,6 +50,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
 		r.indexName = util.GetString(list[0])
 		r.valueName = util.GetString(list[1])
+
 		if r.indexName != "" && r.indexName != "_" {
 			err = c.symbols.Create(r.indexName)
 		}
@@ -58,6 +59,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 			err = c.symbols.Create(r.valueName)
 		}
 	}
+
 	if err == nil {
 		if v, err = c.Pop(); err == nil {
 			r.value = v
@@ -71,6 +73,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 					keySet = append(keySet, i)
 					runes = append(runes, ch)
 				}
+
 				r.keySet = keySet
 				r.runes = runes
 
@@ -128,12 +131,15 @@ func RangeInitImpl(c *Context, i interface{}) error {
 //    index number is also stored in the index variable.
 func RangeNextImpl(c *Context, i interface{}) error {
 	var err error
+
 	destination := util.GetInt(i)
+
 	stackSize := len(c.rangeStack)
 	if stackSize == 0 {
 		c.pc = destination
 	} else {
 		r := c.rangeStack[stackSize-1]
+
 		switch actual := r.value.(type) {
 		case string:
 			if r.index >= len(r.keySet) {
@@ -142,12 +148,15 @@ func RangeNextImpl(c *Context, i interface{}) error {
 			} else {
 				key := r.keySet[r.index]
 				value := r.runes[r.index]
+
 				if r.indexName != "" && r.indexName != "_" {
 					err = c.symbols.Set(r.indexName, key)
 				}
+
 				if err == nil && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, string(value))
 				}
+
 				r.index++
 			}
 
@@ -157,12 +166,15 @@ func RangeNextImpl(c *Context, i interface{}) error {
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				key := r.keySet[r.index]
+
 				if r.indexName != "" && r.indexName != "_" {
 					err = c.symbols.Set(r.indexName, key)
 				}
+
 				if err == nil && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, actual[util.GetString(key)])
 				}
+
 				r.index++
 			}
 
@@ -170,14 +182,18 @@ func RangeNextImpl(c *Context, i interface{}) error {
 			if r.index >= len(r.keySet) {
 				c.pc = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
+
 				actual.ImmutableKeys(false)
 			} else {
 				key := r.keySet[r.index]
+
 				if r.indexName != "" && r.indexName != "_" {
 					err = c.symbols.Set(r.indexName, key)
 				}
+
 				if err == nil && r.valueName != "" && r.valueName != "_" {
 					var value interface{}
+
 					ok := false
 					if value, ok, err = actual.Get(key); ok && err == nil {
 						err = c.symbols.Set(r.valueName, value)
@@ -186,11 +202,13 @@ func RangeNextImpl(c *Context, i interface{}) error {
 						err = c.symbols.Set(r.valueName, nil)
 					}
 				}
+
 				r.index++
 			}
 
 		case *datatypes.Channel:
 			var datum interface{}
+
 			if actual.IsEmpty() {
 				c.pc = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
@@ -203,6 +221,7 @@ func RangeNextImpl(c *Context, i interface{}) error {
 					if err == nil && r.valueName != "" && r.valueName != "_" {
 						err = c.symbols.Set(r.valueName, datum)
 					}
+
 					r.index++
 				} else {
 					c.pc = destination

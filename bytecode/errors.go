@@ -53,7 +53,9 @@ func (c *Context) NewError(msg string, args ...interface{}) *Error {
 	if msg == "" {
 		return nil
 	}
+
 	token := ""
+
 	if len(args) > 0 {
 		token = util.GetString(args[0])
 	}

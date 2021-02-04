@@ -76,6 +76,7 @@ func ShowAction(c *cli.Context) error {
 		if len(fmt.Sprintf("%v", v)) > 60 {
 			v = fmt.Sprintf("%v", v)[:60] + "..."
 		}
+
 		_ = t.AddRowItems(k, v)
 	}
 

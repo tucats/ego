@@ -32,6 +32,7 @@ func SymbolCreateImpl(c *Context, i interface{}) error {
 	if c.IsConstant(n) {
 		return c.NewError(ReadOnlyError)
 	}
+
 	err := c.Create(n)
 	if err != nil {
 		err = c.NewError(err.Error())
@@ -52,6 +53,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) error {
 		if _, found := sp.Get(n); found {
 			return nil
 		}
+
 		sp = sp.Parent
 	}
 
@@ -66,6 +68,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) error {
 // SymbolDeleteImpl instruction processor
 func SymbolDeleteImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
+
 	err := c.Delete(n)
 	if err != nil {
 		err = c.NewError(err.Error())
@@ -80,7 +83,9 @@ func ConstantImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	varname := util.GetString(i)
+
 	err = c.SetConstant(varname, v)
 	if err != nil {
 		return c.NewError(err.Error())

@@ -10,6 +10,7 @@ func TestValidKeyword(t *testing.T) {
 		test  string
 		valid []string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -63,6 +64,7 @@ func TestFindKeyword(t *testing.T) {
 		test  string
 		valid []string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -123,6 +125,7 @@ func TestValidateBoolean(t *testing.T) {
 	type args struct {
 		value string
 	}
+
 	tests := []struct {
 		name  string
 		args  args
@@ -199,6 +202,7 @@ func TestMakeList(t *testing.T) {
 	type args struct {
 		value string
 	}
+
 	tests := []struct {
 		name string
 		args args

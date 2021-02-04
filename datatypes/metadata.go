@@ -34,6 +34,7 @@ func SetMetadata(value interface{}, key string, v interface{}) bool {
 	if !ok {
 		return false
 	}
+
 	mdxx[key] = v
 
 	return true

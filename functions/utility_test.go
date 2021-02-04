@@ -11,6 +11,7 @@ func TestFunctionLen(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -64,6 +65,7 @@ func TestFunctionProfile(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -114,6 +116,7 @@ func TestFunctionSort(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -169,6 +172,7 @@ func TestFunctionMembers(t *testing.T) {
 	type args struct {
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -214,6 +218,7 @@ func TestReflect(t *testing.T) {
 		s    *symbols.SymbolTable
 		args []interface{}
 	}
+
 	tests := []struct {
 		name    string
 		args    args

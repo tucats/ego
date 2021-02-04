@@ -61,8 +61,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		for _, vs := range v {
 			values = append(values, vs)
 		}
+
 		parameterStruct[k] = values
 	}
+
 	_ = syms.SetAlways("_parms", parameterStruct)
 
 	// Other setup for REST service execution
@@ -167,6 +169,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 						oldestAge = thisAge
 					}
 				}
+
 				delete(serviceCache, key)
 				ui.Debug(ui.ServerLogger, "Endpoint %s aged out of cache", key)
 			}
@@ -183,6 +186,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Do we need to authenticate?
 	var authenticatedCredentials bool
+
 	user := ""
 	pass := ""
 	_ = syms.SetAlways("_token", "")
@@ -209,6 +213,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				authenticatedCredentials = validatePassword(user, pass)
 			}
+
 			_ = syms.SetAlways("_token", "")
 			_ = syms.SetAlways("_token_valid", false)
 
@@ -231,6 +236,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle built-ins and auto-import
 	compilerInstance.AddBuiltins("")
+
 	err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 	if err != nil {
 		fmt.Printf("Unable to auto-import packages: " + err.Error())
@@ -270,9 +276,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(status)
+
 	responseObject, authenticatedCredentials := syms.Get("_rest_response")
+
 	if authenticatedCredentials && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
+
 		_, _ = io.WriteString(w, string(byteBuffer))
 
 		ui.Debug(ui.ServerLogger, "STATUS %d, sending JSON response", status)

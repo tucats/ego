@@ -35,11 +35,14 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	for k, v := range u {
 		va := make([]interface{}, 0)
+
 		for _, vs := range v {
 			va = append(va, vs)
 		}
+
 		args[k] = va
 	}
+
 	_ = syms.SetAlways("_parms", args)
 
 	buf := new(bytes.Buffer)
@@ -52,6 +55,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	// Compile the token stream
 	comp := compiler.New().ExtensionsEnabled(true)
 	comp.LowercaseIdentifiers = persistence.GetBool(defs.CaseNormalizedSetting)
+
 	b, err := comp.Compile("code", t)
 	if err != nil {
 		w.WriteHeader(400)
@@ -59,10 +63,12 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Add the builtin functions
 		comp.AddBuiltins("")
+
 		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if err != nil {
 			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
+
 		comp.AddPackageToSymbols(syms)
 
 		// Run the compiled code

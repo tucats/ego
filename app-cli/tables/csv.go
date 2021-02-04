@@ -31,6 +31,7 @@ func CsvSplit(data string) []string {
 
 			continue
 		}
+
 		if !inQuote && c == ',' {
 			headings = append(headings, strings.TrimSpace(currentHeading.String()))
 			currentHeading.Reset()

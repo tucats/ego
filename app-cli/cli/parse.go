@@ -70,6 +70,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 			return nil
 		}
+
 		if option == "--" {
 			parametersOnly = true
 			helpVerb = false
@@ -87,6 +88,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		value = ""
 		hasValue := false
+
 		if equals := strings.Index(name, "="); equals >= 0 {
 			value = name[equals+1:]
 			name = name[:equals]
@@ -117,6 +119,7 @@ func (c *Context) parseGrammar(args []string) error {
 		if name != "" && location == nil {
 			return NewCLIError(UnknownOptionError, option)
 		}
+
 		// It could be a parameter, or a subcommand.
 		if location == nil {
 			// Is it a subcommand?
@@ -131,6 +134,7 @@ func (c *Context) parseGrammar(args []string) error {
 						break
 					}
 				}
+
 				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
 					// We're doing a subcommand! Create a new context that defines the
 					// next level down. It should include the current context information,
@@ -147,7 +151,6 @@ func (c *Context) parseGrammar(args []string) error {
 
 					subContext.Command = c.Command + entry.LongName + " "
 					subContext.Description = entry.Description
-
 					entry.Found = true
 					c.FindGlobal().ExpectedParameterCount = entry.ParametersExpected
 					c.FindGlobal().ParameterDescription = entry.ParameterDescription
@@ -180,6 +183,7 @@ func (c *Context) parseGrammar(args []string) error {
 					if currentArg >= lastArg {
 						return NewExitError("missing option value for "+name, ExitUsageError)
 					}
+
 					value = args[currentArg]
 					hasValue = true
 				}
@@ -189,12 +193,14 @@ func (c *Context) parseGrammar(args []string) error {
 			switch location.OptionType {
 			case KeywordType:
 				found := false
+
 				for _, validKeyword := range location.Keywords {
 					if strings.EqualFold(value, validKeyword) {
 						found = true
 						location.Value = validKeyword
 					}
 				}
+
 				if !found {
 					return NewCLIError(InvalidKeywordError, location.LongName, value)
 				}
@@ -207,6 +213,7 @@ func (c *Context) parseGrammar(args []string) error {
 				if !valid {
 					return NewCLIError(InvalidBooleanValueError, location.LongName, value)
 				}
+
 				location.Value = b
 
 			case StringType:
@@ -217,6 +224,7 @@ func (c *Context) parseGrammar(args []string) error {
 				if err != nil {
 					return err
 				}
+
 				location.Value = uuid.String()
 
 			case StringListType:
@@ -227,8 +235,10 @@ func (c *Context) parseGrammar(args []string) error {
 				if err != nil {
 					return NewCLIError(InvalidIntegerError, location.LongName, value)
 				}
+
 				location.Value = i
 			}
+
 			ui.Debug(ui.CLILogger, "Option value set to %#v", location.Value)
 
 			// After parsing the option value, if there is an action routine, call it
@@ -257,14 +267,17 @@ func (c *Context) parseGrammar(args []string) error {
 
 	if err == nil {
 		g := c.FindGlobal()
+
 		if g.ExpectedParameterCount == -99 {
 			ui.Debug(ui.CLILogger, "Parameters expected: <varying> found %d", g.GetParameterCount())
 		} else {
 			ui.Debug(ui.CLILogger, "Parameters expected: %d  found %d", g.ExpectedParameterCount, g.GetParameterCount())
 		}
+
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
 			return NewCLIError(UnexpectedParametersError)
 		}
+
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
 				return NewCLIError(TooManyParametersError)
@@ -283,6 +296,7 @@ func (c *Context) parseGrammar(args []string) error {
 		// there wasn't enough command to determine what to do, so show the help.
 		if c.Action != nil {
 			ui.Debug(ui.CLILogger, "Invoking command action")
+
 			err = c.Action(c)
 		} else {
 			ui.Debug(ui.CLILogger, "No command action was ever specified during parsing")

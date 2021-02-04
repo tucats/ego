@@ -34,6 +34,7 @@ func main() {
 	// status from the error, else a default General error.
 	if err != nil {
 		fmt.Printf("Error: %v\n", err.Error())
+
 		if e2, ok := err.(cli.ExitError); ok {
 			os.Exit(e2.ExitStatus)
 		}

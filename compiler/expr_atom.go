@@ -15,10 +15,12 @@ func (c *Compiler) expressionAtom() error {
 	if t == "make" && c.t.Peek(2) == "(" {
 		return c.Make()
 	}
+
 	// Is this a map declaration?
 	if t == "map" && c.t.Peek(2) == "[" {
 		return c.Map()
 	}
+
 	// Is this the "nil" constant?
 	if t == "nil" {
 		c.t.Advance(1)
@@ -86,6 +88,7 @@ func (c *Compiler) expressionAtom() error {
 	if t == "{" {
 		return c.parseStruct()
 	}
+
 	// If the token is a number, convert it
 	if i, err := strconv.Atoi(t); err == nil {
 		c.t.Advance(1)
@@ -118,6 +121,7 @@ func (c *Compiler) expressionAtom() error {
 
 		return err
 	}
+
 	if runeValue == "`" {
 		c.t.Advance(1)
 
@@ -127,6 +131,7 @@ func (c *Compiler) expressionAtom() error {
 
 		return err
 	}
+
 	if tokenizer.IsSymbol(t) {
 		c.t.Advance(1)
 
@@ -150,6 +155,7 @@ func (c *Compiler) expressionAtom() error {
 
 			return nil
 		}
+
 		if c.t.IsNext("{}") {
 			c.b.Emit(bytecode.Load, "new")
 			c.b.Emit(bytecode.Load, t)
@@ -263,6 +269,7 @@ func (c *Compiler) parseStruct() error {
 	var err error
 
 	c.t.Advance(1)
+
 	count := 0
 
 	for c.t.Peek(1) != listTerminator {

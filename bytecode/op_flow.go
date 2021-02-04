@@ -31,10 +31,12 @@ func StopImpl(c *Context, i interface{}) error {
 // to indicate if this is a fatal error that stops Ego, versus a user error.
 func PanicImpl(c *Context, i interface{}) error {
 	c.running = !util.GetBool(i)
+
 	strValue, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	msg := util.GetString(strValue)
 
 	return c.NewError(msg)
@@ -91,6 +93,7 @@ func BranchImpl(c *Context, i interface{}) error {
 	if address < 0 || address > c.bc.emitPos {
 		return c.NewError(InvalidBytecodeAddress)
 	}
+
 	c.pc = address
 
 	return nil
@@ -145,6 +148,7 @@ func GoImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		args[(argc-n)-1] = v
 	}
 
@@ -188,6 +192,7 @@ func CallImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		args[(argc-n)-1] = v
 	}
 
@@ -196,6 +201,7 @@ func CallImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if funcPointer == nil {
 		return c.NewError(InvalidFunctionCallError, "<nil>")
 	}
@@ -211,6 +217,7 @@ func CallImpl(c *Context, i interface{}) error {
 				parentTable = parentTable.Parent
 			}
 		}
+
 		funcSymbols := symbols.NewChildSymbolTable("function "+af.Name, parentTable)
 		funcSymbols.ScopeBoundary = true
 
@@ -219,6 +226,7 @@ func CallImpl(c *Context, i interface{}) error {
 		// visibility into the current scope of symbol values.
 		c.PushFrame("function "+af.Name, af, 0)
 		_ = c.SetAlways("__args", args)
+
 		if c.this != nil {
 			_ = c.SetAlways("__this", c.this)
 			c.this = nil
@@ -234,6 +242,7 @@ func CallImpl(c *Context, i interface{}) error {
 		// symbol stack without binding the scope to the parent of the current
 		// stack.
 		fullSymbolVisibility := c.fullSymbolScope
+
 		if df != nil {
 			fullSymbolVisibility = fullSymbolVisibility || df.FullScope
 		}
@@ -263,16 +272,19 @@ func CallImpl(c *Context, i interface{}) error {
 			_ = funcSymbols.SetAlways("__this", c.this)
 			c.this = nil
 		}
+
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
 			_ = c.Push(StackMarker{Desc: "multivalue result"})
+
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.Push(r.Value[i])
 			}
 
 			return nil
 		}
+
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if df != nil && df.ErrReturn {
@@ -290,6 +302,7 @@ func CallImpl(c *Context, i interface{}) error {
 			if name != "" {
 				name = " " + name
 			}
+
 			err = c.NewError("in function" + name + ", " + err.Error())
 		}
 
@@ -300,6 +313,7 @@ func CallImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if result != nil {
 		_ = c.Push(result)
 	}
@@ -340,8 +354,10 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 		if len(v) < 2 || len(v) > 3 {
 			return c.NewError(InvalidArgCheckError)
 		}
+
 		min = util.GetInt(v[0])
 		max = util.GetInt(v[1])
+
 		if len(v) == 3 {
 			name = util.GetString(v[2])
 		}
@@ -359,6 +375,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 		if len(v) != 2 {
 			return c.NewError(InvalidArgCheckError)
 		}
+
 		min = v[0]
 		max = v[1]
 
@@ -378,6 +395,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		_ = c.SetAlways(thisName, this)
 		c.this = nil
 	}

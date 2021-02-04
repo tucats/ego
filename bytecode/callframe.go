@@ -107,8 +107,9 @@ func (c *Context) FormatFrames(maxDepth int) string {
 		if frame, ok := fx.(CallFrame); ok {
 			r = r + fmt.Sprintf("from: %12s  (%s)\n",
 				formatLocation(frame.Module, frame.Line), frame.Symbols.Name)
-			depth++
 			f = frame.FP
+
+			depth++
 		} else {
 			break
 		}

@@ -15,6 +15,7 @@ func (c *Compiler) Try() error {
 	if err != nil {
 		return err
 	}
+
 	b2 := c.b.Mark()
 
 	c.b.Emit(bytecode.Branch, 0)

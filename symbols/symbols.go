@@ -81,6 +81,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	if !f {
 		v, f = s.Constants[name]
 	}
+
 	constLock.Unlock()
 
 	if !f && s.Parent != nil {
@@ -124,6 +125,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 			syms = syms.Parent
 		}
 	}
+
 	// See if it's in the current constants table.
 	if syms.IsConstant(name) {
 		return s.NewError(ReadOnlyValueError, name)
@@ -230,6 +232,7 @@ func (s *SymbolTable) Create(name string) error {
 	if found {
 		return s.NewError(SymbolExistsError, name)
 	}
+
 	s.Symbols[name] = nil
 
 	return nil
@@ -239,7 +242,9 @@ func (s *SymbolTable) Create(name string) error {
 func (s *SymbolTable) IsConstant(name string) bool {
 	if s.Constants != nil {
 		constLock.Lock()
+
 		_, found := s.Constants[name]
+
 		constLock.Unlock()
 
 		if found {

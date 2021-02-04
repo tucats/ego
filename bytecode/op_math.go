@@ -38,9 +38,11 @@ func NegateImpl(c *Context, i interface{}) error {
 	case []interface{}:
 		// Create an array in inverse order
 		r := make([]interface{}, len(value))
+
 		for n, d := range value {
 			r[len(value)-n-1] = d
 		}
+
 		_ = c.Push(r)
 
 	default:
@@ -60,6 +62,7 @@ func AddImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
@@ -76,6 +79,7 @@ func AddImpl(c *Context, i interface{}) error {
 			// array.
 			if c.Static {
 				arrayType := reflect.TypeOf(vx[0])
+
 				for _, vv := range vy {
 					if arrayType != reflect.TypeOf(vv) {
 						return c.NewError(InvalidTypeError)
@@ -111,6 +115,7 @@ func AddImpl(c *Context, i interface{}) error {
 		// All other types are scalar math
 	default:
 		v1, v2 = util.Normalize(v1, v2)
+
 		switch v1.(type) {
 		case int:
 			return c.Push(v1.(int) + v2.(int))
@@ -136,6 +141,7 @@ func AndImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -150,6 +156,7 @@ func OrImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -167,6 +174,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
@@ -188,6 +196,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 	// Everything else is a scalar subtraction
 	default:
 		v1, v2 = util.Normalize(v1, v2)
+
 		switch v1.(type) {
 		case int:
 			return c.Push(v1.(int) - v2.(int))
@@ -212,12 +221,14 @@ func MultiplyImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
+
 	switch v1.(type) {
 	case int:
 		return c.Push(v1.(int) * v2.(int))
@@ -239,20 +250,24 @@ func ExponentImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
+
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {
 			return c.Push(0)
 		}
+
 		if v2.(int) == 1 {
 			return c.Push(v1)
 		}
+
 		prod := v1.(int)
 
 		for n := 2; n <= v2.(int); n = n + 1 {
@@ -274,16 +289,19 @@ func DivideImpl(c *Context, i interface{}) error {
 	if c.sp < 1 {
 		return c.NewError(StackUnderflowError)
 	}
+
 	v2, err := c.Pop()
 	if err != nil {
 		return err
 	}
+
 	v1, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
+
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {

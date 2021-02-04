@@ -93,6 +93,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 			break
 		}
 	}
+
 	if isLvalueList {
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == "<-" {
@@ -138,6 +139,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 	for c.t.Peek(1) == "." || c.t.Peek(1) == "[" {
 		if needLoad {
 			bc.Emit(bytecode.Load, name)
+
 			needLoad = false
 		}
 

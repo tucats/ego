@@ -63,6 +63,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 
 				t.Advance(-1)
 			}
+
 			line, err = strconv.Atoi(t.Next())
 			if err == nil {
 				err = breakAtLine(name, line)

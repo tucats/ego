@@ -176,6 +176,7 @@ func TestAction(c *cli.Context) error {
 // ReadDirectory reads all the files in a directory into a single string.
 func ReadDirectory(name string) (string, error) {
 	var b strings.Builder
+
 	dirname := name
 
 	fi, err := ioutil.ReadDir(dirname)

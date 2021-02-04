@@ -56,7 +56,9 @@ func StoreChanImpl(c *Context, i interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	sourceChan := false
+
 	if _, ok := v.(*datatypes.Channel); ok {
 		sourceChan = true
 	}
@@ -65,6 +67,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 	// already known to be a channel, then create this variable (with a nil value)
 	// so it can receive the channel info regardless of its type
 	varname := util.GetString(i)
+
 	x, ok := c.Get(varname)
 	if !ok {
 		if sourceChan {

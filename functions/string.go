@@ -38,6 +38,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	for _, ch := range v {
 		if count < p {
 			b.WriteRune(ch)
+
 			count++
 		} else {
 			break
@@ -90,6 +91,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	case datatypes.EgoMap:
 		_, found, err := arg.Get(args[1])
+
 		return found, err
 
 	case map[string]interface{}:
@@ -109,13 +111,13 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Substring implements the substring() function
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := util.GetString(args[0])
-	p1 := util.GetInt(args[1]) // Starting character position
-	p2 := util.GetInt(args[2]) // Number of characters
 
+	p1 := util.GetInt(args[1]) // Starting character position
 	if p1 < 1 {
 		p1 = 1
 	}
 
+	p2 := util.GetInt(args[2]) // Number of characters
 	if p2 == 0 {
 		return "", nil
 	}
@@ -132,6 +134,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	}
 
 	var b strings.Builder
+
 	pos := 1
 
 	for _, ch := range v {
@@ -142,6 +145,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 		if pos >= p1 {
 			b.WriteRune(ch)
 		}
+
 		pos++
 	}
 
@@ -231,12 +235,14 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return nil, NewError("template", ArgumentCountError)
 	}
+
 	tree, ok := args[0].(*template.Template)
 	if !ok {
 		return nil, NewError("string", InvalidTypeError)
 	}
 
 	root := tree.Tree.Root
+
 	for _, n := range root.Nodes {
 		//fmt.Printf("Node[%2d]: %#v\n", i, n)
 		if n.Type() == tparse.NodeTemplate {
@@ -246,10 +252,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			if !ok {
 				return nil, NewError("template", InvalidTemplateNameError, templateNode.Name)
 			}
+
 			t, ok := tv.(*template.Template)
 			if !ok {
 				return nil, NewError("template", InvalidTypeError, templateNode.Name)
 			}
+
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
 			if err != nil {
 				return nil, err
@@ -271,9 +279,11 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := util.GetString(args[0])
 	maxWidth := util.GetInt(args[1])
+
 	if len(name) <= maxWidth {
 		return name, nil
 	}
+
 	result := name
 	chars := 0
 	limit := maxWidth - 3 // name + `...`

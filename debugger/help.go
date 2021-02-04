@@ -33,6 +33,7 @@ func Help() error {
 
 	if err == nil {
 		fmt.Println("Commands:")
+
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(3)
 		_ = table.SetOrderBy("Command")
 		_ = table.Print("text")
