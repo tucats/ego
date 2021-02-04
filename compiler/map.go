@@ -79,7 +79,8 @@ func (c *Compiler) ParseType() int {
 		found := true
 
 		for pos, token := range typeDef.Tokens {
-			if c.t.Peek(1+pos) != token {
+			eval := c.t.Peek(1 + pos)
+			if eval != token {
 				found = false
 			}
 		}

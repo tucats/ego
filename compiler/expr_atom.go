@@ -175,64 +175,89 @@ func (c *Compiler) parseArray() error {
 
 	var listTerminator = ""
 
-	if c.t.Peek(1) == "(" {
-		listTerminator = ")"
-	} else {
-		if c.t.Peek(1) == "[" {
-			listTerminator = "]"
+	// Lets see if this is a type name. Remember where
+	// we came from, and back up over the previous "["
+	// already parsed in the expression atom.
+	marker := c.t.Mark()
+
+	//c.t.Advance(-1)
+
+	kind := c.ParseType()
+	if kind != datatypes.UndefinedType {
+		if kind >= datatypes.ArrayType {
+			kind = kind - datatypes.ArrayType
+		} else {
+			return c.NewError(InvalidTypeNameError)
 		}
+		if !c.t.IsNext("{") {
+			return c.NewError(MissingBlockError)
+		}
+
+		listTerminator = "}"
+	} else {
+		c.t.Set(marker)
+
+		if c.t.Peek(1) == "(" {
+			listTerminator = ")"
+		} else {
+			if c.t.Peek(1) == "[" {
+				listTerminator = "]"
+			}
+		}
+		c.t.Advance(1)
+
+		// Let's experimenally see if this is a range constant expression. This can be
+		// of the form [start:end] which creates an array of integers between the start
+		// and end values (inclusive). It can also be of the form [:end] which assumes
+		// a start number of 1.
+
+		t1 := 1
+
+		if c.t.Peek(1) == ":" {
+			err = nil
+
+			c.t.Advance(-1)
+		} else {
+			t1, err = strconv.Atoi(c.t.Peek(1))
+		}
+
+		if err == nil {
+			if c.t.Peek(2) == ":" {
+				t2, err := strconv.Atoi(c.t.Peek(3))
+				if err == nil {
+					c.t.Advance(3)
+
+					count := t2 - t1 + 1
+					if count < 0 {
+						count = (-count) + 2
+
+						for n := t1; n >= t2; n = n - 1 {
+							c.b.Emit(bytecode.Push, n)
+						}
+					} else {
+						for n := t1; n <= t2; n = n + 1 {
+							c.b.Emit(bytecode.Push, n)
+						}
+					}
+
+					c.b.Emit(bytecode.Array, count)
+
+					if !c.t.IsNext("]") {
+						return c.NewError(InvalidRangeError)
+					}
+
+					return nil
+				}
+			}
+		}
+
 	}
 
 	if listTerminator == "" {
 		return nil
 	}
 
-	c.t.Advance(1)
-
 	count := 0
-	t1 := 1
-
-	// Let's experimenally see if this is a range constant expression. This can be
-	// of the form [start:end] which creates an array of integers between the start
-	// and end values (inclusive). It can also be of the form [:end] which assumes
-	// a start number of 1.
-	if c.t.Peek(1) == ":" {
-		err = nil
-
-		c.t.Advance(-1)
-	} else {
-		t1, err = strconv.Atoi(c.t.Peek(1))
-	}
-
-	if err == nil {
-		if c.t.Peek(2) == ":" {
-			t2, err := strconv.Atoi(c.t.Peek(3))
-			if err == nil {
-				c.t.Advance(3)
-
-				count := t2 - t1 + 1
-				if count < 0 {
-					count = (-count) + 2
-
-					for n := t1; n >= t2; n = n - 1 {
-						c.b.Emit(bytecode.Push, n)
-					}
-				} else {
-					for n := t1; n <= t2; n = n + 1 {
-						c.b.Emit(bytecode.Push, n)
-					}
-				}
-
-				c.b.Emit(bytecode.Array, count)
-
-				if !c.t.IsNext("]") {
-					return c.NewError(InvalidRangeError)
-				}
-
-				return nil
-			}
-		}
-	}
 
 	for c.t.Peek(1) != listTerminator {
 		err := c.conditional()
@@ -240,6 +265,9 @@ func (c *Compiler) parseArray() error {
 			return err
 		}
 
+		if kind != datatypes.UndefinedType {
+			c.b.Emit(bytecode.Coerce, kind)
+		}
 		count = count + 1
 
 		if c.t.AtEnd() {

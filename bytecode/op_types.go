@@ -139,7 +139,7 @@ func CoerceImpl(c *Context, i interface{}) error {
 			return c.NewError(InvalidTypeError)
 		}
 
-	case datatypes.UndefinedType:
+	case datatypes.InterfaceType, datatypes.UndefinedType:
 		// No work at all to do here.
 
 	default:
