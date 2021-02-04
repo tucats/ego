@@ -349,7 +349,19 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return "bool", nil
 
 	case []interface{}:
-		return "array", nil
+		kind := datatypes.UndefinedType
+		for _, n := range v {
+			k2 := datatypes.TypeOf(n)
+			if kind != k2 {
+				if kind == datatypes.UndefinedType {
+					kind = k2
+				} else {
+					kind = datatypes.InterfaceType
+				}
+			}
+
+		}
+		return datatypes.TypeString(kind + datatypes.ArrayType), nil
 
 	case map[string]interface{}:
 		// IF the parent is a string instead of a map, this is the actual type object

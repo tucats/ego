@@ -96,6 +96,33 @@ var TypeDeclarationMap = []TypeDefinition{
 	},
 }
 
+func TypeOf(i interface{}) int {
+	switch i.(type) {
+	case int:
+		return IntType
+
+	case float32, float64:
+		return FloatType
+
+	case string:
+		return StringType
+
+	case bool:
+		return BoolType
+
+	case map[string]interface{}:
+		return StructType
+
+	case *EgoMap:
+		return MapType
+
+	case *Channel:
+		return ChanType
+	default:
+		return InterfaceType
+	}
+}
+
 func TypeString(kind int) string {
 	r := "interface{}"
 
