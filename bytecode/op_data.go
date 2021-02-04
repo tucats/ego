@@ -11,7 +11,7 @@ import (
 *                                         *
 \******************************************/
 
-// StoreImpl instruction processor
+// StoreImpl instruction processor.
 func StoreImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
@@ -49,9 +49,9 @@ func StoreImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// StoreChan instruction processor
+// StoreChan instruction processor.
 func StoreChanImpl(c *Context, i interface{}) error {
-	// Get the value on the stack, and determine if it is a channel or a datum
+	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 
 	// Get the name that is to be used on the other side. If the other item is
 	// already known to be a channel, then create this variable (with a nil value)
-	// so it can receive the channel info regardless of its type
+	// so it can receive the channel info regardless of its type.
 	varname := util.GetString(i)
 
 	x, ok := c.Get(varname)
@@ -109,7 +109,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// StoreGlobalImpl instruction processor
+// StoreGlobalImpl instruction processor.
 func StoreGlobalImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
@@ -139,7 +139,7 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// StoreAlwaysImpl instruction processor
+// StoreAlwaysImpl instruction processor.
 func StoreAlwaysImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
@@ -169,7 +169,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// LoadImpl instruction processor
+// LoadImpl instruction processor.
 func LoadImpl(c *Context, i interface{}) error {
 	name := util.GetString(i)
 	if len(name) == 0 {

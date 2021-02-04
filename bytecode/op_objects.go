@@ -156,7 +156,7 @@ func searchParents(mv map[string]interface{}, name string) (interface{}, bool) {
 	return nil, false
 }
 
-// ThisImpl implements the This opcode
+// ThisImpl implements the This opcode.
 func ThisImpl(c *Context, i interface{}) error {
 	if i == nil {
 		c.this = c.lastStruct

@@ -18,10 +18,10 @@ const (
 	// by the global option --output-type, etc.
 	DefaultTableFormat = "default"
 
-	// TextTableFormat indicates the output format should be human-readable text
+	// TextTableFormat indicates the output format should be human-readable text.
 	TextFormat = "text"
 
-	// JSONTableFormat indicates the output format should be machine-readable JSON
+	// JSONTableFormat indicates the output format should be machine-readable JSON.
 	JSONFormat = "json"
 
 	// JSONIndentedTableFormat indicates JSON output that is indented for readability.
@@ -60,7 +60,7 @@ const (
 	DBLogger       = "DB"
 )
 
-// Loggers is a map of the names of logging modes that are enabled
+// Loggers is a map of the names of logging modes that are enabled.
 var Loggers = map[string]bool{
 	DebugLogger:    false,
 	CLILogger:      false,
@@ -73,7 +73,7 @@ var Loggers = map[string]bool{
 	DBLogger:       false,
 }
 
-// SetLogger enables or disables a logger
+// SetLogger enables or disables a logger.
 func SetLogger(logger string, mode bool) bool {
 	if _, ok := Loggers[logger]; !ok {
 		return false
@@ -100,13 +100,13 @@ func Debug(logger string, format string, args ...interface{}) {
 	}
 }
 
-// Log displays a message to stdout
+// Log displays a message to stdout.
 func Log(class string, format string, args ...interface{}) {
 	s := LogMessage(class, format, args...)
 	fmt.Println(s)
 }
 
-// LogMessage displays a message to stdout
+// LogMessage displays a message to stdout.
 func LogMessage(class string, format string, args ...interface{}) string {
 	s := fmt.Sprintf(format, args...)
 
@@ -121,7 +121,7 @@ func LogMessage(class string, format string, args ...interface{}) string {
 	return s
 }
 
-// Say displays a message to the user unless we are in "quiet" mode
+// Say displays a message to the user unless we are in "quiet" mode.
 func Say(format string, args ...interface{}) {
 	if !QuietMode {
 		s := fmt.Sprintf(format, args...)

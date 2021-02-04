@@ -1,6 +1,6 @@
 package datatypes
 
-// Common metadata keys
+// Common metadata keys.
 const (
 	MetadataKey = "__metadata"
 

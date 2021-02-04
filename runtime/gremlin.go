@@ -67,7 +67,7 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.UnsafePointer: "unsafe ptr",
 }
 
-// GremlinOpen opens a gremlin connetion and stores it in the result value
+// GremlinOpen opens a gremlin connetion and stores it in the result value.
 func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var username, password string
 
@@ -111,7 +111,7 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	}, err
 }
 
-// GremlinQuery executes a string query against an open client
+// GremlinQuery executes a string query against an open client.
 func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getGremlinClient(symbols)
 	if err != nil {
@@ -253,7 +253,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return string(bytes), err
 }
 
-// Table generates a string describing a rectangular result map
+// Table generates a string describing a rectangular result map.
 func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.New(defs.IncorrectArgumentCount)
@@ -467,7 +467,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	return rv, nil
 }
 
-// Utility functions for Gremlin support
+// Utility functions for Gremlin support.
 func gremlinResult(str string) (interface{}, error) {
 	var r interface{}
 

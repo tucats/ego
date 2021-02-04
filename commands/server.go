@@ -26,7 +26,7 @@ import (
 // String written at the start of each new log file.
 const logHeader = "*** Log file initialized %s ***\n"
 
-// Detach starts the sever as a detached process
+// Detach starts the sever as a detached process.
 func Start(c *cli.Context) error {
 	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
@@ -174,7 +174,7 @@ func Start(c *cli.Context) error {
 	return err
 }
 
-// Stop stops a running server if it exists
+// Stop stops a running server if it exists.
 func Stop(c *cli.Context) error {
 	var proc *os.Process
 
@@ -194,7 +194,7 @@ func Stop(c *cli.Context) error {
 	return err
 }
 
-// Status displays the status of a running server if it exists
+// Status displays the status of a running server if it exists.
 func Status(c *cli.Context) error {
 	running := false
 	msg := "Server not running"

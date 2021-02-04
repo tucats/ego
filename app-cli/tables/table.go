@@ -1,27 +1,18 @@
 package tables
 
 const (
-	// AlignmentLeft aligns the column to the left
+	// AlignmentLeft aligns the column to the left.
 	AlignmentLeft = -1
 
-	// AlignmentRight aligns the column to the right
+	// AlignmentRight aligns the column to the right.
 	AlignmentRight = 1
 
-	// AlignmentCenter aligns the column to the center
+	// AlignmentCenter aligns the column to the center.
 	AlignmentCenter = 0
 )
 
-// Table is the wrapper object around a table to be printed
+// Table is the wrapper object around a table to be printed.
 type Table struct {
-	showUnderlines bool
-	showHeadings   bool
-	showRowNumbers bool
-	rowLimit       int
-	startingRow    int
-	columnCount    int
-	rowCount       int
-	orderBy        int
-	ascending      bool
 	rows           [][]string
 	columns        []string
 	alignment      []int
@@ -30,9 +21,18 @@ type Table struct {
 	spacing        string
 	indent         string
 	where          string
+	rowLimit       int
+	startingRow    int
+	columnCount    int
+	rowCount       int
+	orderBy        int
+	ascending      bool
+	showUnderlines bool
+	showHeadings   bool
+	showRowNumbers bool
 }
 
-// New creates a new table object, given a list of headings
+// New creates a new table object, given a list of headings.
 func New(headings []string) (*Table, error) {
 	t := &Table{}
 

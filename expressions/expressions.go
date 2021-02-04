@@ -99,7 +99,7 @@ func (e *Expression) Disasm() {
 	e.b.Disasm()
 }
 
-// GetBytecode returns the active bytecode for the expression
+// GetBytecode returns the active bytecode for the expression.
 func (e *Expression) GetBytecode() *bytecode.ByteCode {
 	return e.b
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// Structure of an Ego channel wrapper around Go channels
+// Structure of an Ego channel wrapper around Go channels.
 type Channel struct {
 	channel chan interface{}
 	mutex   sync.Mutex
@@ -89,7 +89,7 @@ func (c *Channel) IsOpen() bool {
 
 // IsEmpty checks to see if a channel has been drained (i.e. it is
 // closed and there are no more items). This is used by the len()
-// function, for example
+// function, for example.
 func (c *Channel) IsEmpty() bool {
 	return !c.isOpen && c.count == 0
 }
@@ -99,7 +99,7 @@ func (c *Channel) GetSize() int {
 }
 
 // Close the channel so no more sends are permitted to the channel, and
-// the receiver can test for channel completion
+// the receiver can test for channel completion.
 func (c *Channel) Close() bool {
 	c.mutex.Lock()
 

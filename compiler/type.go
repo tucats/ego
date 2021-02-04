@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Type compiles a type statement
+// Type compiles a type statement.
 func (c *Compiler) Type() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {

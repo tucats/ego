@@ -16,7 +16,7 @@ import (
 
 const fileMemberName = "file"
 
-// OpenFile opens a file
+// OpenFile opens a file.
 func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var mask os.FileMode = 0644
 
@@ -104,7 +104,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	return nil, NewError(fn, InvalidFileIdentifierError)
 }
 
-// Close closes a file
+// Close closes a file.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.New(ArgumentCountError)
@@ -159,7 +159,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return MultiValueReturn{Value: []interface{}{scanner.Text(), err}}, err
 }
 
-// WriteString writes a string value to a file
+// WriteString writes a string value to a file.
 func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New(ArgumentCountError)
@@ -175,7 +175,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
-// Write writes an arbitrary binary object to a file
+// Write writes an arbitrary binary object to a file.
 func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.New(ArgumentCountError)
@@ -201,7 +201,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
-// Write writes an arbitrary binary object to a file at an offset
+// Write writes an arbitrary binary object to a file at an offset.
 func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
 

@@ -12,7 +12,7 @@ import (
 )
 
 // ProfileDirectory is the name of the invisible directory that is created
-// in the user's home directory to host configuration data
+// in the user's home directory to host configuration data.
 const ProfileDirectory = ".org.fernwood"
 
 // ProfileFile is the name of the configuration file that contains the
@@ -20,10 +20,10 @@ const ProfileDirectory = ".org.fernwood"
 var ProfileFile = "config.json"
 
 // ProfileName is the name of the configuration being used. The default
-// configuration is always named "default"
+// configuration is always named "default".
 var ProfileName = "default"
 
-// Configuration describes what is known about a configuration
+// Configuration describes what is known about a configuration.
 type Configuration struct {
 	Description string            `json:"description,omitempty"`
 	ID          string            `json:"id,omitempty"`
@@ -33,7 +33,7 @@ type Configuration struct {
 // CurrentConfiguration describes the current configuration that is active.
 var CurrentConfiguration *Configuration
 
-// explicitValues contains overridden default values
+// explicitValues contains overridden default values.
 var explicitValues = Configuration{Description: "overridden defaults", Items: map[string]string{}}
 
 // ProfileDirty is set to true when a key value is written or deleted, which
@@ -161,7 +161,7 @@ func UseProfile(name string) {
 	CurrentConfiguration = &c
 }
 
-// Set puts a profile entry in the current Configuration structure
+// Set puts a profile entry in the current Configuration structure.
 func Set(key string, value string) {
 	explicitValues.Items[key] = value
 	c := getCurrentConfiguration()
@@ -183,7 +183,7 @@ func SetDefault(key string, value string) {
 // Get gets a profile entry in the current configuration structure.
 // If the key does not exist, an empty string is returned.
 func Get(key string) string {
-	// First, search the default values that be explicitly set
+	// First, search the default values that be explicitly set.
 	v, found := explicitValues.Items[key]
 	if !found {
 		c := getCurrentConfiguration()
@@ -248,7 +248,7 @@ func Keys() []string {
 	return result
 }
 
-// Exists test to see if a key value exists or not
+// Exists test to see if a key value exists or not.
 func Exists(key string) bool {
 	_, exists := explicitValues.Items[key]
 	if !exists {

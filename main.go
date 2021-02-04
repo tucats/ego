@@ -11,18 +11,19 @@ import (
 
 // BuildVersion is the incremental build version that is
 // injected into the version number string by the build
-// script
+// script.
 var BuildVersion = "0"
 
+// Copyright is the copyright string for this application
+var Copyright = "(C) Copyright Tom Cole 2020, 2021"
+
 func main() {
-	app := app.New("ego: execute code in the Ego language")
-
-	// Use the build number from the externally-generated build processor.
 	buildVer, _ := strconv.Atoi(BuildVersion)
-	app.SetVersion(1, 1, buildVer)
-	app.SetCopyright("(C) Copyright Tom Cole 2020, 2021")
+	app := app.New("ego: execute code in the Ego language").
+		SetVersion(1, 1, buildVer).
+		SetCopyright(Copyright)
 
-	// fF there aren't any arguments, default to "run"
+	// If there aren't any arguments, default to "run".
 	args := os.Args
 	if len(args) == 1 {
 		args = append(args, "run")

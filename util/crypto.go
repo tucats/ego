@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-// Encrypt encrypts a string using a password
+// Encrypt encrypts a string using a password.
 func Encrypt(data, password string) (string, error) {
 	b, err := encrypt([]byte(data), password)
 	if err != nil {
@@ -19,7 +19,7 @@ func Encrypt(data, password string) (string, error) {
 	return string(b), nil
 }
 
-// Decrypt decrypts a string using a password
+// Decrypt decrypts a string using a password.
 func Decrypt(data, password string) (string, error) {
 	b, err := decrypt([]byte(data), password)
 	if err != nil {

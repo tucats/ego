@@ -6,15 +6,6 @@ import (
 
 func TestTable_FormatJSON(t *testing.T) {
 	type fields struct {
-		showUnderlines bool
-		showHeadings   bool
-		showRowNumbers bool
-		rowLimit       int
-		startingRow    int
-		columnCount    int
-		rowCount       int
-		orderBy        int
-		ascending      bool
 		rows           [][]string
 		columns        []string
 		alignment      []int
@@ -22,6 +13,15 @@ func TestTable_FormatJSON(t *testing.T) {
 		columnOrder    []int
 		spacing        string
 		indent         string
+		rowLimit       int
+		startingRow    int
+		columnCount    int
+		rowCount       int
+		orderBy        int
+		ascending      bool
+		showUnderlines bool
+		showHeadings   bool
+		showRowNumbers bool
 	}
 
 	tests := []struct {

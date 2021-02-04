@@ -7,9 +7,10 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// ResolveEnvironmentVariables searches the grammar tree backwards
-// looking for options that can be specified by an environment
-// variable, and marking those found as needed.
+// ResolveEnvironmentVariables searches the grammar tree backwards looking
+// for options that can be specified by an environment variable, and
+// marking those found as needed. This is done after the command line
+// options are processed, to provide defaults for un-specified options.
 func (c *Context) ResolveEnvironmentVariables() error {
 	var err error
 

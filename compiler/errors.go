@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Error contains an error generated from the compiler
+// Error contains an error generated from the compiler.
 type Error struct {
 	text   string
 	pkg    string
@@ -65,7 +65,7 @@ const (
 	WrongModeError                 = "directive invalid for mode"
 )
 
-// NewError generates a new compiler error
+// NewError generates a new compiler error.
 func (c *Compiler) NewError(msg string, args ...interface{}) *Error {
 	p := c.t.TokenP
 	if p < 0 {

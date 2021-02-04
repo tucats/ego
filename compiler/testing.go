@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Test compiles the @test directive
+// Test compiles the @test directive.
 func (c *Compiler) Test() error {
 	_ = c.modeCheck("test", true)
 
@@ -54,7 +54,7 @@ func (c *Compiler) Test() error {
 	return nil
 }
 
-// TestAssert implements the T.assert() function
+// TestAssert implements the T.assert() function.
 func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("assert", functions.ArgumentCountError)
@@ -100,7 +100,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return true, nil
 }
 
-// TestIsType implements the T.assert() function
+// TestIsType implements the T.assert() function.
 func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
 		return nil, functions.NewError("istype", functions.ArgumentCountError)
@@ -163,7 +163,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, fmt.Errorf("%s in %s", msg, name)
 }
 
-// TestNil implements the T.Nil() function
+// TestNil implements the T.Nil() function.
 func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("Nil", functions.ArgumentCountError)
@@ -176,7 +176,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return args[0] == nil, nil
 }
 
-// TestNotNil implements the T.NotNil() function
+// TestNotNil implements the T.NotNil() function.
 func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("NotNil", functions.ArgumentCountError)
@@ -189,7 +189,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return args[0] != nil, nil
 }
 
-// TestTrue implements the T.True() function
+// TestTrue implements the T.True() function.
 func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("True", functions.ArgumentCountError)
@@ -202,7 +202,7 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.GetBool(args[0]), nil
 }
 
-// TestFalse implements the T.False() function
+// TestFalse implements the T.False() function.
 func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, functions.NewError("False", functions.ArgumentCountError)
@@ -215,7 +215,7 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return !util.GetBool(args[0]), nil
 }
 
-// TestEqual implements the T.Equal() function
+// TestEqual implements the T.Equal() function.
 func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
 		return nil, functions.NewError("Equal", functions.ArgumentCountError)
@@ -230,7 +230,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return b, nil
 }
 
-// TestNotEqual implements the T.NotEqual() function
+// TestNotEqual implements the T.NotEqual() function.
 func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
 		return nil, functions.NewError("NotEqual", functions.ArgumentCountError)
@@ -245,7 +245,7 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return b, nil
 }
 
-// Assert implements the @assert directive
+// Assert implements the @assert directive.
 func (c *Compiler) Assert() error {
 	_ = c.modeCheck("test", true)
 	c.b.Emit(bytecode.Load, "T")
@@ -265,7 +265,7 @@ func (c *Compiler) Assert() error {
 	return nil
 }
 
-// Fail implements the @fail directive
+// Fail implements the @fail directive.
 func (c *Compiler) Fail() error {
 	_ = c.modeCheck("test", true)
 
@@ -286,7 +286,7 @@ func (c *Compiler) Fail() error {
 	return nil
 }
 
-// TestPass implements the @pass directive
+// TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test", true)
 	c.b.Emit(bytecode.Push, "PASS: ")

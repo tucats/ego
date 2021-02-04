@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// ReaderInstance is the readline Instance used for console input
+// ReaderInstance is the readline Instance used for console input.
 var consoleReader *readline.Instance
 var consoleLock sync.Mutex
 

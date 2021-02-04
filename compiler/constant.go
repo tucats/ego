@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Constant compiles a constant block
+// Constant compiles a constant block.
 func (c *Compiler) Constant() error {
 	terminator := ""
 

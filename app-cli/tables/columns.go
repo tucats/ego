@@ -19,7 +19,7 @@ func (t *Table) FindColumn(name string) (int, bool) {
 
 // GetHeadings returns an array of the headings already stored
 // in the table. This can be used to validate a name against
-// the list of headings, for example
+// the list of headings, for example.
 func (t *Table) GetHeadings() []string {
 	return t.columns
 }

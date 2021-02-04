@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Runtime error messages
+// Runtime error messages.
 const (
 	ArgumentCountError            = "incorrect function argument count"
 	ArgumentTypeError             = "incorrect function argument type"
@@ -39,14 +39,14 @@ const (
 	UnknownMemberError            = "unknown structure member"
 )
 
-// Error contains an error generated from the execution context
+// Error contains an error generated from the execution context.
 type Error struct {
 	text   string
 	module string
 	token  string
 }
 
-// NewError generates a new error
+// NewError generates a new error.
 func NewError(fn, msg string, args ...interface{}) *Error {
 	token := ""
 	if len(args) > 0 {

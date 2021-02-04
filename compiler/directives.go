@@ -92,7 +92,7 @@ func (c *Compiler) Global() error {
 	return nil
 }
 
-// Log parses the @log directive
+// Log parses the @log directive.
 func (c *Compiler) Log() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
@@ -120,7 +120,7 @@ func (c *Compiler) Log() error {
 }
 
 // RestStatus parses the @status directive which sets a symbol
-// value in the root symbol table with the REST calls tatus value
+// value in the root symbol table with the REST calls tatus value.
 func (c *Compiler) RestStatus() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
@@ -165,7 +165,7 @@ func (c *Compiler) Authenticated() error {
 	return nil
 }
 
-// RestResponse processes the @response directive
+// RestResponse processes the @response directive.
 func (c *Compiler) RestResponse() error {
 	if c.t.AtEnd() {
 		return c.NewError(InvalidSymbolError)
@@ -184,7 +184,7 @@ func (c *Compiler) RestResponse() error {
 	return nil
 }
 
-// Template implements the template compiler directive
+// Template implements the template compiler directive.
 func (c *Compiler) Template() error {
 	// Get the template name
 	name := c.t.Next()
@@ -208,7 +208,7 @@ func (c *Compiler) Template() error {
 	return nil
 }
 
-// Error implements the @error directive
+// Error implements the @error directive.
 func (c *Compiler) Error() error {
 	if !c.atStatementEnd() {
 		code, err := c.Expression()

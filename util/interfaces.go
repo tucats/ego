@@ -9,7 +9,7 @@ import (
 )
 
 // GetMap extracts a struct from an abstract interface. Returns nil
-// if the interface did not contain a struct/map
+// if the interface did not contain a struct/map.
 func GetMap(v interface{}) map[string]interface{} {
 	if m, ok := v.(map[string]interface{}); ok {
 		return m
@@ -19,7 +19,7 @@ func GetMap(v interface{}) map[string]interface{} {
 }
 
 // GetArray extracts a struct from an abstract interface. Returns nil
-// if the interface did not contain a struct/map
+// if the interface did not contain a struct/map.
 func GetArray(v interface{}) []interface{} {
 	if m, ok := v.([]interface{}); ok {
 		return m
@@ -257,7 +257,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 }
 
 // Normalize accepts two different values and promotes them to
-// the most compatable format
+// the most compatable format.
 func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 	switch v1.(type) {
 	case nil:
@@ -346,7 +346,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 			return fmt.Sprintf("%v", v1.(int64)), v2
 
 		case int:
-			return int64(v1.(int64)), int64(vv)
+			return v1.(int64), int64(vv)
 
 		case int64:
 			return v1, v2
@@ -393,7 +393,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 	return v1, v2
 }
 
-// CoerceType will coerce an interface to a given type by name
+// CoerceType will coerce an interface to a given type by name.
 func CoerceType(v interface{}, typeName string) interface{} {
 	switch typeName {
 	case "int":

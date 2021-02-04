@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Int implements the int() function
+// Int implements the int() function.
 func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if v := util.Coerce(args[0], 1); v == nil {
 		return nil, NewError("int", InvalidTypeError)
@@ -19,7 +19,7 @@ func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 }
 
-// Float implements the float() function
+// Float implements the float() function.
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if v := util.Coerce(args[0], 1.0); v == nil {
 		return nil, NewError("float", InvalidValueError, args[0])
@@ -28,7 +28,7 @@ func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 }
 
-// String implements the string() function
+// String implements the string() function.
 func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Special case. Is the argument an array of strings? If so, restructure as a single
 	// string with line breaks.
@@ -61,7 +61,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return util.GetString(args[0]), nil
 }
 
-// Bool implements the bool() function
+// Bool implements the bool() function.
 func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := util.Coerce(args[0], true)
 	if v == nil {
@@ -71,19 +71,19 @@ func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return v.(bool), nil
 }
 
-// Coerce coerces a value to match the type of a model value
+// Coerce coerces a value to match the type of a model value.
 func Coerce(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.Coerce(args[0], args[1]), nil
 }
 
-// Normalize coerces a value to match the type of a model value
+// Normalize coerces a value to match the type of a model value.
 func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := util.Normalize(args[0], args[1])
 
 	return []interface{}{v1, v2}, nil
 }
 
-// New implements the new() function
+// New implements the new() function.
 func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
@@ -195,7 +195,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// DeepCopy makes a deep copy of an Ego data type
+// DeepCopy makes a deep copy of an Ego data type.
 func DeepCopy(source interface{}, depth int) interface{} {
 	if depth < 0 {
 		return nil

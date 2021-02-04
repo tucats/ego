@@ -17,7 +17,7 @@ import (
 \******************************************/
 
 // PrintImpl instruction processor. If the operand is given, it represents the number of items
-// to remove from the stack and print to stdout
+// to remove from the stack and print to stdout.
 func PrintImpl(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
@@ -70,7 +70,7 @@ func SayImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// NewlineImpl instruction processor generates a newline character to stdout
+// NewlineImpl instruction processor generates a newline character to stdout.
 func NewlineImpl(c *Context, i interface{}) error {
 	if c.output == nil {
 		fmt.Printf("\n")

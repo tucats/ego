@@ -21,16 +21,16 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Reserved symbol names used for configuration
+// Reserved symbol names used for configuration.
 const (
 	ConfigDisassemble = "disassemble"
 	ConfigTrace       = "trace"
 )
 
-// QuitCommand is the command that exits console input
+// QuitCommand is the command that exits console input.
 const QuitCommand = "%quit"
 
-// RunAction is the command handler for the ego CLI
+// RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) error {
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err

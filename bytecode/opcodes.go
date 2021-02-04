@@ -91,7 +91,7 @@ const (
 
 	// Everything from here on is a branch instruction, whose
 	// operand must be present and is an integer instruction
-	// address in the bytecode array
+	// address in the bytecode array.
 	BranchInstructions = iota + BranchInstruction
 	Branch
 	BranchTrue

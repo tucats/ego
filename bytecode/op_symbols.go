@@ -11,7 +11,7 @@ import (
 *                                         *
 \******************************************/
 
-// PushScopeImpl instruction processor
+// PushScopeImpl instruction processor.
 func PushScopeImpl(c *Context, i interface{}) error {
 	s := symbols.NewChildSymbolTable("block", c.symbols)
 	c.symbols = s
@@ -19,14 +19,14 @@ func PushScopeImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// PopScopeImpl instruction processor
+// PopScopeImpl instruction processor.
 func PopScopeImpl(c *Context, i interface{}) error {
 	c.symbols = c.symbols.Parent
 
 	return nil
 }
 
-// SymbolCreateImpl instruction processor
+// SymbolCreateImpl instruction processor.
 func SymbolCreateImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
@@ -41,7 +41,7 @@ func SymbolCreateImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// SymbolOptCreateImpl instruction processor
+// SymbolOptCreateImpl instruction processor.
 func SymbolOptCreateImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
@@ -65,7 +65,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// SymbolDeleteImpl instruction processor
+// SymbolDeleteImpl instruction processor.
 func SymbolDeleteImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
 
@@ -77,7 +77,7 @@ func SymbolDeleteImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// ConstantImpl instruction processor
+// ConstantImpl instruction processor.
 func ConstantImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// FunctionDefinition is an element in the function dictionary
+// FunctionDefinition is an element in the function dictionary.
 type FunctionDefinition struct {
 	Name      string
 	Pkg       string
@@ -37,7 +37,7 @@ const Any = 999999
 
 // FunctionDictionary is the dictionary of functions. As functions are determined
 // to allow the return of both a value and an error as multi-part results, add the
-// ErrReturn:true falg to each function definition.a
+// ErrReturn:true falg to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"append":               {Min: 2, Max: Any, F: Append},
 	"array":                {Min: 1, Max: 2, F: Array},
@@ -176,7 +176,7 @@ func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, erro
 	return nil
 }
 
-// FindName returns the name of a function from the dictionary if one is found
+// FindName returns the name of a function from the dictionary if one is found.
 func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) string {
 	sf1 := reflect.ValueOf(f)
 

@@ -34,5 +34,5 @@ func Pad(v interface{}, w int) string {
 		r = r[:count]
 	}
 
-	return string(r)
+	return r
 }

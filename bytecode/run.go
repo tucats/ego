@@ -12,10 +12,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// OpcodeHandler defines a function that implements an opcode
+// OpcodeHandler defines a function that implements an opcode.
 type OpcodeHandler func(b *Context, i interface{}) error
 
-// DispatchMap is a map that is used to locate the function for an opcode
+// DispatchMap is a map that is used to locate the function for an opcode.
 type DispatchMap map[Instruction]OpcodeHandler
 
 var dispatch DispatchMap
@@ -41,7 +41,7 @@ func (c *Context) GetSymbols() *symbols.SymbolTable {
 	return c.symbols
 }
 
-// Run executes a bytecode context
+// Run executes a bytecode context.
 func (c *Context) Run() error {
 	return c.RunFromAddress(0)
 }
@@ -61,7 +61,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	initializeDispatch()
 	dispatchMux.Unlock()
 
-	// Reset the runtime context
+	// Reset the runtime context.
 	c.pc = addr
 	c.running = true
 
@@ -108,7 +108,7 @@ func (c *Context) RunFromAddress(addr int) error {
 			// and the jump point on top is non-zero, then we can transfer control.
 			// Note that if the error was fatal, the running flag is turned off, which
 			// prevents the try block from being honored (i.e. you cannot catch a fatal
-			// error)
+			// error).
 			if len(c.try) > 0 && c.try[len(c.try)-1] > 0 && c.running {
 				c.pc = c.try[len(c.try)-1]
 
@@ -116,7 +116,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				// errors don't occur.
 				c.try[len(c.try)-1] = 0
 
-				// Implicit pop-scope done here
+				// Implicit pop-scope done here.
 				_ = c.symbols.SetAlways("_error", text)
 
 				if c.Tracing {
@@ -156,7 +156,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 
 				bc.Disasm()
 			}
-			// Create a new stream whose job is to invoke the function by name
+			// Create a new stream whose job is to invoke the function by name.
 			callCode := New("go " + fName)
 			callCode.Emit(Load, fName)
 

@@ -26,7 +26,7 @@ type App struct {
 
 // New creates a new instance of an application context, given the name of the
 // application.
-func New(appName string) App {
+func New(appName string) *App {
 	// Extract the description of the app if it was given
 	var appDescription = ""
 	if i := strings.Index(appName, ":"); i > 0 {
@@ -34,22 +34,26 @@ func New(appName string) App {
 		appName = strings.TrimSpace(appName[:i])
 	}
 
-	app := App{Name: appName, Description: appDescription}
+	app := &App{Name: appName, Description: appDescription}
 
 	return app
 }
 
 // SetVersion sets the version number for the application.
-func (app *App) SetVersion(major, minor, delta int) {
+func (app *App) SetVersion(major, minor, delta int) *App {
 	app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
 	symbols.RootSymbolTable.Symbols["_version"] = app.Version
+
+	return app
 }
 
 // SetCopyright sets the copyright string (if any) used in the
 // help output.
-func (app *App) SetCopyright(s string) {
+func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
 	symbols.RootSymbolTable.Symbols["_copyright"] = app.Copyright
+
+	return app
 }
 
 // Parse runs a grammar, and then calls the provided action routine. It is typically

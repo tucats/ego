@@ -11,14 +11,14 @@ import (
 // opcode array when storage is exhausted in the current array.
 const GrowOpcodesBy = 50
 
-// InitialOpcodeSize is the initial size of the emit buffer
+// InitialOpcodeSize is the initial size of the emit buffer.
 const InitialOpcodeSize = 20
 
 // InitialStackSize is the initial stack size.
 const InitialStackSize = 100
 
 // BranchInstruction is the mininum value for a branch instruction, which has
-// special meaning during relocation and linking
+// special meaning during relocation and linking.
 const BranchInstruction = 2000
 
 // BuiltinInstructions defines the lowest number (other than Stop) of the
@@ -40,7 +40,7 @@ type ByteCode struct {
 	Symbols *symbols.SymbolTable
 }
 
-// New generates and initializes a new bytecode
+// New generates and initializes a new bytecode.
 func New(name string) *ByteCode {
 	bc := ByteCode{
 		Name:    name,
@@ -52,7 +52,7 @@ func New(name string) *ByteCode {
 	return &bc
 }
 
-// Emit emits a single instruction
+// Emit emits a single instruction.
 func (b *ByteCode) Emit(opcode Instruction, operand ...interface{}) {
 	if b.emitPos >= len(b.opcodes) {
 		b.opcodes = append(b.opcodes, make([]I, GrowOpcodesBy)...)
@@ -74,13 +74,13 @@ func (b *ByteCode) Mark() int {
 }
 
 // SetAddressHere sets the current address as the target of the marked
-// instruction
+// instruction.
 func (b *ByteCode) SetAddressHere(mark int) error {
 	return b.SetAddress(mark, b.emitPos)
 }
 
 // SetAddress sets the given value as the target of the marked
-// instruction
+// instruction.
 func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.emitPos || mark < 0 {
 		return b.NewError(InvalidBytecodeAddress)
@@ -145,7 +145,7 @@ func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 	return c.Pop()
 }
 
-// Opcodes returns the opcode list for this byteocde array
+// Opcodes returns the opcode list for this byteocde array.
 func (b *ByteCode) Opcodes() []I {
 	return b.opcodes[:b.emitPos]
 }

@@ -1,7 +1,7 @@
 package defs
 
 // The authorization scheme attached to the bearer token
-// in REST calls
+// in REST calls.
 const AuthScheme = "bearer "
 
 // DefaultUserdataFileName is the default file system name of
@@ -9,21 +9,14 @@ const AuthScheme = "bearer "
 const DefaultUserdataFileName = "user-database.json"
 
 // This is the default media type (for Content and Accept headers)
-// for REST calls based on JSON
+// for REST calls based on JSON.
 const JSONMediaType = "application/json"
 
 // This section describes the profile keys used by Ego
 
 const (
-
-	/////////////////////////////////////////////////////
-	//                                                 //
-	//       Settings used by all Ego commands         //
-	//                                                 //
-	/////////////////////////////////////////////////////
-
 	// File system location used to locate services, lib,
-	// and test directories
+	// and test directories.
 	EgoPathSetting = "ego.path"
 
 	// Do we normalize the case of all symbols to a common
@@ -39,12 +32,6 @@ const (
 	// If true, the script language includes language
 	// extensions such as print, call, try/catch.
 	ExtensionsEnabledSetting = "ego.compiler.extensions"
-
-	/////////////////////////////////////////////////////
-	//                                                 //
-	//        Settings used by the RUN command         //
-	//                                                 //
-	/////////////////////////////////////////////////////
 
 	// Should an interactive session automatically import
 	// all the pre-defined packages?
@@ -63,31 +50,19 @@ const (
 	UseReadline = "ego.console.readline"
 
 	// Should the Ego program(s) be run with "static" or
-	// "dynamic" typing? The default is "dynamic"
+	// "dynamic" typing? The default is "dynamic".
 	StaticTypesSetting = "ego.compiler.types"
 
-	/////////////////////////////////////////////////////
-	//                                                 //
-	//       Settings used Ego server clients          //
-	//                                                 //
-	/////////////////////////////////////////////////////
-
-	// The base URL of the Ego server providing application services
+	// The base URL of the Ego server providing application services.
 	ApplicationServerSetting = "ego.application.server"
 
-	// The base URL of the Ego server providing logon services
+	// The base URL of the Ego server providing logon services.
 	LogonServerSetting = "ego.logon.server"
 
 	// The last token created by a ego logon command, which
 	// is used by default for server admin commands as well
 	// as rest calls.
 	LogonTokenSetting = "ego.logon.token"
-
-	/////////////////////////////////////////////////////
-	//                                                 //
-	//          Settings used by Ego servers           //
-	//                                                 //
-	/////////////////////////////////////////////////////
 
 	// The default user if no userdatabase has been initialized
 	// yet. This is a strong of the form "user:password", which
@@ -110,14 +85,14 @@ const (
 	TokenKeySetting = "ego.token.key"
 
 	// A string indicating the duration of a token before it is
-	// considered expired. Examples are "15m" or "24h"
+	// considered expired. Examples are "15m" or "24h".
 	TokenExpirationSetting = "ego.token.expiration"
 )
 
 // This section contains the names of the command-line options. These often
 // (but not always) have parallels in the settings above. Settings typically
 // have a structured name (ego.compiler.autoimport) while the option name is
-// Unix shell-friendly (auto-import)
+// Unix shell-friendly (auto-import).
 const (
 	AutoImportOption      = "auto-import"
 	DisassembleOption     = "disassemble"

@@ -37,7 +37,7 @@ var serviceCache = map[string]cachedCompilationUnit{}
 var cacheMutext sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
-// cache before items start to be aged out (oldest first)
+// cache before items start to be aged out (oldest first).
 var MaxCachedEntries = 10
 
 // ServiceHandler is the rest handler for services written

@@ -22,7 +22,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// TestAction is the command handler for the ego TEST command
+// TestAction is the command handler for the ego TEST command.
 func TestAction(c *cli.Context) error {
 	var text string
 
@@ -217,7 +217,7 @@ func ReadDirectory(name string) (string, error) {
 	return b.String(), nil
 }
 
-// ReadFile reads the text from a file into a string
+// ReadFile reads the text from a file into a string.
 func ReadFile(name string) (string, error) {
 	s, err := ReadDirectory(name)
 	if err == nil {

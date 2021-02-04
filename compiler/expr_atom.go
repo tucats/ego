@@ -251,7 +251,6 @@ func (c *Compiler) parseArray() error {
 				}
 			}
 		}
-
 	}
 
 	if listTerminator == "" {

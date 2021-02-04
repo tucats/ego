@@ -11,7 +11,7 @@ const (
 	DirectiveStructureName = "_directives"
 )
 
-// Statement compiles a single statement
+// Statement compiles a single statement.
 func (c *Compiler) Statement() error {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
@@ -145,7 +145,7 @@ func (c *Compiler) Statement() error {
 	return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
 }
 
-// IsFunctionCall indicates if the token stream points to a function call
+// IsFunctionCall indicates if the token stream points to a function call.
 func (c *Compiler) IsFunctionCall() bool {
 	// Skip through any referencing tokens to see if we find a function
 	// invocation.

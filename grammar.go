@@ -5,7 +5,7 @@ import (
 	"github.com/tucats/ego/commands"
 )
 
-// EgoGrammar handles the command line options
+// EgoGrammar handles the command line options.
 var EgoGrammar = []cli.Option{
 	{
 		LongName:           "path",
@@ -67,7 +67,7 @@ var ServerUserGrammar = []cli.Option{
 	},
 }
 
-// UserGrammar contains the grammar for SERVER USERS subcommands
+// UserGrammar contains the grammar for SERVER USERS subcommands.
 var UserGrammar = []cli.Option{
 	{
 		LongName:    "set",
@@ -91,7 +91,7 @@ var UserGrammar = []cli.Option{
 	},
 }
 
-// CachesGrammar defines the grammar for the SERVER CACHES subcommands
+// CachesGrammar defines the grammar for the SERVER CACHES subcommands.
 var CachesGrammar = []cli.Option{
 	{
 		LongName:    "flush",
@@ -119,7 +119,7 @@ var CachesGrammar = []cli.Option{
 	},
 }
 
-// ServerGrammar contains the grammar of SERVER subcommands
+// ServerGrammar contains the grammar of SERVER subcommands.
 var ServerGrammar = []cli.Option{
 	{
 		LongName:    "users",
@@ -172,7 +172,7 @@ var ServerGrammar = []cli.Option{
 	},
 }
 
-// ServerStopGrammar handles command line options for the server subcommand
+// ServerStopGrammar handles command line options for the server subcommand.
 var ServerStopGrammar = []cli.Option{
 	{
 		LongName:            "port",
@@ -198,7 +198,7 @@ var ServerStateGrammar = []cli.Option{
 	},
 }
 
-// ServerRunGrammar handles command line options for the server subcommand
+// ServerRunGrammar handles command line options for the server subcommand.
 var ServerRunGrammar = []cli.Option{
 	{
 		LongName:            "port",
@@ -293,7 +293,7 @@ var ServerRunGrammar = []cli.Option{
 	},
 }
 
-// RunGrammar handles the command line options
+// RunGrammar handles the command line options.
 var RunGrammar = []cli.Option{
 	{
 		LongName:            "disassemble",

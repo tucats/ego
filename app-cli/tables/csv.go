@@ -39,7 +39,7 @@ func CsvSplit(data string) []string {
 			continue
 		}
 
-		currentHeading.WriteRune(rune(c))
+		currentHeading.WriteRune(c)
 	}
 
 	if currentHeading.Len() > 0 {
