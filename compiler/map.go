@@ -64,11 +64,11 @@ func (c *Compiler) Map() error {
 
 				continue
 			}
+
 			if c.t.Peek(1) != "}" {
 				return c.NewError(MissingEndOfBlockError)
 			}
 		}
-
 	}
 
 	return nil

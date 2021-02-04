@@ -350,6 +350,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	case []interface{}:
 		kind := datatypes.UndefinedType
+
 		for _, n := range v {
 			k2 := datatypes.TypeOf(n)
 			if kind != k2 {
@@ -359,8 +360,8 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					kind = datatypes.InterfaceType
 				}
 			}
-
 		}
+
 		return datatypes.TypeString(kind + datatypes.ArrayType), nil
 
 	case map[string]interface{}:

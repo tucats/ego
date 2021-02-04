@@ -20,7 +20,7 @@ type Range struct {
 	index     int
 }
 
-// RangeInitImpl impelments the RangeInit opcode
+// RangeInitImpl implements the RangeInit opcode
 //
 // Inputs:
 //    operand    - an array of two strings containing
@@ -110,7 +110,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// RangeNextImpl impelments the RangeNext opcode
+// RangeNextImpl implements the RangeNext opcode
 //
 // Inputs:
 //    operand    - The bytecode address to branch to

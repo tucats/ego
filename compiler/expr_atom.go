@@ -189,6 +189,7 @@ func (c *Compiler) parseArray() error {
 		} else {
 			return c.NewError(InvalidTypeNameError)
 		}
+
 		if !c.t.IsNext("{") {
 			return c.NewError(MissingBlockError)
 		}
@@ -268,6 +269,7 @@ func (c *Compiler) parseArray() error {
 		if kind != datatypes.UndefinedType {
 			c.b.Emit(bytecode.Coerce, kind)
 		}
+
 		count = count + 1
 
 		if c.t.AtEnd() {

@@ -301,7 +301,6 @@ func StoreIntoImpl(c *Context, i interface{}) error {
 	}
 
 	return nil
-
 }
 
 func FlattenImpl(c *Context, i interface{}) error {
