@@ -8,13 +8,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-/******************************************\
-*                                         *
-*           D A T A  T Y P E S            *
-*         A N D   S T O R A G E           *
-*                                         *
-\******************************************/
-
 // MakeArrayImpl instruction processor.
 func MakeArrayImpl(c *Context, i interface{}) error {
 	parms := util.GetInt(i)

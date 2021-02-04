@@ -13,15 +13,16 @@ func (b *ByteCode) Disasm() {
 	ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 
 	for n := 0; n < b.emitPos; n++ {
-		i := b.opcodes[n]
+		i := b.instructions[n]
 		op := FormatInstruction(i)
 		ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
 	}
+
 	ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", b.emitPos)
 }
 
 // FormatInstruction formats a single instruction as a string.
-func FormatInstruction(i I) string {
+func FormatInstruction(i Instruction) string {
 	opname, found := instructionNames[i.Operation]
 
 	// What is the maximum opcode name length?
@@ -52,7 +53,7 @@ func FormatInstruction(i I) string {
 }
 
 // Format formats an array of bytecodes.
-func Format(opcodes []I) string {
+func Format(opcodes []Instruction) string {
 	var b strings.Builder
 
 	b.WriteRune('[')

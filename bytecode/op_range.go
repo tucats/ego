@@ -125,10 +125,10 @@ func RangeInitImpl(c *Context, i interface{}) error {
 //    range, in which case the branch is taken. The
 //    topmost item on the range stack is discarded.
 //
-// 2. The range is incremented and the associated
-//    value (map member, array index, channel value)
-//    is read and stored in the value variable. The
-//    index number is also stored in the index variable.
+// 2. The range is incremented and value is read.
+//    The value (map member, array index, channel)
+//    is stored in the value variable. The index
+//     number is also stored in the index variable.
 func RangeNextImpl(c *Context, i interface{}) error {
 	var err error
 

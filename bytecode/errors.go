@@ -48,7 +48,9 @@ type Error struct {
 	token  string
 }
 
-// NewError generates a new error.
+// NewError generates a new error. The current module name and line
+// number from the context are stored in the new error object, along
+// with the message text and arguments.
 func (c *Context) NewError(msg string, args ...interface{}) *Error {
 	if msg == "" {
 		return nil
@@ -68,7 +70,9 @@ func (c *Context) NewError(msg string, args ...interface{}) *Error {
 	}
 }
 
-// Error produces an error string from this object.
+// Error produces an error string from this object. This includes
+// information about the module name and line number as well as the
+// message text itself.
 func (e Error) Error() string {
 	var b strings.Builder
 

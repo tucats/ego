@@ -12,13 +12,13 @@ func TestCompile(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     string
-		want    []bytecode.I
+		want    []bytecode.Instruction
 		wantErr bool
 	}{
 		{
 			name: "for index loop with break",
 			arg:  "for i := 0; i < 10; i = i + 1 { if i == 3 { break }; print i }",
-			want: []bytecode.I{
+			want: []bytecode.Instruction{
 				{Operation: bytecode.AtLine, Operand: 1},
 				{Operation: bytecode.PushScope, Operand: nil},
 				{Operation: bytecode.Push, Operand: 0},
@@ -58,7 +58,7 @@ func TestCompile(t *testing.T) {
 		{
 			name: "Simple block",
 			arg:  "{ print ; print } ",
-			want: []bytecode.I{
+			want: []bytecode.Instruction{
 				{Operation: bytecode.AtLine, Operand: 1},
 				{Operation: bytecode.PushScope, Operand: nil},
 				{Operation: bytecode.AtLine, Operand: 1},
@@ -72,7 +72,7 @@ func TestCompile(t *testing.T) {
 		{
 			name: "store to _",
 			arg:  "_ = 3",
-			want: []bytecode.I{
+			want: []bytecode.Instruction{
 				{Operation: bytecode.AtLine, Operand: 1},
 				{Operation: bytecode.Push, Operand: 3},
 				{Operation: bytecode.Drop, Operand: 1},
@@ -82,7 +82,7 @@ func TestCompile(t *testing.T) {
 		{
 			name: "Simple print",
 			arg:  "print 1",
-			want: []bytecode.I{
+			want: []bytecode.Instruction{
 				{Operation: bytecode.AtLine, Operand: 1},
 				{Operation: bytecode.Push, Operand: 1},
 				{Operation: bytecode.Print, Operand: nil},
@@ -93,7 +93,7 @@ func TestCompile(t *testing.T) {
 		{
 			name: "Simple if else",
 			arg:  "if false print 1 else print 2",
-			want: []bytecode.I{
+			want: []bytecode.Instruction{
 				{Operation: bytecode.AtLine, Operand: 1},
 				{Operation: bytecode.Load, Operand: "bool"},
 				{Operation: bytecode.Push, Operand: false},

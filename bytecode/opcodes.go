@@ -16,14 +16,13 @@ package bytecode
  * 4. Implement the actual opcode, nominally in the appropriate op_*.go file.
  */
 
-// Constant describing instruction opcodes
-
-type Instruction int
+// Constant describing instruction opcodes.
+type OpcodeID int
 
 const (
-	Stop   Instruction = 0
-	AtLine             = iota + BuiltinInstructions
-	Add    Instruction = iota
+	Stop   OpcodeID = 0
+	AtLine          = iota + BuiltinInstructions
+	Add    OpcodeID = iota
 	And
 	ArgCheck
 	Array
@@ -103,7 +102,7 @@ const (
 	UserBranchInstructions
 )
 
-var instructionNames = map[Instruction]string{
+var instructionNames = map[OpcodeID]string{
 	Add:                "Add",
 	And:                "And",
 	ArgCheck:           "ArgCheck",

@@ -71,6 +71,9 @@ func (c *Context) parseGrammar(args []string) error {
 			return nil
 		}
 
+		// Handle the "empty option" that means the remainder of the command
+		// line will be treated as parameters, even if it looks like it has
+		// options, etc.
 		if option == "--" {
 			parametersOnly = true
 			helpVerb = false

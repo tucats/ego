@@ -20,9 +20,10 @@ import (
 //    tested at the start of every loop, so a condition that is
 //    initially false never runs the loop
 //
-// 4. A for{} with no condition, loop, or range expression. This
-//    form _requires_ that there be at least one break statement
-//    inside the loop, which algorithmically stops the loop
+// 4. A for{} with no condition, loop, or range expression.
+//    this form _requires_ that there be at least one break
+//    statement inside the loop, which algorithmically stops
+//    the loop
 func (c *Compiler) For() error {
 	c.b.Emit(bytecode.PushScope)
 	// Is this a for{} with no conditional or iterator?
@@ -175,7 +176,7 @@ func (c *Compiler) For() error {
 		}
 
 		c.b.Append(bc)
-		c.b.Emit(bytecode.RangeInit, []interface{}{indexName, valueName})
+		c.b.Emit(bytecode.RangeInit, indexName, valueName)
 
 		// Remember top of loop
 		b1 := c.b.Mark()

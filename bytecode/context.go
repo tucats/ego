@@ -51,6 +51,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		name = b.Name
 	}
 
+	// Determine whether static data typing is in effect. This is
+	// normally off, but can be set by a global variable (which is
+	// ultimately set by a profile setting or CLI option).
 	static := false
 	if s, ok := s.Get("__static_data_types"); ok {
 		static = util.GetBool(s)
@@ -91,26 +94,42 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	return ctxp
 }
 
+// GetLine retrieves the current line number from the
+// original source being executed. This is stored in the
+// context every time an AtLine instruction is executed.
 func (c *Context) GetLine() int {
 	return c.line
 }
 
+// SetDebug turns debugging mode on or off for the current
+// context.
 func (c *Context) SetDebug(b bool) *Context {
 	c.debugging = b
 	c.singleStep = true
 
 	return c
 }
+
+// SetFullSymbolScope sets the flag that indicates if a
+// symbol table read can "see" a symbol outside the current
+// function. The default is off, which means symbols are not
+// visible outside the function unless they are in the global
+// symbol table. If true, then a symbol can be read from any
+// level of the symbol table parentage chain.
 func (c *Context) SetFullSymbolScope(b bool) *Context {
 	c.fullSymbolScope = b
 
 	return c
 }
 
+// SetPC sets the program counter (PC) which indicates the
+// next instruction number to execute.
 func (c *Context) SetPC(pc int) {
 	c.pc = pc
 }
 
+// SetGlobal stores a value in a the global symbol table that is
+// at the top of the symbol table chain.
 func (c *Context) SetGlobal(name string, value interface{}) error {
 	return c.symbols.SetGlobal(name, value)
 }
@@ -130,7 +149,10 @@ func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	return c
 }
 
-// GetOutput retrieves the output buffer.
+// GetOutput retrieves the output buffer. This is the buffer that
+// contains all Print and related bytecode instruction output. This
+// is used when output capture is enabled, which typically happens
+// when a program is running as a Web service.
 func (c *Context) GetOutput() string {
 	if c.output != nil {
 		return c.output.String()
@@ -139,35 +161,32 @@ func (c *Context) GetOutput() string {
 	return ""
 }
 
+// SetTracing turns tracing on or off for the current context. When
+// tracing is on, each time an instruction is executed, the current
+// instruction and the top few items on the stack are printed to
+// the console.
 func (c *Context) SetTracing(b bool) {
 	c.tracing = b
 }
 
-// SetTokenizer sets a tokenizer in the current context for tracing and debugging.
+// SetTokenizer sets a tokenizer in the current context for use by
+// tracing and debugging operations. This gives those functions
+// access to the token stream used to compile the bytecode in this
+// context.
 func (c *Context) SetTokenizer(t *tokenizer.Tokenizer) *Context {
 	c.tokenizer = t
 
 	return c
 }
 
-// GetTokenizer gets the tokenizer in the current context for tracing and debugging.
+// GetTokenizer gets the tokenizer in the current context for
+// tracing and debugging.
 func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 	return c.tokenizer
 }
 
-func (c *Context) SetDugging(b bool) *Context {
-	c.debugging = b
-
-	return c
-}
-
-func (c *Context) Debugging() bool {
-	return c.debugging
-}
-
-// AppendSymbols appends a symbol table to the current
-// context. This is used to add in compiler maps, for
-// example.
+// AppendSymbols appends a symbol table to the current context.
+// This is used to add in compiler maps, for example.
 func (c *Context) AppendSymbols(s symbols.SymbolTable) {
 	for k, v := range s.Symbols {
 		_ = c.symbols.SetAlways(k, v)
@@ -179,17 +198,27 @@ func (c *Context) SetByteCode(b *ByteCode) {
 	c.bc = b
 }
 
+// SetSingleStep enables or disables single-step mode. This has no
+// effect if debugging is not active.
 func (c *Context) SetSingleStep(b bool) {
 	c.singleStep = b
 }
+
+// SingleStep retrieves the current single-step setting for this
+// context. This is used in the debugger to know how to handle
+// break operations.
 func (c *Context) SingleStep() bool {
 	return c.singleStep
 }
 
+// SetStepOver determines if single step operations step over a
+// function call, or step into it.
 func (c *Context) SetStepOver(b bool) {
 	c.stepOver = b
 }
 
+// GetModuleName returnes the name of the current module (typically
+// the function name or program name).
 func (c *Context) GetModuleName() string {
 	return c.bc.Name
 }
@@ -306,6 +335,13 @@ func (c *Context) GetConfig(name string) interface{} {
 	return i
 }
 
+// checkType is a utility function used to determine if a given value
+// could be stored in a named symbol. When the value is nil or static
+// type checking is disabled (the default) then no action occurs.
+//
+// Otherwise, the symbol name is used to look up the current value (if
+// any) of the symbol. If it exists, then the type of the value being
+// proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) error {
 	var err error
 

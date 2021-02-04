@@ -16,7 +16,7 @@ import (
 type OpcodeHandler func(b *Context, i interface{}) error
 
 // DispatchMap is a map that is used to locate the function for an opcode.
-type DispatchMap map[Instruction]OpcodeHandler
+type DispatchMap map[OpcodeID]OpcodeHandler
 
 var dispatch DispatchMap
 var dispatchMux sync.Mutex
@@ -73,13 +73,13 @@ func (c *Context) RunFromAddress(addr int) error {
 
 	// Loop over the bytecodes and run.
 	for c.running {
-		if c.pc >= len(c.bc.opcodes) {
+		if c.pc >= len(c.bc.instructions) {
 			c.running = false
 
 			break
 		}
 
-		i := c.bc.opcodes[c.pc]
+		i := c.bc.instructions[c.pc]
 
 		if c.Tracing {
 			s := FormatInstruction(i)

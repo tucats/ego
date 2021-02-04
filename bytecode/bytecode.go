@@ -26,45 +26,54 @@ const BranchInstruction = 2000
 // are added between 1 and this value.
 const BuiltinInstructions = BranchInstruction - 1000
 
-// I contains the information about a single bytecode instruction.
-type I struct {
-	Operation Instruction
+// Instruction contains the information about a single bytecode.
+type Instruction struct {
+	Operation OpcodeID
 	Operand   interface{}
 }
 
 // ByteCode contains the context of the execution of a bytecode stream.
 type ByteCode struct {
-	Name    string
-	opcodes []I
-	emitPos int
-	Symbols *symbols.SymbolTable
+	Name         string
+	instructions []Instruction
+	emitPos      int
+	Symbols      *symbols.SymbolTable
 }
 
 // New generates and initializes a new bytecode.
 func New(name string) *ByteCode {
 	bc := ByteCode{
-		Name:    name,
-		opcodes: make([]I, InitialOpcodeSize),
-		emitPos: 0,
-		Symbols: &symbols.SymbolTable{Symbols: map[string]interface{}{}},
+		Name:         name,
+		instructions: make([]Instruction, InitialOpcodeSize),
+		emitPos:      0,
+		Symbols:      &symbols.SymbolTable{Symbols: map[string]interface{}{}},
 	}
 
 	return &bc
 }
 
-// Emit emits a single instruction.
-func (b *ByteCode) Emit(opcode Instruction, operand ...interface{}) {
-	if b.emitPos >= len(b.opcodes) {
-		b.opcodes = append(b.opcodes, make([]I, GrowOpcodesBy)...)
+// Emit emits a single instruction. The opcode is required, and can optionally
+// be frollowed by an instruction operand (based on whichever instruction)
+// is issued.
+func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
+	// If the output capacity is too small, expand it.
+	if b.emitPos >= len(b.instructions) {
+		b.instructions = append(b.instructions, make([]Instruction, GrowOpcodesBy)...)
 	}
 
-	i := I{Operation: opcode}
+	i := Instruction{Operation: opcode}
 
-	if len(operand) > 0 {
-		i.Operand = operand[0]
+	// If there is one operand, store that in the instruction. If
+	// there are multiple operands, make them into an array.
+	if len(operands) > 0 {
+		if len(operands) > 1 {
+			i.Operand = operands
+		} else {
+			i.Operand = operands[0]
+		}
 	}
 
-	b.opcodes[b.emitPos] = i
+	b.instructions[b.emitPos] = i
 	b.emitPos = b.emitPos + 1
 }
 
@@ -86,9 +95,9 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 		return b.NewError(InvalidBytecodeAddress)
 	}
 
-	i := b.opcodes[mark]
+	i := b.instructions[mark]
 	i.Operand = address
-	b.opcodes[mark] = i
+	b.instructions[mark] = i
 
 	return nil
 }
@@ -102,7 +111,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 	base := b.emitPos
 
-	for _, i := range a.opcodes[:a.emitPos] {
+	for _, i := range a.instructions[:a.emitPos] {
 		if i.Operation > BranchInstructions {
 			i.Operand = util.GetInt(i.Operand) + base
 		}
@@ -113,7 +122,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 // DefineInstruction adds a user-defined instruction to the bytecode
 // set.
-func DefineInstruction(opcode Instruction, name string, implementation OpcodeHandler) error {
+func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) error {
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
 		return fmt.Errorf(OpcodeAlreadyDefinedError, opcode)
@@ -146,8 +155,8 @@ func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 }
 
 // Opcodes returns the opcode list for this byteocde array.
-func (b *ByteCode) Opcodes() []I {
-	return b.opcodes[:b.emitPos]
+func (b *ByteCode) Opcodes() []Instruction {
+	return b.instructions[:b.emitPos]
 }
 
 // Remove removes an instruction from the bytecode. The position is either
@@ -155,25 +164,30 @@ func (b *ByteCode) Opcodes() []I {
 // from the end of the bytecode.
 func (b *ByteCode) Remove(n int) {
 	if n >= 0 {
-		b.opcodes = append(b.opcodes[:n], b.opcodes[n+1:]...)
+		b.instructions = append(b.instructions[:n], b.instructions[n+1:]...)
 	} else {
 		n = b.emitPos - n
-		b.opcodes = append(b.opcodes[:n], b.opcodes[n+1:]...)
+		b.instructions = append(b.instructions[:n], b.instructions[n+1:]...)
 	}
 
 	b.emitPos = b.emitPos - 1
 }
 
+// ByteCodeError is a wrapper for errors generated during bytecode
+// generation.
 type ByteCodeErr struct {
 	err error
 }
 
+// NewError creates a new ByteCodeErr using the message string and any
+// optional arguments that are formatted using the message string.
 func (b *ByteCode) NewError(msg string, args ...interface{}) ByteCodeErr {
 	return ByteCodeErr{
 		err: fmt.Errorf(msg, args...),
 	}
 }
 
+// Error produces a string representation of the ByteCodeError.
 func (be ByteCodeErr) Error() string {
 	return fmt.Sprintf("bytecode generation, %s", be.err.Error())
 }

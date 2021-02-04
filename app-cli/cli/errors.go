@@ -47,7 +47,7 @@ const (
 	WrongParameterCountError  = "incorrect number of parameters"
 )
 
-// Wrapper for CLI errors
+// Wrapper for CLI errors.
 type CLIError struct {
 	err error
 }
@@ -62,7 +62,7 @@ func NewCLIError(msg string, args ...interface{}) CLIError {
 	return e
 }
 
-// Error returns a string representation of the CLIError
+// Error returns a string representation of the CLIError.
 func (ce CLIError) Error() string {
 	return fmt.Sprintf("%s, %s", CLIErrorPrefix, ce.err.Error())
 }

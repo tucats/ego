@@ -12,7 +12,7 @@ import (
 func TestByteCode_Run(t *testing.T) {
 	type fields struct {
 		Name    string
-		opcodes []I
+		opcodes []Instruction
 		emitPos int
 		result  interface{}
 	}
@@ -26,7 +26,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "stop",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Stop},
 				},
 			},
@@ -34,7 +34,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "push int",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 42},
 					{Operation: Stop},
 				},
@@ -44,7 +44,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "drop 2 stack items",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 42},
 					{Operation: Push, Operand: 43},
 					{Operation: Push, Operand: 44},
@@ -57,7 +57,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "push float",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.14},
 					{Operation: Stop},
 				},
@@ -67,7 +67,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "add int",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5},
 					{Operation: Push, Operand: 7},
 					{Operation: Add},
@@ -79,7 +79,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "add float to int",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.14},
 					{Operation: Push, Operand: 7},
 					{Operation: Add},
@@ -91,7 +91,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "sub int from  int",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5},
 					{Operation: Push, Operand: 8},
 					{Operation: Sub},
@@ -103,7 +103,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "div float by int",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 10.0},
 					{Operation: Push, Operand: 2},
 					{Operation: Div},
@@ -115,7 +115,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "mul float by float",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.0},
 					{Operation: Push, Operand: 4.0},
 					{Operation: Mul},
@@ -127,7 +127,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "equal int test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5},
 					{Operation: Push, Operand: 5},
 					{Operation: Equal},
@@ -139,7 +139,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "equal mixed test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5},
 					{Operation: Push, Operand: 5.0},
 					{Operation: Equal},
@@ -151,7 +151,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "not equal int test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5},
 					{Operation: Push, Operand: 5},
 					{Operation: NotEqual},
@@ -163,7 +163,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "not equal string test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: "fruit"},
 					{Operation: Push, Operand: "fruit"},
 					{Operation: NotEqual},
@@ -175,7 +175,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "not equal bool test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: false},
 					{Operation: Push, Operand: false},
 					{Operation: NotEqual},
@@ -187,7 +187,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "not equal float test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 5.00000},
 					{Operation: Push, Operand: 5.00001},
 					{Operation: NotEqual},
@@ -199,7 +199,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "greater than test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: 11.0},
 					{Operation: Push, Operand: 5},
 					{Operation: GreaterThan},
@@ -211,7 +211,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "greater than or equals test",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: "tom"},
 					{Operation: Push, Operand: "tom"},
 					{Operation: GreaterThanOrEqual},
@@ -223,7 +223,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "length of string constant",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Load, Operand: "len"},
 					{Operation: Push, Operand: "fruitcake"},
 					{Operation: Call, Operand: 1},
@@ -235,7 +235,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "left(n, 5) of string constant",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					// Arguments are pushed in the order parsed
 					{Operation: Load, Operand: "strings"},
 					{Operation: Push, Operand: "Left"},
@@ -251,7 +251,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "simple branch",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Operation: Push, Operand: "fruitcake"},
 					{Operation: Branch, Operand: 3},
 					{Operation: Push, Operand: "Left"},
@@ -263,7 +263,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "if-true branch",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 
 					// Use of "short-form" instruction initializer requires passing nil
 					// for those instructions without an operand
@@ -281,7 +281,7 @@ func TestByteCode_Run(t *testing.T) {
 		{
 			name: "if-false branch",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 
 					// Use of "short-form" instruction initializer requires passing nil
 					// for those instructions without an operand
@@ -301,11 +301,11 @@ func TestByteCode_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:    tt.fields.Name,
-				opcodes: tt.fields.opcodes,
-				emitPos: tt.fields.emitPos,
+				Name:         tt.fields.Name,
+				instructions: tt.fields.opcodes,
+				emitPos:      tt.fields.emitPos,
 			}
-			b.emitPos = len(b.opcodes)
+			b.emitPos = len(b.instructions)
 			s := symbols.NewSymbolTable(tt.name)
 			c := NewContext(s, b)
 			functions.AddBuiltins(c.symbols)

@@ -12,10 +12,10 @@ func TestByteCode_New(t *testing.T) {
 		b := New("testing")
 
 		want := ByteCode{
-			Name:    "testing",
-			opcodes: make([]I, InitialOpcodeSize),
-			Symbols: &symbols.SymbolTable{Symbols: map[string]interface{}{}},
-			emitPos: 0,
+			Name:         "testing",
+			instructions: make([]Instruction, InitialOpcodeSize),
+			Symbols:      &symbols.SymbolTable{Symbols: map[string]interface{}{}},
+			emitPos:      0,
 		}
 		if !reflect.DeepEqual(*b, want) {
 			t.Error("new() did not return expected object")
@@ -26,48 +26,48 @@ func TestByteCode_New(t *testing.T) {
 func TestByteCode_Emit2(t *testing.T) {
 	type fields struct {
 		Name    string
-		opcodes []I
+		opcodes []Instruction
 		emitPos int
 	}
 
 	type args struct {
-		emit []I
+		emit []Instruction
 	}
 
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   []I
+		want   []Instruction
 	}{
 		{
 			name: "first emit",
 			fields: fields{
-				opcodes: []I{},
+				opcodes: []Instruction{},
 			},
 			args: args{
-				emit: []I{
+				emit: []Instruction{
 					{Push, 33},
 				},
 			},
-			want: []I{
+			want: []Instruction{
 				{Push, 33},
 			},
 		},
 		{
 			name: "multiple emit",
 			fields: fields{
-				opcodes: []I{},
+				opcodes: []Instruction{},
 			},
 			args: args{
-				emit: []I{
+				emit: []Instruction{
 					{Push, 33},
 					{Push, "stuff"},
 					{Operation: Add},
 					{Operation: Stop},
 				},
 			},
-			want: []I{
+			want: []Instruction{
 				{Push, 33},
 				{Push, "stuff"},
 				{Operation: Add},
@@ -80,15 +80,15 @@ func TestByteCode_Emit2(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:    tt.fields.Name,
-				opcodes: tt.fields.opcodes,
-				emitPos: tt.fields.emitPos,
+				Name:         tt.fields.Name,
+				instructions: tt.fields.opcodes,
+				emitPos:      tt.fields.emitPos,
 			}
 			for _, i := range tt.args.emit {
 				b.Emit(i.Operation, i.Operand)
 			}
 
-			for n, i := range b.opcodes {
+			for n, i := range b.instructions {
 				if n < b.emitPos && i != tt.want[n] {
 					t.Error("opcode mismatch")
 				}
@@ -100,7 +100,7 @@ func TestByteCode_Emit2(t *testing.T) {
 func TestByteCode_Append(t *testing.T) {
 	type fields struct {
 		Name    string
-		opcodes []I
+		opcodes []Instruction
 		emitPos int
 	}
 
@@ -112,13 +112,13 @@ func TestByteCode_Append(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []I
+		want    []Instruction
 		wantPos int
 	}{
 		{
 			name: "simple append",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Push, 0},
 					{Push, 0},
 				},
@@ -126,13 +126,13 @@ func TestByteCode_Append(t *testing.T) {
 			},
 			args: args{
 				a: &ByteCode{
-					opcodes: []I{
+					instructions: []Instruction{
 						{Add, nil},
 					},
 					emitPos: 1,
 				},
 			},
-			want: []I{
+			want: []Instruction{
 				{Push, 0},
 				{Push, 0},
 				{Add, nil},
@@ -142,7 +142,7 @@ func TestByteCode_Append(t *testing.T) {
 		{
 			name: "branch append",
 			fields: fields{
-				opcodes: []I{
+				opcodes: []Instruction{
 					{Push, 11},
 					{Push, 22},
 				},
@@ -150,14 +150,14 @@ func TestByteCode_Append(t *testing.T) {
 			},
 			args: args{
 				a: &ByteCode{
-					opcodes: []I{
+					instructions: []Instruction{
 						{Branch, 2}, // Must be updated
 						{Add, nil},
 					},
 					emitPos: 2,
 				},
 			},
-			want: []I{
+			want: []Instruction{
 				{Push, 11},
 				{Push, 22},
 				{Branch, 4}, // Updated from new offset
@@ -171,17 +171,17 @@ func TestByteCode_Append(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:    tt.fields.Name,
-				opcodes: tt.fields.opcodes,
-				emitPos: tt.fields.emitPos,
+				Name:         tt.fields.Name,
+				instructions: tt.fields.opcodes,
+				emitPos:      tt.fields.emitPos,
 			}
 			b.Append(tt.args.a)
 			if tt.wantPos != b.emitPos {
 				t.Errorf("Append() wrong emitPos, got %d, want %d", b.emitPos, tt.wantPos)
 			}
 			// Check the slice of intentionally emitted opcodes (array may be larger)
-			if !reflect.DeepEqual(tt.want, b.opcodes[:tt.wantPos]) {
-				t.Errorf("Append() wrong array, got %v, want %v", b.opcodes, tt.want)
+			if !reflect.DeepEqual(tt.want, b.instructions[:tt.wantPos]) {
+				t.Errorf("Append() wrong array, got %v, want %v", b.instructions, tt.want)
 			}
 		})
 	}

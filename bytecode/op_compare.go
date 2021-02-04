@@ -7,12 +7,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-/******************************************\
-*                                         *
-*   C O M P A R E   O P E R A T I O N S   *
-*                                         *
-\******************************************/
-
 // EqualImpl instruction processor.
 func EqualImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order

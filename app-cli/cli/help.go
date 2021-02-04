@@ -17,6 +17,9 @@ func ShowHelp(c *Context) {
 		fmt.Printf("%s\n", c.Copyright)
 	}
 
+	// Prepare a composed version of the command string, which chains
+	// together the root, subverbs, and representations of parameters
+	// and options.
 	composedCommand := c.MainProgram + " " + c.Command
 	hasSubcommand := false
 	hasOptions := false
@@ -59,6 +62,9 @@ func ShowHelp(c *Context) {
 
 	fmt.Printf("\nUsage:\n   %-26s   %s\n\n", composedCommand, c.Description)
 
+	// Now prepare the descriptions of the subcommands. This is done using a
+	// table format, where the headings are not printed. But this lets the
+	// sucommands and their descriptions line up nicely.
 	headerShown := false
 
 	tc, _ := tables.New([]string{"subcommand", "description"})
@@ -113,6 +119,8 @@ func ShowHelp(c *Context) {
 		fmt.Printf("\n")
 	}
 
+	// Now, use tables again to format the list of options
+	// and their descriptions.
 	to, _ := tables.New([]string{"option", "description"})
 
 	to.ShowHeadings(false)

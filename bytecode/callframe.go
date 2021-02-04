@@ -7,7 +7,11 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Type of object pushed/popped from stack describes a call frame.
+// CallFrame is an object used to store state of the bytecode runtime
+// environment just before making a call to a bytecode subroutine. This
+// preserves the state of the stack, PC, and other data at the time
+// of the call. When a bytecode subroutine returns, this object is
+// removed from the stack and used to reset the bytecode runtime state.
 type CallFrame struct {
 	Module     string
 	Line       int
@@ -44,7 +48,7 @@ func (c *Context) PushFrame(tableName string, bc *ByteCode, pc int) {
 	c.pc = pc
 
 	// Now that we've saved state on the stack, if we are in step-over mode,
-	// then turn of single stepping
+	// then turn off single stepping
 	if c.singleStep && c.stepOver {
 		c.singleStep = false
 	}
@@ -95,6 +99,10 @@ func (c *Context) PopFrame() error {
 	return err
 }
 
+// FormatFrames is called from the runtime debugger to print out the
+// current call frames stored on the stack. It chases the stack using
+// the frame pointer (FP) in the current context which points to the
+// saved frame. Its FP points to the previous saved frame, and so on.
 func (c *Context) FormatFrames(maxDepth int) string {
 	f := c.fp
 	depth := 1
@@ -118,6 +126,8 @@ func (c *Context) FormatFrames(maxDepth int) string {
 	return r
 }
 
+// Utility function that abstracts out how we format a location using
+// a module name and line number.
 func formatLocation(module string, line int) string {
 	return fmt.Sprintf("%s %d", module, line)
 }

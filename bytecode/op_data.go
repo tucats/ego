@@ -5,13 +5,27 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-/******************************************\
-*                                         *
-*         D A T A   A C C E S S           *
-*                                         *
-\******************************************/
-
 // StoreImpl instruction processor.
+
+// StoreImpl implements the Store opcode
+//
+// Inputs:
+//    operand    - The name of the variable in which
+//				   the top of stack is stored.
+//    stack+0    - The item to be "stored" is read
+//                 on the stack.
+//
+// The value to be stored is popped from the stack. The
+// variable name and value are used to do a type check
+// to ensure that the value is compatible if we are in
+// static type mode.
+//
+// The value is then written to the symbol table.
+//
+// If the variable name begins with "_" then it is
+// considered a read-only variable, so if the stack
+// contains a map then that map is marked with the
+// metadata indicator that it is readonly.
 func StoreImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {

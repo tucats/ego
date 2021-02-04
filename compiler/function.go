@@ -138,20 +138,16 @@ func (c *Compiler) Function(literal bool) error {
 		b.Emit(bytecode.FromFile, c.SourceFile)
 	}
 
-	// Generate the argument check
-	p := []interface{}{
-		len(parameters),
-		len(parameters),
-		fname,
-	}
-
-	if varargs {
-		p[0] = len(parameters)
-		p[1] = -1
-	}
-
+	// Generate the argument check. IF there are variable arguments,
+	// the maximum parameter count is set to -1.
 	b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
-	b.Emit(bytecode.ArgCheck, p)
+
+	maxCount := len(parameters)
+	if varargs {
+		maxCount = -1
+	}
+
+	b.Emit(bytecode.ArgCheck, len(parameters), maxCount, fname)
 
 	// If there was a "this" variable defined, process it now.
 	if this != "" {
