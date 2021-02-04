@@ -34,7 +34,7 @@ func New(appName string) *App {
 		appName = strings.TrimSpace(appName[:i])
 	}
 
-	app := App{Name: appName, Description: appDescription}
+	app := &App{Name: appName, Description: appDescription}
 
 	return app
 }

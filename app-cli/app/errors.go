@@ -16,7 +16,7 @@ const (
 	UnknownOptionError      = "unknown command line option: %s"
 )
 
-// AppError is the wrapper around general application errors
+// AppError is the wrapper around general application errors.
 type AppError struct {
 	err error
 }
