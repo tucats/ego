@@ -2,7 +2,7 @@ package datatypes
 
 import "strings"
 
-// Define data types as abstract identifiers
+// Define data types as abstract identifiers.
 const (
 	UndefinedType = iota
 	IntType
@@ -27,7 +27,7 @@ type TypeDefinition struct {
 	Kind   int
 }
 
-// TypeDeclarationMap is a dictionary of all the type declaration token sequences
+// TypeDeclarationMap is a dictionary of all the type declaration token sequences.
 var TypeDeclarationMap = []TypeDefinition{
 	{
 		[]string{"chan"},

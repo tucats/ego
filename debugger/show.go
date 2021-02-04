@@ -9,6 +9,8 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// Show implements the debugger's show command. This can be used to display information
+// about the state of the running program or it's runtime environment.
 func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
 	var err error
 

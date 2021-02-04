@@ -102,7 +102,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// CoerceImpl instruction processor
+// CoerceImpl instruction processor.
 func CoerceImpl(c *Context, i interface{}) error {
 	t := util.GetInt(i)
 

@@ -15,7 +15,7 @@ import (
 *                                         *
 \******************************************/
 
-// MakeArrayImpl instruction processor
+// MakeArrayImpl instruction processor.
 func MakeArrayImpl(c *Context, i interface{}) error {
 	parms := util.GetInt(i)
 	if parms == 2 {
@@ -46,7 +46,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 	}
 
 	// No initializer, so get the size and make it
-	// a non-negative integer
+	// a non-negative integer.
 	sv, err := c.Pop()
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// ArrayImpl instruction processor
+// ArrayImpl instruction processor.
 func ArrayImpl(c *Context, i interface{}) error {
 	var arrayType reflect.Type
 
@@ -76,7 +76,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 			return err
 		}
 
-		// If we are in static mode, array must be homogeneous
+		// If we are in static mode, array must be homogeneous.
 		if c.Static {
 			if n == 0 {
 				arrayType = reflect.TypeOf(v)
@@ -86,7 +86,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 				}
 			}
 		}
-		// All good, load it into the array
+		// All good, load it into the array.
 		array[(count-n)-1] = v
 	}
 
@@ -140,7 +140,7 @@ func StructImpl(c *Context, i interface{}) error {
 				// Store a pointer to the model object now.
 				datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
 
-				// Update the replica if needed
+				// Update the replica if needed.
 				if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
 					datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
 				} else {
@@ -172,7 +172,7 @@ func StructImpl(c *Context, i interface{}) error {
 			}
 		}
 	} else {
-		// No type, default it to a struct
+		// No type, default it to a struct.
 		datatypes.SetMetadata(m, datatypes.TypeMDKey, "struct")
 	}
 

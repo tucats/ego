@@ -264,7 +264,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // TablePrint prints a table to the default output, in the default --output-format
-// type (text or json)
+// type (text or json).
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
 
@@ -282,7 +282,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // getTable searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a table object, and returns the
-// native table object
+// native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
@@ -302,7 +302,7 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 }
 
 // Utility function that becomes the table handle function pointer for a closed
-// table handle
+// table handle.
 func tableReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.New("table closed")
 }

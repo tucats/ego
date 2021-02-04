@@ -51,7 +51,7 @@ func (t *Table) Print(format string) error {
 	return nil
 }
 
-// FormatJSON will produce the text of the table as JSON
+// FormatJSON will produce the text of the table as JSON.
 func (t *Table) FormatJSON() string {
 	var buffer strings.Builder
 
@@ -75,7 +75,7 @@ func (t *Table) FormatJSON() string {
 		}
 
 		if e != nil {
-			// Load up the symbol tables with column values and the row number
+			// Load up the symbol tables with column values and the row number.
 			symbols := symbols.NewSymbolTable("rowset")
 			_ = symbols.SetAlways("_row_", n+1)
 
@@ -204,7 +204,7 @@ func (t *Table) FormatText() []string {
 		buffer.WriteString(t.indent)
 
 		if e != nil {
-			// Load up the symbol tables with column values and the row number
+			// Load up the symbol tables with column values and the row number.
 			symbols := symbols.NewSymbolTable("rowset")
 			_ = symbols.SetAlways("_row_", i+1)
 

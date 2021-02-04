@@ -12,7 +12,7 @@ import (
 )
 
 // LineColumnFormat describes the format string for the portion
-// of formatted messages that include a line and column designation
+// of formatted messages that include a line and column designation.
 const LineColumnFormat = "at %d:%d"
 
 // LineFormat describes the format string for a message that contains

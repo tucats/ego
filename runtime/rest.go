@@ -73,7 +73,7 @@ var codes = map[int]string{
 	http.StatusServiceUnavailable:           "Unavailable",
 }
 
-// RestNew implements the New() rest function
+// RestNew implements the New() rest function.
 func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client := resty.New()
 
@@ -178,7 +178,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return true, nil
 }
 
-// RestBase implements the Base() rest function
+// RestBase implements the Base() rest function.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -199,7 +199,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return this, nil
 }
 
-// RestBase implements the Base() rest function
+// RestBase implements the Base() rest function.
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
@@ -220,7 +220,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return this, nil
 }
 
-// RestAuth implements the Auth() rest function
+// RestAuth implements the Auth() rest function.
 func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, err := getClient(s)
 	if err != nil {
@@ -241,7 +241,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return this, nil
 }
 
-// RestToken implements the Token() rest function
+// RestToken implements the Token() rest function.
 func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, err := getClient(s)
 	if err != nil {
@@ -265,7 +265,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return this, nil
 }
 
-// RestMedia implements the Media() function
+// RestMedia implements the Media() function.
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
@@ -279,7 +279,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return this, nil
 }
 
-// RestGet implements the rest Get() function
+// RestGet implements the rest Get() function.
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
@@ -354,7 +354,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
 
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego struct. It also mangles
-// struct member names so "-" is converted to "_"
+// struct member names so "-" is converted to "_".
 func headerMap(response *resty.Response) map[string]interface{} {
 	headers := map[string]interface{}{}
 
@@ -368,7 +368,7 @@ func headerMap(response *resty.Response) map[string]interface{} {
 	return headers
 }
 
-// RestPost implements the Post() rest function
+// RestPost implements the Post() rest function.
 func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
 
@@ -442,7 +442,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return rb, nil
 }
 
-// RestDelete implements the Delete() rest function
+// RestDelete implements the Delete() rest function.
 func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
 

@@ -55,7 +55,7 @@ func (c *Compiler) relations() error {
 	return nil
 }
 
-// addSubtract commpiles an expression containing "+", "&", or "-" operators
+// addSubtract commpiles an expression containing "+", "&", or "-" operators.
 func (c *Compiler) addSubtract() error {
 	err := c.multDivide()
 	if err != nil {

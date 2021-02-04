@@ -8,7 +8,7 @@ import (
 
 // IsLValue peeks ahead to see if this is likely to be an lValue
 // object. This is used in cases where the parser might be in an
-// otherwise ambiguous state
+// otherwise ambiguous state.
 func (c *Compiler) IsLValue() bool {
 	name := c.t.Peek(1)
 	if !tokenizer.IsSymbol(name) {
@@ -186,7 +186,7 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 	}
 }
 
-// lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences)
+// lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences).
 func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	term := c.t.Peek(1)
 	if term == "[" {

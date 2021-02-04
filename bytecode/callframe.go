@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Type of object pushed/popped from stack describes a call frame
+// Type of object pushed/popped from stack describes a call frame.
 type CallFrame struct {
 	Module     string
 	Line       int

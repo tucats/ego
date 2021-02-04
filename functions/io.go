@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// ReadFile reads a file contents into a string value
+// ReadFile reads a file contents into a string value.
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := util.GetString(args[0])
 	if name == "." {
@@ -29,7 +29,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return string(content), nil
 }
 
-// Split splits a string into lines
+// Split splits a string into lines.
 func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := util.GetString(args[0])
 
@@ -51,7 +51,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// Tokenize splits a string into tokens
+// Tokenize splits a string into tokens.
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
@@ -65,7 +65,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// WriteFile writes a string to a file
+// WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fname := util.GetString(args[0])
 	text := util.GetString(args[1])
@@ -74,7 +74,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return len(text), err
 }
 
-// DeleteFile delete a file
+// DeleteFile delete a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fname := util.GetString(args[0])
 	err := os.Remove(fname)
@@ -86,7 +86,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := util.GetString(args[0])
 	ext := ""
-	
+
 	if len(args) > 1 {
 		ext = util.GetString(args[1])
 	}
@@ -103,7 +103,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, err
 }
 
-// ExpandPath is used to expand a path into a list of fie names
+// ExpandPath is used to expand a path into a list of fie names.
 func ExpandPath(path, ext string) ([]string, error) {
 	names := []string{}
 
@@ -121,7 +121,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		if err != nil {
 			return names, err
 		}
-		
+
 		// If we have a default suffix, make sure the pattern matches
 		if ext != "" && !strings.HasSuffix(fn, ext) {
 			return names, nil
@@ -147,7 +147,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 	return names, nil
 }
 
-// ReadDir implmeents the io.readdir() function
+// ReadDir implmeents the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := util.GetString(args[0])
 	result := []interface{}{}

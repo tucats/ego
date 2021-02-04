@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Min implements the min() function
+// Min implements the min() function.
 func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
@@ -49,7 +49,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Max implements the max() function
+// Max implements the max() function.
 func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
@@ -92,7 +92,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Sum implements the sum() function
+// Sum implements the sum() function.
 func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := args[0]
 
@@ -123,21 +123,21 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return base, nil
 }
 
-// Sqrt implements the sqrt() function
+// Sqrt implements the sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := util.GetFloat(args[0])
 
 	return math.Sqrt(f), nil
 }
 
-// Abs implements the abs() function
+// Abs implements the abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := util.GetFloat(args[0])
 
 	return math.Abs(f), nil
 }
 
-// Log is the log() function
+// Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return math.Log(util.GetFloat(args[0])), nil
 }

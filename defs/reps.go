@@ -20,7 +20,7 @@ type CachedItem struct {
 }
 
 // CacheResponse describes the response object returned from
-// the /admin/caches endpoint
+// the /admin/caches endpoint.
 type CacheResponse struct {
 	Count int          `json:"count"`
 	Limit int          `json:"limit"`
@@ -44,7 +44,7 @@ type BaseCollection struct {
 	Start int `json:"start"`
 }
 
-// UserCollection is a collection of User response objects
+// UserCollection is a collection of User response objects.
 type UserCollection struct {
 	BaseCollection
 	Count int    `json:"count"`
@@ -53,7 +53,7 @@ type UserCollection struct {
 }
 
 // UserResponse describes a user when the information is passed
-// back to a caller as a response object
+// back to a caller as a response object.
 type UserReponse struct {
 	User
 	RestResponse

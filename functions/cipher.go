@@ -22,12 +22,12 @@ type Token struct {
 	AuthID  uuid.UUID
 }
 
-// Hash implements the cipher.hash() function
+// Hash implements the cipher.hash() function.
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.Hash(util.GetString(args[0])), nil
 }
 
-// Encrypt implements the cipher.hash() function
+// Encrypt implements the cipher.hash() function.
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b, err := util.Encrypt(util.GetString(args[0]), util.GetString(args[1]))
 	if err != nil {
@@ -37,7 +37,7 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return hex.EncodeToString([]byte(b)), nil
 }
 
-// Decrypt implements the cipher.hash() function
+// Decrypt implements the cipher.hash() function.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if err != nil {
@@ -47,7 +47,7 @@ func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return util.Decrypt(string(b), util.GetString(args[1]))
 }
 
-// Validate determines if a token is valid and returns true/false
+// Validate determines if a token is valid and returns true/false.
 func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
@@ -106,7 +106,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, nil
 }
 
-// Extract extracts the data from a token and returns it as a struct
+// Extract extracts the data from a token and returns it as a struct.
 func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
@@ -152,7 +152,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// CreateToken creates a new token with a username and a data payload
+// CreateToken creates a new token with a username and a data payload.
 func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 

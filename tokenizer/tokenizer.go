@@ -21,7 +21,7 @@ type Tokenizer struct {
 const EndOfTokens = "<<end-of-tokens>>"
 
 // New creates a tokenizer instance and breaks the string
-// up into an array of tokens
+// up into an array of tokens.
 func New(src string) *Tokenizer {
 	var s scanner.Scanner
 
@@ -116,7 +116,7 @@ func (t *Tokenizer) PositionString() string {
 	return fmt.Sprintf(util.LineColumnFormat, t.Line[p], t.Pos[p])
 }
 
-// Next gets the next token in the tokenizer
+// Next gets the next token in the tokenizer.
 func (t *Tokenizer) Next() string {
 	if t.TokenP >= len(t.Tokens) {
 		return EndOfTokens
@@ -137,12 +137,12 @@ func (t *Tokenizer) Peek(offset int) string {
 	return t.Tokens[t.TokenP+(offset-1)]
 }
 
-// AtEnd indicates if we are at the end of the string
+// AtEnd indicates if we are at the end of the string.
 func (t *Tokenizer) AtEnd() bool {
 	return t.TokenP >= len(t.Tokens)
 }
 
-// Advance moves the pointer
+// Advance moves the pointer.
 func (t *Tokenizer) Advance(p int) {
 	t.TokenP = t.TokenP + p
 	if t.TokenP < 0 {
@@ -268,7 +268,7 @@ func splitLines(src string) []string {
 	return strings.Split(src, "\n")
 }
 
-// GetSource returns the entire string of the tokenizer
+// GetSource returns the entire string of the tokenizer.
 func (t *Tokenizer) GetSource() string {
 	r := ""
 	for _, line := range t.Source {

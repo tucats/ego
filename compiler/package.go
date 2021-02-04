@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Package compiles a package statement
+// Package compiles a package statement.
 func (c *Compiler) Package() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
@@ -45,7 +45,7 @@ func (c *Compiler) Package() error {
 	return nil
 }
 
-// Import handles the import statement
+// Import handles the import statement.
 func (c *Compiler) Import() error {
 	if c.blockDepth > 0 {
 		return c.NewError(InvalidImportError)
@@ -175,7 +175,7 @@ func (c *Compiler) Import() error {
 	return nil
 }
 
-// ReadFile reads the text from a file into a string
+// ReadFile reads the text from a file into a string.
 func (c *Compiler) ReadFile(name string) (string, error) {
 	s, err := c.ReadDirectory(name)
 	if err == nil {

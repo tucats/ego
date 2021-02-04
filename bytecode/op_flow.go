@@ -322,7 +322,7 @@ func CallImpl(c *Context, i interface{}) error {
 }
 
 // ReturnImpl implements the return opcode which returns from a called function
-// or local subroutine
+// or local subroutine.
 func ReturnImpl(c *Context, i interface{}) error {
 	var err error
 	// Do we have a return value?
@@ -332,7 +332,7 @@ func ReturnImpl(c *Context, i interface{}) error {
 
 	if err == nil {
 		// Use the frame pointer to reset the stack and retrieve the
-		// runtime state
+		// runtime state.
 		err = c.PopFrame()
 	}
 
@@ -343,7 +343,7 @@ func ReturnImpl(c *Context, i interface{}) error {
 // on the stack to satisfy the function's argument list. The operand is the
 // number of values that must be available. Alternaitvely, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
-// function name
+// function name.
 func ArgCheckImpl(c *Context, i interface{}) error {
 	min := 0
 	max := 0
@@ -416,7 +416,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// TryImpl instruction processor
+// TryImpl instruction processor.
 func TryImpl(c *Context, i interface{}) error {
 	addr := util.GetInt(i)
 	c.try = append(c.try, addr)
@@ -424,7 +424,7 @@ func TryImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// TryPopImpl instruction processor
+// TryPopImpl instruction processor.
 func TryPopImpl(c *Context, i interface{}) error {
 	if len(c.try) == 0 {
 		return c.NewError(TryCatchMismatchError)

@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Runtime error messages
+// Runtime error messages.
 const (
 	ArgumentCountError            = "incorrect function argument count"
 	ArgumentTypeError             = "incorrect function argument type"
@@ -40,7 +40,7 @@ const (
 	VarArgError                   = "invalid variable-argument operation"
 )
 
-// Error contains an error generated from the execution context
+// Error contains an error generated from the execution context.
 type Error struct {
 	text   string
 	module string
@@ -48,7 +48,7 @@ type Error struct {
 	token  string
 }
 
-// NewError generates a new error
+// NewError generates a new error.
 func (c *Context) NewError(msg string, args ...interface{}) *Error {
 	if msg == "" {
 		return nil

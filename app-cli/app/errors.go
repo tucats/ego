@@ -2,7 +2,7 @@ package app
 
 import "fmt"
 
-// List of application errors here
+// List of application errors.
 const (
 	ErrorPrefixString = "application error"
 

@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Error message strings
+// Error message strings.
 const (
 	BlockQuoteError         = "invalid block quote terminator"
 	GeneralExpressionError  = "general expression error"
@@ -22,7 +22,7 @@ const (
 	UnexpectedTokenError    = "unexpected token"
 )
 
-// Error contains an error generated from the compiler
+// Error contains an error generated from the compiler.
 type Error struct {
 	text   string
 	line   int

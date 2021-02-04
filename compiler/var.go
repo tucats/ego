@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Var compiles the var statement
+// Var compiles the var statement.
 func (c *Compiler) Var() error {
 	names := []string{}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Decode reads a string as JSON data
+// Decode reads a string as JSON data.
 func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v interface{}
 
@@ -45,7 +45,7 @@ func Seal(i interface{}) interface{} {
 	}
 }
 
-// Encode writes a  JSON string from arbitrary data
+// Encode writes a  JSON string from arbitrary data.
 func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(args[0])
@@ -75,7 +75,7 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return b.String(), nil
 }
 
-// EncodeFormatted writes a  JSON string from arbitrary data
+// EncodeFormatted writes a  JSON string from arbitrary data.
 func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.MarshalIndent(args[0], "", "  ")

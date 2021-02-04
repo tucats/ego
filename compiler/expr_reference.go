@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// reference parses a structure or array reference
+// reference parses a structure or array reference.
 func (c *Compiler) reference() error {
 	// Parse the function call or exprssion atom
 	err := c.expressionAtom()

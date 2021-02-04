@@ -18,7 +18,7 @@ import (
 // item and pushes it's negative. For booleans, this is
 // a "not" operation; for numeric values it is simple
 // negation. For an array, it reverses the order of the
-// array elements
+// array elements.
 func NegateImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
@@ -36,7 +36,7 @@ func NegateImpl(c *Context, i interface{}) error {
 		_ = c.Push(0.0 - value)
 
 	case []interface{}:
-		// Create an array in inverse order
+		// Create an array in inverse order.
 		r := make([]interface{}, len(value))
 
 		for n, d := range value {
@@ -72,7 +72,7 @@ func AddImpl(c *Context, i interface{}) error {
 	// Is it an array we are concatenating to?
 	case []interface{}:
 		switch vy := v2.(type) {
-		// Array requires a deep concatnation
+		// Array requires a deep concatenation.
 		case []interface{}:
 			// If we're in static type mode, each member of the
 			// array being added must match the type of the target
@@ -98,7 +98,7 @@ func AddImpl(c *Context, i interface{}) error {
 			return c.Push(newArray)
 		}
 
-		// You can add a map to another map
+		// You can add a map to another map.
 	case map[string]interface{}:
 		switch vy := v2.(type) {
 		case map[string]interface{}:
@@ -112,7 +112,7 @@ func AddImpl(c *Context, i interface{}) error {
 			return c.NewError(InvalidTypeError)
 		}
 
-		// All other types are scalar math
+		// All other types are scalar math.
 	default:
 		v1, v2 = util.Normalize(v1, v2)
 
@@ -135,7 +135,7 @@ func AddImpl(c *Context, i interface{}) error {
 	}
 }
 
-// AndImpl bytecode instruction processor
+// AndImpl bytecode instruction processor.
 func AndImpl(c *Context, i interface{}) error {
 	v1, err := c.Pop()
 	if err != nil {
@@ -150,7 +150,7 @@ func AndImpl(c *Context, i interface{}) error {
 	return c.Push(util.GetBool(v1) && util.GetBool(v2))
 }
 
-// OrImpl bytecode instruction processor
+// OrImpl bytecode instruction processor.
 func OrImpl(c *Context, i interface{}) error {
 	v1, err := c.Pop()
 	if err != nil {
@@ -168,7 +168,7 @@ func OrImpl(c *Context, i interface{}) error {
 // SubtractImpl instruction processor removes two items from the
 // stack and subtracts them. For numeric values, this is arithmetic
 // subtraction. For an array, the item to be subtracted is removed
-// from the array (in any array location it is found)
+// from the array (in any array location it is found).
 func SubtractImpl(c *Context, i interface{}) error {
 	v2, err := c.Pop()
 	if err != nil {
@@ -193,7 +193,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 
 		return c.Push(newArray)
 
-	// Everything else is a scalar subtraction
+	// Everything else is a scalar subtraction.
 	default:
 		v1, v2 = util.Normalize(v1, v2)
 
@@ -215,7 +215,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 	}
 }
 
-// MultiplyImpl bytecode instruction processor
+// MultiplyImpl bytecode instruction processor.
 func MultiplyImpl(c *Context, i interface{}) error {
 	v2, err := c.Pop()
 	if err != nil {
@@ -244,7 +244,7 @@ func MultiplyImpl(c *Context, i interface{}) error {
 	}
 }
 
-// ExponentImpl bytecode instruction processor
+// ExponentImpl bytecode instruction processor.
 func ExponentImpl(c *Context, i interface{}) error {
 	v2, err := c.Pop()
 	if err != nil {
@@ -284,7 +284,7 @@ func ExponentImpl(c *Context, i interface{}) error {
 	}
 }
 
-// DivideImpl bytecode instruction processor
+// DivideImpl bytecode instruction processor.
 func DivideImpl(c *Context, i interface{}) error {
 	if c.sp < 1 {
 		return c.NewError(StackUnderflowError)

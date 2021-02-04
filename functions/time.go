@@ -10,14 +10,14 @@ import (
 
 const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
-// TimeNow implements time.now()
+// TimeNow implements time.now().
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()
 
 	return makeTime(&t), nil
 }
 
-// TimeParse time.Parse()
+// TimeParse time.Parse().
 func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := util.GetString(args[0])
 	fmt := basicLayout
@@ -34,7 +34,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return makeTime(&t), nil
 }
 
-// TimeAdd implements time.duration()
+// TimeAdd implements time.duration().
 func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, NewError("Add", ArgumentCountError)
@@ -53,7 +53,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// TimeSub implements time.duration()
+// TimeSub implements time.duration().
 func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, NewError("Sub", ArgumentCountError)
@@ -72,7 +72,7 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// TimeFormat implements time.Format()
+// TimeFormat implements time.Format().
 func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, NewError("Format", ArgumentCountError)
@@ -88,7 +88,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return t.Format(layout), nil
 }
 
-// TimeSleep implements time.SleepUntil()
+// TimeSleep implements time.SleepUntil().
 func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
 		return nil, NewError("Sleep", ArgumentCountError)
@@ -105,7 +105,7 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return d.String(), nil
 }
 
-// TimeFormat implements time.Format()
+// TimeFormat implements time.Format().
 func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
 		return nil, NewError("String", ArgumentCountError)
@@ -122,7 +122,7 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // getTime looks in the symbol table for the "this" receiver, and
-// extracts the time value from it
+// extracts the time value from it.
 func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 	if t, ok := symbols.Get("__this"); ok {
 		return getTimeV(t)

@@ -41,13 +41,13 @@ type Loop struct {
 	continues []int
 }
 
-// FunctionDictionary is a list of functions and the bytecode or native function pointer
+// FunctionDictionary is a list of functions and the bytecode or native function pointer.
 type FunctionDictionary map[string]interface{}
 
-// PackageDictionary is a list of packages each with a FunctionDictionary
+// PackageDictionary is a list of packages each with a FunctionDictionary.
 type PackageDictionary map[string]FunctionDictionary
 
-// Compiler is a structure defining what we know about the compilation
+// Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
 	PackageName          string
 	SourceFile           string
@@ -66,7 +66,7 @@ type Compiler struct {
 	exitEnabled          bool // Only true in interactive mode
 }
 
-// New creates a new compiler instance
+// New creates a new compiler instance.
 func New() *Compiler {
 	cInstance := Compiler{
 		b:                    nil,
@@ -82,21 +82,21 @@ func New() *Compiler {
 	return &cInstance
 }
 
-// If set to true, the compiler allows the EXIT statement
+// If set to true, the compiler allows the EXIT statement.
 func (c *Compiler) ExitEnabled(b bool) *Compiler {
 	c.exitEnabled = b
 
 	return c
 }
 
-// If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements
+// If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements.
 func (c *Compiler) ExtensionsEnabled(b bool) *Compiler {
 	c.extensionsEnabled = b
 
 	return c
 }
 
-// WithTokens supplies the token stream to a compiler
+// WithTokens supplies the token stream to a compiler.
 func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 	c.t = t
 
@@ -104,7 +104,7 @@ func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 }
 
 // WithNormalization sets the normalization flag and can be chained
-// onto a compiler.New...() operation
+// onto a compiler.New...() operation.
 func (c *Compiler) WithNormalization(f bool) *Compiler {
 	c.LowercaseIdentifiers = f
 
@@ -145,7 +145,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 }
 
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name
-// is empty)
+// is empty).
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 
@@ -174,7 +174,7 @@ func (c *Compiler) Get(name string) (interface{}, bool) {
 }
 
 // Normalize performs case-normalization based on the current
-// compiler settings
+// compiler settings.
 func (c *Compiler) Normalize(name string) string {
 	if c.LowercaseIdentifiers {
 		return strings.ToLower(name)
@@ -253,14 +253,14 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 }
 
 // StatementEnd returns true when the next token is
-// the end-of-statement boundary
+// the end-of-statement boundary.
 func (c *Compiler) StatementEnd() bool {
 	next := c.t.Peek(1)
 
 	return util.InList(next, tokenizer.EndOfTokens, ";", "}")
 }
 
-// Symbols returns the symbol table map from compilation
+// Symbols returns the symbol table map from compilation.
 func (c *Compiler) Symbols() *symbols.SymbolTable {
 	return c.s
 }

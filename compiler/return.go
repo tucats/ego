@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 )
 
-// Return handles the return statement compilation
+// Return handles the return statement compilation.
 func (c *Compiler) Return() error {
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined.
@@ -68,7 +68,7 @@ func (c *Compiler) Return() error {
 	return nil
 }
 
-// Exit handles the exit statement compilation
+// Exit handles the exit statement compilation.
 func (c *Compiler) Exit() error {
 	c.b.Emit(bytecode.Load, "util")
 	c.b.Emit(bytecode.Member, "Exit")

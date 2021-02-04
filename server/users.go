@@ -142,7 +142,7 @@ func setPermission(user, privilege string, enabled bool) error {
 }
 
 // getPermission returns a boolean indicating if the given username and privilege are valid and
-// set. If the username or privilege does not exist, then the reply is always false
+// set. If the username or privilege does not exist, then the reply is always false.
 func getPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 
@@ -171,7 +171,7 @@ func findPermission(u defs.User, perm string) int {
 }
 
 // validatePassword checks a username and password against the databse and
-// returns true if the user exists and the password is valid
+// returns true if the user exists and the password is valid.
 func validatePassword(user, pass string) bool {
 	ok := false
 
@@ -190,7 +190,7 @@ func validatePassword(user, pass string) bool {
 }
 
 // HashString converts a given string to it's hash. This is used to manage
-// passwords
+// passwords.
 func HashString(s string) string {
 	var r strings.Builder
 
@@ -259,7 +259,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return getPermission(user, priv), nil
 }
 
-// Implements the SetUser() function
+// Implements the SetUser() function.
 func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
@@ -351,7 +351,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return false, nil
 }
 
-// Implements the GetUser() function
+// Implements the GetUser() function.
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
@@ -373,7 +373,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// updateUserDatabase re-writes the user database file with updated values
+// updateUserDatabase re-writes the user database file with updated values.
 func updateUserDatabase() error {
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(userDatabase, "", "   ")
@@ -409,7 +409,7 @@ func validateToken(t string) bool {
 }
 
 // tokenUser is a helper function that calls the builtin cipher.token() and returns
-// the user field
+// the user field.
 func tokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if util.GetBool(v) {

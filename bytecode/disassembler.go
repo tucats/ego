@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Disasm prints out a representation of the bytecode for debugging purposes
+// Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm() {
 	ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 
@@ -51,7 +51,7 @@ func FormatInstruction(i I) string {
 	return opname + " " + f
 }
 
-// Format formats an array of bytecodes
+// Format formats an array of bytecodes.
 func Format(opcodes []I) string {
 	var b strings.Builder
 

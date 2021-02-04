@@ -27,7 +27,7 @@ func OutputFormatAction(c *cli.Context) error {
 	return nil
 }
 
-// DebugAction is an action routine to set the global debug status if specified
+// DebugAction is an action routine to set the global debug status if specified.
 func DebugAction(c *cli.Context) error {
 	loggers, mode := c.FindGlobal().GetStringList("debug")
 	ui.DebugMode = mode
@@ -42,7 +42,7 @@ func DebugAction(c *cli.Context) error {
 	return nil
 }
 
-// QuietAction is an action routine to set the global debug status if specified
+// QuietAction is an action routine to set the global debug status if specified.
 func QuietAction(c *cli.Context) error {
 	ui.QuietMode = c.FindGlobal().GetBool("quiet")
 

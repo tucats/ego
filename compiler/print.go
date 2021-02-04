@@ -5,7 +5,7 @@ import (
 )
 
 // Print compiles a print statement. The verb is already removed
-// from the token stream
+// from the token stream.
 func (c *Compiler) Print() error {
 	newline := true
 

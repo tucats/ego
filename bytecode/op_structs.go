@@ -11,7 +11,7 @@ import (
 
 // This manages operations on structures (structs, maps, and arrays)
 
-// LoadIndexImpl instruction processor
+// LoadIndexImpl instruction processor.
 func LoadIndexImpl(c *Context, i interface{}) error {
 	index, err := c.Pop()
 	if err != nil {
@@ -31,7 +31,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 			err = c.Push(v)
 		}
 
-	// Reading from a channel ignores the index value
+	// Reading from a channel ignores the index value.
 	case *datatypes.Channel:
 		var datum interface{}
 
@@ -40,7 +40,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 			err = c.Push(datum)
 		}
 
-	// Index into map is just member access
+	// Index into map is just member access.
 	case map[string]interface{}:
 		subscript := util.GetString(index)
 		isPackage := false
@@ -53,7 +53,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 
 		var f bool
 
-		// If it's a metadata key name, redirect
+		// If it's a metadata key name, redirect.
 		if strings.HasPrefix(subscript, "__") {
 			v, f = datatypes.GetMetadata(a, subscript[2:])
 		} else {
@@ -87,7 +87,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	return err
 }
 
-// LoadSliceImpl instruction processor
+// LoadSliceImpl instruction processor.
 func LoadSliceImpl(c *Context, i interface{}) error {
 	index2, err := c.Pop()
 	if err != nil {
@@ -127,7 +127,7 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// StoreMetadataImpl instruction processor
+// StoreMetadataImpl instruction processor.
 func StoreMetadataImpl(c *Context, i interface{}) error {
 	var key string
 
@@ -162,7 +162,7 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 	return c.Push(m)
 }
 
-// StoreIndexImpl instruction processor
+// StoreIndexImpl instruction processor.
 func StoreIndexImpl(c *Context, i interface{}) error {
 	storeAlways := util.GetBool(i)
 
@@ -269,7 +269,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// StoreIndexImpl instruction processor
+// StoreIndexImpl instruction processor.
 func StoreIntoImpl(c *Context, i interface{}) error {
 	index, err := c.Pop()
 	if err != nil {
@@ -301,7 +301,6 @@ func StoreIntoImpl(c *Context, i interface{}) error {
 	}
 
 	return nil
-
 }
 
 func FlattenImpl(c *Context, i interface{}) error {

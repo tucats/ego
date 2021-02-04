@@ -13,7 +13,7 @@ import (
 *                                         *
 \******************************************/
 
-// EqualImpl instruction processor
+// EqualImpl instruction processor.
 func EqualImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
@@ -70,7 +70,7 @@ func EqualImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// NotEqualImpl instruction processor
+// NotEqualImpl instruction processor.
 func NotEqualImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
@@ -126,7 +126,7 @@ func NotEqualImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// GreaterThanImpl instruction processor
+// GreaterThanImpl instruction processor.
 func GreaterThanImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
@@ -174,7 +174,7 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// GreaterThanOrEqualImpl instruction processor
+// GreaterThanOrEqualImpl instruction processor.
 func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
@@ -222,7 +222,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// LessThanImpl instruction processor
+// LessThanImpl instruction processor.
 func LessThanImpl(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
@@ -272,9 +272,9 @@ func LessThanImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-// LessThanOrEqualImpl instruction processor
+// LessThanOrEqualImpl instruction processor.
 func LessThanOrEqualImpl(c *Context, i interface{}) error {
-	// Terms pushed in reverse order
+	// Terms pushed in reverse order.
 	v2, err := c.Pop()
 	if err != nil {
 		return err

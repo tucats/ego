@@ -12,11 +12,11 @@ func TestTable_SortRows(t *testing.T) {
 		rows        [][]string
 		sortColumn  string
 		result      []string
-		hideLines   bool
-		hideHeaders bool
 		startingRow int
 		width       int
 		wantErr     bool
+		hideLines   bool
+		hideHeaders bool
 	}{
 		{
 			name:       "Simple table with one column, two rows",

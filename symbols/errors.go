@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Error messages
+// Error messages.
 const (
 	Prefix = "symbol table error"
 
@@ -15,7 +15,7 @@ const (
 	UnknownSymbolError = "unknown symbol"
 )
 
-// SymbolError is a symbol table manager error
+// SymbolError is a symbol table manager error.
 type SymbolError struct {
 	Text      string
 	Parameter string
@@ -37,7 +37,7 @@ func (e *SymbolError) Error() string {
 	return b.String()
 }
 
-// NewError creates an SymbolError object
+// NewError creates an SymbolError object.
 func (*SymbolTable) NewError(text string, args ...interface{}) error {
 	e := &SymbolError{Text: text}
 	if len(args) > 0 {

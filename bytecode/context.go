@@ -13,30 +13,30 @@ import (
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
-	Name            string
-	bc              *ByteCode
-	pc              int
 	stack           []interface{}
+	bc              *ByteCode
+	symbols         *symbols.SymbolTable
+	tokenizer       *tokenizer.Tokenizer
+	try             []int
+	output          *strings.Builder
+	rangeStack      []*Range
+	Name            string
+	this            interface{}
+	lastStruct      interface{}
+	result          interface{}
+	pc              int
 	sp              int
 	fp              int
+	line            int
+	argCountDelta   int
+	Tracing         bool
+	fullSymbolScope bool
 	running         bool
 	Static          bool
 	debugging       bool
 	singleStep      bool
 	stepOver        bool
 	tracing         bool
-	line            int
-	fullSymbolScope bool
-	symbols         *symbols.SymbolTable
-	Tracing         bool
-	tokenizer       *tokenizer.Tokenizer
-	try             []int
-	output          *strings.Builder
-	this            interface{}
-	lastStruct      interface{}
-	result          interface{}
-	rangeStack      []*Range
-	argCountDelta   int
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -116,7 +116,7 @@ func (c *Context) SetGlobal(name string, value interface{}) error {
 }
 
 // EnableConsoleOutput tells the context to begin capturing all output normally generated
-// from Print and Newline into a buffer instead of going to stdout
+// from Print and Newline into a buffer instead of going to stdout.
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	ui.Debug(ui.AppLogger, ">>> Console output set to %v", flag)
 
@@ -130,7 +130,7 @@ func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	return c
 }
 
-// GetOutput retrieves the output buffer
+// GetOutput retrieves the output buffer.
 func (c *Context) GetOutput() string {
 	if c.output != nil {
 		return c.output.String()
@@ -194,18 +194,18 @@ func (c *Context) GetModuleName() string {
 	return c.bc.Name
 }
 
-// SetConstant is a helper function to define a constant value
+// SetConstant is a helper function to define a constant value.
 func (c *Context) SetConstant(name string, v interface{}) error {
 	return c.symbols.SetConstant(name, v)
 }
 
-// IsConstant is a helper function to define a constant value
+// IsConstant is a helper function to define a constant value.
 func (c *Context) IsConstant(name string) bool {
 	return c.symbols.IsConstant(name)
 }
 
 // Get is a helper function that retrieves a symbol value from the associated
-// symbol table
+// symbol table.
 func (c *Context) Get(name string) (interface{}, bool) {
 	v, found := c.symbols.Get(name)
 
@@ -213,28 +213,28 @@ func (c *Context) Get(name string) (interface{}, bool) {
 }
 
 // Set is a helper function that sets a symbol value in the associated
-// symbol table
+// symbol table.
 func (c *Context) Set(name string, value interface{}) error {
 	return c.symbols.Set(name, value)
 }
 
 // SetAlways is a helper function that sets a symbol value in the associated
-// symbol table
+// symbol table.
 func (c *Context) SetAlways(name string, value interface{}) error {
 	return c.symbols.SetAlways(name, value)
 }
 
-// Delete deletes a symbol from the current context
+// Delete deletes a symbol from the current context.
 func (c *Context) Delete(name string) error {
 	return c.symbols.Delete(name)
 }
 
-// Create creates a symbol
+// Create creates a symbol.
 func (c *Context) Create(name string) error {
 	return c.symbols.Create(name)
 }
 
-// Pop removes the top-most item from the stack
+// Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, error) {
 	if c.sp <= 0 || len(c.stack) < c.sp {
 		return nil, c.NewError(StackUnderflowError)
@@ -246,7 +246,7 @@ func (c *Context) Pop() (interface{}, error) {
 	return v, nil
 }
 
-// Push puts a new items on the stack
+// Push puts a new items on the stack.
 func (c *Context) Push(v interface{}) error {
 	if c.sp >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
@@ -258,7 +258,7 @@ func (c *Context) Push(v interface{}) error {
 	return nil
 }
 
-// FormatStack formats the stack for tracing output
+// FormatStack formats the stack for tracing output.
 func FormatStack(s []interface{}, newlines bool) string {
 	var b strings.Builder
 

@@ -24,7 +24,7 @@ func (e ExitError) Error() string {
 	return e.Message
 }
 
-// NewExitError constructs an ExitError
+// NewExitError constructs an ExitError.
 func NewExitError(msg string, code int) ExitError {
 	return ExitError{ExitStatus: code, Message: msg}
 }

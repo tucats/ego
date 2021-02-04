@@ -392,7 +392,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // DBExecute executes a SQL statement, and returns the number of rows that were
-// affected by the statement (such as number of rows deleted for a DELETE statement)
+// affected by the statement (such as number of rows deleted for a DELETE statement).
 func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, tx, err := getDBClient(s)
 	if err != nil {
@@ -455,7 +455,7 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 }
 
 // Utility function that becomes the db handle function pointer for a closed
-// db connection handle
+// db connection handle.
 func dbReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.New("db client closed")
 }

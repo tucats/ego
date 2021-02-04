@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// RowLimit sets the row limit for output (<0 means all rows)
+// RowLimit sets the row limit for output (<0 means all rows).
 func (t *Table) RowLimit(limit int) *Table {
 	if limit <= 0 {
 		t.rowLimit = -1
@@ -15,21 +15,21 @@ func (t *Table) RowLimit(limit int) *Table {
 	return t
 }
 
-// ShowUnderlines enables underlining of column headings when the parameter is true
+// ShowUnderlines enables underlining of column headings when the parameter is true.
 func (t *Table) ShowUnderlines(flag bool) *Table {
 	t.showUnderlines = flag
 
 	return t
 }
 
-// ShowHeadings disables printing of column headings when the parameter is true
+// ShowHeadings disables printing of column headings when the parameter is true.
 func (t *Table) ShowHeadings(flag bool) *Table {
 	t.showHeadings = flag
 
 	return t
 }
 
-// ShowRowNumbers enables printing of column headings when the parameter is true
+// ShowRowNumbers enables printing of column headings when the parameter is true.
 func (t *Table) ShowRowNumbers(flag bool) *Table {
 	t.showRowNumbers = flag
 
@@ -42,11 +42,11 @@ func (t *Table) SetMinimumWidth(n int, w int) error {
 	if n < 0 || n >= t.columnCount {
 		return NewTableErr(InvalidColumnNumberError, n)
 	}
-	
+
 	if w < 0 {
 		return NewTableErr(InvalidColumnWidthError, w)
 	}
-	
+
 	if w > t.maxWidth[n] {
 		t.maxWidth[n] = w
 	}
@@ -66,7 +66,7 @@ func (t *Table) SetStartingRow(s int) error {
 	return nil
 }
 
-// SetSpacing specifies the spaces between columns in output
+// SetSpacing specifies the spaces between columns in output.
 func (t *Table) SetSpacing(s int) error {
 	if s < 0 {
 		return NewTableErr(InvalidSpacingError, s)
@@ -83,7 +83,7 @@ func (t *Table) SetSpacing(s int) error {
 	return nil
 }
 
-// SetIndent specifies the spaces to indent each heading and row
+// SetIndent specifies the spaces to indent each heading and row.
 func (t *Table) SetIndent(s int) error {
 	var buffer strings.Builder
 
@@ -94,7 +94,7 @@ func (t *Table) SetIndent(s int) error {
 	for i := 0; i < s; i++ {
 		buffer.WriteRune(' ')
 	}
-	
+
 	t.indent = buffer.String()
 
 	return nil

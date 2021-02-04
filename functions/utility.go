@@ -17,7 +17,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Sleep implements util.sleep()
+// Sleep implements util.sleep().
 func Sleep(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	duration, err := time.ParseDuration(util.GetString(args[0]))
 	if err == nil {
@@ -27,14 +27,14 @@ func Sleep(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// ProfileGet implements the profile.get() function
+// ProfileGet implements the profile.get() function.
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := util.GetString(args[0])
 
 	return persistence.Get(key), nil
 }
 
-// ProfileSet implements the profile.set() function
+// ProfileSet implements the profile.set() function.
 func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := util.GetString(args[0])
 
@@ -58,7 +58,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	return nil, persistence.Save()
 }
 
-// ProfileDelete implements the profile.delete() function
+// ProfileDelete implements the profile.delete() function.
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := util.GetString(args[0])
 	persistence.Delete(key)
@@ -66,7 +66,7 @@ func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{
 	return nil, nil
 }
 
-// ProfileKeys implements the profile.keys() function
+// ProfileKeys implements the profile.keys() function.
 func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	keys := persistence.Keys()
 	result := make([]interface{}, len(keys))
@@ -78,14 +78,14 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	return result, nil
 }
 
-// UUID implements the uuid() function
+// UUID implements the uuid() function.
 func UUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	u := uuid.New()
 
 	return u.String(), nil
 }
 
-// Length implements the len() function
+// Length implements the len() function.
 func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if args[0] == nil {
 		return 0, nil
@@ -150,7 +150,7 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // Array implements the array() function, which creates
 // an empty array of the given size. IF there are two parameters,
 // the first must be an existing array which is resized to match
-// the new array
+// the new array.
 func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var array []interface{}
 
@@ -185,7 +185,7 @@ func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return os.Getenv(util.GetString(args[0])), nil
 }
 
-// GetMode implements the util.Mode() function which reports the runtime mode
+// GetMode implements the util.Mode() function which reports the runtime mode.
 func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	m, ok := symbols.Get("__exec_mode")
 	if !ok {
@@ -195,7 +195,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	return m, nil
 }
 
-// Members gets an array of the names of the fields in a structure
+// Members gets an array of the names of the fields in a structure.
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case datatypes.EgoMap:
@@ -295,7 +295,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 }
 
-// Exit implements the util.exit() function
+// Exit implements the util.exit() function.
 func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
@@ -316,12 +316,12 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return nil, nil
 }
 
-// FormatSymbols implements the util.symbols() function
+// FormatSymbols implements the util.symbols() function.
 func FormatSymbols(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return syms.Format(false), nil
 }
 
-// Type implements the type() function
+// Type implements the type() function.
 func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
@@ -350,6 +350,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	case []interface{}:
 		kind := datatypes.UndefinedType
+
 		for _, n := range v {
 			k2 := datatypes.TypeOf(n)
 			if kind != k2 {
@@ -359,8 +360,8 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					kind = datatypes.InterfaceType
 				}
 			}
-
 		}
+
 		return datatypes.TypeString(kind + datatypes.ArrayType), nil
 
 	case map[string]interface{}:
@@ -399,7 +400,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Signal creates an error object based on the
-// parameters
+// parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return NewError("error", util.GetString(args[0]), args[1:]...), nil
 }

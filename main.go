@@ -11,7 +11,7 @@ import (
 
 // BuildVersion is the incremental build version that is
 // injected into the version number string by the build
-// script
+// script.
 var BuildVersion = "0"
 
 func main() {

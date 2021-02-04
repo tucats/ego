@@ -16,7 +16,7 @@ import (
 )
 
 // UserHandler is the rest handler for /admin/user endpoint
-// operations
+// operations.
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -235,7 +235,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
 }
 
-// FlushCacheHandler is the rest handler for /admin/caches endpoint
+// FlushCacheHandler is the rest handler for /admin/caches endpoint.
 func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
@@ -341,7 +341,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// For a given userid, indicate if this user exists and has admin privileges
+// For a given userid, indicate if this user exists and has admin privileges.
 func isAdminRequestor(r *http.Request) (string, bool) {
 	var user string
 

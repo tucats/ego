@@ -13,17 +13,17 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Lower implements the lower() function
+// Lower implements the lower() function.
 func Lower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToLower(util.GetString(args[0])), nil
 }
 
-// Upper implements the upper() function
+// Upper implements the upper() function.
 func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToUpper(util.GetString(args[0])), nil
 }
 
-// Left implements the left() function
+// Left implements the left() function.
 func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
@@ -48,7 +48,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return b.String(), nil
 }
 
-// Right implements the right() function
+// Right implements the right() function.
 func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var cpos int
 
@@ -77,7 +77,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return b.String(), nil
 }
 
-// Index implements the index() function
+// Index implements the index() function.
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
 	case []interface{}:
@@ -108,7 +108,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 }
 
-// Substring implements the substring() function
+// Substring implements the substring() function.
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := util.GetString(args[0])
 
@@ -152,7 +152,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	return b.String(), nil
 }
 
-// Format implements the strings.format() function
+// Format implements the strings.format() function.
 func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return "", nil
@@ -228,7 +228,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return b.String(), nil
 }
 
-// Template implements the strings.template() function
+// Template implements the strings.template() function.
 func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 

@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Grammar describes profile subcommands
+// Grammar describes profile subcommands.
 var Grammar = []cli.Option{
 	{
 		LongName:    "list",
@@ -68,7 +68,7 @@ var Grammar = []cli.Option{
 	},
 }
 
-// ShowAction Displays the current contents of the active profile
+// ShowAction Displays the current contents of the active profile.
 func ShowAction(c *cli.Context) error {
 	t, _ := tables.New([]string{"Key", "Value"})
 
@@ -87,7 +87,7 @@ func ShowAction(c *cli.Context) error {
 	return nil
 }
 
-// ListAction Displays the current contents of the active profile
+// ListAction Displays the current contents of the active profile.
 func ListAction(c *cli.Context) error {
 	t, _ := tables.New([]string{"Name", "Description"})
 
@@ -121,9 +121,9 @@ func SetOutputAction(c *cli.Context) error {
 	return NewProfileErr(MissingOutputTypeError)
 }
 
-// SetAction uses the first two parameters as a key and value
+// SetAction uses the first two parameters as a key and value.
 func SetAction(c *cli.Context) error {
-	// Generic --key and --value specification
+	// Generic --key and --value specification.
 	key := c.GetParameter(0)
 	value := "true"
 
@@ -138,7 +138,7 @@ func SetAction(c *cli.Context) error {
 	return nil
 }
 
-// DeleteAction deletes a named key value
+// DeleteAction deletes a named key value.
 func DeleteAction(c *cli.Context) error {
 	key := c.GetParameter(0)
 	persistence.Delete(key)
@@ -161,7 +161,7 @@ func DeleteProfileAction(c *cli.Context) error {
 	return err
 }
 
-// SetDescriptionAction sets the profile description string
+// SetDescriptionAction sets the profile description string.
 func SetDescriptionAction(c *cli.Context) error {
 	config := persistence.Configurations[persistence.ProfileName]
 	config.Description = c.GetParameter(0)

@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Format formats a symbol table into a string for printing/display
+// Format formats a symbol table into a string for printing/display.
 func (s *SymbolTable) Format(includeBuiltins bool) string {
 	var b strings.Builder
 

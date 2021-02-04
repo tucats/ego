@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 )
 
-// SymbolTable contains an abstract symbol table
+// SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
 	Name          string
 	Parent        *SymbolTable
@@ -39,7 +39,7 @@ var RootSymbolTable = SymbolTable{
 	},
 }
 
-// NewSymbolTable generates a new symbol table
+// NewSymbolTable generates a new symbol table.
 func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
@@ -64,7 +64,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	return &symbols
 }
 
-// SetGlobal sets a symbol value in the global symbol table
+// SetGlobal sets a symbol value in the global symbol table.
 func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
 	_ = RootSymbolTable.Create(name)
 
@@ -72,7 +72,7 @@ func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
 }
 
 // Get retrieves a symbol from the current table or any parent
-// table that exists
+// table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	v, f := s.Symbols[name]
 
@@ -222,7 +222,7 @@ func (s *SymbolTable) DeleteAlways(name string) error {
 	return nil
 }
 
-// Create creates a symbol name in the table
+// Create creates a symbol name in the table.
 func (s *SymbolTable) Create(name string) error {
 	if len(name) == 0 {
 		return s.NewError(InvalidSymbolError)
@@ -238,7 +238,7 @@ func (s *SymbolTable) Create(name string) error {
 	return nil
 }
 
-// IsConstant determines if a name is a constant value
+// IsConstant determines if a name is a constant value.
 func (s *SymbolTable) IsConstant(name string) bool {
 	if s.Constants != nil {
 		constLock.Lock()

@@ -37,7 +37,7 @@ func PromptPassword(p string) string {
 		fmt.Print(p)
 	}
 
-	bytePassword, _ := term.ReadPassword(int(syscall.Stdin))
+	bytePassword, _ := term.ReadPassword(syscall.Stdin)
 	password := string(bytePassword)
 
 	fmt.Println() // it's necessary to add a new line after user's input

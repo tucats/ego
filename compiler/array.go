@@ -5,7 +5,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Array compiles the array statement
+// Array compiles the array statement.
 func (c *Compiler) Array() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {

@@ -118,7 +118,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 }
 
 // Use the --port specifiation, if any, to create a platform-specific
-// filename for the pid
+// filename for the pid.
 func getPidFileName(c *cli.Context) string {
 	port, ok := c.GetInteger("port")
 	portString := fmt.Sprintf("-%d", port)

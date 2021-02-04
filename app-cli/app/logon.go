@@ -11,19 +11,19 @@ import (
 )
 
 const (
-	// LogonEndpoint is the endpoint for the logon service
+	// LogonEndpoint is the endpoint for the logon service.
 	LogonEndpoint = "/services/logon"
 
 	// LogonServerSetting is the name of the profile item that
-	// describes the URL of the logon server (less the endpoint)
+	// describes the URL of the logon server (less the endpoint).
 	LogonServerSetting = "ego.logon.server"
 
 	// LogonTokenSetting is th ename of the profile item that
-	// contains the logon token received from a successful logon
+	// contains the logon token received from a successful logon.
 	LogonTokenSetting = "ego.logon.token"
 )
 
-// LogonGrammar describes the login subcommand
+// LogonGrammar describes the login subcommand.
 var LogonGrammar = []cli.Option{
 	{
 		LongName:            "username",
@@ -48,7 +48,7 @@ var LogonGrammar = []cli.Option{
 	},
 }
 
-// Logon handles the logon subcommand
+// Logon handles the logon subcommand.
 func Logon(c *cli.Context) error {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
@@ -75,7 +75,7 @@ func Logon(c *cli.Context) error {
 		pass = ui.PromptPassword("Password: ")
 	}
 
-	// Turn logon server address and endpoint into full URL
+	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + LogonEndpoint
 
 	// Call the endpoint
