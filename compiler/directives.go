@@ -229,8 +229,7 @@ func (c *Compiler) Error() error {
 func (c *Compiler) TypeChecking() error {
 	var err error
 
-	t := c.t.Next()
-	if util.InList(t, "static", "dynamic") {
+	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
 		err = c.NewError(InvalidTypeCheckError, t)

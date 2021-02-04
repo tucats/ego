@@ -249,8 +249,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
-	rerr := rows.Close()
-	if rerr != nil {
+	if err := rows.Close(); err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 

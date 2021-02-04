@@ -76,6 +76,7 @@ const (
 	StoreChan
 	StoreGlobal
 	StoreIndex
+	StoreInto
 	StoreMetadata
 	Struct
 	Sub
@@ -162,6 +163,7 @@ var instructionNames = map[Instruction]string{
 	StoreChan:          "StoreChan",
 	StoreGlobal:        "StoreGlobal",
 	StoreIndex:         "StoreIndex",
+	StoreInto:          "StoreInto",
 	StoreMetadata:      "StoreMetadata",
 	Struct:             "Struct",
 	Sub:                "Sub",
@@ -237,6 +239,7 @@ func initializeDispatch() {
 			StoreChan:          StoreChanImpl,
 			StoreGlobal:        StoreGlobalImpl,
 			StoreIndex:         StoreIndexImpl,
+			StoreInto:          StoreIntoImpl,
 			StoreMetadata:      StoreMetadataImpl,
 			Struct:             StructImpl,
 			Sub:                SubtractImpl,

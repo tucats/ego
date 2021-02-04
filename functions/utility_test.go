@@ -318,6 +318,7 @@ func TestStrLen(t *testing.T) {
 			got, err := StrLen(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -373,6 +374,7 @@ func TestLength(t *testing.T) {
 			got, err := Length(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Length() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

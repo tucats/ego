@@ -30,5 +30,6 @@ func NewAppError(msg string, args ...interface{}) AppError {
 
 func (e AppError) Error() string {
 	msg := fmt.Sprintf("%s, %s", ErrorPrefixString, e.err.Error())
+
 	return msg
 }

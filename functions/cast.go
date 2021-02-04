@@ -12,22 +12,20 @@ import (
 
 // Int implements the int() function
 func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := util.Coerce(args[0], 1)
-	if v == nil {
+	if v := util.Coerce(args[0], 1); v == nil {
 		return nil, NewError("int", InvalidTypeError)
+	} else {
+		return v.(int), nil
 	}
-
-	return v.(int), nil
 }
 
 // Float implements the float() function
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := util.Coerce(args[0], 1.0)
-	if v == nil {
+	if v := util.Coerce(args[0], 1.0); v == nil {
 		return nil, NewError("float", InvalidValueError, args[0])
+	} else {
+		return v.(float64), nil
 	}
-
-	return v.(float64), nil
 }
 
 // String implements the string() function

@@ -269,6 +269,41 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 	return nil
 }
 
+// StoreIndexImpl instruction processor
+func StoreIntoImpl(c *Context, i interface{}) error {
+	index, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	destination, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	switch a := destination.(type) {
+	case *datatypes.EgoMap:
+		if _, err = a.Set(index, v); err == nil {
+			err = c.Push(a)
+		}
+
+		if err != nil {
+			return c.NewError(err.Error())
+		}
+
+	default:
+		return c.NewError(InvalidTypeError)
+	}
+
+	return nil
+
+}
+
 func FlattenImpl(c *Context, i interface{}) error {
 	c.argCountDelta = 0
 

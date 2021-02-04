@@ -27,14 +27,49 @@ func (c *Compiler) Map() error {
 	// Parse the object type
 	valueType := c.ParseType()
 
-	// Make a suitable map object
-	m := datatypes.NewMap(keyType, valueType)
+	// Make a suitable map object and push it on the stack.
+	c.b.Emit(bytecode.Push, datatypes.NewMap(keyType, valueType))
 
-	// Eat any {} initializer stuff; not really supported yet
-	_ = c.t.IsNext("{}")
+	// Eat {}, if not present parse an initializer}
+	if !c.t.IsNext("{}") {
+		if !c.t.IsNext("{") {
+			return c.NewError(MissingBlockError)
+		}
 
-	// Push it on the stack.
-	c.b.Emit(bytecode.Push, m)
+		for {
+			if c.t.IsNext("}") {
+				break
+			}
+
+			keyBC, err := c.Expression()
+			if err != nil {
+				return err
+			}
+
+			if !c.t.IsNext(":") {
+				return c.NewError(MissingColonError)
+			}
+
+			valueBC, err := c.Expression()
+			if err != nil {
+				return err
+			}
+
+			c.b.Append(valueBC)
+			c.b.Append(keyBC)
+			c.b.Emit(bytecode.StoreInto)
+
+			if c.t.Peek(1) == "," {
+				c.t.Advance(1)
+
+				continue
+			}
+			if c.t.Peek(1) != "}" {
+				return c.NewError(MissingEndOfBlockError)
+			}
+		}
+
+	}
 
 	return nil
 }
@@ -51,6 +86,7 @@ func (c *Compiler) ParseType() int {
 
 		if found {
 			c.t.Advance(len(typeDef.Tokens))
+
 			return typeDef.Kind
 		}
 	}

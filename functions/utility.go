@@ -428,6 +428,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	case *datatypes.EgoMap:
 		_, err := v.Delete(args[1])
+
 		return v, err
 
 	case map[string]interface{}:

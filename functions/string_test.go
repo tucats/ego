@@ -364,6 +364,7 @@ func TestSubstring(t *testing.T) {
 			got, err := Substring(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Substring() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
