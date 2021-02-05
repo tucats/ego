@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -161,7 +162,8 @@ func TestFunctionSort(t *testing.T) {
 
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			gotArray, ok := got.(*datatypes.EgoArray)
+			if !ok || !reflect.DeepEqual(gotArray.BaseArray(), tt.want) {
 				t.Errorf("FunctionSort() = %v, want %v", got, tt.want)
 			}
 		})
@@ -265,7 +267,7 @@ func TestReflect(t *testing.T) {
 			}},
 			want: map[string]interface{}{
 				"basetype": "array",
-				"type":     "array",
+				"type":     "[]int",
 				"elements": "int",
 				"size":     3,
 			},

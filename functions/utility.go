@@ -271,7 +271,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Float64s(floatArray)
 
-		resultArray := datatypes.NewArray(datatypes.IntType, len(array))
+		resultArray := datatypes.NewArray(datatypes.FloatType, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)

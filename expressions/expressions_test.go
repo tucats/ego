@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -222,14 +223,10 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "Concatenate array",
-			expr: "[1,2] + [3,4]",
+			expr: "append([1,2], [3,4]...)",
 			want: []interface{}{1, 2, 3, 4},
 		},
 		{
-			name: "Subtract from array",
-			expr: "[1,2,3] - 2",
-			want: []interface{}{1, 3},
-		}, {
 			name: "Invalid argument list to function",
 			expr: "len(1 3)",
 			want: nil,
@@ -397,7 +394,11 @@ func TestNew(t *testing.T) {
 			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {
-				if !reflect.DeepEqual(v1, tt.want) {
+				if array, ok := v1.(*datatypes.EgoArray); ok {
+					if !reflect.DeepEqual(array.BaseArray(), tt.want) {
+						t.Errorf("Expression test, got %v, want %v", v1, tt.want)
+					}
+				} else if !reflect.DeepEqual(v1, tt.want) {
 					t.Errorf("Expression test, got %v, want %v", v1, tt.want)
 				}
 			}
