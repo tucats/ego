@@ -1,0 +1,63 @@
+@test "Go-style arrays and maps"
+
+{
+    // Integer array
+    a := []int{true, 2.0, "3", 4}
+    @assert T.Equal(len(a), 4)
+    @assert T.Equal(a, [1, 2, 3, 4])
+    @assert T.Equal(reflect(a).type, "[]int")
+}
+
+{
+    // String array
+    a := []string{true, 2.1, "3", 4}
+    @assert T.Equal(len(a), 4)
+    @assert T.Equal(a, ["true", "2.1", "3", "4"])
+    @assert T.Equal(reflect(a).type, "[]string")
+
+}
+
+
+{
+    // bool array
+    a := []bool{true, 0, false, 1.3}
+    @assert T.Equal(len(a), 4)
+    @assert T.Equal(a, [true, false, false, true])
+    @assert T.Equal(reflect(a).type, "[]bool")
+
+}
+
+{
+    // map of strings to strings
+    a := map[string]string{
+        "mom": "Sue",
+        "dad": "Mike",
+    }
+    @assert T.Equal(len(a), 2)
+    @assert T.Equal(reflect(a).type, "map[string]string")
+    @assert T.Equal(a["mom"], "Sue")
+}
+
+{
+    // map of ints to strings
+    a := map[int]string{
+        101: "Sue",
+        102: "Mike",
+        103: "Fred",
+    }
+    @assert T.Equal(len(a), 3)
+    @assert T.Equal(reflect(a).type, "map[int]string")
+    @assert T.Equal(a[101], "Sue")
+}
+
+{
+    // empty map of strings to bool
+    a := map[string]bool{}
+    @assert T.Equal(len(a), 0)
+    @assert T.Equal(reflect(a).type, "map[string]bool")
+    @assert T.Equal(a["true"], nil)
+}
+
+
+
+@pass
