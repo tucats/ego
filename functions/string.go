@@ -84,20 +84,20 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		for i := 0; i < arg.Len(); i++ {
 			vv, _ := arg.Get(i)
 			if reflect.DeepEqual(vv, args[1]) {
-				return i + 1, nil
+				return i, nil
 			}
 		}
 
-		return 0, nil
+		return -1, nil
 
 	case []interface{}:
 		for n, v := range arg {
 			if reflect.DeepEqual(v, args[1]) {
-				return n + 1, nil
+				return n, nil
 			}
 		}
 
-		return 0, nil
+		return -1, nil
 
 	case datatypes.EgoMap:
 		_, found, err := arg.Get(args[1])

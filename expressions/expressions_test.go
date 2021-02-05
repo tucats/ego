@@ -295,12 +295,12 @@ func TestNew(t *testing.T) {
 		{
 			name: "index of array function",
 			expr: "index(a, false)",
-			want: 4,
+			want: 3,
 		},
 		{
 			name: "index of array not found",
 			expr: "index(a, 55.5)",
-			want: 0,
+			want: -1,
 		},
 		{
 			name: "substring function",

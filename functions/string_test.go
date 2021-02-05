@@ -254,12 +254,12 @@ func TestFunctionIndex(t *testing.T) {
 		{
 			name: "array index",
 			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, 3.14}},
-			want: 2,
+			want: 1,
 		},
 		{
 			name: "array not found",
 			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, false}},
-			want: 0,
+			want: -1,
 		},
 		{
 			name: "member found",
