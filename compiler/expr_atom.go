@@ -89,6 +89,12 @@ func (c *Compiler) expressionAtom() error {
 		return c.parseStruct()
 	}
 
+	if t == "struct" && c.t.Peek(2) == "{" {
+		c.t.Advance(1)
+
+		return c.parseStruct()
+	}
+
 	// If the token is a number, convert it
 	if i, err := strconv.Atoi(t); err == nil {
 		c.t.Advance(1)
