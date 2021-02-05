@@ -33,6 +33,8 @@ if _json {
 r := `Healthy %s mode at %s
     version %s,
     user    %s,
-    session %s
+    session %s,
+    
+%s
 `
-@response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session)
+@response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,util.Memory())

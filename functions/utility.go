@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -635,4 +636,26 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return map[string]interface{}{}, err
+}
+
+func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var m runtime.MemStats
+
+	var result strings.Builder
+
+	runtime.ReadMemStats(&m)
+
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+
+	result.WriteString(fmt.Sprintf("Memmory stats  %v\n", time.Now()))
+	result.WriteString(fmt.Sprintf("   Alloc      = %8.3fmb\n", bToMb(m.Alloc)))
+	result.WriteString(fmt.Sprintf("   TotalAlloc = %8.3fmb\n", bToMb(m.TotalAlloc)))
+	result.WriteString(fmt.Sprintf("   Sys        = %8.3fmb\n", bToMb(m.Sys)))
+	result.WriteString(fmt.Sprintf("   NumGC      = %4d\n", m.NumGC))
+
+	return result.String(), nil
+}
+
+func bToMb(b uint64) float64 {
+	return float64(b) / 1024.0 / 1024.0
 }

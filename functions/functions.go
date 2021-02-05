@@ -110,6 +110,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"util.Coerce":          {Min: 2, Max: 2, F: Coerce},
 	"util.Exit":            {Min: 0, Max: 1, F: Exit},
 	"util.Getenv":          {Min: 1, Max: 1, F: GetEnv},
+	"util.Memory":          {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":            {Min: 0, Max: 0, F: GetMode, FullScope: true},
 	"util.Normalize":       {Min: 2, Max: 2, F: Normalize},
 	"util.Symbols":         {Min: 0, Max: 1, F: FormatSymbols, FullScope: true},
