@@ -300,10 +300,10 @@ func CallImpl(c *Context, i interface{}) error {
 		if err != nil {
 			name := functions.FindName(af)
 			if name != "" {
-				name = " " + name
+				name = "in function " + name + ", "
 			}
 
-			err = c.NewError("in function" + name + ", " + err.Error())
+			err = c.NewError(name + err.Error())
 		}
 
 	default:

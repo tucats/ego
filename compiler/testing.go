@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/functions"
@@ -15,9 +16,9 @@ import (
 func (c *Compiler) Test() error {
 	_ = c.modeCheck("test", true)
 
-	s := c.t.Next()
-	if s[:1] == "\"" {
-		s = s[1 : len(s)-1]
+	testDescription := c.t.Next()
+	if testDescription[:1] == "\"" {
+		testDescription = testDescription[1 : len(testDescription)-1]
 	}
 
 	test := map[string]interface{}{}
@@ -30,14 +31,21 @@ func (c *Compiler) Test() error {
 	test["False"] = TestFalse
 	test["Equal"] = TestEqual
 	test["NotEqual"] = TestNotEqual
-	test["description"] = s
+	test["description"] = testDescription
+
+	padSize := 50 - len(testDescription)
+	if padSize < 0 {
+		padSize = 0
+	}
+
+	pad := strings.Repeat(" ", padSize)
 
 	_ = c.s.SetAlways("T", test)
 
 	// Generate code to update the description (this is required for the
 	// cases of the ego test command running multiple tests as a single
 	// stream)
-	c.b.Emit(bytecode.Push, s)
+	c.b.Emit(bytecode.Push, testDescription)
 	c.b.Emit(bytecode.Load, "T")
 	c.b.Emit(bytecode.Push, "description")
 	c.b.Emit(bytecode.StoreIndex)
@@ -49,7 +57,10 @@ func (c *Compiler) Test() error {
 	c.b.Emit(bytecode.Push, "description")
 	c.b.Emit(bytecode.Member)
 	c.b.Emit(bytecode.Print)
-	c.b.Emit(bytecode.Newline)
+	c.b.Emit(bytecode.Push, pad)
+	c.b.Emit(bytecode.Print)
+
+	//c.b.Emit(bytecode.Newline)
 
 	return nil
 }
@@ -78,6 +89,8 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if !b {
 			msg := util.GetString(array[1])
 
+			fmt.Println()
+
 			return nil, fmt.Errorf("@assert, %s in %s", msg, name)
 		} else {
 			return true, nil
@@ -93,6 +106,8 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if len(args) > 1 {
 			msg = util.GetString(args[1])
 		}
+
+		fmt.Println()
 
 		return nil, fmt.Errorf("%s in %s", msg, name)
 	}
@@ -289,11 +304,7 @@ func (c *Compiler) Fail() error {
 // TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test", true)
-	c.b.Emit(bytecode.Push, "PASS: ")
-	c.b.Emit(bytecode.Print)
-	c.b.Emit(bytecode.Load, "T")
-	c.b.Emit(bytecode.Push, "description")
-	c.b.Emit(bytecode.Member)
+	c.b.Emit(bytecode.Push, "(PASS)")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Newline)
 
