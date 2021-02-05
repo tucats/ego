@@ -20,6 +20,15 @@
             "program": "${workspaceFolder}", 
             "args": ["run", "test.ego", "-d"]
         },
+        {
+            "name": "Test test.ego",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["test", "test.ego"]
+        },
+        
         
         {
             "name": "Display Server cache",

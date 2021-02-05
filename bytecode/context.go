@@ -3,6 +3,7 @@ package bytecode
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/symbols"
@@ -20,6 +21,7 @@ type Context struct {
 	try             []int
 	output          *strings.Builder
 	rangeStack      []*Range
+	timers          []time.Time
 	Name            string
 	this            interface{}
 	lastStruct      interface{}
@@ -75,6 +77,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		this:            "",
 		try:             make([]int, 0),
 		rangeStack:      make([]*Range, 0),
+		timers:          make([]time.Time, 0),
 	}
 	ctxp := &ctx
 	ctxp.SetByteCode(b)

@@ -24,6 +24,7 @@ const (
 	InvalidIdentifierError        = "invalid identifier"
 	InvalidSliceIndexError        = "invalid slice index"
 	InvalidThisError              = "invalid _this_ identifier"
+	InvalidTimerError             = "invalid timer operation"
 	InvalidTypeError              = "invalid or unsupported data type for this operation"
 	InvalidVarTypeError           = "invalid type for this variable"
 	NotAServiceError              = "not running as a service"

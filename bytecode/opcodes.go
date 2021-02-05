@@ -85,6 +85,7 @@ const (
 	SymbolOptCreate
 	Template
 	This
+	Timer
 	Try
 	TryPop
 
@@ -172,6 +173,7 @@ var instructionNames = map[OpcodeID]string{
 	SymbolOptCreate:    "SymbolOptCreate",
 	Template:           "Template",
 	This:               "This",
+	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
 }
@@ -248,6 +250,7 @@ func initializeDispatch() {
 			SymbolOptCreate:    SymbolOptCreateImpl,
 			Template:           TemplateImpl,
 			This:               ThisImpl,
+			Timer:              TimerImpl,
 			Try:                TryImpl,
 			TryPop:             TryPopImpl,
 		}

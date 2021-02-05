@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"text/template"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/tokenizer"
@@ -123,4 +124,31 @@ func FromFileImpl(c *Context, i interface{}) error {
 	}
 
 	return err
+}
+
+func TimerImpl(c *Context, i interface{}) error {
+	mode := util.GetInt(i)
+	switch mode {
+	case 0:
+		t := time.Now()
+		c.timers = append(c.timers, t)
+
+	case 1:
+		timerStack := len(c.timers)
+		if timerStack == 0 {
+			return c.NewError(InvalidTimerError)
+		}
+
+		t := c.timers[timerStack-1]
+		c.timers = c.timers[:timerStack-1]
+		now := time.Now()
+		elapsed := now.Sub(t)
+
+		_ = c.Push(elapsed.String())
+
+	default:
+		return c.NewError(InvalidTimerError)
+	}
+
+	return nil
 }

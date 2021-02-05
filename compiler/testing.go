@@ -59,6 +59,7 @@ func (c *Compiler) Test() error {
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Push, pad)
 	c.b.Emit(bytecode.Print)
+	c.b.Emit(bytecode.Timer, 0)
 
 	//c.b.Emit(bytecode.Newline)
 
@@ -304,7 +305,9 @@ func (c *Compiler) Fail() error {
 // TestPass implements the @pass directive.
 func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test", true)
-	c.b.Emit(bytecode.Push, "(PASS)")
+	c.b.Emit(bytecode.Push, "(PASS)  ")
+	c.b.Emit(bytecode.Print)
+	c.b.Emit(bytecode.Timer, 1)
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Newline)
 
