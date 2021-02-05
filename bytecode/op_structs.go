@@ -71,6 +71,15 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 		err = c.Push(v)
 		c.lastStruct = a
 
+	case *datatypes.EgoArray:
+		subscript := util.GetInt(index)
+		if subscript < 0 || subscript >= a.Len() {
+			return c.NewError(InvalidArrayIndexError, subscript)
+		}
+
+		v, _ := a.Get(subscript)
+		err = c.Push(v)
+
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
@@ -105,6 +114,16 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 	}
 
 	switch a := array.(type) {
+	case *datatypes.EgoArray:
+		subscript1 := util.GetInt(index1)
+		subscript2 := util.GetInt(index2)
+
+		v, err := a.GetSlice(subscript1, subscript2)
+		if err == nil {
+			err = c.Push(v)
+		}
+
+		return err
 	// Array of objects means we retrieve a slice.
 	case []interface{}:
 		subscript1 := util.GetInt(index1)
@@ -246,6 +265,27 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		}
 
 	// Index into array is integer index
+	case *datatypes.EgoArray:
+		subscript := util.GetInt(index)
+		if subscript < 0 || subscript >= a.Len() {
+			return c.NewError(InvalidArrayIndexError, subscript)
+		}
+
+		if c.Static {
+			vv, _ := a.Get(subscript)
+			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
+				return c.NewError(InvalidVarTypeError)
+			}
+		}
+
+		err = a.Set(subscript, v)
+		if err == nil {
+			err = c.Push(a)
+		}
+
+		return err
+
+	// Index into array is integer index
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
@@ -308,7 +348,13 @@ func FlattenImpl(c *Context, i interface{}) error {
 
 	v, err := c.Pop()
 	if err == nil {
-		if array, ok := v.([]interface{}); ok {
+		if array, ok := v.(*datatypes.EgoArray); ok {
+			for idx := 0; idx < array.Len(); idx = idx + 1 {
+				vv, _ := array.Get(idx)
+				_ = c.Push(vv)
+				c.argCountDelta++
+			}
+		} else if array, ok := v.([]interface{}); ok {
 			for _, vv := range array {
 				_ = c.Push(vv)
 				c.argCountDelta++

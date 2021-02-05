@@ -27,7 +27,6 @@ var ReservedWords []string = []string{
 }
 
 var ExtendedReservedWords = []string{
-	"array",
 	"call",
 	"catch",
 	"print",

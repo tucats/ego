@@ -116,6 +116,9 @@ func Format(arg interface{}) string {
 	case string:
 		return "\"" + v + "\""
 
+	case *datatypes.EgoArray:
+		return v.String()
+
 	case *datatypes.EgoMap:
 		return v.String()
 

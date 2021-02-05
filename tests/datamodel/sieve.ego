@@ -4,8 +4,8 @@
 
 func primes(size) [] {
 
-	array t[size+1] = false
-	array r[0]
+    t := make([]bool, size+1)
+    r := make([]int, 0)
 
 	for p := 2;  p <= size ; p = p + 1{
 
@@ -31,5 +31,6 @@ func primes(size) [] {
 
 // Calcuate the array containing the primes from 1..10
 p := primes(10)
+
 @assert T.Equal(p, [ 3, 5, 7])
 @pass

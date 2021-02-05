@@ -292,7 +292,12 @@ func (c *Compiler) parseArray() error {
 		c.t.Advance(1)
 	}
 
-	c.b.Emit(bytecode.Array, count)
+	if kind != datatypes.UndefinedType {
+		c.b.Emit(bytecode.Array, count, kind)
+	} else {
+		c.b.Emit(bytecode.Array, count)
+	}
+
 	c.t.Advance(1)
 
 	return nil

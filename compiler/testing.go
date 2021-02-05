@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -239,6 +240,20 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	b := reflect.DeepEqual(args[0], args[1])
 
+	if a1, ok := args[0].([]interface{}); ok {
+		if a2, ok := args[1].(*datatypes.EgoArray); ok {
+			b = reflect.DeepEqual(a1, a2.BaseArray())
+		}
+	} else if a1, ok := args[1].([]interface{}); ok {
+		if a2, ok := args[0].(*datatypes.EgoArray); ok {
+			b = reflect.DeepEqual(a1, a2.BaseArray())
+		}
+	} else if a1, ok := args[0].(*datatypes.EgoArray); ok {
+		if a2, ok := args[1].(*datatypes.EgoArray); ok {
+			b = a1.DeepEqual(a2)
+		}
+	}
+
 	if len(args) == 3 {
 		return []interface{}{b, util.GetString(args[2])}, nil
 	}
@@ -252,13 +267,12 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, functions.NewError("NotEqual", functions.ArgumentCountError)
 	}
 
-	b := !reflect.DeepEqual(args[0], args[1])
-
-	if len(args) == 3 {
-		return []interface{}{b, util.GetString(args[2])}, nil
+	b, err := TestEqual(s, args)
+	if err == nil {
+		return !util.GetBool(b), nil
 	}
 
-	return b, nil
+	return nil, err
 }
 
 // Assert implements the @assert directive.

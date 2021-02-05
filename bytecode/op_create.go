@@ -27,10 +27,10 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 			size = 0
 		}
 
-		array := make([]interface{}, size)
+		array := datatypes.NewArray(datatypes.TypeOf(initialValue), size)
 
 		for n := 0; n < size; n++ {
-			array[n] = initialValue
+			_ = array.Set(n, initialValue)
 		}
 
 		_ = c.Push(array)
@@ -50,7 +50,8 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 		size = 0
 	}
 
-	array := make([]interface{}, size)
+	array := datatypes.NewArray(datatypes.InterfaceType, size)
+
 	_ = c.Push(array)
 
 	return nil
@@ -60,8 +61,17 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 func ArrayImpl(c *Context, i interface{}) error {
 	var arrayType reflect.Type
 
-	count := util.GetInt(i)
-	array := make([]interface{}, count)
+	var count, kind int
+
+	if args, ok := i.([]interface{}); ok {
+		count = util.GetInt(args[0])
+		kind = util.GetInt(args[1])
+	} else {
+		count = util.GetInt(i)
+		kind = datatypes.InterfaceType
+	}
+
+	array := datatypes.NewArray(kind, count)
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
@@ -73,6 +83,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 		if c.Static {
 			if n == 0 {
 				arrayType = reflect.TypeOf(v)
+				_ = array.SetType(datatypes.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
 					return c.NewError(InvalidTypeError)
@@ -80,7 +91,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 			}
 		}
 		// All good, load it into the array.
-		array[(count-n)-1] = v
+		_ = array.Set((count-n)-1, v)
 	}
 
 	_ = c.Push(array)

@@ -223,6 +223,16 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
+	case *datatypes.EgoArray:
+		r := datatypes.NewArray(v.ValueType(), v.Len())
+
+		for i := 0; i < v.Len(); i++ {
+			vv, _ := v.Get(i)
+			_ = v.Set(i, vv)
+		}
+
+		return r
+
 	case *datatypes.EgoMap:
 		r := datatypes.NewMap(v.KeyType(), v.ValueType())
 

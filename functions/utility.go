@@ -101,6 +101,9 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		return size, nil
 
+	case *datatypes.EgoArray:
+		return arg.Len(), nil
+
 	case error:
 		return len(arg.Error()), nil
 
@@ -224,6 +227,9 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	for _, a := range args {
 		switch v := a.(type) {
+		case *datatypes.EgoArray:
+			array = append(array, v.BaseArray()...)
+
 		case []interface{}:
 			array = append(array, v...)
 
@@ -248,10 +254,10 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Ints(intArray)
 
-		resultArray := make([]interface{}, len(array))
+		resultArray := datatypes.NewArray(datatypes.IntType, len(array))
 
 		for n, i := range intArray {
-			resultArray[n] = i
+			_ = resultArray.Set(n, i)
 		}
 
 		return resultArray, nil
@@ -265,10 +271,10 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Float64s(floatArray)
 
-		resultArray := make([]interface{}, len(array))
+		resultArray := datatypes.NewArray(datatypes.IntType, len(array))
 
 		for n, i := range floatArray {
-			resultArray[n] = i
+			_ = resultArray.Set(n, i)
 		}
 
 		return resultArray, nil
@@ -282,10 +288,10 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Strings(stringArray)
 
-		resultArray := make([]interface{}, len(array))
+		resultArray := datatypes.NewArray(datatypes.StringType, len(array))
 
 		for n, i := range stringArray {
-			resultArray[n] = i
+			_ = resultArray.Set(n, i)
 		}
 
 		return resultArray, nil
@@ -325,6 +331,9 @@ func FormatSymbols(syms *symbols.SymbolTable, args []interface{}) (interface{}, 
 func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
+		return v.TypeString(), nil
+
+	case *datatypes.EgoArray:
 		return v.TypeString(), nil
 
 	case nil:
@@ -409,17 +418,33 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // together as an array. The first argument is flattened into the result, and then each
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	result := []interface{}{}
+	result := make([]interface{}, 0)
+	kind := datatypes.InterfaceType
 
 	for i, j := range args {
-		if array, ok := j.([]interface{}); ok && i == 0 {
+		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
+			if kind != datatypes.InterfaceType {
+				if err := array.Validate(kind); err != nil {
+					return nil, err
+				}
+			}
+
+			result = append(result, array.BaseArray()...)
+
+			if kind == datatypes.InterfaceType {
+				kind = array.ValueType()
+			}
+		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
+			if kind != datatypes.InterfaceType && datatypes.TypeOf(j) != kind {
+				return nil, errors.New(datatypes.WrongArrayValueType)
+			}
 			result = append(result, j)
 		}
 	}
 
-	return result, nil
+	return datatypes.NewFromArray(kind, result), nil
 }
 
 // Delete can be used three ways. To delete a member from a structure, to delete
@@ -563,6 +588,17 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			datatypes.SizeMDKey:     len(m.Keys()),
 			datatypes.TypeMDKey:     m.TypeString(),
 			datatypes.BasetypeMDKey: "map[interface{}]interface{}",
+		}
+
+		return result, nil
+	}
+
+	if m, ok := args[0].(*datatypes.EgoArray); ok {
+		// Make a list of the visible member names
+		result := map[string]interface{}{
+			datatypes.SizeMDKey:     m.Len(),
+			datatypes.TypeMDKey:     m.TypeString(),
+			datatypes.BasetypeMDKey: "[]interface{}",
 		}
 
 		return result, nil

@@ -92,6 +92,9 @@ func RangeInitImpl(c *Context, i interface{}) error {
 				r.keySet = actual.Keys()
 				actual.ImmutableKeys(true)
 
+			case *datatypes.EgoArray:
+				actual.Immutable(true)
+
 			case *datatypes.Channel:
 				// No further init required
 
@@ -227,6 +230,26 @@ func RangeNextImpl(c *Context, i interface{}) error {
 					c.pc = destination
 					c.rangeStack = c.rangeStack[:stackSize-1]
 				}
+			}
+
+		case *datatypes.EgoArray:
+			if r.index >= actual.Len() {
+				c.pc = destination
+				actual.Immutable(false)
+				c.rangeStack = c.rangeStack[:stackSize-1]
+			} else {
+				if r.indexName != "" && r.indexName != "_" {
+					err = c.symbols.Set(r.indexName, r.index)
+				}
+				if err == nil && r.valueName != "" && r.valueName != "_" {
+					var d interface{}
+
+					d, err = actual.Get(r.index)
+					if err == nil {
+						err = c.symbols.Set(r.valueName, d)
+					}
+				}
+				r.index++
 			}
 
 		case []interface{}:

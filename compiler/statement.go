@@ -67,13 +67,6 @@ func (c *Compiler) Statement() error {
 	case "{":
 		return c.Block()
 
-	case "array":
-		if c.extensionsEnabled {
-			return c.Array()
-		}
-
-		return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
-
 	case "assert":
 		if c.extensionsEnabled {
 			return c.Assert()
@@ -191,7 +184,6 @@ func (c *Compiler) IsFunctionCall() bool {
 			"!=",
 			"==",
 			"=",
-			"array",
 			"assert",
 			"break",
 			"call",

@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/util"
 )
 
@@ -34,6 +36,17 @@ func NegateImpl(c *Context, i interface{}) error {
 
 	case float64:
 		_ = c.Push(0.0 - value)
+
+	case *datatypes.EgoArray:
+		// Create an array in inverse order.
+		r := datatypes.NewArray(value.ValueType(), value.Len())
+
+		for n := 0; n < value.Len(); n = n + 1 {
+			d, _ := value.Get(n)
+			_ = r.Set(value.Len()-n-1, d)
+		}
+
+		_ = c.Push(r)
 
 	case []interface{}:
 		// Create an array in inverse order.
@@ -69,7 +82,16 @@ func AddImpl(c *Context, i interface{}) error {
 	}
 
 	switch vx := v1.(type) {
-	// Is it an array we are concatenating to?
+	// Is it an Ego array we are concatenating to?
+	case *datatypes.EgoArray:
+		newArray, err := functions.Append(nil, []interface{}{v1, v2})
+		if err == nil {
+			err = c.Push(newArray)
+		}
+
+		return err
+
+	// Is it a native array we are concatenating to?
 	case []interface{}:
 		switch vy := v2.(type) {
 		// Array requires a deep concatenation.

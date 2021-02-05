@@ -80,6 +80,16 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Index implements the index() function.
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
+	case *datatypes.EgoArray:
+		for i := 0; i < arg.Len(); i++ {
+			vv, _ := arg.Get(i)
+			if reflect.DeepEqual(vv, args[1]) {
+				return i + 1, nil
+			}
+		}
+
+		return 0, nil
+
 	case []interface{}:
 		for n, v := range arg {
 			if reflect.DeepEqual(v, args[1]) {

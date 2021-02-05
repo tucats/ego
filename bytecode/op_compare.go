@@ -22,7 +22,7 @@ func EqualImpl(c *Context, i interface{}) error {
 
 	var r bool
 
-	switch v1.(type) {
+	switch a := v1.(type) {
 	case nil:
 		r = (v2 == nil)
 
@@ -31,6 +31,18 @@ func EqualImpl(c *Context, i interface{}) error {
 
 	case *datatypes.EgoMap:
 		r = reflect.DeepEqual(v1, v2)
+
+	case *datatypes.EgoArray:
+		switch b := v2.(type) {
+		case *datatypes.EgoArray:
+			r = a.DeepEqual(b)
+
+		case []interface{}:
+			r = reflect.DeepEqual(a.BaseArray(), b)
+
+		default:
+			r = false
+		}
 
 	case []interface{}:
 		r = reflect.DeepEqual(v1, v2)
@@ -88,6 +100,9 @@ func NotEqualImpl(c *Context, i interface{}) error {
 	case *datatypes.EgoMap:
 		r = !reflect.DeepEqual(v1, v2)
 
+	case *datatypes.EgoArray:
+		r = !reflect.DeepEqual(v1, v2)
+
 	case map[string]interface{}:
 		r = !reflect.DeepEqual(v1, v2)
 
@@ -142,7 +157,7 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}:
+	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
 		return c.NewError(InvalidTypeError)
 
 	default:
@@ -190,7 +205,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}:
+	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
 		return c.NewError(InvalidTypeError)
 
 	default:
@@ -240,7 +255,7 @@ func LessThanImpl(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}:
+	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
 		return c.NewError(InvalidTypeError)
 
 	default:
@@ -288,7 +303,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}:
+	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
 		return c.NewError(InvalidTypeError)
 
 	default:
