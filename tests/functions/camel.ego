@@ -1,6 +1,6 @@
 import strings
 
-@test "strings.Camel()"
+@test "functions: strings.Camel()"
 
 @assert T.Equal(strings.Camel("test") , "Test" )
 @assert T.Equal(strings.Camel("teST") , "Test" )

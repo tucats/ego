@@ -1,4 +1,4 @@
-@test "Go-style arrays and maps"
+@test "types: Go-style arrays and maps"
 
 {
     // Integer array

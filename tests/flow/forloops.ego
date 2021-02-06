@@ -1,4 +1,4 @@
-@test "basic for-loops"
+@test "flow: basic for-loops"
 
 // Simple for loop with explicit terms. Calculate the
 // sum of values from 1..5

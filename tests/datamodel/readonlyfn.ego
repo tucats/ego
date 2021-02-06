@@ -1,8 +1,5 @@
 
-// Illegal operation, as the strings package is readonly 
-import strings
-
-@test "write to readonly function value"
+@test "datamodel: write to readonly function value"
 
 caught := false
 try {

@@ -1,4 +1,4 @@
-@test "for loops with ranges"
+@test "flow: for loops with ranges"
 
 {
     // Range over an array

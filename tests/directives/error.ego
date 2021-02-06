@@ -1,4 +1,4 @@
-@test "test of using @error with a try/catch block"
+@test "directives: @error with a try/catch block"
 
 try {
    @error "test error";

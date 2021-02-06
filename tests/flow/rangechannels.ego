@@ -1,4 +1,4 @@
-@test "channel with multiple messages"
+@test "flow: channel with multiple messages"
 {
    // Asynchronous routine that sends some messages, and then
    // closes the channel so the receiver knows we're done

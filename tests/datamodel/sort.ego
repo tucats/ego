@@ -1,5 +1,5 @@
 
-@test "simple string array sort"
+@test "datamodel: simple string array sort"
 
 {
     x := {a:5, b:6}

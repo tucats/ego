@@ -1,4 +1,4 @@
-@test "initialize using types"
+@test "types: initialize using types"
 {
     type emp struct {
         name string

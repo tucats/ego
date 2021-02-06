@@ -1,4 +1,4 @@
-@test "Return multiple function values"
+@test "datamodel: return multiple function values"
 
 {
     func f() (int, int) {

@@ -1,4 +1,4 @@
-@test "basic encrypt/decrypt"
+@test "cipher: basic encrypt/decrypt"
 
 // Simple encryption and decryption
 {

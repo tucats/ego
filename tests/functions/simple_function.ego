@@ -4,7 +4,7 @@
  * Simple test program for ego processor.
  */
 
-@test "simple function call"
+@test "functions: simple function call"
 
 func dbl(x interface{}) interface{} {
    return x * 2

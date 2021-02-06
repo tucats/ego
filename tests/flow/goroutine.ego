@@ -1,4 +1,4 @@
-@test "go routine with channel"
+@test "flow: go routine with channel"
 
 func gofn(c chan) {
    time.Sleep("500ms")

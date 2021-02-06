@@ -1,5 +1,5 @@
 
-@test "function definitions as expressions"
+@test "functions: function definitions as expressions"
 
 {
    func x1( f interface{}, v interface{} ) interface{} {

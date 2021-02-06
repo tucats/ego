@@ -1,4 +1,4 @@
-@test "varargs in function definition"
+@test "functions: varargs in function definition"
 
 func testf( base int, args... int ) int {
     s := base

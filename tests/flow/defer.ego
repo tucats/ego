@@ -1,4 +1,4 @@
-@test "defer statement"
+@test "flow: defer statement"
 
 
 func defer_test() string {

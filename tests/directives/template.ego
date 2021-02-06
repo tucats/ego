@@ -1,5 +1,5 @@
 // Template test program
-@test "template test"
+@test "directives: @template test"
 
 // Test of referencing templates from other templates
 @template g_prefix `g.V()`

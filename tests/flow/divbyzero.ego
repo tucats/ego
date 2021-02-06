@@ -4,7 +4,7 @@
  * Runtime divide-by-zero error.
  */
 
-@test "divide by zero"
+@test "flow: divide by zero error trap"
 
 func half(x int) float {
    try {

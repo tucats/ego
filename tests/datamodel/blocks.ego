@@ -1,6 +1,6 @@
 /* Test scoping */
 
-@test "block scoping"
+@test "datamodel: block scoping"
 
 g := 33
 

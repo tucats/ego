@@ -1,6 +1,6 @@
 /* Test of break and continue */
 
-@test "break and continue from loop"
+@test "flow: break and continue from loop"
 x := [1,5,3,6,9,10]
 t := 0
 for i := range x {

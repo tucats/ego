@@ -1,4 +1,4 @@
-@test "time functions"
+@test "functions: time functions"
 
 {
     pattern := "Jan 2 15:04:05 MST 2006"

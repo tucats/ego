@@ -1,7 +1,7 @@
 
 /* Switch statement test */
 
-@test "switch statement"
+@test "flow: switch statement"
 
 {
     x := 5

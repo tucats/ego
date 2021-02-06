@@ -1,4 +1,4 @@
-@test "var and type testing"
+@test "types: var and type testing"
 
 {
     var a1,a2,a3 int

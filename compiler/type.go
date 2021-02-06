@@ -4,7 +4,10 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
+
+type modelIsType struct{}
 
 // Type compiles a type statement.
 func (c *Compiler) Type() error {
@@ -112,7 +115,9 @@ func (c *Compiler) compileType() error {
 				return err
 			}
 
-			c.b.Emit(bytecode.Push, model)
+			if _, ok := model.(modelIsType); !ok {
+				c.b.Emit(bytecode.Push, model)
+			}
 		}
 
 		c.b.Emit(bytecode.Push, name)
@@ -155,5 +160,42 @@ func (c *Compiler) typeDeclaration() (interface{}, error) {
 		}
 	}
 
-	return nil, c.NewError(InvalidTypeNameError)
+	// Not a known type, let's see if it's a user type initialzer.
+	t := c.Normalize(c.t.Next())
+	if !tokenizer.IsSymbol(t) {
+		return nil, c.NewError(InvalidTypeNameError, t)
+	}
+
+	// Is it a generator for a type?
+	if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
+		c.b.Emit(bytecode.Load, t)
+		c.b.Emit(bytecode.Push, "__type")
+		c.b.Emit(bytecode.LoadIndex)
+		c.b.Emit(bytecode.Push, "__type")
+
+		err := c.expressionAtom()
+		if err != nil {
+			return nil, err
+		}
+
+		i := c.b.Opcodes()
+		ix := i[len(i)-1]
+		ix.Operand = util.GetInt(ix.Operand) + 1
+		i[len(i)-1] = ix
+
+		return modelIsType{}, nil
+	}
+
+	if c.t.IsNext("{}") {
+		c.b.Emit(bytecode.Load, "new")
+		c.b.Emit(bytecode.Load, t)
+		c.b.Emit(bytecode.Call, 1)
+	}
+
+	// Let's hope its a type name and see how it goes at runtime.
+	c.b.Emit(bytecode.Load, "new")
+	c.b.Emit(bytecode.Load, t)
+	c.b.Emit(bytecode.Call, 1)
+
+	return modelIsType{}, nil
 }

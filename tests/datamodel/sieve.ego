@@ -1,6 +1,6 @@
 /* Classic prime number search using sieve method */
 
-@test "seive test"
+@test "datamodel: seive test"
 
 func primes(size int) []int {
 

@@ -1,4 +1,4 @@
-@test "static typing"
+@test "types: static typing"
 
 // Outer variable set to string value
 a := "Tom"

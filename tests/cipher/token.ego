@@ -1,4 +1,4 @@
-@test "cipher token functions"
+@test "cipher: token functions"
 
 import cipher
 
