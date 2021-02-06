@@ -561,6 +561,34 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	// Is it a bytecode function?
+	vv := reflect.ValueOf(args[0])
+	// If it's a bytecode.Bytecode pointer, use reflection to get the
+	// Name field value and use that with the name. A function literal
+	// will have no name.
+	if vv.Kind() == reflect.Ptr {
+		ts := vv.String()
+		if ts == "<*bytecode.ByteCode Value>" {
+			switch v := args[0].(type) {
+			default:
+				e := reflect.ValueOf(v).Elem()
+
+				name, ok := e.Field(0).Interface().(string)
+				if !ok || len(name) == 0 {
+					name = "<anonymous>"
+				}
+
+				result := map[string]interface{}{
+					datatypes.TypeMDKey:     "func",
+					datatypes.BasetypeMDKey: "func " + name,
+				}
+
+				return result, nil
+			}
+		}
+	}
+
+	// Is it an Ego structure?
 	if m, ok := args[0].(map[string]interface{}); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
@@ -590,6 +618,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return result, nil
 	}
 
+	// Is it an Ego map datatype?
 	if m, ok := args[0].(*datatypes.EgoMap); ok {
 		// Make a list of the visible member names
 		result := map[string]interface{}{
@@ -601,6 +630,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return result, nil
 	}
 
+	// Is it an Ego array datatype?
 	if m, ok := args[0].(*datatypes.EgoArray); ok {
 		// Make a list of the visible member names
 		result := map[string]interface{}{
