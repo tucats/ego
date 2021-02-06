@@ -1,6 +1,6 @@
 package io
 
-func DirList(path) string {
+func DirList(path string) string {
 
     a := []
     r := ""

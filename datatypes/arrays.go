@@ -37,6 +37,24 @@ func NewFromArray(valueType int, source []interface{}) *EgoArray {
 	return m
 }
 
+// Make creates a new array pattenered off of the type of the receiver array,
+// of the given size.
+func (a *EgoArray) Make(size int) *EgoArray {
+	m := &EgoArray{
+		data:      make([]interface{}, size),
+		valueType: a.valueType,
+		immutable: 0,
+	}
+
+	model := InstanceOf(a.valueType)
+
+	for index := range m.data {
+		m.data[index] = model
+	}
+
+	return m
+}
+
 func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 	if a.valueType == InterfaceType || b.valueType == InterfaceType {
 		return reflect.DeepEqual(a.data, b.data)

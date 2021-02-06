@@ -7,8 +7,8 @@ package x
  * locate the associated functions bound to the package.
  */
 
-type employee-> x {
-    name {
+type employee-> x struct{
+    name struct {
            first string
            last string
          }

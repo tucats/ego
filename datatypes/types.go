@@ -27,6 +27,9 @@ type TypeDefinition struct {
 	Kind   int
 }
 
+// This is the "zero instance" value for an interface{} object.
+var interfaceProxy interface{}
+
 // TypeDeclarationMap is a dictionary of all the type declaration token sequences.
 var TypeDeclarationMap = []TypeDefinition{
 	{
@@ -36,42 +39,32 @@ var TypeDeclarationMap = []TypeDefinition{
 	},
 	{
 		[]string{"[", "]", "int"},
-		1,
+		NewArray(IntType, 0),
 		IntType + ArrayType,
 	},
 	{
 		[]string{"[", "]", "bool"},
-		true,
+		NewArray(BoolType, 0),
 		BoolType + ArrayType,
 	},
 	{
 		[]string{"[", "]", "float"},
-		0.0,
+		NewArray(FloatType, 0),
 		FloatType + ArrayType,
 	},
 	{
 		[]string{"[", "]", "string"},
-		"",
+		NewArray(StringType, 0),
 		StringType + ArrayType,
 	},
 	{
 		[]string{"[", "]", "interface{}"},
-		nil,
+		NewArray(InterfaceType, 0),
 		InterfaceType + ArrayType,
 	},
 	{
-		[]string{"[", "]", "struct"},
-		map[string]interface{}{},
-		ArrayType,
-	},
-	{
-		[]string{"[", "]", "{", "}"},
-		map[string]interface{}{},
-		StructType,
-	},
-	{
 		[]string{"bool"},
-		true,
+		false,
 		BoolType,
 	},
 	{
@@ -91,11 +84,14 @@ var TypeDeclarationMap = []TypeDefinition{
 	},
 	{
 		[]string{"interface{}"},
-		nil,
+		interfaceProxy,
 		InterfaceType,
 	},
 }
 
+// TypeOF accepts an interface of arbitrary Ego or native data type,
+// and returns an integer containing the datatype specification, such
+// as datatypes.IntType or datatypes.StringType.
 func TypeOf(i interface{}) int {
 	switch i.(type) {
 	case int:
@@ -123,6 +119,8 @@ func TypeOf(i interface{}) int {
 	}
 }
 
+// TypeString returns a textual representation of the type indicator
+// passed in.
 func TypeString(kind int) string {
 	r := "interface{}"
 
@@ -135,6 +133,21 @@ func TypeString(kind int) string {
 	return r
 }
 
+// InstanceOf accepts a kind type indicator, and returns the zero-value
+// model of that type.
+func InstanceOf(kind int) interface{} {
+	for _, typeDef := range TypeDeclarationMap {
+		if typeDef.Kind == kind {
+			return typeDef.Model
+		}
+	}
+
+	return nil
+}
+
+// IsType accepts an arbitrary value that is either an Ego or native data
+// value, and a type specification, and indicates if it is of the provided
+// Ego datatype indicator.
 func IsType(v interface{}, kind int) bool {
 	if kind == InterfaceType {
 		return true

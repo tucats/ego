@@ -6,7 +6,7 @@
 
 @test "divide by zero"
 
-func half(x) float {
+func half(x int) float {
    try {
       return x / 0 
    } catch {

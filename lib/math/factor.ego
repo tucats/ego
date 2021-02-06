@@ -5,7 +5,7 @@ package math
  * Create a function that returns an array of factors for an integer value
  */
 
-func Factor(n int)[] {
+func Factor(n int) []int {
     if n < 1 {
         return []
     }

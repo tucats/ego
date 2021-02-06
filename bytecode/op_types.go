@@ -88,7 +88,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 					return c.NewError(InvalidTypeError)
 				}
 
-			case datatypes.UndefinedType, datatypes.ChanType:
+			case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
 				// No work at all to do here.
 
 			default:
@@ -129,8 +129,12 @@ func CoerceImpl(c *Context, i interface{}) error {
 
 	case datatypes.ArrayType:
 		// If it's  not already an array, wrap it in one.
-		if _, ok := v.([]interface{}); !ok {
-			v = []interface{}{v}
+		if _, ok := v.(*datatypes.EgoArray); !ok {
+			if _, ok := v.([]interface{}); !ok {
+				array := datatypes.NewArray(datatypes.TypeOf(v), 1)
+				_ = array.Set(0, v)
+				v = array
+			}
 		}
 
 	case datatypes.StructType:
@@ -143,7 +147,27 @@ func CoerceImpl(c *Context, i interface{}) error {
 		// No work at all to do here.
 
 	default:
-		return c.NewError(InvalidTypeError)
+		if t < datatypes.ArrayType {
+			return c.NewError(InvalidTypeError)
+		}
+
+		var base []interface{}
+
+		if a, ok := v.(*datatypes.EgoArray); ok {
+			base = a.BaseArray()
+		} else {
+			base = v.([]interface{})
+		}
+
+		elementType := t - datatypes.ArrayType
+		array := datatypes.NewArray(elementType, len(base))
+		model := datatypes.InstanceOf(elementType)
+
+		for i, element := range base {
+			_ = array.Set(i, util.Coerce(element, model))
+		}
+
+		v = array
 	}
 
 	_ = c.Push(v)

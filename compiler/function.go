@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // Descriptor of each parameter in the parameter list.
@@ -90,38 +89,13 @@ func (c *Compiler) Function(literal bool) error {
 			// Is there a type name that follows it? We have to check for "[]" and "{}"
 			// as two different tokens. Also note that you can use the word array or struct
 			// instead if you wish.
-			if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
-				p.kind = datatypes.ArrayType
+			k, err := c.typeDeclaration()
 
-				c.t.Advance(2)
-			} else if c.t.Peek(1) == "{}" {
-				p.kind = datatypes.StructType
-
-				c.t.Advance(1)
-			} else if util.InList(c.t.Peek(1), "chan", "interface{}", "int", "string", "bool", "double", "float", "array", "struct") {
-				switch c.t.Next() {
-				case "int":
-					p.kind = datatypes.IntType
-
-				case "string":
-					p.kind = datatypes.StringType
-
-				case "bool":
-					p.kind = datatypes.BoolType
-
-				case "float", "double":
-					p.kind = datatypes.FloatType
-
-				case "struct":
-					p.kind = datatypes.StructType
-
-				case "array":
-					p.kind = datatypes.ArrayType
-
-				case "chan":
-					p.kind = datatypes.ChanType
-				}
+			if err != nil {
+				return c.Error()
 			}
+
+			p.kind = datatypes.TypeOf(k)
 
 			if varargs {
 				p.kind = datatypes.VarArgs
@@ -198,65 +172,15 @@ func (c *Compiler) Function(literal bool) error {
 	for {
 		coercion := bytecode.New(fmt.Sprintf("%s return item %d", fname, returnValueCount))
 
-		if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
-			coercion.Emit(bytecode.Coerce, datatypes.ArrayType)
-			c.t.Advance(2)
+		if c.t.Peek(1) == "{" {
+			wasVoid = true
 		} else {
-			if c.t.Peek(1) == "{}" {
-				coercion.Emit(bytecode.Coerce, datatypes.StructType)
-				c.t.Advance(1)
-			} else {
-				switch c.t.Peek(1) {
-				// Start of block means no more types here.
-				case "{":
-					wasVoid = true
-
-				case "error":
-					c.t.Advance(1)
-					coercion.Emit(bytecode.Coerce, datatypes.ErrorType)
-
-				case "chan":
-					coercion.Emit(bytecode.Coerce, datatypes.ChanType)
-					c.t.Advance(1)
-
-				case "int":
-					coercion.Emit(bytecode.Coerce, datatypes.IntType)
-					c.t.Advance(1)
-
-				case "float", "double":
-					coercion.Emit(bytecode.Coerce, datatypes.FloatType)
-					c.t.Advance(1)
-
-				case "string":
-					coercion.Emit(bytecode.Coerce, datatypes.StringType)
-					c.t.Advance(1)
-
-				case "bool":
-					coercion.Emit(bytecode.Coerce, datatypes.BoolType)
-					c.t.Advance(1)
-
-				case "struct":
-					coercion.Emit(bytecode.Coerce, datatypes.StructType)
-					c.t.Advance(1)
-
-				case "array":
-					coercion.Emit(bytecode.Coerce, datatypes.ArrayType)
-					c.t.Advance(1)
-
-				case "interface{}":
-					coercion.Emit(bytecode.Coerce, datatypes.UndefinedType)
-					c.t.Advance(1)
-
-				case "void":
-					// Do nothing, there is no result.
-					wasVoid = true
-
-					c.t.Advance(1)
-
-				default:
-					return c.NewError(MissingFunctionTypeError)
-				}
+			k, err := c.typeDeclaration()
+			if err != nil {
+				return err
 			}
+
+			coercion.Emit(bytecode.Coerce, datatypes.TypeOf(k))
 		}
 
 		if !wasVoid {

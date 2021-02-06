@@ -507,6 +507,11 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	kind := args[0]
 	size := util.GetInt(args[1])
+
+	if egoArray, ok := kind.(*datatypes.EgoArray); ok {
+		return egoArray.Make(size), nil
+	}
+
 	array := make([]interface{}, size)
 
 	if v, ok := kind.([]interface{}); ok {
@@ -520,6 +525,8 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch kind.(type) {
 	case *datatypes.Channel:
 		return datatypes.NewChannel(size), nil
+
+	case *datatypes.EgoArray:
 
 	case []int, int:
 		for i := range array {

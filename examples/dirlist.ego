@@ -15,7 +15,7 @@ t.Align("size", "right")
 
 // Looping over the array of files and directories, add each file's info to
 // the table as a new row.
-for f := range d {
+for _, f := range d {
    t.AddRow(f.name, f.size, f.modified)
 }
 

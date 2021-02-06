@@ -2,7 +2,7 @@
 
 @test "seive test"
 
-func primes(size) [] {
+func primes(size int) []int {
 
     t := make([]bool, size+1)
     r := make([]int, 0)
@@ -22,7 +22,7 @@ func primes(size) [] {
 		if next == 0 {
 			break
 		}
-		r = r + next
+		r = append(r, next)
 		p = next - 1
 
 	}

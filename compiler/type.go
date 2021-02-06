@@ -107,27 +107,12 @@ func (c *Compiler) compileType() error {
 				return err
 			}
 		} else {
-			switch c.t.Next() {
-			case "chan":
-				channel := datatypes.NewChannel(1)
-
-				c.b.Emit(bytecode.Push, channel)
-
-			case "int":
-				c.b.Emit(bytecode.Push, 0)
-
-			case "float", "double":
-				c.b.Emit(bytecode.Push, 0.0)
-
-			case "bool":
-				c.b.Emit(bytecode.Push, false)
-
-			case "string":
-				c.b.Emit(bytecode.Push, "")
-
-			default:
-				return c.NewError(InvalidTypeNameError)
+			model, err := c.typeDeclaration()
+			if err != nil {
+				return err
 			}
+
+			c.b.Emit(bytecode.Push, model)
 		}
 
 		c.b.Emit(bytecode.Push, name)
@@ -145,4 +130,30 @@ func (c *Compiler) compileType() error {
 			return c.NewError(MissingEndOfBlockError)
 		}
 	}
+}
+
+func (c *Compiler) typeDeclaration() (interface{}, error) {
+	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
+		return nil, c.compileType()
+	}
+
+	for _, typeDef := range datatypes.TypeDeclarationMap {
+		found := true
+
+		for offset, token := range typeDef.Tokens {
+			if c.t.Peek(1+offset) != token {
+				found = false
+
+				break
+			}
+		}
+
+		if found {
+			c.t.Advance(len(typeDef.Tokens))
+
+			return typeDef.Model, nil
+		}
+	}
+
+	return nil, c.NewError(InvalidTypeNameError)
 }

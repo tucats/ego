@@ -217,11 +217,6 @@ func TestNew(t *testing.T) {
 			want: []interface{}{true, "Tom", 33.5},
 		},
 		{
-			name: "Add to array",
-			expr: "[1,2] + 3",
-			want: []interface{}{1, 2, 3},
-		},
-		{
 			name: "Concatenate array",
 			expr: "append([1,2], [3,4]...)",
 			want: []interface{}{1, 2, 3, 4},

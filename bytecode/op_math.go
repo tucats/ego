@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/util"
 )
 
@@ -82,15 +81,6 @@ func AddImpl(c *Context, i interface{}) error {
 	}
 
 	switch vx := v1.(type) {
-	// Is it an Ego array we are concatenating to?
-	case *datatypes.EgoArray:
-		newArray, err := functions.Append(nil, []interface{}{v1, v2})
-		if err == nil {
-			err = c.Push(newArray)
-		}
-
-		return err
-
 	// Is it a native array we are concatenating to?
 	case []interface{}:
 		switch vy := v2.(type) {

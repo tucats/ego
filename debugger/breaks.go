@@ -143,7 +143,6 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 	for _, b := range breakPoints {
 		switch b.kind {
 		case BreakValue:
-			// fmt.Printf("DEBUG: break eval sym table\n%s\n", s.Format(true))
 			// If we already hit this, don't do it again on each statement. Pass.
 			if b.hit > 0 {
 				break
