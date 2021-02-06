@@ -186,18 +186,18 @@ func RunAction(c *cli.Context) error {
 			break
 		}
 
-		// Also, make sure we have a balanced {} count if we're in interactive
+		// Also, make sure we have a balanced count for {}, (), and [] if we're in interactive
 		// mode.
 		for interactive && len(t.Tokens) > 0 {
 			count := 0
 
 			for _, v := range t.Tokens {
-				if v == "{" {
+				switch v {
+				case "{", "(", "[":
 					count++
-				} else {
-					if v == "}" {
-						count--
-					}
+
+				case "}", ")", "]":
+					count--
 				}
 			}
 
