@@ -323,9 +323,11 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return nil, nil
 }
 
-// FormatSymbols implements the util.symbols() function.
+// FormatSymbols implements the util.symbols() function. We skip over the current
+// symbol table, which was created just for this function call and will always be
+// empty.
 func FormatSymbols(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return syms.Format(false), nil
+	return syms.Parent.Format(false), nil
 }
 
 // Type implements the type() function.
@@ -561,13 +563,28 @@ func Make(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// Is it a bytecode function?
 	vv := reflect.ValueOf(args[0])
+	ts := vv.String()
+
+	// If it's a builtin function, it's description will match the signature. If it's a
+	// match, find out it's name and return it as a builtin.
+	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, error) Value>" {
+		name := runtime.FuncForPC(reflect.ValueOf(args[0]).Pointer()).Name()
+		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
+
+		result := map[string]interface{}{
+			datatypes.TypeMDKey:     "builtin",
+			datatypes.BasetypeMDKey: "builtin " + name,
+		}
+
+		return result, nil
+	}
+
 	// If it's a bytecode.Bytecode pointer, use reflection to get the
 	// Name field value and use that with the name. A function literal
 	// will have no name.
 	if vv.Kind() == reflect.Ptr {
-		ts := vv.String()
 		if ts == "<*bytecode.ByteCode Value>" {
 			switch v := args[0].(type) {
 			default:

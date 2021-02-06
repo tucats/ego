@@ -44,10 +44,13 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 		v := s.Symbols[k]
 		skip := false
-		typeString := "package"
+		typeString := /* "package" */ datatypes.TypeString(datatypes.TypeOf(v))
 
 		switch actual := v.(type) {
 		case *datatypes.EgoMap:
+			typeString = actual.TypeString()
+
+		case *datatypes.EgoArray:
 			typeString = actual.TypeString()
 
 		case func(*SymbolTable, []interface{}) (interface{}, error):
@@ -73,13 +76,14 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 		b.WriteString("   ")
 		b.WriteString(k)
-		b.WriteString(" = ")
 
-		if skip {
-			b.WriteString("(")
+		if !skip {
+			b.WriteString(" <")
 			b.WriteString(typeString)
-			b.WriteString(") ")
+			b.WriteString(">")
 		}
+
+		b.WriteString(" = ")
 
 		// Any variable named _password or _token has it's value obscured
 		if k == "_password" || k == "_token" {
