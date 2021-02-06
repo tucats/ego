@@ -20,7 +20,10 @@ func (c *Compiler) Statement() error {
 	}
 
 	if c.t.IsNext("{}") {
-		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+		// Empty body at end of token array means no more atlines...
+		if c.t.TokenP < len(c.t.Line) {
+			c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+		}
 
 		return nil
 	}

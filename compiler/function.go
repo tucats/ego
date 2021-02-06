@@ -40,6 +40,9 @@ func (c *Compiler) Function(isLiteral bool) error {
 		return err
 	}
 
+	if c.t.AtEnd() {
+		return c.NewError(MissingFunctionBodyError)
+	}
 	// Create a new bytecode object which will hold the function
 	// generated code.
 	b := bytecode.New(functionName)
@@ -110,7 +113,7 @@ func (c *Compiler) Function(isLiteral bool) error {
 	for {
 		coercion := bytecode.New(fmt.Sprintf("%s return item %d", functionName, returnValueCount))
 
-		if c.t.Peek(1) == "{" {
+		if c.t.Peek(1) == "{" || c.t.Peek(1) == "{}" {
 			wasVoid = true
 		} else {
 			k, err := c.typeDeclaration()
@@ -264,7 +267,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	if c.t.IsNext("(") {
 		for !c.t.IsNext(")") {
 			if c.t.AtEnd() {
-				break
+				return parameters, hasVarArgs, c.NewError(MissingParenthesisError)
 			}
 
 			p := parameter{kind: datatypes.UndefinedType}
@@ -296,6 +299,8 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			parameters = append(parameters, p)
 			_ = c.t.IsNext(",")
 		}
+	} else {
+		return parameters, hasVarArgs, c.NewError(MissingParameterList)
 	}
 
 	return parameters, hasVarArgs, nil
