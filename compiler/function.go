@@ -17,97 +17,34 @@ type parameter struct {
 // Function compiles a function definition. The literal flag indicates if
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
-func (c *Compiler) Function(literal bool) error {
-	// List of type coercions that will be needed for any RETURN statement.
+func (c *Compiler) Function(isLiteral bool) error {
+	var err error
+
 	coercions := []*bytecode.ByteCode{}
-	parameters := []parameter{}
-	this := ""
-	fname := ""
-	class := ""
-	byValue := true
+	thisName := ""
+	functionName := ""
+	className := ""
+	byValue := false
 
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
-	if !literal {
-		fname = c.t.Next()
-		// Is this receiver notation?
-		if fname == "(" {
-			this = c.t.Next()
-
-			if c.t.IsNext("*") {
-				byValue = false
-			}
-
-			class = c.t.Next()
-
-			if !tokenizer.IsSymbol(this) {
-				return c.NewError(InvalidSymbolError, this)
-			}
-
-			if !tokenizer.IsSymbol(class) {
-				return c.NewError(InvalidSymbolError, class)
-			}
-
-			if !c.t.IsNext(")") {
-				return c.NewError(MissingParenthesisError)
-			}
-
-			fname = c.t.Next()
-		}
-
-		if !tokenizer.IsSymbol(fname) {
-			return c.NewError(InvalidFunctionName, fname)
-		}
-
-		fname = c.Normalize(fname)
-	}
-
-	// Process the function parameter specification
-	varargs := false
-
-	if c.t.IsNext("(") {
-		for !c.t.IsNext(")") {
-			if c.t.AtEnd() {
-				break
-			}
-
-			p := parameter{kind: datatypes.UndefinedType}
-
-			name := c.t.Next()
-			if tokenizer.IsSymbol(name) {
-				p.name = name
-			} else {
-				return c.NewError(InvalidFunctionArgument)
-			}
-
-			if c.t.Peek(1) == "..." {
-				c.t.Advance(1)
-
-				varargs = true
-			}
-
-			// Is there a type name that follows it? We have to check for "[]" and "{}"
-			// as two different tokens. Also note that you can use the word array or struct
-			// instead if you wish.
-			k, err := c.typeDeclaration()
-
-			if err != nil {
-				return c.Error()
-			}
-
-			p.kind = datatypes.TypeOf(k)
-
-			if varargs {
-				p.kind = datatypes.VarArgs
-			}
-
-			parameters = append(parameters, p)
-			_ = c.t.IsNext(",")
+	if !isLiteral {
+		functionName, thisName, className, byValue, err = c.parseFunctionName()
+		if err != nil {
+			return err
 		}
 	}
+	// The function name must be followed by a parameter declaration
+	parameters, hasVarArgs, err := c.parseParameterDeclaration()
+	if err != nil {
+		return err
+	}
 
-	b := bytecode.New(fname)
-	// If we know our source file, mark it in the bytecode now.
+	// Create a new bytecode object which will hold the function
+	// generated code.
+	b := bytecode.New(functionName)
+
+	// If we know our source file, copy it to the new bytecode.
 	if c.SourceFile != "" {
 		b.Emit(bytecode.FromFile, c.SourceFile)
 	}
@@ -116,24 +53,26 @@ func (c *Compiler) Function(literal bool) error {
 	// the maximum parameter count is set to -1.
 	b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 
-	maxCount := len(parameters)
-	if varargs {
-		maxCount = -1
+	maxArgCount := len(parameters)
+	if hasVarArgs {
+		maxArgCount = -1
 	}
 
-	b.Emit(bytecode.ArgCheck, len(parameters), maxCount, fname)
+	b.Emit(bytecode.ArgCheck, len(parameters), maxArgCount, functionName)
 
-	// If there was a "this" variable defined, process it now.
-	if this != "" {
-		b.Emit(bytecode.This, this)
+	// If there was a "this" recevier variable defined, generate code to set
+	// it now, and handle whether the receiver is a pointer to the actual
+	// type object, or a copy of it.
+	if thisName != "" {
+		b.Emit(bytecode.This, thisName)
 
 		// If it was by value, make a copy of that so the function can't
 		// modify the actual value.
 		if byValue {
 			b.Emit(bytecode.Load, "new")
-			b.Emit(bytecode.Load, this)
+			b.Emit(bytecode.Load, thisName)
 			b.Emit(bytecode.Call, 1)
-			b.Emit(bytecode.Store, this)
+			b.Emit(bytecode.Store, thisName)
 		}
 	}
 
@@ -141,9 +80,8 @@ func (c *Compiler) Function(literal bool) error {
 	// array named __args which is generated as part of the bytecode function call.
 	for n, p := range parameters {
 		// is this the end of the fixed list? If so, emit the instruction that scoops
-		// up the remaining arguments and stores them as an array value.
-		//
-		// Otherwise, generate code to extract the argument value by index number.
+		// up the remaining arguments and stores them as an array value.  Otherwise,
+		// generate code to extract the argument value by index number.
 		if p.kind == datatypes.VarArgs {
 			b.Emit(bytecode.GetVarArgs, n)
 		} else {
@@ -153,7 +91,7 @@ func (c *Compiler) Function(literal bool) error {
 		}
 
 		// If this argumnet is not interface{} or a variable argument item,
-		// generaet code to validate/coerce the value to a given type.
+		// generate code to validate/coerce the value to a given type.
 		if p.kind != datatypes.UndefinedType && p.kind != datatypes.VarArgs {
 			b.Emit(bytecode.RequiredType, p.kind)
 		}
@@ -170,7 +108,7 @@ func (c *Compiler) Function(literal bool) error {
 
 	// Loop over the (possibly singular) return type specification
 	for {
-		coercion := bytecode.New(fmt.Sprintf("%s return item %d", fname, returnValueCount))
+		coercion := bytecode.New(fmt.Sprintf("%s return item %d", functionName, returnValueCount))
 
 		if c.t.Peek(1) == "{" {
 			wasVoid = true
@@ -211,9 +149,9 @@ func (c *Compiler) Function(literal bool) error {
 	cx := New()
 	cx.t = c.t
 	cx.b = b
-	cx.coerce = coercions
+	cx.coercions = coercions
 
-	err := cx.Statement()
+	err = cx.Statement()
 	if err != nil {
 		return err
 	}
@@ -228,17 +166,17 @@ func (c *Compiler) Function(literal bool) error {
 	cx.b.Emit(bytecode.Return)
 
 	// If there was a receiver, make sure this function is added to the type structure
-	if class != "" {
+	if className != "" {
 		c.b.Emit(bytecode.Push, b)
 
 		if c.PackageName != "" {
 			c.b.Emit(bytecode.Load, c.PackageName)
-			c.b.Emit(bytecode.Member, class)
+			c.b.Emit(bytecode.Member, className)
 		} else {
-			c.b.Emit(bytecode.Load, class)
+			c.b.Emit(bytecode.Load, className)
 		}
 
-		c.b.Emit(bytecode.Push, fname)
+		c.b.Emit(bytecode.Push, functionName)
 		c.b.Emit(bytecode.StoreIndex, true)
 
 		return nil
@@ -247,17 +185,118 @@ func (c *Compiler) Function(literal bool) error {
 	// If it was a literal, push the body of the function (really, a bytecode expression
 	// of the function code) on the stack. Otherwise, let's store it in the symbol table
 	// or package dictionary as appropriate.
-	if literal {
+	if isLiteral {
 		c.b.Emit(bytecode.Push, b)
 	} else {
 		// Store address of the function, either in the current
 		// compiler's symbol table or active package.
 		if c.PackageName == "" {
-			_ = c.s.SetAlways(fname, b)
+			_ = c.s.SetAlways(functionName, b)
 		} else {
-			_ = c.AddPackageFunction(c.PackageName, fname, b)
+			_ = c.AddPackageFunction(c.PackageName, functionName, b)
 		}
 	}
 
 	return nil
+}
+
+// Parse the function name clause, which can contain a receiver declaration
+// (including  the name of the "this" variable, it's type name, and whether it
+// is by value vs. by reference) as well as the actual function name itself.
+func (c *Compiler) parseFunctionName() (functionName string, thisName string, typeName string, byValue bool, err error) {
+	functionName = c.t.Next()
+	byValue = true
+	thisName = ""
+	typeName = ""
+
+	// Is this receiver notation?
+	if functionName == "(" {
+		thisName = c.t.Next()
+		functionName = ""
+
+		if c.t.IsNext("*") {
+			byValue = false
+		}
+
+		typeName = c.t.Next()
+
+		// Validatee that the name of the receiver variable and
+		// the receiver type name are both valid.
+		if !tokenizer.IsSymbol(thisName) {
+			err = c.NewError(InvalidSymbolError, thisName)
+		}
+
+		if err != nil && !tokenizer.IsSymbol(typeName) {
+			err = c.NewError(InvalidSymbolError, typeName)
+		}
+
+		// Must end with a closing paren for the receiver declaration.
+		if err != nil || !c.t.IsNext(")") {
+			err = c.NewError(MissingParenthesisError)
+		}
+
+		// Last, but not least, the function name follows the optional
+		// receiver name.
+		if err == nil {
+			functionName = c.t.Next()
+		}
+	}
+
+	// Make sure the function name is valid; bail out if not. Otherwise,
+	// normalize it and we're done.
+	if !tokenizer.IsSymbol(functionName) {
+		err = c.NewError(InvalidFunctionName, functionName)
+	} else {
+		functionName = c.Normalize(functionName)
+	}
+
+	return
+}
+
+// Process the function parameter specification. This is a list enclosed in
+// parenthesis with each parameter name and a required type declaration that
+// follows it. This is returned as the parameters value, which is an array for
+// each parameter and it's type.
+func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err error) {
+	parameters = []parameter{}
+	hasVarArgs = false
+
+	if c.t.IsNext("(") {
+		for !c.t.IsNext(")") {
+			if c.t.AtEnd() {
+				break
+			}
+
+			p := parameter{kind: datatypes.UndefinedType}
+
+			name := c.t.Next()
+			if tokenizer.IsSymbol(name) {
+				p.name = name
+			} else {
+				return nil, false, c.NewError(InvalidFunctionArgument)
+			}
+
+			if c.t.IsNext("...") {
+				hasVarArgs = true
+			}
+
+			// There must be a type declaration that follows. This returns a model which
+			// is the "zero value" for the declared type.
+			model, err := c.typeDeclaration()
+			if err != nil {
+				return nil, false, c.Error()
+			}
+
+			if hasVarArgs {
+				p.kind = datatypes.VarArgs
+			} else {
+				p.kind = datatypes.TypeOf(model)
+			}
+
+			parameters = append(parameters, p)
+			_ = c.t.IsNext(",")
+		}
+	}
+
+	return parameters, hasVarArgs, nil
 }

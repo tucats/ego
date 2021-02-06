@@ -55,7 +55,7 @@ type Compiler struct {
 	t                    *tokenizer.Tokenizer
 	s                    *symbols.SymbolTable
 	loops                *Loop
-	coerce               []*bytecode.ByteCode
+	coercions            []*bytecode.ByteCode
 	constants            []string
 	deferQueue           []int
 	packages             PackageDictionary

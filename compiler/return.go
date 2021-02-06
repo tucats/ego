@@ -24,11 +24,11 @@ func (c *Compiler) Return() error {
 			return err
 		}
 
-		if returnCount >= len(c.coerce) {
+		if returnCount >= len(c.coercions) {
 			return c.NewError(TooManyReturnValues)
 		}
 
-		bc.Append(c.coerce[returnCount])
+		bc.Append(c.coercions[returnCount])
 
 		returnCount++
 
@@ -41,7 +41,7 @@ func (c *Compiler) Return() error {
 		}
 	}
 
-	if returnCount < len(c.coerce) {
+	if returnCount < len(c.coercions) {
 		return c.NewError(MissingReturnValues)
 	}
 

@@ -87,13 +87,46 @@ Array constants are expressed using square brackets, which contain a list of val
 
 The first example is an array of integers. The value at position 0 is `101`. The value at position 1 is `335`, and so on.  The second example is a heterogenous array, where each value is of varying types. For example, the value at position 0 is the integer `123` and the value at position 1 is the string `"Fred"`.
 
+You can also specify a type for the array using a typed array constant. For example,
+
+    a := []int{101, 102, 103}
+
+In this example, an array is created that can only contain `int` values. If you specify a value in the array
+initialization list that is not an `int`, it is converted to an `int` before in is stored. You an then only
+store `int` values in the array going forward,
+
+    a[1] = 1325    // Succeeds
+    a[1] = 1325.0  // Failed, must be of type int
+
 
 ## Structures<a name="structures"></a>
 A structure (called `struct` in the _Ego_ language) is a set of key/value pairs. The key is an _Ego_ symbol, and the value is any supported value type. Each key must be unique. The values can be read or written in the struct based on the key name. Once a struct is created, it cannot have new keys added to it directly. A struct constant is indicated by braces, as in:
 
     {  Name: "Tom", Age: 53 }
 
-This struct has two members, `Name` and `Age`. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member `Name` is a string value, and the struct member `Age` is an int value.
+This struct has two members, `Name` and `Age`. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member `Name` is a string value, and the struct member `Age` is an int value. 
+
+This type of struct is known as an _anonymous_ struct in that it does not have a specific type, and in fact the fields are all declared as type interface{} so they can hold any arbitrary values unless static type checking is enabled. 
+
+You cannot add new fields to this struct if you create a struct constant with fields already. That is, you cannot
+
+    a := { Name: "Bob" }
+    a.Age = 43
+
+The second line will generate an error because Age is not a member of the structure. There is one special case
+of an _anonymous_ struct that can have fields added (or removed) dynamically. This is an empty _anonymous_
+struct,
+
+    a := {}
+    a.Name = "Fred"
+    a.Gender = "M"
+
+The empty anonymous structure can have fields added to it just by naming them, and they are created as needed. 
+In this case you can also use the delete() function to remove a field,
+
+    delete(a, "Gender")
+
+This removes the field `Gender` from the struct.
 
 ## Maps<a name="maps"></a>
 A `map` in the _Ego_ language functions the same as it does in Go. A map is declared as having a key type and a value type, and a hashmap is constructed based on that inforation. You can set a value in the map and you can fetch a value from the map.
@@ -122,7 +155,18 @@ The _Ego_ language includes the ability to create use-defined types. These are l
        Age     int
     }
 
-This creates a new type called `Employee` which is a struct with two members, `Name` and `Age`. A variable created with this type will always be a struct, and will always contain these two members. The use of this statement will be more clear later when we see how to create a variable of a given type.
+This creates a new type called `Employee` which is a struct with two members, `Name` and `Age`. A variable created with this type will always be a struct, and will always contain these two members. You can then create a variable
+of this type using
+
+   e := Employee{}
+
+The `{}` indicates this is a type, and a new structure (of type `Employee`) is created and stored in the variable `e`.  You can initialize fields in the struct when you create it if you wish,
+
+   a := Employee{ Name: "Robin" }
+
+In this example, a new Employee is created and the `Name` field is initialized to the string "Robin". The value `a`
+also contains a field `Age` because that was declared in the type, but at this point it contains the zero-value
+for it's type (in this case, an integer zero). You can only initialize fields in a type that were declared in the original type.
 
 # Variables and Expressions<a name="symbolsexpressions"></a>
 This section covers variables (named storage for values) and expressions (sequences of variables, values, and operators that result in a computed value).
@@ -246,7 +290,7 @@ The _Ego_ language includes a library of built-in functions which can also be us
 | array()  | array(list, 5)        | Create a new array using the values of `list` that is `5` elements long |
 | bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
 | close()  | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
-| delete() | delete(emp, "Name")   | Remove the struct member Name from the `emp` struct |
+| delete() | delete(emp, "Name")   | Remove the named field from a map, or a struct member |
 | error()  | error("panic") | Generate a runtime error named "panic". |
 | eval()   | eval("3 + 5")  | Evaluate the expression in the string value, and return the result, `8` |
 | float()  | float(33)      | Convert the value to a float, in this case `33.0` |
@@ -467,7 +511,7 @@ Use the `func` statement to declare a function. The function must have a name, o
     x := addem(a, 3.8)
     fmt.Println("The sum is ", x)
 
-In this example, the function `addem` is created. It accepts two parameters; each is of type float in this example. The parameter values actually passed in by the caller will be stored in local variabels v1 and v2. The function defintiion also indicates that the result of the function will also be a float value.
+In this example, the function `addem` is created. It accepts two parameters; each is of type float in this example. The parameter values actually passed in by the caller will be stored in local variables v1 and v2. The function defintiion also indicates that the result of the function will also be a float value.
 
 Parameter types and return type cause type _coercion_ to occur, where values are converted to the required type if they are not already the right value type. For example,
 
@@ -476,6 +520,8 @@ Parameter types and return type cause type _coercion_ to occur, where values are
 Would result in `y` containing the floating point value 17.0. This is because the string value "15" would be converted to a float value, and the integer value 2 would be converted to a float value before the body of the function is invoked. So `type(v1)` in the function will return "float" as the result, regardless of the type of the value passed in when the function was called.  
 
 The `func` statement allows for a special data type `interface{}` which really means "any type is allowed" and no conversion occurs. If the function body needs to know the actual type of the value passed, the `type()` function would be used.
+
+A function that does not return a value at all should omit the return type declaration.
 
 ## The `return` Statement  <a name="returnstmt"></a>
 When a function is ready to return a value the `return` statement is used. This identifies an expression that defines what is to be returned. The `return` statement results in this expression being _coerced_ to the data type named in the `func` statement as the return value.  If the example above had a `string` result type,
@@ -579,6 +625,7 @@ invocation without it being an explicit parameter. This also allows multiple fun
     var foo Employee{                             (3)
         first: "Bob", 
         last: "Smith"}
+        
     fmt.Println("The name is ", foo.Name())       (4)
 
 Let's take a look more closely at this example to see what's going on.
