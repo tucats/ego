@@ -330,10 +330,14 @@ func ReturnImpl(c *Context, i interface{}) error {
 		c.result, err = c.Pop()
 	}
 
-	if err == nil {
+	// If FP is zero, there are no frames; this is a return from the main source
+	// of the program or service.
+	if c.fp > 0 && err == nil {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
 		err = c.PopFrame()
+	} else {
+		c.running = false
 	}
 
 	return err

@@ -28,8 +28,14 @@
             "program": "${workspaceFolder}", 
             "args": ["test", "test.ego"]
         },
-        
-        
+        {
+            "name": "Local ego server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["server", "run", "-k"]
+        },
         {
             "name": "Display Server cache",
             "type": "go",

@@ -316,7 +316,6 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	status := response.StatusCode()
 	this["status"] = status
 	this["headers"] = headerMap(response)
-
 	rb := string(response.Body())
 
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {

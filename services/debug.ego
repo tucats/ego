@@ -6,12 +6,13 @@ import ( cipher util time )
 @status 200
 
 if _json {
-    r := {
-        valid_user:  authenticated(),
-        version:     _version,
-        token_valid: _token_valid,
-        session:     _session 
-    }
+    r := {}  // Needs to be an anonymous struct so we can arbitrarily
+             // add fields.
+    r.valid_user  = authenticated()
+    r.version     = _version
+    r.token_valid = _token_valid
+    r.session     = _session 
+    r.memory      = util.Memory()
 
     if _token_valid {
         // If the token was valid, get some additional info about the user it represents
