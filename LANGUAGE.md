@@ -668,6 +668,30 @@ be written such that it doesn't matter was the type of an instance variable. By 
 the `String()` function from any instance, it will execute the _appropriate_ `String()`
 function based on the type.
 
+Note that types can be nested. Consider this example:
+
+    type EmpInfo struct {
+        First string
+        Last string
+        Age int
+    }
+
+    type Employee struct {
+        Info  EmpInfo
+        Manager bool
+    }
+
+    e := Employee{
+        Info: EmpInfo{
+            First: "Bob",
+            Last:  "Smith",
+            Age:   35,
+        },
+        Manager: false
+    }
+
+The type `Employee` contains within it an item `Info` which is of another type, `EmpInfo`. Note that when initializing the fields of the newly-created instance variabel `e`, you must identify the type name for the `Info` field explicitly, since it acts as an instance generator itself for an instance of `EmpInfo` which is then stored in the field `Info` in the structure.
+
 # Error Handling <a name="errors"></a>
 
 There are two kinds of errors that can be managed in an _Ego_ program.
