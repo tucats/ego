@@ -35,12 +35,26 @@
 
 7. [Packages](#packages)
    1. [The `import` statement](#import)
+   2. [`db` package](#db)
+   2. [`tables` package](#tables)
+
+8. [Directives](#directives)
+   1. [@error](#at-error)
+   2. [@global](#at-global)
+   3. [@template](#at-template)
+   4. [@type](#at-type)
+
+9. [Testing](#testing)
+   1. [The `test` command](#testcmd)
+   2. [The `@test` directive](#at-test)
+   3. [The `@assert` directive](#at-test)
+   4. [The `@fail` directive](#at-test)
+   5. [The `@pass` directive](#at-test)
 
 &nbsp;
 &nbsp;
 
-
-# Introduction to _Ego_ Language<a name="intro"></a>
+# Introduction to _Ego_ Language <a name="intro"></a>
 _Version 0.2_
 
 This document describes the language _Ego_, which is a scripting language and tool set patterned off of the _Go_ programming language. The _Ego_ language name is a portmanteaux for _Emulated Go_. The data types and language statements are very similar to _Go_ with a few exceptions:
@@ -53,6 +67,8 @@ The _Ego_ language is run using the `ego` command-line interface. This provides 
 The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely available for any use, public or private, including commercial software. The only requirement is that any software that incorporates or makes use of _Ego_ or the packages written by Tom Cole to support must include a statement attributing authorship to _Ego_ and it's runtime environment to Tom Cole.
 
 
+&nbsp;
+&nbsp;
 # Data Types<a name="datatypes"></a>
 The _Ego_ language supports a number of base types which express a single value of some type (string, integer, boolean, etc.). These base types can be members of complex types consisting of arrays (ordered lists) and structs (key/value pairs). Additionally, the user can create types based on the base or complex types, such as a type describing a structure that records information about an employee; this type can be used to create instances of the structure, etc.
 
@@ -167,6 +183,10 @@ The `{}` indicates this is a type, and a new structure (of type `Employee`) is c
 In this example, a new Employee is created and the `Name` field is initialized to the string "Robin". The value `a`
 also contains a field `Age` because that was declared in the type, but at this point it contains the zero-value
 for it's type (in this case, an integer zero). You can only initialize fields in a type that were declared in the original type.
+
+
+&nbsp;
+&nbsp;
 
 # Variables and Expressions<a name="symbolsexpressions"></a>
 This section covers variables (named storage for values) and expressions (sequences of variables, values, and operators that result in a computed value).
@@ -335,6 +355,9 @@ are multiple threads waiting to send they are effectively run one-at-a-time. By
 creating a channel that can hold multiple messages, up to 10 (in the above example)
 threads could send a message to the channel before the first message was read.
 
+
+&nbsp;
+&nbsp;
 
 # Conditional and Iterative Execution <a name="flowcontrol"></a>
 We have discussed how variables are created, and how expressions are used to calculate values based on variables, constant values, and functions. However, most interesting programs require some decision making to control the flow of execution based on the values of variables. This section will describe how to make _either/or_ decisions in the code, and how to execute a block of code repeatedly until a condition is met.
@@ -692,6 +715,10 @@ Note that types can be nested. Consider this example:
 
 The type `Employee` contains within it an item `Info` which is of another type, `EmpInfo`. Note that when initializing the fields of the newly-created instance variabel `e`, you must identify the type name for the `Info` field explicitly, since it acts as an instance generator itself for an instance of `EmpInfo` which is then stored in the field `Info` in the structure.
 
+
+&nbsp;
+&nbsp;
+
 # Error Handling <a name="errors"></a>
 
 There are two kinds of errors that can be managed in an _Ego_ program.
@@ -753,7 +780,14 @@ is a `catch{}` block, the value of the `_error_` variable will be the
 string "Invalid value for x".
 
 
+&nbsp;
+&nbsp;
+
 # Threads <a name="threads"></a>
+
+
+&nbsp;
+&nbsp;
 
 # Builtin Packages <a name="builtinpackages"></a>
 Packages are a mechanism for grouping related functions together. These
@@ -794,6 +828,62 @@ import is a directory in the $EGO_PATH/lib location, then all the
 source files within that directory area read and processed as part
 of one package. 
 
+## db <a name="db"></a>
+The `db` package provides support for accessing a database. Currently, this must be a Postgres
+database or a database that uses the Postgres wire protocol for communicating. The package has
+a `New` function which creates a new database client object.
+
+With this object, you can execute a SQL query and get back either a fully-formed array of
+struct types (for small result sets) or a row scanning object that is used to step through
+a result set of arbitrary size.
+
+### db.New("connection-string-url")
+There is a simplified interface to SQL databases available. By default, the only provider supported
+is Postgres at this time.
+
+The result of the db.New() call is a database handle, which can be used to execute statements or
+return results from queries.
+
+     d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
+     r, e := d.QueryResult("select * from foo")
+     d.Close()
+
+This example will open a database connection with the specified URL, and perform a query that returns
+a result set. The result set is an Ego array of arrays, containing the values from the result set.
+The Query function call always returns all results, so this could be quite large with a query that
+has no filtering. You can specify parameters to the query as additional argument, which are then
+substituted into the query, as in:
+
+     age := 21
+     r, e := d.QueryResult("select member where age >= $1", age)
+
+The parameter value of `age` is injected into the query where the $1 string is found.
+
+Once a database handle is created, here are the functions you can call using the handle:
+
+| Function | Description |
+|----------|-------------|
+| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
+| d.Commit() | Commit the active transation
+| d.Rollback() | Roll back the active transaction
+| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set.
+| d.Query(q, [, args...]) | Execute a query and return a row set object
+| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected.
+| d.Close() | Terminate the connection to the database and free up resources.
+| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
+
+When you use the Query() call it returns a rowset object. This object can be used to step through the
+result set a row at a time. This allows the underlying driver to manage buffers and large result sets
+without filling up memory with the entire result set at once.
+
+| Function | Description |
+|----------|-------------|
+| r.Next() | Prepare the next row for reading. Returns false if there are no more rows
+| r.Scan() | Read the next row and create either a struct or an array of the row data
+| r.Close() | End reading rows and release any resources consumed by the rowset read.
+
+
+
 ## fmt
 
 ## io
@@ -803,16 +893,112 @@ of one package.
 ## profile
 
 ## rest
+The `rest` package provides a generalized HTTP/HTTPS client that can be used to
+communicate with a server, authenticate to it (either using username/password or
+an authentication token), and perform GET, POST, and DELETE operations against
+URL endpoints.
+
+The package supports sending and receiving arbitrary Ego data structures which
+are expressed as JSON data to the server, or sending and receiving text payloads.
+
+If the server being communicated with is an _Ego_ server, then you can use the
+`ego logon` command to create a local token used to authenticate to the server.
+
+### rest.New(<user, password>)
+This returns a rest connection handle (an opaque Go object represented by an Ego symbol
+value). If the optional username and password are specified, then the request will use
+Basic authentication with that username and password. Otherwise, if the logon-token 
+preference item is available, it is used as a Bearer token string for authentication.
+
+The resulting item can be used to make calls using the connection just created. For 
+example, if the value of `rest.New()` was stored in the variable `r`, the following
+functions would become available: 
+
+| Function | Description |
+|----------|-------------|
+| r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
+| r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
+| r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
+| r.Delete(url) | DELETE to the named URL
+| r.Media("type") | Specify the media/content type of the exchange
+| r.Verify(b) | Enable or disable TLS server certificate validation
+| r.Auth(u,p) | Estabish BasicAuth with the given username and password strings
+| r.Token(t) | Establish Bearer token auth with the given token value
+
+
+&nbsp; 
+&nbsp;     
+
+Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used to examing the HTTP status
+code of the last request, the headers returned, and the value of the response body of the last request.
+The response body may be a string (if the media type was not json) or an actual object if the media type
+was json.
+
+Here's a simple example:
+
+    
+    server := rest.New().Base("http://localhost:8080")
+    server.Get("/services/debug")
+     
+    if server.status == http.StatusOK {
+        print "Server session ID is ", server.response.session
+    }
+
 
 ## string
+
+## tables <a name="tables"></a>
+The tables package provides functions to help programs produce text tables of
+data for output. The package allows you to create a table object with a given
+set of column names. You can add rows to the table, sort the table, specify
+formatting options for the table, and then generate a text or json version of
+the table data.
+
+### tables.New("colname" [, "colname"...])
+This gives access to the table formatting and printing subsystem for Ego programs. The
+arguments must be the names of the columns in the resulting table. These can be passed 
+as descrete arguments, or as an array of strings. The result is a TableHandle object 
+that can be used to insert data into the table structure, sort it, and format it for
+output.
+
+    
+    t := tables.New(":Identity", "Age:", "Address")
+    
+    t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"})
+    t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"})
+    t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"})
+    
+    t.Sort( "Age", "Identity" )
+    
+    t.Format(true,false)
+    t.Print()
+    t.Close()
+    
+This sample program creates a table with three column headings. The use of the ":" 
+character controls alignment for the column. If the colon is at the left or right
+side of the heading, that is how the heading is aligned. If no colon is used, then
+the default is left-aligned.
+
+The data is added
+for three rows. Note that data can be added as either a struct, where the column names
+must match the column names. Alternatively, the values can be added as separate arguments
+to the function, in which case they are added in the order of the column headings.
+
+The format of the table is further set by sorting the data by Age and then Identity, and 
+indicating that headings are to be printed, but underlines under those headings are not.
+The table is then printed to the default output and the memory structures are released.
 
 ## time
 
 ## util
 
+
+&nbsp;
+&nbsp;
+
 # User Packages
 
-### package
+## package
 Use the `package` statement to define a set of related functions in 
 a package in the current source file. A give source file can only
 contain one package statement and it must be the first statement.
@@ -827,3 +1013,78 @@ be defined in the `factor` package, and must be referenced with the
 
 This calls the function `intfact()` defined in the `factor` package.
 
+
+
+&nbsp;
+&nbsp;
+
+# Directives <a name="directives"></a>
+
+
+Directives are special _Ego_ statements that perform special functions
+outside the normal language syntax, often to influence the runtime 
+environment of the program or give instructions to the compiler itself.
+
+
+## @error <a name="at-error"></a>
+
+You can generate a runtime error by adding in a `@error` directive, 
+which is followed by a string expression that is used to formulate
+the error message text. 
+
+    v = "unknonwn"
+    @error "unrecognized value: " + v
+
+This will result in a runtime error being generated with the error text
+"unrecognized value: unknown". This error can be intercepted in a try/catch
+block if desired.
+
+
+## @global 
+
+You can store a value in the Root symbol table (the table that is the
+ultimate parent of all other symbols). You cannot modify an existing
+readonly value, but you can create new readonly values, or values that
+can be changed by the user.
+
+    @global base "http://localhost:8080"
+
+This creates a variable named `base` that is in the root symbol table,
+with the value of the given expression. If you do not specify an expression,
+the variable is created as an empty-string.
+
+
+## @template <a name="at-template"></a>
+
+You can store away a named Go template as inline code. The template
+can reference any other templates defined. 
+
+    @template hello "Greetings, {{.Name}}"
+
+The resulting templates are available to the template() function,
+ whose first parameter is the template name and the second optional
+ parameter is a record containing all the named values that might
+ be substituted into the template.  For example,
+
+     print strings.template(hello, { Name: "Tom"})
+
+This results in the string "Greetings, Tom" being printed on the
+stdout console. Note that `hello` becomes a global variable in the program, and
+is a pointer to the template that was previously compiled. This
+global value can only be used with template functions.
+
+
+## @type static|dynamic <a name="at-type"></a>
+
+You can temporarily change the langauge settings to allow static
+typing of data only. When in static mode,
+
+* All values in an array constant must be of the same type
+* You cannot store a value in a variable of a different type
+* You cannot create or delete structure members
+
+This mode is effective only within the current statement block
+(demarcated by "{" and "}" characters). When the block finishes,
+type enforcement returns to the state of the previous block. This
+value is controlled by the static-types preferences item or
+command-line option.
