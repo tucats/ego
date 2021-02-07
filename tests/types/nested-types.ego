@@ -3,20 +3,21 @@
 {
     type EmpInfo struct {
         Name []string
-        ID int
+        ID   int
     }
 
     type Employee struct {
-        Info  EmpInfo
+        Info    EmpInfo
         Manager bool
     }
 
     e := Employee{
         Info: EmpInfo{ 
             Name: []string{"Bob", "Smith"},
-            ID: 101,
+            ID:   101,
         },
     }
+    
     @assert T.Equal(e.Info.Name[0], "Bob")
     @assert T.Equal(e.Manager, false)
 }
