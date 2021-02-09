@@ -1,43 +1,47 @@
 package math
 
-
 /*
  * Create a function that returns an array of factors for an integer value
  */
 
 func Factor(n int) []int {
     if n < 1 {
-        return []
+        return make([]int, 0)
     }
 
     if n != int(n) {
-        return []
+        return make([]int, 0)
     }
 
     if n == 1 {
-        return [1]
+        return []int{1}
     }
+
     if n == 2 {
-        return [1,2]
+        return []int{1,2}
     }
 
     length := int(math.Sqrt(n))
     count := 0
-    result := [1]
+    result := []int{1}
+
     for i:= 2; i <= length; i=i+1 {
         count = count + 1
         d := float(n)/i
         j := int(n)/i
+
         if d == j {
-            if index(result, i) == 0 {
-                result = result + i
+            if index(result, i) < 0 {
+                result = append(result, i)
             }
-            if index(result, j) == 0 {
-                result = result + j
+        
+            if index(result, j) < 0 {
+                result = append(result, j)
             }
         }
     }
 
-    result = result + n
+    result = append(result, n)
+
     return sort(result)
 }
