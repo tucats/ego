@@ -145,16 +145,12 @@ func (a *EgoArray) String() string {
 
 	b.WriteString("[")
 
-	for i, v := range a.data {
+	for i, element := range a.data {
 		if i > 0 {
 			b.WriteString(", ")
 		}
 
-		if s, ok := v.(string); ok {
-			b.WriteString(fmt.Sprintf("\"%s\"", s))
-		} else {
-			b.WriteString(fmt.Sprintf("%v", v))
-		}
+		b.WriteString(Format(element))
 	}
 
 	b.WriteString("]")

@@ -114,7 +114,7 @@ func (m *EgoMap) String() string {
 		if s, ok := v.(string); ok {
 			b.WriteString(fmt.Sprintf("%v: \"%s\"", k, s))
 		} else {
-			b.WriteString(fmt.Sprintf("%v: %v", k, v))
+			b.WriteString(fmt.Sprintf("%v: %s", k, Format(v)))
 		}
 	}
 
