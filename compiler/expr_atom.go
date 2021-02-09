@@ -196,6 +196,14 @@ func (c *Compiler) parseArray() error {
 			return c.NewError(InvalidTypeNameError)
 		}
 
+		// Is it an empty declaration, such as []int{} ?
+		if c.t.IsNext("{}") {
+			c.b.Emit(bytecode.Array, 0, kind)
+
+			return nil
+		}
+
+		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext("{") {
 			return c.NewError(MissingBlockError)
 		}
