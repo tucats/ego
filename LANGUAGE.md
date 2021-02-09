@@ -630,7 +630,7 @@ This somewhat artificial example shows a function named `compare` that has a fir
 
 A more complex example might be a function whose job is to sort a list of values. Sorting a list of scalar values is available as a built-in function, but sorting a list of complex types can't be done wih the builtin `sort()` function. You could write a sort function, that accepts as a parameter the comparision operation, and that function knows how to decide between two values as to which one sorts first. This lets the sort function you create be generic without regard for the data types.
 
-## Function Recivers  <a name="funcreceivers"></a>
+## Function Receivers  <a name="funcreceivers"></a>
 A function can be written such that it can only be used when referenced via a variable of a specific type. This type is created by the user, and then the functions that 
 are written to operate on that type use any variable of the type as a _receiver_, which means that variable in the function gets the value of the item in the function
 invocation without it being an explicit parameter. This also allows multiple functions of the same name to exist which just reference different types.  For example,
@@ -760,9 +760,21 @@ If the value of `hours` is non-zero, the assignment statement will assign
 the dividend to `x`. However, if hours is zero it will trigger a panic
 divide-by-zero error. When this happens, the remainder of the statements
 (if any) in the `try` block are skipped, and the `catch` block is executed.
-Within this block, there is a variable `_error_` that is set to the
-value of the error that was signalled. This can be used in the `catch`
-block if it needs handle more than one possible error, for example.
+
+You can optionally specify the name of a variable that will be created within
+the catch block that contains the actual error encountered. Do this by
+adding the name in parenthesis before the catch block. This can be used 
+in the `catch` block if it needs handle more than one possible error. For
+example:
+
+    x := 0
+    try {
+        x = 125 / x
+    } catch (e) {
+        fmt.Println("unexpected error, ", e)
+    }
+
+This can be used in the `catch` block if it needs handle more than one possible error, for example.
 
 ## Signalling Errors <a name="signalling"></a>
 
