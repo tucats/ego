@@ -274,7 +274,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				err = ctx.Run()
 			}
 
-			if err == errors.Stop {
+			if err.Is(errors.Stop) {
 				err = nil
 			}
 

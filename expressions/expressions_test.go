@@ -6,7 +6,6 @@ package expressions
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
@@ -384,7 +383,7 @@ func TestNew(t *testing.T) {
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)
-			if !errors.Nil(err) && strings.HasSuffix(err.Error(), "stop") {
+			if err.Is(errors.Stop) {
 				err = nil
 			}
 			if !errors.Nil(err) && tt.want != nil {

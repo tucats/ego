@@ -34,7 +34,7 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 			err = Debugger(c)
 		}
 
-		if err == errors.Stop {
+		if err.Is(errors.Stop) {
 			return nil
 		}
 	}
@@ -122,7 +122,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				t2 := tokenizer.New(text)
 
 				err = compiler.Run("debugger", s, t2)
-				if err == errors.Stop {
+				if err.Is(errors.Stop) {
 					err = nil
 				}
 
@@ -136,13 +136,13 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = errors.New(errors.InvalidDebugCommandError).WithContext(t)
 			}
 
-			if !errors.Nil(err) && err != errors.Stop && err != errors.StepOver {
+			if !errors.Nil(err) && !err.Is(errors.Stop) && !err.Is(errors.StepOver) {
 				fmt.Printf("Debugger error, %v\n", err)
 
 				err = nil
 			}
 
-			if err == errors.Stop {
+			if err.Is(errors.Stop) {
 				err = nil
 				prompt = false
 			}

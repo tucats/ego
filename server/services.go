@@ -111,7 +111,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	var compilerInstance *compiler.Compiler
 
-	var err error
+	var err *errors.EgoError
 
 	cacheMutext.Lock()
 	if cachedItem, ok := serviceCache[r.URL.Path]; ok {
@@ -250,7 +250,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx.Tracing = Tracing
 
 	err = ctx.Run()
-	if err == errors.Stop {
+	if err.Is(errors.Stop) {
 		err = nil
 	}
 

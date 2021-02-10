@@ -80,6 +80,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
 				end, e2 = strconv.Atoi(tokens.Next())
 			}
+
 			err = errors.New(e2)
 		}
 

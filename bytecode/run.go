@@ -3,7 +3,6 @@ package bytecode
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -179,8 +178,8 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 		}
 	}
 
-	if !errors.Nil(err) && !strings.HasSuffix(err.Error(), "stop") {
-		fmt.Printf("%v\n", err)
+	if !err.Is(errors.Stop) {
+		fmt.Printf("Go routine  %s failed, %v\n", fName, err)
 		ui.Debug(ui.ByteCodeLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)
 	}

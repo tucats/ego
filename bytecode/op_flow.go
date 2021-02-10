@@ -24,7 +24,7 @@ import (
 func StopImpl(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
-	return errors.NewMessage("stop")
+	return errors.New(errors.Stop)
 }
 
 // PanicImpl instruction processor generates an error. The boolean flag is used

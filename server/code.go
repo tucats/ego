@@ -76,7 +76,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()
-		if err == errors.Stop {
+		if err.Is(errors.Stop) {
 			err = nil
 		}
 
