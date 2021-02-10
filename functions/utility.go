@@ -446,7 +446,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			result = append(result, array...)
 		} else {
 			if kind != datatypes.InterfaceType && datatypes.TypeOf(j) != kind {
-				return nil, errors.New(errors.WrongArrayValueType).At("append()", 0)
+				return nil, errors.New(errors.WrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
 		}

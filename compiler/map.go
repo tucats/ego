@@ -19,6 +19,9 @@ func (c *Compiler) Map() *errors.EgoError {
 
 	// Parse the key type
 	keyType := c.ParseType()
+	if keyType == datatypes.UndefinedType {
+		return c.NewError(errors.InvalidTypeError)
+	}
 
 	// Closing bracket on the key type
 	if !c.t.IsNext("]") {

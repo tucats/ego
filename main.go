@@ -15,7 +15,7 @@ import (
 // script.
 var BuildVersion = "0"
 
-// Copyright is the copyright string for this application
+// Copyright is the copyright string for this application.
 var Copyright = "(C) Copyright Tom Cole 2020, 2021"
 
 func main() {
@@ -38,7 +38,12 @@ func main() {
 		fmt.Printf("Error: %v\n", err.Error())
 
 		if value := err.GetContext(); value != nil {
-			os.Exit(util.GetInt(value))
+			errorCode := util.GetInt(value)
+			if errorCode == 0 {
+				errorCode = 1
+			}
+
+			os.Exit(errorCode)
 		}
 
 		os.Exit(1)

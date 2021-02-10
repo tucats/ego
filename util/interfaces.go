@@ -177,7 +177,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case string:
 			if value == "" {
-				return 0.0
+				return 0
 			}
 
 			st, err := strconv.Atoi(value)

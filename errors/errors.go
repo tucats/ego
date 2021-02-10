@@ -6,8 +6,9 @@ import (
 )
 
 type location struct {
-	name string
-	line int
+	name   string
+	line   int
+	column int
 }
 
 type EgoError struct {
@@ -27,14 +28,22 @@ func New(err error) *EgoError {
 }
 
 func (e *EgoError) In(name string) *EgoError {
-	return e.At(name, 0)
+	if e.location == nil {
+		e.location = &location{}
+	}
+
+	e.location.name = name
+
+	return e
 }
 
-func (e *EgoError) At(name string, line int) *EgoError {
-	e.location = &location{
-		name: name,
-		line: line,
+func (e *EgoError) At(line int, column int) *EgoError {
+	if e.location == nil {
+		e.location = &location{}
 	}
+
+	e.location.line = line
+	e.location.column = column
 
 	return e
 }
@@ -118,12 +127,20 @@ func (e *EgoError) Error() string {
 		}
 
 		if e.location.line > 0 {
+			var lineStr string
+
+			if e.location.column > 0 {
+				lineStr = fmt.Sprintf("%d:%d", e.location.line, e.location.column)
+			} else {
+				lineStr = fmt.Sprintf("%d", e.location.line)
+			}
+
 			b.WriteString("at ")
 
 			if len(e.location.name) > 0 {
-				b.WriteString(fmt.Sprintf("%s(line %d)", e.location.name, e.location.line))
+				b.WriteString(fmt.Sprintf("%s(line %s)", e.location.name, lineStr))
 			} else {
-				b.WriteString(fmt.Sprintf("line %d", e.location.line))
+				b.WriteString(fmt.Sprintf("line %s", lineStr))
 			}
 		} else {
 			b.WriteString("in ")

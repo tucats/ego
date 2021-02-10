@@ -13,7 +13,7 @@ func (c *Context) NewError(err error, context ...interface{}) *errors.EgoError {
 		return nil
 	}
 
-	r := errors.New(err).At(c.Name, c.GetLine())
+	r := errors.New(err).In(c.Name).At(c.GetLine(), 0)
 
 	if len(context) > 0 {
 		_ = r.WithContext(context[0])

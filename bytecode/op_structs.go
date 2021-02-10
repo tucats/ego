@@ -208,7 +208,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if !errors.Nil(err) {
-			return errors.New(err).At(c.GetModuleName(), c.GetLine())
+			return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
 	// Index into map is just member access. Make sure it's not

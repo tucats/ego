@@ -29,8 +29,7 @@ func (c *Compiler) NewError(err error, args ...interface{}) *errors.EgoError {
 	}
 
 	if p >= 0 {
-		//		e.column = c.t.Pos[p]
-		e = e.At(c.PackageName, c.t.Line[p])
+		e = e.In(c.PackageName).At(c.t.Line[p], c.t.Pos[p])
 	}
 
 	return e
