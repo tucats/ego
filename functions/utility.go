@@ -414,7 +414,12 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // Signal creates an error object based on the
 // parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return errors.New(errors.GenericError).WithContext(append([]interface{}{}, args...)), nil
+	r := errors.New(errors.UserError)
+	if len(args) > 0 {
+		r = r.WithContext(args[0])
+	}
+
+	return r, nil
 }
 
 // Append implements the builtin append() function, which concatenates all the items
@@ -661,14 +666,24 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	if e, ok := args[0].(*errors.EgoError); ok {
 		wrappedError := e.Unwrap()
-		result := map[string]interface{}{
-			datatypes.TypeMDKey:     "error",
-			datatypes.BasetypeMDKey: "error",
-			"error":                 wrappedError,
-			"text":                  e.Error(),
+
+		if e.Is(errors.UserError) {
+			text := datatypes.GetString(e.GetContext())
+
+			return map[string]interface{}{
+				datatypes.TypeMDKey:     "error",
+				datatypes.BasetypeMDKey: "error",
+				"error":                 wrappedError.Error(),
+				"text":                  text,
+			}, nil
 		}
 
-		return result, nil
+		return map[string]interface{}{
+			datatypes.TypeMDKey:     "error",
+			datatypes.BasetypeMDKey: "error",
+			"error":                 wrappedError.Error(),
+			"text":                  e.Error(),
+		}, nil
 	}
 
 	typeString, err := Type(s, args)

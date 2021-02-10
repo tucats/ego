@@ -66,5 +66,6 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	text, e2 := fmt.Printf("%s\n", b.String())
+
 	return text, errors.New(e2)
 }

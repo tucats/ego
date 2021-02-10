@@ -47,6 +47,7 @@ func (e *EgoError) WithContext(context interface{}) *EgoError {
 
 func NewMessage(m string) *EgoError {
 	return &EgoError{
+		err:     UserError,
 		context: m,
 	}
 }
@@ -134,13 +135,15 @@ func (e *EgoError) Error() string {
 
 	// If we have an underlying error, report the string value for that
 	if e.err != nil {
-		if predicate {
-			b.WriteString(", ")
+		if !e.Is(UserError) {
+			if predicate {
+				b.WriteString(", ")
+			}
+
+			b.WriteString(e.err.Error())
+
+			predicate = true
 		}
-
-		b.WriteString(e.err.Error())
-
-		predicate = true
 	}
 
 	// If we have additional context, report that
