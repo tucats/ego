@@ -1,6 +1,9 @@
 package compiler
 
-import "github.com/tucats/ego/bytecode"
+import (
+	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/tokenizer"
+)
 
 // Try compiles the try statement which allows the program to catch error
 // conditions instead of stopping execution on an error.
@@ -23,6 +26,23 @@ func (c *Compiler) Try() error {
 
 	if !c.t.IsNext("catch") {
 		return c.NewError(MissingCatchError)
+	}
+
+	// Is there a named variable that will hold the error?
+
+	if c.t.IsNext("(") {
+		errName := c.t.Next()
+		if !tokenizer.IsSymbol(errName) {
+			return c.NewError(InvalidSymbolError)
+		}
+
+		if !c.t.IsNext(")") {
+			return c.NewError(MissingParenthesisError)
+		}
+
+		c.b.Emit(bytecode.SymbolCreate, errName)
+		c.b.Emit(bytecode.Load, bytecode.ErrorVariableName)
+		c.b.Emit(bytecode.StoreAlways, errName)
 	}
 
 	err = c.Statement()

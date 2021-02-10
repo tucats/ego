@@ -117,7 +117,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				c.try[len(c.try)-1] = 0
 
 				// Implicit pop-scope done here.
-				_ = c.symbols.SetAlways("_error", text)
+				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
 				if c.Tracing {
 					ui.Debug(ui.ByteCodeLogger, "*** Branch to %d on error: %s", c.pc, text)

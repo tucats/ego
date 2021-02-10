@@ -26,6 +26,10 @@ const BranchInstruction = 2000
 // are added between 1 and this value.
 const BuiltinInstructions = BranchInstruction - 1000
 
+// ErrorVariableName is the name of the local variable created for a
+// catch-block of a try/catch construct. The variable contains an error.
+const ErrorVariableName = "_error"
+
 // Instruction contains the information about a single bytecode.
 type Instruction struct {
 	Operation OpcodeID

@@ -9,7 +9,10 @@
 func half(x int) float {
    try {
       return x / 0 
-   } catch {
+   } catch (e){
+      if type(e) != "error" {
+         @fail "catch error is wrong type"
+      }
       return -55.0
    }
 }
