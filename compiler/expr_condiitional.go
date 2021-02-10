@@ -8,7 +8,7 @@ import (
 // conditional handles parsing the ?: trinary operator. The first term is
 // converted to a boolean value, and if true the second term is returned, else
 // the third term. All terms must be present.
-func (c *Compiler) conditional() error {
+func (c *Compiler) conditional() *EgoError {
 	// Parse the conditional
 	err := c.relations()
 	if err != nil {

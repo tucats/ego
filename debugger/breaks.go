@@ -30,10 +30,8 @@ type breakPoint struct {
 
 var breakPoints = []breakPoint{}
 
-func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
-	var err error
-
-	var line int
+func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
+	var err *errors.EgoError
 
 	t.Advance(1)
 
@@ -64,9 +62,11 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 				t.Advance(-1)
 			}
 
-			line, err = strconv.Atoi(t.Next())
-			if err == nil {
+			line, e2 := strconv.Atoi(t.Next())
+			if e2 == nil {
 				err = breakAtLine(name, line)
+			} else {
+				err = errors.New(e2)
 			}
 
 		default:
@@ -81,7 +81,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 	return err
 }
 
-func breakAtLine(module string, line int) error {
+func breakAtLine(module string, line int) *errors.EgoError {
 	b := breakPoint{
 		module: module,
 		line:   line,
@@ -95,7 +95,7 @@ func breakAtLine(module string, line int) error {
 	return nil
 }
 
-func breakWhen(expression *bytecode.ByteCode, text string) error {
+func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
 	b := breakPoint{
 		module: "expression",
 		hit:    0,

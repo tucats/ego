@@ -41,7 +41,7 @@ type Range struct {
 // pushed on a stack in the runtime context where it
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
-func RangeInitImpl(c *Context, i interface{}) error {
+func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 	var v interface{}
 
 	var err error
@@ -133,7 +133,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 //    The value (map member, array index, channel)
 //    is stored in the value variable. The index
 //     number is also stored in the index variable.
-func RangeNextImpl(c *Context, i interface{}) error {
+func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 	var err error
 
 	destination := util.GetInt(i)

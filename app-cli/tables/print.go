@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
 // Print will output a table using current rows and format specifications.
-func (t *Table) Print(format string) error {
+func (t *Table) Print(format string) *errors.EgoError {
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
 		_ = t.SortRows(t.orderBy, t.ascending)

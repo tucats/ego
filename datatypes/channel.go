@@ -1,12 +1,12 @@
 package datatypes
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // Structure of an Ego channel wrapper around Go channels.
@@ -47,7 +47,7 @@ func NewChannel(size int) *Channel {
 
 // Send transmits an arbitrary data object through the channel, if it
 // is open.
-func (c *Channel) Send(datum interface{}) error {
+func (c *Channel) Send(datum interface{}) *errors.EgoError {
 	c.mutex.Lock()
 
 	defer c.mutex.Unlock()
@@ -61,18 +61,18 @@ func (c *Channel) Send(datum interface{}) error {
 		return nil
 	}
 
-	return errors.New(ChannelNotOpenError)
+	return errors.New(errors.ChannelNotOpenError)
 }
 
 // Receive accepts an arbitrary data object through the channel, waiting
 // if there is no information available yet. If it's not open, we also
 // check to see if the messages have all been drained by looking at the
 // counter.
-func (c *Channel) Receive() (interface{}, error) {
+func (c *Channel) Receive() (interface{}, *errors.EgoError) {
 	ui.Debug(ui.ByteCodeLogger, "--> Receiving on %s", c.String())
 
 	if !c.isOpen && c.count == 0 {
-		return nil, errors.New(ChannelNotOpenError)
+		return nil, errors.New(errors.ChannelNotOpenError)
 	}
 
 	datum := <-c.channel

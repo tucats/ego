@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // Parse processes the grammar associated with the current context,
@@ -15,7 +16,7 @@ import (
 // Unrecognized options or subcommands, as well as invalid values
 // are reported as an error. If there is an action routine associated
 // with an option or a subcommand, that action is executed.
-func (c *Context) Parse() error {
+func (c *Context) Parse() *errors.EgoError {
 	args := c.Args
 	c.MainProgram = filepath.Base(args[0])
 	c.Command = ""
@@ -34,8 +35,8 @@ func (c *Context) Parse() error {
 // ParseGrammar accepts an argument list and parses it using the current context grammar
 // definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
 // This is never called by the user directly.
-func (c *Context) parseGrammar(args []string) error {
-	var err error
+func (c *Context) parseGrammar(args []string) *errors.EgoError {
+	var err *errors.EgoError
 
 	lastArg := len(args)
 	parametersOnly := false
@@ -120,7 +121,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return NewCLIError(UnknownOptionError, option)
+			return errors.New(errors.UnknownOptionError).WithContext(option)
 		}
 
 		// It could be a parameter, or a subcommand.
@@ -184,7 +185,7 @@ func (c *Context) parseGrammar(args []string) error {
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
-						return NewExitError("missing option value for "+name, ExitUsageError)
+						return errors.New(errors.MissingOptionValueError).WithContext(name)
 					}
 
 					value = args[currentArg]
@@ -205,7 +206,7 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				if !found {
-					return NewCLIError(InvalidKeywordError, location.LongName, value)
+					return errors.New(errors.InvalidKeywordError).WithContext(value)
 				}
 
 			case BooleanType:
@@ -214,7 +215,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return NewCLIError(InvalidBooleanValueError, location.LongName, value)
+					return errors.New(errors.InvalidBooleanValueError).WithContext(value)
 				}
 
 				location.Value = b
@@ -236,7 +237,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case IntType:
 				i, err := strconv.Atoi(value)
 				if err != nil {
-					return NewCLIError(InvalidIntegerError, location.LongName, value)
+					return errors.New(InvalidIntegerError, location.LongName, value)
 				}
 
 				location.Value = i
@@ -259,7 +260,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = NewCLIError(RequiredNotFoundError, entry.LongName)
+			err = errors.New(RequiredNotFoundError, entry.LongName)
 
 			break
 		}
@@ -278,16 +279,16 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return NewCLIError(UnexpectedParametersError)
+			return errors.New(UnexpectedParametersError)
 		}
 
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return NewCLIError(TooManyParametersError)
+				return errors.New(TooManyParametersError)
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return NewCLIError(WrongParameterCountError)
+				return errors.New(WrongParameterCountError)
 			}
 		}
 

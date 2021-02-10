@@ -57,7 +57,7 @@ func (c *Context) PushFrame(tableName string, bc *ByteCode, pc int) {
 
 // PopFrame retrieves the call frame information from the stack, and updates
 // the current bytecode context to reflect the previously-stored state.
-func (c *Context) PopFrame() error {
+func (c *Context) PopFrame() *errors.EgoError {
 	// First, is there stuff on the stack we want to preserve?
 	topOfStackSlice := c.stack[c.fp : c.sp+1]
 

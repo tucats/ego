@@ -10,7 +10,7 @@ import (
 
 // StaticTypeOpcode implements the StaticType opcode, which
 // sets the static typing flag for the current context.
-func StaticTypingImpl(c *Context, i interface{}) error {
+func StaticTypingImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err == nil {
 		c.Static = util.GetBool(v)
@@ -20,7 +20,7 @@ func StaticTypingImpl(c *Context, i interface{}) error {
 	return err
 }
 
-func RequiredTypeImpl(c *Context, i interface{}) error {
+func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err == nil {
 		// If we're doing strict type checking...
@@ -103,7 +103,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 }
 
 // CoerceImpl instruction processor.
-func CoerceImpl(c *Context, i interface{}) error {
+func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	t := util.GetInt(i)
 
 	v, err := c.Pop()

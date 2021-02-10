@@ -10,7 +10,7 @@ import (
 )
 
 // MakeArrayImpl instruction processor.
-func MakeArrayImpl(c *Context, i interface{}) error {
+func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	parms := util.GetInt(i)
 	if parms == 2 {
 		initialValue, err := c.Pop()
@@ -59,7 +59,7 @@ func MakeArrayImpl(c *Context, i interface{}) error {
 }
 
 // ArrayImpl instruction processor.
-func ArrayImpl(c *Context, i interface{}) error {
+func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	var arrayType reflect.Type
 
 	var count, kind int
@@ -104,7 +104,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 // of elements on the stack. These are pulled off in pairs,
 // where the first value is the name of the struct field and
 // the second value is the value of the struct field.
-func StructImpl(c *Context, i interface{}) error {
+func StructImpl(c *Context, i interface{}) *errors.EgoError {
 	count := util.GetInt(i)
 	m := map[string]interface{}{}
 

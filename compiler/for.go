@@ -25,7 +25,7 @@ import (
 //    this form _requires_ that there be at least one break
 //    statement inside the loop, which algorithmically stops
 //    the loop
-func (c *Compiler) For() error {
+func (c *Compiler) For() *errors.EgoError {
 	c.b.Emit(bytecode.PushScope)
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1) == "{" {
@@ -311,7 +311,7 @@ func (c *Compiler) For() error {
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the breaks list
 // in the compiler context.
-func (c *Compiler) Break() error {
+func (c *Compiler) Break() *errors.EgoError {
 	if c.loops == nil {
 		return c.NewError(errors.InvalidLoopControlError)
 	}
@@ -328,7 +328,7 @@ func (c *Compiler) Break() error {
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the continues list
 // in the compiler context.
-func (c *Compiler) Continue() error {
+func (c *Compiler) Continue() *errors.EgoError {
 	if c.loops == nil {
 		return c.NewError(errors.InvalidLoopControlError)
 	}

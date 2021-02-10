@@ -1,55 +1,55 @@
 package cli
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
-func dummyAction(c *Context) error {
+func dummyAction(c *Context) *errors.EgoError {
 	return nil
 }
 
-func integerAction(c *Context) error {
+func integerAction(c *Context) *errors.EgoError {
 	v, found := c.GetInteger("integer")
 	if !found {
-		return errors.New("No integer option found")
+		return errors.NewMessage("No integer option found")
 	}
 
 	if v != 42 {
-		return errors.New("Integer value not 42")
+		return errors.NewMessage("Integer value not 42")
 	}
 
 	return nil
 }
 
-func stringAction(c *Context) error {
+func stringAction(c *Context) *errors.EgoError {
 	v, found := c.GetString("string")
 	if !found {
-		return errors.New("No string option found")
+		return errors.NewMessage("No string option found")
 	}
 
 	if v != "foobar" {
-		return errors.New("String value not foobar")
+		return errors.NewMessage("String value not foobar")
 	}
 
 	return nil
 }
 
-func booleanValueAction(c *Context) error {
+func booleanValueAction(c *Context) *errors.EgoError {
 	v := c.GetBool("boolean")
 	if v != true {
-		return errors.New("Boolean value not true")
+		return errors.NewMessage("Boolean value not true")
 	}
 
 	return nil
 }
 
-func booleanAction(c *Context) error {
+func booleanAction(c *Context) *errors.EgoError {
 	v := c.GetBool("flag")
 	if v != true {
-		return errors.New("Boolean not present")
+		return errors.NewMessage("Boolean not present")
 	}
 
 	return nil

@@ -13,7 +13,7 @@ import (
 \******************************************/
 
 // PushScopeImpl instruction processor.
-func PushScopeImpl(c *Context, i interface{}) error {
+func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	s := symbols.NewChildSymbolTable("block", c.symbols)
 	c.symbols = s
 
@@ -21,14 +21,14 @@ func PushScopeImpl(c *Context, i interface{}) error {
 }
 
 // PopScopeImpl instruction processor.
-func PopScopeImpl(c *Context, i interface{}) error {
+func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	c.symbols = c.symbols.Parent
 
 	return nil
 }
 
 // SymbolCreateImpl instruction processor.
-func SymbolCreateImpl(c *Context, i interface{}) error {
+func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
 		return c.NewError(errors.ReadOnlyError)
@@ -43,7 +43,7 @@ func SymbolCreateImpl(c *Context, i interface{}) error {
 }
 
 // SymbolOptCreateImpl instruction processor.
-func SymbolOptCreateImpl(c *Context, i interface{}) error {
+func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
 		return c.NewError(errors.ReadOnlyError)
@@ -67,7 +67,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) error {
 }
 
 // SymbolDeleteImpl instruction processor.
-func SymbolDeleteImpl(c *Context, i interface{}) error {
+func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 
 	err := c.Delete(n)
@@ -79,7 +79,7 @@ func SymbolDeleteImpl(c *Context, i interface{}) error {
 }
 
 // ConstantImpl instruction processor.
-func ConstantImpl(c *Context, i interface{}) error {
+func ConstantImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err != nil {
 		return err

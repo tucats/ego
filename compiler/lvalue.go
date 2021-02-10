@@ -44,7 +44,7 @@ func (c *Compiler) IsLValue() bool {
 
 // Check to see if this is a list of lvalues, which can occur
 // in a multi-part assignment.
-func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
+func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	bc := bytecode.New("lvalue list")
 	count := 0
 	savedPosition := c.t.TokenP
@@ -121,7 +121,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 // LValue compiles the information on the left side of
 // an assignment. This information is used later to store the
 // data in the named object.
-func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
+func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 	if bc, err := lvalueList(c); err == nil {
 		return bc, nil
 	}
@@ -188,7 +188,7 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 }
 
 // lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences).
-func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
+func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 	term := c.t.Peek(1)
 	if term == "[" {
 		c.t.Advance(1)

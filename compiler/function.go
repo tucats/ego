@@ -18,8 +18,8 @@ type parameter struct {
 // Function compiles a function definition. The literal flag indicates if
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
-func (c *Compiler) Function(isLiteral bool) error {
-	var err error
+func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
+	var err *errors.EgoError
 
 	coercions := []*bytecode.ByteCode{}
 	thisName := ""
@@ -207,7 +207,7 @@ func (c *Compiler) Function(isLiteral bool) error {
 // Parse the function name clause, which can contain a receiver declaration
 // (including  the name of the "this" variable, it's type name, and whether it
 // is by value vs. by reference) as well as the actual function name itself.
-func (c *Compiler) parseFunctionName() (functionName string, thisName string, typeName string, byValue bool, err error) {
+func (c *Compiler) parseFunctionName() (functionName string, thisName string, typeName string, byValue bool, err *errors.EgoError) {
 	functionName = c.t.Next()
 	byValue = true
 	thisName = ""
@@ -261,7 +261,7 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 // parenthesis with each parameter name and a required type declaration that
 // follows it. This is returned as the parameters value, which is an array for
 // each parameter and it's type.
-func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err error) {
+func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err *errors.EgoError) {
 	parameters = []parameter{}
 	hasVarArgs = false
 

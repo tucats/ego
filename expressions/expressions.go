@@ -27,6 +27,7 @@ package expressions
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -36,7 +37,7 @@ type Expression struct {
 	t   *tokenizer.Tokenizer
 	b   *bytecode.ByteCode
 	c   bool
-	err error
+	err *errors.EgoError
 }
 
 // New creates a new Expression object.
@@ -90,7 +91,7 @@ func (e *Expression) WithBytecode(b *bytecode.ByteCode) *Expression {
 }
 
 // Error returns the last error seen on the expression object.
-func (e *Expression) Error() error {
+func (e *Expression) Error() *errors.EgoError {
 	return e.err
 }
 
@@ -106,6 +107,6 @@ func (e *Expression) GetBytecode() *bytecode.ByteCode {
 
 // Evaluate is a helper function for the case where a string is to
 // be evaluated once and the value returned.
-func Evaluate(expr string, s *symbols.SymbolTable) (interface{}, error) {
+func Evaluate(expr string, s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
 	return New().WithText(expr).Eval(s)
 }

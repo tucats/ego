@@ -1,5 +1,7 @@
 package cli
 
+import "github.com/tucats/ego/errors"
+
 const (
 
 	// StringType accepts a string (in quotes if it contains spaces or punctuation).
@@ -42,7 +44,7 @@ type Option struct {
 	Keywords             []string
 	SubGrammar           []Option
 	Value                interface{}
-	Action               func(c *Context) error
+	Action               func(c *Context) *errors.EgoError
 	OptionType           int
 	ParametersExpected   int
 	Found                bool
@@ -64,7 +66,7 @@ type Context struct {
 	Args                   []string
 	Parameters             []string
 	Parent                 *Context
-	Action                 func(c *Context) error
+	Action                 func(c *Context) *errors.EgoError
 	ParameterCount         int
 	ExpectedParameterCount int
 }

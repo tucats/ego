@@ -20,7 +20,7 @@ import (
 
 // PrintImpl instruction processor. If the operand is given, it represents the number of items
 // to remove from the stack and print to stdout.
-func PrintImpl(c *Context, i interface{}) error {
+func PrintImpl(c *Context, i interface{}) *errors.EgoError {
 	count := 1
 	if i != nil {
 		count = util.GetInt(i)
@@ -52,7 +52,7 @@ func PrintImpl(c *Context, i interface{}) error {
 
 // LogImpl imeplements the Log directive, which outputs the top stack
 // item to the logger named in the operand.
-func LogImpl(c *Context, i interface{}) error {
+func LogImpl(c *Context, i interface{}) *errors.EgoError {
 	logger := util.GetString(i)
 
 	msg, err := c.Pop()
@@ -65,7 +65,7 @@ func LogImpl(c *Context, i interface{}) error {
 
 // SayImpl instruction processor. This can be used in place of NewLine to end
 //buffered output, but the output is only displayed if we are not in --quiet mode.
-func SayImpl(c *Context, i interface{}) error {
+func SayImpl(c *Context, i interface{}) *errors.EgoError {
 	ui.Say("%s\n", c.output.String())
 	c.output = nil
 
@@ -73,7 +73,7 @@ func SayImpl(c *Context, i interface{}) error {
 }
 
 // NewlineImpl instruction processor generates a newline character to stdout.
-func NewlineImpl(c *Context, i interface{}) error {
+func NewlineImpl(c *Context, i interface{}) *errors.EgoError {
 	if c.output == nil {
 		fmt.Printf("\n")
 	} else {
@@ -91,7 +91,7 @@ func NewlineImpl(c *Context, i interface{}) error {
 
 // TemplateImpl compiles a template string from the stack and stores it in
 // the template manager for the execution context.
-func TemplateImpl(c *Context, i interface{}) error {
+func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	t, err := c.Pop()
@@ -114,7 +114,7 @@ func TemplateImpl(c *Context, i interface{}) error {
 // FromFileImpl loads the context tokenizer with the
 // source from a file if it does not alrady exist and
 // we are in debug mode.
-func FromFileImpl(c *Context, i interface{}) error {
+func FromFileImpl(c *Context, i interface{}) *errors.EgoError {
 	if !c.debugging {
 		return nil
 	}
@@ -127,7 +127,7 @@ func FromFileImpl(c *Context, i interface{}) error {
 	return err
 }
 
-func TimerImpl(c *Context, i interface{}) error {
+func TimerImpl(c *Context, i interface{}) *errors.EgoError {
 	mode := util.GetInt(i)
 	switch mode {
 	case 0:

@@ -17,6 +17,10 @@ type EgoError struct {
 }
 
 func New(err error) *EgoError {
+	if e, ok := err.(*EgoError); ok {
+		return e
+	}
+
 	return &EgoError{
 		err: err,
 	}

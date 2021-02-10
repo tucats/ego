@@ -11,7 +11,7 @@ import (
 type modelIsType struct{}
 
 // Type compiles a type statement.
-func (c *Compiler) Type() error {
+func (c *Compiler) Type() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(errors.InvalidSymbolError)
@@ -78,7 +78,7 @@ func (c *Compiler) Type() error {
 	return nil
 }
 
-func (c *Compiler) compileType() error {
+func (c *Compiler) compileType() *errors.EgoError {
 	// Skip over the optional struct type keyword
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		c.t.Advance(1)
@@ -138,7 +138,7 @@ func (c *Compiler) compileType() error {
 	}
 }
 
-func (c *Compiler) typeDeclaration() (interface{}, error) {
+func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		return nil, c.compileType()
 	}

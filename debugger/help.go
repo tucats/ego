@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/tables"
+	"github.com/tucats/ego/errors"
 )
 
 var helpText = [][]string{
@@ -24,7 +25,7 @@ var helpText = [][]string{
 	{"step over", "Step over a function call to the next line in this program"},
 }
 
-func Help() error {
+func Help() *errors.EgoError {
 	table, err := tables.New([]string{"Command", "Description"})
 
 	for _, helpItem := range helpText {

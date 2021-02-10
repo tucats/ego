@@ -1,13 +1,13 @@
 package functions
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -193,7 +193,7 @@ func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) 
 	return ""
 }
 
-func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
+func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, *errors.EgoError) {
 	var fdef = FunctionDefinition{}
 
 	found := false

@@ -18,7 +18,7 @@ import (
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func AddUser(c *cli.Context) error {
+func AddUser(c *cli.Context) *EgoError {
 	var err error
 
 	user, _ := c.GetString("username")
@@ -59,7 +59,7 @@ func AddUser(c *cli.Context) error {
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func DeleteUser(c *cli.Context) error {
+func DeleteUser(c *cli.Context) *EgoError {
 	var err error
 
 	user, _ := c.GetString("username")
@@ -87,7 +87,7 @@ func DeleteUser(c *cli.Context) error {
 	return err
 }
 
-func ListUsers(c *cli.Context) error {
+func ListUsers(c *cli.Context) *EgoError {
 	path := persistence.Get(defs.LogonServerSetting)
 	if path == "" {
 		path = "http://localhost:8080"

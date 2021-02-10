@@ -2,13 +2,12 @@ package runtime
 
 import (
 	"database/sql"
-	"errors"
 	"net/url"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -19,9 +18,9 @@ import (
 // DBNew implements the New() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	// Get the connection string, which MUST be in URL format.
@@ -69,7 +68,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DBBegin implements the Begin() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var tx *sql.Tx
 
 	d, tx, err := getDBClient(s)
@@ -90,7 +89,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // DBCommit implements the Commit() db function.
-func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
@@ -110,7 +109,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // DBCommit implements the Commit() db function.
-func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
@@ -133,9 +132,9 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // of structs, where the struct members are the same as the result set column names. When
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
-func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	_, _, err := getDBClient(s)
@@ -151,7 +150,7 @@ func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // DBClose closes the database connection, frees up any resources held, and resets the
 // handle contents to prevent re-using the connection.
-func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, tx, err := getDBClient(s)
 	if err != nil {
 		return nil, err
@@ -177,7 +176,7 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // DBQuery executes a query, with optional parameter substitution, and returns the
 // entire result set as an array.
-func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	db, tx, err := getDBClient(s)
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -277,7 +276,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // DBQueryRows executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
-func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	db, tx, err := getDBClient(s)
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -317,7 +316,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }
 
-func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 
@@ -334,7 +333,7 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return err, nil
 }
 
-func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 	result := make([]interface{}, 0)
@@ -349,7 +348,7 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return result, err
 }
 
-func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 	active := rows.Next()
@@ -359,7 +358,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return active, nil
 }
 
-func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThis(s)
 	rows := this["rows"].(*sql.Rows)
 	db := this["db"].(map[string]interface{})
@@ -393,13 +392,15 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // DBExecute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
-func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	db, tx, err := getDBClient(s)
-	if err != nil {
-		return nil, err
+func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	db, tx, e2 := getDBClient(s)
+	if e2 != nil {
+		return nil, e2
 	}
 
 	var sqlResult sql.Result
+
+	var err error
 
 	query := util.GetString(args[0])
 
@@ -416,7 +417,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	r, err := sqlResult.RowsAffected()
@@ -425,19 +426,19 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
 
-	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
+	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, errors.New(err)
 }
 
 // getClient searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a database client object, and returns
 // the native client object.
-func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
+func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, *errors.EgoError) {
 	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(map[string]interface{}); ok {
 			if client, ok := gc["client"]; ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {
-						return nil, nil, errors.New("db client was closed")
+						return nil, nil, errors.New(errors.DatabaseClientClosedError)
 					}
 
 					tx := gc["transaction"]
@@ -451,11 +452,11 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 		}
 	}
 
-	return nil, nil, errors.New(defs.NoFunctionReceiver)
+	return nil, nil, errors.New(errors.NoFunctionReceiver)
 }
 
 // Utility function that becomes the db handle function pointer for a closed
 // db connection handle.
-func dbReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return nil, errors.New("db client closed")
+func dbReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	return nil, errors.New(errors.DatabaseClientClosedError)
 }

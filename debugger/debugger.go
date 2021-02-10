@@ -19,12 +19,12 @@ const (
 
 // Run a context but allow the debugger to take control as
 // needed.
-func Run(c *bytecode.Context) error {
+func Run(c *bytecode.Context) *errors.EgoError {
 	return RunFrom(c, 0)
 }
 
-func RunFrom(c *bytecode.Context, pc int) error {
-	var err error
+func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
+	var err *errors.EgoError
 
 	c.SetPC(pc)
 
@@ -43,8 +43,8 @@ func RunFrom(c *bytecode.Context, pc int) error {
 }
 
 // This is called on AtLine to offer the chance for the debugger to take control.
-func Debugger(c *bytecode.Context) error {
-	var err error
+func Debugger(c *bytecode.Context) *errors.EgoError {
+	var err *errors.EgoError
 
 	line := c.GetLine()
 	text := c.GetTokenizer().GetLine(line)
@@ -102,7 +102,7 @@ func Debugger(c *bytecode.Context) error {
 					} else {
 						if tokens.Peek(2) != tokenizer.EndOfTokens {
 							prompt = true
-							err = fmt.Errorf("unrecognized step type: %s", tokens.Peek(2))
+							err = errors.New(errors.InvalidStepType).WithContext(tokens.Peek(2))
 							c.SetSingleStep(false)
 						}
 					}
@@ -130,10 +130,10 @@ func Debugger(c *bytecode.Context) error {
 				err = Break(c, tokens)
 
 			case "exit":
-				return errors.Stop
+				return errors.New(errors.Stop)
 
 			default:
-				err = fmt.Errorf("unrecognized command: %s", t)
+				err = errors.New(errors.InvalidDebugCommandError).WithContext(t)
 			}
 
 			if err != nil && err != errors.Stop && err != errors.StepOver {
@@ -152,7 +152,7 @@ func Debugger(c *bytecode.Context) error {
 	return err
 }
 
-func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
+func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.EgoError {
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text)

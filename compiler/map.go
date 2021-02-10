@@ -8,7 +8,7 @@ import (
 
 // Map compiles a map type declaration
 
-func (c *Compiler) Map() error {
+func (c *Compiler) Map() *errors.EgoError {
 	if !c.t.IsNext("map") {
 		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}

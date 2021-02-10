@@ -21,7 +21,7 @@ import (
 
 // StopImpl instruction processor causes the current execution context to
 // stop executing immediately.
-func StopImpl(c *Context, i interface{}) error {
+func StopImpl(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
 	return errors.NewMessage("stop")
@@ -29,7 +29,7 @@ func StopImpl(c *Context, i interface{}) error {
 
 // PanicImpl instruction processor generates an error. The boolean flag is used
 // to indicate if this is a fatal error that stops Ego, versus a user error.
-func PanicImpl(c *Context, i interface{}) error {
+func PanicImpl(c *Context, i interface{}) *errors.EgoError {
 	c.running = !util.GetBool(i)
 
 	strValue, err := c.Pop()
@@ -45,7 +45,7 @@ func PanicImpl(c *Context, i interface{}) error {
 // AtLineImpl instruction processor. This identifies the start of a new statement,
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
-func AtLineImpl(c *Context, i interface{}) error {
+func AtLineImpl(c *Context, i interface{}) *errors.EgoError {
 	c.line = util.GetInt(i)
 	c.stepOver = false
 	_ = c.symbols.SetAlways("__line", c.line)
@@ -65,7 +65,7 @@ func AtLineImpl(c *Context, i interface{}) error {
 // BranchFalseImpl instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean FALSE value. Otherwise,
 // execution continues with the next instruction.
-func BranchFalseImpl(c *Context, i interface{}) error {
+func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {
@@ -87,7 +87,7 @@ func BranchFalseImpl(c *Context, i interface{}) error {
 
 // BranchImpl instruction processor branches to the instruction named in
 // the operand.
-func BranchImpl(c *Context, i interface{}) error {
+func BranchImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
@@ -102,7 +102,7 @@ func BranchImpl(c *Context, i interface{}) error {
 // BranchTrueImpl instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean TRUE value. Otherwise,
 // execution continues with the next instruction.
-func BranchTrueImpl(c *Context, i interface{}) error {
+func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
 	if err != nil {
@@ -127,7 +127,7 @@ func BranchTrueImpl(c *Context, i interface{}) error {
 // instruction stream. This is used to implement defer statement blocks, for
 // example, so when defers have been generated then a local call is added to
 // the return statement(s) for the block.
-func LocalCallImpl(c *Context, i interface{}) error {
+func LocalCallImpl(c *Context, i interface{}) *errors.EgoError {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
@@ -136,7 +136,7 @@ func LocalCallImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-func GoImpl(c *Context, i interface{}) error {
+func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	argc := i.(int) + c.argCountDelta
 	c.argCountDelta = 0
 
@@ -171,7 +171,7 @@ func GoImpl(c *Context, i interface{}) error {
 // number of arguments that are on the stack. The function value must be
 // etiher a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
-func CallImpl(c *Context, i interface{}) error {
+func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	var err error
 
 	var funcPointer interface{}
@@ -318,7 +318,7 @@ func CallImpl(c *Context, i interface{}) error {
 
 // ReturnImpl implements the return opcode which returns from a called function
 // or local subroutine.
-func ReturnImpl(c *Context, i interface{}) error {
+func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 	var err error
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
@@ -343,7 +343,7 @@ func ReturnImpl(c *Context, i interface{}) error {
 // number of values that must be available. Alternaitvely, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
-func ArgCheckImpl(c *Context, i interface{}) error {
+func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	min := 0
 	max := 0
 	name := "function call"
@@ -416,7 +416,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 }
 
 // TryImpl instruction processor.
-func TryImpl(c *Context, i interface{}) error {
+func TryImpl(c *Context, i interface{}) *errors.EgoError {
 	addr := util.GetInt(i)
 	c.try = append(c.try, addr)
 
@@ -424,7 +424,7 @@ func TryImpl(c *Context, i interface{}) error {
 }
 
 // TryPopImpl instruction processor.
-func TryPopImpl(c *Context, i interface{}) error {
+func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
 	if len(c.try) == 0 {
 		return c.NewError(errors.TryCatchMismatchError)
 	}

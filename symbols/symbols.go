@@ -66,7 +66,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 }
 
 // SetGlobal sets a symbol value in the global symbol table.
-func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
+func (s *SymbolTable) SetGlobal(name string, value interface{}) *errors.EgoError {
 	_ = RootSymbolTable.Create(name)
 
 	return RootSymbolTable.SetAlways(name, value)
@@ -94,7 +94,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
-func (s *SymbolTable) SetConstant(name string, v interface{}) error {
+func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	constLock.Lock()
 
 	if s.Constants == nil {
@@ -111,7 +111,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetAlways(name string, v interface{}) error {
+func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
 		s.Symbols = map[string]interface{}{}
 	}
@@ -138,7 +138,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 }
 
 // Set stores a symbol value in the table where it was found.
-func (s *SymbolTable) Set(name string, v interface{}) error {
+func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
 		s.Symbols = map[string]interface{}{}
 	}
@@ -171,7 +171,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 // Delete removes a symbol from the table. Search from the local symbol
 // up the parent tree until you find the symbol to delete.
-func (s *SymbolTable) Delete(name string) error {
+func (s *SymbolTable) Delete(name string) *errors.EgoError {
 	if len(name) == 0 {
 		return errors.New(errors.InvalidSymbolError)
 	}
@@ -200,7 +200,7 @@ func (s *SymbolTable) Delete(name string) error {
 
 // DeleteAlways removes a symbol from the table. Search from the local symbol
 // up the parent tree until you find the symbol to delete.
-func (s *SymbolTable) DeleteAlways(name string) error {
+func (s *SymbolTable) DeleteAlways(name string) *errors.EgoError {
 	if len(name) == 0 {
 		return errors.New(errors.InvalidSymbolError)
 	}
@@ -224,7 +224,7 @@ func (s *SymbolTable) DeleteAlways(name string) error {
 }
 
 // Create creates a symbol name in the table.
-func (s *SymbolTable) Create(name string) error {
+func (s *SymbolTable) Create(name string) *errors.EgoError {
 	if len(name) == 0 {
 		return errors.New(errors.InvalidSymbolError)
 	}

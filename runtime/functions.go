@@ -1,12 +1,11 @@
 package runtime
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
@@ -55,7 +54,7 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 
 // Prompt implements the prompt() function, which uses the console
 // reader.
-func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	prompt := ""
 	if len(args) > 0 {
 		prompt = util.GetString(args[0])
@@ -82,9 +81,9 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // Eval implements the eval() function which accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays.
-func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	return expressions.Evaluate(util.GetString(args[0]), symbols)

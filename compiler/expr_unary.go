@@ -2,7 +2,7 @@ package compiler
 
 import bc "github.com/tucats/ego/bytecode"
 
-func (c *Compiler) unary() error {
+func (c *Compiler) unary() *EgoError {
 	// Check for unary negation or not before passing into top-level diadic operators.
 	t := c.t.Peek(1)
 

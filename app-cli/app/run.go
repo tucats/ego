@@ -7,12 +7,13 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/profile"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // Run sets up required data structures and parses the command line. It then
 // automatically calls any action routines specfied in the grammar, which do
 // the work of the command.
-func runFromContext(context *cli.Context) error {
+func runFromContext(context *cli.Context) *errors.EgoError {
 	// Create a new grammar which prepends the default supplied options
 	// to the caller's grammar definition.
 	grammar := []cli.Option{

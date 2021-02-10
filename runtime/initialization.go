@@ -8,10 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
-func InitProfileDefaults() error {
-	var err error
+func InitProfileDefaults() *errors.EgoError {
+	var err *errors.EgoError
 
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 

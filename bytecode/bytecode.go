@@ -87,13 +87,13 @@ func (b *ByteCode) Mark() int {
 
 // SetAddressHere sets the current address as the target of the marked
 // instruction.
-func (b *ByteCode) SetAddressHere(mark int) error {
+func (b *ByteCode) SetAddressHere(mark int) *errors.EgoError {
 	return b.SetAddress(mark, b.emitPos)
 }
 
 // SetAddress sets the given value as the target of the marked
 // instruction.
-func (b *ByteCode) SetAddress(mark int, address int) error {
+func (b *ByteCode) SetAddress(mark int, address int) *errors.EgoError {
 	if mark > b.emitPos || mark < 0 {
 		return b.NewError(errors.InvalidBytecodeAddress)
 	}
@@ -125,7 +125,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 // DefineInstruction adds a user-defined instruction to the bytecode
 // set.
-func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) error {
+func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) *errors.EgoError {
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
 		return errors.New(errors.OpcodeAlreadyDefinedError).WithContext(opcode)
@@ -138,7 +138,7 @@ func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandle
 }
 
 // Run generates a one-time context for executing this bytecode.
-func (b *ByteCode) Run(s *symbols.SymbolTable) error {
+func (b *ByteCode) Run(s *symbols.SymbolTable) *errors.EgoError {
 	c := NewContext(s, b)
 
 	return c.Run()
@@ -146,7 +146,7 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 
 // Call generates a one-time context for executing this bytecode,
 // and returns a value as well as an error.
-func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
+func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
 	c := NewContext(s, b)
 
 	err := c.Run()

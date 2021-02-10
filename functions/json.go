@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
 // Decode reads a string as JSON data.
-func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var v interface{}
 
 	jsonBuffer := util.GetString(args[0])
@@ -19,7 +20,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If its a struct, make sure it has the static attribute
 	v = Seal(v)
 
-	return v, err
+	return v, errors.New(err)
 }
 
 func Seal(i interface{}) interface{} {
@@ -46,11 +47,11 @@ func Seal(i interface{}) interface{} {
 }
 
 // Encode writes a  JSON string from arbitrary data.
-func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(args[0])
 
-		return string(jsonBuffer), err
+		return string(jsonBuffer), errors.New(err)
 	}
 
 	var b strings.Builder
@@ -64,7 +65,7 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 		jsonBuffer, err := json.Marshal(v)
 		if err != nil {
-			return "", err
+			return "", errors.New(err)
 		}
 
 		b.WriteString(string(jsonBuffer))
@@ -76,11 +77,11 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // EncodeFormatted writes a  JSON string from arbitrary data.
-func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.MarshalIndent(args[0], "", "  ")
 
-		return string(jsonBuffer), err
+		return string(jsonBuffer), errors.New(err)
 	}
 
 	var b strings.Builder

@@ -8,7 +8,7 @@ import (
 )
 
 // Return handles the return statement compilation.
-func (c *Compiler) Return() error {
+func (c *Compiler) Return() *errors.EgoError {
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined.
 	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
@@ -70,7 +70,7 @@ func (c *Compiler) Return() error {
 }
 
 // Exit handles the exit statement compilation.
-func (c *Compiler) Exit() error {
+func (c *Compiler) Exit() *errors.EgoError {
 	c.b.Emit(bytecode.Load, "util")
 	c.b.Emit(bytecode.Member, "Exit")
 

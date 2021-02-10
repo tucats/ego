@@ -13,7 +13,7 @@ import (
 )
 
 // OpcodeHandler defines a function that implements an opcode.
-type OpcodeHandler func(b *Context, i interface{}) error
+type OpcodeHandler func(b *Context, i interface{}) *errors.EgoError
 
 // DispatchMap is a map that is used to locate the function for an opcode.
 type DispatchMap map[OpcodeID]OpcodeHandler
@@ -42,17 +42,17 @@ func (c *Context) GetSymbols() *symbols.SymbolTable {
 }
 
 // Run executes a bytecode context.
-func (c *Context) Run() error {
+func (c *Context) Run() *errors.EgoError {
 	return c.RunFromAddress(0)
 }
 
 // Used to resume execution after an event like the debugger being invoked.
-func (c *Context) Resume() error {
+func (c *Context) Resume() *errors.EgoError {
 	return c.RunFromAddress(c.pc)
 }
 
 // RunFromAddress executes a bytecode context from a given starting address.
-func (c *Context) RunFromAddress(addr int) error {
+func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	var err error
 
 	// Make sure globals are initialized. Because this updates a global, let's
@@ -127,7 +127,7 @@ func (c *Context) RunFromAddress(addr int) error {
 					ui.Debug(ui.ByteCodeLogger, "*** Return error: %s", text)
 				}
 
-				return err
+				return errors.New(err)
 			}
 		}
 	}
@@ -136,7 +136,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		ui.Debug(ui.ByteCodeLogger, "*** End tracing "+c.Name)
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation

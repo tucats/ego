@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 var PathRoot string
@@ -25,12 +26,12 @@ var Realm string
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify ".ego" programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(root string, subpath string) error {
+func DefineLibHandlers(root string, subpath string) *errors.EgoError {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	for _, f := range fids {
@@ -84,13 +85,13 @@ func IsRunning(pid int) bool {
 // RemovePidFile removes the existing pid file, regardless of
 // the server state. Don't call this unless you know the server
 // has stopped!
-func RemovePidFile(c *cli.Context) error {
-	return os.Remove(getPidFileName((c)))
+func RemovePidFile(c *cli.Context) *errors.EgoError {
+	return errors.New(os.Remove(getPidFileName((c))))
 }
 
 // ReadPidFile reads the active pid file (if found) and returns
 // it's contents converted to a ServerStatus object.
-func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
+func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	var status = defs.ServerStatus{}
 
 	b, err := ioutil.ReadFile(getPidFileName(c))
@@ -98,13 +99,13 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 		err = json.Unmarshal(b, &status)
 	}
 
-	return &status, err
+	return &status, errors.New(err)
 }
 
 // WritePidFile creates (or replaces) the pid file with the current
 // server status. It also forces the file to be read/write only for
 // the server process owner.
-func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
+func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 	fn := getPidFileName(c)
 	status.Started = time.Now()
 	b, _ := json.MarshalIndent(status, "", "  ")
@@ -114,7 +115,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 		err = os.Chmod(fn, 0600)
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // Use the --port specifiation, if any, to create a platform-specific

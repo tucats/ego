@@ -9,7 +9,7 @@ import (
 // Call handles the call statement. This is really the same as
 // invoking a function in an expression, except there is no
 // result value.
-func (c *Compiler) Call() error {
+func (c *Compiler) Call() *EgoError {
 	// Let's peek ahead to see if this is a legit function call
 	if !tokenizer.IsSymbol(c.t.Peek(1)) || (c.t.Peek(2) != "->" && c.t.Peek(2) != "(" && c.t.Peek(2) != ".") {
 		return c.NewError(errors.InvalidFunctionCall)

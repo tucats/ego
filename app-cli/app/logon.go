@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 const (
@@ -57,7 +58,7 @@ var LogonGrammar = []cli.Option{
 // If the user credentials are valid and a token is returned, it is
 // stored in the user's active profile where it can be accessed by
 // other Ego commands as needed.
-func Logon(c *cli.Context) error {
+func Logon(c *cli.Context) *errors.EgoError {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
@@ -68,7 +69,7 @@ func Logon(c *cli.Context) error {
 	}
 
 	if url == "" {
-		return NewAppError(NoLogonServerError)
+		return errors.New(errors.NoLogonServerError)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -100,25 +101,25 @@ func Logon(c *cli.Context) error {
 			ui.Say("Successfully logged in as \"%s\"", user)
 		}
 
-		return err
+		return errors.New(err)
 	}
 
 	// If there was an HTTP error condition, let's report it now.
 	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = NewAppError(NoCredentialsError)
+			err = errors.New(errors.NoCredentialsError)
 
 		case http.StatusForbidden:
-			err = NewAppError(InvalidCredentialsError)
+			err = errors.New(errors.InvalidCredentialsError)
 
 		case http.StatusNotFound:
-			err = NewAppError(LogonEndpointError)
+			err = errors.New(errors.LogonEndpointError)
 
 		default:
-			err = NewAppError(HTTPError, r.StatusCode())
+			err = errors.New(errors.HTTPError).WithContext(r.StatusCode())
 		}
 	}
 
-	return err
+	return errors.New(err)
 }

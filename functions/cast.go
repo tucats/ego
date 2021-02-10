@@ -11,7 +11,7 @@ import (
 )
 
 // Int implements the int() function.
-func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1); v == nil {
 		return nil, errors.New(errors.InvalidTypeError).In("int()").WithContext(args[0])
 	} else {
@@ -20,7 +20,7 @@ func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // Float implements the float() function.
-func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1.0); v == nil {
 		return nil, errors.New(errors.InvalidTypeError).In("float()").WithContext(args[0])
 	} else {
@@ -29,7 +29,7 @@ func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 // String implements the string() function.
-func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Special case. Is the argument an array of strings? If so, restructure as a single
 	// string with line breaks.
 	if array, ok := args[0].([]interface{}); ok {
@@ -62,7 +62,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 // Bool implements the bool() function.
-func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v := util.Coerce(args[0], true)
 	if v == nil {
 		return nil, errors.New(errors.InvalidTypeError).In("bool()").WithContext(args[0])
@@ -72,19 +72,19 @@ func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // Coerce coerces a value to match the type of a model value.
-func Coerce(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Coerce(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	return util.Coerce(args[0], args[1]), nil
 }
 
 // Normalize coerces a value to match the type of a model value.
-func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v1, v2 := util.Normalize(args[0], args[1])
 
 	return []interface{}{v1, v2}, nil
 }
 
 // New implements the new() function.
-func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {

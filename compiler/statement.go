@@ -13,7 +13,7 @@ const (
 )
 
 // Statement compiles a single statement.
-func (c *Compiler) Statement() error {
+func (c *Compiler) Statement() *errors.EgoError {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
 	if c.t.IsNext(";") {

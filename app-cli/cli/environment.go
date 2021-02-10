@@ -5,14 +5,15 @@ import (
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // ResolveEnvironmentVariables searches the grammar tree backwards looking
 // for options that can be specified by an environment variable, and
 // marking those found as needed. This is done after the command line
 // options are processed, to provide defaults for un-specified options.
-func (c *Context) ResolveEnvironmentVariables() error {
-	var err error
+func (c *Context) ResolveEnvironmentVariables() *errors.EgoError {
+	var err *errors.EgoError
 
 	// Search the current tree. Note that if we find the item,
 	// the updates have to be written back to the option array,

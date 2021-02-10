@@ -7,7 +7,7 @@ import (
 
 // Block compiles a statement block. The leading { has already
 // been parsed.
-func (c *Compiler) Block() error {
+func (c *Compiler) Block() *EgoError {
 	parsing := true
 	c.blockDepth = c.blockDepth + 1
 

@@ -15,7 +15,7 @@ import (
 )
 
 // Package compiles a package statement.
-func (c *Compiler) Package() error {
+func (c *Compiler) Package() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(errors.InvalidPackageName, name)
@@ -47,7 +47,7 @@ func (c *Compiler) Package() error {
 }
 
 // Import handles the import statement.
-func (c *Compiler) Import() error {
+func (c *Compiler) Import() *errors.EgoError {
 	if c.blockDepth > 0 {
 		return c.NewError(errors.InvalidImportError)
 	}
@@ -177,7 +177,7 @@ func (c *Compiler) Import() error {
 }
 
 // ReadFile reads the text from a file into a string.
-func (c *Compiler) ReadFile(name string) (string, error) {
+func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 	s, err := c.ReadDirectory(name)
 	if err == nil {
 		return s, nil
@@ -188,25 +188,25 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 	// Not a directory, try to read the file
 	fn := name
 
-	content, err := ioutil.ReadFile(fn)
-	if err != nil {
-		content, err = ioutil.ReadFile(name + ".ego")
+	content, e2 := ioutil.ReadFile(fn)
+	if e2 != nil {
+		content, e2 = ioutil.ReadFile(name + ".ego")
 		if err != nil {
 			r := os.Getenv("EGO_PATH")
 			fn = filepath.Join(r, "lib", name+".ego")
 
-			content, err = ioutil.ReadFile(fn)
-			if err != nil {
+			content, e2 = ioutil.ReadFile(fn)
+			if e2 != nil {
 				c.t.Advance(-1)
 
-				return "", c.NewError(err)
+				return "", c.NewError(e2)
 			}
 		} else {
 			fn = name + ".ego"
 		}
 	}
 
-	if err == nil {
+	if e2 == nil {
 		c.SourceFile = fn
 	}
 
@@ -215,7 +215,7 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 }
 
 // ReadDirectory reads all the files in a directory into a single string.
-func (c *Compiler) ReadDirectory(name string) (string, error) {
+func (c *Compiler) ReadDirectory(name string) (string, *errors.EgoError) {
 	var b strings.Builder
 
 	r := os.Getenv("EGO_PATH")
@@ -238,7 +238,7 @@ func (c *Compiler) ReadDirectory(name string) (string, error) {
 			ui.Debug(ui.CompilerLogger, "+++ No such directory")
 		}
 
-		return "", err
+		return "", errors.New(err)
 	}
 
 	ui.Debug(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)

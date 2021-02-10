@@ -115,7 +115,7 @@ func (c *Compiler) WithNormalization(f bool) *Compiler {
 // CompileString turns a string into a compilation unit. This is a helper function
 // around the Compile() operation that removes the need for the caller
 // to provide a tokenizer.
-func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, error) {
+func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, *errors.EgoError) {
 	t := tokenizer.New(source)
 
 	return c.Compile(name, t)
@@ -123,7 +123,7 @@ func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode
 
 // Compile starts a compilation unit, and returns a bytecode
 // of the compiled material.
-func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
+func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, *errors.EgoError) {
 	c.b = bytecode.New(name)
 	c.t = t
 
@@ -187,7 +187,7 @@ func (c *Compiler) Normalize(name string) string {
 // AddPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
-func (c *Compiler) AddPackageFunction(pkgname string, name string, function interface{}) error {
+func (c *Compiler) AddPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -210,7 +210,7 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 // AddPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
-func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{}) error {
+func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -270,7 +270,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // parameter indicates if all available packages (including those
 // found in the ego path) are imported, versus just essential
 // packages like "util".
-func (c *Compiler) AutoImport(all bool) error {
+func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 	// Start by making a list of the packages. If we need all packages,
 	// scan all the built-in function names for package names. We ignore
 	// functions that don't have package names as those are already
@@ -308,7 +308,7 @@ func (c *Compiler) AutoImport(all bool) error {
 	savedT := c.t
 	savedSource := c.SourceFile
 
-	var firstError error
+	var firstError *errors.EgoError
 
 	for _, packageName := range sortedPackageNames {
 		text := "import " + packageName

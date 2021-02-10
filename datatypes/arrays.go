@@ -71,7 +71,7 @@ func (a *EgoArray) ValueType() int {
 	return a.valueType
 }
 
-func (a *EgoArray) Validate(kind int) error {
+func (a *EgoArray) Validate(kind int) *errors.EgoError {
 	if kind == datatypes.InterfaceType {
 		return nil
 	}
@@ -94,7 +94,7 @@ func (a *EgoArray) Immutable(b bool) {
 	}
 }
 
-func (a *EgoArray) Get(i interface{}) (interface{}, error) {
+func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
 		return nil, errors.New(errors.ArrayBoundsError)
@@ -107,7 +107,7 @@ func (a *EgoArray) Len() int {
 	return len(a.data)
 }
 
-func (a *EgoArray) SetType(i int) error {
+func (a *EgoArray) SetType(i int) *errors.EgoError {
 	if a.valueType == InterfaceType {
 		a.valueType = i
 
@@ -117,7 +117,7 @@ func (a *EgoArray) SetType(i int) error {
 	return errors.New(errors.ImmutableArrayError)
 }
 
-func (a *EgoArray) Set(i interface{}, value interface{}) error {
+func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	if a.immutable > 0 {
 		return errors.New(errors.ImmutableArrayError)
 	}
@@ -158,7 +158,7 @@ func (a *EgoArray) String() string {
 	return b.String()
 }
 
-func (a *EgoArray) GetSlice(first, last int) ([]interface{}, error) {
+func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 	if first < 0 || last > len(a.data) {
 		return nil, errors.New(errors.ArrayBoundsError)
 	}

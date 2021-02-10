@@ -6,7 +6,7 @@ import (
 )
 
 // Switch compiles a switch statement.
-func (c *Compiler) Switch() error {
+func (c *Compiler) Switch() *errors.EgoError {
 	var defaultBlock *bytecode.ByteCode
 
 	next := 0

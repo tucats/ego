@@ -5,7 +5,7 @@ import "errors"
 // This contains the definitions for the Ego native errors, regardless
 // of subsystem, etc.
 
-// Internal control signals
+// Internal control signals.
 var Continue = errors.New("continue")
 var Panic = errors.New("Panic")
 var SignalDebugger = errors.New("signal")
@@ -13,6 +13,8 @@ var StepOver = errors.New("step-over")
 var Stop = errors.New("stop")
 
 // Runtime errors
+
+var InvalidDebugCommandError = errors.New("invalid debugger command")
 
 var ArgumentCountError = errors.New("incorrect function argument count")
 
@@ -69,7 +71,7 @@ var NotAServiceError = errors.New("not running as a service")
 
 var NotATypeError = errors.New("not a type")
 
-var OpcodeAlreadyDefinedError = errors.New("opcode already defined: %d")
+var OpcodeAlreadyDefinedError = errors.New("opcode already defined")
 
 var ReadOnlyError = errors.New("invalid write to read-only item")
 
@@ -155,3 +157,49 @@ var TooManyReturnValues = errors.New("too many return values")
 var UnexpectedTokenError = errors.New("unexpected token")
 var UnrecognizedStatementError = errors.New("unrecognized statement")
 var WrongModeError = errors.New("directive invalid for mode")
+
+var HTTPError = errors.New("received HTTP %d")
+var InvalidCredentialsError = errors.New("invalid credentials")
+var InvalidLoggerName = errors.New("invalid logger name")
+var InvalidOutputFormatErr = errors.New("invalid output format specified")
+var LogonEndpointError = errors.New("logon endpoint not found")
+var NoCredentialsError = errors.New("no credentials provided")
+var NoLogonServerError = errors.New("no --logon-server specified")
+var UnknownOptionError = errors.New("unknown command line option")
+
+var CannotDeleteActiveProfile = errors.New("cannot delete active profile")
+var NoSuchProfile = errors.New("no such profile")
+
+var TableErrorPrefix = errors.New("table processing")
+var EmptyColumnListError = errors.New("empty column list")
+var IncorrectColumnCountError = errors.New("incorred number of columns")
+var InvalidAlignmentError = errors.New("invalid alignment specification")
+var InvalidColumnNameError = errors.New("invalid column name")
+var InvalidColumnNumberError = errors.New("invalid column number")
+var InvalidColumnWidthError = errors.New("invalid column width")
+var InvalidOutputFormatError = errors.New("invalid output format")
+var InvalidRowNumberError = errors.New("invalid row number")
+var InvalidSpacingError = errors.New("invalid spacing value")
+
+var ServerAlreadyRunning = errors.New("server already running as pid")
+var ChannelNotOpenError = errors.New("channel not open")
+var InvalidStepType = errors.New("invalid step type")
+
+var InvalidBooleanValueError = errors.New("option --%s invalid boolean value")
+var InvalidIntegerError = errors.New("option --%s invalid integer value")
+var InvalidKeywordError = errors.New("option --%s has no such keyword")
+var RequiredNotFoundError = errors.New("required option %s not found")
+var TooManyParametersError = errors.New("too many parameters on command line")
+var UnexpectedParametersError = errors.New("unexpected parameters or invalid subcommand")
+var WrongParameterCountError = errors.New("incorrect number of parameters")
+var MissingOptionValueError = errors.New("missing option value")
+var NoPrivilegeForOperationError = errors.New("no privilege for operation")
+var NoSuchUserError = errors.New("no such user")
+var TableClosedError = errors.New("table closed")
+var RestClientClosedError = errors.New("rest client closed")
+var InvalidStructError = errors.New("invalid result struct")
+var InvalidRowSetError = errors.New("invalid rowset value")
+var InvalidResultSetTypeError = errors.New("invalid result set type")
+var UnexpectedValueError = errors.New("unexpected value")
+var InvalidGremlinClientError = errors.New("invalid gremlin client")
+var DatabaseClientClosedError = errors.New("database client closed")

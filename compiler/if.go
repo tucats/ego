@@ -2,11 +2,12 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 // If compiles conditional statments. The verb is already
 // removed from the token stream.
-func (c *Compiler) If() error {
+func (c *Compiler) If() *errors.EgoError {
 	// Compile the conditional expression
 	bc, err := c.Expression()
 	if err != nil {

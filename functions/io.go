@@ -15,7 +15,7 @@ import (
 )
 
 // ReadFile reads a file contents into a string value.
-func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	name := util.GetString(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -23,7 +23,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	// Convert []byte to string
@@ -31,7 +31,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Split splits a string into lines.
-func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	src := util.GetString(args[0])
 
 	// Are we seeing Windows-style line endings? If so, use that as
@@ -53,7 +53,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Tokenize splits a string into tokens.
-func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
 	r := make([]interface{}, 0)
@@ -67,24 +67,24 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // WriteFile writes a string to a file.
-func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	fname := util.GetString(args[0])
 	text := util.GetString(args[1])
 	err := ioutil.WriteFile(fname, []byte(text), 0777)
 
-	return len(text), err
+	return len(text), errors.New(err)
 }
 
 // DeleteFile delete a file.
-func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	fname := util.GetString(args[0])
 	err := os.Remove(fname)
 
-	return err == nil, err
+	return err == nil, errors.New(err)
 }
 
 // Expand expands a list of file or path names into a list of files.
-func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	path := util.GetString(args[0])
 	ext := ""
 
@@ -105,7 +105,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // ExpandPath is used to expand a path into a list of fie names.
-func ExpandPath(path, ext string) ([]string, error) {
+func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 	names := []string{}
 
 	// Can we read this as a directory?
@@ -120,7 +120,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		}
 
 		if err != nil {
-			return names, err
+			return names, errors.New(err)
 		}
 
 		// If we have a default suffix, make sure the pattern matches
@@ -149,7 +149,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 }
 
 // ReadDir implements the io.readdir() function.
-func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	path := util.GetString(args[0])
 	result := []interface{}{}
 
@@ -173,7 +173,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // This is the generic close() which can be used to close a channel, and maybe
 // later other items as well.
-func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch arg := args[0].(type) {
 	case *datatypes.Channel:
 		return arg.Close(), nil

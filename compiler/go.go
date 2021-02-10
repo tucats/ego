@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) Go() error {
+func (c *Compiler) Go() *errors.EgoError {
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
 		return c.NewError(errors.InvalidSymbolError, fName)

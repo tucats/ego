@@ -7,7 +7,7 @@ import (
 
 // Print compiles a print statement. The verb is already removed
 // from the token stream.
-func (c *Compiler) Print() error {
+func (c *Compiler) Print() *errors.EgoError {
 	newline := true
 
 	for !c.StatementEnd() {

@@ -5,14 +5,15 @@ import (
 	"strconv"
 
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
 // Show implements the debugger's show command. This can be used to display information
 // about the state of the running program or it's runtime environment.
-func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
-	var err error
+func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) *errors.EgoError {
+	var err *errors.EgoError
 
 	t := tokens.Peek(2)
 	tx := c.GetTokenizer()
@@ -35,7 +36,9 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tx != "all" {
-				depth, err = strconv.Atoi(tx)
+				var e2 error
+				depth, e2 = strconv.Atoi(tx)
+				err = errors.New(e2)
 			}
 		}
 
@@ -70,12 +73,14 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tokens.Advance(2)
 
 		if tokens.Peek(1) != tokenizer.EndOfTokens {
-			start, err = strconv.Atoi(tokens.Next())
+			var e2 error
+			start, e2 = strconv.Atoi(tokens.Next())
 			_ = tokens.IsNext(":")
 
-			if err == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
-				end, err = strconv.Atoi(tokens.Next())
+			if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
+				end, e2 = strconv.Atoi(tokens.Next())
 			}
+			err = errors.New(e2)
 		}
 
 		if err == nil {
@@ -89,7 +94,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = fmt.Errorf("unreognized show command: %s", t)
+		err = errors.New(errors.InvalidDebugCommandError).WithContext("show " + t)
 	}
 
 	return err

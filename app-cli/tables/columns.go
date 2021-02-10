@@ -2,6 +2,8 @@ package tables
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 // FindColumn returns the column number for a named column. The boolean return
@@ -26,7 +28,7 @@ func (t *Table) GetHeadings() []string {
 
 // SetColumnOrder accepts a list of column positions and uses it
 // to set the order in which columns of output are printed.
-func (t *Table) SetColumnOrder(order []int) error {
+func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
 	if len(order) == 0 {
 		return NewTableErr(EmptyColumnListError)
 	}
@@ -48,7 +50,7 @@ func (t *Table) SetColumnOrder(order []int) error {
 
 // SetColumnOrderByName accepts a list of column positions and uses it
 // to set the order in which columns of output are printed.
-func (t *Table) SetColumnOrderByName(order []string) error {
+func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
 	if len(order) == 0 {
 		return NewTableErr(EmptyColumnListError)
 	}

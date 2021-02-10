@@ -3,12 +3,14 @@ package tables
 import (
 	"sort"
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 // SortRows sorts the existing table rows. The column to sort by is specified by
 // ordinal position (zero-based). The ascending flag is true if the sort is to be
 // in ascending order, and false if a descending sort is required.
-func (t *Table) SortRows(column int, ascending bool) error {
+func (t *Table) SortRows(column int, ascending bool) *errors.EgoError {
 	if column < 0 || column >= t.columnCount {
 		return NewTableErr(InvalidColumnNumberError, column)
 	}
@@ -26,7 +28,7 @@ func (t *Table) SortRows(column int, ascending bool) error {
 
 // SetOrderBy sets the name of the column that should be used for
 // sorting the output data.
-func (t *Table) SetOrderBy(name string) error {
+func (t *Table) SetOrderBy(name string) *errors.EgoError {
 	ascending := true
 
 	if name[0] == '~' {

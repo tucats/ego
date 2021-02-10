@@ -13,7 +13,7 @@ import (
 // Directive processes a compiler directive. These become symbols generated
 // at compile time that are copied to the compiler's symbol table for processing
 // elsewhere.
-func (c *Compiler) Directive() error {
+func (c *Compiler) Directive() *EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(errors.InvalidDirectiveError, name)
@@ -65,7 +65,7 @@ func (c *Compiler) Directive() error {
 
 // Global parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
-func (c *Compiler) Global() error {
+func (c *Compiler) Global() *EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -94,7 +94,7 @@ func (c *Compiler) Global() error {
 }
 
 // Log parses the @log directive.
-func (c *Compiler) Log() error {
+func (c *Compiler) Log() *EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -122,7 +122,7 @@ func (c *Compiler) Log() error {
 
 // RestStatus parses the @status directive which sets a symbol
 // value in the root symbol table with the REST calls tatus value.
-func (c *Compiler) RestStatus() error {
+func (c *Compiler) RestStatus() *EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -146,7 +146,7 @@ func (c *Compiler) RestStatus() error {
 	return nil
 }
 
-func (c *Compiler) Authenticated() error {
+func (c *Compiler) Authenticated() *EgoError {
 	var token string
 
 	_ = c.modeCheck("server", true)
@@ -167,7 +167,7 @@ func (c *Compiler) Authenticated() error {
 }
 
 // RestResponse processes the @response directive.
-func (c *Compiler) RestResponse() error {
+func (c *Compiler) RestResponse() *EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -186,7 +186,7 @@ func (c *Compiler) RestResponse() error {
 }
 
 // Template implements the template compiler directive.
-func (c *Compiler) Template() error {
+func (c *Compiler) Template() *EgoError {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
@@ -210,7 +210,7 @@ func (c *Compiler) Template() error {
 }
 
 // Error implements the @error directive.
-func (c *Compiler) Error() error {
+func (c *Compiler) Error() *EgoError {
 	if !c.atStatementEnd() {
 		code, err := c.Expression()
 		if err == nil {
@@ -227,7 +227,7 @@ func (c *Compiler) Error() error {
 
 // TypeChecking implements the @type directive which must be followed by the
 // keyword "static" or "dynamic", indicating the type of type checking.
-func (c *Compiler) TypeChecking() error {
+func (c *Compiler) TypeChecking() *EgoError {
 	var err error
 
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
@@ -251,7 +251,7 @@ func (c *Compiler) atStatementEnd() bool {
 // in the given mode. If check is true, we require that we
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
-func (c *Compiler) modeCheck(mode string, check bool) error {
+func (c *Compiler) modeCheck(mode string, check bool) *EgoError {
 	c.b.Emit(bytecode.Load, "__exec_mode")
 	c.b.Emit(bytecode.Push, mode)
 	c.b.Emit(bytecode.Equal)

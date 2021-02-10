@@ -27,7 +27,7 @@ import (
 // considered a read-only variable, so if the stack
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
-func StoreImpl(c *Context, i interface{}) error {
+func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func StoreImpl(c *Context, i interface{}) error {
 }
 
 // StoreChan instruction processor.
-func StoreChanImpl(c *Context, i interface{}) error {
+func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
 	if err != nil {
@@ -125,7 +125,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 }
 
 // StoreGlobalImpl instruction processor.
-func StoreGlobalImpl(c *Context, i interface{}) error {
+func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 }
 
 // StoreAlwaysImpl instruction processor.
-func StoreAlwaysImpl(c *Context, i interface{}) error {
+func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 }
 
 // LoadImpl instruction processor.
-func LoadImpl(c *Context, i interface{}) error {
+func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 	if len(name) == 0 {
 		return c.NewError(errors.InvalidIdentifierError).WithContext(name)

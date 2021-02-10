@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -24,7 +24,7 @@ var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
-func LoadUserDatabase(c *cli.Context) error {
+func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	defaultUser := "admin"
 	defaultPassword := "password"
 
@@ -65,7 +65,7 @@ func LoadUserDatabase(c *cli.Context) error {
 			}
 
 			if err != nil {
-				return err
+				return errors.New(err)
 			}
 
 			ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
@@ -87,7 +87,7 @@ func LoadUserDatabase(c *cli.Context) error {
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
-	var err error
+	var err *errors.EgoError
 
 	su, ok := c.GetString("superuser")
 	if !ok {
@@ -103,8 +103,8 @@ func LoadUserDatabase(c *cli.Context) error {
 
 // setPermission sets a given permission string to true for a given user. Returns an error
 // if the username does not exist.
-func setPermission(user, privilege string, enabled bool) error {
-	var err error
+func setPermission(user, privilege string, enabled bool) *errors.EgoError {
+	var err *errors.EgoError
 
 	privname := strings.ToLower(privilege)
 
@@ -135,7 +135,7 @@ func setPermission(user, privilege string, enabled bool) error {
 
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		err = fmt.Errorf("no such user: %s", user)
+		err = errors.New(errors.NoSuchUserError).WithContext(user)
 	}
 
 	return err
@@ -208,7 +208,7 @@ func HashString(s string) string {
 // Authenticated implmeents the Authenticated(user,pass) function. This accepts a username
 // and password string, and determines if they are authenticated using the
 // users database.
-func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var user, pass string
 
 	// If there are no arguments, then we look for the _user and _password
@@ -223,7 +223,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		}
 	} else {
 		if len(args) != 2 {
-			return false, errors.New(defs.IncorrectArgumentCount)
+			return false, errors.New(errors.ArgumentCountError)
 		}
 
 		user = util.GetString(args[0])
@@ -240,11 +240,11 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // Permission implements the Permission(user,priv) function.
-func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var user, priv string
 
 	if len(args) != 2 {
-		return false, errors.New(defs.IncorrectArgumentCount)
+		return false, errors.New(errors.ArgumentCountError)
 	}
 
 	user = util.GetString(args[0])
@@ -260,8 +260,8 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // Implements the SetUser() function.
-func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	var err error
+func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var err *errors.EgoError
 
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
@@ -271,13 +271,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if !superUser {
-		return nil, errors.New(defs.NoPrivilegeForOperation)
+		return nil, errors.New(errors.NoPrivilegeForOperationError)
 	}
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	if u, ok := args[0].(map[string]interface{}); ok {
@@ -323,7 +323,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Implements the DeleteUser() function. Returns true if the name was deleted,
 // else false if it was not a valid username.
-func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
@@ -332,12 +332,12 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if !superUser {
-		return nil, errors.New(defs.NoPrivilegeForOperation)
+		return nil, errors.New(errors.NoPrivilegeForOperationError)
 	}
 
 	// There must be one parameter, which is the username
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	name := strings.ToLower(util.GetString(args[0]))
@@ -352,10 +352,10 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // Implements the GetUser() function.
-func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
-		return nil, errors.New(defs.IncorrectArgumentCount)
+		return nil, errors.New(errors.ArgumentCountError)
 	}
 
 	r := map[string]interface{}{}
@@ -374,11 +374,11 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // updateUserDatabase re-writes the user database file with updated values.
-func updateUserDatabase() error {
+func updateUserDatabase() *errors.EgoError {
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(userDatabase, "", "   ")
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
@@ -393,7 +393,7 @@ func updateUserDatabase() error {
 	// Write to the database file.
 	err = ioutil.WriteFile(userDatabaseFile, b, 0600)
 
-	return err
+	return errors.New(err)
 }
 
 // validateToken is a helper function that calls the builtin cipher.validate(). The

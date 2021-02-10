@@ -10,7 +10,7 @@ import (
 // the stack (the first must be a string and the second a
 // map) and indexes into the map to get the matching value
 // and puts back on the stack.
-func MemberImpl(c *Context, i interface{}) error {
+func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 	var name string
 
 	if i != nil {
@@ -89,7 +89,7 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 // member in the structure, we also search the __parent field
 // for the value. This supports calling packages based on
 // a given object value.
-func ClassMemberImpl(c *Context, i interface{}) error {
+func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 	var name string
 
 	if i != nil {
@@ -158,7 +158,7 @@ func searchParents(mv map[string]interface{}, name string) (interface{}, bool) {
 }
 
 // ThisImpl implements the This opcode.
-func ThisImpl(c *Context, i interface{}) error {
+func ThisImpl(c *Context, i interface{}) *errors.EgoError {
 	if i == nil {
 		c.this = c.lastStruct
 		c.lastStruct = nil

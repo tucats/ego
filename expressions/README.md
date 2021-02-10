@@ -97,7 +97,7 @@ function of type func([]interface{})(interface{}, error).  For example,
 this is a simplified function that creates a floating point sum of all
 the supplied values (which will be type-coerced to be floats):
     
-    func sum( args []interface{})(interface{}, error) {
+    func sum( args []interface{})(interface{},  *EgoError) {
         result := 0
         for _, v := range args {
             result = result + util.GetInt(v)

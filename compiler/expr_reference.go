@@ -8,7 +8,7 @@ import (
 )
 
 // reference parses a structure or array reference.
-func (c *Compiler) reference() error {
+func (c *Compiler) reference() *EgoError {
 	// Parse the function call or exprssion atom
 	err := c.expressionAtom()
 	if err != nil {

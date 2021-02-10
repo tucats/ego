@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func (c *Compiler) expressionAtom() error {
+func (c *Compiler) expressionAtom() *EgoError {
 	t := c.t.Peek(1)
 	// Is this the make() function?
 	if t == "make" && c.t.Peek(2) == "(" {
@@ -177,7 +177,7 @@ func (c *Compiler) expressionAtom() error {
 	return c.NewError(errors.UnexpectedTokenError, t)
 }
 
-func (c *Compiler) parseArray() error {
+func (c *Compiler) parseArray() *EgoError {
 	var err error
 
 	var listTerminator = ""
@@ -312,7 +312,7 @@ func (c *Compiler) parseArray() error {
 	return nil
 }
 
-func (c *Compiler) parseStruct() error {
+func (c *Compiler) parseStruct() *EgoError {
 	var listTerminator = "}"
 
 	var err error
@@ -374,7 +374,7 @@ func (c *Compiler) parseStruct() error {
 	return err
 }
 
-func (c *Compiler) unLit(s string) (string, error) {
+func (c *Compiler) unLit(s string) (string, *EgoError) {
 	quote := s[0:1]
 	if s[len(s)-1:] != quote {
 		return s[1:], c.NewError(errors.BlockQuoteError, quote)

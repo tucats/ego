@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
 // Printf implements fmt.printf() and is a wrapper around the native Go function.
-func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	len := 0
 
 	str, err := Sprintf(s, args)
@@ -21,7 +22,7 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Sprintf implements fmt.sprintf() and is a wrapper around the native Go function.
-func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 0 {
 		return 0, nil
 	}
@@ -36,7 +37,7 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Print implements fmt.Print() and is a wrapper around the native Go function.
-func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -47,11 +48,13 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		b.WriteString(util.FormatUnquoted(v))
 	}
 
-	return fmt.Printf("%s", b.String())
+	text, e2 := fmt.Printf("%s", b.String())
+
+	return text, errors.New(e2)
 }
 
 // Println implements fmt.Println() and is a wrapper around the native Go function.
-func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -62,5 +65,6 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		b.WriteString(util.FormatUnquoted(v))
 	}
 
-	return fmt.Printf("%s\n", b.String())
+	text, e2 := fmt.Printf("%s\n", b.String())
+	return text, errors.New(e2)
 }

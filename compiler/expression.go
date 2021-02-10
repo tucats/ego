@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 // Expression is the public entrypoint to compile an expression which
@@ -10,7 +11,7 @@ import (
 //
 // The function grammar considers a conditional to be the top of the
 // parse tree, so we start evaluating there.
-func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
+func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
 	cx := New()
 	cx.t = c.t
 	cx.b = bytecode.New("subexpression")

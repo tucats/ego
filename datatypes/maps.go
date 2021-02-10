@@ -41,7 +41,7 @@ func (m *EgoMap) ImmutableKeys(b bool) {
 	}
 }
 
-func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
+func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
 	if IsType(key, m.keyType) {
 		v, found := m.data[key]
 
@@ -51,7 +51,7 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 	return nil, false, errors.New(errors.WrongMapKeyType).WithContext(key)
 }
 
-func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
+func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError) {
 	if m.immutable > 0 {
 		return false, errors.New(errors.ImmutableMapError)
 	}
@@ -79,7 +79,7 @@ func (m *EgoMap) Keys() []interface{} {
 	return r
 }
 
-func (m *EgoMap) Delete(key interface{}) (bool, error) {
+func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
 	if m.immutable > 0 {
 		return false, errors.New(errors.ImmutableMapError)
 	}

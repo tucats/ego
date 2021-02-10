@@ -7,10 +7,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+
+	"github.com/tucats/ego/errors"
 )
 
 // Encrypt encrypts a string using a password.
-func Encrypt(data, password string) (string, error) {
+func Encrypt(data, password string) (string, *errors.EgoError) {
 	b, err := encrypt([]byte(data), password)
 	if err != nil {
 		return "", err
@@ -20,7 +22,7 @@ func Encrypt(data, password string) (string, error) {
 }
 
 // Decrypt decrypts a string using a password.
-func Decrypt(data, password string) (string, error) {
+func Decrypt(data, password string) (string, *errors.EgoError) {
 	b, err := decrypt([]byte(data), password)
 	if err != nil {
 		return "", err
@@ -39,18 +41,18 @@ func Hash(key string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func encrypt(data []byte, passphrase string) ([]byte, error) {
+func encrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
@@ -58,17 +60,17 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func decrypt(data []byte, passphrase string) ([]byte, error) {
+func decrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
 	key := []byte(Hash(passphrase))
 	block, err := aes.NewCipher(key)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	nonceSize := gcm.NonceSize()
@@ -80,7 +82,7 @@ func decrypt(data []byte, passphrase string) ([]byte, error) {
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	return plaintext, nil

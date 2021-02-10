@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -69,7 +70,7 @@ var Grammar = []cli.Option{
 }
 
 // ShowAction Displays the current contents of the active profile.
-func ShowAction(c *cli.Context) error {
+func ShowAction(c *cli.Context) *errors.EgoError {
 	t, _ := tables.New([]string{"Key", "Value"})
 
 	for k, v := range persistence.CurrentConfiguration.Items {
@@ -88,7 +89,7 @@ func ShowAction(c *cli.Context) error {
 }
 
 // ListAction Displays the current contents of the active profile.
-func ListAction(c *cli.Context) error {
+func ListAction(c *cli.Context) *errors.EgoError {
 	t, _ := tables.New([]string{"Name", "Description"})
 
 	for k, v := range persistence.Configurations {
@@ -103,7 +104,7 @@ func ListAction(c *cli.Context) error {
 }
 
 // SetOutputAction is the action handler for the set-output subcommand.
-func SetOutputAction(c *cli.Context) error {
+func SetOutputAction(c *cli.Context) *errors.EgoError {
 	if c.GetParameterCount() == 1 {
 		outputType := c.GetParameter(0)
 		if util.InList(outputType,
@@ -122,7 +123,7 @@ func SetOutputAction(c *cli.Context) error {
 }
 
 // SetAction uses the first two parameters as a key and value.
-func SetAction(c *cli.Context) error {
+func SetAction(c *cli.Context) *errors.EgoError {
 	// Generic --key and --value specification.
 	key := c.GetParameter(0)
 	value := "true"
@@ -139,7 +140,7 @@ func SetAction(c *cli.Context) error {
 }
 
 // DeleteAction deletes a named key value.
-func DeleteAction(c *cli.Context) error {
+func DeleteAction(c *cli.Context) *errors.EgoError {
 	key := c.GetParameter(0)
 	persistence.Delete(key)
 	ui.Say("Profile key %s deleted", key)
@@ -148,7 +149,7 @@ func DeleteAction(c *cli.Context) error {
 }
 
 // DeleteProfileAction deletes a named profile.
-func DeleteProfileAction(c *cli.Context) error {
+func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 	key := c.GetParameter(0)
 
 	err := persistence.DeleteProfile(key)
@@ -162,7 +163,7 @@ func DeleteProfileAction(c *cli.Context) error {
 }
 
 // SetDescriptionAction sets the profile description string.
-func SetDescriptionAction(c *cli.Context) error {
+func SetDescriptionAction(c *cli.Context) *errors.EgoError {
 	config := persistence.Configurations[persistence.ProfileName]
 	config.Description = c.GetParameter(0)
 	persistence.Configurations[persistence.ProfileName] = config

@@ -9,7 +9,7 @@ import (
 )
 
 // Var compiles the var statement.
-func (c *Compiler) Var() error {
+func (c *Compiler) Var() *errors.EgoError {
 	names := []string{}
 
 	for {

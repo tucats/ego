@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/ego/symbols"
@@ -27,13 +27,13 @@ import (
 const logHeader = "*** Log file initialized %s ***\n"
 
 // Detach starts the sever as a detached process.
-func Start(c *cli.Context) error {
+func Start(c *cli.Context) *errors.EgoError {
 	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
 	if err == nil && status != nil {
 		if _, err := os.FindProcess(status.PID); err == nil {
 			if !c.GetBool("force") {
-				return fmt.Errorf("server already running as pid %d", status.PID)
+				return errors.New(errors.).WithContext(status.PID)
 			}
 		}
 	}
@@ -175,7 +175,7 @@ func Start(c *cli.Context) error {
 }
 
 // Stop stops a running server if it exists.
-func Stop(c *cli.Context) error {
+func Stop(c *cli.Context) *errors.EgoError {
 	var proc *os.Process
 
 	status, err := server.ReadPidFile(c)
@@ -195,7 +195,7 @@ func Stop(c *cli.Context) error {
 }
 
 // Status displays the status of a running server if it exists.
-func Status(c *cli.Context) error {
+func Status(c *cli.Context) *errors.EgoError {
 	running := false
 	msg := "Server not running"
 
@@ -224,7 +224,7 @@ func Status(c *cli.Context) error {
 
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
-func Restart(c *cli.Context) error {
+func Restart(c *cli.Context) *errors.EgoError {
 	var proc *os.Process
 
 	status, err := server.ReadPidFile(c)
@@ -315,7 +315,7 @@ func Restart(c *cli.Context) error {
 
 // RunServer initializes and runs the server, which starts listenting for
 // new connections. This will never terminate until the process is killed.
-func RunServer(c *cli.Context) error {
+func RunServer(c *cli.Context) *errors.EgoError {
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
@@ -424,7 +424,7 @@ func RunServer(c *cli.Context) error {
 // that the current cache size, the next attempt to load a new service into the cache
 // will result in discarding the oldest cache entries until the cache is the correct
 // size. You must be an admin user with a valid token to perform this command.
-func SetCacheSize(c *cli.Context) error {
+func SetCacheSize(c *cli.Context) *errors.EgoError {
 	if c.GetParameterCount() == 0 {
 		return errors.New(defs.CacheSizeNotSpecified)
 	}
@@ -474,7 +474,7 @@ func SetCacheSize(c *cli.Context) error {
 // requests require that the service code be reloaded from disk. This is often
 // used when making changes to a service, to quickly force the server to pick up
 // the changes. You must be an admin user with a valid token to perform this command.
-func FlushServerCaches(c *cli.Context) error {
+func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
@@ -512,7 +512,7 @@ func FlushServerCaches(c *cli.Context) error {
 // the server's cache of previously-compiled service programs. The current and maximum
 // size of the cache, and the endpoints that are cached are listed. You must be an
 // admin user with a valid token to perform this command.
-func ListServerCaches(c *cli.Context) error {
+func ListServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)

@@ -2,6 +2,8 @@ package tables
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 // RowLimit sets the row limit for output (<0 means all rows).
@@ -38,13 +40,13 @@ func (t *Table) ShowRowNumbers(flag bool) *Table {
 
 // SetMinimumWidth specifies the minimum width of a column. The column number is
 // always zero-based.
-func (t *Table) SetMinimumWidth(n int, w int) error {
+func (t *Table) SetMinimumWidth(n int, w int) *errors.EgoError {
 	if n < 0 || n >= t.columnCount {
-		return NewTableErr(InvalidColumnNumberError, n)
+		return errors.New(InvalidColumnNumberError).WithContext(n)
 	}
 
 	if w < 0 {
-		return NewTableErr(InvalidColumnWidthError, w)
+		return errors.New(InvalidColumnWidthError).WithContext(w)
 	}
 
 	if w > t.maxWidth[n] {
@@ -56,7 +58,7 @@ func (t *Table) SetMinimumWidth(n int, w int) error {
 
 // SetStartingRow specifies the first row of the table to be
 // printed. A value less than zero is an error.
-func (t *Table) SetStartingRow(s int) error {
+func (t *Table) SetStartingRow(s int) *errors.EgoError {
 	if s < 1 {
 		return NewTableErr(InvalidRowNumberError, s)
 	}
@@ -67,7 +69,7 @@ func (t *Table) SetStartingRow(s int) error {
 }
 
 // SetSpacing specifies the spaces between columns in output.
-func (t *Table) SetSpacing(s int) error {
+func (t *Table) SetSpacing(s int) *errors.EgoError {
 	if s < 0 {
 		return NewTableErr(InvalidSpacingError, s)
 	}
@@ -84,7 +86,7 @@ func (t *Table) SetSpacing(s int) error {
 }
 
 // SetIndent specifies the spaces to indent each heading and row.
-func (t *Table) SetIndent(s int) error {
+func (t *Table) SetIndent(s int) *errors.EgoError {
 	var buffer strings.Builder
 
 	if s < 0 {
@@ -101,7 +103,7 @@ func (t *Table) SetIndent(s int) error {
 }
 
 // SetAlignment sets the alignment for a given column.
-func (t *Table) SetAlignment(column int, alignment int) error {
+func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
 	if column < 0 || column >= t.columnCount {
 		return NewTableErr(InvalidColumnNumberError, column)
 	}

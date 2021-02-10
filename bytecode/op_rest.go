@@ -20,7 +20,7 @@ import (
 // variable _authenticated whose value was set during REST service initialization.
 // The operand determines what kind of authentication is required; i.e. via token
 // or username or either, and whether the user must be an admin (root) user.
-func AuthImpl(c *Context, i interface{}) error {
+func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 	var user, pass string
 
 	if _, ok := c.Get("_authenticated"); !ok {
@@ -119,7 +119,7 @@ func AuthImpl(c *Context, i interface{}) error {
 // Generate a response body for a REST service. If the current media type is JSON, then the
 // top of stack is formatted as JSON, otherwise it is formatted as text, and written to the
 // response.
-func ResponseImpl(c *Context, i interface{}) error {
+func ResponseImpl(c *Context, i interface{}) *errors.EgoError {
 	// See if we have a media type specified.
 	isJSON := false
 

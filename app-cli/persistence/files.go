@@ -2,13 +2,13 @@ package persistence
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // ProfileDirectory is the name of the invisible directory that is created
@@ -49,7 +49,7 @@ var ProfileDirty = false
 var Configurations map[string]Configuration
 
 // Load reads in the named profile, if it exists.
-func Load(application string, name string) error {
+func Load(application string, name string) *errors.EgoError {
 	var c Configuration = Configuration{
 		Description: "Default configuration",
 		Items:       map[string]string{},
@@ -61,7 +61,7 @@ func Load(application string, name string) error {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	var path strings.Builder
@@ -74,7 +74,7 @@ func Load(application string, name string) error {
 
 	configFile, err := os.Open(path.String())
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	defer configFile.Close()
@@ -101,11 +101,11 @@ func Load(application string, name string) error {
 		CurrentConfiguration = &c
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // Save the current configuration.
-func Save() error {
+func Save() *errors.EgoError {
 	// So we even need to do anything?
 	if !ProfileDirty {
 		return nil
@@ -116,7 +116,7 @@ func Save() error {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	path.WriteString(home)
@@ -144,7 +144,7 @@ func Save() error {
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
 	err = ioutil.WriteFile(path.String(), byteBuffer, os.ModePerm)
 
-	return err
+	return errors.New(err)
 }
 
 // UseProfile specifies the name of the profile to use, if other
@@ -259,12 +259,12 @@ func Exists(key string) bool {
 	return exists
 }
 
-func DeleteProfile(key string) error {
+func DeleteProfile(key string) *errors.EgoError {
 	if cfg, ok := Configurations[key]; ok {
 		if cfg.ID == getCurrentConfiguration().ID {
 			ui.Debug(ui.AppLogger, "cannot delete active profile")
 
-			return fmt.Errorf("cannot delete active profile")
+			return errors.New(errors.CannotDeleteActiveProfile).WithContext(key)
 		}
 
 		delete(Configurations, key)
@@ -281,7 +281,7 @@ func DeleteProfile(key string) error {
 
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
 
-	return fmt.Errorf("no such profile: %s", key)
+	return errors.New(errors.NoSuchProfile).WithContext(key)
 }
 
 func getCurrentConfiguration() *Configuration {

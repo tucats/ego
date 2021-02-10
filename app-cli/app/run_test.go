@@ -4,12 +4,12 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/errors"
 )
 
 var testGrammar1 = []cli.Option{
@@ -47,27 +47,27 @@ var testGrammar1 = []cli.Option{
 	},
 }
 
-func testAction0(c *cli.Context) error {
+func testAction0(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-func testAction1(c *cli.Context) error {
+func testAction1(c *cli.Context) *errors.EgoError {
 	v, _ := c.GetString("explode")
 	fmt.Printf("Found the option value %s\n", v)
 
 	if v != "bob" {
-		return errors.New("Invalid explode name: " + v)
+		return errors.NewMessage("Invalid explode name: " + v)
 	}
 
 	return nil
 }
 
-func testAction2(c *cli.Context) error {
+func testAction2(c *cli.Context) *errors.EgoError {
 	v, _ := c.GetInteger("count")
 	fmt.Printf("Found the option value %v\n", v)
 
 	if v != 42 {
-		return errors.New("Invalid count: " + strconv.Itoa(v))
+		return errors.NewMessage("Invalid count: " + strconv.Itoa(v))
 	}
 
 	return nil

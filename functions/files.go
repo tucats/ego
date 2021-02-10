@@ -17,7 +17,7 @@ import (
 const fileMemberName = "file"
 
 // OpenFile opens a file.
-func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var mask os.FileMode = 0644
 
 	var f *os.File
@@ -26,7 +26,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	fname, err := filepath.Abs(util.GetString(args[0]))
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	if len(args) > 1 {
@@ -51,7 +51,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	f, err = os.OpenFile(fname, mode, mask)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	fobj := map[string]interface{}{
@@ -89,7 +89,7 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 
 // Helper function that gets the file handle for a all to a
 // handle-based function.
-func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
+func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
 	this := getThis(s)
 	if v, ok := this["valid"]; ok && util.GetBool(v) {
 		fh, ok := this[fileMemberName]
@@ -105,7 +105,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 }
 
 // Close closes a file.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 0 {
 		return nil, errors.New(errors.ArgumentCountError).In("Close()")
 	}
@@ -115,8 +115,8 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		this := getThis(s)
 		this["valid"] = false
 
-		err = f.Close()
-		if err == nil {
+		e2 := f.Close()
+		if e2 == nil {
 			delete(this, "Close")
 			delete(this, "ReadString")
 			delete(this, "Write")
@@ -125,6 +125,8 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			delete(this, fileMemberName)
 			delete(this, "name")
 			delete(this, "file")
+		} else {
+			err = errors.New(e2)
 		}
 	}
 
@@ -132,7 +134,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // ReadString reads the next line from the file as a string.
-func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 0 {
 		return nil, errors.New(errors.ArgumentCountError).In("ReadString()")
 	}
@@ -160,7 +162,9 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // WriteString writes a string value to a file.
-func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var e2 error
+
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError).In("WriteString()")
 	}
@@ -169,14 +173,17 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	f, err := getFile("WriteString", s)
 	if err == nil {
-		length, err = f.WriteString(util.GetString(args[0]) + "\n")
+		length, e2 = f.WriteString(util.GetString(args[0]) + "\n")
+		if e2 != nil {
+			err = errors.New(e2)
+		}
 	}
 
 	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
 // Write writes an arbitrary binary object to a file.
-func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError).In("Write()")
 	}
@@ -187,7 +194,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	err := enc.Encode(args[0])
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	bytes := buf.Bytes()
@@ -198,11 +205,11 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		length, err = f.Write(bytes)
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, err
+	return MultiValueReturn{Value: []interface{}{length, err}}, errors.New(err)
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
-func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var buf bytes.Buffer
 
 	if len(args) != 2 {
@@ -214,7 +221,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	err := enc.Encode(args[0])
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	bytes := buf.Bytes()
@@ -225,5 +232,5 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		length, err = f.WriteAt(bytes, int64(offset))
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, err
+	return MultiValueReturn{Value: []interface{}{length, err}}, errors.New(err)
 }

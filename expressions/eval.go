@@ -1,19 +1,18 @@
 package expressions
 
 import (
-	"strings"
-
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
 // Eval evaluates the parsed expression. This can be called multiple times
 // with the same scanned string, but with different symbols.
-func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
+func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
 	// If the compile failed, bail out now.
 	if e.err != nil {
-		return nil, e.err
+		return nil, errors.New(e.err)
 	}
 
 	// If the symbol table we're given is unallocated, make one for our use now.
@@ -28,7 +27,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 	ctx := bytecode.NewContext(s, e.b)
 
 	err := ctx.Run()
-	if err != nil && !strings.HasSuffix(err.Error(), "stop") {
+	if err != errors.Stop {
 		return nil, err
 	}
 

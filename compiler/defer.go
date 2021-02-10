@@ -2,7 +2,7 @@ package compiler
 
 import "github.com/tucats/ego/bytecode"
 
-func (c *Compiler) Defer() error {
+func (c *Compiler) Defer() *EgoError {
 	start := c.b.Mark()
 	c.b.Emit(bytecode.Branch, 0)
 

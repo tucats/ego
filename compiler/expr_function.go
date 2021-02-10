@@ -5,7 +5,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func (c *Compiler) functionCall() error {
+func (c *Compiler) functionCall() *EgoError {
 	// Note, caller already consumed the opening paren
 	argc := 0
 
@@ -55,7 +55,7 @@ func (c *Compiler) functionCall() error {
 
 // functionOrReference compiles a function call. The value of the
 // function has been pushed to the top of the stack.
-func (c *Compiler) functionOrReference() error {
+func (c *Compiler) functionOrReference() *EgoError {
 	// Get the atom
 	err := c.reference()
 	if err != nil {

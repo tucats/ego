@@ -134,7 +134,7 @@ func (c *Context) SetPC(pc int) {
 
 // SetGlobal stores a value in a the global symbol table that is
 // at the top of the symbol table chain.
-func (c *Context) SetGlobal(name string, value interface{}) error {
+func (c *Context) SetGlobal(name string, value interface{}) *errors.EgoError {
 	return c.symbols.SetGlobal(name, value)
 }
 
@@ -228,7 +228,7 @@ func (c *Context) GetModuleName() string {
 }
 
 // SetConstant is a helper function to define a constant value.
-func (c *Context) SetConstant(name string, v interface{}) error {
+func (c *Context) SetConstant(name string, v interface{}) *errors.EgoError {
 	return c.symbols.SetConstant(name, v)
 }
 
@@ -247,28 +247,28 @@ func (c *Context) Get(name string) (interface{}, bool) {
 
 // Set is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) Set(name string, value interface{}) error {
+func (c *Context) Set(name string, value interface{}) *errors.EgoError {
 	return c.symbols.Set(name, value)
 }
 
 // SetAlways is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) SetAlways(name string, value interface{}) error {
+func (c *Context) SetAlways(name string, value interface{}) *errors.EgoError {
 	return c.symbols.SetAlways(name, value)
 }
 
 // Delete deletes a symbol from the current context.
-func (c *Context) Delete(name string) error {
+func (c *Context) Delete(name string) *errors.EgoError {
 	return c.symbols.Delete(name)
 }
 
 // Create creates a symbol.
-func (c *Context) Create(name string) error {
+func (c *Context) Create(name string) *errors.EgoError {
 	return c.symbols.Create(name)
 }
 
 // Pop removes the top-most item from the stack.
-func (c *Context) Pop() (interface{}, error) {
+func (c *Context) Pop() (interface{}, *errors.EgoError) {
 	if c.sp <= 0 || len(c.stack) < c.sp {
 		return nil, c.NewError(errors.StackUnderflowError)
 	}
@@ -280,7 +280,7 @@ func (c *Context) Pop() (interface{}, error) {
 }
 
 // Push puts a new items on the stack.
-func (c *Context) Push(v interface{}) error {
+func (c *Context) Push(v interface{}) *errors.EgoError {
 	if c.sp >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
@@ -346,7 +346,7 @@ func (c *Context) GetConfig(name string) interface{} {
 // Otherwise, the symbol name is used to look up the current value (if
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
-func (c *Context) checkType(name string, value interface{}) error {
+func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
 	var err error
 
 	if !c.Static || value == nil {

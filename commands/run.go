@@ -31,7 +31,7 @@ const (
 const QuitCommand = "%quit"
 
 // RunAction is the command handler for the ego CLI.
-func RunAction(c *cli.Context) error {
+func RunAction(c *cli.Context) *errors.EgoError {
 	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func RunAction(c *cli.Context) error {
 			if err != nil {
 				content, err = ioutil.ReadFile(fname + ".ego")
 				if err != nil {
-					return fmt.Errorf("unable to read file: %s", fname)
+					return errors.New(err).WithContext(fname)
 				}
 			}
 
@@ -162,7 +162,7 @@ func RunAction(c *cli.Context) error {
 			if err != nil {
 				content, err = ioutil.ReadFile(fname + ".ego")
 				if err != nil {
-					return fmt.Errorf("unable to read file: %s", fname)
+					return errors.New(err).WithContext(fname)
 				}
 			}
 			// Convert []byte to string

@@ -13,7 +13,7 @@ import (
 // This manages operations on structures (structs, maps, and arrays)
 
 // LoadIndexImpl instruction processor.
-func LoadIndexImpl(c *Context, i interface{}) error {
+func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 }
 
 // LoadSliceImpl instruction processor.
-func LoadSliceImpl(c *Context, i interface{}) error {
+func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 	index2, err := c.Pop()
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 }
 
 // StoreMetadataImpl instruction processor.
-func StoreMetadataImpl(c *Context, i interface{}) error {
+func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 	var key string
 
 	if i != nil {
@@ -183,7 +183,7 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 }
 
 // StoreIndexImpl instruction processor.
-func StoreIndexImpl(c *Context, i interface{}) error {
+func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	storeAlways := util.GetBool(i)
 
 	index, err := c.Pop()
@@ -311,7 +311,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 }
 
 // StoreIndexImpl instruction processor.
-func StoreIntoImpl(c *Context, i interface{}) error {
+func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
 	if err != nil {
 		return err
@@ -344,7 +344,7 @@ func StoreIntoImpl(c *Context, i interface{}) error {
 	return nil
 }
 
-func FlattenImpl(c *Context, i interface{}) error {
+func FlattenImpl(c *Context, i interface{}) *errors.EgoError {
 	c.argCountDelta = 0
 
 	v, err := c.Pop()

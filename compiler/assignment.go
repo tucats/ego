@@ -3,7 +3,7 @@ package compiler
 import "github.com/tucats/ego/errors"
 
 // Assignment compiles an assignment statement.
-func (c *Compiler) Assignment() error {
+func (c *Compiler) Assignment() *EgoError {
 	storeLValue, err := c.LValue()
 	if err != nil {
 		return err

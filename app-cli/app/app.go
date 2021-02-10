@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -59,7 +60,7 @@ func (app *App) SetCopyright(s string) *App {
 // Parse runs a grammar, and then calls the provided action routine. It is typically
 // used in cases where there are no subcommands, and an action should be run after
 // parsing options.
-func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) error) error {
+func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) error) *errors.EgoError {
 	app.Action = action
 
 	return app.Run(grammar, args)
@@ -68,7 +69,7 @@ func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Co
 // Run runs a grammar given a set of arguments in the current
 // applciation. The grammar must declare action routines for the
 // various subcommands, which will be executed by the parser.
-func (app *App) Run(grammar []cli.Option, args []string) error {
+func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 	app.Context = &cli.Context{
 		Description: app.Description,
 		Copyright:   app.Copyright,

@@ -8,7 +8,7 @@ import (
 
 // Try compiles the try statement which allows the program to catch error
 // conditions instead of stopping execution on an error.
-func (c *Compiler) Try() error {
+func (c *Compiler) Try() *errors.EgoError {
 	// Generate start of a try block.
 	b1 := c.b.Mark()
 

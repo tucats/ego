@@ -22,7 +22,7 @@ import (
 )
 
 // TestAction is the command handler for the ego TEST command.
-func TestAction(c *cli.Context) error {
+func TestAction(c *cli.Context) *EgoError {
 	var text string
 
 	var err error
@@ -173,7 +173,7 @@ func TestAction(c *cli.Context) error {
 }
 
 // ReadDirectory reads all the files in a directory into a single string.
-func ReadDirectory(name string) (string, error) {
+func ReadDirectory(name string) (string, *EgoError) {
 	var b strings.Builder
 
 	dirname := name
@@ -217,7 +217,7 @@ func ReadDirectory(name string) (string, error) {
 }
 
 // ReadFile reads the text from a file into a string.
-func ReadFile(name string) (string, error) {
+func ReadFile(name string) (string, *EgoError) {
 	s, err := ReadDirectory(name)
 	if err == nil {
 		return s, nil

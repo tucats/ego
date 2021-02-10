@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func (c *Compiler) Make() error {
+func (c *Compiler) Make() *errors.EgoError {
 	if !c.t.IsNext("make") {
 		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}

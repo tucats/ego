@@ -1,5 +1,7 @@
 package tables
 
+import "github.com/tucats/ego/errors"
+
 const (
 	// AlignmentLeft aligns the column to the left.
 	AlignmentLeft = -1
@@ -33,7 +35,7 @@ type Table struct {
 }
 
 // New creates a new table object, given a list of headings.
-func New(headings []string) (*Table, error) {
+func New(headings []string) (*Table, *errors.EgoError) {
 	t := &Table{}
 
 	if len(headings) == 0 {
