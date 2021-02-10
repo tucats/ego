@@ -59,6 +59,27 @@ func (e *EgoError) Is(err error) bool {
 	return e.err == err
 }
 
+func (e *EgoError) Equal(v interface{}) bool {
+	if e == nil {
+		return v == nil
+	}
+
+	if v == nil {
+		return Nil(e)
+	}
+
+	switch a := v.(type) {
+	case *EgoError:
+		return e.err == a.err
+
+	case error:
+		return e.err == a
+
+	default:
+		return false
+	}
+}
+
 // Nil tests to see if the error is "nil". If it is a native Go
 // error, it is just tested to see if it is nil. If it is an
 // EgoError then additionally we test to see if it is a valid

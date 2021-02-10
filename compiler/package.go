@@ -191,7 +191,7 @@ func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 	content, e2 := ioutil.ReadFile(fn)
 	if e2 != nil {
 		content, e2 = ioutil.ReadFile(name + ".ego")
-		if !errors.Nil(err) {
+		if !errors.Nil(e2) {
 			r := os.Getenv("EGO_PATH")
 			fn = filepath.Join(r, "lib", name+".ego")
 

@@ -181,11 +181,16 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ArgumentCountError).In("Nil()")
 	}
 
-	if len(args) == 2 {
-		return []interface{}{args[0] == nil, util.GetString(args[1])}, nil
+	isNil := args[0] == nil
+	if e, ok := args[0].(*errors.EgoError); ok {
+		isNil = errors.Nil(e)
 	}
 
-	return args[0] == nil, nil
+	if len(args) == 2 {
+		return []interface{}{isNil, util.GetString(args[1])}, nil
+	}
+
+	return isNil, nil
 }
 
 // TestNotNil implements the T.NotNil() function.
@@ -194,11 +199,16 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, errors.New(errors.ArgumentCountError).In("NotNil")
 	}
 
-	if len(args) == 2 {
-		return []interface{}{args[0] != nil, util.GetString(args[1])}, nil
+	isNil := args[0] == nil
+	if e, ok := args[0].(*errors.EgoError); ok {
+		isNil = errors.Nil(e)
 	}
 
-	return args[0] != nil, nil
+	if len(args) == 2 {
+		return []interface{}{!isNil, util.GetString(args[1])}, nil
+	}
+
+	return !isNil, nil
 }
 
 // TestTrue implements the T.True() function.

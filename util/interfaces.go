@@ -142,6 +142,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return int64(value)
 
 		case string:
+			if value == "" {
+				return 0
+			}
+
 			st, err := strconv.Atoi(value)
 			if !errors.Nil(err) {
 				return nil
@@ -172,6 +176,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return int(value)
 
 		case string:
+			if value == "" {
+				return 0.0
+			}
+
 			st, err := strconv.Atoi(value)
 			if !errors.Nil(err) {
 				return nil

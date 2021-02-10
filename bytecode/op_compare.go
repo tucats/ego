@@ -25,7 +25,14 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := v1.(type) {
 	case nil:
-		r = (v2 == nil)
+		if e2, ok := v2.(*errors.EgoError); ok {
+			r = errors.Nil(e2)
+		} else {
+			r = (v2 == nil)
+		}
+
+	case *errors.EgoError:
+		r = a.Equal(v2)
 
 	case map[string]interface{}:
 		r = reflect.DeepEqual(v1, v2)
@@ -91,9 +98,17 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	var r bool
-	switch v1.(type) {
+
+	switch a := v1.(type) {
 	case nil:
-		r = (v2 != nil)
+		if e2, ok := v2.(*errors.EgoError); ok {
+			r = !errors.Nil(e2)
+		} else {
+			r = (v2 != nil)
+		}
+
+	case *errors.EgoError:
+		r = !a.Equal(v2)
 
 	case error:
 		r = !reflect.DeepEqual(v1, v2)
