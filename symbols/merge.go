@@ -6,6 +6,14 @@ import "github.com/tucats/ego/app-cli/ui"
 func (s *SymbolTable) Merge(st *SymbolTable) {
 	ui.Debug(ui.SymbolLogger, "+++ Merging symbols from %s", st.Name)
 
+	// This must be serialized on the two tables to avoid collisions between
+	// threads.
+	s.mutex.Lock()
+	st.mutex.Lock()
+
+	defer st.mutex.Unlock()
+	defer s.mutex.Unlock()
+
 	for k, v := range st.Symbols {
 		// Is it a struct? If so we may need to merge to it...
 		switch vv := v.(type) {

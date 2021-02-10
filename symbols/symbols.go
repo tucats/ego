@@ -15,6 +15,7 @@ type SymbolTable struct {
 	Symbols       map[string]interface{}
 	Constants     map[string]interface{}
 	ScopeBoundary bool
+	mutex         sync.Mutex
 }
 
 // constLock is used to protect concurrent access to the constant
