@@ -18,10 +18,6 @@ type SymbolTable struct {
 	mutex         sync.Mutex
 }
 
-// constLock is used to protect concurrent access to the constant
-// symbol table, which is shared.
-var constLock sync.Mutex
-
 // RootSymbolTable is the parent of all other tables.
 var RootSymbolTable = SymbolTable{
 	Name:          "Root Symbol Table",
@@ -78,13 +74,13 @@ func (s *SymbolTable) SetGlobal(name string, value interface{}) *errors.EgoError
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	v, f := s.Symbols[name]
 
-	constLock.Lock()
+	s.mutex.Lock()
+
+	defer s.mutex.Unlock()
 
 	if !f {
 		v, f = s.Constants[name]
 	}
-
-	constLock.Unlock()
 
 	if !f && s.Parent != nil {
 		return s.Parent.Get(name)
@@ -96,15 +92,15 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
-	constLock.Lock()
+	s.mutex.Lock()
+
+	defer s.mutex.Unlock()
 
 	if s.Constants == nil {
 		s.Constants = map[string]interface{}{}
 	}
 
 	s.Constants[name] = v
-
-	constLock.Unlock()
 
 	return nil
 }
@@ -243,11 +239,11 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 // IsConstant determines if a name is a constant value.
 func (s *SymbolTable) IsConstant(name string) bool {
 	if s.Constants != nil {
-		constLock.Lock()
+		s.mutex.Lock()
+
+		defer s.mutex.Unlock()
 
 		_, found := s.Constants[name]
-
-		constLock.Unlock()
 
 		if found {
 			return true

@@ -1,6 +1,12 @@
 package symbols
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"sync"
+
+	"github.com/tucats/ego/app-cli/ui"
+)
+
+var mergeMutex sync.Mutex
 
 // Merge merges the contents of a table into the current table.
 func (s *SymbolTable) Merge(st *SymbolTable) {
@@ -8,11 +14,9 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 
 	// This must be serialized on the two tables to avoid collisions between
 	// threads.
-	s.mutex.Lock()
-	st.mutex.Lock()
+	mergeMutex.Lock()
 
-	defer st.mutex.Unlock()
-	defer s.mutex.Unlock()
+	defer mergeMutex.Unlock()
 
 	for k, v := range st.Symbols {
 		// Is it a struct? If so we may need to merge to it...
