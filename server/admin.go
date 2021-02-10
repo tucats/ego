@@ -41,7 +41,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !util.InList(r.Method, "POST", "DELETE", "GET") {
-		w.WriteHeader(418)
+		w.WriteHeader(http.StatusTeapot)
 
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 
@@ -227,13 +227,13 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// We had some kind of error, so report that.
-	w.WriteHeader(500)
+	w.WriteHeader(http.StatusInternalServerError)
 
-	msg := `{ "status" : 500, "msg" : "%s"`
+	msg := `{ "status" : HTTP.STATUSINTERNALSERVERERROR, "msg" : "%s"`
 
 	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
 
-	ui.Debug(ui.ServerLogger, "500 Internal server error %v", err)
+	ui.Debug(ui.ServerLogger, "HTTP.STATUSINTERNALSERVERERROR Internal server error %v", err)
 }
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
@@ -266,7 +266,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !errors.Nil(err) {
-			result.Status = 400
+			result.Status = http.StatusBadRequest
 			result.Message = err.Error()
 		} else {
 			result = defs.CacheResponse{
@@ -332,7 +332,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 
 	default:
-		w.WriteHeader(418)
+		w.WriteHeader(http.StatusTeapot)
 
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 

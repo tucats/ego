@@ -297,11 +297,13 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *e
 
 	result := name
 	chars := 0
-	limit := maxWidth - 3 // name + `...`
+	dots := "..."
+	limit := maxWidth - len(dots) // name + `...`
+
 	// iterating over strings is based on runes, not bytes.
 	for i := range name {
 		if chars >= limit {
-			result = name[:i] + `...`
+			result = name[:i] + dots
 
 			break
 		}

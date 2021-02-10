@@ -16,6 +16,9 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// Max number of times we will chase a redirect before failing.
+const MaxRedirectCount = 10
+
 // This maps HTTP status codes to a message string.
 var codes = map[int]string{
 	http.StatusContinue:                     "Continue",
@@ -286,7 +289,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, err
 	}
 
-	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	this := getThis(s)
 
@@ -570,7 +573,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 	}
 
 	url = strings.TrimSuffix(url, "/") + endpoint
-	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)

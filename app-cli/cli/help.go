@@ -7,6 +7,13 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
+// Default indentation for subordinate text, and default
+// spacing between columns.
+const (
+	helpIndent  = 3
+	helpSpacing = 3
+)
+
 // ShowHelp displays help text for the grammar, using a standardized format.
 // The help shows subcommands as well as options, including value type cues.
 // The output is automatically directed to the stdout console output.
@@ -71,8 +78,8 @@ func ShowHelp(c *Context) {
 
 	tc.ShowHeadings(false)
 
-	_ = tc.SetIndent(3)
-	_ = tc.SetSpacing(3)
+	_ = tc.SetIndent(helpIndent)
+	_ = tc.SetSpacing(helpSpacing)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
 
 	for _, option := range c.Grammar {
@@ -100,7 +107,7 @@ func ShowHelp(c *Context) {
 
 	tc.ShowHeadings(false)
 
-	_ = tc.SetIndent(3)
+	_ = tc.SetIndent(helpIndent)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
 
 	for _, option := range c.Grammar {
@@ -125,8 +132,8 @@ func ShowHelp(c *Context) {
 
 	to.ShowHeadings(false)
 
-	_ = to.SetIndent(3)
-	_ = to.SetSpacing(3)
+	_ = to.SetIndent(helpIndent)
+	_ = to.SetSpacing(helpSpacing)
 	_ = to.SetMinimumWidth(0, minimumFirstColumnWidth)
 
 	for _, option := range c.Grammar {

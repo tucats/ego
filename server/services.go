@@ -142,7 +142,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			cacheMutext.Unlock()
 
@@ -178,7 +178,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !errors.Nil(err) {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 
 		return
@@ -267,7 +267,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !errors.Nil(err) {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
 		ui.Debug(ui.ServerLogger, "STATUS %d", status)

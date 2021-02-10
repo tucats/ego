@@ -7,6 +7,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+const defaultHelpIndent = 3
+
 var helpText = [][]string{
 	{"break at [n]", "Halt execution at a given line number"},
 	{"break when [e]", "Halt execution when expression is true"},
@@ -35,7 +37,7 @@ func Help() *errors.EgoError {
 	if errors.Nil(err) {
 		fmt.Println("Commands:")
 
-		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(3)
+		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)
 		_ = table.SetOrderBy("Command")
 		_ = table.Print("text")
 	}

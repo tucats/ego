@@ -12,6 +12,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const maxKeyValuePrintWidth = 60
+
 // Grammar describes profile subcommands.
 var Grammar = []cli.Option{
 	{
@@ -74,8 +76,8 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	t, _ := tables.New([]string{"Key", "Value"})
 
 	for k, v := range persistence.CurrentConfiguration.Items {
-		if len(fmt.Sprintf("%v", v)) > 60 {
-			v = fmt.Sprintf("%v", v)[:60] + "..."
+		if len(fmt.Sprintf("%v", v)) > maxKeyValuePrintWidth {
+			v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
 		}
 
 		_ = t.AddRowItems(k, v)

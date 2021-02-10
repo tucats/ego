@@ -58,7 +58,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, err := comp.Compile("code", t)
 	if !errors.Nil(err) {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
 		// Add the builtin functions
@@ -81,7 +81,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !errors.Nil(err) {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {
 			w.WriteHeader(http.StatusOK)

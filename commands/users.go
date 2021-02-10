@@ -95,7 +95,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
-	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(runtime.MaxRedirectCount))
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)

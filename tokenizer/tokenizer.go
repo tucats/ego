@@ -17,8 +17,13 @@ type Tokenizer struct {
 	Pos    []int
 }
 
-// EndOfTokens is a reserved token that means end of the buffer was reached.
-const EndOfTokens = "<<end-of-tokens>>"
+const (
+	// EndOfTokens is a reserved token that means end of the buffer was reached.
+	EndOfTokens = "<<end-of-tokens>>"
+
+	// ToTheEnd means to advance the token stream to the end.
+	ToTheEnd = 9999
+)
 
 // New creates a tokenizer instance and breaks the string
 // up into an array of tokens.

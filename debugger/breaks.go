@@ -49,7 +49,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				}
 			}
 
-			t.Advance(999)
+			t.Advance(tokenizer.ToTheEnd)
 
 		case "at":
 			name := t.Next()
