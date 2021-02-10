@@ -150,7 +150,7 @@ func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, *errors.EgoError) 
 	c := NewContext(s, b)
 
 	err := c.Run()
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 

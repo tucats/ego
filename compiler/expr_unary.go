@@ -1,8 +1,11 @@
 package compiler
 
-import bc "github.com/tucats/ego/bytecode"
+import (
+	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
+)
 
-func (c *Compiler) unary() *EgoError {
+func (c *Compiler) unary() *errors.EgoError {
 	// Check for unary negation or not before passing into top-level diadic operators.
 	t := c.t.Peek(1)
 
@@ -11,7 +14,7 @@ func (c *Compiler) unary() *EgoError {
 		c.t.Advance(1)
 
 		err := c.functionOrReference()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -23,7 +26,7 @@ func (c *Compiler) unary() *EgoError {
 		c.t.Advance(1)
 
 		err := c.functionOrReference()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

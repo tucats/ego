@@ -11,7 +11,7 @@ import (
 // with the same scanned string, but with different symbols.
 func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
 	// If the compile failed, bail out now.
-	if e.err != nil {
+	if !errors.Nil(e.err) {
 		return nil, errors.New(e.err)
 	}
 

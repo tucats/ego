@@ -15,12 +15,12 @@ import (
 // LoadIndexImpl instruction processor.
 func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	array, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -28,7 +28,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoMap:
 		var v interface{}
 
-		if v, _, err = a.Get(index); err == nil {
+		if v, _, err = a.Get(index); errors.Nil(err) {
 			err = c.Push(v)
 		}
 
@@ -37,7 +37,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		var datum interface{}
 
 		datum, err = a.Receive()
-		if err == nil {
+		if errors.Nil(err) {
 			err = c.Push(datum)
 		}
 
@@ -100,17 +100,17 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 // LoadSliceImpl instruction processor.
 func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 	index2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	index1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	array, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 		subscript2 := util.GetInt(index2)
 
 		v, err := a.GetSlice(subscript1, subscript2)
-		if err == nil {
+		if errors.Nil(err) {
 			err = c.Push(v)
 		}
 
@@ -155,7 +155,7 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 		key = util.GetString(i)
 	} else {
 		keyx, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -163,12 +163,12 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	value, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	m, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -187,27 +187,27 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	storeAlways := util.GetBool(i)
 
 	index, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	destination, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
-		if _, err = a.Set(index, v); err == nil {
+		if _, err = a.Set(index, v); errors.Nil(err) {
 			err = c.Push(a)
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			return errors.New(err).At(c.GetModuleName(), c.GetLine())
 		}
 
@@ -280,7 +280,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		err = a.Set(subscript, v)
-		if err == nil {
+		if errors.Nil(err) {
 			err = c.Push(a)
 		}
 
@@ -313,27 +313,27 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 // StoreIndexImpl instruction processor.
 func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	destination, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
-		if _, err = a.Set(index, v); err == nil {
+		if _, err = a.Set(index, v); errors.Nil(err) {
 			err = c.Push(a)
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			return c.NewError(err)
 		}
 
@@ -348,7 +348,7 @@ func FlattenImpl(c *Context, i interface{}) *errors.EgoError {
 	c.argCountDelta = 0
 
 	v, err := c.Pop()
-	if err == nil {
+	if errors.Nil(err) {
 		if array, ok := v.(*datatypes.EgoArray); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)

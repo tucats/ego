@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func (c *Compiler) expressionAtom() *EgoError {
+func (c *Compiler) expressionAtom() *errors.EgoError {
 	t := c.t.Peek(1)
 	// Is this the make() function?
 	if t == "make" && c.t.Peek(2) == "(" {
@@ -69,7 +69,7 @@ func (c *Compiler) expressionAtom() *EgoError {
 		c.t.Advance(1)
 
 		err := c.conditional()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -97,14 +97,14 @@ func (c *Compiler) expressionAtom() *EgoError {
 	}
 
 	// If the token is a number, convert it
-	if i, err := strconv.Atoi(t); err == nil {
+	if i, err := strconv.Atoi(t); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if i, err := strconv.ParseFloat(t, 64); err == nil {
+	if i, err := strconv.ParseFloat(t, 64); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
@@ -126,7 +126,7 @@ func (c *Compiler) expressionAtom() *EgoError {
 
 		c.b.Emit(bytecode.Push, s)
 
-		return err
+		return errors.New(err)
 	}
 
 	if runeValue == "`" {
@@ -151,7 +151,7 @@ func (c *Compiler) expressionAtom() *EgoError {
 			c.b.Emit(bytecode.Push, "__type")
 
 			err := c.expressionAtom()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -177,7 +177,7 @@ func (c *Compiler) expressionAtom() *EgoError {
 	return c.NewError(errors.UnexpectedTokenError, t)
 }
 
-func (c *Compiler) parseArray() *EgoError {
+func (c *Compiler) parseArray() *errors.EgoError {
 	var err error
 
 	var listTerminator = ""
@@ -237,10 +237,10 @@ func (c *Compiler) parseArray() *EgoError {
 			t1, err = strconv.Atoi(c.t.Peek(1))
 		}
 
-		if err == nil {
+		if errors.Nil(err) {
 			if c.t.Peek(2) == ":" {
 				t2, err := strconv.Atoi(c.t.Peek(3))
-				if err == nil {
+				if errors.Nil(err) {
 					c.t.Advance(3)
 
 					count := t2 - t1 + 1
@@ -276,7 +276,7 @@ func (c *Compiler) parseArray() *EgoError {
 
 	for c.t.Peek(1) != listTerminator {
 		err := c.conditional()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -312,7 +312,7 @@ func (c *Compiler) parseArray() *EgoError {
 	return nil
 }
 
-func (c *Compiler) parseStruct() *EgoError {
+func (c *Compiler) parseStruct() *errors.EgoError {
 	var listTerminator = "}"
 
 	var err error
@@ -326,8 +326,8 @@ func (c *Compiler) parseStruct() *EgoError {
 		name := c.t.Next()
 		if len(name) > 2 && name[0:1] == "\"" {
 			name, err = strconv.Unquote(name)
-			if err != nil {
-				return err
+			if !errors.Nil(err) {
+				return errors.New(err)
 			}
 		} else {
 			if !tokenizer.IsSymbol(name) {
@@ -344,7 +344,7 @@ func (c *Compiler) parseStruct() *EgoError {
 
 		// Third element: value, which is emitted.
 		err := c.conditional()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -371,10 +371,10 @@ func (c *Compiler) parseStruct() *EgoError {
 	c.b.Emit(bytecode.Struct, count)
 	c.t.Advance(1)
 
-	return err
+	return errors.New(err)
 }
 
-func (c *Compiler) unLit(s string) (string, *EgoError) {
+func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	quote := s[0:1]
 	if s[len(s)-1:] != quote {
 		return s[1:], c.NewError(errors.BlockQuoteError, quote)

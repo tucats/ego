@@ -3,6 +3,8 @@ package tables
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/errors"
 )
 
 func TestNew(t *testing.T) {
@@ -74,7 +76,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := New(tt.args.headings)
-			if err != nil && !tt.wantError {
+			if !errors.Nil(err) && !tt.wantError {
 				t.Errorf("New() resulted in unexpected error %v", err)
 			}
 
@@ -150,7 +152,7 @@ func TestNewCSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewCSV(tt.args.h)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("NewCSV() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

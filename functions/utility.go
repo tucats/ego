@@ -21,11 +21,11 @@ import (
 // Sleep implements util.sleep().
 func Sleep(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	duration, err := time.ParseDuration(util.GetString(args[0]))
-	if err == nil {
+	if errors.Nil(err) {
 		time.Sleep(duration)
 	}
 
-	return true, err
+	return true, errors.New(err)
 }
 
 // ProfileGet implements the profile.get() function.
@@ -427,7 +427,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
 			if kind != datatypes.InterfaceType {
-				if err := array.Validate(kind); err != nil {
+				if err := array.Validate(kind); !errors.Nil(err) {
 					return nil, err
 				}
 			}
@@ -672,7 +672,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	typeString, err := Type(s, args)
-	if err == nil {
+	if errors.Nil(err) {
 		result := map[string]interface{}{
 			datatypes.TypeMDKey:     typeString,
 			datatypes.BasetypeMDKey: typeString,

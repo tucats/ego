@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -119,7 +120,7 @@ func TestCompile(t *testing.T) {
 			// Make sure PRINT verb works for these tests.
 			c.extensionsEnabled = true
 			bc, err := c.Compile("unit test", tokens)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Compile() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

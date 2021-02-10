@@ -116,10 +116,10 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			return nil
 		}
 
-		return NewProfileErr(InvalidOutputError, outputType)
+		return errors.New(errors.InvalidOutputFormatError).WithContext(outputType)
 	}
 
-	return NewProfileErr(MissingOutputTypeError)
+	return errors.New(errors.MissingOutputTypeError)
 }
 
 // SetAction uses the first two parameters as a key and value.
@@ -153,7 +153,7 @@ func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 	key := c.GetParameter(0)
 
 	err := persistence.DeleteProfile(key)
-	if err == nil {
+	if errors.Nil(err) {
 		ui.Say("Profile %s deleted", key)
 
 		return nil

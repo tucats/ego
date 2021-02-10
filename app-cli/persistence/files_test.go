@@ -3,7 +3,11 @@
 // profile in as part of startup, and of updating the profile as needed.
 package persistence
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/tucats/ego/errors"
+)
 
 func TestLoad(t *testing.T) {
 	type args struct {
@@ -23,7 +27,7 @@ func TestLoad(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Load(tt.args.application, tt.args.name); (err != nil) != tt.wantErr {
+			if err := Load(tt.args.application, tt.args.name); (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

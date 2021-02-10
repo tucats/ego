@@ -16,7 +16,7 @@ func (c *Compiler) Print() *errors.EgoError {
 		}
 
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

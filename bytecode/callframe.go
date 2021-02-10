@@ -66,7 +66,7 @@ func (c *Context) PopFrame() *errors.EgoError {
 	c.sp = c.fp
 	cx, err := c.Pop()
 
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

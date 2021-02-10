@@ -16,7 +16,7 @@ func (c *Compiler) Try() *errors.EgoError {
 
 	// Statement to try
 	err := c.Statement()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -47,7 +47,7 @@ func (c *Compiler) Try() *errors.EgoError {
 	}
 
 	err = c.Statement()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block

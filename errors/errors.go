@@ -59,8 +59,33 @@ func (e *EgoError) Is(err error) bool {
 	return e.err == err
 }
 
+// Nil tests to see if the error is "nil". If it is a native Go
+// error, it is just tested to see if it is nil. If it is an
+// EgoError then additionally we test to see if it is a valid
+// pointer but to a null error, in which case it is also considered
+// a nil value.
+func Nil(e error) bool {
+	if e == nil {
+		return true
+	}
+
+	if ee, ok := e.(*EgoError); ok {
+		if ee == nil {
+			return true
+		}
+
+		return ee.err == nil
+	}
+
+	return false
+}
+
 func (e *EgoError) Error() string {
 	var b strings.Builder
+
+	if e == nil || e.err == nil {
+		panic("format of a nil error; needs to use errors.Nil() to test")
+	}
 
 	predicate := false
 
@@ -111,4 +136,8 @@ func (e *EgoError) Error() string {
 
 func (e *EgoError) Unwrap() error {
 	return e.err
+}
+
+func (e *EgoError) GetContext() interface{} {
+	return e.context
 }

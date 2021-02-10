@@ -154,7 +154,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 
 func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	c, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -181,7 +181,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // RestBase implements the Base() rest function.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -202,7 +202,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // RestBase implements the Base() rest function.
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -223,7 +223,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // RestAuth implements the Auth() rest function.
 func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -244,7 +244,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // RestToken implements the Token() rest function.
 func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -268,7 +268,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // RestMedia implements the Media() function.
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -282,7 +282,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // RestGet implements the rest Get() function.
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -376,7 +376,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	client, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -395,7 +395,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		media := util.GetString(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, errors.New(err)
 			}
 
@@ -450,7 +450,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	client, err := getClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -467,7 +467,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		media := util.GetString(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, errors.New(err)
 			}
 
@@ -583,7 +583,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 
 	if body != nil {
 		b, err := json.Marshal(body)
-		if err != nil {
+		if !errors.Nil(err) {
 			return errors.New(err)
 		}
 
@@ -601,7 +601,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 		err = errors.NewMessage(defs.NotFound)
 	}
 
-	if err == nil && response != nil {
+	if errors.Nil(err) && response != nil {
 		body := string(resp.Body())
 		if !util.InList(body[0:1], "{", "[", "\"") {
 			r := defs.RestResponse{

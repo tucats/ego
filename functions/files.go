@@ -25,7 +25,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	mode := os.O_RDONLY
 
 	fname, err := filepath.Abs(util.GetString(args[0]))
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -50,7 +50,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -111,7 +111,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	f, err := getFile("Close", s)
-	if err == nil {
+	if errors.Nil(err) {
 		this := getThis(s)
 		this["valid"] = false
 
@@ -140,7 +140,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	f, err := getFile("ReadString", s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
@@ -172,7 +172,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	length := 0
 
 	f, err := getFile("WriteString", s)
-	if err == nil {
+	if errors.Nil(err) {
 		length, e2 = f.WriteString(util.GetString(args[0]) + "\n")
 		if e2 != nil {
 			err = errors.New(e2)
@@ -193,7 +193,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -201,7 +201,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	length := len(bytes)
 
 	f, err := getFile("Write", s)
-	if err == nil {
+	if errors.Nil(err) {
 		length, err = f.Write(bytes)
 	}
 
@@ -220,7 +220,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -228,7 +228,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	length := len(bytes)
 
 	f, err := getFile("WriteAt", s)
-	if err == nil {
+	if errors.Nil(err) {
 		length, err = f.WriteAt(bytes, int64(offset))
 	}
 

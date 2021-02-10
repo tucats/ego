@@ -35,7 +35,7 @@ func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err := c.Create(n)
-	if err != nil {
+	if !errors.Nil(err) {
 		err = c.NewError(err)
 	}
 
@@ -59,7 +59,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err := c.Create(n)
-	if err != nil {
+	if !errors.Nil(err) {
 		err = c.NewError(err)
 	}
 
@@ -71,7 +71,7 @@ func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 
 	err := c.Delete(n)
-	if err != nil {
+	if !errors.Nil(err) {
 		err = c.NewError(err)
 	}
 
@@ -81,14 +81,14 @@ func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
 // ConstantImpl instruction processor.
 func ConstantImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	varname := util.GetString(i)
 
 	err = c.SetConstant(varname, v)
-	if err != nil {
+	if !errors.Nil(err) {
 		return c.NewError(err)
 	}
 

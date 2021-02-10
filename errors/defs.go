@@ -14,6 +14,7 @@ var Stop = errors.New("stop")
 
 // Runtime errors
 
+var MissingOutputTypeError = errors.New("missing output format type")
 var InvalidDebugCommandError = errors.New("invalid debugger command")
 
 var ArgumentCountError = errors.New("incorrect function argument count")
@@ -203,3 +204,7 @@ var InvalidResultSetTypeError = errors.New("invalid result set type")
 var UnexpectedValueError = errors.New("unexpected value")
 var InvalidGremlinClientError = errors.New("invalid gremlin client")
 var DatabaseClientClosedError = errors.New("database client closed")
+
+var TransactionAlreadyActive = errors.New("transaction already active")
+var CacheSizeNotSpecifiedError = errors.New("cache size not specified")
+var NoTransactionActiveError = errors.New("no transaction active")

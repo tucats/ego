@@ -17,7 +17,7 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		name = util.GetString(i)
 	} else {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -25,7 +25,7 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	m, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 		name = util.GetString(i)
 	} else {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -104,7 +104,7 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	m, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

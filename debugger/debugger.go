@@ -28,7 +28,7 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 
 	c.SetPC(pc)
 
-	for err == nil {
+	for errors.Nil(err) {
 		err = c.Resume()
 		if err == errors.SignalDebugger {
 			err = Debugger(c)
@@ -77,7 +77,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		}
 
 		// We have a command now in the tokens buffer.
-		if err == nil {
+		if errors.Nil(err) {
 			t := tokens.Peek(1)
 			switch t {
 			case "help":
@@ -136,7 +136,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = errors.New(errors.InvalidDebugCommandError).WithContext(t)
 			}
 
-			if err != nil && err != errors.Stop && err != errors.StepOver {
+			if !errors.Nil(err) && err != errors.Stop && err != errors.StepOver {
 				fmt.Printf("Debugger error, %v\n", err)
 
 				err = nil

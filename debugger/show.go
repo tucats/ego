@@ -42,7 +42,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			}
 		}
 
-		if err == nil {
+		if errors.Nil(err) {
 			fmt.Print(c.FormatFrames(depth))
 		}
 
@@ -83,7 +83,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			err = errors.New(e2)
 		}
 
-		if err == nil {
+		if errors.Nil(err) {
 			for i, t := range tx.Source {
 				if i < start-1 || i > end-1 {
 					continue

@@ -13,7 +13,7 @@ import (
 // Directive processes a compiler directive. These become symbols generated
 // at compile time that are copied to the compiler's symbol table for processing
 // elsewhere.
-func (c *Compiler) Directive() *EgoError {
+func (c *Compiler) Directive() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.NewError(errors.InvalidDirectiveError, name)
@@ -65,7 +65,7 @@ func (c *Compiler) Directive() *EgoError {
 
 // Global parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
-func (c *Compiler) Global() *EgoError {
+func (c *Compiler) Global() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -81,7 +81,7 @@ func (c *Compiler) Global() *EgoError {
 		c.b.Emit(bytecode.Push, "")
 	} else {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -94,7 +94,7 @@ func (c *Compiler) Global() *EgoError {
 }
 
 // Log parses the @log directive.
-func (c *Compiler) Log() *EgoError {
+func (c *Compiler) Log() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -108,7 +108,7 @@ func (c *Compiler) Log() *EgoError {
 		c.b.Emit(bytecode.Push, "")
 	} else {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -122,7 +122,7 @@ func (c *Compiler) Log() *EgoError {
 
 // RestStatus parses the @status directive which sets a symbol
 // value in the root symbol table with the REST calls tatus value.
-func (c *Compiler) RestStatus() *EgoError {
+func (c *Compiler) RestStatus() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -134,7 +134,7 @@ func (c *Compiler) RestStatus() *EgoError {
 		c.b.Emit(bytecode.Push, http.StatusOK)
 	} else {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -146,7 +146,7 @@ func (c *Compiler) RestStatus() *EgoError {
 	return nil
 }
 
-func (c *Compiler) Authenticated() *EgoError {
+func (c *Compiler) Authenticated() *errors.EgoError {
 	var token string
 
 	_ = c.modeCheck("server", true)
@@ -167,7 +167,7 @@ func (c *Compiler) Authenticated() *EgoError {
 }
 
 // RestResponse processes the @response directive.
-func (c *Compiler) RestResponse() *EgoError {
+func (c *Compiler) RestResponse() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.NewError(errors.InvalidSymbolError)
 	}
@@ -175,7 +175,7 @@ func (c *Compiler) RestResponse() *EgoError {
 	_ = c.modeCheck("server", true)
 
 	bc, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -186,7 +186,7 @@ func (c *Compiler) RestResponse() *EgoError {
 }
 
 // Template implements the template compiler directive.
-func (c *Compiler) Template() *EgoError {
+func (c *Compiler) Template() *errors.EgoError {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
@@ -197,7 +197,7 @@ func (c *Compiler) Template() *EgoError {
 
 	// Get the template string definition
 	bc, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -210,10 +210,10 @@ func (c *Compiler) Template() *EgoError {
 }
 
 // Error implements the @error directive.
-func (c *Compiler) Error() *EgoError {
+func (c *Compiler) Error() *errors.EgoError {
 	if !c.atStatementEnd() {
 		code, err := c.Expression()
-		if err == nil {
+		if errors.Nil(err) {
 			c.b.Append(code)
 		}
 	} else {
@@ -227,7 +227,7 @@ func (c *Compiler) Error() *EgoError {
 
 // TypeChecking implements the @type directive which must be followed by the
 // keyword "static" or "dynamic", indicating the type of type checking.
-func (c *Compiler) TypeChecking() *EgoError {
+func (c *Compiler) TypeChecking() *errors.EgoError {
 	var err error
 
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
@@ -238,7 +238,7 @@ func (c *Compiler) TypeChecking() *EgoError {
 
 	c.b.Emit(bytecode.StaticTyping)
 
-	return err
+	return errors.New(err)
 }
 
 // atStatementEnd checks the next token in the stream to see if it indicates
@@ -251,7 +251,7 @@ func (c *Compiler) atStatementEnd() bool {
 // in the given mode. If check is true, we require that we
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
-func (c *Compiler) modeCheck(mode string, check bool) *EgoError {
+func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
 	c.b.Emit(bytecode.Load, "__exec_mode")
 	c.b.Emit(bytecode.Push, mode)
 	c.b.Emit(bytecode.Equal)

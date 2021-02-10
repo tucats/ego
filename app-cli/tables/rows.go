@@ -11,7 +11,7 @@ import (
 // where each object represents a column of the data.
 func (t *Table) AddRow(row []string) *errors.EgoError {
 	if len(row) != t.columnCount {
-		return NewTableErr(IncorrectColumnCountError, len(row))
+		return errors.New(errors.IncorrectColumnCountError).WithContext(len(row))
 	}
 
 	for n, h := range row {
@@ -30,7 +30,7 @@ func (t *Table) AddRow(row []string) *errors.EgoError {
 // formatted values are added to the table as a row.
 func (t *Table) AddRowItems(items ...interface{}) *errors.EgoError {
 	if len(items) != t.columnCount {
-		return NewTableErr(IncorrectColumnCountError, len(items))
+		return errors.New(errors.IncorrectColumnCountError).WithContext(len(items))
 	}
 
 	row := make([]string, t.columnCount)

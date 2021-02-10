@@ -30,7 +30,7 @@ func DefineLibHandlers(root string, subpath string) *errors.EgoError {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
-	if err != nil {
+	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
@@ -52,7 +52,7 @@ func DefineLibHandlers(root string, subpath string) *errors.EgoError {
 			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
 
 			err := DefineLibHandlers(root, newpath)
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 		}
@@ -72,9 +72,9 @@ func DefineLibHandlers(root string, subpath string) *errors.EgoError {
 // process, which validates if it actually exists.
 func IsRunning(pid int) bool {
 	proc, err := os.FindProcess(pid)
-	if err == nil {
+	if errors.Nil(err) {
 		err := proc.Signal(syscall.Signal(0))
-		if err == nil {
+		if errors.Nil(err) {
 			return true
 		}
 	}
@@ -95,7 +95,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	var status = defs.ServerStatus{}
 
 	b, err := ioutil.ReadFile(getPidFileName(c))
-	if err == nil {
+	if errors.Nil(err) {
 		err = json.Unmarshal(b, &status)
 	}
 
@@ -111,7 +111,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 	b, _ := json.MarshalIndent(status, "", "  ")
 
 	err := ioutil.WriteFile(fn, b, 0600)
-	if err == nil {
+	if errors.Nil(err) {
 		err = os.Chmod(fn, 0600)
 	}
 

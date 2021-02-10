@@ -43,7 +43,7 @@ func (c *Compiler) Type() *errors.EgoError {
 
 	// Compile a struct definition
 	err := c.compileType()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -107,12 +107,12 @@ func (c *Compiler) compileType() *errors.EgoError {
 
 		if c.t.Peek(1) == "{" {
 			err := c.compileType()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 		} else {
 			model, err := c.typeDeclaration()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -175,7 +175,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 		c.b.Emit(bytecode.Push, "__type")
 
 		err := c.expressionAtom()
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 

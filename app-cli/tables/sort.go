@@ -12,7 +12,7 @@ import (
 // in ascending order, and false if a descending sort is required.
 func (t *Table) SortRows(column int, ascending bool) *errors.EgoError {
 	if column < 0 || column >= t.columnCount {
-		return NewTableErr(InvalidColumnNumberError, column)
+		return errors.New(errors.InvalidColumnNumberError).WithContext(column)
 	}
 
 	sort.SliceStable(t.rows, func(i, j int) bool {
@@ -45,5 +45,5 @@ func (t *Table) SetOrderBy(name string) *errors.EgoError {
 		}
 	}
 
-	return NewTableErr(InvalidColumnNameError, name)
+	return errors.New(errors.InvalidColumnNameError).WithContext(name)
 }

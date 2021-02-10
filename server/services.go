@@ -125,7 +125,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		cacheMutext.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, path+".ego"))
-		if err != nil {
+		if !errors.Nil(err) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			cacheMutext.Unlock()
 
@@ -141,7 +141,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
-		if err != nil {
+		if !errors.Nil(err) {
 			w.WriteHeader(400)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			cacheMutext.Unlock()
@@ -149,7 +149,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// If it compiled successfully, then put it in the cache
-		if err == nil {
+		if errors.Nil(err) {
 			serviceCache[r.URL.Path] = cachedCompilationUnit{
 				age:   time.Now(),
 				c:     compilerInstance,
@@ -177,7 +177,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		cacheMutext.Unlock()
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		w.WriteHeader(400)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 
@@ -238,7 +238,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	compilerInstance.AddBuiltins("")
 
 	err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
-	if err != nil {
+	if !errors.Nil(err) {
 		fmt.Printf("Unable to auto-import packages: " + err.Error())
 	}
 
@@ -266,7 +266,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		w.WriteHeader(500)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 

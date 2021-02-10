@@ -10,7 +10,7 @@ import (
 func (c *Compiler) If() *errors.EgoError {
 	// Compile the conditional expression
 	bc, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -24,7 +24,7 @@ func (c *Compiler) If() *errors.EgoError {
 
 	// Compile the statement to be executed if true
 	err = c.Statement()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -36,7 +36,7 @@ func (c *Compiler) If() *errors.EgoError {
 		_ = c.b.SetAddressHere(b1)
 
 		err = c.Statement()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

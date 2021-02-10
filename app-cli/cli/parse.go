@@ -225,8 +225,8 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			case UUIDType:
 				uuid, err := uuid.Parse(value)
-				if err != nil {
-					return err
+				if !errors.Nil(err) {
+					return errors.New(err)
 				}
 
 				location.Value = uuid.String()
@@ -236,8 +236,8 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			case IntType:
 				i, err := strconv.Atoi(value)
-				if err != nil {
-					return errors.New(InvalidIntegerError, location.LongName, value)
+				if !errors.Nil(err) {
+					return errors.New(errors.InvalidIntegerError).WithContext(value)
 				}
 
 				location.Value = i
@@ -248,7 +248,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
 				err = location.Action(c)
-				if err != nil {
+				if !errors.Nil(err) {
 					break
 				}
 			}
@@ -260,7 +260,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.New(RequiredNotFoundError, entry.LongName)
+			err = errors.New(errors.RequiredNotFoundError).WithContext(entry.LongName)
 
 			break
 		}
@@ -269,7 +269,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 	// If the parse went okay, let's check to make sure we don't have dangling
 	// parameters, and then call the action if there is one.
 
-	if err == nil {
+	if errors.Nil(err) {
 		g := c.FindGlobal()
 
 		if g.ExpectedParameterCount == -99 {
@@ -279,16 +279,16 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return errors.New(UnexpectedParametersError)
+			return errors.New(errors.UnexpectedParametersError)
 		}
 
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return errors.New(TooManyParametersError)
+				return errors.New(errors.TooManyParametersError)
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return errors.New(WrongParameterCountError)
+				return errors.New(errors.WrongParameterCountError)
 			}
 		}
 

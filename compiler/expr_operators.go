@@ -8,9 +8,9 @@ import (
 )
 
 // relations compiles a relationship expression.
-func (c *Compiler) relations() *EgoError {
+func (c *Compiler) relations() *errors.EgoError {
 	err := c.addSubtract()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -25,7 +25,7 @@ func (c *Compiler) relations() *EgoError {
 			c.t.Advance(1)
 
 			err := c.addSubtract()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -57,9 +57,9 @@ func (c *Compiler) relations() *EgoError {
 }
 
 // addSubtract commpiles an expression containing "+", "&", or "-" operators.
-func (c *Compiler) addSubtract() *EgoError {
+func (c *Compiler) addSubtract() *errors.EgoError {
 	err := c.multDivide()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (c *Compiler) addSubtract() *EgoError {
 			}
 
 			err := c.multDivide()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -101,9 +101,9 @@ func (c *Compiler) addSubtract() *EgoError {
 }
 
 // multDivide compiles an expression containing "*", "^", "|", or "/" operators.
-func (c *Compiler) multDivide() *EgoError {
+func (c *Compiler) multDivide() *errors.EgoError {
 	err := c.unary()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -121,7 +121,7 @@ func (c *Compiler) multDivide() *EgoError {
 			}
 
 			err := c.unary()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 )
 
 // GetMap extracts a struct from an abstract interface. Returns nil
@@ -45,6 +46,10 @@ func GetInt64(v interface{}) int64 {
 // GetInt takes a generic interface and returns the integer value, using
 // type coercion if needed.
 func GetInt(v interface{}) int {
+	if v == nil {
+		return 0
+	}
+
 	switch v.(type) {
 	case error:
 		return 0
@@ -138,7 +143,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case string:
 			st, err := strconv.Atoi(value)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil
 			}
 
@@ -168,7 +173,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case string:
 			st, err := strconv.Atoi(value)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil
 			}
 

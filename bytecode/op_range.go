@@ -44,7 +44,7 @@ type Range struct {
 func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 	var v interface{}
 
-	var err error
+	var err *errors.EgoError
 
 	r := Range{}
 
@@ -56,13 +56,13 @@ func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 			err = c.symbols.Create(r.indexName)
 		}
 
-		if err == nil && r.valueName != "" && r.valueName != "_" {
+		if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 			err = c.symbols.Create(r.valueName)
 		}
 	}
 
-	if err == nil {
-		if v, err = c.Pop(); err == nil {
+	if errors.Nil(err) {
+		if v, err = c.Pop(); errors.Nil(err) {
 			r.value = v
 
 			switch actual := v.(type) {
@@ -134,7 +134,7 @@ func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 //    is stored in the value variable. The index
 //     number is also stored in the index variable.
 func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
-	var err error
+	var err *errors.EgoError
 
 	destination := util.GetInt(i)
 
@@ -157,7 +157,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if err == nil && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, string(value))
 				}
 
@@ -175,7 +175,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if err == nil && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, actual[util.GetString(key)])
 				}
 
@@ -195,11 +195,11 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if err == nil && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					var value interface{}
 
 					ok := false
-					if value, ok, err = actual.Get(key); ok && err == nil {
+					if value, ok, err = actual.Get(key); ok && errors.Nil(err) {
 						err = c.symbols.Set(r.valueName, value)
 					} else {
 						// If the key was deleted inside the loop, we set the value to nil
@@ -218,11 +218,11 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				datum, err = actual.Receive()
-				if err == nil {
+				if errors.Nil(err) {
 					if r.indexName != "" && r.indexName != "_" {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
-					if err == nil && r.valueName != "" && r.valueName != "_" {
+					if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 						err = c.symbols.Set(r.valueName, datum)
 					}
 
@@ -242,11 +242,11 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 				if r.indexName != "" && r.indexName != "_" {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if err == nil && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					var d interface{}
 
 					d, err = actual.Get(r.index)
-					if err == nil {
+					if errors.Nil(err) {
 						err = c.symbols.Set(r.valueName, d)
 					}
 				}
@@ -261,7 +261,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 				if r.indexName != "" && r.indexName != "_" {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if err == nil && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, actual[r.index])
 				}
 				r.index++

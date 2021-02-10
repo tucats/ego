@@ -23,7 +23,7 @@ import (
 // array elements.
 func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -72,12 +72,12 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 // it merges the addend into the first struct.
 func AddImpl(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -151,12 +151,12 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 // AndImpl bytecode instruction processor.
 func AndImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -166,12 +166,12 @@ func AndImpl(c *Context, i interface{}) *errors.EgoError {
 // OrImpl bytecode instruction processor.
 func OrImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -184,12 +184,12 @@ func OrImpl(c *Context, i interface{}) *errors.EgoError {
 // from the array (in any array location it is found).
 func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -231,12 +231,12 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 // MultiplyImpl bytecode instruction processor.
 func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -260,12 +260,12 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 // ExponentImpl bytecode instruction processor.
 func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -304,12 +304,12 @@ func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

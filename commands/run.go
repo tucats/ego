@@ -32,7 +32,7 @@ const QuitCommand = "%quit"
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) *errors.EgoError {
-	if err := runtime.InitProfileDefaults(); err != nil {
+	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
 		return err
 	}
 
@@ -91,9 +91,9 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		} else {
 			// Otherwise, use the parameter as a filename
 			content, err := ioutil.ReadFile(fname)
-			if err != nil {
+			if !errors.Nil(err) {
 				content, err = ioutil.ReadFile(fname + ".ego")
-				if err != nil {
+				if !errors.Nil(err) {
 					return errors.New(err).WithContext(fname)
 				}
 			}
@@ -159,9 +159,9 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			fname := strings.TrimSpace(text[8:])
 
 			content, err := ioutil.ReadFile(fname)
-			if err != nil {
+			if !errors.Nil(err) {
 				content, err = ioutil.ReadFile(fname + ".ego")
-				if err != nil {
+				if !errors.Nil(err) {
 					return errors.New(err).WithContext(fname)
 				}
 			}
@@ -219,7 +219,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		comp := compiler.New().WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 		b, err := comp.Compile(mainName, t)
-		if err != nil {
+		if !errors.Nil(err) {
 			fmt.Printf("Error: %s\n", err.Error())
 
 			exitValue = 1
@@ -229,7 +229,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				comp.AddBuiltins("")
 
 				err := comp.AutoImport(autoImport)
-				if err != nil {
+				if !errors.Nil(err) {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
 
@@ -280,7 +280,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			ui.DebugMode = oldDebugMode
 
-			if err != nil {
+			if !errors.Nil(err) {
 				fmt.Printf("Error: %s\n", err.Error())
 
 				exitValue = 2

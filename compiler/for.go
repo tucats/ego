@@ -38,7 +38,7 @@ func (c *Compiler) For() *errors.EgoError {
 
 		// Compile loop body
 		err := c.Statement()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -78,7 +78,7 @@ func (c *Compiler) For() *errors.EgoError {
 	// if not an lvalue, assume conditional mode
 	if !c.IsLValue() {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return c.NewError(errors.MissingForLoopInitializerError)
 		}
 
@@ -117,7 +117,7 @@ func (c *Compiler) For() *errors.EgoError {
 		stmts := c.statementCount
 
 		err = c.Statement()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 		// If we didn't emit anything other than
@@ -157,7 +157,7 @@ func (c *Compiler) For() *errors.EgoError {
 	}
 
 	indexStore, err := c.LValue()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -172,7 +172,7 @@ func (c *Compiler) For() *errors.EgoError {
 		// For a range, the index and value targets must be simple names, and cannot
 		// be real lvalues. The actual thing we range is on the stack.
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return c.NewError(err)
 		}
 
@@ -187,7 +187,7 @@ func (c *Compiler) For() *errors.EgoError {
 
 		// Loop body
 		err = c.Statement()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -231,7 +231,7 @@ func (c *Compiler) For() *errors.EgoError {
 
 	// The expression is the initial value of the loop.
 	initializerCode, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -245,7 +245,7 @@ func (c *Compiler) For() *errors.EgoError {
 	// Now get the condition clause that tells us if the loop
 	// is still executing.
 	condition, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -257,7 +257,7 @@ func (c *Compiler) For() *errors.EgoError {
 	// (nominally the index) to eventually trigger the
 	// loop condition.
 	incrementStore, err := c.LValue()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -266,7 +266,7 @@ func (c *Compiler) For() *errors.EgoError {
 	}
 
 	incrementCode, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -282,7 +282,7 @@ func (c *Compiler) For() *errors.EgoError {
 
 	// Loop body goes next
 	err = c.Statement()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

@@ -101,7 +101,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		}
 
 		err = imp(c, i.Operand)
-		if err != nil {
+		if !errors.Nil(err) {
 			text := err.Error()
 
 			// See if we are in a try/catch block. IF there is a Try/Catch stack
@@ -179,7 +179,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 		}
 	}
 
-	if err != nil && !strings.HasSuffix(err.Error(), "stop") {
+	if !errors.Nil(err) && !strings.HasSuffix(err.Error(), "stop") {
 		fmt.Printf("%v\n", err)
 		ui.Debug(ui.ByteCodeLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)

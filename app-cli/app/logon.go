@@ -92,12 +92,12 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
-	if err == nil && r.StatusCode() == http.StatusOK {
+	if errors.Nil(err) && r.StatusCode() == http.StatusOK {
 		token := strings.TrimSuffix(string(r.Body()), "\n")
 		persistence.Set(LogonTokenSetting, token)
 
 		err = persistence.Save()
-		if err == nil {
+		if errors.Nil(err) {
 			ui.Say("Successfully logged in as \"%s\"", user)
 		}
 
@@ -105,7 +105,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	// If there was an HTTP error condition, let's report it now.
-	if err == nil {
+	if errors.Nil(err) {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
 			err = errors.New(errors.NoCredentialsError)

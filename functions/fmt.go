@@ -14,7 +14,7 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	len := 0
 
 	str, err := Sprintf(s, args)
-	if err == nil {
+	if errors.Nil(err) {
 		len, _ = fmt.Printf("%s", util.GetString(str))
 	}
 

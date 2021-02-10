@@ -270,7 +270,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, errors.New(err)
 			}
 		}

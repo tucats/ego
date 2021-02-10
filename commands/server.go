@@ -30,10 +30,10 @@ const logHeader = "*** Log file initialized %s ***\n"
 func Start(c *cli.Context) *errors.EgoError {
 	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
-	if err == nil && status != nil {
-		if _, err := os.FindProcess(status.PID); err == nil {
+	if errors.Nil(err) && status != nil {
+		if _, err := os.FindProcess(status.PID); errors.Nil(err) {
 			if !c.GetBool("force") {
-				return errors.New(errors.).WithContext(status.PID)
+				return errors.New(errors.ServerAlreadyRunning).WithContext(status.PID)
 			}
 		}
 	}
@@ -104,9 +104,11 @@ func Start(c *cli.Context) *errors.EgoError {
 	}
 
 	// Make sure the location of the server program is a full absolute path
-	args[0], err = filepath.Abs(args[0])
-	if err != nil {
-		return err
+	var e2 error
+
+	args[0], e2 = filepath.Abs(args[0])
+	if e2 != nil {
+		return errors.New(e2)
 	}
 
 	// Is there a log file specified (either as a command-line option or as an
@@ -134,13 +136,13 @@ func Start(c *cli.Context) *errors.EgoError {
 
 	// Create the log file and write the header to it. This open file will
 	// be passed to the forked process to use as its stdout and stderr.
-	logf, err := os.Create(logFileName)
-	if err == nil {
-		_, err = logf.WriteString(fmt.Sprintf(logHeader, time.Now().Format(time.UnixDate)))
+	logf, e2 := os.Create(logFileName)
+	if e2 == nil {
+		_, e2 = logf.WriteString(fmt.Sprintf(logHeader, time.Now().Format(time.UnixDate)))
 	}
 
-	if err != nil {
-		return err
+	if e2 != nil {
+		return errors.New(e2)
 	}
 
 	var attr = syscall.ProcAttr{
@@ -153,16 +155,19 @@ func Start(c *cli.Context) *errors.EgoError {
 		},
 	}
 
-	pid, err := syscall.ForkExec(args[0], args, &attr)
+	pid, e2 := syscall.ForkExec(args[0], args, &attr)
 
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.
-	if err == nil {
+	if e2 == nil {
 		status.Args = args
 		status.PID = pid
 		status.LogID = logID
 		status.Args = args
-		err = server.WritePidFile(c, *status)
+
+		if err := server.WritePidFile(c, *status); !errors.Nil(err) {
+			return err
+		}
 
 		ui.Say("Server started as process %d", pid)
 	} else {
@@ -171,7 +176,7 @@ func Start(c *cli.Context) *errors.EgoError {
 		_ = server.RemovePidFile(c)
 	}
 
-	return err
+	return errors.New(e2)
 }
 
 // Stop stops a running server if it exists.
@@ -179,11 +184,13 @@ func Stop(c *cli.Context) *errors.EgoError {
 	var proc *os.Process
 
 	status, err := server.ReadPidFile(c)
-	if err == nil {
-		proc, err = os.FindProcess(status.PID)
-		if err == nil {
-			err = proc.Kill()
-			if err == nil {
+	if errors.Nil(err) {
+		var e2 error
+
+		proc, e2 = os.FindProcess(status.PID)
+		if e2 == nil {
+			e2 = proc.Kill()
+			if e2 == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
 
 				err = server.RemovePidFile(c)
@@ -191,7 +198,7 @@ func Stop(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // Status displays the status of a running server if it exists.
@@ -200,7 +207,7 @@ func Status(c *cli.Context) *errors.EgoError {
 	msg := "Server not running"
 
 	status, err := server.ReadPidFile(c)
-	if err == nil {
+	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
 			running = true
 			msg = fmt.Sprintf("Server is running (pid %d, session %s) since %v",
@@ -227,20 +234,26 @@ func Status(c *cli.Context) *errors.EgoError {
 func Restart(c *cli.Context) *errors.EgoError {
 	var proc *os.Process
 
+	var e2 error
+
 	status, err := server.ReadPidFile(c)
-	if err == nil {
-		proc, err = os.FindProcess(status.PID)
-		if err == nil {
-			err = proc.Kill()
-			if err == nil {
+	if errors.Nil(err) {
+		proc, e2 = os.FindProcess(status.PID)
+		if e2 == nil {
+			e2 = proc.Kill()
+			if e2 == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
 
 				err = server.RemovePidFile(c)
 			}
 		}
+
+		if e2 != nil {
+			err = errors.New(e2)
+		}
 	}
 
-	if err == nil {
+	if errors.Nil(err) {
 		args := status.Args
 
 		// Find the log file from the command-line args. If it's not
@@ -256,8 +269,8 @@ func Restart(c *cli.Context) *errors.EgoError {
 		logFileName, _ = filepath.Abs(logFileName)
 
 		logf, err := os.Create(logFileName)
-		if err != nil {
-			return err
+		if !errors.Nil(err) {
+			return errors.New(err)
 		}
 
 		// Set up the new ID. If there was one already (because this might be
@@ -281,8 +294,8 @@ func Restart(c *cli.Context) *errors.EgoError {
 
 		if _, err = logf.WriteString(fmt.Sprintf("*** Log file re-initialized %s ***\n",
 			time.Now().Format(time.UnixDate)),
-		); err != nil {
-			return err
+		); !errors.Nil(err) {
+			return errors.New(err)
 		}
 
 		attr := syscall.ProcAttr{
@@ -296,7 +309,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 		}
 
 		pid, err := syscall.ForkExec(args[0], args, &attr)
-		if err == nil {
+		if errors.Nil(err) {
 			status.PID = pid
 			status.LogID = logID
 			status.Args = args
@@ -307,7 +320,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 			_ = server.RemovePidFile(c)
 		}
 
-		return err
+		return errors.New(err)
 	}
 
 	return err
@@ -316,7 +329,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 // RunServer initializes and runs the server, which starts listenting for
 // new connections. This will never terminate until the process is killed.
 func RunServer(c *cli.Context) *errors.EgoError {
-	if err := runtime.InitProfileDefaults(); err != nil {
+	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
 		return err
 	}
 	// Unless told to specifically suppress the log, turn it on.
@@ -378,13 +391,13 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	// Load the user database (if requested)
-	if err := server.LoadUserDatabase(c); err != nil {
+	if err := server.LoadUserDatabase(c); !errors.Nil(err) {
 		return err
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
 	err := server.DefineLibHandlers(server.PathRoot, "/services")
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -406,17 +419,19 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	addr := "localhost:" + strconv.Itoa(port)
 
+	var e2 error
+
 	if c.GetBool("not-secure") {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
-		err = http.ListenAndServe(addr, nil)
+		e2 = http.ListenAndServe(addr, nil)
 	} else {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		err = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
+		e2 = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 
-	return err
+	return errors.New(e2)
 }
 
 // SetCacheSize is the administrative command that sets the server's cache size for
@@ -426,12 +441,12 @@ func RunServer(c *cli.Context) *errors.EgoError {
 // size. You must be an admin user with a valid token to perform this command.
 func SetCacheSize(c *cli.Context) *errors.EgoError {
 	if c.GetParameterCount() == 0 {
-		return errors.New(defs.CacheSizeNotSpecified)
+		return errors.New(errors.CacheSizeNotSpecifiedError)
 	}
 
 	size, err := strconv.Atoi(c.GetParameter(0))
-	if err != nil {
-		return err
+	if !errors.Nil(err) {
+		return errors.New(err)
 	}
 
 	cacheStatus := defs.CacheResponse{
@@ -439,8 +454,8 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	}
 
 	err = runtime.Exchange("/admin/caches", "POST", &cacheStatus, &cacheStatus)
-	if err != nil {
-		return err
+	if !errors.Nil(err) {
+		return errors.New(err)
 	}
 
 	switch ui.OutputFormat {
@@ -457,10 +472,10 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(defs.NoPrivilegeForOperation)
+				return errors.New(errors.NoPrivilegeForOperationError)
 			}
 
-			return errors.New(cacheStatus.Message)
+			return errors.NewMessage(cacheStatus.Message)
 		}
 
 		ui.Say("Server cache size updated")
@@ -478,7 +493,7 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -496,10 +511,10 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(defs.NoPrivilegeForOperation)
+				return errors.New(errors.NoPrivilegeForOperationError)
 			}
 
-			return errors.New(cacheStatus.Message)
+			return errors.NewMessage(cacheStatus.Message)
 		}
 
 		ui.Say("Server cache emptied")
@@ -516,12 +531,12 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	if cacheStatus.Status != http.StatusOK {
-		return fmt.Errorf("HTTP error %d", cacheStatus.Status)
+		return errors.New(errors.HTTPError).WithContext(cacheStatus.Status)
 	}
 
 	switch ui.OutputFormat {
@@ -536,10 +551,10 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(defs.NoPrivilegeForOperation)
+				return errors.New(errors.NoPrivilegeForOperationError)
 			}
 
-			return errors.New(cacheStatus.Message)
+			return errors.NewMessage(cacheStatus.Message)
 		}
 
 		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)

@@ -22,7 +22,7 @@ type App struct {
 	Copyright   string
 	Version     string
 	Context     *cli.Context
-	Action      func(c *cli.Context) error
+	Action      func(c *cli.Context) *errors.EgoError
 }
 
 // New creates a new instance of an application context, given the name of the
@@ -60,7 +60,7 @@ func (app *App) SetCopyright(s string) *App {
 // Parse runs a grammar, and then calls the provided action routine. It is typically
 // used in cases where there are no subcommands, and an action should be run after
 // parsing options.
-func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) error) *errors.EgoError {
+func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) *errors.EgoError) *errors.EgoError {
 	app.Action = action
 
 	return app.Run(grammar, args)

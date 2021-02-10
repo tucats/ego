@@ -27,13 +27,13 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	connStr := util.GetString(args[0])
 
 	url, err := url.Parse(connStr)
-	if err != nil {
-		return nil, err
+	if !errors.Nil(err) {
+		return nil, errors.New(err)
 	}
 
 	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
+	if !errors.Nil(err) {
+		return nil, errors.New(err)
 	}
 
 	// If there was a password specified in the URL, blank it out now before we log it.
@@ -72,16 +72,18 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	var tx *sql.Tx
 
 	d, tx, err := getDBClient(s)
-	if err == nil {
+	if errors.Nil(err) {
 		this := getThis(s)
 
 		if tx == nil {
-			tx, err = d.Begin()
-			if err == nil {
+			var e2 error
+
+			tx, e2 = d.Begin()
+			if e2 == nil {
 				this["transaction"] = tx
 			}
 		} else {
-			err = errors.New("transaction already active")
+			err = errors.New(errors.TransactionAlreadyActive)
 		}
 	}
 
@@ -93,13 +95,13 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
-	if err == nil {
+	if errors.Nil(err) {
 		this := getThis(s)
 
 		if tx != nil {
-			err = tx.Rollback()
+			err = errors.New(tx.Rollback())
 		} else {
-			err = errors.New("no transaction active")
+			err = errors.New(errors.NoTransactionActiveError)
 		}
 
 		this["transaction"] = nil
@@ -113,13 +115,13 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
-	if err == nil {
+	if errors.Nil(err) {
 		this := getThis(s)
 
 		if tx != nil {
-			err = tx.Commit()
+			err = errors.New(tx.Commit())
 		} else {
-			err = errors.New("no transaction active")
+			err = errors.New(errors.NoTransactionActiveError)
 		}
 
 		this["transaction"] = nil
@@ -138,7 +140,7 @@ func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	_, _, err := getDBClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -152,12 +154,12 @@ func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // handle contents to prevent re-using the connection.
 func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, tx, err := getDBClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
 	if tx != nil {
-		err = tx.Rollback()
+		err = errors.New(tx.Rollback())
 	}
 
 	this := getThis(s)
@@ -178,7 +180,7 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // entire result set as an array.
 func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	db, tx, err := getDBClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
@@ -188,25 +190,27 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	var rows *sql.Rows
 
+	var e2 error
+
 	query := util.GetString(args[0])
 	ui.Debug(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
 		ui.Debug(ui.DBLogger, "Query: %s", query)
 
-		rows, err = db.Query(query, args[1:]...)
+		rows, e2 = db.Query(query, args[1:]...)
 	} else {
 		ui.Debug(ui.DBLogger, "(Tx) Query: %s", query)
 
-		rows, err = tx.Query(query, args[1:]...)
+		rows, e2 = tx.Query(query, args[1:]...)
 	}
 
 	if rows != nil {
 		defer rows.Close()
 	}
 
-	if err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	if e2 != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
 	}
 
 	arrayResult := make([][]interface{}, 0)
@@ -223,8 +227,8 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			rowTemplate[i] = &rowValues[i]
 		}
 
-		if err := rows.Scan(rowTemplate...); err != nil {
-			return nil, err
+		if err := rows.Scan(rowTemplate...); !errors.Nil(err) {
+			return nil, errors.New(err)
 		}
 
 		if asStruct {
@@ -248,13 +252,13 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
-	if err := rows.Close(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	if err := rows.Close(); !errors.Nil(err) {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	if err := rows.Err(); !errors.Nil(err) {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -278,7 +282,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // for subsequent calls to fetch the data.
 func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	db, tx, err := getDBClient(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
@@ -288,18 +292,20 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	var rows *sql.Rows
 
+	var e2 error
+
 	if tx == nil {
 		ui.Debug(ui.DBLogger, "QueryRows: %s", query)
 
-		rows, err = db.Query(query, args[1:]...)
+		rows, e2 = db.Query(query, args[1:]...)
 	} else {
 		ui.Debug(ui.DBLogger, "(Tx) QueryRows: %s", query)
 
-		rows, err = tx.Query(query, args[1:]...)
+		rows, e2 = tx.Query(query, args[1:]...)
 	}
 
-	if err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	if e2 != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(e2)}}, errors.New(e2)
 	}
 
 	result := map[string]interface{}{}
@@ -339,13 +345,13 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	result := make([]interface{}, 0)
 
 	columns, err := rows.Columns()
-	if err == nil {
+	if errors.Nil(err) {
 		for _, name := range columns {
 			result = append(result, name)
 		}
 	}
 
-	return result, err
+	return result, errors.New(err)
 }
 
 func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
@@ -373,8 +379,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		rowTemplate[i] = &rowValues[i]
 	}
 
-	if err := rows.Scan(rowTemplate...); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+	if err := rows.Scan(rowTemplate...); !errors.Nil(err) {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
 	}
 
 	if asStruct {
@@ -416,7 +422,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		sqlResult, err = tx.Exec(query, args[1:]...)
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 

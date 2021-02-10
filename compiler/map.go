@@ -43,7 +43,7 @@ func (c *Compiler) Map() *errors.EgoError {
 			}
 
 			keyBC, err := c.Expression()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -52,7 +52,7 @@ func (c *Compiler) Map() *errors.EgoError {
 			}
 
 			valueBC, err := c.Expression()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 

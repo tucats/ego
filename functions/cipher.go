@@ -31,7 +31,7 @@ func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 // Encrypt implements the cipher.hash() function.
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	b, err := util.Encrypt(util.GetString(args[0]), util.GetString(args[1]))
-	if err != nil {
+	if !errors.Nil(err) {
 		return b, err
 	}
 
@@ -41,7 +41,7 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // Decrypt implements the cipher.hash() function.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	b, err := hex.DecodeString(util.GetString(args[0]))
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -59,7 +59,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Take the token value, and de-hexify it.
 	b, err := hex.DecodeString(util.GetString(args[0]))
-	if err != nil {
+	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
 		} else {
@@ -71,11 +71,11 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	key := getTokenKey()
 
 	j, err := util.Decrypt(string(b), key)
-	if err == nil && len(j) == 0 {
+	if errors.Nil(err) && len(j) == 0 {
 		err = errors.New(errors.InvalidTokenEncryption).In("validate()")
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
 		} else {
@@ -86,7 +86,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	var t = Token{}
 
 	err = json.Unmarshal([]byte(j), &t)
-	if err != nil {
+	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
 		} else {
@@ -113,7 +113,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	// Take the token value, and de-hexify it.
 	b, err := hex.DecodeString(util.GetString(args[0]))
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -122,7 +122,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	key := getTokenKey()
 
 	j, err := util.Decrypt(string(b), key)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -133,7 +133,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	var t = Token{}
 
 	err = json.Unmarshal([]byte(j), &t)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -173,7 +173,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	// that created it.
 	if session, ok := s.Get("_session"); ok {
 		t.AuthID, err = uuid.Parse(util.GetString(session))
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, errors.New(err)
 		}
 	}
@@ -186,7 +186,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	}
 
 	duration, err := time.ParseDuration(interval)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -194,13 +194,13 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	// Make the token into a json string
 	b, err := json.Marshal(t)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
 	// Encrypt the string value
 	encryptedString, err := util.Encrypt(string(b), getTokenKey())
-	if err != nil {
+	if !errors.Nil(err) {
 		return b, errors.New(err)
 	}
 

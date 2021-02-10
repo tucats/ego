@@ -53,7 +53,7 @@ func (c *Compiler) Make() *errors.EgoError {
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Call, 2)
 
-	if err == nil && !c.t.IsNext(")") {
+	if errors.Nil(err) && !c.t.IsNext(")") {
 		err = c.NewError(errors.MissingParenthesisError)
 	}
 

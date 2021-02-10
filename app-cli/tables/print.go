@@ -46,7 +46,7 @@ func (t *Table) Print(format string) *errors.EgoError {
 		fmt.Printf("%s\n", string(b))
 
 	default:
-		return NewTableErr(InvalidOutputFormatError, format)
+		return errors.New(errors.InvalidOutputFormatError).WithContext(format)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func (t *Table) FormatJSON() string {
 			}
 
 			v, err := e.Eval(symbols)
-			if err != nil {
+			if !errors.Nil(err) {
 				buffer.WriteString(fmt.Sprintf("*** where clause error: %s", err.Error()))
 
 				break
@@ -214,7 +214,7 @@ func (t *Table) FormatText() []string {
 			}
 
 			v, err := e.Eval(symbols)
-			if err != nil {
+			if !errors.Nil(err) {
 				output = append(output, fmt.Sprintf("*** where clause error: %s", err.Error()))
 
 				break

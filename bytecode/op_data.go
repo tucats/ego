@@ -29,7 +29,7 @@ import (
 // metadata indicator that it is readonly.
 func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -41,11 +41,11 @@ func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err = c.checkType(varname, v)
-	if err == nil {
+	if errors.Nil(err) {
 		err = c.Set(varname, v)
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		return c.NewError(err)
 	}
 
@@ -68,7 +68,7 @@ func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 			err = c.NewError(errors.UnknownIdentifierError).WithContext(x)
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 	}
@@ -127,7 +127,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 // StoreGlobalImpl instruction processor.
 func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -135,7 +135,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 	varname := util.GetString(i)
 
 	err = c.SetGlobal(varname, v)
-	if err != nil {
+	if !errors.Nil(err) {
 		return c.NewError(err)
 	}
 
@@ -157,7 +157,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 // StoreAlwaysImpl instruction processor.
 func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -165,7 +165,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	varname := util.GetString(i)
 
 	err = c.SetAlways(varname, v)
-	if err != nil {
+	if !errors.Nil(err) {
 		return c.NewError(err)
 	}
 

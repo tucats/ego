@@ -113,7 +113,7 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 // GremlinQuery executes a string query against an open client.
 func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getGremlinClient(symbols)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -146,13 +146,13 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 		m = args[1]
 	} else {
 		m, err = GremlinMap(symbols, args)
-		if err != nil {
+		if !errors.Nil(err) {
 			return m, err
 		}
 	}
 
 	client, err := getGremlinClient(symbols)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -164,7 +164,7 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 	}
 
 	r, err := gremlinResult(string(res[0]))
-	if err != nil {
+	if !errors.Nil(err) {
 		return r, err
 	}
 
@@ -181,7 +181,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	// Get a normalized result set from the query.
 	resultSet, err := GremlinQueryMap(symbols, args)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -409,7 +409,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	case string:
 		// We were given a query to execute
 		r, err = GremlinQuery(symbols, args)
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 
@@ -471,7 +471,7 @@ func gremlinResult(str string) (interface{}, *errors.EgoError) {
 	var r interface{}
 
 	err := json.Unmarshal([]byte(str), &r)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -521,7 +521,7 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 
 		case "g:List":
 			r, err := gremlinResultArray(v)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, err
 			}
 
@@ -576,7 +576,7 @@ func gremlinResultArray(i interface{}) (interface{}, *errors.EgoError) {
 
 	for _, element := range a {
 		v, err := gremlinResultValue(element)
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 
@@ -598,7 +598,7 @@ func gremlinResultMapList(i interface{}) (interface{}, *errors.EgoError) {
 		k := util.GetString(a[i])
 
 		v, err := gremlinResultValue(a[i+1])
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 
@@ -620,7 +620,7 @@ func gremlinResultMap(i interface{}) (interface{}, *errors.EgoError) {
 
 	for k, v := range a {
 		r[k], err = gremlinResultValue(v)
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 	}

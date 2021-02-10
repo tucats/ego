@@ -57,7 +57,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	comp.LowercaseIdentifiers = persistence.GetBool(defs.CaseNormalizedSetting)
 
 	b, err := comp.Compile("code", t)
-	if err != nil {
+	if !errors.Nil(err) {
 		w.WriteHeader(400)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
@@ -65,7 +65,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		comp.AddBuiltins("")
 
 		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
-		if err != nil {
+		if !errors.Nil(err) {
 			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
 
@@ -80,7 +80,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 			err = nil
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			w.WriteHeader(400)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {

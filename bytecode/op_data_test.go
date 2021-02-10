@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -117,9 +118,9 @@ func TestStructImpl(t *testing.T) {
 			_ = ctx.symbols.SetAlways("usertype", model)
 
 			err := StructImpl(ctx, tt.arg)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("StructImpl() error = %v, wantErr %v", err, tt.wantErr)
-			} else if err == nil {
+			} else if errors.Nil(err) {
 				got, _ := ctx.Pop()
 				if !reflect.DeepEqual(got, tt.want) {
 					t.Errorf("StructImpl() got = %v, want %v", got, tt.want)

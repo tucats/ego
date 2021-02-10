@@ -22,7 +22,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	content, err := ioutil.ReadFile(name)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
@@ -80,7 +80,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	fname := util.GetString(args[0])
 	err := os.Remove(fname)
 
-	return err == nil, errors.New(err)
+	return errors.Nil(err), errors.New(err)
 }
 
 // Expand expands a list of file or path names into a list of files.
@@ -110,16 +110,16 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 
 	// Can we read this as a directory?
 	fi, err := ioutil.ReadDir(path)
-	if err != nil {
+	if !errors.Nil(err) {
 		fn := path
 
 		_, err := ioutil.ReadFile(fn)
-		if err != nil {
+		if !errors.Nil(err) {
 			fn = path + ext
 			_, err = ioutil.ReadFile(fn)
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			return names, errors.New(err)
 		}
 
@@ -138,7 +138,7 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 		fn := filepath.Join(path, f.Name())
 
 		list, err := ExpandPath(fn, ext)
-		if err != nil {
+		if !errors.Nil(err) {
 			return names, err
 		}
 
@@ -154,7 +154,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	result := []interface{}{}
 
 	files, err := ioutil.ReadDir(path)
-	if err != nil {
+	if !errors.Nil(err) {
 		return result, errors.New(err).In("ReadDir()")
 	}
 

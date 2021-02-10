@@ -31,13 +31,13 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
 		functionName, thisName, className, byValue, err = c.parseFunctionName()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 	}
 	// The function name must be followed by a parameter declaration
 	parameters, hasVarArgs, err := c.parseParameterDeclaration()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -118,7 +118,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 			wasVoid = true
 		} else {
 			k, err := c.typeDeclaration()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -156,7 +156,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	cx.coercions = coercions
 
 	err = cx.Statement()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -230,18 +230,18 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 			err = c.NewError(errors.InvalidSymbolError, thisName)
 		}
 
-		if err != nil && !tokenizer.IsSymbol(typeName) {
+		if !errors.Nil(err) && !tokenizer.IsSymbol(typeName) {
 			err = c.NewError(errors.InvalidSymbolError, typeName)
 		}
 
 		// Must end with a closing paren for the receiver declaration.
-		if err != nil || !c.t.IsNext(")") {
+		if !errors.Nil(err) || !c.t.IsNext(")") {
 			err = c.NewError(errors.MissingParenthesisError)
 		}
 
 		// Last, but not least, the function name follows the optional
 		// receiver name.
-		if err == nil {
+		if errors.Nil(err) {
 			functionName = c.t.Next()
 		}
 	}
@@ -287,7 +287,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// There must be a type declaration that follows. This returns a model which
 			// is the "zero value" for the declared type.
 			model, err := c.typeDeclaration()
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, false, c.Error()
 			}
 

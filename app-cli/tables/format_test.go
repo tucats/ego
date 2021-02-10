@@ -3,6 +3,8 @@ package tables
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/errors"
 )
 
 func TestTable_SetAlignment(t *testing.T) {
@@ -127,10 +129,10 @@ func TestTable_SetAlignment(t *testing.T) {
 				indent:         tt.fields.indent,
 			}
 			err := tb.SetAlignment(tt.args.column, tt.args.alignment)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Table.SetAlignment() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err == nil && !reflect.DeepEqual(tb.alignment, tt.wantAlignment) {
+			if errors.Nil(err) && !reflect.DeepEqual(tb.alignment, tt.wantAlignment) {
 				t.Errorf("Table.SetAlignment() alignment = %v, want %v", tb.alignment, tt.wantAlignment)
 			}
 		})
@@ -206,7 +208,7 @@ func TestTable_SetSpacing(t *testing.T) {
 				indent:         tt.fields.indent,
 			}
 			err := tb.SetSpacing(tt.args.s)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Table.SetSpacing() error = %v, wantErr %v", err, tt.wantErr)
 			} else if tb.spacing != tt.wantSpacing {
 				t.Errorf("Table.SetSpacing() error, incorrect number of spaces")
@@ -284,7 +286,7 @@ func TestTable_SetIndent(t *testing.T) {
 				indent:         tt.fields.indent,
 			}
 			err := tb.SetIndent(tt.args.s)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Table.SetSpacing() error = %v, wantErr %v", err, tt.wantErr)
 			} else if tb.indent != tt.wantSpacing {
 				t.Errorf("Table.SetSpacing() error, incorrect number of spaces")

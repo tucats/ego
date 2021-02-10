@@ -263,7 +263,7 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	b, err := TestEqual(s, args)
-	if err == nil {
+	if errors.Nil(err) {
 		return !util.GetBool(b), nil
 	}
 
@@ -280,7 +280,7 @@ func (c *Compiler) Assert() *errors.EgoError {
 	argCount := 1
 
 	code, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -297,7 +297,7 @@ func (c *Compiler) Fail() *errors.EgoError {
 	next := c.t.Peek(1)
 	if next != "@" && next != ";" && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

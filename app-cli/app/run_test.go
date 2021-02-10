@@ -193,7 +193,7 @@ func TestRun(t *testing.T) {
 			app.SetCopyright("(c) 2020 Tom Cole. All rights reserved.")
 			app.SetVersion(1, 1, 0)
 
-			if err := app.Run(tt.args.grammar, tt.args.args); (err != nil) != tt.wantErr {
+			if err := app.Run(tt.args.grammar, tt.args.args); (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

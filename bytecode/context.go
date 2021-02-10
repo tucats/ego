@@ -347,7 +347,7 @@ func (c *Context) GetConfig(name string) interface{} {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
-	var err error
+	var err *errors.EgoError
 
 	if !c.Static || value == nil {
 		return err

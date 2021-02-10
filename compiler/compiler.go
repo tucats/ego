@@ -131,7 +131,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 
 	for !c.t.AtEnd() {
 		err := c.Statement()
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 	}
@@ -314,7 +314,7 @@ func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 		text := "import " + packageName
 
 		_, err := c.CompileString(packageName, text)
-		if err == nil {
+		if errors.Nil(err) {
 			firstError = err
 		}
 	}

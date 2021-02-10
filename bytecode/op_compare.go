@@ -12,12 +12,12 @@ import (
 func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -81,12 +81,12 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -140,12 +140,12 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -188,12 +188,12 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -236,12 +236,12 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -286,12 +286,12 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order.
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

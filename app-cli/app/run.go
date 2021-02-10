@@ -90,7 +90,7 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 	err := context.Parse()
 
 	// If no errors, then write out an updated profile as needed.
-	if err == nil {
+	if errors.Nil(err) {
 		err = persistence.Save()
 	}
 

@@ -8,10 +8,10 @@ import (
 )
 
 // reference parses a structure or array reference.
-func (c *Compiler) reference() *EgoError {
+func (c *Compiler) reference() *errors.EgoError {
 	// Parse the function call or exprssion atom
 	err := c.expressionAtom()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -33,7 +33,7 @@ func (c *Compiler) reference() *EgoError {
 				c.b.Emit(bc.Push, "__type")
 
 				err := c.expressionAtom()
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 
@@ -51,7 +51,7 @@ func (c *Compiler) reference() *EgoError {
 			c.t.Advance(1)
 
 			err := c.functionCall()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -69,14 +69,14 @@ func (c *Compiler) reference() *EgoError {
 			c.t.Advance(1)
 
 			err := c.conditional()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
 			// is it a slice instead of an index?
 			if c.t.IsNext(":") {
 				err := c.conditional()
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 

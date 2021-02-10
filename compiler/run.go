@@ -19,7 +19,7 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.Eg
 	c.ExtensionsEnabled(true)
 
 	bc, err := c.Compile(name, t)
-	if err == nil {
+	if errors.Nil(err) {
 		err = bytecode.NewContext(s, bc).Run()
 	}
 

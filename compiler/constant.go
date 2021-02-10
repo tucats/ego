@@ -8,7 +8,7 @@ import (
 )
 
 // Constant compiles a constant block.
-func (c *Compiler) Constant() *EgoError {
+func (c *Compiler) Constant() *errors.EgoError {
 	terminator := ""
 
 	if c.t.IsNext("(") {
@@ -28,7 +28,7 @@ func (c *Compiler) Constant() *EgoError {
 		}
 
 		vx, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

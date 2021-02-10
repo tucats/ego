@@ -33,7 +33,7 @@ func PanicImpl(c *Context, i interface{}) *errors.EgoError {
 	c.running = !util.GetBool(i)
 
 	strValue, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -68,7 +68,7 @@ func AtLineImpl(c *Context, i interface{}) *errors.EgoError {
 func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func BranchImpl(c *Context, i interface{}) *errors.EgoError {
 func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -153,7 +153,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	fName, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -172,7 +172,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 // etiher a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
 func CallImpl(c *Context, i interface{}) *errors.EgoError {
-	var err error
+	var err *errors.EgoError
 
 	var funcPointer interface{}
 
@@ -189,7 +189,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -198,7 +198,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Function value is last item on stack
 	funcPointer, err = c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -232,7 +232,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 			c.this = nil
 		}
 
-	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
+	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
 		// First, can we check the argument count on behalf of the caller?
 		df := functions.FindFunction(af)
 		fname := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
@@ -297,7 +297,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
-		if err != nil {
+		if !errors.Nil(err) {
 			err = c.NewError(err).In(functions.FindName(af))
 		}
 
@@ -305,7 +305,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidFunctionCallError).WithContext(af)
 	}
 
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -327,7 +327,7 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// If FP is zero, there are no frames; this is a return from the main source
 	// of the program or service.
-	if c.fp > 0 && err == nil {
+	if c.fp > 0 && errors.Nil(err) {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
 		err = c.PopFrame()
@@ -335,7 +335,7 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 		c.running = false
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // ArgCheckImpl instruction processor verifies that there are enough items
@@ -391,7 +391,7 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	// the stack value accordingly.
 	if thisName, ok := c.this.(string); ok && thisName != "" {
 		this, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

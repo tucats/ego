@@ -60,7 +60,7 @@ func Load(application string, name string) *errors.EgoError {
 	ProfileFile = application + ".json"
 
 	home, err := os.UserHomeDir()
-	if err != nil {
+	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
@@ -73,7 +73,7 @@ func Load(application string, name string) *errors.EgoError {
 	path.WriteString(ProfileFile)
 
 	configFile, err := os.Open(path.String())
-	if err != nil {
+	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
@@ -84,7 +84,7 @@ func Load(application string, name string) *errors.EgoError {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into the config map which we defined above
 	err = json.Unmarshal(byteValue, &Configurations)
-	if err == nil {
+	if errors.Nil(err) {
 		if name == "" {
 			name = ProfileName
 		}
@@ -115,7 +115,7 @@ func Save() *errors.EgoError {
 	var path strings.Builder
 
 	home, err := os.UserHomeDir()
-	if err != nil {
+	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
@@ -272,7 +272,7 @@ func DeleteProfile(key string) *errors.EgoError {
 		ProfileDirty = true
 
 		err := Save()
-		if err == nil {
+		if errors.Nil(err) {
 			ui.Debug(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
 		}
 

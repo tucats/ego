@@ -89,7 +89,7 @@ func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
 	}
 
 	_, found, err := m.Get(key)
-	if err == nil {
+	if errors.Nil(err) {
 		delete(m.data, key)
 	}
 

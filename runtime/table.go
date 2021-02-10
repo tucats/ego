@@ -62,7 +62,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Create the new table object, and set the alignment for each column heading now.
 	t, err := tables.New(headings)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // being held by the table.
 func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, err := getTable(s)
-	if err != nil {
+	if !errors.Nil(err) {
 		return nil, err
 	}
 
@@ -116,7 +116,7 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // were defined when the table was created.
 func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	t, err := getTable(s)
-	if err == nil {
+	if errors.Nil(err) {
 		if len(args) > 0 {
 			if m, ok := args[0].(map[string]interface{}); ok {
 				if len(args) > 1 {
@@ -157,7 +157,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // to reverse the sort order from it's default value of ascending to descending.
 func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	t, err := getTable(s)
-	if err == nil {
+	if errors.Nil(err) {
 		for i := len(args) - 1; i >= 0; i = i - 1 {
 			v := args[i]
 			ascending := true
@@ -192,7 +192,7 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	}
 
 	t, err := getTable(s)
-	if err == nil {
+	if errors.Nil(err) {
 		headings := true
 		lines := true
 
@@ -221,7 +221,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	t, err := getTable(s)
-	if err == nil {
+	if errors.Nil(err) {
 		column := 0
 
 		if columnName, ok := args[0].(string); ok {
@@ -271,7 +271,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	t, err := getTable(s)
-	if err == nil {
+	if errors.Nil(err) {
 		err = t.Print(fmt)
 	}
 

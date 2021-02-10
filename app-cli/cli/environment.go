@@ -50,7 +50,7 @@ func (c *Context) ResolveEnvironmentVariables() *errors.EgoError {
 	}
 
 	// If there is a parent grammar, search that as well.
-	if err == nil && c.Parent != nil {
+	if errors.Nil(err) && c.Parent != nil {
 		err = c.Parent.ResolveEnvironmentVariables()
 	}
 

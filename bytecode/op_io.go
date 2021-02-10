@@ -28,7 +28,7 @@ func PrintImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n = n + 1 {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -56,7 +56,7 @@ func LogImpl(c *Context, i interface{}) *errors.EgoError {
 	logger := util.GetString(i)
 
 	msg, err := c.Pop()
-	if err == nil {
+	if errors.Nil(err) {
 		ui.Debug(logger, "%v", msg)
 	}
 
@@ -95,9 +95,9 @@ func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	t, err := c.Pop()
-	if err == nil {
-		t, err = template.New(name).Parse(util.GetString(t))
-		if err == nil {
+	if errors.Nil(err) {
+		t, e2 := template.New(name).Parse(util.GetString(t))
+		if e2 == nil {
 			err = c.Push(t)
 		}
 	}
@@ -120,11 +120,11 @@ func FromFileImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	b, err := ioutil.ReadFile(util.GetString(i))
-	if err == nil {
+	if errors.Nil(err) {
 		c.tokenizer = tokenizer.New(string(b))
 	}
 
-	return err
+	return errors.New(err)
 }
 
 func TimerImpl(c *Context, i interface{}) *errors.EgoError {

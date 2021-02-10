@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
@@ -311,10 +312,10 @@ func TestByteCode_Run(t *testing.T) {
 			functions.AddBuiltins(c.symbols)
 
 			err := c.Run()
-			if err != nil && strings.HasSuffix(err.Error(), "stop") {
+			if !errors.Nil(err) && strings.HasSuffix(err.Error(), "stop") {
 				err = nil
 			}
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("ByteCode.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if c.running {
@@ -322,7 +323,7 @@ func TestByteCode_Run(t *testing.T) {
 			}
 			if tt.fields.result != nil {
 				v, err := c.Pop()
-				if err != nil && !tt.wantErr {
+				if !errors.Nil(err) && !tt.wantErr {
 					t.Error("ByteCode Run() unexpected " + err.Error())
 				}
 				if !reflect.DeepEqual(tt.fields.result, v) {

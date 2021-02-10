@@ -39,7 +39,7 @@ func New(headings []string) (*Table, *errors.EgoError) {
 	t := &Table{}
 
 	if len(headings) == 0 {
-		return t, NewTableErr(EmptyColumnListError)
+		return t, errors.New(errors.EmptyColumnListError)
 	}
 
 	t.rowLimit = -1

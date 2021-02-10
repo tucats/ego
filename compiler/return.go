@@ -21,7 +21,7 @@ func (c *Compiler) Return() *errors.EgoError {
 
 	for !c.StatementEnd() {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -78,7 +78,7 @@ func (c *Compiler) Exit() *errors.EgoError {
 
 	if !c.StatementEnd() {
 		bc, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

@@ -70,7 +70,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 			}
 
 			err := c.lvalueTerm(bc)
-			if err != nil {
+			if !errors.Nil(err) {
 				return nil, err
 			}
 		}
@@ -122,7 +122,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 // an assignment. This information is used later to store the
 // data in the named object.
 func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
-	if bc, err := lvalueList(c); err == nil {
+	if bc, err := lvalueList(c); errors.Nil(err) {
 		return bc, nil
 	}
 
@@ -145,7 +145,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 		}
 
 		err := c.lvalueTerm(bc)
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil, err
 		}
 	}
@@ -194,7 +194,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 		c.t.Advance(1)
 
 		ix, err := c.Expression()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

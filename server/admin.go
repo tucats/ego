@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -68,7 +69,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err == nil {
+	if errors.Nil(err) {
 		s := symbols.NewSymbolTable(r.URL.Path)
 
 		_ = s.SetAlways("_superuser", true)
@@ -105,7 +106,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 
-			if err == nil {
+			if errors.Nil(err) {
 				w.WriteHeader(http.StatusOK)
 
 				msg, _ := json.Marshal(response)
@@ -143,7 +144,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
-			if err == nil && !util.GetBool(v) {
+			if errors.Nil(err) && !util.GetBool(v) {
 				w.WriteHeader(http.StatusNotFound)
 
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
@@ -155,7 +156,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if err == nil {
+			if errors.Nil(err) {
 				b, _ := json.Marshal(response)
 
 				w.WriteHeader(http.StatusOK)
@@ -260,11 +261,11 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = buf.ReadFrom(r.Body)
 
 		err := json.Unmarshal(buf.Bytes(), &result)
-		if err == nil {
+		if errors.Nil(err) {
 			MaxCachedEntries = result.Limit
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			result.Status = 400
 			result.Message = err.Error()
 		} else {

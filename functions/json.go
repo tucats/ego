@@ -64,7 +64,7 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		}
 
 		jsonBuffer, err := json.Marshal(v)
-		if err != nil {
+		if !errors.Nil(err) {
 			return "", errors.New(err)
 		}
 
@@ -94,8 +94,8 @@ func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *
 		}
 
 		jsonBuffer, err := json.MarshalIndent(v, "", "  ")
-		if err != nil {
-			return "", err
+		if !errors.Nil(err) {
+			return "", errors.New(err)
 		}
 
 		b.WriteString(string(jsonBuffer))

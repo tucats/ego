@@ -123,7 +123,7 @@ func (c *Compiler) Import() *errors.EgoError {
 
 		// Read the imported object as a file path
 		text, err := c.ReadFile(fileName)
-		if err != nil {
+		if !errors.Nil(err) {
 			// If it wasn't found but we did add some builtins, good enough.
 			// Skip past the filename that was rejected by c.Readfile()...
 			if builtinsAdded {
@@ -148,7 +148,7 @@ func (c *Compiler) Import() *errors.EgoError {
 
 		for !c.t.AtEnd() {
 			err := c.Statement()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 		}
@@ -179,7 +179,7 @@ func (c *Compiler) Import() *errors.EgoError {
 // ReadFile reads the text from a file into a string.
 func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 	s, err := c.ReadDirectory(name)
-	if err == nil {
+	if errors.Nil(err) {
 		return s, nil
 	}
 
@@ -191,7 +191,7 @@ func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 	content, e2 := ioutil.ReadFile(fn)
 	if e2 != nil {
 		content, e2 = ioutil.ReadFile(name + ".ego")
-		if err != nil {
+		if !errors.Nil(err) {
 			r := os.Getenv("EGO_PATH")
 			fn = filepath.Join(r, "lib", name+".ego")
 
@@ -233,7 +233,7 @@ func (c *Compiler) ReadDirectory(name string) (string, *errors.EgoError) {
 	}
 
 	fi, err := ioutil.ReadDir(dirname)
-	if err != nil {
+	if !errors.Nil(err) {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Debug(ui.CompilerLogger, "+++ No such directory")
 		}
@@ -258,7 +258,7 @@ func (c *Compiler) ReadDirectory(name string) (string, *errors.EgoError) {
 			fname := filepath.Join(dirname, f.Name())
 
 			t, err := c.ReadFile(fname)
-			if err != nil {
+			if !errors.Nil(err) {
 				return "", err
 			}
 

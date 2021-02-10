@@ -162,7 +162,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 
 // FindFunction returns the function definition associated with the
 // provided function pointer, if one is found.
-func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) *FunctionDefinition {
+func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError)) *FunctionDefinition {
 	sf1 := reflect.ValueOf(f)
 
 	for _, d := range FunctionDictionary {
@@ -178,7 +178,7 @@ func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, erro
 }
 
 // FindName returns the name of a function from the dictionary if one is found.
-func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) string {
+func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError)) string {
 	sf1 := reflect.ValueOf(f)
 
 	for name, d := range FunctionDictionary {
@@ -206,16 +206,16 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	if !found {
-		return nil, errors.New("no such function: " + name)
+		return nil, errors.New(errors.InvalidFunctionName).WithContext(name)
 	}
 
 	if len(args) < fdef.Min || len(args) > fdef.Max {
-		return nil, errors.New("incorrect number of arguments")
+		return nil, errors.New(errors.Panic).WithContext("incorrect number of arguments")
 	}
 
-	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, error))
+	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError))
 	if !ok {
-		return nil, fmt.Errorf("unable to convert %#v to function pointer", fdef.F)
+		return nil, errors.New(errors.Panic).WithContext(fmt.Errorf("unable to convert %#v to function pointer", fdef.F))
 	}
 
 	return fn(s, args)

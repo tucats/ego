@@ -130,14 +130,14 @@ func ResponseImpl(c *Context, i interface{}) *errors.EgoError {
 	var output string
 
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	if isJSON {
 		b, err := json.Marshal(v)
-		if err != nil {
-			return err
+		if !errors.Nil(err) {
+			return errors.New(err)
 		}
 
 		output = string(b)

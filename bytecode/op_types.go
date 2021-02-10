@@ -12,7 +12,7 @@ import (
 // sets the static typing flag for the current context.
 func StaticTypingImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err == nil {
+	if errors.Nil(err) {
 		c.Static = util.GetBool(v)
 		err = c.symbols.SetAlways("__static_data_types", c.Static)
 	}
@@ -22,7 +22,7 @@ func StaticTypingImpl(c *Context, i interface{}) *errors.EgoError {
 
 func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err == nil {
+	if errors.Nil(err) {
 		// If we're doing strict type checking...
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
@@ -107,7 +107,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	t := util.GetInt(i)
 
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

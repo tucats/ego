@@ -32,7 +32,7 @@ func DropToMarkerImpl(c *Context, i interface{}) *errors.EgoError {
 	found := false
 	for !found {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			break
 		}
 
@@ -78,7 +78,7 @@ func DropImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n = n + 1 {
 		_, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return nil
 		}
 	}
@@ -89,7 +89,7 @@ func DropImpl(c *Context, i interface{}) *errors.EgoError {
 // DupImpl instruction processor duplicates the top stack item.
 func DupImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -104,12 +104,12 @@ func DupImpl(c *Context, i interface{}) *errors.EgoError {
 // two items on the stack.
 func SwapImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -124,7 +124,7 @@ func SwapImpl(c *Context, i interface{}) *errors.EgoError {
 // entire deep copy of the object.
 func CopyImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 

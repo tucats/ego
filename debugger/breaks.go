@@ -42,9 +42,9 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			ec := compiler.New().WithTokens(tokenizer.New(text))
 
 			bc, err := ec.Expression()
-			if err == nil {
+			if errors.Nil(err) {
 				err = breakWhen(bc, text)
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 			}
@@ -73,7 +73,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			err = errors.New(errors.InvalidBreakClauseError)
 		}
 
-		if err != nil {
+		if !errors.Nil(err) {
 			break
 		}
 	}
@@ -153,7 +153,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			ctx.SetDebug(false)
 
 			err := ctx.Run()
-			if err != nil {
+			if !errors.Nil(err) {
 				if err == errors.StepOver {
 					err = nil
 
@@ -166,8 +166,8 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			}
 
 			//fmt.Printf("Break expression status = %v\n", err)
-			if err == nil {
-				if v, err := ctx.Pop(); err == nil {
+			if errors.Nil(err) {
+				if v, err := ctx.Pop(); errors.Nil(err) {
 					//fmt.Printf("Break expression result = %v\n", v)
 					prompt = util.GetBool(v)
 					if prompt {

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -54,7 +55,7 @@ func TestExpression_Parse(t *testing.T) {
 			e.t.Tokens = tt.fields.Tokens
 			e.t.TokenP = tt.fields.TokenP
 
-			if err := e.Parse(tt.fields.Source); (err != nil) != tt.wantErr {
+			if err := e.Parse(tt.fields.Source); (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Expression.Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(e.t.Tokens, tt.wantTokens) {

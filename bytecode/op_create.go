@@ -14,12 +14,12 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	parms := util.GetInt(i)
 	if parms == 2 {
 		initialValue, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
 		sv, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -42,7 +42,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	// No initializer, so get the size and make it
 	// a non-negative integer.
 	sv, err := c.Pop()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -76,7 +76,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -110,14 +110,14 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n++ {
 		nx, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
 		name := util.GetString(nx)
 
 		value, err := c.Pop()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

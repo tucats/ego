@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/errors"
 )
 
 func TestCompiler_ReadDirectory(t *testing.T) {
@@ -35,7 +36,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Compiler{}
 			got, err := c.ReadDirectory(tt.args)
-			if (err != nil) != tt.wantErr {
+			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Compiler.ReadDirectory() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

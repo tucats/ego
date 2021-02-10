@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/app"
-	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 // BuildVersion is the incremental build version that is
@@ -33,11 +34,11 @@ func main() {
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
-	if err != nil {
+	if !errors.Nil(err) {
 		fmt.Printf("Error: %v\n", err.Error())
 
-		if e2, ok := err.(cli.ExitError); ok {
-			os.Exit(e2.ExitStatus)
+		if value := err.GetContext(); value != nil {
+			os.Exit(util.GetInt(value))
 		}
 
 		os.Exit(1)

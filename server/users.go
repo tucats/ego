@@ -50,21 +50,21 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	if userDatabaseFile != "" {
 		b, err := ioutil.ReadFile(userDatabaseFile)
-		if err == nil {
+		if errors.Nil(err) {
 			if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
 				r, err := util.Decrypt(string(b), key)
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 
 				b = []byte(r)
 			}
 
-			if err == nil {
+			if errors.Nil(err) {
 				err = json.Unmarshal(b, &userDatabase)
 			}
 
-			if err != nil {
+			if !errors.Nil(err) {
 				return errors.New(err)
 			}
 
@@ -377,13 +377,13 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func updateUserDatabase() *errors.EgoError {
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(userDatabase, "", "   ")
-	if err != nil {
+	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
 	if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
 		r, err := util.Encrypt(string(b), key)
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 
@@ -401,7 +401,7 @@ func updateUserDatabase() *errors.EgoError {
 // the various ways the token was considered invalid.
 func validateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
-	if err != nil {
+	if !errors.Nil(err) {
 		ui.Debug(ui.ServerLogger, "Token validation error: "+err.Error())
 	}
 

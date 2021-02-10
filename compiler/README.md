@@ -27,14 +27,14 @@ Go program.
     src := "..."
 
     bc, err := compiler.CompileString(src)
-    if err != nil {
+    if !errors.Nil(err) {
         // Handle compile-time errors
     }
 
     syms := symbols.NewSymbolTable("test program")
     ctx := bytecode.NewContext(syms, bc)
     err := ctx.Run()
-    if err != nil {
+    if !errors.Nil(err) {
         // Handle run-time errors
     }
 

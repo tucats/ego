@@ -22,7 +22,7 @@ func (c *Compiler) Go() *errors.EgoError {
 
 	for c.t.Peek(1) != ")" {
 		err := c.conditional()
-		if err != nil {
+		if !errors.Nil(err) {
 			return err
 		}
 

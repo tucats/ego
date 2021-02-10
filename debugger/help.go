@@ -32,7 +32,7 @@ func Help() *errors.EgoError {
 		err = table.AddRow(helpItem)
 	}
 
-	if err == nil {
+	if errors.Nil(err) {
 		fmt.Println("Commands:")
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(3)

@@ -15,7 +15,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 
 	// Parse the expression to test
 	tx, err := c.Expression()
-	if err != nil {
+	if !errors.Nil(err) {
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "}" {
 				err := c.Statement()
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 			}
@@ -57,7 +57,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 			}
 
 			cx, err := c.Expression()
-			if err != nil {
+			if !errors.Nil(err) {
 				return err
 			}
 
@@ -75,7 +75,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "default" && c.t.Peek(1) != "}" {
 				err := c.Statement()
-				if err != nil {
+				if !errors.Nil(err) {
 					return err
 				}
 			}

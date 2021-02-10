@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,12 +12,13 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 )
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func AddUser(c *cli.Context) *EgoError {
+func AddUser(c *cli.Context) *errors.EgoError {
 	var err error
 
 	user, _ := c.GetString("username")
@@ -41,25 +41,25 @@ func AddUser(c *cli.Context) *EgoError {
 	resp := defs.UserReponse{}
 
 	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
-	if err == nil {
+	if errors.Nil(err) {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
 
 			b, err = json.Marshal(resp)
-			if err == nil {
+			if errors.Nil(err) {
 				fmt.Printf("%s\n", string(b))
 			}
 		}
 	}
 
-	return err
+	return errors.New(err)
 }
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func DeleteUser(c *cli.Context) *EgoError {
+func DeleteUser(c *cli.Context) *errors.EgoError {
 	var err error
 
 	user, _ := c.GetString("username")
@@ -71,23 +71,23 @@ func DeleteUser(c *cli.Context) *EgoError {
 	resp := defs.UserReponse{}
 
 	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
-	if err == nil {
+	if errors.Nil(err) {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
 
 			b, err = json.Marshal(resp)
-			if err == nil {
+			if errors.Nil(err) {
 				fmt.Printf("%s\n", string(b))
 			}
 		}
 	}
 
-	return err
+	return errors.New(err)
 }
 
-func ListUsers(c *cli.Context) *EgoError {
+func ListUsers(c *cli.Context) *errors.EgoError {
 	path := persistence.Get(defs.LogonServerSetting)
 	if path == "" {
 		path = "http://localhost:8080"
@@ -113,19 +113,19 @@ func ListUsers(c *cli.Context) *EgoError {
 
 	response, err = r.Get(url)
 	if response.StatusCode() == http.StatusNotFound && len(response.Body()) == 0 {
-		err = errors.New(defs.NotFound)
+		err = errors.NewMessage(defs.NotFound)
 	}
 
 	status := response.StatusCode()
 	if status == http.StatusForbidden {
-		err = errors.New(defs.NoPrivilegeForOperation)
+		err = errors.NewMessage(defs.NoPrivilegeForOperation)
 	}
 
-	if err == nil && status == http.StatusOK {
+	if errors.Nil(err) && status == http.StatusOK {
 		body := string(response.Body())
 
 		err = json.Unmarshal([]byte(body), &ud)
-		if err == nil {
+		if errors.Nil(err) {
 			switch ui.OutputFormat {
 			case ui.TextFormat:
 				t, _ := tables.New([]string{"User", "ID", "Permissions"})
@@ -161,5 +161,5 @@ func ListUsers(c *cli.Context) *EgoError {
 		}
 	}
 
-	return err
+	return errors.New(err)
 }
