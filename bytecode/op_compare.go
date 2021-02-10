@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -158,7 +159,7 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -174,7 +175,7 @@ func GreaterThanImpl(c *Context, i interface{}) error {
 			r = v1.(string) > v2.(string)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 
@@ -206,7 +207,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -222,7 +223,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) error {
 			r = v1.(string) >= v2.(string)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 
@@ -256,7 +257,7 @@ func LessThanImpl(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -272,7 +273,7 @@ func LessThanImpl(c *Context, i interface{}) error {
 			r = v1.(string) < v2.(string)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 
@@ -304,7 +305,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -319,7 +320,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) error {
 			r = v1.(string) <= v2.(string)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -29,11 +30,11 @@ func RunFrom(c *bytecode.Context, pc int) error {
 
 	for err == nil {
 		err = c.Resume()
-		if err != nil && err.Error() == SignalDebugger.Error() {
+		if err == errors.SignalDebugger {
 			err = Debugger(c)
 		}
 
-		if err != nil && err.Error() == Stop.Error() {
+		if err == errors.Stop {
 			return nil
 		}
 	}
@@ -121,7 +122,7 @@ func Debugger(c *bytecode.Context) error {
 				t2 := tokenizer.New(text)
 
 				err = compiler.Run("debugger", s, t2)
-				if err != nil && err.Error() == Stop.Error() {
+				if err == errors.Stop {
 					err = nil
 				}
 
@@ -129,19 +130,19 @@ func Debugger(c *bytecode.Context) error {
 				err = Break(c, tokens)
 
 			case "exit":
-				return Stop
+				return errors.Stop
 
 			default:
 				err = fmt.Errorf("unrecognized command: %s", t)
 			}
 
-			if err != nil && err.Error() != Stop.Error() && err.Error() != StepOver.Error() {
+			if err != nil && err != errors.Stop && err != errors.StepOver {
 				fmt.Printf("Debugger error, %v\n", err)
 
 				err = nil
 			}
 
-			if err != nil && err.Error() == Stop.Error() {
+			if err == errors.Stop {
 				err = nil
 				prompt = false
 			}

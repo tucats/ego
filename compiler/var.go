@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -16,7 +17,7 @@ func (c *Compiler) Var() error {
 		if !tokenizer.IsSymbol(name) {
 			c.t.Advance(-1)
 
-			return c.NewError(InvalidSymbolError, name)
+			return c.NewError(errors.InvalidSymbolError, name)
 		}
 
 		// See if it's a reserved word.
@@ -27,7 +28,7 @@ func (c *Compiler) Var() error {
 				break
 			}
 
-			return c.NewError(InvalidSymbolError, name)
+			return c.NewError(errors.InvalidSymbolError, name)
 		}
 
 		name = c.Normalize(name)

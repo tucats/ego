@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -102,7 +103,7 @@ func RangeInitImpl(c *Context, i interface{}) error {
 				// No further init required
 
 			default:
-				err = c.NewError(InvalidTypeError)
+				err = c.NewError(errors.InvalidTypeError)
 			}
 
 			r.index = 0

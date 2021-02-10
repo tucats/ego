@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -45,7 +46,7 @@ func StoreImpl(c *Context, i interface{}) error {
 	}
 
 	if err != nil {
-		return c.NewError(err.Error())
+		return c.NewError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -87,7 +88,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 		if sourceChan {
 			err = c.Create(varname)
 		} else {
-			err = c.NewError(UnknownIdentifierError, x)
+			err = c.NewError(errors.UnknownIdentifierError).WithContext(x)
 		}
 
 		if err != nil {
@@ -101,7 +102,7 @@ func StoreChanImpl(c *Context, i interface{}) error {
 	}
 
 	if !sourceChan && !destChan {
-		return c.NewError(InvalidChannel)
+		return c.NewError(errors.InvalidChannelError)
 	}
 
 	var datum interface{}
@@ -135,7 +136,7 @@ func StoreGlobalImpl(c *Context, i interface{}) error {
 
 	err = c.SetGlobal(varname, v)
 	if err != nil {
-		return c.NewError(err.Error())
+		return c.NewError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -165,7 +166,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 
 	err = c.SetAlways(varname, v)
 	if err != nil {
-		return c.NewError(err.Error())
+		return c.NewError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -187,12 +188,12 @@ func StoreAlwaysImpl(c *Context, i interface{}) error {
 func LoadImpl(c *Context, i interface{}) error {
 	name := util.GetString(i)
 	if len(name) == 0 {
-		return c.NewError(InvalidIdentifierError, name)
+		return c.NewError(errors.InvalidIdentifierError).WithContext(name)
 	}
 
 	v, found := c.Get(util.GetString(i))
 	if !found {
-		return c.NewError(UnknownIdentifierError, name)
+		return c.NewError(errors.UnknownIdentifierError).WithContext(name)
 	}
 
 	_ = c.Push(v)

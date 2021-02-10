@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -86,7 +87,7 @@ func ArrayImpl(c *Context, i interface{}) error {
 				_ = array.SetType(datatypes.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.NewError(InvalidTypeError)
+					return c.NewError(errors.InvalidTypeError)
 				}
 			}
 		}
@@ -154,7 +155,7 @@ func StructImpl(c *Context, i interface{}) error {
 				// Check all the fields in the new value to ensure they are valid.
 				for k := range m {
 					if _, found := modelMap[k]; !strings.HasPrefix(k, "__") && !found {
-						return c.NewError(InvalidFieldError, k)
+						return c.NewError(errors.InvalidFieldError, k)
 					}
 				}
 				// Add in any fields from the model not present in the one we're creating.
@@ -172,7 +173,7 @@ func StructImpl(c *Context, i interface{}) error {
 					}
 				}
 			} else {
-				return c.NewError(UnknownTypeError, typeName)
+				return c.NewError(errors.UnknownTypeError, typeName)
 			}
 		}
 	} else {

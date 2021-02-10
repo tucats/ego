@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,8 +12,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
@@ -152,7 +151,7 @@ func TestAction(c *cli.Context) error {
 			}
 
 			err = ctx.Run()
-			if err != nil && err.Error() == debugger.Stop.Error() {
+			if err == errors.Stop {
 				err = nil
 			}
 
@@ -167,7 +166,7 @@ func TestAction(c *cli.Context) error {
 	}
 
 	if exitValue > 0 {
-		return errors.New(defs.TerminatedWithErrors)
+		return errors.New(errors.TerminatedWithErrors)
 	}
 
 	return nil

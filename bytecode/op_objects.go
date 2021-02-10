@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -44,10 +45,10 @@ func MemberImpl(c *Context, i interface{}) error {
 		v, found = findMember(mv, name)
 		if !found {
 			if isPackage {
-				return c.NewError(UnknownPackageMemberError, name)
+				return c.NewError(errors.UnknownPackageMemberError).WithContext(name)
 			}
 
-			return c.NewError(UnknownMemberError, name)
+			return c.NewError(errors.UnknownMemberError).WithContext(name)
 		}
 
 		// Remember where we loaded this from unless it was a package name
@@ -57,7 +58,7 @@ func MemberImpl(c *Context, i interface{}) error {
 			c.lastStruct = nil
 		}
 	} else {
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	_ = c.Push(v)
@@ -111,7 +112,7 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 	switch mv := m.(type) {
 	case map[string]interface{}:
 		if _, found := datatypes.GetMetadata(mv, datatypes.ParentMDKey); found {
-			return c.NewError(NotATypeError)
+			return c.NewError(errors.NotATypeError)
 		}
 
 		v, found := mv[name]
@@ -121,13 +122,13 @@ func ClassMemberImpl(c *Context, i interface{}) error {
 				return c.Push(v)
 			}
 
-			return c.NewError(UnknownMemberError, name)
+			return c.NewError(errors.UnknownMemberError).WithContext(name)
 		}
 
 		_ = c.Push(v)
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return nil

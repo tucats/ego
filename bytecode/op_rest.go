@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -23,7 +24,7 @@ func AuthImpl(c *Context, i interface{}) error {
 	var user, pass string
 
 	if _, ok := c.Get("_authenticated"); !ok {
-		return c.NewError(NotAServiceError)
+		return c.NewError(errors.NotAServiceError)
 	}
 
 	kind := util.GetString(i)

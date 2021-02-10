@@ -10,8 +10,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -76,7 +76,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()
-		if err != nil && err.Error() == debugger.Stop.Error() {
+		if err == errors.Stop {
 			err = nil
 		}
 

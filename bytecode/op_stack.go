@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -48,7 +49,7 @@ func DropToMarkerImpl(c *Context, i interface{}) error {
 func StackCheckImpl(c *Context, i interface{}) error {
 	count := util.GetInt(i)
 	if c.sp <= count {
-		return c.NewError(IncorrectReturnValueCount)
+		return c.NewError(errors.IncorrectReturnValueCount)
 	}
 
 	// The marker is an instance of a StackMarker object.
@@ -57,7 +58,7 @@ func StackCheckImpl(c *Context, i interface{}) error {
 		return nil
 	}
 
-	return c.NewError(IncorrectReturnValueCount)
+	return c.NewError(errors.IncorrectReturnValueCount)
 }
 
 // PushImpl instruction processor. This pushes the instruction operand
@@ -140,7 +141,7 @@ func CopyImpl(c *Context, i interface{}) error {
 }
 
 func GetVarArgsImpl(c *Context, i interface{}) error {
-	err := c.NewError(VarArgError)
+	err := c.NewError(errors.VarArgError)
 	argPos := util.GetInt(i)
 
 	if arrayV, ok := c.Get("__args"); ok {

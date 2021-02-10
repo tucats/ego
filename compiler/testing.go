@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -70,7 +71,7 @@ func (c *Compiler) Test() error {
 // TestAssert implements the T.assert() function.
 func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, functions.NewError("assert", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("assert")
 	}
 
 	// Figure out the test name. If not found, use "test"
@@ -93,7 +94,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 			fmt.Println()
 
-			return nil, fmt.Errorf("@assert, %s in %s", msg, name)
+			return nil, errors.New(errors.AssertError).In(name).WithContext(msg)
 		} else {
 			return true, nil
 		}
@@ -103,10 +104,10 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// argument.
 	b := util.GetBool(args[0])
 	if !b {
-		msg := TestingAssertError
+		msg := errors.New(errors.TestingAssertError).In("assert()")
 
 		if len(args) > 1 {
-			msg = util.GetString(args[1])
+			msg = msg.WithContext(args[1])
 		}
 
 		fmt.Println()
@@ -120,7 +121,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TestIsType implements the T.assert() function.
 func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, functions.NewError("istype", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("IsType()")
 	}
 
 	// Figure out the test name. If not found, use "test"
@@ -177,7 +178,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TestNil implements the T.Nil() function.
 func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, functions.NewError("Nil", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Nil()")
 	}
 
 	if len(args) == 2 {
@@ -190,7 +191,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TestNotNil implements the T.NotNil() function.
 func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, functions.NewError("NotNil", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("NotNil")
 	}
 
 	if len(args) == 2 {
@@ -203,7 +204,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TestTrue implements the T.True() function.
 func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, functions.NewError("True", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("True()")
 	}
 
 	if len(args) == 2 {
@@ -216,7 +217,7 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TestFalse implements the T.False() function.
 func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, functions.NewError("False", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("False()")
 	}
 
 	if len(args) == 2 {
@@ -229,7 +230,7 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TestEqual implements the T.Equal() function.
 func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, functions.NewError("Equal", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Equal()")
 	}
 
 	b := reflect.DeepEqual(args[0], args[1])
@@ -258,7 +259,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TestNotEqual implements the T.NotEqual() function.
 func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, functions.NewError("NotEqual", functions.ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("NoEqual()")
 	}
 
 	b, err := TestEqual(s, args)

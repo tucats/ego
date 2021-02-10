@@ -3,6 +3,7 @@ package bytecode
 import (
 	"fmt"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -79,7 +80,7 @@ func (c *Context) PopFrame() error {
 		c.pc = callFrame.PC
 		c.fp = callFrame.FP
 	} else {
-		return c.NewError(InvalidCallFrame)
+		return c.NewError(errors.InvalidCallFrameError)
 	}
 
 	// Finally, if there _was_ stuff on the stack after the call,

@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -54,7 +55,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return nil, c.NewError(InvalidSymbolError, name)
+			return nil, c.NewError(errors.InvalidSymbolError, name)
 		}
 
 		name = c.Normalize(name)
@@ -97,7 +98,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 	if isLvalueList {
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == "<-" {
-			return nil, c.NewError(InvalidChannelList)
+			return nil, c.NewError(errors.InvalidChannelList)
 		}
 
 		// Patch up the stack size check. We can use the SetAddress
@@ -114,7 +115,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	c.t.TokenP = savedPosition
 
-	return nil, c.NewError(NotAnLValueListError)
+	return nil, c.NewError(errors.NotAnLValueListError)
 }
 
 // LValue compiles the information on the left side of
@@ -129,7 +130,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, error) {
 
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return nil, c.NewError(InvalidSymbolError, name)
+		return nil, c.NewError(errors.InvalidSymbolError, name)
 	}
 
 	name = c.Normalize(name)
@@ -200,7 +201,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 		bc.Append(ix)
 
 		if !c.t.IsNext("]") {
-			return c.NewError(MissingBracketError)
+			return c.NewError(errors.MissingBracketError)
 		}
 
 		bc.Emit(bytecode.LoadIndex)
@@ -213,7 +214,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 
 		member := c.t.Next()
 		if !tokenizer.IsSymbol(member) {
-			return c.NewError(InvalidSymbolError, member)
+			return c.NewError(errors.InvalidSymbolError, member)
 		}
 
 		bc.Emit(bytecode.Push, c.Normalize(member))

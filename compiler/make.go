@@ -3,15 +3,16 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 )
 
 func (c *Compiler) Make() error {
 	if !c.t.IsNext("make") {
-		return c.NewError(UnexpectedTokenError, c.t.Peek(1))
+		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}
 
 	if !c.t.IsNext("(") {
-		return c.NewError(MissingParenthesisError)
+		return c.NewError(errors.MissingParenthesisError)
 	}
 
 	c.b.Emit(bytecode.Load, "make")
@@ -39,12 +40,12 @@ func (c *Compiler) Make() error {
 		}
 
 		if !found {
-			return c.NewError(InvalidTypeSpecError)
+			return c.NewError(errors.InvalidTypeSpecError)
 		}
 	}
 
 	if !c.t.IsNext(",") {
-		return c.NewError(InvalidListError)
+		return c.NewError(errors.InvalidListError)
 	}
 
 	bc, err := c.Expression()
@@ -53,7 +54,7 @@ func (c *Compiler) Make() error {
 	c.b.Emit(bytecode.Call, 2)
 
 	if err == nil && !c.t.IsNext(")") {
-		err = c.NewError(MissingParenthesisError)
+		err = c.NewError(errors.MissingParenthesisError)
 	}
 
 	return err

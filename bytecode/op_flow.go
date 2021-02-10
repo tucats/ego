@@ -1,13 +1,13 @@
 package bytecode
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -24,7 +24,7 @@ import (
 func StopImpl(c *Context, i interface{}) error {
 	c.running = false
 
-	return errors.New("stop")
+	return errors.NewMessage("stop")
 }
 
 // PanicImpl instruction processor generates an error. The boolean flag is used
@@ -39,7 +39,7 @@ func PanicImpl(c *Context, i interface{}) error {
 
 	msg := util.GetString(strValue)
 
-	return c.NewError(msg)
+	return c.NewError(errors.Panic).WithContext(msg)
 }
 
 // AtLineImpl instruction processor. This identifies the start of a new statement,
@@ -52,7 +52,7 @@ func AtLineImpl(c *Context, i interface{}) error {
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
 	// Are we in debug mode?
 	if c.debugging {
-		return errors.New("signal")
+		return errors.New(errors.SignalDebugger)
 	}
 	// If we are tracing, put that out now.
 	if c.tracing && c.tokenizer != nil {
@@ -75,7 +75,7 @@ func BranchFalseImpl(c *Context, i interface{}) error {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(InvalidBytecodeAddress)
+		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
 	}
 
 	if !util.GetBool(v) {
@@ -91,7 +91,7 @@ func BranchImpl(c *Context, i interface{}) error {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(InvalidBytecodeAddress)
+		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
 	}
 
 	c.pc = address
@@ -112,7 +112,7 @@ func BranchTrueImpl(c *Context, i interface{}) error {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(InvalidBytecodeAddress)
+		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
 	}
 
 	if util.GetBool(v) {
@@ -203,7 +203,7 @@ func CallImpl(c *Context, i interface{}) error {
 	}
 
 	if funcPointer == nil {
-		return c.NewError(InvalidFunctionCallError, "<nil>")
+		return c.NewError(errors.InvalidFunctionCallError).WithContext("<nil>")
 	}
 
 	// Depends on the type here as to what we call...
@@ -251,7 +251,7 @@ func CallImpl(c *Context, i interface{}) error {
 			if len(args) < df.Min || len(args) > df.Max {
 				name := functions.FindName(af)
 
-				return functions.NewError(name, ArgumentCountError)
+				return errors.New(errors.ArgumentCountError).WithContext(name)
 			}
 		}
 
@@ -298,16 +298,11 @@ func CallImpl(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			name := functions.FindName(af)
-			if name != "" {
-				name = "in function " + name + ", "
-			}
-
-			err = c.NewError(name + err.Error())
+			err = c.NewError(err).In(functions.FindName(af))
 		}
 
 	default:
-		return c.NewError(InvalidFunctionCallError, fmt.Sprintf("%#v", af))
+		return c.NewError(errors.InvalidFunctionCallError).WithContext(af)
 	}
 
 	if err != nil {
@@ -356,7 +351,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	switch v := i.(type) {
 	case []interface{}:
 		if len(v) < 2 || len(v) > 3 {
-			return c.NewError(InvalidArgCheckError)
+			return c.NewError(errors.InvalidArgCheckError)
 		}
 
 		min = util.GetInt(v[0])
@@ -377,19 +372,19 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 
 	case []int:
 		if len(v) != 2 {
-			return c.NewError(InvalidArgCheckError)
+			return c.NewError(errors.InvalidArgCheckError)
 		}
 
 		min = v[0]
 		max = v[1]
 
 	default:
-		return c.NewError(InvalidArgCheckError)
+		return c.NewError(errors.InvalidArgCheckError)
 	}
 
 	v, found := c.Get("__args")
 	if !found {
-		return c.NewError(InvalidArgCheckError)
+		return c.NewError(errors.InvalidArgCheckError)
 	}
 
 	// Was there a "This" done just before this? If so, set
@@ -414,7 +409,7 @@ func ArgCheckImpl(c *Context, i interface{}) error {
 	}
 
 	if len(va) < min || len(va) > max {
-		return functions.NewError(name, ArgumentCountError)
+		return errors.New(errors.ArgumentCountError).In(name)
 	}
 
 	return nil
@@ -431,7 +426,7 @@ func TryImpl(c *Context, i interface{}) error {
 // TryPopImpl instruction processor.
 func TryPopImpl(c *Context, i interface{}) error {
 	if len(c.try) == 0 {
-		return c.NewError(TryCatchMismatchError)
+		return c.NewError(errors.TryCatchMismatchError)
 	}
 
 	if len(c.try) == 1 {

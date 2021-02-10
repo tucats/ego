@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -62,10 +63,10 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 
 		if !f {
 			if isPackage {
-				return c.NewError(UnknownPackageMemberError, subscript)
+				return c.NewError(errors.UnknownPackageMemberError).WithContext(subscript)
 			}
 
-			return c.NewError(UnknownMemberError, subscript)
+			return c.NewError(errors.UnknownMemberError).WithContext(subscript)
 		}
 
 		err = c.Push(v)
@@ -74,7 +75,7 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(InvalidArrayIndexError, subscript)
+			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
 		}
 
 		v, _ := a.Get(subscript)
@@ -83,14 +84,14 @@ func LoadIndexImpl(c *Context, i interface{}) error {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(InvalidArrayIndexError, subscript)
+			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
 		}
 
 		v := a[subscript]
 		err = c.Push(v)
 
 	default:
-		err = c.NewError(InvalidTypeError)
+		err = c.NewError(errors.InvalidTypeError)
 	}
 
 	return err
@@ -128,19 +129,19 @@ func LoadSliceImpl(c *Context, i interface{}) error {
 	case []interface{}:
 		subscript1 := util.GetInt(index1)
 		if subscript1 < 0 || subscript1 >= len(a) {
-			return c.NewError(InvalidSliceIndexError, subscript1)
+			return c.NewError(errors.InvalidSliceIndexError).WithContext(subscript1)
 		}
 
 		subscript2 := util.GetInt(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
-			return c.NewError(InvalidSliceIndexError, subscript2)
+			return c.NewError(errors.InvalidSliceIndexError).WithContext(subscript2)
 		}
 
 		v := a[subscript1 : subscript2+1]
 		_ = c.Push(v)
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -173,7 +174,7 @@ func StoreMetadataImpl(c *Context, i interface{}) error {
 
 	_, ok := m.(map[string]interface{})
 	if !ok {
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	_ = datatypes.SetMetadata(m, key, value)
@@ -207,7 +208,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		}
 
 		if err != nil {
-			return c.NewError(err.Error())
+			return errors.New(err).At(c.GetModuleName(), c.GetLine())
 		}
 
 	// Index into map is just member access. Make sure it's not
@@ -219,7 +220,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		old, found := datatypes.GetMetadata(a, datatypes.ReadonlyMDKey)
 		if found && !storeAlways {
 			if util.GetBool(old) {
-				return c.NewError(ReadOnlyError)
+				return c.NewError(errors.ReadOnlyError)
 			}
 		}
 
@@ -227,12 +228,12 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		old, found = a[subscript]
 		if found {
 			if subscript[0:1] == "_" {
-				return c.NewError(ReadOnlyError)
+				return c.NewError(errors.ReadOnlyError)
 			}
 
 			// Check to be sure this isn't a restricted (function code) type
 			if _, ok := old.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
-				return c.NewError(ReadOnlyError)
+				return c.NewError(errors.ReadOnlyError)
 			}
 		}
 
@@ -240,14 +241,14 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		// present, with a value that is true, and we are not doing the "store always"
 		if staticFlag, ok := datatypes.GetMetadata(a, datatypes.StaticMDKey); ok && util.GetBool(staticFlag) && !storeAlways {
 			if _, ok := a[subscript]; !ok {
-				return c.NewError(UnknownMemberError, subscript)
+				return c.NewError(errors.UnknownMemberError).WithContext(subscript)
 			}
 		}
 
 		if c.Static {
 			if vv, ok := a[subscript]; ok && vv != nil {
 				if reflect.TypeOf(vv) != reflect.TypeOf(v) {
-					return c.NewError(InvalidVarTypeError)
+					return c.NewError(errors.InvalidVarTypeError)
 				}
 			}
 		}
@@ -268,13 +269,13 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(InvalidArrayIndexError, subscript)
+			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
 		}
 
 		if c.Static {
 			vv, _ := a.Get(subscript)
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.NewError(InvalidVarTypeError)
+				return c.NewError(errors.InvalidVarTypeError)
 			}
 		}
 
@@ -289,13 +290,13 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(InvalidArrayIndexError, subscript)
+			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
 		}
 
 		if c.Static {
 			vv := a[subscript]
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.NewError(InvalidVarTypeError)
+				return c.NewError(errors.InvalidVarTypeError)
 			}
 		}
 
@@ -303,7 +304,7 @@ func StoreIndexImpl(c *Context, i interface{}) error {
 		_ = c.Push(a)
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -333,11 +334,11 @@ func StoreIntoImpl(c *Context, i interface{}) error {
 		}
 
 		if err != nil {
-			return c.NewError(err.Error())
+			return c.NewError(err)
 		}
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -13,7 +14,7 @@ type modelIsType struct{}
 func (c *Compiler) Type() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(InvalidSymbolError)
+		return c.NewError(errors.InvalidSymbolError)
 	}
 
 	name = c.Normalize(name)
@@ -29,7 +30,7 @@ func (c *Compiler) Type() error {
 	}
 
 	if c.t.Peek(1) != "{" {
-		return c.NewError(MissingBlockError)
+		return c.NewError(errors.MissingBlockError)
 	}
 
 	// If there is no parent, seal the chain by making the link point to a string of our own name.
@@ -85,7 +86,7 @@ func (c *Compiler) compileType() error {
 
 	// Must start with {
 	if !c.t.IsNext("{") {
-		return c.NewError(MissingBlockError)
+		return c.NewError(errors.MissingBlockError)
 	}
 
 	count := 0
@@ -93,7 +94,7 @@ func (c *Compiler) compileType() error {
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return c.NewError(InvalidSymbolError, name)
+			return c.NewError(errors.InvalidSymbolError, name)
 		}
 
 		name = c.Normalize(name)
@@ -132,7 +133,7 @@ func (c *Compiler) compileType() error {
 		}
 
 		if c.t.AtEnd() {
-			return c.NewError(MissingEndOfBlockError)
+			return c.NewError(errors.MissingEndOfBlockError)
 		}
 	}
 }
@@ -163,7 +164,7 @@ func (c *Compiler) typeDeclaration() (interface{}, error) {
 	// Not a known type, let's see if it's a user type initialzer.
 	t := c.Normalize(c.t.Next())
 	if !tokenizer.IsSymbol(t) {
-		return nil, c.NewError(InvalidTypeNameError, t)
+		return nil, c.NewError(errors.InvalidTypeNameError, t)
 	}
 
 	// Is it a generator for a type?

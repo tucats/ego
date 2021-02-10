@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -25,7 +26,7 @@ func (c *Compiler) Try() error {
 	_ = c.b.SetAddressHere(b1)
 
 	if !c.t.IsNext("catch") {
-		return c.NewError(MissingCatchError)
+		return c.NewError(errors.MissingCatchError)
 	}
 
 	// Is there a named variable that will hold the error?
@@ -33,11 +34,11 @@ func (c *Compiler) Try() error {
 	if c.t.IsNext("(") {
 		errName := c.t.Next()
 		if !tokenizer.IsSymbol(errName) {
-			return c.NewError(InvalidSymbolError)
+			return c.NewError(errors.InvalidSymbolError)
 		}
 
 		if !c.t.IsNext(")") {
-			return c.NewError(MissingParenthesisError)
+			return c.NewError(errors.MissingParenthesisError)
 		}
 
 		c.b.Emit(bytecode.SymbolCreate, errName)

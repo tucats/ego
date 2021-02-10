@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -269,7 +270,7 @@ func (c *Context) Create(name string) error {
 // Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, error) {
 	if c.sp <= 0 || len(c.stack) < c.sp {
-		return nil, c.NewError(StackUnderflowError)
+		return nil, c.NewError(errors.StackUnderflowError)
 	}
 
 	c.sp = c.sp - 1
@@ -358,7 +359,7 @@ func (c *Context) checkType(name string, value interface{}) error {
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
-			err = c.NewError(InvalidVarTypeError)
+			err = c.NewError(errors.InvalidVarTypeError)
 		}
 	}
 

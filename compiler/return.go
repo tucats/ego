@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 // Return handles the return statement compilation.
@@ -25,7 +26,7 @@ func (c *Compiler) Return() error {
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.NewError(TooManyReturnValues)
+			return c.NewError(errors.TooManyReturnValues)
 		}
 
 		bc.Append(c.coercions[returnCount])
@@ -42,7 +43,7 @@ func (c *Compiler) Return() error {
 	}
 
 	if returnCount < len(c.coercions) {
-		return c.NewError(MissingReturnValues)
+		return c.NewError(errors.MissingReturnValues)
 	}
 
 	// If there was a return value, the return values must be

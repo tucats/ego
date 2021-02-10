@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -136,7 +137,7 @@ func TimerImpl(c *Context, i interface{}) error {
 	case 1:
 		timerStack := len(c.timers)
 		if timerStack == 0 {
-			return c.NewError(InvalidTimerError)
+			return c.NewError(errors.InvalidTimerError)
 		}
 
 		t := c.timers[timerStack-1]
@@ -161,7 +162,7 @@ func TimerImpl(c *Context, i interface{}) error {
 		_ = c.Push(msText)
 
 	default:
-		return c.NewError(InvalidTimerError)
+		return c.NewError(errors.InvalidTimerError)
 	}
 
 	return nil

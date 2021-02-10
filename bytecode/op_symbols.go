@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -30,12 +31,12 @@ func PopScopeImpl(c *Context, i interface{}) error {
 func SymbolCreateImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
-		return c.NewError(ReadOnlyError)
+		return c.NewError(errors.ReadOnlyError)
 	}
 
 	err := c.Create(n)
 	if err != nil {
-		err = c.NewError(err.Error())
+		err = c.NewError(err)
 	}
 
 	return err
@@ -45,7 +46,7 @@ func SymbolCreateImpl(c *Context, i interface{}) error {
 func SymbolOptCreateImpl(c *Context, i interface{}) error {
 	n := util.GetString(i)
 	if c.IsConstant(n) {
-		return c.NewError(ReadOnlyError)
+		return c.NewError(errors.ReadOnlyError)
 	}
 
 	sp := c.symbols
@@ -59,7 +60,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) error {
 
 	err := c.Create(n)
 	if err != nil {
-		err = c.NewError(err.Error())
+		err = c.NewError(err)
 	}
 
 	return err
@@ -71,7 +72,7 @@ func SymbolDeleteImpl(c *Context, i interface{}) error {
 
 	err := c.Delete(n)
 	if err != nil {
-		err = c.NewError(err.Error())
+		err = c.NewError(err)
 	}
 
 	return err
@@ -88,7 +89,7 @@ func ConstantImpl(c *Context, i interface{}) error {
 
 	err = c.SetConstant(varname, v)
 	if err != nil {
-		return c.NewError(err.Error())
+		return c.NewError(err)
 	}
 
 	return err

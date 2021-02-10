@@ -2,6 +2,7 @@ package compiler
 
 import (
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 func (c *Compiler) functionCall() error {
@@ -34,7 +35,7 @@ func (c *Compiler) functionCall() error {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(InvalidListError)
+			return c.NewError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -42,7 +43,7 @@ func (c *Compiler) functionCall() error {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
-		return c.NewError(MissingParenthesisError)
+		return c.NewError(errors.MissingParenthesisError)
 	}
 
 	c.t.Advance(1)

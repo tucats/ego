@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -101,13 +101,13 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 		}
 	}
 
-	return nil, NewError(fn, InvalidFileIdentifierError)
+	return nil, errors.New(errors.InvalidfileIdentifierError).In(fn)
 }
 
 // Close closes a file.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Close()")
 	}
 
 	f, err := getFile("Close", s)
@@ -134,7 +134,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // ReadString reads the next line from the file as a string.
 func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("ReadString()")
 	}
 
 	f, err := getFile("ReadString", s)
@@ -162,7 +162,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // WriteString writes a string value to a file.
 func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("WriteString()")
 	}
 
 	length := 0
@@ -178,7 +178,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Write writes an arbitrary binary object to a file.
 func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Write()")
 	}
 
 	var buf bytes.Buffer
@@ -206,7 +206,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
 
 	if len(args) != 2 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("WriteAt()")
 	}
 
 	offset := util.GetInt(args[1])

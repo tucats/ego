@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -147,14 +148,14 @@ func ExpandPath(path, ext string) ([]string, error) {
 	return names, nil
 }
 
-// ReadDir implmeents the io.readdir() function.
+// ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := util.GetString(args[0])
 	result := []interface{}{}
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return result, err
+		return result, errors.New(err).In("ReadDir()")
 	}
 
 	for _, file := range files {
@@ -178,6 +179,6 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return arg.Close(), nil
 
 	default:
-		return nil, NewError("close", InvalidTypeError)
+		return nil, errors.New(errors.InvalidTypeError).In("CloseAny()")
 	}
 }

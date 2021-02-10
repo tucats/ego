@@ -2,7 +2,6 @@ package commands
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
@@ -274,7 +274,7 @@ func RunAction(c *cli.Context) error {
 				err = ctx.Run()
 			}
 
-			if err != nil && err.Error() == debugger.Stop.Error() {
+			if err == errors.Stop {
 				err = nil
 			}
 
@@ -301,7 +301,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	if exitValue > 0 {
-		return errors.New(defs.TerminatedWithErrors)
+		return errors.New(errors.TerminatedWithErrors)
 	}
 
 	return nil

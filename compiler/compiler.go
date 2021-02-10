@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -197,7 +198,7 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 	}
 
 	if _, found := fd[name]; found {
-		return c.NewError(FunctionAlreadyExistsError)
+		return c.NewError(errors.FunctionAlreadyExistsError)
 	}
 
 	fd[name] = function
@@ -218,7 +219,7 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 	}
 
 	if _, found := fd[name]; found {
-		return c.NewError(FunctionAlreadyExistsError)
+		return c.NewError(errors.FunctionAlreadyExistsError)
 	}
 
 	fd[name] = value

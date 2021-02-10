@@ -1,10 +1,10 @@
 package bytecode
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -27,12 +27,12 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
-					err = c.NewError(InvalidArgTypeError)
+					err = c.NewError(errors.InvalidArgTypeError)
 				}
 			} else {
 				if t, ok := i.(string); ok {
 					if t != reflect.TypeOf(v).String() {
-						err = c.NewError(InvalidArgTypeError)
+						err = c.NewError(errors.InvalidArgTypeError)
 					}
 				} else {
 					if t, ok := i.(int); ok {
@@ -53,7 +53,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 							ok = true
 						}
 						if !ok {
-							err = c.NewError(InvalidArgTypeError)
+							err = c.NewError(errors.InvalidArgTypeError)
 						}
 					}
 				}
@@ -62,7 +62,7 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 			t := util.GetInt(i)
 			switch t {
 			case datatypes.ErrorType:
-				v = errors.New(util.GetString(v))
+				v = errors.New(errors.Panic).WithContext(v)
 
 			case datatypes.IntType:
 				v = util.GetInt(v)
@@ -85,14 +85,14 @@ func RequiredTypeImpl(c *Context, i interface{}) error {
 			case datatypes.StructType:
 				// If it's not a struct, we can't do anything so fail
 				if _, ok := v.(map[string]interface{}); !ok {
-					return c.NewError(InvalidTypeError)
+					return c.NewError(errors.InvalidTypeError)
 				}
 
 			case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
 				// No work at all to do here.
 
 			default:
-				return c.NewError(InvalidTypeError)
+				return c.NewError(errors.InvalidTypeError)
 			}
 		}
 
@@ -113,7 +113,7 @@ func CoerceImpl(c *Context, i interface{}) error {
 
 	switch t {
 	case datatypes.ErrorType:
-		v = errors.New(util.GetString(v))
+		v = errors.New(errors.Panic).WithContext(v)
 
 	case datatypes.IntType:
 		v = util.GetInt(v)
@@ -140,7 +140,7 @@ func CoerceImpl(c *Context, i interface{}) error {
 	case datatypes.StructType:
 		// If it's not a struct, we can't do anything so fail
 		if _, ok := v.(map[string]interface{}); !ok {
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 
 	case datatypes.InterfaceType, datatypes.UndefinedType:
@@ -148,7 +148,7 @@ func CoerceImpl(c *Context, i interface{}) error {
 
 	default:
 		if t < datatypes.ArrayType {
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 
 		var base []interface{}

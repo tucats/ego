@@ -1,28 +1,17 @@
 package debugger
 
-import (
-	"errors"
-)
+import "github.com/tucats/ego/errors"
 
-const (
-	InvalidBreakClauseError = "invalid break clause"
-)
-
-var SignalDebugger = errors.New("signal")
-var StepOver = errors.New("step-over")
-var Stop = errors.New("stop")
-
-func InvokeDebugger(e error) bool {
+func InvokeDebugger(e *errors.EgoError) bool {
 	if e == nil {
 		return false
 	}
 
-	text := e.Error()
-	if text == SignalDebugger.Error() {
+	if e.Is(errors.SignalDebugger) {
 		return true
 	}
 
-	if text == StepOver.Error() {
+	if e.Is(errors.StepOver) {
 		return true
 	}
 

@@ -2,6 +2,7 @@ package compiler
 
 import (
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -82,12 +83,12 @@ func (c *Compiler) reference() error {
 				c.b.Emit(bc.LoadSlice)
 
 				if c.t.Next() != "]" {
-					return c.NewError(MissingBracketError)
+					return c.NewError(errors.MissingBracketError)
 				}
 			} else {
 				// Nope, singular index
 				if c.t.Next() != "]" {
-					return c.NewError(MissingBracketError)
+					return c.NewError(errors.MissingBracketError)
 				}
 
 				c.b.Emit(bc.LoadIndex)

@@ -1,5 +1,7 @@
 package compiler
 
+import "github.com/tucats/ego/errors"
+
 // Assignment compiles an assignment statement.
 func (c *Compiler) Assignment() error {
 	storeLValue, err := c.LValue()
@@ -8,7 +10,7 @@ func (c *Compiler) Assignment() error {
 	}
 
 	if !c.t.AnyNext(":=", "=", "<-") {
-		return c.NewError(MissingAssignmentError)
+		return c.NewError(errors.MissingAssignmentError)
 	}
 
 	expressionCode, err := c.Expression()

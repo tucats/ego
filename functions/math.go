@@ -3,6 +3,7 @@ package functions
 import (
 	"math"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -18,7 +19,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
-			return nil, NewError("min", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("min()")
 		}
 
 		switch r.(type) {
@@ -42,7 +43,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				r = v
 			}
 		default:
-			return nil, NewError("min", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("min()")
 		}
 	}
 
@@ -60,7 +61,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
-			return nil, NewError("max", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("max()")
 		}
 
 		switch rr := r.(type) {
@@ -85,7 +86,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			}
 
 		default:
-			return nil, NewError("max", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("max()")
 		}
 	}
 
@@ -99,7 +100,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, addend := range args[1:] {
 		addend = util.Coerce(addend, base)
 		if addend == nil {
-			return nil, NewError("sum", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("sum()")
 		}
 
 		switch addend.(type) {
@@ -116,7 +117,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			base = base.(bool) || addend.(bool)
 
 		default:
-			return nil, NewError("sum", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("sum()")
 		}
 	}
 

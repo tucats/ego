@@ -2,19 +2,20 @@ package compiler
 
 import (
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
 func (c *Compiler) Go() error {
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
-		return c.NewError(InvalidSymbolError, fName)
+		return c.NewError(errors.InvalidSymbolError, fName)
 	}
 
 	c.b.Emit(bc.Push, fName)
 
 	if !c.t.IsNext("(") {
-		return c.NewError(MissingParenthesisError)
+		return c.NewError(errors.MissingParenthesisError)
 	}
 
 	argc := 0
@@ -43,7 +44,7 @@ func (c *Compiler) Go() error {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(InvalidListError)
+			return c.NewError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -51,7 +52,7 @@ func (c *Compiler) Go() error {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
-		return c.NewError(MissingParenthesisError)
+		return c.NewError(errors.MissingParenthesisError)
 	}
 
 	c.t.Advance(1)

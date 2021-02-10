@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -73,7 +74,7 @@ func (c *Compiler) expressionAtom() error {
 		}
 
 		if c.t.Next() != ")" {
-			return c.NewError(MissingParenthesisError)
+			return c.NewError(errors.MissingParenthesisError)
 		}
 
 		return nil
@@ -173,7 +174,7 @@ func (c *Compiler) expressionAtom() error {
 		return nil
 	}
 
-	return c.NewError(UnexpectedTokenError, t)
+	return c.NewError(errors.UnexpectedTokenError, t)
 }
 
 func (c *Compiler) parseArray() error {
@@ -193,7 +194,7 @@ func (c *Compiler) parseArray() error {
 		if kind >= datatypes.ArrayType {
 			kind = kind - datatypes.ArrayType
 		} else {
-			return c.NewError(InvalidTypeNameError)
+			return c.NewError(errors.InvalidTypeNameError)
 		}
 
 		// Is it an empty declaration, such as []int{} ?
@@ -205,7 +206,7 @@ func (c *Compiler) parseArray() error {
 
 		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext("{") {
-			return c.NewError(MissingBlockError)
+			return c.NewError(errors.MissingBlockError)
 		}
 
 		listTerminator = "}"
@@ -258,7 +259,7 @@ func (c *Compiler) parseArray() error {
 					c.b.Emit(bytecode.Array, count)
 
 					if !c.t.IsNext("]") {
-						return c.NewError(InvalidRangeError)
+						return c.NewError(errors.InvalidRangeError)
 					}
 
 					return nil
@@ -294,7 +295,7 @@ func (c *Compiler) parseArray() error {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(InvalidListError)
+			return c.NewError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -330,7 +331,7 @@ func (c *Compiler) parseStruct() error {
 			}
 		} else {
 			if !tokenizer.IsSymbol(name) {
-				return c.NewError(InvalidSymbolError, name)
+				return c.NewError(errors.InvalidSymbolError, name)
 			}
 		}
 
@@ -338,7 +339,7 @@ func (c *Compiler) parseStruct() error {
 
 		// Second element: colon
 		if c.t.Next() != ":" {
-			return c.NewError(MissingColonError)
+			return c.NewError(errors.MissingColonError)
 		}
 
 		// Third element: value, which is emitted.
@@ -361,7 +362,7 @@ func (c *Compiler) parseStruct() error {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(InvalidListError)
+			return c.NewError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -376,7 +377,7 @@ func (c *Compiler) parseStruct() error {
 func (c *Compiler) unLit(s string) (string, error) {
 	quote := s[0:1]
 	if s[len(s)-1:] != quote {
-		return s[1:], c.NewError(BlockQuoteError, quote)
+		return s[1:], c.NewError(errors.BlockQuoteError, quote)
 	}
 
 	return s[1 : len(s)-1], nil

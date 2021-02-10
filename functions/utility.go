@@ -1,7 +1,6 @@
 package functions
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -44,7 +44,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// doesn't exist yet, for example
 	if strings.HasPrefix(key, "ego.") {
 		if !persistence.Exists(key) {
-			return nil, NewError("Set", "cannot create reserved setting", key)
+			return nil, errors.New(errors.ReservedProfileSetting).In("Set()").WithContext(key)
 		}
 	}
 	// If the value is an empty string, delete the key else
@@ -173,7 +173,7 @@ func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 			}
 
 		default:
-			return nil, NewError("array", InvalidTypeError)
+			return nil, errors.New(errors.InvalidTypeError).In("array()")
 		}
 	} else {
 		count = util.GetInt(args[0])
@@ -217,7 +217,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return util.MakeSortedArray(keys), nil
 
 	default:
-		return nil, NewError("members", InvalidTypeError)
+		return nil, errors.New(errors.InvalidTypeError).In("members()")
 	}
 }
 
@@ -298,7 +298,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return resultArray, nil
 
 	default:
-		return nil, NewError("sort", InvalidTypeError)
+		return nil, errors.New(errors.InvalidTypeError).In("sort()")
 	}
 }
 
@@ -314,10 +314,10 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		os.Exit(v)
 
 	case string:
-		return nil, errors.New(v)
+		return nil, errors.NewMessage(v)
 
 	default:
-		return nil, NewError("exit", InvalidTypeError)
+		return nil, errors.New(errors.InvalidTypeError).In("exit()")
 	}
 
 	return nil, nil
@@ -414,7 +414,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Signal creates an error object based on the
 // parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return NewError("error", util.GetString(args[0]), args[1:]...), nil
+	return errors.New(errors.GenericError).WithContext(append([]interface{}{}, args...)), nil
 }
 
 // Append implements the builtin append() function, which concatenates all the items
@@ -441,7 +441,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			result = append(result, array...)
 		} else {
 			if kind != datatypes.InterfaceType && datatypes.TypeOf(j) != kind {
-				return nil, errors.New(datatypes.WrongArrayValueType)
+				return nil, errors.New(errors.WrongArrayValueType).At("append()", 0)
 			}
 			result = append(result, j)
 		}
@@ -456,10 +456,10 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // and the third form does not have a second parameter.
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if _, ok := args[0].(string); ok && len(args) != 1 {
-		return nil, errors.New(ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError)
 	} else {
 		if len(args) != 2 {
-			return nil, errors.New(ArgumentCountError)
+			return nil, errors.New(errors.ArgumentCountError).In("delete{}")
 		}
 	}
 
@@ -481,7 +481,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case []interface{}:
 		i := util.GetInt(args[1])
 		if i < 0 || i >= len(v) {
-			return nil, errors.New(InvalidArrayIndexError)
+			return nil, errors.New(errors.InvalidArrayIndexError).In("delete()")
 		}
 
 		r := append(v[:i], v[i+1:]...)
@@ -489,7 +489,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return r, nil
 
 	default:
-		return nil, errors.New(InvalidTypeError)
+		return nil, errors.New(errors.InvalidTypeError).In("delete()")
 	}
 }
 
@@ -654,6 +654,18 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			datatypes.SizeMDKey:     m.Len(),
 			datatypes.TypeMDKey:     m.TypeString(),
 			datatypes.BasetypeMDKey: "[]interface{}",
+		}
+
+		return result, nil
+	}
+
+	if e, ok := args[0].(*errors.EgoError); ok {
+		wrappedError := e.Unwrap()
+		result := map[string]interface{}{
+			datatypes.TypeMDKey:     "error",
+			datatypes.BasetypeMDKey: "error",
+			"error":                 wrappedError,
+			"text":                  e.Error(),
 		}
 
 		return result, nil

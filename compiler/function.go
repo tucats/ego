@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -41,7 +42,7 @@ func (c *Compiler) Function(isLiteral bool) error {
 	}
 
 	if c.t.AtEnd() {
-		return c.NewError(MissingFunctionBodyError)
+		return c.NewError(errors.MissingFunctionBodyError)
 	}
 	// Create a new bytecode object which will hold the function
 	// generated code.
@@ -134,7 +135,7 @@ func (c *Compiler) Function(isLiteral bool) error {
 
 		// If we got here, but never had a () around this list, it's an error
 		if !hasReturnList {
-			return c.NewError(InvalidReturnTypeList)
+			return c.NewError(errors.InvalidReturnTypeList)
 		}
 
 		c.t.Advance(1)
@@ -142,7 +143,7 @@ func (c *Compiler) Function(isLiteral bool) error {
 
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(")") {
-		return c.NewError(MissingParenthesisError)
+		return c.NewError(errors.MissingParenthesisError)
 	}
 
 	// Now compile a statement or block into the function body. We'll use the
@@ -226,16 +227,16 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 		// Validatee that the name of the receiver variable and
 		// the receiver type name are both valid.
 		if !tokenizer.IsSymbol(thisName) {
-			err = c.NewError(InvalidSymbolError, thisName)
+			err = c.NewError(errors.InvalidSymbolError, thisName)
 		}
 
 		if err != nil && !tokenizer.IsSymbol(typeName) {
-			err = c.NewError(InvalidSymbolError, typeName)
+			err = c.NewError(errors.InvalidSymbolError, typeName)
 		}
 
 		// Must end with a closing paren for the receiver declaration.
 		if err != nil || !c.t.IsNext(")") {
-			err = c.NewError(MissingParenthesisError)
+			err = c.NewError(errors.MissingParenthesisError)
 		}
 
 		// Last, but not least, the function name follows the optional
@@ -248,7 +249,7 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 	// Make sure the function name is valid; bail out if not. Otherwise,
 	// normalize it and we're done.
 	if !tokenizer.IsSymbol(functionName) {
-		err = c.NewError(InvalidFunctionName, functionName)
+		err = c.NewError(errors.InvalidFunctionName, functionName)
 	} else {
 		functionName = c.Normalize(functionName)
 	}
@@ -267,7 +268,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	if c.t.IsNext("(") {
 		for !c.t.IsNext(")") {
 			if c.t.AtEnd() {
-				return parameters, hasVarArgs, c.NewError(MissingParenthesisError)
+				return parameters, hasVarArgs, c.NewError(errors.MissingParenthesisError)
 			}
 
 			p := parameter{kind: datatypes.UndefinedType}
@@ -276,7 +277,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			if tokenizer.IsSymbol(name) {
 				p.name = name
 			} else {
-				return nil, false, c.NewError(InvalidFunctionArgument)
+				return nil, false, c.NewError(errors.InvalidFunctionArgument)
 			}
 
 			if c.t.IsNext("...") {
@@ -300,7 +301,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			_ = c.t.IsNext(",")
 		}
 	} else {
-		return parameters, hasVarArgs, c.NewError(MissingParameterList)
+		return parameters, hasVarArgs, c.NewError(errors.MissingParameterList)
 	}
 
 	return parameters, hasVarArgs, nil

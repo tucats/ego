@@ -3,17 +3,18 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 )
 
 // Map compiles a map type declaration
 
 func (c *Compiler) Map() error {
 	if !c.t.IsNext("map") {
-		return c.NewError(UnexpectedTokenError, c.t.Peek(1))
+		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}
 
 	if !c.t.IsNext("[") {
-		return c.NewError(MissingBracketError)
+		return c.NewError(errors.MissingBracketError)
 	}
 
 	// Parse the key type
@@ -21,7 +22,7 @@ func (c *Compiler) Map() error {
 
 	// Closing bracket on the key type
 	if !c.t.IsNext("]") {
-		return c.NewError(MissingBracketError)
+		return c.NewError(errors.MissingBracketError)
 	}
 
 	// Parse the object type
@@ -33,7 +34,7 @@ func (c *Compiler) Map() error {
 	// Eat {}, if not present parse an initializer}
 	if !c.t.IsNext("{}") {
 		if !c.t.IsNext("{") {
-			return c.NewError(MissingBlockError)
+			return c.NewError(errors.MissingBlockError)
 		}
 
 		for {
@@ -47,7 +48,7 @@ func (c *Compiler) Map() error {
 			}
 
 			if !c.t.IsNext(":") {
-				return c.NewError(MissingColonError)
+				return c.NewError(errors.MissingColonError)
 			}
 
 			valueBC, err := c.Expression()
@@ -66,7 +67,7 @@ func (c *Compiler) Map() error {
 			}
 
 			if c.t.Peek(1) != "}" {
-				return c.NewError(MissingEndOfBlockError)
+				return c.NewError(errors.MissingEndOfBlockError)
 			}
 		}
 	}

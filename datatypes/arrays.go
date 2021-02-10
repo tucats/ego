@@ -1,11 +1,11 @@
 package datatypes
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/gopackages/datatypes"
 )
 
@@ -79,7 +79,7 @@ func (a *EgoArray) Validate(kind int) error {
 	for i := 0; i < a.Len(); i++ {
 		v, _ := a.Get(i)
 		if !datatypes.IsType(v, kind) {
-			return errors.New(WrongArrayValueType)
+			return errors.New(errors.WrongArrayValueType)
 		}
 	}
 
@@ -97,7 +97,7 @@ func (a *EgoArray) Immutable(b bool) {
 func (a *EgoArray) Get(i interface{}) (interface{}, error) {
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
-		return nil, errors.New(ArrayBoundsError)
+		return nil, errors.New(errors.ArrayBoundsError)
 	}
 
 	return a.data[index], nil
@@ -114,21 +114,21 @@ func (a *EgoArray) SetType(i int) error {
 		return nil
 	}
 
-	return errors.New(ImmutableArrayError)
+	return errors.New(errors.ImmutableArrayError)
 }
 
 func (a *EgoArray) Set(i interface{}, value interface{}) error {
 	if a.immutable > 0 {
-		return errors.New(ImmutableArrayError)
+		return errors.New(errors.ImmutableArrayError)
 	}
 
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
-		return errors.New(ArrayBoundsError)
+		return errors.New(errors.ArrayBoundsError)
 	}
 
 	if !IsType(value, a.valueType) {
-		return errors.New(WrongArrayValueType)
+		return errors.New(errors.WrongArrayValueType)
 	}
 
 	a.data[index] = value
@@ -160,7 +160,7 @@ func (a *EgoArray) String() string {
 
 func (a *EgoArray) GetSlice(first, last int) ([]interface{}, error) {
 	if first < 0 || last > len(a.data) {
-		return nil, errors.New(ArrayBoundsError)
+		return nil, errors.New(errors.ArrayBoundsError)
 	}
 
 	return a.data[first:last], nil

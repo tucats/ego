@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -17,13 +18,13 @@ import (
 func (c *Compiler) Package() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError("invalid package name", name)
+		return c.NewError(errors.InvalidPackageName, name)
 	}
 
 	name = strings.ToLower(name)
 
 	if (c.PackageName != "") && (c.PackageName != name) {
-		return c.NewError(PackageRedefinitionError)
+		return c.NewError(errors.PackageRedefinitionError)
 	}
 
 	c.PackageName = name
@@ -48,11 +49,11 @@ func (c *Compiler) Package() error {
 // Import handles the import statement.
 func (c *Compiler) Import() error {
 	if c.blockDepth > 0 {
-		return c.NewError(InvalidImportError)
+		return c.NewError(errors.InvalidImportError)
 	}
 
 	if c.loops != nil {
-		return c.NewError(InvalidImportError)
+		return c.NewError(errors.InvalidImportError)
 	}
 
 	isList := false
@@ -82,7 +83,7 @@ func (c *Compiler) Import() error {
 		}
 
 		if c.loops != nil {
-			return c.NewError(InvalidImportError)
+			return c.NewError(errors.InvalidImportError)
 		}
 
 		// Get the package name from the given string. If this is
@@ -154,7 +155,7 @@ func (c *Compiler) Import() error {
 
 		// If after the import we ended with mismatched block markers, complain
 		if c.blockDepth != savedBlockDepth {
-			return c.NewError(MissingEndOfBlockError, packageName)
+			return c.NewError(errors.MissingEndOfBlockError, packageName)
 		}
 
 		// Reset the compiler back to the token stream we were working on
@@ -198,7 +199,7 @@ func (c *Compiler) ReadFile(name string) (string, error) {
 			if err != nil {
 				c.t.Advance(-1)
 
-				return "", c.NewError("unable to read import file", err.Error())
+				return "", c.NewError(err)
 			}
 		} else {
 			fn = name + ".ego"

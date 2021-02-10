@@ -2,6 +2,7 @@ package compiler
 
 import (
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -73,7 +74,7 @@ func (c *Compiler) addSubtract() error {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.NewError(MissingTermError)
+				return c.NewError(errors.MissingTermError)
 			}
 
 			err := c.multDivide()
@@ -116,7 +117,7 @@ func (c *Compiler) multDivide() error {
 
 		if c.t.AnyNext("^", "*", "/", "|") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.NewError(MissingTermError)
+				return c.NewError(errors.MissingTermError)
 			}
 
 			err := c.unary()

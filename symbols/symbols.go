@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 )
 
 // SymbolTable contains an abstract symbol table.
@@ -128,7 +129,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 
 	// See if it's in the current constants table.
 	if syms.IsConstant(name) {
-		return s.NewError(ReadOnlyValueError, name)
+		return errors.New(errors.ReadOnlyValueError).WithContext(name)
 	}
 
 	syms.Symbols[name] = v
@@ -148,16 +149,16 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	// to be sure it's writable.
 	if found {
 		if old != nil && name[0:1] == "_" {
-			return s.NewError(ReadOnlyValueError, name)
+			return errors.New(errors.ReadOnlyValueError).WithContext(name)
 		}
 		// Check to be sure this isn't a restricted (function code) type
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return s.NewError(ReadOnlyValueError, name)
+			return errors.New(errors.ReadOnlyValueError).WithContext(name)
 		}
 	} else {
 		// If there are no more tables, we have an error.
 		if s.Parent == nil {
-			return s.NewError(UnknownSymbolError, name)
+			return errors.New(errors.UnknownSymbolError).WithContext(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
 		return s.Parent.Set(name, v)
@@ -172,21 +173,21 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 // up the parent tree until you find the symbol to delete.
 func (s *SymbolTable) Delete(name string) error {
 	if len(name) == 0 {
-		return s.NewError(InvalidSymbolError)
+		return errors.New(errors.InvalidSymbolError)
 	}
 
 	if name[:1] == "_" {
-		return s.NewError(ReadOnlyValueError, name)
+		return errors.New(errors.ReadOnlyValueError).WithContext(name)
 	}
 
 	if s.Symbols == nil {
-		return s.NewError(UnknownSymbolError, name)
+		return errors.New(errors.UnknownSymbolError).WithContext(name)
 	}
 
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
-			return s.NewError(UnknownSymbolError, name)
+			return errors.New(errors.UnknownSymbolError).WithContext(name)
 		}
 
 		return s.Parent.Delete(name)
@@ -201,17 +202,17 @@ func (s *SymbolTable) Delete(name string) error {
 // up the parent tree until you find the symbol to delete.
 func (s *SymbolTable) DeleteAlways(name string) error {
 	if len(name) == 0 {
-		return s.NewError(InvalidSymbolError)
+		return errors.New(errors.InvalidSymbolError)
 	}
 
 	if s.Symbols == nil {
-		return s.NewError(UnknownSymbolError, name)
+		return errors.New(errors.UnknownSymbolError).WithContext(name)
 	}
 
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
-			return s.NewError(UnknownSymbolError, name)
+			return errors.New(errors.UnknownSymbolError).WithContext(name)
 		}
 
 		return s.Parent.DeleteAlways(name)
@@ -225,12 +226,12 @@ func (s *SymbolTable) DeleteAlways(name string) error {
 // Create creates a symbol name in the table.
 func (s *SymbolTable) Create(name string) error {
 	if len(name) == 0 {
-		return s.NewError(InvalidSymbolError)
+		return errors.New(errors.InvalidSymbolError)
 	}
 
 	_, found := s.Symbols[name]
 	if found {
-		return s.NewError(SymbolExistsError, name)
+		return errors.New(errors.SymbolExistsError).WithContext(name)
 	}
 
 	s.Symbols[name] = nil

@@ -1,12 +1,12 @@
 package debugger
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -70,7 +70,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			}
 
 		default:
-			err = errors.New(InvalidBreakClauseError)
+			err = errors.New(errors.InvalidBreakClauseError)
 		}
 
 		if err != nil {
@@ -154,13 +154,13 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 
 			err := ctx.Run()
 			if err != nil {
-				if err.Error() == StepOver.Error() {
+				if err == errors.StepOver {
 					err = nil
 
 					ctx.StepOver(true)
 				}
 
-				if err.Error() == SignalDebugger.Error() {
+				if err == errors.SignalDebugger {
 					err = nil
 				}
 			}

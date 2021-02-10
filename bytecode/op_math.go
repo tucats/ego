@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -58,7 +59,7 @@ func NegateImpl(c *Context, i interface{}) error {
 		_ = c.Push(r)
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -94,7 +95,7 @@ func AddImpl(c *Context, i interface{}) error {
 
 				for _, vv := range vy {
 					if arrayType != reflect.TypeOf(vv) {
-						return c.NewError(InvalidTypeError)
+						return c.NewError(errors.InvalidTypeError)
 					}
 				}
 			}
@@ -121,7 +122,7 @@ func AddImpl(c *Context, i interface{}) error {
 			return c.Push(vx)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 
 		// All other types are scalar math.
@@ -142,7 +143,7 @@ func AddImpl(c *Context, i interface{}) error {
 			return c.Push(v1.(bool) && v2.(bool))
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 }
@@ -222,7 +223,7 @@ func SubtractImpl(c *Context, i interface{}) error {
 			return c.Push(s)
 
 		default:
-			return c.NewError(InvalidTypeError)
+			return c.NewError(errors.InvalidTypeError)
 		}
 	}
 }
@@ -252,7 +253,7 @@ func MultiplyImpl(c *Context, i interface{}) error {
 		return c.Push(v1.(bool) || v2.(bool))
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 }
 
@@ -292,14 +293,14 @@ func ExponentImpl(c *Context, i interface{}) error {
 		return c.Push(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 }
 
 // DivideImpl bytecode instruction processor.
 func DivideImpl(c *Context, i interface{}) error {
 	if c.sp < 1 {
-		return c.NewError(StackUnderflowError)
+		return c.NewError(errors.StackUnderflowError)
 	}
 
 	v2, err := c.Pop()
@@ -317,19 +318,19 @@ func DivideImpl(c *Context, i interface{}) error {
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {
-			return c.NewError(DivisionByZeroError)
+			return c.NewError(errors.DivisionByZeroError)
 		}
 
 		return c.Push(v1.(int) / v2.(int))
 
 	case float64:
 		if v2.(float64) == 0 {
-			return c.NewError(DivisionByZeroError)
+			return c.NewError(errors.DivisionByZeroError)
 		}
 
 		return c.Push(v1.(float64) / v2.(float64))
 
 	default:
-		return c.NewError(InvalidTypeError)
+		return c.NewError(errors.InvalidTypeError)
 	}
 }

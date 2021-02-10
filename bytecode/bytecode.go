@@ -1,8 +1,7 @@
 package bytecode
 
 import (
-	"fmt"
-
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -96,7 +95,7 @@ func (b *ByteCode) SetAddressHere(mark int) error {
 // instruction.
 func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.emitPos || mark < 0 {
-		return b.NewError(InvalidBytecodeAddress)
+		return b.NewError(errors.InvalidBytecodeAddress)
 	}
 
 	i := b.instructions[mark]
@@ -129,7 +128,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) error {
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
-		return fmt.Errorf(OpcodeAlreadyDefinedError, opcode)
+		return errors.New(errors.OpcodeAlreadyDefinedError).WithContext(opcode)
 	}
 
 	instructionNames[opcode] = name
@@ -177,21 +176,14 @@ func (b *ByteCode) Remove(n int) {
 	b.emitPos = b.emitPos - 1
 }
 
-// ByteCodeError is a wrapper for errors generated during bytecode
-// generation.
-type ByteCodeErr struct {
-	err error
-}
-
 // NewError creates a new ByteCodeErr using the message string and any
 // optional arguments that are formatted using the message string.
-func (b *ByteCode) NewError(msg string, args ...interface{}) ByteCodeErr {
-	return ByteCodeErr{
-		err: fmt.Errorf(msg, args...),
-	}
-}
+func (b *ByteCode) NewError(err error, args ...interface{}) *errors.EgoError {
+	r := errors.New(err)
 
-// Error produces a string representation of the ByteCodeError.
-func (be ByteCodeErr) Error() string {
-	return fmt.Sprintf("bytecode generation, %s", be.err.Error())
+	if len(args) > 0 {
+		_ = r.WithContext(args[0])
+	}
+
+	return r
 }

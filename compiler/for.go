@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -50,7 +51,7 @@ func (c *Compiler) For() error {
 
 		// Update any break statements. If there are no breaks, this is an illegal loop construct
 		if len(c.loops.breaks) == 0 {
-			return c.NewError(LoopExitError)
+			return c.NewError(errors.LoopExitError)
 		}
 
 		for _, fixAddr := range c.loops.breaks {
@@ -78,7 +79,7 @@ func (c *Compiler) For() error {
 	if !c.IsLValue() {
 		bc, err := c.Expression()
 		if err != nil {
-			return c.NewError(MissingForLoopInitializerError)
+			return c.NewError(errors.MissingForLoopInitializerError)
 		}
 
 		// Make a point of seeing if this is a constant value, which
@@ -122,14 +123,14 @@ func (c *Compiler) For() error {
 		// If we didn't emit anything other than
 		// the AtLine then this is an invalid loop
 		if c.b.Mark() <= opcount+1 {
-			return c.NewError(LoopBodyError)
+			return c.NewError(errors.LoopBodyError)
 		}
 
 		// Uglier test, but also needs doing. If there was a statement, but
 		// it was a block that did not contain any statments, also empty body.
 		wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
 		if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount-1 {
-			return c.NewError(LoopBodyError)
+			return c.NewError(errors.LoopBodyError)
 		}
 		// Branch back to start of loop
 		c.b.Emit(bytecode.Branch, b1)
@@ -142,7 +143,7 @@ func (c *Compiler) For() error {
 		_ = c.b.SetAddressHere(b2)
 
 		if isConstant && len(c.loops.breaks) == 0 {
-			return c.NewError(LoopExitError)
+			return c.NewError(errors.LoopExitError)
 		}
 
 		for _, fixAddr := range c.loops.breaks {
@@ -161,7 +162,7 @@ func (c *Compiler) For() error {
 	}
 
 	if !c.t.IsNext(":=") {
-		return c.NewError(MissingLoopAssignmentError)
+		return c.NewError(errors.MissingLoopAssignmentError)
 	}
 
 	// Do we compile a range?
@@ -172,7 +173,7 @@ func (c *Compiler) For() error {
 		// be real lvalues. The actual thing we range is on the stack.
 		bc, err := c.Expression()
 		if err != nil {
-			return c.NewError(err.Error())
+			return c.NewError(err)
 		}
 
 		c.b.Append(bc)
@@ -223,7 +224,7 @@ func (c *Compiler) For() error {
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
 	if indexName == "" && valueName != "" {
-		return c.NewError(InvalidLoopIndexError)
+		return c.NewError(errors.InvalidLoopIndexError)
 	}
 
 	c.PushLoop(indexLoopType)
@@ -238,7 +239,7 @@ func (c *Compiler) For() error {
 	c.b.Append(indexStore)
 
 	if !c.t.IsNext(";") {
-		return c.NewError(MissingSemicolonError)
+		return c.NewError(errors.MissingSemicolonError)
 	}
 
 	// Now get the condition clause that tells us if the loop
@@ -249,7 +250,7 @@ func (c *Compiler) For() error {
 	}
 
 	if !c.t.IsNext(";") {
-		return c.NewError(MissingSemicolonError)
+		return c.NewError(errors.MissingSemicolonError)
 	}
 
 	// Finally, get the clause that updates something
@@ -261,7 +262,7 @@ func (c *Compiler) For() error {
 	}
 
 	if !c.t.IsNext("=") {
-		return c.NewError(MissingEqualError)
+		return c.NewError(errors.MissingEqualError)
 	}
 
 	incrementCode, err := c.Expression()
@@ -312,7 +313,7 @@ func (c *Compiler) For() error {
 // in the compiler context.
 func (c *Compiler) Break() error {
 	if c.loops == nil {
-		return c.NewError(InvalidLoopControlError)
+		return c.NewError(errors.InvalidLoopControlError)
 	}
 
 	fixAddr := c.b.Mark()
@@ -329,7 +330,7 @@ func (c *Compiler) Break() error {
 // in the compiler context.
 func (c *Compiler) Continue() error {
 	if c.loops == nil {
-		return c.NewError(InvalidLoopControlError)
+		return c.NewError(errors.InvalidLoopControlError)
 	}
 
 	c.loops.continues = append(c.loops.continues, c.b.Mark())

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -71,7 +72,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err == nil && len(j) == 0 {
-		err = NewError("validate", InvalidTokenEncryption)
+		err = errors.New(errors.InvalidTokenEncryption).In("validate()")
 	}
 
 	if err != nil {
@@ -97,13 +98,13 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		if reportErr {
-			return false, NewError("validate", ExpiredTokenError)
+			err = errors.New(errors.ExpiredTokenError).In("validate()")
 		} else {
 			return false, nil
 		}
 	}
 
-	return true, nil
+	return true, err
 }
 
 // Extract extracts the data from a token and returns it as a struct.
@@ -126,7 +127,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(j) == 0 {
-		return nil, NewError("extract", InvalidTokenEncryption)
+		return nil, errors.New(errors.InvalidTokenEncryption).In("extract()")
 	}
 
 	var t = Token{}
@@ -139,7 +140,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		return nil, NewError("extract", ExpiredTokenError)
+		err = errors.New(errors.ExpiredTokenError).In("validate()")
 	}
 
 	r := map[string]interface{}{}
@@ -149,7 +150,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r["session"] = t.AuthID.String()
 	r["id"] = t.TokenID.String()
 
-	return r, nil
+	return r, err
 }
 
 // CreateToken creates a new token with a username and a data payload.

@@ -1,9 +1,10 @@
 package datatypes
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 type EgoMap struct {
@@ -47,20 +48,20 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 		return v, found, nil
 	}
 
-	return nil, false, errors.New(WrongMapKeyType)
+	return nil, false, errors.New(errors.WrongMapKeyType).WithContext(key)
 }
 
 func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
 	if m.immutable > 0 {
-		return false, errors.New(ImmutableMapError)
+		return false, errors.New(errors.ImmutableMapError)
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(WrongMapKeyType)
+		return false, errors.New(errors.WrongMapKeyType).WithContext(key)
 	}
 
 	if !IsType(value, m.valueType) {
-		return false, errors.New(WrongMapValueType)
+		return false, errors.New(errors.WrongMapValueType).WithContext(value)
 	}
 
 	_, found := m.data[key]
@@ -80,11 +81,11 @@ func (m *EgoMap) Keys() []interface{} {
 
 func (m *EgoMap) Delete(key interface{}) (bool, error) {
 	if m.immutable > 0 {
-		return false, errors.New(ImmutableMapError)
+		return false, errors.New(errors.ImmutableMapError)
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(WrongMapKeyType)
+		return false, errors.New(errors.WrongMapKeyType).WithContext(key)
 	}
 
 	_, found, err := m.Get(key)

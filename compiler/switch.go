@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 // Switch compiles a switch statement.
@@ -23,7 +24,7 @@ func (c *Compiler) Switch() error {
 	c.b.Emit(bytecode.Store, t)
 
 	if !c.t.IsNext("{") {
-		return c.NewError(MissingBlockError)
+		return c.NewError(errors.MissingBlockError)
 	}
 
 	for !c.t.IsNext("}") {
@@ -34,7 +35,7 @@ func (c *Compiler) Switch() error {
 		// Could be a default statement:
 		if c.t.IsNext("default") {
 			if !c.t.IsNext(":") {
-				return c.NewError(MissingColonError)
+				return c.NewError(errors.MissingColonError)
 			}
 
 			savedBC := c.b
@@ -52,7 +53,7 @@ func (c *Compiler) Switch() error {
 		} else {
 			// Must be a "case" statement:
 			if !c.t.IsNext("case") {
-				return c.NewError(MissingCaseError)
+				return c.NewError(errors.MissingCaseError)
 			}
 
 			cx, err := c.Expression()
@@ -69,7 +70,7 @@ func (c *Compiler) Switch() error {
 			c.b.Emit(bytecode.BranchFalse, 0)
 
 			if !c.t.IsNext(":") {
-				return c.NewError(MissingColonError)
+				return c.NewError(errors.MissingColonError)
 			}
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "default" && c.t.Peek(1) != "}" {

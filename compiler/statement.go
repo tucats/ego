@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -75,7 +76,7 @@ func (c *Compiler) Statement() error {
 			return c.Assert()
 		}
 
-		return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
+		return c.NewError(errors.UnrecognizedStatementError, c.t.Peek(0))
 
 	case "break":
 		return c.Break()
@@ -138,7 +139,7 @@ func (c *Compiler) Statement() error {
 	}
 
 	// Unknown statement, return an error
-	return c.NewError(UnrecognizedStatementError, c.t.Peek(0))
+	return c.NewError(errors.UnrecognizedStatementError, c.t.Peek(0))
 }
 
 // IsFunctionCall indicates if the token stream points to a function call.

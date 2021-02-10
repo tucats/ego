@@ -3,11 +3,11 @@ package bytecode
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -97,7 +97,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		imp, found := dispatch[i.Operation]
 		if !found {
-			return c.NewError(UnimplementedInstructionError, strconv.Itoa(int(i.Operation)))
+			return c.NewError(errors.UnimplementedInstructionError).WithContext(i.Operation)
 		}
 
 		err = imp(c, i.Operand)
@@ -143,7 +143,7 @@ func (c *Context) RunFromAddress(addr int) error {
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	syms := parentCtx.symbols
-	err := parentCtx.NewError(InvalidFunctionCallError)
+	err := parentCtx.NewError(errors.InvalidFunctionCallError)
 
 	ui.Debug(ui.ByteCodeLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.ByteCodeLogger, "--> Argument list: %#v\n", args)
@@ -175,7 +175,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ctx := NewContext(funcSyms, callCode)
 			ctx.Tracing = true
 			ui.DebugMode = true
-			err = parentCtx.NewError(ctx.Run().Error())
+			err = parentCtx.NewError(ctx.Run())
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -15,7 +16,7 @@ import (
 func (c *Compiler) Directive() error {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(InvalidDirectiveError, name)
+		return c.NewError(errors.InvalidDirectiveError, name)
 	}
 
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
@@ -58,7 +59,7 @@ func (c *Compiler) Directive() error {
 		return c.TypeChecking()
 
 	default:
-		return c.NewError(InvalidDirectiveError, name)
+		return c.NewError(errors.InvalidDirectiveError, name)
 	}
 }
 
@@ -66,12 +67,12 @@ func (c *Compiler) Directive() error {
 // value in the root symbol table, global to all execution.
 func (c *Compiler) Global() error {
 	if c.t.AtEnd() {
-		return c.NewError(InvalidSymbolError)
+		return c.NewError(errors.InvalidSymbolError)
 	}
 
 	name := c.t.Next()
 	if strings.HasPrefix(name, "_") || !tokenizer.IsSymbol(name) {
-		return c.NewError(InvalidSymbolError, name)
+		return c.NewError(errors.InvalidSymbolError, name)
 	}
 
 	name = c.Normalize(name)
@@ -95,12 +96,12 @@ func (c *Compiler) Global() error {
 // Log parses the @log directive.
 func (c *Compiler) Log() error {
 	if c.t.AtEnd() {
-		return c.NewError(InvalidSymbolError)
+		return c.NewError(errors.InvalidSymbolError)
 	}
 
 	name := strings.ToUpper(c.t.Next())
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(InvalidSymbolError, name)
+		return c.NewError(errors.InvalidSymbolError, name)
 	}
 
 	if c.t.AtEnd() {
@@ -123,7 +124,7 @@ func (c *Compiler) Log() error {
 // value in the root symbol table with the REST calls tatus value.
 func (c *Compiler) RestStatus() error {
 	if c.t.AtEnd() {
-		return c.NewError(InvalidSymbolError)
+		return c.NewError(errors.InvalidSymbolError)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -157,7 +158,7 @@ func (c *Compiler) Authenticated() error {
 	}
 
 	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
-		return c.NewError("Invalid authentication type", token)
+		return c.NewError(errors.InvalidAuthenticationType, token)
 	}
 
 	c.b.Emit(bytecode.Auth, token)
@@ -168,7 +169,7 @@ func (c *Compiler) Authenticated() error {
 // RestResponse processes the @response directive.
 func (c *Compiler) RestResponse() error {
 	if c.t.AtEnd() {
-		return c.NewError(InvalidSymbolError)
+		return c.NewError(errors.InvalidSymbolError)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -189,7 +190,7 @@ func (c *Compiler) Template() error {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(InvalidSymbolError, name)
+		return c.NewError(errors.InvalidSymbolError, name)
 	}
 
 	name = c.Normalize(name)
@@ -216,7 +217,7 @@ func (c *Compiler) Error() error {
 			c.b.Append(code)
 		}
 	} else {
-		c.b.Emit(bytecode.Push, GenericError)
+		c.b.Emit(bytecode.Push, errors.Panic)
 	}
 
 	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
@@ -232,7 +233,7 @@ func (c *Compiler) TypeChecking() error {
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
-		err = c.NewError(InvalidTypeCheckError, t)
+		err = c.NewError(errors.InvalidTypeCheckError, t)
 	}
 
 	c.b.Emit(bytecode.StaticTyping)
@@ -263,7 +264,7 @@ func (c *Compiler) modeCheck(mode string, check bool) error {
 		c.b.Emit(bytecode.BranchFalse, 0)
 	}
 
-	c.b.Emit(bytecode.Push, WrongModeError)
+	c.b.Emit(bytecode.Push, errors.WrongModeError)
 	c.b.Emit(bytecode.Push, ": ")
 	c.b.Emit(bytecode.Load, "__exec_mode")
 	c.b.Emit(bytecode.Add)

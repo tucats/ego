@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -37,7 +38,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TimeAdd implements time.duration().
 func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, NewError("Add", ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Add()")
 	}
 
 	t, err := getTime(s)
@@ -56,7 +57,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TimeSub implements time.duration().
 func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, NewError("Sub", ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Sub()")
 	}
 
 	t, err := getTime(s)
@@ -75,7 +76,7 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TimeFormat implements time.Format().
 func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, NewError("Format", ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Format()")
 	}
 
 	t, err := getTime(s)
@@ -91,7 +92,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TimeSleep implements time.SleepUntil().
 func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, NewError("Sleep", ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("Sleep()")
 	}
 
 	t, err := getTime(s)
@@ -108,7 +109,7 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TimeFormat implements time.Format().
 func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, NewError("String", ArgumentCountError)
+		return nil, errors.New(errors.ArgumentCountError).In("String()")
 	}
 
 	t, err := getTime(s)
@@ -128,7 +129,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 		return getTimeV(t)
 	}
 
-	return nil, NewError("time", NoFunctionReceiver)
+	return nil, errors.New(errors.NoFunctionReceiver).In("time function")
 }
 
 // getTimeV extracts a time.Time value from an Ego time
@@ -142,7 +143,7 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 		}
 	}
 
-	return nil, NewError("time", NoFunctionReceiver)
+	return nil, errors.New(errors.NoFunctionReceiver).In("time function")
 }
 
 func makeTime(t *time.Time) interface{} {

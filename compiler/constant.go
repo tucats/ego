@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -17,13 +18,13 @@ func (c *Compiler) Constant() error {
 	for terminator == "" || !c.t.IsNext(terminator) {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return c.NewError(InvalidSymbolError)
+			return c.NewError(errors.InvalidSymbolError)
 		}
 
 		name = c.Normalize(name)
 
 		if !c.t.IsNext("=") {
-			return c.NewError(MissingEqualError)
+			return c.NewError(errors.MissingEqualError)
 		}
 
 		vx, err := c.Expression()
@@ -36,7 +37,7 @@ func (c *Compiler) Constant() error {
 
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(util.GetString(i.Operand), c.constants...) {
-				return c.NewError(InvalidConstantError)
+				return c.NewError(errors.InvalidConstantError)
 			}
 		}
 

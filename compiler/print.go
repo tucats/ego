@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/errors"
 )
 
 // Print compiles a print statement. The verb is already removed
@@ -11,7 +12,7 @@ func (c *Compiler) Print() error {
 
 	for !c.StatementEnd() {
 		if c.t.IsNext(",") {
-			return c.NewError(UnexpectedTokenError, c.t.Peek(1))
+			return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
 		}
 
 		bc, err := c.Expression()
