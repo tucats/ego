@@ -55,7 +55,7 @@ func QuietAction(c *cli.Context) *errors.EgoError {
 }
 
 func VersionAction(c *cli.Context) *errors.EgoError {
-	fmt.Printf("%s %s (%s, %s x%d)\n",
+	fmt.Printf("%s version %s (%s, %s x%d)\n",
 		c.FindGlobal().AppName,
 		c.FindGlobal().Version,
 		runtime.GOOS,
