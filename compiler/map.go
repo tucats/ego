@@ -20,7 +20,7 @@ func (c *Compiler) Map() *errors.EgoError {
 	// Parse the key type
 	keyType := c.ParseType()
 	if keyType == datatypes.UndefinedType {
-		return c.NewError(errors.InvalidTypeError)
+		return c.NewError(errors.InvalidTypeSpecError)
 	}
 
 	// Closing bracket on the key type
@@ -30,6 +30,9 @@ func (c *Compiler) Map() *errors.EgoError {
 
 	// Parse the object type
 	valueType := c.ParseType()
+	if valueType == datatypes.UndefinedType {
+		return c.NewError(errors.InvalidTypeSpecError)
+	}
 
 	// Make a suitable map object and push it on the stack.
 	c.b.Emit(bytecode.Push, datatypes.NewMap(keyType, valueType))
