@@ -38,7 +38,12 @@ func main() {
 		fmt.Printf("Error: %v\n", err.Error())
 
 		if value := err.GetContext(); value != nil {
-			errorCode := util.GetInt(value)
+			errorCode := 1
+
+			if _, ok := value.(string); !ok {
+				errorCode = util.GetInt(value)
+			}
+
 			if errorCode == 0 {
 				errorCode = 1
 			}
