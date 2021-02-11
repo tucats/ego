@@ -71,6 +71,12 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 			Action:              QuietAction,
 			EnvironmentVariable: "CLI_QUIET",
 		},
+		{
+			LongName:    "version",
+			Description: "Display the version number",
+			OptionType:  cli.Subcommand,
+			Action:      VersionAction,
+		},
 	}
 
 	// Add the user-provided grammar

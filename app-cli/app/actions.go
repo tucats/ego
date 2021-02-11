@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -49,6 +50,17 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 // QuietAction is an action routine to set the global debug status if specified.
 func QuietAction(c *cli.Context) *errors.EgoError {
 	ui.QuietMode = c.FindGlobal().GetBool("quiet")
+
+	return nil
+}
+
+func VersionAction(c *cli.Context) *errors.EgoError {
+	fmt.Printf("%s %s (%s, %s x%d)\n",
+		c.FindGlobal().AppName,
+		c.FindGlobal().Version,
+		runtime.GOOS,
+		runtime.GOARCH,
+		runtime.NumCPU())
 
 	return nil
 }
