@@ -30,7 +30,7 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 
 	for errors.Nil(err) {
 		err = c.Resume()
-		if err == errors.SignalDebugger {
+		if err.Is(errors.SignalDebugger) {
 			err = Debugger(c)
 		}
 

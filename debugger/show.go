@@ -23,9 +23,17 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		ShowBreaks()
 
 	case "symbols", "syms":
+		if tokens.Peek(3) != tokenizer.EndOfTokens {
+			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+		}
+
 		fmt.Println(s.Format(true))
 
 	case "line":
+		if tokens.Peek(3) != tokenizer.EndOfTokens {
+			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+		}
+
 		text := tx.GetLine(line)
 
 		fmt.Printf("%s:\n\t%5d, %s\n", stepTo, line, text)
@@ -35,6 +43,10 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
+			if tokens.Peek(4) != tokenizer.EndOfTokens {
+				return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(4))
+			}
+
 			if tx != "all" {
 				var e2 error
 				depth, e2 = strconv.Atoi(tx)
@@ -49,6 +61,10 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	case "scope":
 		syms := s
 		depth := 0
+
+		if tokens.Peek(3) != tokenizer.EndOfTokens {
+			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+		}
 
 		fmt.Printf("Symbol table scope:\n")
 
