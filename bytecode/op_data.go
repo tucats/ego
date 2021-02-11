@@ -6,8 +6,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// StoreImpl instruction processor.
-
 // StoreImpl implements the Store opcode
 //
 // Inputs:
