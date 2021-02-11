@@ -126,7 +126,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	// See if it's in the current constants table.
 	if syms.IsConstant(name) {
-		return errors.New(errors.ReadOnlyValueError).WithContext(name)
+		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
 	syms.Symbols[name] = v
@@ -146,16 +146,16 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	// to be sure it's writable.
 	if found {
 		if old != nil && name[0:1] == "_" {
-			return errors.New(errors.ReadOnlyValueError).WithContext(name)
+			return errors.New(errors.ReadOnlyValueError).Context(name)
 		}
 		// Check to be sure this isn't a restricted (function code) type
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return errors.New(errors.ReadOnlyValueError).WithContext(name)
+			return errors.New(errors.ReadOnlyValueError).Context(name)
 		}
 	} else {
 		// If there are no more tables, we have an error.
 		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).WithContext(name)
+			return errors.New(errors.UnknownSymbolError).Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
 		return s.Parent.Set(name, v)
@@ -174,17 +174,17 @@ func (s *SymbolTable) Delete(name string) *errors.EgoError {
 	}
 
 	if name[:1] == "_" {
-		return errors.New(errors.ReadOnlyValueError).WithContext(name)
+		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
 	if s.Symbols == nil {
-		return errors.New(errors.UnknownSymbolError).WithContext(name)
+		return errors.New(errors.UnknownSymbolError).Context(name)
 	}
 
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).WithContext(name)
+			return errors.New(errors.UnknownSymbolError).Context(name)
 		}
 
 		return s.Parent.Delete(name)
@@ -203,13 +203,13 @@ func (s *SymbolTable) DeleteAlways(name string) *errors.EgoError {
 	}
 
 	if s.Symbols == nil {
-		return errors.New(errors.UnknownSymbolError).WithContext(name)
+		return errors.New(errors.UnknownSymbolError).Context(name)
 	}
 
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).WithContext(name)
+			return errors.New(errors.UnknownSymbolError).Context(name)
 		}
 
 		return s.Parent.DeleteAlways(name)
@@ -228,7 +228,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 
 	_, found := s.Symbols[name]
 	if found {
-		return errors.New(errors.SymbolExistsError).WithContext(name)
+		return errors.New(errors.SymbolExistsError).Context(name)
 	}
 
 	s.Symbols[name] = nil

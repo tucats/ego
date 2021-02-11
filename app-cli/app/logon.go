@@ -117,7 +117,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 			err = errors.New(errors.LogonEndpointError)
 
 		default:
-			err = errors.New(errors.HTTPError).WithContext(r.StatusCode())
+			err = errors.New(errors.HTTPError).Context(r.StatusCode())
 		}
 	}
 

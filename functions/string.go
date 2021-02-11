@@ -261,7 +261,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				return nil, errors.New(errors.InvalidTemplateName).In("template()").WithContext(templateNode.Name)
+				return nil, errors.New(errors.InvalidTemplateName).In("template()").Context(templateNode.Name)
 			}
 
 			t, ok := tv.(*template.Template)

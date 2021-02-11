@@ -555,14 +555,14 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 				return r, nil
 			}
 
-			return nil, errors.New(errors.UnexpectedValueError).WithContext(v)
+			return nil, errors.New(errors.UnexpectedValueError).Context(v)
 
 		default:
-			return nil, errors.New(errors.InvalidTypeNameError).WithContext(m["@type"])
+			return nil, errors.New(errors.InvalidTypeNameError).Context(m["@type"])
 		}
 
 	default:
-		return nil, errors.New(errors.UnexpectedValueError).WithContext(m)
+		return nil, errors.New(errors.UnexpectedValueError).Context(m)
 	}
 }
 

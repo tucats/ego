@@ -48,7 +48,7 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
 		return v, found, nil
 	}
 
-	return nil, false, errors.New(errors.WrongMapKeyType).WithContext(key)
+	return nil, false, errors.New(errors.WrongMapKeyType).Context(key)
 }
 
 func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError) {
@@ -57,11 +57,11 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(errors.WrongMapKeyType).WithContext(key)
+		return false, errors.New(errors.WrongMapKeyType).Context(key)
 	}
 
 	if !IsType(value, m.valueType) {
-		return false, errors.New(errors.WrongMapValueType).WithContext(value)
+		return false, errors.New(errors.WrongMapValueType).Context(value)
 	}
 
 	_, found := m.data[key]
@@ -85,7 +85,7 @@ func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(errors.WrongMapKeyType).WithContext(key)
+		return false, errors.New(errors.WrongMapKeyType).Context(key)
 	}
 
 	_, found, err := m.Get(key)

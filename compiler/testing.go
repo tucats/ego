@@ -94,7 +94,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 			fmt.Println()
 
-			return nil, errors.New(errors.AssertError).In(name).WithContext(msg)
+			return nil, errors.New(errors.AssertError).In(name).Context(msg)
 		} else {
 			return true, nil
 		}
@@ -107,7 +107,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		msg := errors.New(errors.TestingAssertError).In("assert()")
 
 		if len(args) > 1 {
-			msg = msg.WithContext(args[1])
+			msg = msg.Context(args[1])
 		}
 
 		fmt.Println()
@@ -146,7 +146,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 			msg = util.GetString(args[2])
 		}
 
-		return nil, errors.NewMessage(msg).WithContext(name)
+		return nil, errors.NewMessage(msg).Context(name)
 	}
 
 	return true, nil
@@ -172,7 +172,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		}
 	}
 
-	return nil, errors.NewMessage(msg).WithContext(name)
+	return nil, errors.NewMessage(msg).Context(name)
 }
 
 // TestNil implements the T.Nil() function.

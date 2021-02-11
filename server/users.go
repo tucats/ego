@@ -135,7 +135,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		err = errors.New(errors.NoSuchUserError).WithContext(user)
+		err = errors.New(errors.NoSuchUserError).Context(user)
 	}
 
 	return err

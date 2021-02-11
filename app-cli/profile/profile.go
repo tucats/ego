@@ -118,7 +118,7 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			return nil
 		}
 
-		return errors.New(errors.InvalidOutputFormatError).WithContext(outputType)
+		return errors.New(errors.InvalidOutputFormatError).Context(outputType)
 	}
 
 	return errors.New(errors.MissingOutputTypeError)

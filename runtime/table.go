@@ -170,7 +170,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 			pos, found := t.FindColumn(heading)
 			if !found {
-				err = errors.New(errors.InvalidColumnNameError).WithContext(heading)
+				err = errors.New(errors.InvalidColumnNameError).Context(heading)
 			} else {
 				err = t.SortRows(pos, ascending)
 			}
@@ -227,7 +227,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.FindColumn(columnName)
 			if !ok {
-				err = errors.New(errors.InvalidColumnNameError).WithContext(columnName)
+				err = errors.New(errors.InvalidColumnNameError).Context(columnName)
 
 				return err, err
 			}
@@ -249,7 +249,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 				mode = tables.AlignmentCenter
 
 			default:
-				err = errors.New(errors.InvalidAlignmentError).WithContext(modeName)
+				err = errors.New(errors.InvalidAlignmentError).Context(modeName)
 
 				return err, err
 			}

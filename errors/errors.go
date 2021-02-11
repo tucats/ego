@@ -5,18 +5,29 @@ import (
 	"strings"
 )
 
+// location describes a source code location. Zero-values mean
+// the item is not considered present, and will be omitted from
+// formatted output.
 type location struct {
 	name   string
 	line   int
 	column int
 }
 
+// EgoError describes the error structure shared by all of Ego.
+// This includes a wrapped error (which may be from our list of
+// native errors, or a return code from a Go runtime). The
+// context is a string that further explains the cause/source of
+// the error, and is message-specific.
 type EgoError struct {
 	err      error
 	location *location
 	context  string
 }
 
+// New creates a new EgoError object, and fils in the native
+// wrapped error. Note that if the value passed in is already
+// an EgoError, then it is returned without re-wrapping it.
 func New(err error) *EgoError {
 	if e, ok := err.(*EgoError); ok {
 		return e
@@ -27,6 +38,8 @@ func New(err error) *EgoError {
 	}
 }
 
+// In specifies the location name. This can be the name of
+// a source code module, or a function name.
 func (e *EgoError) In(name string) *EgoError {
 	if e.location == nil {
 		e.location = &location{}
@@ -37,6 +50,10 @@ func (e *EgoError) In(name string) *EgoError {
 	return e
 }
 
+// At specifies a line number and column position related to
+// the error. The line number is always present, the column
+// is typically only set during compilation; if it is zero then
+// it is not displayed.
 func (e *EgoError) At(line int, column int) *EgoError {
 	if e.location == nil {
 		e.location = &location{}
@@ -48,12 +65,19 @@ func (e *EgoError) At(line int, column int) *EgoError {
 	return e
 }
 
-func (e *EgoError) WithContext(context interface{}) *EgoError {
+// Context specifies the context value. This is a message-
+// dependent value that further describes the error. For
+// example, in a keyword not recognized error, the context
+// is usually the offending keyword.
+func (e *EgoError) Context(context interface{}) *EgoError {
 	e.context = fmt.Sprintf("%v", context)
 
 	return e
 }
 
+// NewMessage create a new EgoError using an arbitrary
+// string. This is used in cases where a fmt.Errorf() was
+// used to generate an error string.
 func NewMessage(m string) *EgoError {
 	return &EgoError{
 		err:     UserError,
@@ -61,6 +85,8 @@ func NewMessage(m string) *EgoError {
 	}
 }
 
+// Is compares the current error to the supplied error, and
+// return sa boolean indicating if they are the same.
 func (e *EgoError) Is(err error) bool {
 	if e == nil {
 		return false
@@ -69,6 +95,10 @@ func (e *EgoError) Is(err error) bool {
 	return e.err == err
 }
 
+// Equal comparees an error to an arbitrary object. If the
+// object is not an error, then the result is always false.
+// If it is a native error or an EgoError, the error and
+// wrapped error are compared.
 func (e *EgoError) Equal(v interface{}) bool {
 	if e == nil {
 		return v == nil
@@ -111,6 +141,7 @@ func Nil(e error) bool {
 	return false
 }
 
+// Format an EgoError as a string for human consumption.
 func (e *EgoError) Error() string {
 	var b strings.Builder
 
@@ -175,10 +206,13 @@ func (e *EgoError) Error() string {
 	return b.String()
 }
 
+// Unwrap retrieves the native or wrapped error from this
+// EgoError.
 func (e *EgoError) Unwrap() error {
 	return e.err
 }
 
+// GetContext retrieves the context value for the error.
 func (e *EgoError) GetContext() interface{} {
 	return e.context
 }

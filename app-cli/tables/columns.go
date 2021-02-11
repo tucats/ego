@@ -37,7 +37,7 @@ func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
 
 	for n, v := range order {
 		if v < 1 || v > t.columnCount {
-			return errors.New(errors.InvalidColumnNumberError).WithContext(v)
+			return errors.New(errors.InvalidColumnNumberError).Context(v)
 		}
 
 		newOrder[n] = v - 1
@@ -60,7 +60,7 @@ func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
 	for n, name := range order {
 		v, found := t.FindColumn(name)
 		if !found {
-			return errors.New(errors.InvalidColumnNameError).WithContext(name)
+			return errors.New(errors.InvalidColumnNameError).Context(name)
 		}
 
 		newOrder[n] = v

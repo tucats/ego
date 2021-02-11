@@ -96,7 +96,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 		imp, found := dispatch[i.Operation]
 		if !found {
-			return c.NewError(errors.UnimplementedInstructionError).WithContext(i.Operation)
+			return c.NewError(errors.UnimplementedInstructionError).Context(i.Operation)
 		}
 
 		err = imp(c, i.Operand)

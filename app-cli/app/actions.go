@@ -20,7 +20,7 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
 			ui.OutputFormat = formatString
 		} else {
-			return errors.New(errors.InvalidOutputFormatErr).WithContext(formatString)
+			return errors.New(errors.InvalidOutputFormatErr).Context(formatString)
 		}
 
 		persistence.SetDefault("ego.output-format", strings.ToLower(formatString))
@@ -39,7 +39,7 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 	for _, v := range loggers {
 		valid := ui.SetLogger(strings.ToUpper(v), true)
 		if !valid {
-			return errors.New(errors.InvalidLoggerName).WithContext(v)
+			return errors.New(errors.InvalidLoggerName).Context(v)
 		}
 	}
 

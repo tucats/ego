@@ -39,7 +39,7 @@ func PanicImpl(c *Context, i interface{}) *errors.EgoError {
 
 	msg := util.GetString(strValue)
 
-	return c.NewError(errors.Panic).WithContext(msg)
+	return c.NewError(errors.Panic).Context(msg)
 }
 
 // AtLineImpl instruction processor. This identifies the start of a new statement,
@@ -75,7 +75,7 @@ func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
+		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	if !util.GetBool(v) {
@@ -91,7 +91,7 @@ func BranchImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
+		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	c.pc = address
@@ -112,7 +112,7 @@ func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).WithContext(address)
+		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	if util.GetBool(v) {
@@ -203,7 +203,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if funcPointer == nil {
-		return c.NewError(errors.InvalidFunctionCallError).WithContext("<nil>")
+		return c.NewError(errors.InvalidFunctionCallError).Context("<nil>")
 	}
 
 	// Depends on the type here as to what we call...
@@ -251,7 +251,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 			if len(args) < df.Min || len(args) > df.Max {
 				name := functions.FindName(af)
 
-				return errors.New(errors.ArgumentCountError).WithContext(name)
+				return errors.New(errors.ArgumentCountError).Context(name)
 			}
 		}
 
@@ -302,7 +302,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
-		return c.NewError(errors.InvalidFunctionCallError).WithContext(af)
+		return c.NewError(errors.InvalidFunctionCallError).Context(af)
 	}
 
 	if !errors.Nil(err) {

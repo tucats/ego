@@ -13,7 +13,7 @@ import (
 // Int implements the int() function.
 func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1); v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("int()").WithContext(args[0])
+		return nil, errors.New(errors.InvalidTypeError).In("int()").Context(args[0])
 	} else {
 		return v.(int), nil
 	}
@@ -22,7 +22,7 @@ func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // Float implements the float() function.
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1.0); v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("float()").WithContext(args[0])
+		return nil, errors.New(errors.InvalidTypeError).In("float()").Context(args[0])
 	} else {
 		return v.(float64), nil
 	}
@@ -65,7 +65,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v := util.Coerce(args[0], true)
 	if v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("bool()").WithContext(args[0])
+		return nil, errors.New(errors.InvalidTypeError).In("bool()").Context(args[0])
 	}
 
 	return v.(bool), nil
@@ -104,7 +104,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("new()").WithContext(typeValue)
+			return nil, errors.New(errors.InvalidTypeError).In("new()").Context(typeValue)
 		}
 	}
 
@@ -127,7 +127,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("new()").WithContext(typeValue)
+			return nil, errors.New(errors.InvalidTypeError).In("new()").Context(typeValue)
 		}
 	}
 
@@ -137,13 +137,13 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	// IF there was a type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
-		return nil, errors.New(errors.InvalidValueError).In("new()").WithContext(nil)
+		return nil, errors.New(errors.InvalidValueError).In("new()").Context(nil)
 
 	case symbols.SymbolTable:
-		return nil, errors.New(errors.InvalidValueError).In("new()").WithContext("symbol table")
+		return nil, errors.New(errors.InvalidValueError).In("new()").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-		return nil, errors.New(errors.InvalidValueError).In("new()").WithContext("builtin function")
+		return nil, errors.New(errors.InvalidValueError).In("new()").Context("builtin function")
 
 	case int:
 	case string:
@@ -189,7 +189,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		}
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("new()").WithContext(v)
+		return nil, errors.New(errors.InvalidTypeError).In("new()").Context(v)
 	}
 
 	return r, nil

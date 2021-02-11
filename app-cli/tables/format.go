@@ -42,11 +42,11 @@ func (t *Table) ShowRowNumbers(flag bool) *Table {
 // always zero-based.
 func (t *Table) SetMinimumWidth(n int, w int) *errors.EgoError {
 	if n < 0 || n >= t.columnCount {
-		return errors.New(errors.InvalidColumnNumberError).WithContext(n)
+		return errors.New(errors.InvalidColumnNumberError).Context(n)
 	}
 
 	if w < 0 {
-		return errors.New(errors.InvalidColumnWidthError).WithContext(w)
+		return errors.New(errors.InvalidColumnWidthError).Context(w)
 	}
 
 	if w > t.maxWidth[n] {
@@ -60,7 +60,7 @@ func (t *Table) SetMinimumWidth(n int, w int) *errors.EgoError {
 // printed. A value less than zero is an error.
 func (t *Table) SetStartingRow(s int) *errors.EgoError {
 	if s < 1 {
-		return errors.New(errors.InvalidRowNumberError).WithContext(s)
+		return errors.New(errors.InvalidRowNumberError).Context(s)
 	}
 
 	t.startingRow = s - 1
@@ -71,7 +71,7 @@ func (t *Table) SetStartingRow(s int) *errors.EgoError {
 // SetSpacing specifies the spaces between columns in output.
 func (t *Table) SetSpacing(s int) *errors.EgoError {
 	if s < 0 {
-		return errors.New(errors.InvalidSpacingError).WithContext(s)
+		return errors.New(errors.InvalidSpacingError).Context(s)
 	}
 
 	var buffer strings.Builder
@@ -90,7 +90,7 @@ func (t *Table) SetIndent(s int) *errors.EgoError {
 	var buffer strings.Builder
 
 	if s < 0 {
-		return errors.New(errors.InvalidSpacingError).WithContext(s)
+		return errors.New(errors.InvalidSpacingError).Context(s)
 	}
 
 	for i := 0; i < s; i++ {
@@ -105,7 +105,7 @@ func (t *Table) SetIndent(s int) *errors.EgoError {
 // SetAlignment sets the alignment for a given column.
 func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
 	if column < 0 || column >= t.columnCount {
-		return errors.New(errors.InvalidColumnNumberError).WithContext(column)
+		return errors.New(errors.InvalidColumnNumberError).Context(column)
 	}
 
 	switch alignment {
@@ -119,7 +119,7 @@ func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
 		t.alignment[column] = AlignmentCenter
 
 	default:
-		return errors.New(errors.InvalidAlignmentError).WithContext(alignment)
+		return errors.New(errors.InvalidAlignmentError).Context(alignment)
 	}
 
 	return nil

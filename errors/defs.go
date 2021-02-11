@@ -4,6 +4,7 @@ import "errors"
 
 // This contains the definitions for the Ego native errors, regardless
 // of subsystem, etc.
+// TODO introduce localized strings.
 
 var ArgumentCountError = errors.New("incorrect function argument count")
 var ArgumentTypeError = errors.New("incorrect function argument type")

@@ -102,7 +102,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 					} else {
 						if tokens.Peek(2) != tokenizer.EndOfTokens {
 							prompt = true
-							err = errors.New(errors.InvalidStepType).WithContext(tokens.Peek(2))
+							err = errors.New(errors.InvalidStepType).Context(tokens.Peek(2))
 							c.SetSingleStep(false)
 						}
 					}
@@ -133,7 +133,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				return errors.New(errors.Stop)
 
 			default:
-				err = errors.New(errors.InvalidDebugCommandError).WithContext(t)
+				err = errors.New(errors.InvalidDebugCommandError).Context(t)
 			}
 
 			if !errors.Nil(err) && !err.Is(errors.Stop) && !err.Is(errors.StepOver) {

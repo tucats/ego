@@ -121,7 +121,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return errors.New(errors.UnknownOptionError).WithContext(option)
+			return errors.New(errors.UnknownOptionError).Context(option)
 		}
 
 		// It could be a parameter, or a subcommand.
@@ -185,7 +185,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
-						return errors.New(errors.MissingOptionValueError).WithContext(name)
+						return errors.New(errors.MissingOptionValueError).Context(name)
 					}
 
 					value = args[currentArg]
@@ -206,7 +206,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				}
 
 				if !found {
-					return errors.New(errors.InvalidKeywordError).WithContext(value)
+					return errors.New(errors.InvalidKeywordError).Context(value)
 				}
 
 			case BooleanType:
@@ -215,7 +215,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return errors.New(errors.InvalidBooleanValueError).WithContext(value)
+					return errors.New(errors.InvalidBooleanValueError).Context(value)
 				}
 
 				location.Value = b
@@ -237,7 +237,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			case IntType:
 				i, err := strconv.Atoi(value)
 				if !errors.Nil(err) {
-					return errors.New(errors.InvalidIntegerError).WithContext(value)
+					return errors.New(errors.InvalidIntegerError).Context(value)
 				}
 
 				location.Value = i
@@ -260,7 +260,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.New(errors.RequiredNotFoundError).WithContext(entry.LongName)
+			err = errors.New(errors.RequiredNotFoundError).Context(entry.LongName)
 
 			break
 		}

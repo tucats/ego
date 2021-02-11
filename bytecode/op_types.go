@@ -62,7 +62,7 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			t := util.GetInt(i)
 			switch t {
 			case datatypes.ErrorType:
-				v = errors.New(errors.Panic).WithContext(v)
+				v = errors.New(errors.Panic).Context(v)
 
 			case datatypes.IntType:
 				v = util.GetInt(v)
@@ -113,7 +113,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch t {
 	case datatypes.ErrorType:
-		v = errors.New(errors.Panic).WithContext(v)
+		v = errors.New(errors.Panic).Context(v)
 
 	case datatypes.IntType:
 		v = util.GetInt(v)

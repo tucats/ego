@@ -44,7 +44,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// doesn't exist yet, for example
 	if strings.HasPrefix(key, "ego.") {
 		if !persistence.Exists(key) {
-			return nil, errors.New(errors.ReservedProfileSetting).In("Set()").WithContext(key)
+			return nil, errors.New(errors.ReservedProfileSetting).In("Set()").Context(key)
 		}
 	}
 	// If the value is an empty string, delete the key else
@@ -416,7 +416,7 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r := errors.New(errors.UserError)
 	if len(args) > 0 {
-		r = r.WithContext(args[0])
+		r = r.Context(args[0])
 	}
 
 	return r, nil

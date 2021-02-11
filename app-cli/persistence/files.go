@@ -264,7 +264,7 @@ func DeleteProfile(key string) *errors.EgoError {
 		if cfg.ID == getCurrentConfiguration().ID {
 			ui.Debug(ui.AppLogger, "cannot delete active profile")
 
-			return errors.New(errors.CannotDeleteActiveProfile).WithContext(key)
+			return errors.New(errors.CannotDeleteActiveProfile).Context(key)
 		}
 
 		delete(Configurations, key)
@@ -281,7 +281,7 @@ func DeleteProfile(key string) *errors.EgoError {
 
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
 
-	return errors.New(errors.NoSuchProfile).WithContext(key)
+	return errors.New(errors.NoSuchProfile).Context(key)
 }
 
 func getCurrentConfiguration() *Configuration {

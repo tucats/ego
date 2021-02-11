@@ -95,7 +95,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = errors.New(errors.InvalidDebugCommandError).WithContext("show " + t)
+		err = errors.New(errors.InvalidDebugCommandError).Context("show " + t)
 	}
 
 	return err

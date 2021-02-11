@@ -22,7 +22,7 @@ func (c *Compiler) NewError(err error, args ...interface{}) *errors.EgoError {
 		token = util.GetString(args[0])
 	}
 
-	e := errors.New(err).WithContext(token)
+	e := errors.New(err).Context(token)
 
 	if c.PackageName != "" {
 		e = e.In(c.PackageName)

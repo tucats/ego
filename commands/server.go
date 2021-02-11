@@ -33,7 +33,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) && status != nil {
 		if _, err := os.FindProcess(status.PID); errors.Nil(err) {
 			if !c.GetBool("force") {
-				return errors.New(errors.ServerAlreadyRunning).WithContext(status.PID)
+				return errors.New(errors.ServerAlreadyRunning).Context(status.PID)
 			}
 		}
 	}
@@ -536,7 +536,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	}
 
 	if cacheStatus.Status != http.StatusOK {
-		return errors.New(errors.HTTPError).WithContext(cacheStatus.Status)
+		return errors.New(errors.HTTPError).Context(cacheStatus.Status)
 	}
 
 	switch ui.OutputFormat {

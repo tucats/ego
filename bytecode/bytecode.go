@@ -128,7 +128,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) *errors.EgoError {
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
-		return errors.New(errors.OpcodeAlreadyDefinedError).WithContext(opcode)
+		return errors.New(errors.OpcodeAlreadyDefinedError).Context(opcode)
 	}
 
 	instructionNames[opcode] = name
@@ -182,7 +182,7 @@ func (b *ByteCode) NewError(err error, args ...interface{}) *errors.EgoError {
 	r := errors.New(err)
 
 	if len(args) > 0 {
-		_ = r.WithContext(args[0])
+		_ = r.Context(args[0])
 	}
 
 	return r

@@ -63,10 +63,10 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 
 		if !f {
 			if isPackage {
-				return c.NewError(errors.UnknownPackageMemberError).WithContext(subscript)
+				return c.NewError(errors.UnknownPackageMemberError).Context(subscript)
 			}
 
-			return c.NewError(errors.UnknownMemberError).WithContext(subscript)
+			return c.NewError(errors.UnknownMemberError).Context(subscript)
 		}
 
 		err = c.Push(v)
@@ -75,7 +75,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
+			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		v, _ := a.Get(subscript)
@@ -84,7 +84,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
+			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		v := a[subscript]
@@ -129,12 +129,12 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript1 := util.GetInt(index1)
 		if subscript1 < 0 || subscript1 >= len(a) {
-			return c.NewError(errors.InvalidSliceIndexError).WithContext(subscript1)
+			return c.NewError(errors.InvalidSliceIndexError).Context(subscript1)
 		}
 
 		subscript2 := util.GetInt(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
-			return c.NewError(errors.InvalidSliceIndexError).WithContext(subscript2)
+			return c.NewError(errors.InvalidSliceIndexError).Context(subscript2)
 		}
 
 		v := a[subscript1 : subscript2+1]
@@ -241,7 +241,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		// present, with a value that is true, and we are not doing the "store always"
 		if staticFlag, ok := datatypes.GetMetadata(a, datatypes.StaticMDKey); ok && util.GetBool(staticFlag) && !storeAlways {
 			if _, ok := a[subscript]; !ok {
-				return c.NewError(errors.UnknownMemberError).WithContext(subscript)
+				return c.NewError(errors.UnknownMemberError).Context(subscript)
 			}
 		}
 
@@ -269,7 +269,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
+			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		if c.Static {
@@ -290,7 +290,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(errors.InvalidArrayIndexError).WithContext(subscript)
+			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		if c.Static {

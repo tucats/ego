@@ -88,7 +88,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 		if sourceChan {
 			err = c.Create(varname)
 		} else {
-			err = c.NewError(errors.UnknownIdentifierError).WithContext(x)
+			err = c.NewError(errors.UnknownIdentifierError).Context(x)
 		}
 
 		if !errors.Nil(err) {
@@ -188,12 +188,12 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 	if len(name) == 0 {
-		return c.NewError(errors.InvalidIdentifierError).WithContext(name)
+		return c.NewError(errors.InvalidIdentifierError).Context(name)
 	}
 
 	v, found := c.Get(util.GetString(i))
 	if !found {
-		return c.NewError(errors.UnknownIdentifierError).WithContext(name)
+		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	_ = c.Push(v)

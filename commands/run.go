@@ -94,7 +94,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			if !errors.Nil(err) {
 				content, err = ioutil.ReadFile(fname + ".ego")
 				if !errors.Nil(err) {
-					return errors.New(err).WithContext(fname)
+					return errors.New(err).Context(fname)
 				}
 			}
 
@@ -162,7 +162,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			if !errors.Nil(err) {
 				content, err = ioutil.ReadFile(fname + ".ego")
 				if !errors.Nil(err) {
-					return errors.New(err).WithContext(fname)
+					return errors.New(err).Context(fname)
 				}
 			}
 			// Convert []byte to string

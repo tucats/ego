@@ -45,10 +45,10 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		v, found = findMember(mv, name)
 		if !found {
 			if isPackage {
-				return c.NewError(errors.UnknownPackageMemberError).WithContext(name)
+				return c.NewError(errors.UnknownPackageMemberError).Context(name)
 			}
 
-			return c.NewError(errors.UnknownMemberError).WithContext(name)
+			return c.NewError(errors.UnknownMemberError).Context(name)
 		}
 
 		// Remember where we loaded this from unless it was a package name
@@ -122,7 +122,7 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 				return c.Push(v)
 			}
 
-			return c.NewError(errors.UnknownMemberError).WithContext(name)
+			return c.NewError(errors.UnknownMemberError).Context(name)
 		}
 
 		_ = c.Push(v)
