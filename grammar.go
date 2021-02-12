@@ -291,6 +291,12 @@ var ServerRunGrammar = []cli.Option{
 		Description: "Sets the optional session UUID value",
 		OptionType:  cli.UUIDType,
 	},
+	{
+		LongName:    "debug",
+		ShortName:   "d",
+		Description: "Debug this service endpoint",
+		OptionType:  cli.StringType,
+	},
 }
 
 // RunGrammar handles the command line options.

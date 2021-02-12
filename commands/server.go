@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,6 +26,8 @@ import (
 
 // String written at the start of each new log file.
 const logHeader = "*** Log file initialized %s ***\n"
+
+var PathList []string
 
 // Detach starts the sever as a detached process.
 func Start(c *cli.Context) *errors.EgoError {
@@ -347,6 +350,11 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		session = util.GetString(s)
 	}
 
+	debugPath, _ := c.GetString("debug")
+	if len(debugPath) > 0 {
+		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
+	}
+
 	ui.Debug(ui.ServerLogger, "Starting server, session %s", session)
 
 	// Do we enable the /code endpoint? This is off by default.
@@ -380,7 +388,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	// Determine the reaml used in security challenges.
+	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")
 	if c.WasFound("realm") {
 		server.Realm, _ = c.GetString("realm")
@@ -396,9 +404,31 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
+	_ = symbols.RootSymbolTable.SetAlways("__paths", []string{})
+
 	err := server.DefineLibHandlers(server.PathRoot, "/services")
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if debugPath != "" && debugPath != "/" {
+		found = false
+
+		if px, ok := symbols.RootSymbolTable.Get("__paths"); ok {
+			if pathList, ok := px.([]string); ok {
+				for _, path := range pathList {
+					if strings.EqualFold(debugPath, path) {
+						found = true
+
+						break
+					}
+				}
+			}
+		}
+
+		if !found {
+			return errors.New(errors.NoSuchDebugService).Context(debugPath)
+		}
 	}
 
 	// Specify port and security status, and create the approriate listener.

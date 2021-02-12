@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
@@ -30,6 +31,7 @@ type cachedCompilationUnit struct {
 	age   time.Time
 	c     *compiler.Compiler
 	b     *bytecode.ByteCode
+	t     *tokenizer.Tokenizer
 	count int
 }
 
@@ -51,6 +53,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = syms.SetAlways("__static_data_types", staticTypes)
+
+	debug := false
+
+	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
+		debugPath := util.GetString(b)
+		if debugPath == "/" {
+			debug = true
+		} else {
+			debug = strings.EqualFold(util.GetString(b), r.URL.Path)
+		}
+	}
 
 	// Get the query parameters and store as a local varialble
 	queryParameters := r.URL.Query()
@@ -113,10 +126,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	var err *errors.EgoError
 
+	var tokens *tokenizer.Tokenizer
+
 	cacheMutext.Lock()
 	if cachedItem, ok := serviceCache[r.URL.Path]; ok {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c
+		tokens = cachedItem.t
 		cachedItem.age = time.Now()
 		cachedItem.count++
 		serviceCache[r.URL.Path] = cachedItem
@@ -134,7 +150,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Tokenize the input
 		text := string(bytes)
-		tokens := tokenizer.New(text)
+		tokens = tokenizer.New(text)
 
 		// Compile the token stream
 		compilerInstance = compiler.New().ExtensionsEnabled(true)
@@ -154,6 +170,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				age:   time.Now(),
 				c:     compilerInstance,
 				b:     serviceCode,
+				t:     tokens,
 				count: 0,
 			}
 			// Is the cache too large? If so, throw out the oldest
@@ -245,11 +262,22 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	compilerInstance.AddPackageToSymbols(syms)
 
 	// Run the service code
-	ctx := bytecode.NewContext(syms, serviceCode)
+	ctx := bytecode.NewContext(syms, serviceCode).SetDebug(debug).SetTokenizer(tokens)
 	ctx.EnableConsoleOutput(false)
 	ctx.Tracing = Tracing
 
-	err = ctx.Run()
+	if debug {
+		fmt.Printf("\nDebugging started for service %s %s\n",
+			r.Method, r.URL.Path)
+
+		err = debugger.Run(ctx)
+
+		fmt.Printf("Debugging ended for service %s %s\n\n",
+			r.Method, r.URL.Path)
+	} else {
+		err = ctx.Run()
+	}
+
 	if err.Is(errors.Stop) {
 		err = nil
 	}

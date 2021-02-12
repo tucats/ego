@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 )
 
 var PathRoot string
@@ -26,7 +27,7 @@ var Realm string
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify ".ego" programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(root string, subpath string) *errors.EgoError {
+func DefineLibHandlers(root, subpath string) *errors.EgoError {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
@@ -59,6 +60,13 @@ func DefineLibHandlers(root string, subpath string) *errors.EgoError {
 	}
 
 	for _, path := range paths {
+		if pathList, ok := symbols.RootSymbolTable.Get("__paths"); ok {
+			if px, ok := pathList.([]string); ok {
+				px = append(px, path)
+				_ = symbols.RootSymbolTable.SetAlways("__paths", px)
+			}
+		}
+
 		ui.Debug(ui.ServerLogger, "Defining endpoint %s", path)
 		http.HandleFunc(path, ServiceHandler)
 	}

@@ -47,7 +47,14 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 	var err *errors.EgoError
 
 	line := c.GetLine()
-	text := c.GetTokenizer().GetLine(line)
+	text := ""
+
+	if tok := c.GetTokenizer(); tok != nil {
+		text = tok.GetLine(line)
+	} else {
+		fmt.Printf("No source available for debugging\n")
+	}
+
 	s := c.GetSymbols()
 	prompt := false
 
