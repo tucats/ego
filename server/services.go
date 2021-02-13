@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -53,17 +54,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = syms.SetAlways("__static_data_types", staticTypes)
-
-	debug := false
-
-	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
-		debugPath := util.GetString(b)
-		if debugPath == "/" {
-			debug = true
-		} else {
-			debug = strings.EqualFold(util.GetString(b), r.URL.Path)
-		}
-	}
 
 	// Get the query parameters and store as a local varialble
 	queryParameters := r.URL.Query()
@@ -119,7 +109,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		path = path[1:]
 	}
 
-	// Is this endpoint already in the cache of compiled services?
 	var serviceCode *bytecode.ByteCode
 
 	var compilerInstance *compiler.Compiler
@@ -128,8 +117,37 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	var tokens *tokenizer.Tokenizer
 
+	var debug bool
+
+	// The endpoint might have trailing path stuff; if so we need to find
+	// the part of the path that is the actual endpoint, so we can locate
+	// the service program. Also, store awaay the full path, the endpoint,
+	// and any suffix that the service might want to process.
+	endpoint := findPath(r.URL.Path)
+	pathSuffix := path[len(endpoint):]
+
+	if pathSuffix != "" {
+		pathSuffix = "/" + pathSuffix
+	}
+
+	_ = syms.SetAlways("_path_endpoint", endpoint)
+	_ = syms.SetAlways("_path", "/"+path)
+	_ = syms.SetAlways("_path_suffix", pathSuffix)
+
+	// Now that we know the actual endpoint, see if this is the endpoint
+	// we are debugging.
+	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
+		debugPath := util.GetString(b)
+		if debugPath == "/" {
+			debug = true
+		} else {
+			debug = strings.EqualFold(util.GetString(b), endpoint)
+		}
+	}
+
+	// Is this endpoint already in the cache of compiled services?
 	cacheMutext.Lock()
-	if cachedItem, ok := serviceCache[r.URL.Path]; ok {
+	if cachedItem, ok := serviceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c
 		tokens = cachedItem.t
@@ -140,7 +158,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
 		cacheMutext.Unlock()
 	} else {
-		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, path+".ego"))
+		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+".ego"))
 		if !errors.Nil(err) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			cacheMutext.Unlock()
@@ -319,4 +337,25 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		ui.Debug(ui.ServerLogger, "STATUS %d, sending TEXT response", status)
 	}
+}
+
+func findPath(urlPath string) string {
+	if paths, ok := symbols.RootSymbolTable.Get("__paths"); ok {
+		if pathList, ok := paths.([]string); ok {
+			sort.Slice(pathList, func(i, j int) bool {
+				return len(pathList[i]) > len(pathList[j])
+			})
+
+			for _, path := range pathList {
+				if strings.HasPrefix(urlPath, path) {
+					ui.Debug(ui.ServerLogger, "Path %s resolves to endpoint %s",
+						urlPath, path)
+
+					return path
+				}
+			}
+		}
+	}
+
+	return urlPath
 }

@@ -140,7 +140,13 @@ var ServerGrammar = []cli.Option{
 		Description: "Run the rest server",
 		OptionType:  cli.Subcommand,
 		Action:      commands.RunServer,
-		Value:       ServerRunGrammar,
+		// Run and Start share a grammar, but Run has additional option
+		Value: append(ServerRunGrammar, cli.Option{
+			LongName:    "debug",
+			ShortName:   "d",
+			Description: "Service endpoint to debug",
+			OptionType:  cli.StringType,
+		}),
 	},
 	{
 		LongName:    "restart",
@@ -290,12 +296,6 @@ var ServerRunGrammar = []cli.Option{
 		LongName:    "session-uuid",
 		Description: "Sets the optional session UUID value",
 		OptionType:  cli.UUIDType,
-	},
-	{
-		LongName:    "debug",
-		ShortName:   "d",
-		Description: "Debug this service endpoint",
-		OptionType:  cli.StringType,
 	},
 }
 

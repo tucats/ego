@@ -34,7 +34,7 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 			err = Debugger(c)
 		}
 
-		if err.Is(errors.Stop) {
+		if !c.IsRunning() || err.Is(errors.Stop) {
 			return nil
 		}
 	}

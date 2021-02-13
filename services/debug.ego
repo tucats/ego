@@ -5,6 +5,13 @@ import ( cipher util time )
 @authenticated user
 @status 200
 
+// If we got additional info in the path, we can't process it.
+
+if _path_suffix != "" {
+    @status 400
+    @response "Unsupported URL suffix " + _path_suffix
+    return 
+}
 if _json {
     r := {}  // Needs to be an anonymous struct so we can arbitrarily
              // add fields.

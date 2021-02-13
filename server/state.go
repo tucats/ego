@@ -67,6 +67,7 @@ func DefineLibHandlers(root, subpath string) *errors.EgoError {
 			}
 		}
 
+		path = path + "/"
 		ui.Debug(ui.ServerLogger, "Defining endpoint %s", path)
 		http.HandleFunc(path, ServiceHandler)
 	}

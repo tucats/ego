@@ -50,6 +50,10 @@ func (c *Context) Resume() *errors.EgoError {
 	return c.RunFromAddress(c.pc)
 }
 
+func (c *Context) IsRunning() bool {
+	return c.running
+}
+
 // RunFromAddress executes a bytecode context from a given starting address.
 func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	var err *errors.EgoError
