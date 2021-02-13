@@ -37,7 +37,7 @@ type cachedCompilationUnit struct {
 }
 
 var serviceCache = map[string]cachedCompilationUnit{}
-var cacheMutext sync.Mutex
+var cacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
@@ -146,22 +146,22 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Is this endpoint already in the cache of compiled services?
-	cacheMutext.Lock()
+	cacheMutex.Lock()
 	if cachedItem, ok := serviceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c
 		tokens = cachedItem.t
 		cachedItem.age = time.Now()
 		cachedItem.count++
-		serviceCache[r.URL.Path] = cachedItem
+		serviceCache[endpoint] = cachedItem
 
 		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
-		cacheMutext.Unlock()
+		cacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+".ego"))
 		if !errors.Nil(err) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
-			cacheMutext.Unlock()
+			cacheMutex.Unlock()
 
 			return
 		}
@@ -178,13 +178,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if !errors.Nil(err) {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
-			cacheMutext.Unlock()
+			cacheMutex.Unlock()
 
 			return
 		}
 		// If it compiled successfully, then put it in the cache
 		if errors.Nil(err) {
-			serviceCache[r.URL.Path] = cachedCompilationUnit{
+			serviceCache[endpoint] = cachedCompilationUnit{
 				age:   time.Now(),
 				c:     compilerInstance,
 				b:     serviceCode,
@@ -209,7 +209,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				ui.Debug(ui.ServerLogger, "Endpoint %s aged out of cache", key)
 			}
 		}
-		cacheMutext.Unlock()
+		cacheMutex.Unlock()
 	}
 
 	if !errors.Nil(err) {
