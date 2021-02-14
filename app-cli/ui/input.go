@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
 
 	"golang.org/x/term"
 )
@@ -37,7 +36,7 @@ func PromptPassword(p string) string {
 		fmt.Print(p)
 	}
 
-	bytePassword, _ := term.ReadPassword(syscall.Stdin)
+	bytePassword, _ := term.ReadPassword(int(os.Stdin.Fd()))
 	password := string(bytePassword)
 
 	fmt.Println() // it's necessary to add a new line after user's input

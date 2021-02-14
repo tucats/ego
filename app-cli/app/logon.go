@@ -13,7 +13,7 @@ import (
 
 const (
 	// LogonEndpoint is the endpoint for the logon service.
-	LogonEndpoint = "/services/logon"
+	LogonEndpoint = "/services/logon/"
 
 	// LogonServerSetting is the name of the profile item that
 	// describes the URL of the logon server (less the endpoint).
