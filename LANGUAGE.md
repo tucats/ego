@@ -1370,15 +1370,15 @@ values in the string.
 This creates a string named `msg` which contains "Unrecognized value foobar" as it's
 contents. The value is not printed to the console as part of this operation.
 
-## io
+## io <a name="io"></a>
 The io package supports input/output operations using native files in the file system 
 of the computer running _Ego_. 
 
-## math
+## math <a name="math"></a>
 
-## profile
+## profile <a name="profile"></a>
 
-## rest
+## rest <a name="rest"></a>
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
 communicate with a server, authenticate to it (either using username/password or
 an authentication token), and perform GET, POST, and DELETE operations against
@@ -1431,8 +1431,20 @@ Here's a simple example:
     }
 
 
-## string
+## strings <a name="strings"></a>
+The `strings` package contains a library of functions to support manipulation
+of string data. Unless otherwise noted, strings are intrepreted as a set of
+characters, so some unicode characters can take more than one byte of storage.
 
+### strings.Chars(s)
+The `Chars` function returns an array of integer values. Each value represents
+the Unicode character for that position in the string, expressed as an integer
+value. 
+
+    runes := strings.Char("test")
+
+The value of `runes` is an integer array with values [116, 101, 115, 116] which
+are the Unicode character values for the letters "t", "e", "s", and "t".
 
 ### strings.URLPattern()
 The `URLPattern()` function can be used in a web service to determine what parts of

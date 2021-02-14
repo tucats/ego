@@ -180,11 +180,22 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // Chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
 func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	v := util.GetString(args[0])
-	r := make([]interface{}, 0)
+	count := 0
 
-	for _, ch := range v {
-		r = append(r, ch)
+	// Count the number of characters in the string. (We can't use len() here
+	// which onl returns number of bytes)
+	v := util.GetString(args[0])
+	for i := range v {
+		count = i + 1
+	}
+
+	r := datatypes.NewArray(datatypes.IntType, count)
+
+	for i, ch := range v {
+		err := r.Set(i, int(ch))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return r, nil
