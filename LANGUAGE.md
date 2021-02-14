@@ -1437,7 +1437,30 @@ of string data. Unless otherwise noted, strings are intrepreted as a set of
 characters, so some unicode characters can take more than one byte of storage.
 
 ### strings.Chars(s)
-The `Chars` function returns an array of integer values. Each value represents
+The `Chars` function returns an array of string values. Each value represents
+a single character for that position in the string.
+
+    runes := strings.Char("test")
+
+The value of `runes` is an string array with values ["t", "e", "s", "t"].
+If the string is an empty string, it results in an array of zero elements.
+
+### strings.Format(v)
+The `Format()` function returns a string that contains the formatted value of
+the variable passed in. This is the same formatting operation that is done by
+the `io.Println()` function, but the resulting string is returned as the
+function value instead of printed to the console.
+
+### strings.Index(string, test)
+The `Index` function searches a string for the first occurrance of the test
+string. If it is found, it returns the character position of the first
+character in `string` that contains the value of `test`. If no instance of
+the test string is found, the function returns 0.
+
+### strings.Ints(string)
+
+### strings.Chars(s)
+The `Ints` function returns an array of integer values. Each value represents
 the Unicode character for that position in the string, expressed as an integer
 value. 
 

@@ -189,10 +189,10 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.IntType, count)
+	r := datatypes.NewArray(datatypes.StringType, count)
 
 	for i, ch := range v {
-		err := r.Set(i, int(ch))
+		err := r.Set(i, string(ch))
 		if err != nil {
 			return nil, err
 		}
@@ -204,12 +204,22 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 // Ints implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
 func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	v := util.GetString(args[0])
-	r := make([]interface{}, 0)
-	i := []rune(v)
+	count := 0
 
-	for n := 0; n < len(i); n = n + 1 {
-		r = append(r, int(i[n]))
+	// Count the number of characters in the string. (We can't use len() here
+	// which onl returns number of bytes)
+	v := util.GetString(args[0])
+	for i := range v {
+		count = i + 1
+	}
+
+	r := datatypes.NewArray(datatypes.IntType, count)
+
+	for i, ch := range v {
+		err := r.Set(i, int(ch))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return r, nil
