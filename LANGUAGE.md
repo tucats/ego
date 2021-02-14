@@ -36,7 +36,8 @@
 7. [Packages](#packages)
    1. [The `import` statement](#import)
    2. [`db` package](#db)
-   3. ['fmt' package](#fmt)
+   3. [`fmt` package](#fmt)
+   3. [`strings` package](#strings)
    2. [`tables` package](#tables)
 
 8. [Directives](#directives)
@@ -1458,17 +1459,132 @@ character in `string` that contains the value of `test`. If no instance of
 the test string is found, the function returns 0.
 
 ### strings.Ints(string)
-
-### strings.Chars(s)
 The `Ints` function returns an array of integer values. Each value represents
 the Unicode character for that position in the string, expressed as an integer
 value. 
 
-    runes := strings.Char("test")
+    runes := strings.Ints("test")
 
 The value of `runes` is an integer array with values [116, 101, 115, 116] which
-are the Unicode character values for the letters "t", "e", "s", and "t".
+are the Unicode character values for the letters "t", "e", "s", and "t". If
+the string passed is is am empty string, the `Ints` function returns an empty
+array.
 
+### strings.Left(string, count)
+The `Left()` function returns the left-most characters of the given string. If
+the value of the count parameter is less than 1, an empty string is returned.
+If the count value is larger than the string length, then the entire string
+is returned.
+
+    name := "Bob Smith"
+    first := strings.Left(name, 3)
+
+In this example, the value of `first` will be "Bob".
+
+### strings.Length(string)
+The `Length()` function returns the length of a string _in characters_. This 
+is different than the bulitin `len()` function which returns the length of a
+string in bytes. This difference is because a character can take up more than
+one byte.  For example,
+
+     str := "\u2813foo\u2813"
+     a := len(str)
+     b := strings.Length(str)
+
+In this example, the value of `a` will be 9, which is the number of bytes stored
+in the string. But because the first and last characters are unicode characters
+that take multiple bytes, the value of `b` will be 5, indiating that there are
+five characters in the string.
+
+
+### strings.Right(string, count)
+The `Right()` function returns the right-most characters of the given string. 
+If the value of the count parameter is less than 1, an empty string is returned.
+If the count value is larger than the string length, then the entire string
+is returned.
+
+    name := "Bob Smith"
+    last := strings.Right(name, 5)
+
+In this example, the value of `last` will be "Smith".
+
+### strings.Split(string [, delimiter])
+The `Split()` function will split a string into an array of strings, based on a
+provided delimiter character. If the character is not present, then a newline
+is assumed as the delimiter character.
+
+    a := "This is\na test\nstring"
+    b := strings.Split(a)
+
+In this example, `b` will be an array of strings with three members, one for each
+line of the string:  ["This is", "a test", "string"]. If the string given was an
+empty string, the result is an empty array.
+
+If you wish to use your own delimiter, you can supply that as the second parameter.
+For example,
+
+    a := "101, 553, 223, 59"
+    b := strings.Split(a, ", ")
+
+This uses the string ", " as the delimiter. Note that this must exactly match, so
+the space is significant. The value of b will be "101", "553", "223", "59"].
+
+### strings.String(n1, n2...)
+The `String()` function will construct a string from an array of numeric values or
+string values.
+
+    a := strings.String(115, 101, 116, 115)
+
+This results in `a` containing the value "sets", where each integer value was used
+as a Unicode character specification to construct the string.
+
+    b := strings.String("this", "and", "that")
+
+You can also specify arguments that are string values (including individual 
+characters) and they are concatenated together to make a string. In the above
+example, `b` contains the string "thisandthat".
+
+### strings.Substring(string, start, count)
+
+### strings.Template(name [, struct])
+
+### strings.ToLower(string)
+The `ToLower()` function converts the characters of a string to the lowercase
+version of that character, if there is one. If there is no lowercase for a
+given character, the character is not affected in the result.
+
+    a := "Mazda626"
+    b := strings.ToLower(a)
+
+In this example, the value of `b` will be "mazda626".
+
+
+### strings.ToUpper(string)
+The `ToUpper()` function converts the characters of a string to the uppercase
+version of that character, if there is one. If there is no uppercase value for a
+given character, the character is not affected in the result.
+
+    a := "Bang+Olafsen"
+    b := strings.ToUpper(a)
+
+In this example, the value of `b` will be "BANG+OLAFSEN".
+
+### strings.ToUpper(string)
+
+### strings.Tokenize(string)
+
+### strings.Truncate(string, len)
+The `Truncate()` function will truncate a string that is too long, and add
+the elipsis ("...") character at the end to show that there is more informaiton
+that was not included. 
+
+    a := "highway bridge out of order"
+    msg := strings.Truncate(a, 10)
+
+In this example, the value of `msg` is "highway...". This is to ensure that the
+resulting string is only ten characters long (the length specified as the second
+parameter). If the string is not longer than the gien count, the entire string is
+returned.
 ### strings.URLPattern()
 The `URLPattern()` function can be used in a web service to determine what parts of
 a URL are present. This is particularly useful when using collection-style URL names,
