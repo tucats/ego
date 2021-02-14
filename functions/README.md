@@ -211,17 +211,22 @@ This writes the string text to the output file, which is created if it
 does not already exist. The text becomes the contents of the file; any
 previous contents are lost.
 
-### io.Split(text)
+### strings.Split(text [, delimiter])
 This will split a single string (typically read using the `io.Readfile()`
 function) into an array of strings on line boundaries.
 
     buffer := io.Readfile("test.txt")
-    lines := io.Split(buffer)
+    lines := strings.Split(buffer)
 
 The result of this is that lines is an array of strings, each of which
-represents a line of text. Note that this function can be used on any
-string, but resides in the `io` package because it is most commonly
-used in support of IO operations.
+represents a line of text. If you wish to split the data using a
+different delimiter string than a newline, specify it as the optional
+second parameter:
+
+    urlParts := strings.Split("/services/debug/windows", "/")
+
+results in `urlParts` being an array of three string values, containing
+["service", "debug", "windows"] as its value.
 
 ### io.Open(name [, createFlag ]) 
 This opens a new file of the given name. If the optional second parameter

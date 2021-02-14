@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -311,4 +312,144 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *e
 	}
 
 	return result, nil
+}
+
+// Split splits a string into lines separated by a newline. Optionally
+// a different delimiter can be supplied as the second argument.
+func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var v []string
+
+	src := util.GetString(args[0])
+	delim := "\n"
+
+	if len(args) > 1 {
+		delim = util.GetString(args[1])
+	}
+
+	// Are we seeing Windows-style line endings? If we are doing a split
+	// based on line endings, use Windows line endings.
+	if delim == "\n" && strings.Index(src, "\r\n") > 0 {
+		v = strings.Split(src, "\r\n")
+	} else {
+		// Otherwise, split by the delimiter
+		v = strings.Split(src, delim)
+	}
+
+	// We need to store the result in a native Ego array.
+	r := datatypes.NewArray(datatypes.StringType, len(v))
+
+	for i, n := range v {
+		err := r.Set(i, n)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+	}
+
+	return r, nil
+}
+
+// Tokenize splits a string into tokens.
+func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	src := util.GetString(args[0])
+	t := tokenizer.New(src)
+
+	r := datatypes.NewArray(datatypes.StringType, len(t.Tokens))
+
+	var err *errors.EgoError
+
+	for i, n := range t.Tokens {
+		err = r.Set(i, n)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return r, err
+}
+
+// URLPattern uses ParseURLPattern and then puts the result in a
+// native Ego map structure.
+func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	result := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+
+	patternMap, match := ParseURLPattern(util.GetString(args[0]), util.GetString(args[1]))
+	if !match {
+		return result, nil
+	}
+
+	for k, v := range patternMap {
+		_, err := result.Set(k, v)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return result, nil
+}
+
+// ParseURLPattern accepts a pattern that tells what part of the URL is
+// meant to be literal, and what is a user-supplied item. The result is
+// a map of the URL items parsed.
+//
+// If the pattern is
+//
+//   "/services/debug/processes/{{ID}}"
+//
+// and the url is
+//
+//   /services/debug/processses/1653
+//
+// Then the result map will be
+//    map[string]interface{} {
+//             "ID" : 1653
+//    }
+func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
+	urlParts := strings.Split(strings.ToLower(url), "/")
+	patternParts := strings.Split(strings.ToLower(pattern), "/")
+	result := map[string]interface{}{}
+
+	if len(urlParts) > len(patternParts) {
+		return nil, false
+	}
+
+	for idx, pat := range patternParts {
+		if len(pat) == 0 {
+			continue
+		}
+
+		// If the pattern continues longer than the
+		// URL given, mark those as being absent
+		if idx >= len(urlParts) {
+			// Is this part of the pattern a substitution? If not, we store
+			// it in the result as a field-not-found. If it is a substitution
+			// operator, store as an empty string.
+			if !strings.HasPrefix(pat, "{{") || !strings.HasSuffix(pat, "}}") {
+				result[pat] = false
+			} else {
+				name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
+				result[name] = ""
+			}
+
+			continue
+		}
+
+		// If this part just matches, mark it as present.
+		if pat == urlParts[idx] {
+			result[pat] = true
+
+			continue
+		}
+
+		// If this pattern is a substitution operator, get the value now
+		// and store in the maap using the substitution name
+		if strings.HasPrefix(pat, "{{") && strings.HasSuffix(pat, "}}") {
+			name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
+			result[name] = urlParts[idx]
+		} else {
+			// It didn't match the url, so no data
+			return nil, false
+		}
+	}
+
+	return result, true
 }

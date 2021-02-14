@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -28,42 +27,6 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Convert []byte to string
 	return string(content), nil
-}
-
-// Split splits a string into lines.
-func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	src := util.GetString(args[0])
-
-	// Are we seeing Windows-style line endings? If so, use that as
-	// the split boundary.
-	if strings.Index(src, "\r\n") > 0 {
-		return strings.Split(src, "\r\n"), nil
-	}
-
-	// Otherwise, simple split by new-line works fine.
-	v := strings.Split(src, "\n")
-	r := make([]interface{}, 0)
-
-	// We must recopy this into an array of interfaces to adopt Ego typelessness.
-	for _, n := range v {
-		r = append(r, n)
-	}
-
-	return r, nil
-}
-
-// Tokenize splits a string into tokens.
-func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	src := util.GetString(args[0])
-	t := tokenizer.New(src)
-	r := make([]interface{}, 0)
-
-	// We must recopy this into an array of interfaces to adopt Ego typelessness.
-	for _, n := range t.Tokens {
-		r = append(r, n)
-	}
-
-	return r, nil
 }
 
 // WriteFile writes a string to a file.
@@ -181,95 +144,4 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	default:
 		return nil, errors.New(errors.InvalidTypeError).In("CloseAny()")
 	}
-}
-
-// URLPattern uses ParseURLPattern and then puts the result in a
-// native Ego map structure.
-func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) != 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("urlpattern()")
-	}
-
-	result := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
-
-	patternMap, match := ParseURLPattern(util.GetString(args[0]), util.GetString(args[1]))
-	if !match {
-		return result, nil
-	}
-
-	for k, v := range patternMap {
-		_, err := result.Set(k, v)
-		if err != nil {
-			return result, errors.New(err)
-		}
-	}
-
-	return result, nil
-}
-
-// ParseURLPattern accepts a pattern that tells what part of the URL is
-// meant to be literal, and what is a user-supplied item. The result is
-// a map of the URL items parsed.
-//
-// If the pattern is
-//
-//   "/services/debug/processes/{{ID}}"
-//
-// and the url is
-//
-//   /services/debug/processses/1653
-//
-// Then the result map will be
-//    map[string]interface{} {
-//             "ID" : 1653
-//    }
-func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
-	urlParts := strings.Split(strings.ToLower(url), "/")
-	patternParts := strings.Split(strings.ToLower(pattern), "/")
-	result := map[string]interface{}{}
-
-	if len(urlParts) > len(patternParts) {
-		return nil, false
-	}
-
-	for idx, pat := range patternParts {
-		if len(pat) == 0 {
-			continue
-		}
-
-		// If the pattern continues longer than the
-		// URL given, mark those as being absent
-		if idx >= len(urlParts) {
-			// Is this part of the pattern a substitution? If not, we store
-			// it in the result as a field-not-found. If it is a substitution
-			// operator, store as an empty string.
-			if !strings.HasPrefix(pat, "{{") || !strings.HasSuffix(pat, "}}") {
-				result[pat] = false
-			} else {
-				name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
-				result[name] = ""
-			}
-
-			continue
-		}
-
-		// If this part just matches, mark it as present.
-		if pat == urlParts[idx] {
-			result[pat] = true
-
-			continue
-		}
-
-		// If this pattern is a substitution operator, get the value now
-		// and store in the maap using the substitution name
-		if strings.HasPrefix(pat, "{{") && strings.HasSuffix(pat, "}}") {
-			name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
-			result[name] = urlParts[idx]
-		} else {
-			// It didn't match the url, so no data
-			return nil, false
-		}
-	}
-
-	return result, true
 }
