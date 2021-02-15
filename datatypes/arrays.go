@@ -193,3 +193,21 @@ func getInt(i interface{}) int {
 		return -1
 	}
 }
+
+// Delete removes an item from the array by index number. The index
+// must be a valid array index. The return value is nil if no error
+// occurs, else an error if the index is out-of-bounds or the array
+// is marked as immutable.
+func (a *EgoArray) Delete(i int) *errors.EgoError {
+	if i >= len(a.data) || i < 0 {
+		return errors.New(errors.ArrayBoundsError)
+	}
+
+	if a.immutable != 0 {
+		return errors.New(errors.ImmutableArrayError)
+	}
+
+	a.data = append(a.data[:i], a.data[i+1:]...)
+
+	return nil
+}

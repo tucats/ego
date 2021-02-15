@@ -460,8 +460,10 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if _, ok := args[0].(string); ok && len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+	if _, ok := args[0].(string); ok {
+		if len(args) != 1 {
+			return nil, errors.New(errors.ArgumentCountError).In("delete{}")
+		}
 	} else {
 		if len(args) != 2 {
 			return nil, errors.New(errors.ArgumentCountError).In("delete{}")
@@ -482,6 +484,12 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		delete(v, key)
 
 		return v, nil
+
+	case *datatypes.EgoArray:
+		i := util.GetInt(args[1])
+		err := v.Delete(i)
+
+		return v, err
 
 	case []interface{}:
 		i := util.GetInt(args[1])
