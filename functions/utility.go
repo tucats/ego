@@ -642,6 +642,8 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			if mm, ok := result.(map[string]interface{}); ok {
 				mm[datatypes.MembersMDKey] = members
 				mm[datatypes.BasetypeMDKey] = "map"
+				// We don't show the parent object
+				delete(mm, datatypes.ParentMDKey)
 			}
 		}
 

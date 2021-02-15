@@ -134,7 +134,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	// Otherwise, make a deep copy of the item.
 	r := DeepCopy(args[0], 10)
 
-	// IF there was a type in the source, make the clone point back to it
+	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
 		return nil, errors.New(errors.InvalidValueError).In("new()").Context(nil)
