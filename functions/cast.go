@@ -11,7 +11,9 @@ import (
 )
 
 // For a new() on an object, we won't recursively copy objects
-// nested more deeply than this.
+// nested more deeply than this. Setting this too small will
+// prevent complex structures from copying correctly. Too large,
+// and memory could be swallowed whole.
 const MaxDeepCopyDepth = 100
 
 // Int implements the int() function.
@@ -87,7 +89,10 @@ func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 	return []interface{}{v1, v2}, nil
 }
 
-// New implements the new() function.
+// New implements the new() function. If an integer type number
+// or a string type name is given, the "zero value" for that type
+// is returned. For an array, struct, or map, a recursive copy is
+// done of the members to a new object which is returned.
 func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
@@ -199,7 +204,10 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	return r, nil
 }
 
-// DeepCopy makes a deep copy of an Ego data type.
+// DeepCopy makes a deep copy of an Ego data type. It should be called with the
+// maximum nesting depth permitted (i.e. array index->array->array...). Because
+// it calls itself recursively, this is used to determine when to give up and
+// stop traversing nested data. The default is MaxDeepCopyDepth.
 func DeepCopy(source interface{}, depth int) interface{} {
 	if depth < 0 {
 		return nil
@@ -232,7 +240,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
-			vv := DeepCopy(vv, depth-1)
+			vv = DeepCopy(vv, depth-1)
 			_ = v.Set(i, vv)
 		}
 

@@ -15,6 +15,10 @@ import (
 const TokenExpirationSetting = "ego.token.expiration"
 const TokenKeySetting = "ego.token.key"
 
+// Token is the Go native expression of a token value, which contains
+// the identity of the creator, an arbitrary data payload, an expiration
+// time after which the token is no longer valid, a unique ID for this
+// token, and the unique ID of the Ego session that created the token.
 type Token struct {
 	Name    string
 	Data    string
@@ -23,12 +27,16 @@ type Token struct {
 	AuthID  uuid.UUID
 }
 
-// Hash implements the cipher.hash() function.
+// Hash implements the cipher.hash() function. For an arbitrary string
+// value, it computes a crypotraphic hash of the value, and returns it
+// as a 32-character string containing the hexademical hash value. Hashes
+// are irreversable.
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	return util.Hash(util.GetString(args[0])), nil
 }
 
-// Encrypt implements the cipher.hash() function.
+// Encrypt implements the cipher.Encrypt() function. This takes a string value and
+// a string key, and encrypts the string using the key.
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	b, err := util.Encrypt(util.GetString(args[0]), util.GetString(args[1]))
 	if !errors.Nil(err) {
@@ -38,7 +46,10 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	return hex.EncodeToString([]byte(b)), nil
 }
 
-// Decrypt implements the cipher.hash() function.
+// Decrypt implements the cipher.Decrypt() function. It accepts an encrypted string
+// and a key, and attempts to decode the string. If the string is not a valid encryption
+// using the given key, an empty string is returned. It is an error if the string does
+// not contain a valid hexadecimal character string.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if !errors.Nil(err) {
