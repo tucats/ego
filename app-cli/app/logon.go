@@ -13,7 +13,7 @@ import (
 
 const (
 	// LogonEndpoint is the endpoint for the logon service.
-	LogonEndpoint = "/services/logon"
+	LogonEndpoint = "/services/logon/"
 
 	// LogonServerSetting is the name of the profile item that
 	// describes the URL of the logon server (less the endpoint).
@@ -43,6 +43,7 @@ var LogonGrammar = []cli.Option{
 	{
 		LongName:            "logon-server",
 		ShortName:           "l",
+		Aliases:             []string{"server"},
 		OptionType:          cli.StringType,
 		Description:         "URL of logon server",
 		EnvironmentVariable: "CLI_LOGON_SERVER",

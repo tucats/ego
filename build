@@ -9,10 +9,16 @@ BUILDVER=$(cat buildver.txt)
 
 GO="go"
 GOARCH="amd64"
+GOOS="darwin"
 
 if [ "$1" == "-a" ]; then
    GO="go1.16rc1"
    GOARCH=arm64
+fi
+
+
+if [ "$1" == "-w" ]; then
+   GOOS=windows
 fi
 
 if [ "$1" == "-i" ]; then
@@ -28,7 +34,7 @@ if [ "$1" == "-i" ]; then
 fi
 
 echo Build $BUILDVER on $GOARCH
-GOARCH=$GOARCH $GO build -ldflags "-X main.BuildVersion=$BUILDVER"
+GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "-X main.BuildVersion=$BUILDVER"
 
 if [ "$1" == "-i" ]; then
    git commit -a -m "increment build version"
