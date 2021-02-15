@@ -202,7 +202,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 // Members gets an array of the names of the fields in a structure.
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch v := args[0].(type) {
-	case datatypes.EgoMap:
+	case *datatypes.EgoMap:
 		return v.Keys(), nil
 
 	case map[string]interface{}:
