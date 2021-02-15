@@ -10,6 +10,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// For a new() on an object, we won't recursively copy objects
+// nested more deeply than this.
+const MaxDeepCopyDepth = 100
+
 // Int implements the int() function.
 func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1); v == nil {
@@ -132,7 +136,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	}
 
 	// Otherwise, make a deep copy of the item.
-	r := DeepCopy(args[0], 10)
+	r := DeepCopy(args[0], MaxDeepCopyDepth)
 
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
@@ -228,6 +232,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
+			vv := DeepCopy(vv, depth-1)
 			_ = v.Set(i, vv)
 		}
 
