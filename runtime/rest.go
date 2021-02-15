@@ -181,7 +181,11 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return true, nil
 }
 
-// RestBase implements the Base() rest function.
+// VerifyServer implements the Verify() rest function. This accepts a boolean value
+// and sets the TLS server certificate authentication accordingly. When set to true,
+// a connection will not be made if the server's certificate cannot be authenticated.
+// This is the default mode for HTTPS connections. During debugging, you may wish to
+// turn this off when using self-generated certficates.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getClient(s)
 	if !errors.Nil(err) {
@@ -202,7 +206,10 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	return this, nil
 }
 
-// RestBase implements the Base() rest function.
+// RestBase implements the Base() rest function. This specifies a string that is used
+// as the base prefix for any URL formed in a REST call. This lets you specify the
+// protocol/host/port information once, and then have each Get(), Post(), etc. call
+// just specify the endpoint.
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, err := getClient(s)
 	if !errors.Nil(err) {
@@ -223,7 +230,9 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return this, nil
 }
 
-// RestAuth implements the Auth() rest function.
+// RestAuth implements the Auth() rest function. When present, it accepts a username and
+// password as parameters, and sets the rest client to use BasicAuth authentication, where
+// the username and password are part of an Authentication header.
 func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, err := getClient(s)
 	if !errors.Nil(err) {
@@ -244,7 +253,8 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return this, nil
 }
 
-// RestToken implements the Token() rest function.
+// RestToken implements the Token() rest function. When present, it accepts a token string
+// and sets the rest client to use Bearer token authentication using this token value.
 func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, err := getClient(s)
 	if !errors.Nil(err) {
@@ -268,7 +278,9 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return this, nil
 }
 
-// RestMedia implements the Media() function.
+// RestMedia implements the Media() function. This specifies a string containing the media
+// type that the REST service expects. In it's simplest form, this can be "application/text"
+// for free text responses, or "application/json" for JSON data payloads.
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	_, err := getClient(s)
 	if !errors.Nil(err) {
@@ -282,7 +294,10 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return this, nil
 }
 
-// RestGet implements the rest Get() function.
+// RestGet implements the rest Get() function. This must be provided with a URL or
+// URL fragment (depending on whether Base() was called). The URL is constructed, and
+// authentication set, and a GET HTTP operation is generated. The result is either a
+// string (for media type of text) or a struct (media type of JSON).
 func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getClient(s)
 	if !errors.Nil(err) {
@@ -335,36 +350,33 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	return rb, nil
 }
 
-// Extract the cookies from the response, and format them as an Ego array
+// fetchCookies extracts the cookies from the response, and format them as an Ego array
 // of structs.
-func fetchCookies(s *symbols.SymbolTable, r *resty.Response) []interface{} {
+func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray {
 	cookies := r.Cookies()
-	result := make([]interface{}, len(cookies))
+	result := datatypes.NewArray(datatypes.InterfaceType, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := map[string]interface{}{}
-		cookie["expires"] = v.Expires.String()
-		cookie["name"] = v.Name
-		cookie["domain"] = v.Domain
-		cookie["value"] = v.Value
-		cookie["path"] = v.Path
-		result[i] = cookie
+		cookie := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+
+		_, _ = cookie.Set("expires", v.Expires.String())
+		_, _ = cookie.Set("name", v.Name)
+		_, _ = cookie.Set("domain", v.Domain)
+		_, _ = cookie.Set("value", v.Value)
+		_, _ = cookie.Set("path", v.Path)
+		_ = result.Set(i, cookie)
 	}
 
 	return result
 }
 
 // headerMap is a support function that extracts the header data from a
-// rest response, and formats it to be an Ego struct. It also mangles
-// struct member names so "-" is converted to "_".
-func headerMap(response *resty.Response) map[string]interface{} {
-	headers := map[string]interface{}{}
+// rest response, and formats it to be an Ego map.
+func headerMap(response *resty.Response) *datatypes.EgoMap {
+	headers := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 
 	for k, v := range response.Header() {
-		k = strings.ReplaceAll(k, "-", "_")
-		vs := fmt.Sprintf("%v", v)
-		vs = strings.TrimPrefix(strings.TrimSuffix(vs, "]"), "[")
-		headers[k] = vs
+		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))
 	}
 
 	return headers

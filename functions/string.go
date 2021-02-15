@@ -101,7 +101,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 		return -1, nil
 
-	case datatypes.EgoMap:
+	case *datatypes.EgoMap:
 		_, found, err := arg.Get(args[1])
 
 		return found, err
