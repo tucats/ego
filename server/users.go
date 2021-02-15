@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -160,6 +161,9 @@ func getPermission(user, privilege string) bool {
 	return false
 }
 
+// findPermission searches the permission strings associated with the given user,
+// and returns the position in the permissions array where th ematching name is
+// found. It returns -1 if there is no such permission.
 func findPermission(u defs.User, perm string) int {
 	for i, p := range u.Permissions {
 		if p == perm {
@@ -190,7 +194,7 @@ func validatePassword(user, pass string) bool {
 }
 
 // HashString converts a given string to it's hash. This is used to manage
-// passwords.
+// passwords as opaque objects.
 func HashString(s string) string {
 	var r strings.Builder
 
@@ -205,7 +209,7 @@ func HashString(s string) string {
 	return r.String()
 }
 
-// Authenticated implmeents the Authenticated(user,pass) function. This accepts a username
+// Authenticated implements the Authenticated(user,pass) function. This accepts a username
 // and password string, and determines if they are authenticated using the
 // users database.
 func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
@@ -239,7 +243,8 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	return validatePassword(user, pass), nil
 }
 
-// Permission implements the Permission(user,priv) function.
+// Permission implements the Permission(user,priv) function. It returns
+// a boolean value indicating if the given username has the given permission.
 func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var user, priv string
 
@@ -259,7 +264,9 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return getPermission(user, priv), nil
 }
 
-// Implements the SetUser() function.
+// SetUser mplements the SetUser() function. For the super user, this function
+// can be used to update user data in the persistent use database for the Ego
+// web server.
 func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var err *errors.EgoError
 
@@ -280,9 +287,9 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ArgumentCountError)
 	}
 
-	if u, ok := args[0].(map[string]interface{}); ok {
+	if u, ok := args[0].(*datatypes.EgoMap); ok {
 		name := ""
-		if n, ok := u["name"]; ok {
+		if n, ok, _ := u.Get("name"); ok {
 			name = strings.ToLower(util.GetString(n))
 		}
 
@@ -295,11 +302,11 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			}
 		}
 
-		if n, ok := u["password"]; ok {
+		if n, ok, _ := u.Get("password"); ok {
 			r.Password = HashString(util.GetString(n))
 		}
 
-		if n, ok := u["permissions"]; ok {
+		if n, ok, _ := u.Get("permissions"); ok {
 			if m, ok := n.([]interface{}); ok {
 				if len(m) > 0 {
 					r.Permissions = []string{}
@@ -321,8 +328,9 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	return true, err
 }
 
-// Implements the DeleteUser() function. Returns true if the name was deleted,
-// else false if it was not a valid username.
+// DeleteUser implements the DeleteUser() function. For a privileged user,
+// this will delete a record from the persistent user database. Returns true
+// if the name was deleted, else false if it was not a valid username.
 func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
@@ -351,14 +359,15 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return false, nil
 }
 
-// Implements the GetUser() function.
+// GetUser implements the GetUser() function. This returns a struct defining the
+// persisted information about an existing user in the user database.
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError)
 	}
 
-	r := map[string]interface{}{}
+	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 	name := strings.ToLower(util.GetString(args[0]))
 
 	t, ok := userDatabase[name]
@@ -366,9 +375,9 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return r, nil
 	}
 
-	r["name"] = name
-	r["permissions"] = t.Permissions
-	r["superuser"] = getPermission(name, "root")
+	_, _ = r.Set("name", name)
+	_, _ = r.Set("permissions", t.Permissions)
+	_, _ = r.Set("superuser", getPermission(name, "root"))
 
 	return r, nil
 }
