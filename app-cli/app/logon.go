@@ -43,6 +43,7 @@ var LogonGrammar = []cli.Option{
 	{
 		LongName:            "logon-server",
 		ShortName:           "l",
+		Aliases:             []string{"server"},
 		OptionType:          cli.StringType,
 		Description:         "URL of logon server",
 		EnvironmentVariable: "CLI_LOGON_SERVER",
