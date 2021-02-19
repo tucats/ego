@@ -63,7 +63,7 @@ func (c *Context) PopThis() (interface{}, bool) {
 // Add a line to the trace output that shows the "this" stack of
 // saved function receivers.
 func (c Context) PrintThisStack(operation string) {
-	if ui.ActiveLogger(ui.ByteCodeLogger) {
+	if ui.ActiveLogger(ui.TraceLogger) {
 		var b strings.Builder
 
 		label := "@ " + operation + "; stack ="
@@ -85,6 +85,6 @@ func (c Context) PrintThisStack(operation string) {
 			}
 		}
 
-		ui.Debug(ui.ByteCodeLogger, "%s", b.String())
+		ui.Debug(ui.TraceLogger, "%s", b.String())
 	}
 }

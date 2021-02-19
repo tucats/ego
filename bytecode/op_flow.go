@@ -158,7 +158,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Launch the function call as a separate thread.
-	ui.Debug(ui.ByteCodeLogger, "--> Launching go routine \"%s\"", fName)
+	ui.Debug(ui.TraceLogger, "--> Launching go routine \"%s\"", fName)
 
 	go GoRoutine(util.GetString(fName), c, args)
 

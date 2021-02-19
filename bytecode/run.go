@@ -69,7 +69,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	c.running = true
 
 	if c.Tracing {
-		ui.Debug(ui.ByteCodeLogger, "*** Tracing "+c.Name)
+		ui.Debug(ui.TraceLogger, "*** Tracing "+c.Name)
 	}
 
 	fullStackListing := util.GetBool(c.GetConfig("full_stack_listing"))
@@ -92,7 +92,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				s2 = s2[:50]
 			}
 
-			ui.Debug(ui.ByteCodeLogger, "%8s%3d: %-30s stack[%2d]: %s",
+			ui.Debug(ui.TraceLogger, "%8s%3d: %-30s stack[%2d]: %s",
 				c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
 
@@ -123,11 +123,11 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
 				if c.Tracing {
-					ui.Debug(ui.ByteCodeLogger, "*** Branch to %d on error: %s", c.pc, text)
+					ui.Debug(ui.TraceLogger, "*** Branch to %d on error: %s", c.pc, text)
 				}
 			} else {
 				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.Tracing {
-					ui.Debug(ui.ByteCodeLogger, "*** Return error: %s", text)
+					ui.Debug(ui.TraceLogger, "*** Return error: %s", text)
 				}
 
 				return errors.New(err)
@@ -136,7 +136,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	}
 
 	if c.Tracing {
-		ui.Debug(ui.ByteCodeLogger, "*** End tracing "+c.Name)
+		ui.Debug(ui.TraceLogger, "*** End tracing "+c.Name)
 	}
 
 	return errors.New(err)
@@ -148,8 +148,8 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	syms := parentCtx.symbols
 	err := parentCtx.NewError(errors.InvalidFunctionCallError)
 
-	ui.Debug(ui.ByteCodeLogger, "--> Starting Go routine \"%s\"", fName)
-	ui.Debug(ui.ByteCodeLogger, "--> Argument list: %#v\n", args)
+	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
+	ui.Debug(ui.TraceLogger, "--> Argument list: %#v\n", args)
 
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
 	if fCode, ok := syms.Get(fName); ok {
@@ -184,7 +184,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 
 	if !err.Is(errors.Stop) {
 		fmt.Printf("Go routine  %s failed, %v\n", fName, err)
-		ui.Debug(ui.ByteCodeLogger, "--> Go routine invocation ends with %v", err)
+		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)
 	}
 }

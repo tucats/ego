@@ -320,7 +320,11 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 		_ = syms.SetAlways("__exec_mode", "run")
 	}
 
-	traceLogging := ui.Loggers[ui.ByteCodeLogger]
+	if c.GetBool("trace") {
+		ui.SetLogger(ui.TraceLogger, true)
+	}
+
+	traceLogging := ui.ActiveLogger(ui.TraceLogger)
 
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
 	io.SetConfig(syms, ConfigDisassemble, disassemble)

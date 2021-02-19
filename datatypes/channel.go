@@ -40,7 +40,7 @@ func NewChannel(size int) *Channel {
 	}
 	c.channel = make(chan interface{}, size)
 
-	ui.Debug(ui.ByteCodeLogger, "--> Created  %s", c.String())
+	ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
 
 	return c
 }
@@ -53,7 +53,7 @@ func (c *Channel) Send(datum interface{}) *errors.EgoError {
 	defer c.mutex.Unlock()
 
 	if c.isOpen {
-		ui.Debug(ui.ByteCodeLogger, "--> Sending on %s", c.String())
+		ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
 
 		c.count++
 		c.channel <- datum
@@ -69,7 +69,7 @@ func (c *Channel) Send(datum interface{}) *errors.EgoError {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, *errors.EgoError) {
-	ui.Debug(ui.ByteCodeLogger, "--> Receiving on %s", c.String())
+	ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
 
 	if !c.isOpen && c.count == 0 {
 		return nil, errors.New(errors.ChannelNotOpenError)
@@ -105,7 +105,7 @@ func (c *Channel) Close() bool {
 
 	defer c.mutex.Unlock()
 
-	ui.Debug(ui.ByteCodeLogger, "--> Closing %s", c.String())
+	ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
 
 	wasActive := c.isOpen
 

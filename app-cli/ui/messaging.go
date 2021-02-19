@@ -49,15 +49,16 @@ var sequenceMux sync.Mutex
 
 // Names of loggers go here.
 const (
-	DebugLogger    = "DEBUG"
-	CLILogger      = "CLI"
-	CompilerLogger = "COMPILER"
-	SymbolLogger   = "SYMBOLS"
-	ServerLogger   = "SERVER"
 	AppLogger      = "APP"
 	ByteCodeLogger = "BYTECODE"
-	UserLogger     = "USER"
+	CLILogger      = "CLI"
+	CompilerLogger = "COMPILER"
 	DBLogger       = "DB"
+	DebugLogger    = "DEBUG"
+	ServerLogger   = "SERVER"
+	SymbolLogger   = "SYMBOLS"
+	TraceLogger    = "TRACE"
+	UserLogger     = "USER"
 )
 
 // Loggers is a map of the names of logging modes that are enabled.
@@ -69,6 +70,7 @@ var Loggers = map[string]bool{
 	ServerLogger:   false,
 	AppLogger:      false,
 	ByteCodeLogger: false,
+	TraceLogger:    false,
 	UserLogger:     false,
 	DBLogger:       false,
 }

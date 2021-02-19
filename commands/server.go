@@ -372,10 +372,10 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Set up tracing for the server, and enable the logger if
 	// needed.
 	if c.WasFound("trace") {
-		ui.SetLogger(ui.ByteCodeLogger, true)
+		ui.SetLogger(ui.TraceLogger, true)
 	}
 
-	server.Tracing = ui.Loggers[ui.ByteCodeLogger]
+	server.Tracing = ui.Loggers[ui.TraceLogger]
 
 	// Figure out the root location of the services, which will
 	// also become the context-root of the ultimate URL path for

@@ -360,6 +360,6 @@ func (c *Compiler) PopLoop() {
 	if c.loops != nil {
 		c.loops = c.loops.Parent
 	} else {
-		ui.Debug(ui.ByteCodeLogger, "=== loop stack empty")
+		ui.Debug(ui.TraceLogger, "=== loop stack empty")
 	}
 }
