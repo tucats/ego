@@ -126,7 +126,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 					ui.Debug(ui.ByteCodeLogger, "*** Branch to %d on error: %s", c.pc, text)
 				}
 			} else {
-				if !err.Is(errors.SignalDebugger) && c.Tracing {
+				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.Tracing {
 					ui.Debug(ui.ByteCodeLogger, "*** Return error: %s", text)
 				}
 
