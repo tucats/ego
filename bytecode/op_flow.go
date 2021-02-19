@@ -224,13 +224,9 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// Make a new symbol table for the function to run with,
 		// and a new execution context. Note that this table has no
 		// visibility into the current scope of symbol values.
+
 		c.PushFrame("function "+af.Name, af, 0)
 		_ = c.SetAlways("__args", args)
-
-		if c.this != nil {
-			_ = c.SetAlways("__this", c.this)
-			c.this = nil
-		}
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
 		// First, can we check the argument count on behalf of the caller?
@@ -268,9 +264,10 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+fname, parentTable)
 		funcSymbols.ScopeBoundary = true
 
-		if c.this != nil {
-			_ = funcSymbols.SetAlways("__this", c.this)
-			c.this = nil
+		// Is this builtin one that requires a "this" variable? If so, get it from
+		// the "this" stack.
+		if v, ok := c.PopThis(); ok {
+			_ = funcSymbols.SetAlways("__this", v)
 		}
 
 		result, err = af(funcSymbols, args)
@@ -385,18 +382,6 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	v, found := c.Get("__args")
 	if !found {
 		return c.NewError(errors.InvalidArgCheckError)
-	}
-
-	// Was there a "This" done just before this? If so, set
-	// the stack value accordingly.
-	if thisName, ok := c.this.(string); ok && thisName != "" {
-		this, err := c.Pop()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		_ = c.SetAlways(thisName, this)
-		c.this = nil
 	}
 
 	// Do the actual compare. Note that if we ended up with a negative

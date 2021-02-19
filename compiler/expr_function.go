@@ -9,8 +9,6 @@ func (c *Compiler) functionCall() *errors.EgoError {
 	// Note, caller already consumed the opening paren
 	argc := 0
 
-	c.b.Emit(bc.This, nil)
-
 	for c.t.Peek(1) != ")" {
 		err := c.conditional()
 		if !errors.Nil(err) {

@@ -156,22 +156,3 @@ func searchParents(mv map[string]interface{}, name string) (interface{}, bool) {
 
 	return nil, false
 }
-
-// ThisImpl implements the This opcode.
-func ThisImpl(c *Context, i interface{}) *errors.EgoError {
-	if i == nil {
-		c.this = c.lastStruct
-		c.lastStruct = nil
-
-		return nil
-	}
-
-	this := util.GetString(i)
-
-	v, ok := c.Get("__this")
-	if !ok {
-		v = c.this
-	}
-
-	return c.SetAlways(this, v)
-}

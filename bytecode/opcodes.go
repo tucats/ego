@@ -40,6 +40,7 @@ const (
 	Exp
 	Flatten
 	FromFile
+	GetThis
 	GetVarArgs
 	Go
 	GreaterThan
@@ -68,6 +69,7 @@ const (
 	Response
 	Return
 	Say
+	SetThis
 	StackCheck
 	StaticTyping
 	Store
@@ -84,7 +86,6 @@ const (
 	SymbolDelete
 	SymbolOptCreate
 	Template
-	This
 	Timer
 	Try
 	TryPop
@@ -126,6 +127,7 @@ var instructionNames = map[OpcodeID]string{
 	Exp:                "Exp",
 	Flatten:            "Flatten",
 	FromFile:           "FromFile",
+	GetThis:            "GetThis",
 	GetVarArgs:         "GetVarArgs",
 	Go:                 "Go",
 	GreaterThan:        "GreaterThan",
@@ -155,6 +157,7 @@ var instructionNames = map[OpcodeID]string{
 	Response:           "Response",
 	Return:             "Return",
 	Say:                "Say",
+	SetThis:            "SetThis",
 	StackCheck:         "StackCheck",
 	StaticTyping:       "StaticTyping",
 	Stop:               "Stop",
@@ -172,7 +175,6 @@ var instructionNames = map[OpcodeID]string{
 	SymbolDelete:       "SymbolDelete",
 	SymbolOptCreate:    "SymbolOptCreate",
 	Template:           "Template",
-	This:               "This",
 	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
@@ -203,6 +205,7 @@ func initializeDispatch() {
 			Exp:                ExponentImpl,
 			Flatten:            FlattenImpl,
 			FromFile:           FromFileImpl,
+			GetThis:            GetThisImpl,
 			GetVarArgs:         GetVarArgsImpl,
 			Go:                 GoImpl,
 			GreaterThan:        GreaterThanImpl,
@@ -232,6 +235,7 @@ func initializeDispatch() {
 			Response:           ResponseImpl,
 			Return:             ReturnImpl,
 			Say:                SayImpl,
+			SetThis:            SetThisImpl,
 			StackCheck:         StackCheckImpl,
 			StaticTyping:       StaticTypingImpl,
 			Stop:               StopImpl,
@@ -249,7 +253,6 @@ func initializeDispatch() {
 			SymbolDelete:       SymbolDeleteImpl,
 			SymbolOptCreate:    SymbolOptCreateImpl,
 			Template:           TemplateImpl,
-			This:               ThisImpl,
 			Timer:              TimerImpl,
 			Try:                TryImpl,
 			TryPop:             TryPopImpl,

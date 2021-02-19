@@ -19,7 +19,7 @@ type CallFrame struct {
 	Symbols    *symbols.SymbolTable
 	Bytecode   *ByteCode
 	Tokenizer  *tokenizer.Tokenizer
-	This       interface{}
+	ThisStack  []interface{}
 	SingleStep bool
 	PC         int
 	FP         int
@@ -34,7 +34,7 @@ func (c *Context) PushFrame(tableName string, bc *ByteCode, pc int) {
 		Bytecode:   c.bc,
 		SingleStep: c.singleStep,
 		Tokenizer:  c.tokenizer,
-		This:       c.this,
+		ThisStack:  c.thisStack,
 		PC:         c.pc,
 		FP:         c.fp,
 		Module:     c.bc.Name,
@@ -75,7 +75,7 @@ func (c *Context) PopFrame() *errors.EgoError {
 		c.symbols = callFrame.Symbols
 		c.singleStep = callFrame.SingleStep
 		c.tokenizer = callFrame.Tokenizer
-		c.this = callFrame.This
+		c.thisStack = callFrame.ThisStack
 		c.bc = callFrame.Bytecode
 		c.pc = callFrame.PC
 		c.fp = callFrame.FP

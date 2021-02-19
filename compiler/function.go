@@ -68,7 +68,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.
 	if thisName != "" {
-		b.Emit(bytecode.This, thisName)
+		b.Emit(bytecode.GetThis, thisName)
 
 		// If it was by value, make a copy of that so the function can't
 		// modify the actual value.

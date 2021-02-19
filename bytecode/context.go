@@ -24,7 +24,7 @@ type Context struct {
 	rangeStack      []*Range
 	timers          []time.Time
 	Name            string
-	this            interface{}
+	thisStack       []interface{}
 	lastStruct      interface{}
 	result          interface{}
 	pc              int
@@ -75,7 +75,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		symbols:         s,
 		fullSymbolScope: true,
 		Tracing:         false,
-		this:            "",
+		thisStack:       nil,
 		try:             make([]int, 0),
 		rangeStack:      make([]*Range, 0),
 		timers:          make([]time.Time, 0),
