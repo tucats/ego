@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,12 +64,49 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		fileMemberName: f,
 		"valid":        true,
 		"name":         fname,
+		"String":       AsString,
 	}
 
 	datatypes.SetMetadata(fobj, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(fobj, datatypes.TypeMDKey, "file")
 
 	return fobj, nil
+}
+
+func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var b strings.Builder
+
+	f := getThis(s)
+	if f == nil {
+		return nil, errors.New(errors.NoFunctionReceiver).In("String()")
+	}
+
+	b.WriteString("<file")
+
+	if bx, ok := f["valid"]; ok {
+		if util.GetBool(bx) {
+			b.WriteString("; open")
+			b.WriteString("; name \"")
+
+			if name, ok := f["name"]; ok {
+				b.WriteString(util.GetString(name))
+			}
+
+			b.WriteString("\"")
+
+			if f, ok := f[fileMemberName]; ok {
+				b.WriteString(fmt.Sprintf("; fileptr %v", f))
+			}
+
+			b.WriteString(">")
+
+			return b.String(), nil
+		}
+	}
+
+	b.WriteString("; closed>")
+
+	return b.String(), nil
 }
 
 // getThis returns a map for the "this" object in the current
