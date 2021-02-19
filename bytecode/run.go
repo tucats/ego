@@ -87,7 +87,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		if c.Tracing {
 			s := FormatInstruction(i)
 
-			s2 := FormatStack(c.stack[:c.sp], fullStackListing)
+			s2 := FormatStack(c.symbols, c.stack[:c.sp], fullStackListing)
 			if !fullStackListing && len(s2) > 50 {
 				s2 = s2[:50]
 			}

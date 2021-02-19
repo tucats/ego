@@ -60,8 +60,10 @@ func (c *Context) PopThis() (interface{}, bool) {
 	return this.value, true
 }
 
+// Add a line to the trace output that shows the "this" stack of
+// saved function receivers.
 func (c Context) PrintThisStack(operation string) {
-	if v, ok := ui.Loggers[ui.ByteCodeLogger]; v && ok {
+	if ui.ActiveLogger(ui.ByteCodeLogger) {
 		var b strings.Builder
 
 		label := "@ " + operation + "; stack ="
@@ -70,14 +72,16 @@ func (c Context) PrintThisStack(operation string) {
 			b.WriteString(fmt.Sprintf("%13s%s %v", " ", label, "<empty>"))
 		} else {
 			b.WriteString(fmt.Sprintf("%13s%s ", " ", label))
-			for index, v := range c.thisStack {
+
+			lastOne := len(c.thisStack) - 1
+			for index := lastOne; index >= 0; index-- {
+				v := c.thisStack[index]
+				n := v.name
+				r, _ := functions.Type(c.symbols, []interface{}{v.value})
+				b.WriteString(fmt.Sprintf("%s <%s>", n, r))
 				if index > 0 {
 					b.WriteString(", ")
 				}
-
-				n := v.name
-				r, _ := functions.Type(c.symbols, []interface{}{v.value})
-				b.WriteString(fmt.Sprintf("%s(%s)", n, r))
 			}
 		}
 

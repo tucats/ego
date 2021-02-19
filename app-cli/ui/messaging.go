@@ -91,6 +91,20 @@ func SetLogger(logger string, mode bool) bool {
 	return true
 }
 
+// Determine if a given logger is active. This is particularly useful
+// when deciding if it's worth doing complex formatting operations.
+func ActiveLogger(logger string) bool {
+	if !DebugMode {
+		return false
+	}
+
+	if active, found := Loggers[logger]; active && found {
+		return true
+	}
+
+	return false
+}
+
 // Debug displays a message if debugging mode is enabled.
 func Debug(logger string, format string, args ...interface{}) {
 	if DebugMode {

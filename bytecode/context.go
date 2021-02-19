@@ -297,7 +297,7 @@ func (c *Context) Push(v interface{}) *errors.EgoError {
 }
 
 // FormatStack formats the stack for tracing output.
-func FormatStack(s []interface{}, newlines bool) string {
+func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) string {
 	var b strings.Builder
 
 	if len(s) == 0 {
@@ -317,6 +317,10 @@ func FormatStack(s []interface{}, newlines bool) string {
 			}
 		}
 
+		/*
+			str := functions.FormatAsString(syms, s[n])
+			b.WriteString(str)
+		*/
 		b.WriteString(util.Format(s[n]))
 
 		if !newlines && b.Len() > 50 {
