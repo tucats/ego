@@ -12,6 +12,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+type This struct {
+	name  string
+	value interface{}
+}
+
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
@@ -24,7 +29,7 @@ type Context struct {
 	rangeStack      []*Range
 	timers          []time.Time
 	Name            string
-	thisStack       []interface{}
+	thisStack       []This
 	lastStruct      interface{}
 	result          interface{}
 	pc              int

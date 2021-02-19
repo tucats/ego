@@ -19,7 +19,7 @@ type CallFrame struct {
 	Symbols    *symbols.SymbolTable
 	Bytecode   *ByteCode
 	Tokenizer  *tokenizer.Tokenizer
-	ThisStack  []interface{}
+	ThisStack  []This
 	SingleStep bool
 	PC         int
 	FP         int
