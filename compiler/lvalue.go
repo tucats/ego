@@ -176,8 +176,8 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 	ops := bc.Opcodes()
 
 	opsPos := bc.Mark() - 1
-	if opsPos > 0 && ops[opsPos].Operation == bytecode.LoadIndex {
-		ops[opsPos].Operation = bytecode.StoreIndex
+	if opsPos > 0 && ops[opsPos].Operation == bytecode.LoadIndex && ops[opsPos].Operand == nil {
+		ops[opsPos] = bytecode.Instruction{Operation: bytecode.StoreIndex, Operand: nil}
 	} else {
 		if isChan {
 			bc.Emit(bytecode.StoreChan, name)
@@ -217,7 +217,10 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 			return c.NewError(errors.InvalidSymbolError, member)
 		}
 
-		bc.Emit(bytecode.LoadIndex, c.Normalize(member))
+		// Must do this as a push/loadindex in case the struct is
+		// actuall a typed struct.
+		bc.Emit(bytecode.Push, c.Normalize(member))
+		bc.Emit(bytecode.LoadIndex)
 
 		return nil
 	}
