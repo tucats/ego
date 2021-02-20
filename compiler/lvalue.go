@@ -155,6 +155,10 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 	if name == "_" {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
+		// If its the case of x := <-c  then skip the assignment
+		if util.InList(c.t.Peek(1), "=", ":=") && c.t.Peek(2) == "<-" {
+			c.t.Advance(1)
+		}
 		if c.t.Peek(1) == ":=" {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
