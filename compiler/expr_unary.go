@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 )
@@ -10,6 +11,26 @@ func (c *Compiler) unary() *errors.EgoError {
 	t := c.t.Peek(1)
 
 	switch t {
+	case "&":
+		c.t.Advance(1)
+
+		err := c.functionOrReference()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Emit(bc.Address, false)
+
+	case "*":
+		c.t.Advance(1)
+
+		err := c.functionOrReference()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Emit(bytecode.Address, true)
+
 	case "-":
 		c.t.Advance(1)
 
@@ -19,8 +40,6 @@ func (c *Compiler) unary() *errors.EgoError {
 		}
 
 		c.b.Emit(bc.Negate, 0)
-
-		return nil
 
 	case "!":
 		c.t.Advance(1)
@@ -32,9 +51,9 @@ func (c *Compiler) unary() *errors.EgoError {
 
 		c.b.Emit(bc.Negate, 0)
 
-		return nil
-
 	default:
 		return c.functionOrReference()
 	}
+
+	return nil
 }

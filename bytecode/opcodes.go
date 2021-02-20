@@ -23,6 +23,7 @@ const (
 	Stop   OpcodeID = 0
 	AtLine          = iota + BuiltinInstructions
 	Add    OpcodeID = iota
+	Address
 	And
 	ArgCheck
 	Array
@@ -80,6 +81,7 @@ const (
 	StoreIndex
 	StoreInto
 	StoreMetadata
+	StoreViaPointer
 	Struct
 	Sub
 	Swap
@@ -107,6 +109,7 @@ const (
 
 var instructionNames = map[OpcodeID]string{
 	Add:                "Add",
+	Address:            "Address",
 	And:                "And",
 	ArgCheck:           "ArgCheck",
 	Array:              "Array",
@@ -170,6 +173,7 @@ var instructionNames = map[OpcodeID]string{
 	StoreIndex:         "StoreIndex",
 	StoreInto:          "StoreInto",
 	StoreMetadata:      "StoreMetadata",
+	StoreViaPointer:    "StoreViaPointer",
 	Struct:             "Struct",
 	Sub:                "Sub",
 	Swap:               "Swap",
@@ -186,6 +190,7 @@ func initializeDispatch() {
 	if dispatch == nil {
 		dispatch = DispatchMap{
 			Add:                AddImpl,
+			Address:            AddressImpl,
 			And:                AndImpl,
 			ArgCheck:           ArgCheckImpl,
 			Array:              ArrayImpl,
@@ -249,6 +254,7 @@ func initializeDispatch() {
 			StoreIndex:         StoreIndexImpl,
 			StoreInto:          StoreIntoImpl,
 			StoreMetadata:      StoreMetadataImpl,
+			StoreViaPointer:    StoreViaPointerImpl,
 			Struct:             StructImpl,
 			Sub:                SubtractImpl,
 			Swap:               SwapImpl,

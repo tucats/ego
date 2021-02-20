@@ -11,6 +11,15 @@ import (
 // object. This is used in cases where the parser might be in an
 // otherwise ambiguous state.
 func (c *Compiler) IsLValue() bool {
+	// Remember were we are, and set it back when done.
+	mark := c.t.Mark()
+	defer c.t.Set(mark)
+
+	// If this is a leading asterisk, that's fine.
+	if c.t.Peek(1) == "*" {
+		c.t.Advance(1)
+	}
+
 	name := c.t.Peek(1)
 	if !tokenizer.IsSymbol(name) {
 		return false
@@ -44,13 +53,20 @@ func (c *Compiler) IsLValue() bool {
 
 // Check to see if this is a list of lvalues, which can occur
 // in a multi-part assignment.
+//
+// TODO support pointer stores.
 func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	bc := bytecode.New("lvalue list")
 	count := 0
+
 	savedPosition := c.t.TokenP
 	isLvalueList := false
 
 	bc.Emit(bytecode.StackCheck, 1)
+
+	if c.t.Peek(1) == "*" {
+		return nil, c.NewError(errors.InvalidSymbolError, "*")
+	}
 
 	for {
 		name := c.t.Next()
@@ -78,7 +94,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 		// Cheating here a bit; this opcode does an optional create
 		// if it's not found anywhere in the tree already.
 		bc.Emit(bytecode.SymbolOptCreate, name)
-		patchStore(bc, name, false)
+		patchStore(bc, name, false, false)
 
 		count++
 
@@ -127,8 +143,14 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 	}
 
 	bc := bytecode.New("lvalue")
+	isPointer := false
 
 	name := c.t.Next()
+	if name == "*" {
+		isPointer = true
+		name = c.t.Next()
+	}
+
 	if !tokenizer.IsSymbol(name) {
 		return nil, c.NewError(errors.InvalidSymbolError, name)
 	}
@@ -163,7 +185,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
 
-		patchStore(bc, name, c.t.Peek(1) == "<-")
+		patchStore(bc, name, isPointer, c.t.Peek(1) == "<-")
 	}
 
 	return bc, nil
@@ -173,7 +195,7 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 // generating ends in a LoadIndex, but this is the last part of the
 // storagebytecode, convert the last operation to a Store which writes
 // the value back.
-func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
+func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 	// Is the last operation in the stack referecing
 	// a parent object? If so, convert the last one to
 	// a store operation.
@@ -186,7 +208,11 @@ func patchStore(bc *bytecode.ByteCode, name string, isChan bool) {
 		if isChan {
 			bc.Emit(bytecode.StoreChan, name)
 		} else {
-			bc.Emit(bytecode.Store, name)
+			if isPointer {
+				bc.Emit(bytecode.StoreViaPointer, name)
+			} else {
+				bc.Emit(bytecode.Store, name)
+			}
 		}
 	}
 }

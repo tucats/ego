@@ -115,6 +115,14 @@ func (c *Compiler) multDivide() *errors.EgoError {
 
 		op := c.t.Peek(1)
 
+		// Special case; if the next tokens are * <symbol> = then this isn't a multiply,
+		// but rather a pointer dereference assignment statement boundary.
+		if c.t.Peek(1) == "*" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == "=" {
+			parsing = false
+
+			continue
+		}
+
 		if c.t.AnyNext("^", "*", "/", "|") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.NewError(errors.MissingTermError)

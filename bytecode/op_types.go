@@ -193,3 +193,25 @@ func (b ByteCode) NeedsCoerce(kind int) bool {
 
 	return true
 }
+
+func AddressImpl(c *Context, i interface{}) *errors.EgoError {
+	var err *errors.EgoError
+
+	var v interface{}
+
+	isDeref := util.GetBool(i)
+
+	if v, err = c.Pop(); err == nil {
+		if isDeref {
+			v, err = datatypes.Dereference(v)
+		} else {
+			v, err = datatypes.AddressOf(v)
+		}
+
+		if err == nil {
+			err = c.Push(v)
+		}
+	}
+
+	return err
+}

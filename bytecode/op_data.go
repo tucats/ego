@@ -152,6 +152,62 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
+// StoreViaPointer has a name as it's argument. It loads the value,
+// verifies it is a pointer, and stores TOS into that pointer.
+func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
+	name := util.GetString(i)
+
+	dest, ok := c.Get(name)
+	if !ok {
+		return errors.New(errors.UnknownIdentifierError)
+	}
+
+	src, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	switch actual := dest.(type) {
+	case *bool:
+		d := util.Coerce(src, true)
+		*actual = d.(bool)
+
+	case *int:
+		d := util.Coerce(src, 1)
+		*actual = d.(int)
+
+	case *float64:
+		d := util.Coerce(src, 1.0)
+		*actual = d.(float64)
+
+	case *string:
+		d := util.Coerce(src, "")
+		*actual = d.(string)
+
+	case **datatypes.EgoArray:
+		*actual, ok = src.(*datatypes.EgoArray)
+		if !ok {
+			return errors.New(errors.InvalidTypeError)
+		}
+	case **datatypes.EgoMap:
+		*actual, ok = src.(*datatypes.EgoMap)
+		if !ok {
+			return errors.New(errors.InvalidTypeError)
+		}
+
+	case **datatypes.Channel:
+		*actual, ok = src.(*datatypes.Channel)
+		if !ok {
+			return errors.New(errors.InvalidTypeError)
+		}
+
+	default:
+		return errors.New(errors.InvalidTypeError)
+	}
+
+	return nil
+}
+
 // StoreAlwaysImpl instruction processor.
 func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
