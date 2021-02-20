@@ -12,11 +12,21 @@ import (
 
 // This manages operations on structures (structs, maps, and arrays)
 
-// LoadIndexImpl instruction processor.
+// LoadIndexImpl instruction processor. If the operand is non-nil then
+// it is used as the index value, else the index value comes from the
+// stack.
 func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
-	index, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	var err *errors.EgoError
+
+	var index interface{}
+
+	if i != nil {
+		index = i
+	} else {
+		index, err = c.Pop()
+		if !errors.Nil(err) {
+			return err
+		}
 	}
 
 	array, err := c.Pop()

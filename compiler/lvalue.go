@@ -217,8 +217,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 			return c.NewError(errors.InvalidSymbolError, member)
 		}
 
-		bc.Emit(bytecode.Push, c.Normalize(member))
-		bc.Emit(bytecode.LoadIndex)
+		bc.Emit(bytecode.LoadIndex, c.Normalize(member))
 
 		return nil
 	}

@@ -90,8 +90,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 			b.Emit(bytecode.GetVarArgs, n)
 		} else {
 			b.Emit(bytecode.Load, "__args")
-			b.Emit(bytecode.Push, n)
-			b.Emit(bytecode.LoadIndex)
+			b.Emit(bytecode.LoadIndex, n)
 		}
 
 		// If this argumnet is not interface{} or a variable argument item,
@@ -101,8 +100,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 		}
 		// Generate code to store the value on top of the stack into the local
 		// symbol for the parameter name.
-		b.Emit(bytecode.SymbolCreate, p.name)
-		b.Emit(bytecode.Store, p.name)
+		b.Emit(bytecode.StoreAlways, p.name)
 	}
 
 	// Is there a list of return items (expressed as a parenthesis)?

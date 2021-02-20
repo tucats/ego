@@ -28,8 +28,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			colon := c.t.Peek(3)
 
 			if tokenizer.IsSymbol(name) && colon == ":" {
-				c.b.Emit(bc.Push, "__type")
-				c.b.Emit(bc.LoadIndex)
+				c.b.Emit(bc.LoadIndex, "__type")
 				c.b.Emit(bc.Push, "__type")
 
 				err := c.expressionAtom()
@@ -61,8 +60,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 			lastName = c.t.Next()
 
-			c.b.Emit(bc.Push, lastName)
-			c.b.Emit(bc.Member)
+			c.b.Emit(bc.Member, lastName)
 
 		// Array index reference
 		case "[":

@@ -56,8 +56,7 @@ func (c *Compiler) Test() *errors.EgoError {
 	c.b.Emit(bytecode.Push, "TEST: ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Load, "T")
-	c.b.Emit(bytecode.Push, "description")
-	c.b.Emit(bytecode.Member)
+	c.b.Emit(bytecode.Member, "description")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Push, pad)
 	c.b.Emit(bytecode.Print)
@@ -284,8 +283,7 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 func (c *Compiler) Assert() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 	c.b.Emit(bytecode.Load, "T")
-	c.b.Emit(bytecode.Push, "assert")
-	c.b.Emit(bytecode.Member)
+	c.b.Emit(bytecode.Member, "assert")
 
 	argCount := 1
 
