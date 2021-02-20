@@ -174,3 +174,22 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 
 	return nil
 }
+
+func (b ByteCode) NeedsCoerce(kind int) bool {
+	// If there are no instructions before this, no coerce is appropriate.
+	pos := b.Mark()
+	if pos == 0 {
+		return false
+	}
+
+	i := b.GetInstruction(pos - 1)
+	if i == nil {
+		return false
+	}
+
+	if i.Operation == Push {
+		return datatypes.TypeOf(i.Operand) != kind
+	}
+
+	return true
+}

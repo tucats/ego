@@ -149,7 +149,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	err := parentCtx.NewError(errors.InvalidFunctionCallError)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
-	ui.Debug(ui.TraceLogger, "--> Argument list: %#v\n", args)
+	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)
 
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
 	if fCode, ok := syms.Get(fName); ok {
@@ -178,6 +178,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ctx := NewContext(funcSyms, callCode)
 			ctx.Tracing = true
 			ui.DebugMode = true
+
 			err = parentCtx.NewError(ctx.Run())
 		}
 	}

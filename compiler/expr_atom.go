@@ -286,8 +286,13 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			return err
 		}
 
+		// If this is an array of a specific type, check to see
+		// if the prevous value was a constant. If it wasn't, or
+		// was of the wrong type, emit a coerce...
 		if kind != datatypes.UndefinedType {
-			c.b.Emit(bytecode.Coerce, kind)
+			if c.b.NeedsCoerce(kind) {
+				c.b.Emit(bytecode.Coerce, kind)
+			}
 		}
 
 		count = count + 1

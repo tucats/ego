@@ -156,3 +156,20 @@ func searchParents(mv map[string]interface{}, name string) (interface{}, bool) {
 
 	return nil, false
 }
+
+func StoreBytecodeImpl(c *Context, i interface{}) *errors.EgoError {
+	var err *errors.EgoError
+
+	var v interface{}
+
+	if v, err = c.Pop(); err == nil {
+		if bc, ok := v.(*ByteCode); ok {
+			bc.Name = util.GetString(i)
+			err = c.symbols.SetAlways(bc.Name, bc)
+		} else {
+			err = errors.New(errors.InvalidTypeError)
+		}
+	}
+
+	return err
+}

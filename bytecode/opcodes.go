@@ -74,6 +74,7 @@ const (
 	StaticTyping
 	Store
 	StoreAlways
+	StoreBytecode
 	StoreChan
 	StoreGlobal
 	StoreIndex
@@ -163,6 +164,7 @@ var instructionNames = map[OpcodeID]string{
 	Stop:               "Stop",
 	Store:              "Store",
 	StoreAlways:        "StoreAlways",
+	StoreBytecode:      "StoreBytecode",
 	StoreChan:          "StoreChan",
 	StoreGlobal:        "StoreGlobal",
 	StoreIndex:         "StoreIndex",
@@ -241,6 +243,7 @@ func initializeDispatch() {
 			Stop:               StopImpl,
 			Store:              StoreImpl,
 			StoreAlways:        StoreAlwaysImpl,
+			StoreBytecode:      StoreBytecodeImpl,
 			StoreChan:          StoreChanImpl,
 			StoreGlobal:        StoreGlobalImpl,
 			StoreIndex:         StoreIndexImpl,

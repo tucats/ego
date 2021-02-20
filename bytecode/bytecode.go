@@ -123,6 +123,14 @@ func (b *ByteCode) Append(a *ByteCode) {
 	}
 }
 
+func (b *ByteCode) GetInstruction(pos int) *Instruction {
+	if pos < 0 || pos >= len(b.instructions) {
+		return nil
+	}
+
+	return &(b.instructions[pos])
+}
+
 // DefineInstruction adds a user-defined instruction to the bytecode
 // set.
 func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) *errors.EgoError {

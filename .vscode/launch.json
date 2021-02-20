@@ -21,6 +21,14 @@
             "args": ["run", "test.ego", "-d"]
         },
         {
+            "name": "Trace test.ego",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["run", "test.ego", "--trace"]
+        },
+        {
             "name": "Test test.ego",
             "type": "go",
             "request": "launch",

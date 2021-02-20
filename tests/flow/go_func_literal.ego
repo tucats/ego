@@ -1,0 +1,18 @@
+@test "flow: function literal as go-routine"
+
+{
+    var ch chan
+
+    // Launch a thread using the function constant right
+    // here, followed by it's arguments.
+
+    go func (c chan, str string)  {
+        c <- strings.ToLower(str)
+    }(ch, "HellO")
+
+    // Wait to get the result back from the thread.
+    x <- ch
+    @assert T.Equal(x, "hello")
+}
+
+@pass
