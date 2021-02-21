@@ -348,17 +348,27 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	case *datatypes.Channel:
 		return "chan", nil
 
-	case int:
-		return "int", nil
+	default:
+		tt := datatypes.TypeOf(v)
+		if tt == datatypes.UndefinedType {
+			vv := reflect.ValueOf(v)
+			if vv.Kind() == reflect.Func {
+				return "builtin", nil
+			}
 
-	case float64, float32:
-		return "float", nil
+			if vv.Kind() == reflect.Ptr {
+				ts := vv.String()
+				if ts == "<*bytecode.ByteCode Value>" {
+					return "func", nil
+				}
 
-	case string:
-		return "string", nil
+				return fmt.Sprintf("ptr %s", ts), nil
+			}
 
-	case bool:
-		return "bool", nil
+			return "unknown", nil
+		}
+
+		return datatypes.TypeString(tt), nil
 
 	case []interface{}:
 		kind := datatypes.UndefinedType
@@ -392,22 +402,10 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		// Finally, just a generic struct then.
 		return "struct", nil
 
-	default:
-		vv := reflect.ValueOf(v)
-		if vv.Kind() == reflect.Func {
-			return "builtin", nil
-		}
+	case *interface{}:
+		tt := datatypes.PointerTo(v) + datatypes.PointerType
 
-		if vv.Kind() == reflect.Ptr {
-			ts := vv.String()
-			if ts == "<*bytecode.ByteCode Value>" {
-				return "func", nil
-			}
-
-			return fmt.Sprintf("ptr %s", ts), nil
-		}
-
-		return "unknown", nil
+		return datatypes.TypeString(tt), nil
 	}
 }
 

@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"github.com/google/uuid"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -41,44 +40,52 @@ func (c *Compiler) Var() *errors.EgoError {
 
 	// We'll need to use this token string over and over for each name
 	// in the list, so remember where to start.
-	mark := c.t.Mark()
+	kind := datatypes.UndefinedType
 
-	for _, name := range names {
-		c.t.Set(mark)
+	var model interface{}
 
-		if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
-			c.t.Advance(2)
-			c.b.Emit(bytecode.Array, 0)
-		} else {
-			typename := c.t.Next()
+	for _, typeInfo := range datatypes.TypeDeclarationMap {
+		match := true
 
-			switch typename {
-			case "chan":
-				c.b.Emit(bytecode.Push, datatypes.NewChannel(1))
+		for idx, token := range typeInfo.Tokens {
+			if c.t.Peek(idx+1) != token {
+				match = false
 
-			case "int":
-				c.b.Emit(bytecode.Push, int(0))
-
-			case "float", "double":
-				c.b.Emit(bytecode.Push, 0.0)
-
-			case "string":
-				c.b.Emit(bytecode.Push, "")
-
-			case "bool":
-				c.b.Emit(bytecode.Push, false)
-
-			case "uuid":
-				c.b.Emit(bytecode.Push, uuid.Nil)
-
-			// Must be a user type name
-			default:
-				c.b.Emit(bytecode.Load, "new")
-				c.b.Emit(bytecode.Load, typename)
-				c.b.Emit(bytecode.Call, 1)
+				break
 			}
 		}
 
+		if match {
+			kind = typeInfo.Kind
+			model = typeInfo.Model
+			c.t.Advance(len(typeInfo.Tokens))
+		}
+	}
+
+	if kind == datatypes.UndefinedType {
+		// Is the next item a symbol? If so, assume it's a user
+		// defined type
+		typeName := c.t.Next()
+		if tokenizer.IsSymbol(typeName) {
+			for _, name := range names {
+				c.b.Emit(bytecode.Load, "new")
+				c.b.Emit(bytecode.Load, typeName)
+				c.b.Emit(bytecode.Call, 1)
+				c.b.Emit(bytecode.SymbolCreate, name)
+				c.b.Emit(bytecode.Store, name)
+			}
+
+			return nil
+		}
+
+		// Not a symbol name, so fail
+		return c.NewError(errors.InvalidTypeSpecError)
+	}
+
+	// We got a built-in type, so emit the model and store it
+	// in each symbo
+	for _, name := range names {
+		c.b.Emit(bytecode.Push, model)
 		c.b.Emit(bytecode.SymbolCreate, name)
 		c.b.Emit(bytecode.Store, name)
 	}

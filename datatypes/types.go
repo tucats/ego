@@ -34,6 +34,7 @@ var intModel = 0
 var floatModel = 0.0
 var boolModel = false
 var stringModel = ""
+var chanModel = NewChannel(1)
 
 //var arrayModel = []interface{}{}
 //var structModle = map[string]interface{}{}
@@ -42,7 +43,7 @@ var stringModel = ""
 var TypeDeclarationMap = []TypeDefinition{
 	{
 		[]string{"chan"},
-		&Channel{},
+		chanModel,
 		ChanType,
 	},
 	{
