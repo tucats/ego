@@ -222,7 +222,12 @@ func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if content, ok := addr.(*interface{}); ok {
-		return c.Push(*content)
+		c2 := *content
+		if c3, ok := c2.(*interface{}); ok {
+			return c.Push(*c3)
+		} else {
+			return c.Push(c2)
+		}
 	}
 
 	return c.NewError(errors.NotAPointer).Context(name)

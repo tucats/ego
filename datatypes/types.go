@@ -36,6 +36,11 @@ var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
 
+var intInterface interface{} = 0
+var boolInterface interface{} = false
+var floatInterface interface{} = 0.0
+var stringInterface interface{} = ""
+
 //var arrayModel = []interface{}{}
 //var structModle = map[string]interface{}{}
 
@@ -98,22 +103,22 @@ var TypeDeclarationMap = []TypeDefinition{
 	},
 	{
 		[]string{"*", "bool"},
-		&boolModel,
+		&boolInterface,
 		BoolType + PointerType,
 	},
 	{
 		[]string{"*", "int"},
-		&intModel,
+		&intInterface,
 		IntType + PointerType,
 	},
 	{
 		[]string{"*", "float"},
-		&floatModel,
+		&floatInterface,
 		FloatType + PointerType,
 	},
 	{
 		[]string{"*", "string"},
-		&stringModel,
+		&stringInterface,
 		StringType + PointerType,
 	},
 	{
