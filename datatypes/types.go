@@ -126,7 +126,7 @@ var TypeDeclarationMap = []TypeDefinition{
 // and returns an integer containing the datatype specification, such
 // as datatypes.IntType or datatypes.StringType.
 func TypeOf(i interface{}) int {
-	switch actual := i.(type) {
+	switch i.(type) {
 	case int:
 		return IntType
 
@@ -164,13 +164,6 @@ func TypeOf(i interface{}) int {
 		return ChanType
 
 	default:
-		switch actual.(type) {
-		case int:
-			return IntType
-		case *int:
-			return IntType + PointerType
-		}
-
 		return InterfaceType
 	}
 }
@@ -262,4 +255,16 @@ func IsType(v interface{}, kind int) bool {
 	}
 
 	return false
+}
+
+func PointerTo(v interface{}) int {
+	// Is this a pointer to an interface at all?
+	p, ok := v.(*interface{})
+	if !ok {
+		return UndefinedType
+	}
+
+	actual := *p
+
+	return TypeOf(actual)
 }

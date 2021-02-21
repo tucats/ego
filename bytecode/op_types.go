@@ -62,9 +62,9 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			t := util.GetInt(i)
 			// If it's a pointer type, we can't do coercions
 			if t > datatypes.PointerType {
-				actualT := datatypes.TypeOf(v)
-				if t != actualT && actualT != datatypes.InterfaceType {
-					return c.NewError(errors.InvalidTypeError)
+				actualT := datatypes.PointerTo(v) + datatypes.PointerType
+				if t != actualT /* && actualT != datatypes.InterfaceType  */ {
+					return c.NewError(errors.ArgumentTypeError)
 				}
 			} else {
 				switch t {
