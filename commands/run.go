@@ -44,6 +44,13 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	wasCommandLine := true
 	fullScope := false
 
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.MaxSymbolsPerScope, _ = c.GetInteger(defs.SymbolTableSizeOption)
+		if symbols.MaxSymbolsPerScope < symbols.MinSymbolTableSize {
+			symbols.MaxSymbolsPerScope = symbols.MinSymbolTableSize
+		}
+	}
+
 	autoImport := persistence.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
 		autoImport = c.GetBool(defs.AutoImportOption)

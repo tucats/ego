@@ -101,6 +101,9 @@ func Format(element interface{}) string {
 	case *EgoMap:
 		return v.String()
 
+	case *interface{}:
+		return fmt.Sprintf("&%#v", *v)
+
 	default:
 		vv := reflect.ValueOf(v)
 
@@ -135,7 +138,7 @@ func Format(element interface{}) string {
 				}
 			}
 
-			return fmt.Sprintf("ptr %s", ts)
+			return fmt.Sprintf("ptr %s %#v", ts, element)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {

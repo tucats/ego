@@ -10,7 +10,12 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// This is the maximum number of symbols that can be created at any
+// given scope.
 var MaxSymbolsPerScope = 100
+
+// No symbol table will be smaller than this size.
+const MinSymbolTableSize = 25
 
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
@@ -56,7 +61,8 @@ var RootSymbolTable = SymbolTable{
 		"_session":   2,
 		"_config":    3,
 	},
-	Values: rootValues,
+	ValueSize: 4, // Needs to be the number of non-nil values in rootValues
+	Values:    rootValues,
 }
 
 // NewSymbolTable generates a new symbol table.
@@ -187,14 +193,13 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	// IF this doesn't exist, allocate more space in the values array
 	vx, ok := syms.Symbols[name]
 	if !ok {
-		// TODO add error checking for overflow
-		vx = s.ValueSize
-		syms.Symbols[name] = s.ValueSize
-		s.ValueSize++
-
 		if s.ValueSize >= len(s.Values) {
 			return errors.New(errors.TooManyLocalSymbols)
 		}
+
+		vx = s.ValueSize
+		syms.Symbols[name] = s.ValueSize
+		s.ValueSize++
 	}
 
 	syms.Values[vx] = v
@@ -311,13 +316,13 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.SymbolExistsError).Context(name)
 	}
 
-	s.Symbols[name] = s.ValueSize
-	s.Values[s.ValueSize] = nil
-
-	s.ValueSize++
 	if s.ValueSize >= len(s.Values) {
 		return errors.New(errors.TooManyLocalSymbols)
 	}
+
+	s.Symbols[name] = s.ValueSize
+	s.Values[s.ValueSize] = nil
+	s.ValueSize++
 
 	return nil
 }

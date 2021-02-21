@@ -340,6 +340,13 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		ui.SetLogger(ui.ServerLogger, true)
 	}
 
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.MaxSymbolsPerScope, _ = c.GetInteger(defs.SymbolTableSizeOption)
+		if symbols.MaxSymbolsPerScope < symbols.MinSymbolTableSize {
+			symbols.MaxSymbolsPerScope = symbols.MinSymbolTableSize
+		}
+	}
+
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.
 	session, found := c.GetString("session-uuid")

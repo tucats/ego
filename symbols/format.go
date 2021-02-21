@@ -1,6 +1,7 @@
 package symbols
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -21,7 +22,8 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString("\"")
 	}
 
-	b.WriteString(":\n")
+	b.WriteString(fmt.Sprintf(" (%d/%d):\n",
+		s.ValueSize, len(s.Values)))
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.
@@ -44,7 +46,16 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 		v := s.Values[s.Symbols[k]]
 		skip := false
-		typeString := /* "package" */ datatypes.TypeString(datatypes.TypeOf(v))
+
+		dt := datatypes.TypeOf(v)
+		typeString := datatypes.TypeString(dt)
+
+		if dt == datatypes.InterfaceType {
+			xt := datatypes.PointerTo(v)
+			if xt != datatypes.InterfaceType {
+				typeString = datatypes.TypeString(xt + datatypes.PointerType)
+			}
+		}
 
 		switch actual := v.(type) {
 		case *datatypes.EgoMap:

@@ -337,6 +337,12 @@ var RunGrammar = []cli.Option{
 		ShortName:   "s",
 		Description: "Display symbol table",
 		OptionType:  cli.BooleanType,
+		Private:     true,
+	},
+	{
+		LongName:    "symbol-table-size",
+		Description: "Maximum number of symbols at any given scope",
+		OptionType:  cli.IntType,
 	},
 	{
 		LongName:            "auto-import",
