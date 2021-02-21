@@ -64,6 +64,24 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return c.Function(true)
 	}
 
+	// Is this address-of?
+	if t == "&" && tokenizer.IsSymbol(c.t.Peek(2)) {
+		name := c.Normalize(c.t.Peek(2))
+		c.b.Emit(bytecode.Address, false, name)
+		c.t.Advance(2)
+
+		return nil
+	}
+
+	// Is this dereference?
+	if t == "*" && tokenizer.IsSymbol(c.t.Peek(2)) {
+		name := c.Normalize(c.t.Peek(2))
+		c.b.Emit(bytecode.Address, true, name)
+		c.t.Advance(2)
+
+		return nil
+	}
+
 	// Is this a parenthesis expression?
 	if t == "(" {
 		c.t.Advance(1)
@@ -191,8 +209,6 @@ func (c *Compiler) parseArray() *errors.EgoError {
 	// we came from, and back up over the previous "["
 	// already parsed in the expression atom.
 	marker := c.t.Mark()
-
-	//c.t.Advance(-1)
 
 	kind := c.ParseType()
 	if kind != datatypes.UndefinedType {

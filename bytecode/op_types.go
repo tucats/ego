@@ -60,39 +60,46 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		} else {
 			t := util.GetInt(i)
-			switch t {
-			case datatypes.ErrorType:
-				v = errors.New(errors.Panic).Context(v)
-
-			case datatypes.IntType:
-				v = util.GetInt(v)
-
-			case datatypes.FloatType:
-				v = util.GetFloat(v)
-
-			case datatypes.StringType:
-				v = util.GetString(v)
-
-			case datatypes.BoolType:
-				v = util.GetBool(v)
-
-			case datatypes.ArrayType:
-				// If it's  not already an array, wrap it in one.
-				if _, ok := v.([]interface{}); !ok {
-					v = []interface{}{v}
-				}
-
-			case datatypes.StructType:
-				// If it's not a struct, we can't do anything so fail
-				if _, ok := v.(map[string]interface{}); !ok {
+			// If it's a pointer type, we can't do coercions
+			if t > datatypes.PointerType {
+				if t != datatypes.TypeOf(v) {
 					return c.NewError(errors.InvalidTypeError)
 				}
+			} else {
+				switch t {
+				case datatypes.ErrorType:
+					v = errors.New(errors.Panic).Context(v)
 
-			case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
-				// No work at all to do here.
+				case datatypes.IntType:
+					v = util.GetInt(v)
 
-			default:
-				return c.NewError(errors.InvalidTypeError)
+				case datatypes.FloatType:
+					v = util.GetFloat(v)
+
+				case datatypes.StringType:
+					v = util.GetString(v)
+
+				case datatypes.BoolType:
+					v = util.GetBool(v)
+
+				case datatypes.ArrayType:
+					// If it's  not already an array, wrap it in one.
+					if _, ok := v.([]interface{}); !ok {
+						v = []interface{}{v}
+					}
+
+				case datatypes.StructType:
+					// If it's not a struct, we can't do anything so fail
+					if _, ok := v.(map[string]interface{}); !ok {
+						return c.NewError(errors.InvalidTypeError)
+					}
+
+				case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
+					// No work at all to do here.
+
+				default:
+					return c.NewError(errors.InvalidTypeError)
+				}
 			}
 		}
 

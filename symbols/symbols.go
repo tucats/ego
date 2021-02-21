@@ -89,6 +89,22 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	return v, f
 }
 
+// Get retrieves a symbol from the current table or any parent
+// table that exists.
+func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
+	v, f := s.Symbols[name]
+
+	s.mutex.Lock()
+
+	defer s.mutex.Unlock()
+
+	if !f && s.Parent != nil {
+		return s.Parent.Get(name)
+	}
+
+	return &v, f
+}
+
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {

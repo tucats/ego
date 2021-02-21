@@ -13,10 +13,11 @@ const (
 	ErrorType
 	ChanType
 	MapType
-	InterfaceType       // alias for "any"
-	VarArgs             // pseudo type used for varible argument list items
-	UserType            // something defined by a type statement
-	ArrayType     = 100 // Can be added to a type to make it an array
+	InterfaceType        // alias for "any"
+	VarArgs              // pseudo type used for varible argument list items
+	UserType             // something defined by a type statement
+	PointerType   = 2048 // Can be added to any type to make it an array
+	ArrayType     = 4096 // Can be added to a type to make it an array
 )
 
 // This defines the token structure for various type declarations, including a model of that
@@ -27,8 +28,15 @@ type TypeDefinition struct {
 	Kind   int
 }
 
-// This is the "zero instance" value for an interface{} object.
-var interfaceProxy interface{}
+// This is the "zero instance" value for various types.
+var interfaceModel interface{}
+var intModel = 0
+var floatModel = 0.0
+var boolModel = false
+var stringModel = ""
+
+//var arrayModel = []interface{}{}
+//var structModle = map[string]interface{}{}
 
 // TypeDeclarationMap is a dictionary of all the type declaration token sequences.
 var TypeDeclarationMap = []TypeDefinition{
@@ -64,28 +72,53 @@ var TypeDeclarationMap = []TypeDefinition{
 	},
 	{
 		[]string{"bool"},
-		false,
+		boolModel,
 		BoolType,
 	},
 	{
 		[]string{"int"},
-		0,
+		intModel,
 		IntType,
 	},
 	{
 		[]string{"float"},
-		0.0,
+		floatModel,
 		FloatType,
 	},
 	{
 		[]string{"string"},
-		"",
+		stringModel,
 		StringType,
 	},
 	{
 		[]string{"interface{}"},
-		interfaceProxy,
+		interfaceModel,
 		InterfaceType,
+	},
+	{
+		[]string{"*", "bool"},
+		&boolModel,
+		BoolType + PointerType,
+	},
+	{
+		[]string{"*", "int"},
+		&intModel,
+		IntType + PointerType,
+	},
+	{
+		[]string{"*", "float"},
+		&floatModel,
+		FloatType + PointerType,
+	},
+	{
+		[]string{"*", "string"},
+		&stringModel,
+		StringType + PointerType,
+	},
+	{
+		[]string{"*", "interface{}"},
+		&interfaceModel,
+		InterfaceType + PointerType,
 	},
 }
 
@@ -109,11 +142,27 @@ func TypeOf(i interface{}) int {
 	case map[string]interface{}:
 		return StructType
 
+	case *int:
+		return IntType + PointerType
+
+	case *float32, *float64:
+		return FloatType + PointerType
+
+	case *string:
+		return StringType + PointerType
+
+	case *bool:
+		return BoolType + PointerType
+
+	case *map[string]interface{}:
+		return StructType + PointerType
+
 	case *EgoMap:
 		return MapType
 
 	case *Channel:
 		return ChanType
+
 	default:
 		return InterfaceType
 	}
@@ -154,6 +203,28 @@ func IsType(v interface{}, kind int) bool {
 	}
 
 	switch v.(type) {
+	case *int, *int32, *int64:
+		return kind == IntType+PointerType
+
+	case *float32, *float64:
+		return kind == FloatType+PointerType
+
+	case *string:
+		return kind == StringType+PointerType
+
+	case *bool:
+		return kind == BoolType+PointerType
+
+	case *[]interface{}:
+		return kind == ArrayType+PointerType
+
+	case *map[string]interface{}:
+		if _, ok := GetMetadata(v, TypeMDKey); ok {
+			return kind == UserType
+		}
+
+		return kind == StructType+PointerType
+
 	case int, int32, int64:
 		return kind == IntType
 
