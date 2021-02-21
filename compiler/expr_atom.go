@@ -67,7 +67,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is this address-of?
 	if t == "&" && tokenizer.IsSymbol(c.t.Peek(2)) {
 		name := c.Normalize(c.t.Peek(2))
-		c.b.Emit(bytecode.Address, false, name)
+		c.b.Emit(bytecode.AddressOf, name)
 		c.t.Advance(2)
 
 		return nil
@@ -76,7 +76,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is this dereference?
 	if t == "*" && tokenizer.IsSymbol(c.t.Peek(2)) {
 		name := c.Normalize(c.t.Peek(2))
-		c.b.Emit(bytecode.Address, true, name)
+		c.b.Emit(bytecode.DeRef, name)
 		c.t.Advance(2)
 
 		return nil

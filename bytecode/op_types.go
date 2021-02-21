@@ -62,7 +62,8 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			t := util.GetInt(i)
 			// If it's a pointer type, we can't do coercions
 			if t > datatypes.PointerType {
-				if t != datatypes.TypeOf(v) {
+				actualT := datatypes.TypeOf(v)
+				if t != actualT && actualT != datatypes.InterfaceType {
 					return c.NewError(errors.InvalidTypeError)
 				}
 			} else {
@@ -201,24 +202,28 @@ func (b ByteCode) NeedsCoerce(kind int) bool {
 	return true
 }
 
-func AddressImpl(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func AddressOfImpl(c *Context, i interface{}) *errors.EgoError {
+	name := util.GetString(i)
 
-	var v interface{}
-
-	isDeref := util.GetBool(i)
-
-	if v, err = c.Pop(); err == nil {
-		if isDeref {
-			v, err = datatypes.Dereference(v)
-		} else {
-			v, err = datatypes.AddressOf(v)
-		}
-
-		if err == nil {
-			err = c.Push(v)
-		}
+	addr, ok := c.symbols.GetAddress(name)
+	if !ok {
+		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
-	return err
+	return c.Push(addr)
+}
+
+func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
+	name := util.GetString(i)
+
+	addr, ok := c.symbols.GetAddress(name)
+	if !ok {
+		return c.NewError(errors.UnknownIdentifierError).Context(name)
+	}
+
+	if content, ok := addr.(*interface{}); ok {
+		return c.Push(*content)
+	}
+
+	return c.NewError(errors.NotAPointer).Context(name)
 }

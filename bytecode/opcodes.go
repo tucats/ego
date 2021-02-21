@@ -23,7 +23,7 @@ const (
 	Stop   OpcodeID = 0
 	AtLine          = iota + BuiltinInstructions
 	Add    OpcodeID = iota
-	Address
+	AddressOf
 	And
 	ArgCheck
 	Array
@@ -33,6 +33,7 @@ const (
 	Coerce
 	Constant
 	Copy
+	DeRef
 	Div
 	Drop
 	DropToMarker
@@ -109,7 +110,7 @@ const (
 
 var instructionNames = map[OpcodeID]string{
 	Add:                "Add",
-	Address:            "Address",
+	AddressOf:          "AddressOf",
 	And:                "And",
 	ArgCheck:           "ArgCheck",
 	Array:              "Array",
@@ -123,6 +124,7 @@ var instructionNames = map[OpcodeID]string{
 	Coerce:             "Coerce",
 	Constant:           "Constant",
 	Copy:               "Copy",
+	DeRef:              "Deref",
 	Div:                "Div",
 	Drop:               "Drop",
 	DropToMarker:       "DropToMarker",
@@ -190,7 +192,7 @@ func initializeDispatch() {
 	if dispatch == nil {
 		dispatch = DispatchMap{
 			Add:                AddImpl,
-			Address:            AddressImpl,
+			AddressOf:          AddressOfImpl,
 			And:                AndImpl,
 			ArgCheck:           ArgCheckImpl,
 			Array:              ArrayImpl,
@@ -204,6 +206,7 @@ func initializeDispatch() {
 			Coerce:             CoerceImpl,
 			Constant:           ConstantImpl,
 			Copy:               CopyImpl,
+			DeRef:              DeRefImpl,
 			Div:                DivideImpl,
 			Drop:               DropImpl,
 			DropToMarker:       DropToMarkerImpl,

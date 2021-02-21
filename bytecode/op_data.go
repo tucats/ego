@@ -159,7 +159,7 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 
 	dest, ok := c.Get(name)
 	if !ok {
-		return errors.New(errors.UnknownIdentifierError)
+		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	src, err := c.Pop()
@@ -168,6 +168,9 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch actual := dest.(type) {
+	case *interface{}:
+		*actual = src
+
 	case *bool:
 		d := util.Coerce(src, true)
 		*actual = d.(bool)
@@ -187,22 +190,22 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 	case **datatypes.EgoArray:
 		*actual, ok = src.(*datatypes.EgoArray)
 		if !ok {
-			return errors.New(errors.InvalidTypeError)
+			return c.NewError(errors.NotAPointer).Context(name)
 		}
 	case **datatypes.EgoMap:
 		*actual, ok = src.(*datatypes.EgoMap)
 		if !ok {
-			return errors.New(errors.InvalidTypeError)
+			return c.NewError(errors.NotAPointer).Context(name)
 		}
 
 	case **datatypes.Channel:
 		*actual, ok = src.(*datatypes.Channel)
 		if !ok {
-			return errors.New(errors.InvalidTypeError)
+			return c.NewError(errors.NotAPointer).Context(name)
 		}
 
 	default:
-		return errors.New(errors.InvalidTypeError)
+		return c.NewError(errors.NotAPointer).Context(name)
 	}
 
 	return nil

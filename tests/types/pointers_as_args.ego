@@ -1,0 +1,14 @@
+@test "types: pointers as func args"
+
+{
+   func setter( src int, dest *int) {
+      *dest = src
+      @assert T.Equal(42, *dest)
+   }
+
+   x := 66
+   setter(42, &x)
+   @assert T.Equal(42, x)
+
+}
+@pass

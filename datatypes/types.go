@@ -126,7 +126,7 @@ var TypeDeclarationMap = []TypeDefinition{
 // and returns an integer containing the datatype specification, such
 // as datatypes.IntType or datatypes.StringType.
 func TypeOf(i interface{}) int {
-	switch i.(type) {
+	switch actual := i.(type) {
 	case int:
 		return IntType
 
@@ -164,6 +164,13 @@ func TypeOf(i interface{}) int {
 		return ChanType
 
 	default:
+		switch actual.(type) {
+		case int:
+			return IntType
+		case *int:
+			return IntType + PointerType
+		}
+
 		return InterfaceType
 	}
 }
