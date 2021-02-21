@@ -42,7 +42,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.Symbols[k]
+		v := s.Values[s.Symbols[k]]
 		skip := false
 		typeString := /* "package" */ datatypes.TypeString(datatypes.TypeOf(v))
 

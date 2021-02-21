@@ -49,7 +49,7 @@ func New(name string) *ByteCode {
 		Name:         name,
 		instructions: make([]Instruction, InitialOpcodeSize),
 		emitPos:      0,
-		Symbols:      &symbols.SymbolTable{Symbols: map[string]interface{}{}},
+		Symbols:      &symbols.SymbolTable{Name: name, Symbols: map[string]int{}, Values: make([]interface{}, symbols.MaxSymbolsPerScope)},
 	}
 
 	return &bc

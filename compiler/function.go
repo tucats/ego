@@ -148,7 +148,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	// current token stream in progress, and the current bytecode. But otherwise we
 	// use a new compiler context, so any nested operations do not affect the definition
 	// of the function body we're compiling.
-	cx := New()
+	cx := New("function " + functionName)
 	cx.t = c.t
 	cx.b = b
 	cx.coercions = coercions
@@ -193,7 +193,9 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 		// Store address of the function, either in the current
 		// compiler's symbol table or active package.
 		if c.PackageName == "" {
-			_ = c.s.SetAlways(functionName, b)
+			c.b.Emit(bytecode.Push, b)
+			c.b.Emit(bytecode.StoreAlways, functionName)
+			//_ = c.s.SetAlways(functionName, b)
 		} else {
 			_ = c.AddPackageFunction(c.PackageName, functionName, b)
 		}

@@ -4,13 +4,18 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/util"
 )
 
 var mergeMutex sync.Mutex
 
 // Merge merges the contents of a table into the current table.
 func (s *SymbolTable) Merge(st *SymbolTable) {
-	ui.Debug(ui.SymbolLogger, "+++ Merging symbols from %s", st.Name)
+	ui.Debug(ui.SymbolLogger, "+++ Merging symbols from %s to %s", st.Name, s.Name)
+
+	if len(st.Values) == 0 {
+		return
+	}
 
 	// This must be serialized on the two tables to avoid collisions between
 	// threads.
@@ -18,8 +23,9 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 
 	defer mergeMutex.Unlock()
 
-	for k, v := range st.Symbols {
+	for k, vx := range st.Symbols {
 		// Is it a struct? If so we may need to merge to it...
+		v := st.Values[vx]
 		switch vv := v.(type) {
 		case map[string]interface{}:
 			// Does the old struct already exist in the compiler table?
@@ -46,7 +52,7 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 			}
 
 		default:
-			ui.Debug(ui.SymbolLogger, "    copying entry %s with %v", k, v)
+			ui.Debug(ui.SymbolLogger, "    copying entry %s with %s", k, util.Format(vv))
 			_ = s.SetAlways(k, vv)
 		}
 	}

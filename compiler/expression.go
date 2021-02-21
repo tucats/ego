@@ -12,7 +12,7 @@ import (
 // The function grammar considers a conditional to be the top of the
 // parse tree, so we start evaluating there.
 func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
-	cx := New()
+	cx := New("expression eval")
 	cx.t = c.t
 	cx.b = bytecode.New("subexpression")
 

@@ -39,7 +39,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 		switch t.Next() {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
-			ec := compiler.New().WithTokens(tokenizer.New(text))
+			ec := compiler.New("break expression").WithTokens(tokenizer.New(text))
 
 			bc, err := ec.Expression()
 			if errors.Nil(err) {

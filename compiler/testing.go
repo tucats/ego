@@ -42,15 +42,9 @@ func (c *Compiler) Test() *errors.EgoError {
 
 	pad := strings.Repeat(" ", padSize)
 
-	_ = c.s.SetAlways("T", test)
-
-	// Generate code to update the description (this is required for the
-	// cases of the ego test command running multiple tests as a single
-	// stream)
-	c.b.Emit(bytecode.Push, testDescription)
-	c.b.Emit(bytecode.Load, "T")
-	c.b.Emit(bytecode.Push, "description")
-	c.b.Emit(bytecode.StoreIndex)
+	// Generate code to create a Test object
+	c.b.Emit(bytecode.Push, test)
+	c.b.Emit(bytecode.StoreAlways, "T")
 
 	// Generate code to report that the test is starting.
 	c.b.Emit(bytecode.Push, "TEST: ")

@@ -171,8 +171,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		tokens = tokenizer.New(text)
 
 		// Compile the token stream
-		compilerInstance = compiler.New().ExtensionsEnabled(true)
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
+		compilerInstance = compiler.New(name).ExtensionsEnabled(true)
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {

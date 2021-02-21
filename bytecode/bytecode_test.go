@@ -14,7 +14,7 @@ func TestByteCode_New(t *testing.T) {
 		want := ByteCode{
 			Name:         "testing",
 			instructions: make([]Instruction, InitialOpcodeSize),
-			Symbols:      &symbols.SymbolTable{Symbols: map[string]interface{}{}},
+			Symbols:      &symbols.SymbolTable{Name: "testing", Symbols: map[string]int{}, Values: make([]interface{}, symbols.MaxSymbolsPerScope)},
 			emitPos:      0,
 		}
 		if !reflect.DeepEqual(*b, want) {

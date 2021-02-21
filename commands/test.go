@@ -101,8 +101,8 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		t := tokenizer.New(text)
 
 		// Compile the token stream
-		comp := compiler.New()
 		name := strings.ReplaceAll(fileOrPath, "/", "_")
+		comp := compiler.New(name)
 
 		b, err := comp.Compile(name, t)
 		if !errors.Nil(err) {

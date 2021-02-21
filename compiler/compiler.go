@@ -68,11 +68,11 @@ type Compiler struct {
 }
 
 // New creates a new compiler instance.
-func New() *Compiler {
+func New(name string) *Compiler {
 	cInstance := Compiler{
 		b:                    nil,
 		t:                    nil,
-		s:                    &symbols.SymbolTable{Name: "compile-unit"},
+		s:                    &symbols.SymbolTable{Name: "compile-unit " + name},
 		constants:            make([]string, 0),
 		deferQueue:           make([]int, 0),
 		packages:             PackageDictionary{},

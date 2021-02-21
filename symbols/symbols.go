@@ -4,18 +4,45 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
+
+var MaxSymbolsPerScope = 100
 
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
 	Name          string
 	Parent        *SymbolTable
-	Symbols       map[string]interface{}
+	Symbols       map[string]int
 	Constants     map[string]interface{}
+	Values        []interface{}
+	ValueSize     int
 	ScopeBoundary bool
 	mutex         sync.Mutex
+}
+
+var rootValues = []interface{}{
+	"Tom Cole",
+	"(c) Copyright 2020, 2021",
+	uuid.NewString(),
+	map[string]interface{}{
+		"disassemble": false,
+		"trace":       false,
+		datatypes.MetadataKey: map[string]interface{}{
+			datatypes.TypeMDKey: "config",
+		},
+	},
+	nil, // Note that, for the root symbol table only,
+	nil, // This list of nils represents the slots
+	nil, // available in the root symbol table for new
+	nil, // values. Increase as needed...
+	nil,
+	nil,
+	nil,
+	nil,
 }
 
 // RootSymbolTable is the parent of all other tables.
@@ -23,18 +50,13 @@ var RootSymbolTable = SymbolTable{
 	Name:          "Root Symbol Table",
 	Parent:        nil,
 	ScopeBoundary: true,
-	Symbols: map[string]interface{}{
-		"_author":    "Tom Cole",
-		"_copyright": "(c) Copyright 2020",
-		"_session":   uuid.New().String(),
-		"_config": map[string]interface{}{
-			"disassemble": false,
-			"trace":       false,
-			datatypes.MetadataKey: map[string]interface{}{
-				datatypes.TypeMDKey: "config",
-			},
-		},
+	Symbols: map[string]int{
+		"_author":    0,
+		"_copyright": 1,
+		"_session":   2,
+		"_config":    3,
 	},
+	Values: rootValues,
 }
 
 // NewSymbolTable generates a new symbol table.
@@ -42,7 +64,8 @@ func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
 		Parent:    &RootSymbolTable,
-		Symbols:   map[string]interface{}{},
+		Symbols:   map[string]int{},
+		Values:    make([]interface{}, MaxSymbolsPerScope),
 		Constants: map[string]interface{}{},
 	}
 
@@ -55,7 +78,8 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
 		Parent:    parent,
-		Symbols:   map[string]interface{}{},
+		Symbols:   map[string]int{},
+		Values:    make([]interface{}, MaxSymbolsPerScope),
 		Constants: map[string]interface{}{},
 	}
 
@@ -72,11 +96,15 @@ func (s *SymbolTable) SetGlobal(name string, value interface{}) *errors.EgoError
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
-	v, f := s.Symbols[name]
+	var v interface{}
 
 	s.mutex.Lock()
-
 	defer s.mutex.Unlock()
+
+	vx, f := s.Symbols[name]
+	if f {
+		v = s.Values[vx]
+	}
 
 	if !f {
 		v, f = s.Constants[name]
@@ -86,23 +114,33 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		return s.Parent.Get(name)
 	}
 
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, get(%s) = %v [%d]",
+		s.Name, name, v, vx)
+
 	return v, f
 }
 
-// Get retrieves a symbol from the current table or any parent
-// table that exists.
+// GetAddress retrieves the address of a symbol values from the
+// current table or any parent table that exists.
 func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
-	v, f := s.Symbols[name]
+	var v interface{}
 
 	s.mutex.Lock()
-
 	defer s.mutex.Unlock()
+
+	vx, f := s.Symbols[name]
+	if f {
+		v = &s.Values[vx]
+	}
 
 	if !f && s.Parent != nil {
 		return s.Parent.Get(name)
 	}
 
-	return &v, f
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, get(&%s) = %v",
+		s.Name, name, util.Format(v))
+
+	return v, f
 }
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
@@ -126,7 +164,8 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 // readonly values.
 func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
-		s.Symbols = map[string]interface{}{}
+		s.Symbols = map[string]int{}
+		s.Values = make([]interface{}, MaxSymbolsPerScope)
 	}
 
 	// Hack. If this is the "_rest_response" variable, we have
@@ -145,7 +184,23 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
-	syms.Symbols[name] = v
+	// IF this doesn't exist, allocate more space in the values array
+	vx, ok := syms.Symbols[name]
+	if !ok {
+		// TODO add error checking for overflow
+		vx = s.ValueSize
+		syms.Symbols[name] = s.ValueSize
+		s.ValueSize++
+
+		if s.ValueSize >= len(s.Values) {
+			return errors.New(errors.TooManyLocalSymbols)
+		}
+	}
+
+	syms.Values[vx] = v
+
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, setalways(%s) = %v [%d]",
+		s.Name, name, util.Format(v), vx)
 
 	return nil
 }
@@ -153,10 +208,16 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 // Set stores a symbol value in the table where it was found.
 func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
-		s.Symbols = map[string]interface{}{}
+		s.Symbols = map[string]int{}
+		s.Values = make([]interface{}, MaxSymbolsPerScope)
 	}
 
-	old, found := s.Symbols[name]
+	var old interface{}
+
+	oldx, found := s.Symbols[name]
+	if found {
+		old = s.Values[oldx]
+	}
 
 	// If it was already there, we hae some additional checks to do
 	// to be sure it's writable.
@@ -177,7 +238,10 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		return s.Parent.Set(name, v)
 	}
 
-	s.Symbols[name] = v
+	s.Values[oldx] = v
+
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, set(%s) = %v [%d]",
+		s.Name, name, util.Format(v), oldx)
 
 	return nil
 }
@@ -247,7 +311,13 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.SymbolExistsError).Context(name)
 	}
 
-	s.Symbols[name] = nil
+	s.Symbols[name] = s.ValueSize
+	s.Values[s.ValueSize] = nil
+
+	s.ValueSize++
+	if s.ValueSize >= len(s.Values) {
+		return errors.New(errors.TooManyLocalSymbols)
+	}
 
 	return nil
 }

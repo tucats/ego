@@ -116,7 +116,7 @@ func TestCompile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tokens := tokenizer.New(tt.arg)
-			c := New()
+			c := New(tt.name)
 			// Make sure PRINT verb works for these tests.
 			c.extensionsEnabled = true
 			bc, err := c.Compile("unit test", tokens)

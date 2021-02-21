@@ -53,7 +53,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	t := tokenizer.New(text)
 
 	// Compile the token stream
-	comp := compiler.New().ExtensionsEnabled(true)
+	comp := compiler.New("code endpoint").ExtensionsEnabled(true)
 	comp.LowercaseIdentifiers = persistence.GetBool(defs.CaseNormalizedSetting)
 
 	b, err := comp.Compile("code", t)

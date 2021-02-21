@@ -245,7 +245,7 @@ func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidIdentifierError).Context(name)
 	}
 
-	v, found := c.Get(util.GetString(i))
+	v, found := c.Get(name)
 	if !found {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}

@@ -216,7 +216,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// Compile the token stream. Allow the EXIT command only if  we are in "run" mode interactively
-		comp := compiler.New().WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
+		comp := compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
