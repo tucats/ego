@@ -27,6 +27,11 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v) {
+		return c.NewError(errors.InvalidTypeError)
+	}
+
 	switch value := v.(type) {
 	case bool:
 		_ = c.Push(!value)
@@ -79,6 +84,11 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	switch vx := v1.(type) {
@@ -168,6 +178,11 @@ func AndImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
+	}
+
 	return c.Push(util.GetBool(v1) && util.GetBool(v2))
 }
 
@@ -181,6 +196,11 @@ func OrImpl(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	return c.Push(util.GetBool(v1) || util.GetBool(v2))
@@ -199,6 +219,11 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	switch vx := v1.(type) {
@@ -248,6 +273,11 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
+	}
+
 	v1, v2 = util.Normalize(v1, v2)
 
 	switch v1.(type) {
@@ -278,6 +308,11 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
+	}
 
 	switch v1.(type) {
 	case int:
@@ -319,6 +354,11 @@ func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.NewError(errors.InvalidTypeError)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
