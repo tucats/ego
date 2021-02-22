@@ -1,7 +1,9 @@
 package compiler
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
@@ -12,6 +14,28 @@ import (
 
 func (c *Compiler) expressionAtom() *errors.EgoError {
 	t := c.t.Peek(1)
+
+	// Is it a binary constant? If so, convert to decimal.
+	if strings.HasPrefix(strings.ToLower(t), "0b") {
+		binaryValue := 0
+		fmt.Sscanf(t[2:], "%b", &binaryValue)
+		t = strconv.Itoa(binaryValue)
+	}
+
+	// Is it a hexadecimal constant? If so, convert to decimal.
+	if strings.HasPrefix(strings.ToLower(t), "0x") {
+		hexValue := 0
+		fmt.Sscanf(strings.ToLower(t[2:]), "%x", &hexValue)
+		t = strconv.Itoa(hexValue)
+	}
+
+	// Is it an octal constant? If so, convert to decimal.
+	if strings.HasPrefix(strings.ToLower(t), "0o") {
+		octalValue := 0
+		fmt.Sscanf(strings.ToLower(t[2:]), "%o", &octalValue)
+		t = strconv.Itoa(octalValue)
+	}
+
 	// Is this the make() function?
 	if t == "make" && c.t.Peek(2) == "(" {
 		return c.Make()

@@ -1,0 +1,13 @@
+@test "datamodel: bin/octal/hex constants"
+
+{
+
+    b := 0b101
+    o := 0o377
+    h := 0x41
+
+    @assert T.Equal(b, 5)
+    @assert T.Equal(o, 255)
+    @assert T.Equal(h, 65)
+}
+@pass
