@@ -15,7 +15,7 @@ import (
 )
 
 func Format(element interface{}) string {
-	if element == nil {
+	if IsNil(element) {
 		return "<nil>"
 	}
 

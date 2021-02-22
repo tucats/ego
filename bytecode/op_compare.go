@@ -30,6 +30,10 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if datatypes.IsNil(v1) && datatypes.IsNil(v2) {
+		return c.Push(true)
+	}
+
 	var r bool
 
 	switch a := v1.(type) {
@@ -114,6 +118,8 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	if !errors.Nil(err) {
 		return err
 	}
+
+	// TODO handle nil types here.
 
 	var r bool
 
