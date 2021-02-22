@@ -25,7 +25,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.4.1 // indirect
-	golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d // indirect
+	golang.org/x/net v0.0.0-20210222171744-9060382bd457 // indirect
 	golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
