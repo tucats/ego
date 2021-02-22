@@ -100,7 +100,6 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	formatString := util.GetString(args[1])
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
-
 	ptrs := make([]*interface{}, len(args)-2)
 
 	for i, v := range args[2:] {
@@ -113,8 +112,8 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		}
 	}
 
+	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
-
 	if err != nil {
 		return 0, errors.New(err).Context("Sscanf()")
 	}
@@ -141,26 +140,52 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 	dTokens := tokenizer.New(data)
 	d := dTokens.Tokens
 	f := []string{}
-	last := ""
+	parsingVerb := false
 
+	// Scan over the token, collapsing format verbs into a
+	// single token.
 	for _, token := range fTokens.Tokens {
-		if last == "%" {
-			f[len(f)-1] = "%" + token
+		if parsingVerb {
+			// Must only be supported format string. TODO We do not allow width
+			// specifications yet.
+			if !util.InList(token, "s", "t", "f", "d", "v") {
+				return result, errors.New(errors.InvalidFormatVerbError)
+			}
+
+			// Add to the previous token
+			f[len(f)-1] = f[len(f)-1] + token
+			parsingVerb = false
 		} else {
 			f = append(f, token)
+			if token == "%" {
+				parsingVerb = true
+			}
 		}
-
-		last = token
 	}
 
 	parsing := true
 
+	// Now scan over the format tokens, which now represent either
+	// required tokens in the input data or format operations.
 	for idx, token := range f {
 		if !parsing {
 			break
 		}
 
 		switch token {
+		case "%v":
+			var v interface{}
+
+			_, e := _fmt.Sscanf(d[idx], "%v", &v)
+			if e != nil {
+				err = errors.New(e).Context("Sscanf()")
+				parsing = false
+
+				break
+			}
+
+			result = append(result, v)
+
 		case "%s":
 			result = append(result, d[idx])
 
@@ -169,7 +194,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := _fmt.Sscanf(d[idx], "%t", &v)
 			if e != nil {
-				err = errors.New(err).Context("Sscanf()")
+				err = errors.New(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -182,7 +207,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := _fmt.Sscanf(d[idx], "%f", &v)
 			if e != nil {
-				err = errors.New(err).Context("Sscanf()")
+				err = errors.New(e).Context("Sscanf()")
 				parsing = false
 
 				break
