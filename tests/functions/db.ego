@@ -1,4 +1,4 @@
-@test "functions: db connection to local postgres server"
+@test "functions: db using local postgres"
 
 constr := "postgres://tom:secret@homebase.local/?sslmode=disable"
 d := db.New(constr)
@@ -6,7 +6,7 @@ d := db.New(constr)
 // Is there a working database we can test against?
 _, e := d.Query("select 0 where 1=0")
 if e != nil {
-    fmt.Printf("Database not available, %v\n", e)
+    // Nothing to do
 } else {
 
     // Delete the test table if it already exists.
