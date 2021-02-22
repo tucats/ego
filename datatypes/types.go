@@ -1,6 +1,10 @@
 package datatypes
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/tucats/ego/errors"
+)
 
 // Define data types as abstract identifiers.
 const (
@@ -276,15 +280,24 @@ func PointerTo(v interface{}) int {
 }
 
 func IsNil(v interface{}) bool {
+	// Is it outright a nil value?
 	if v == nil {
 		return true
 	}
 
+	// Is it a nil error message?
+	if err, ok := v.(*errors.EgoError); ok {
+		return errors.Nil(err)
+	}
+
+	// If it's not a pointer, then it can't be nil
 	addr, ok := v.(*interface{})
 	if !ok {
 		return false
 	}
 
+	// Compare the pointer to the known "Zero values"
+	// used to initialize empty pointers.
 	if addr == nil {
 		return true
 	} else if addr == &boolInterface {
