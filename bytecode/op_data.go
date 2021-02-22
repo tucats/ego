@@ -162,6 +162,10 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
+	if datatypes.IsNil(dest) {
+		return c.NewError(errors.NilPointerReferenceError).Context(name)
+	}
+
 	src, err := c.Pop()
 	if err != nil {
 		return err

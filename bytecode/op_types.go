@@ -221,9 +221,21 @@ func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
+	if datatypes.IsNil(addr) {
+		return c.NewError(errors.NilPointerReferenceError)
+	}
+
 	if content, ok := addr.(*interface{}); ok {
+		if datatypes.IsNil(content) {
+			return c.NewError(errors.NilPointerReferenceError)
+		}
+
 		c2 := *content
 		if c3, ok := c2.(*interface{}); ok {
+			if datatypes.IsNil(content) {
+				return c.NewError(errors.NilPointerReferenceError)
+			}
+
 			return c.Push(*c3)
 		} else {
 			return c.Push(c2)

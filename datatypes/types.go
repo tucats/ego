@@ -274,3 +274,30 @@ func PointerTo(v interface{}) int {
 
 	return TypeOf(actual)
 }
+
+func IsNil(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+
+	addr, ok := v.(*interface{})
+	if !ok {
+		return false
+	}
+
+	if addr == nil {
+		return true
+	} else if addr == &boolInterface {
+		return true
+	} else if addr == &intInterface {
+		return true
+	} else if addr == &stringInterface {
+		return true
+	} else if addr == &floatInterface {
+		return true
+	} else if addr == &interfaceModel {
+		return true
+	}
+
+	return false
+}
