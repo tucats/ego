@@ -40,7 +40,6 @@ const Any = 999999
 // ErrReturn:true falg to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"append":               {Min: 2, Max: Any, F: Append},
-	"array":                {Min: 1, Max: 2, F: Array},
 	"bool":                 {Min: 1, Max: 1, F: Bool},
 	"close":                {Min: 1, Max: 1, F: CloseAny},
 	"delete":               {Min: 1, Max: 2, F: Delete, FullScope: true},

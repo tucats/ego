@@ -151,38 +151,6 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	return count, nil
 }
 
-// Array implements the array() function, which creates
-// an empty array of the given size. IF there are two parameters,
-// the first must be an existing array which is resized to match
-// the new array.
-func Array(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	var array []interface{}
-
-	count := 0
-
-	if len(args) == 2 {
-		switch v := args[0].(type) {
-		case []interface{}:
-			count = util.GetInt(args[1])
-			if count < len(v) {
-				array = v[:count]
-			} else if count == len(v) {
-				array = v
-			} else {
-				array = append(v, make([]interface{}, count-len(v))...)
-			}
-
-		default:
-			return nil, errors.New(errors.InvalidTypeError).In("array()")
-		}
-	} else {
-		count = util.GetInt(args[0])
-		array = make([]interface{}, count)
-	}
-
-	return array, nil
-}
-
 // GetEnv implements the util.getenv() function which reads
 // an environment variable from the os.
 func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
