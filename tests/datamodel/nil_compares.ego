@@ -1,0 +1,19 @@
+@test "datamodel: nil value comparisons"
+
+{
+    var x, y *int
+
+    @assert T.True( x == y )
+    @assert T.False(x != y)
+    @assert T.True( 3 != nil )
+    @assert T.True( nil != 3 )
+    @assert T.False( x != nil )
+
+    @assert T.True( nil == nil )
+    @assert T.False( nil != nil )
+
+    x = nil
+    @assert T.False( x != nil )
+
+}
+@pass

@@ -30,8 +30,14 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// If both are nil, then they match.
 	if datatypes.IsNil(v1) && datatypes.IsNil(v2) {
 		return c.Push(true)
+	}
+
+	// Otherwise, if either one is nil, there is no match
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.Push(false)
 	}
 
 	var r bool
@@ -119,7 +125,11 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	// TODO handle nil types here.
+	// IF only one side is nil, they are not equal by definition.
+	if !datatypes.IsNil(v1) && datatypes.IsNil(v2) ||
+		datatypes.IsNil(v1) && !datatypes.IsNil(v2) {
+		return c.Push(true)
+	}
 
 	var r bool
 
