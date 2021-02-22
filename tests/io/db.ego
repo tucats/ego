@@ -1,4 +1,4 @@
-@test "functions: db using local postgres"
+@test "io: db using local postgres"
 
 constr := "postgres://tom:secret@homebase.local/?sslmode=disable"
 d := db.New(constr)

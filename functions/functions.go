@@ -70,6 +70,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"fmt.Printf":           {Min: 1, Max: Any, F: Printf, ErrReturn: true},
 	"fmt.Println":          {Min: 0, Max: Any, F: Println},
 	"fmt.Sprintf":          {Min: 1, Max: Any, F: Sprintf},
+	"fmt.Sscanf":           {Min: 3, Max: Any, F: Sscanf, ErrReturn: true},
 	"io.Delete":            {Min: 1, Max: 1, F: DeleteFile, ErrReturn: true},
 	"io.Expand":            {Min: 1, Max: 2, F: Expand, ErrReturn: true},
 	"io.Open":              {Min: 1, Max: 2, F: OpenFile, ErrReturn: true},

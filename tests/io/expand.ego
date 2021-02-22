@@ -1,4 +1,4 @@
-@test "functions: io.Expand() testing"
+@test "io: io.Expand() testing"
 
 {
     want := ["/Users/tom/go/src/github.com/tucats/ego/main.go"]

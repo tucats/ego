@@ -2,10 +2,13 @@ package functions
 
 import (
 	"fmt"
+	_fmt "fmt"
 	"strings"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -90,4 +93,124 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 	}
 
 	return util.FormatUnquoted(v)
+}
+
+func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	dataString := util.GetString(args[0])
+	formatString := util.GetString(args[1])
+
+	// Verify the remaining arguments are all pointers, and unwrap them.
+
+	ptrs := make([]*interface{}, len(args)-2)
+
+	for i, v := range args[2:] {
+		if datatypes.PointerTo(v) == datatypes.UndefinedType {
+			return nil, errors.New(errors.NotAPointer)
+		}
+
+		if content, ok := v.(*interface{}); ok {
+			ptrs[i] = content
+		}
+	}
+
+	items, err := scanner(dataString, formatString)
+
+	if err != nil {
+		return 0, errors.New(err).Context("Sscanf()")
+	}
+
+	// Stride over the return value pointers, assigning as many
+	// items as we got.
+	for idx, p := range ptrs {
+		if idx >= len(items) {
+			break
+		}
+
+		*p = items[idx]
+	}
+
+	return len(items), nil
+}
+
+func scanner(data, format string) ([]interface{}, *errors.EgoError) {
+	var err *errors.EgoError
+
+	result := make([]interface{}, 0)
+
+	fTokens := tokenizer.New(format)
+	dTokens := tokenizer.New(data)
+	d := dTokens.Tokens
+	f := []string{}
+	last := ""
+
+	for _, token := range fTokens.Tokens {
+		if last == "%" {
+			f[len(f)-1] = "%" + token
+		} else {
+			f = append(f, token)
+		}
+
+		last = token
+	}
+
+	parsing := true
+
+	for idx, token := range f {
+		if !parsing {
+			break
+		}
+
+		switch token {
+		case "%s":
+			result = append(result, d[idx])
+
+		case "%t":
+			v := false
+
+			_, e := _fmt.Sscanf(d[idx], "%t", &v)
+			if e != nil {
+				err = errors.New(err).Context("Sscanf()")
+				parsing = false
+
+				break
+			}
+
+			result = append(result, v)
+
+		case "%f":
+			v := 0.0
+
+			_, e := _fmt.Sscanf(d[idx], "%f", &v)
+			if e != nil {
+				err = errors.New(err).Context("Sscanf()")
+				parsing = false
+
+				break
+			}
+
+			result = append(result, v)
+
+		case "%d":
+			v := 0
+
+			_, e := _fmt.Sscanf(d[idx], "%d", &v)
+			if e != nil {
+				err = errors.New(e).Context("Sscanf()")
+				parsing = false
+
+				break
+			}
+
+			result = append(result, v)
+
+		default:
+			if token != d[idx] {
+				parsing = false
+
+				break
+			}
+		}
+	}
+
+	return result, err
 }

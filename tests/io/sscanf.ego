@@ -1,0 +1,32 @@
+@test "io: Sscanf"
+{
+    x := 0
+    n, e := fmt.Sscanf("name 35", "age %d", &x)
+    @assert T.Equal(n, 0)
+    @assert T.Equal(x, 0)
+
+    n, e = fmt.Sscanf("age 35", "age %d", &x)
+    @assert T.Equal(n, 1)
+
+    t := false
+    n, e = fmt.Sscanf("is true", "is %t", &t)
+    @assert T.Equal(n, 1)
+    @assert T.True(t)
+
+    f := 0.0
+    n, e = fmt.Sscanf("3.14", "%f", &f)
+    @assert T.Equal(n, 1)
+    @assert T.Equal(f, 3.14)
+
+    n, e = fmt.Sscanf("5 at 2.50", "%d at %f", &x, &f)
+    @assert T.Equal(n, 2)
+    @assert T.Equal(f, 2.50)
+    @assert T.Equal(x, 5)
+
+    n, e := fmt.Sscanf("thirty", "%d", &x)
+    @assert T.Equal(n, 0)
+    @assert T.True(e != nil )
+    @assert T.Equal(x, 5)
+
+}
+@pass
