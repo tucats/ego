@@ -43,5 +43,5 @@ func Factor(n int) []int {
 
     result = append(result, n)
 
-    return sort(result)
+    return sort.Ints(result)
 }

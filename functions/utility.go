@@ -200,10 +200,66 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 }
 
+// SortStrings implements the sort.Strings function.
+func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if array, ok := args[0].(*datatypes.EgoArray); ok {
+		if array.ValueType() == datatypes.StringType {
+			err := array.Sort()
+
+			return array, err
+		} else {
+			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Strings()")
+		}
+	} else {
+		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Strings()")
+	}
+}
+
+// SortInts implements the sort.Ints function.
+func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if array, ok := args[0].(*datatypes.EgoArray); ok {
+		if array.ValueType() == datatypes.IntType {
+			err := array.Sort()
+
+			return array, err
+		} else {
+			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Ints()")
+		}
+	} else {
+		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Ints()")
+	}
+}
+
+// SortFloats implements the sort.Floats function.
+func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if array, ok := args[0].(*datatypes.EgoArray); ok {
+		if array.ValueType() == datatypes.FloatType {
+			err := array.Sort()
+
+			return array, err
+		} else {
+			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Floats()")
+		}
+	} else {
+		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Floats()")
+	}
+}
+
 // Sort implements the sort() function.
+// TODO remove this (deprecated; replaced by sort package).
 func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Make a master array of the values presented
 	var array []interface{}
+
+	// Special case. If there is a single argument, and it is already an Ego array,
+	// use the native sort function
+	if len(args) == 1 {
+		if array, ok := args[0].(*datatypes.EgoArray); ok {
+			err := array.Sort()
+
+			return array, err
+		}
+	}
 
 	for _, a := range args {
 		switch v := a.(type) {

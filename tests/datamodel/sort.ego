@@ -1,9 +1,0 @@
-
-@test "datamodel: simple string array sort"
-
-{
-    x := {a:5, b:6}
-    y := members(x)
-    @assert T.Equal(sort(y), ["a","b"] )
-}
-@pass
