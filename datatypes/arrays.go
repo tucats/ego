@@ -3,10 +3,12 @@ package datatypes
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/gopackages/datatypes"
+	"github.com/tucats/gopackages/util"
 )
 
 type EgoArray struct {
@@ -210,4 +212,51 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 	a.data = append(a.data[:i], a.data[i+1:]...)
 
 	return nil
+}
+
+func (a *EgoArray) Sort() *errors.EgoError {
+	var err *errors.EgoError
+
+	switch a.valueType {
+	case StringType:
+		strs := make([]string, a.Len())
+		for i, v := range a.data {
+			strs[i] = util.GetString(v)
+		}
+
+		sort.Strings(strs)
+
+		for i, v := range strs {
+			a.data[i] = v
+		}
+
+	case IntType:
+		values := make([]int, a.Len())
+		for i, v := range a.data {
+			values[i] = util.GetInt(v)
+		}
+
+		sort.Ints(values)
+
+		for i, v := range values {
+			a.data[i] = v
+		}
+
+	case FloatType:
+		values := make([]float64, a.Len())
+		for i, v := range a.data {
+			values[i] = util.GetFloat(v)
+		}
+
+		sort.Float64s(values)
+
+		for i, v := range values {
+			a.data[i] = v
+		}
+
+	default:
+		err = errors.New(errors.InvalidArgTypeError)
+	}
+
+	return err
 }

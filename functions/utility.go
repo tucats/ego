@@ -171,18 +171,29 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
-		return v.Keys(), nil
+		keys := datatypes.NewArray(datatypes.StringType, 0)
+		keyList := v.Keys()
+
+		for i, v := range keyList {
+			_ = keys.Set(i, v)
+		}
+
+		_ = keys.Sort()
+
+		return keys, nil
 
 	case map[string]interface{}:
-		keys := make([]string, 0)
+		keys := datatypes.NewArray(datatypes.StringType, 0)
 
 		for k := range v {
 			if !strings.HasPrefix(k, "__") {
-				keys = append(keys, k)
+				keys.Append(k)
 			}
 		}
 
-		return util.MakeSortedArray(keys), nil
+		err := keys.Sort()
+
+		return keys, err
 
 	default:
 		return nil, errors.New(errors.InvalidTypeError).In("members()")
@@ -477,7 +488,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, found := s.Get("__cli_args")
 	if !found {
-		r = []interface{}{}
+		r = datatypes.NewArray(datatypes.StringType, 0)
 	}
 
 	return r, nil
@@ -595,7 +606,8 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			}
 		}
 
-		members := util.MakeSortedArray(memberList)
+		// Sort the member list and forge it into an Ego array
+		members := datatypes.NewFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
 
 		result := m[datatypes.MetadataKey]
 		if result == nil {

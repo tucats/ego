@@ -474,3 +474,76 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 
 	return result, true
 }
+
+// Wrapper around strings.Compare().
+func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+	b := util.GetString(args[1])
+
+	return strings.Compare(a, b), nil
+}
+
+// Wrapper around strings.Contains().
+func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+	b := util.GetString(args[1])
+
+	return strings.Contains(a, b), nil
+}
+
+// Wrapper around strings.Contains().
+func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+	b := util.GetString(args[1])
+
+	return strings.ContainsAny(a, b), nil
+}
+
+// Wrapper around strings.Count().
+func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+	b := util.GetString(args[1])
+
+	return strings.Count(a, b), nil
+}
+
+// Wrapper around strings.EqualFold().
+func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+	b := util.GetString(args[1])
+
+	return strings.EqualFold(a, b), nil
+}
+
+// Wrapper around strings.Fields().
+func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	a := util.GetString(args[0])
+
+	fields := strings.Fields(a)
+
+	result := datatypes.NewArray(datatypes.StringType, len(fields))
+
+	for idx, f := range fields {
+		_ = result.Set(idx, f)
+	}
+
+	return result, nil
+}
+
+// Wrapper around strings.Join().
+func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	elemArray, ok := args[0].(*datatypes.EgoArray)
+	if !ok {
+		return nil, errors.New(errors.ArgumentTypeError).Context("Join()")
+	}
+
+	separator := util.GetString(args[1])
+	elements := make([]string, elemArray.Len())
+
+	for i := 0; i < elemArray.Len(); i++ {
+		element, _ := elemArray.Get(i)
+		elements[i] = util.GetString(element)
+	}
+
+	return strings.Join(elements, separator), nil
+}
