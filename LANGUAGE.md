@@ -6,6 +6,7 @@
     2. [Arrays](#arrays)
     2. [Structures](#structures)
     3. [Maps](#maps)
+    3. [Pointers](#pointers)
     3. [User Types](#usertypes)
 2. [Symbols and Expressions](#symbolsexpressions)
     1. [Symbols and Scope](#symbolsscope)
@@ -35,10 +36,15 @@
 
 7. [Packages](#packages)
    1. [The `import` statement](#import)
+   2. [`cipher` package](#cipher)
    2. [`db` package](#db)
    3. [`fmt` package](#fmt)
+   3. [`io` package](#io)
+   3. [`rest` package](#rest)
+   3. [`sort` package](#sort)
    3. [`strings` package](#strings)
    2. [`tables` package](#tables)
+   2. [`util` package](#util)
 
 8. [Directives](#directives)
    1. [@error](#at-error)
@@ -243,6 +249,86 @@ for example.
 This uses an integer variable to retrieve a value from the map. In this 
 case, the value of `name` will be set to "Susan". If there is nothing 
 in the map with the given key, the value of the exprssion is `nil`.
+
+## Pointers<a name="pointers"></a>
+The _Ego_ language adopts the Go standards for pointers. Pointers exist
+solely to identify the address of another object. This address can be
+passed across function boundaries to allow the function to modify the
+value of a parameter.
+
+No pointer arithmetic is permitted; a pointer can only be set as the
+address of another variable.
+
+    var x *int                      (1)
+
+    y := 42
+    x := &y                         (2)
+
+    fmt.Println(*x)                 (3)
+
+In this example, 
+
+1. A variable `x` is created as a pointer to an integer
+value. At the time of this statement, the value of x is `nil` and
+it cannot be dereferenced without an error.
+
+2. The value of `x` is now set to a non-nil value; it becomes the
+address of the variable `y`.  From this point forward (until the
+value of `x` is changed again) you can reference the value of `y`
+using either the symbol `y` or by dereferencing the pointer to `y`
+stored in `x`.
+
+3. This shows dereferencing the pointer value to access the underlying
+value of `42` as the output of the print operation. If you had printed
+the valuel `x` rather than `*x`, it would print the string `&42` to show
+that the value points to `42`.
+
+The above examples illustrate basic functions of a pointer, but the
+most common case is as a return value from a function or as a function
+parameter.
+
+    func hasPositive( x int ) *int {
+        if x >= 0 {
+            return &x
+        }
+        return nil
+    }
+
+    v = hasPositive(55)
+    if v == nil {
+        fmt.Println("Not positive; no value returned")
+    }
+
+In this somewhat contrived example, the function `hasPositive` does not
+return an integer, it returns a pointer to an integer. The logic of the
+function is such that if a positive value was given, it is returned, 
+else a nil value is returned as the pointer value indicating _no value_
+returned from the function.
+
+As a final example, you can use pointers to allow a function to modify
+a value.
+
+    func setter( destination *int, source int) {
+        *destination = source
+    }
+
+    x := 55
+    setter(&x, 42)
+    fmt.Println(x)
+
+In this example, the function `setter` is given the address of an integer
+and a value to store in that integer. Because the value is passed by
+pointer, the value of `destination` is the address of the value `55`. The
+`setter` function overwrites that with the parameter passed (in this case,
+the value `42`). The result is that the value of x has now been chnaged
+by the function, and the value printed will be "42". 
+
+This is the only way a function can change a parameter value. By default,
+a value (such as `source` in the example above) gets a copy made and that
+copy is what is passed to the function. If the `setter` function had
+modified the value of `source`, then the value would be different in the
+copy local to the function, but the global value (`42`, in this case) would
+not have changed.
 
 ## User Types<a name="usertypes"></a>
 The _Ego_ language includes the ability to create use-defined types. 
@@ -492,7 +578,6 @@ a single value.
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
 | append() | append(list, 5, 6, 7) | Append the items together into an array. |
-| array()  | array(list, 5)        | Create a new array using the values of `list` that is `5` elements long |
 | bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
 | close()  | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
 | delete() | delete(emp, "Name")   | Remove the named field from a map, or a struct member |
@@ -506,7 +591,6 @@ a single value.
 | max()    | max(11, 17, 3) | Return the mathmatically greatest value in the argument list, in this case `17`. |
 | members() | members(emp)  | Return an array of strings containing the struct member names of the argument |
 | min()    | min(5,2,33)    | Return the mathmatically smalles value in the argument list, in this case `2` |
-| sort()   | sort(items)    | Sort the array members of `items` from smallest to largest values |
 | string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
 | sum()    | sum(5,6,3)     | Return the arithmetic sum of the values, in this case `14` |
 | type()   | type(emp)      | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
@@ -1015,9 +1099,9 @@ immediately invoke the function literal (stored in `fn`) to compare
 two boolean value, and return the result.
 
 A more complex example might be a function whose job is to sort a 
-list of values. Sorting a list of scalar values is available as a 
-built-in function, but sorting a list of complex types can't be 
-done wih the builtin `sort()` function. You could write a sort function, 
+list of values. Sorting a list of scalar values is available as 
+built-in function to the sort package, but sorting a list of 
+complex types can't be done this way. You could write a sort function, 
 that accepts as a parameter the comparision operation, and that 
 function knows how to decide between two values as to which one sorts 
 first. This lets the sort function you create be generic without regard 
@@ -1432,6 +1516,49 @@ Here's a simple example:
     }
 
 
+## sort <a name="sort"></a>
+The `sort` package contains functions that can sort an array containing only
+homogeneous base types (int, string, float). If the array contains interfaces
+or structs, it cannot be sorted. The sort occurs "in place" in the array.
+
+### sort.Strings(array)
+The `Strings` function sorts an array of strings. An empty string sorts to
+the start of the list.
+
+    a := []string{"apple", "pear", "", "cherry"}
+    sort.Strings(a)
+
+After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
+
+### sort.Ints(array)
+The `Ints` function sorts an array of integers. Negative numbers sort before positive
+numbers.
+
+    a := []int{5, 3, 8, 0, -1}
+    sort.Ints(a)
+
+After this code executes, the value of the array is [-1, 0, 3, 5, 8].
+
+
+### sort.Floats(array)
+The `Floats` function sorts an array of floating point nubmers. Negative 
+numbers sort before positive numbers.
+
+    a := []float{5.3, 3, 8.001, 0, -1.5}
+    sort.Floats(a)
+
+After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
+
+### sort.Strings(array)
+The `Strings` function sorts an array of strings. An empty string sorts to
+the start of the list.
+
+    a := []string{"apple", "pear", "", "cherry"}
+    sort.Strings(a)
+
+After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
+
+
 ## strings <a name="strings"></a>
 The `strings` package contains a library of functions to support manipulation
 of string data. Unless otherwise noted, strings are intrepreted as a set of
@@ -1445,6 +1572,69 @@ a single character for that position in the string.
 
 The value of `runes` is an string array with values ["t", "e", "s", "t"].
 If the string is an empty string, it results in an array of zero elements.
+
+### strings.Compare(a, b)
+The `Compare` function compares two string values, and returns an integer containing
+-1 if the first string is less than the second, 0 if they are equal, or 1 if the
+second value is less than the first value.
+
+    fmt.Println(strings.Compare("peach", "apple"))
+
+This will print the value 1 as the second value sorts higher in order than
+the first value.
+
+### strings.Contains(str, substr)
+The `Contains` function scans a string for a substring and returns a boolean
+value indicating if the substring exists in the string
+
+    a := strings.Contains("This is a test", "is a")
+    b := strings.Contains("This is a test", "isa")
+
+In this example, `a` contains the value `true`, and `b` contains the value `false`.
+Note that the substring must match exactly, including whitespace, to be considered
+a match. 
+
+### strings.ContainsAny(str, chars)
+The `ContainsAny` function scans a string to see if instances of any of the
+characters from a substring appear in the string.
+
+    a := strings.ContainsAny("this is a test", "satx")
+    b := strings.ContainsAny("this is a test", "xyz")
+
+In this example, `a` is true because the string contains at least one of the
+characters in the substring (there are instances of "s", "a", and "t"). The
+value of `b` is false because the string does not contain any instances of
+("x", "y", or "z")
+
+### strings.EqualFold(a, b)
+The `EqualFold` function compares two strings for equality, ignoring differnces
+in case.
+
+    a := strings.EqualFold("symphony b", "Symphony B")
+    b := strings.EqualFold("åto", "Åto")
+
+In both these examples, the result is `true`.
+
+### strings.Fields
+The `Fields` function breaks a string down into individual strings based on
+whitespace characters.
+
+    s := "this is    a test"
+    b := strings.Fields(s)
+
+The result is that `b` will contain the array ["this", "is", "a", "test"]
+
+### strings.Join
+The `Join` function joins together an array of strings with a separator tring.
+The separator is placed between items, but not at the start or end of the
+resulting string.
+
+    a := []string{ "usr", "local", "bin"}
+    b := strings.Join(a, "/")
+
+The result is that `b` contains a string "usr/local/bin". This function is most
+commonly used to create lists (with a "," for separator) or path names (using a
+host-specific path separator like "/" or "\").
 
 ### strings.Format(v)
 The `Format()` function returns a string that contains the formatted value of
@@ -1585,6 +1775,7 @@ In this example, the value of `msg` is "highway...". This is to ensure that the
 resulting string is only ten characters long (the length specified as the second
 parameter). If the string is not longer than the gien count, the entire string is
 returned.
+
 ### strings.URLPattern()
 The `URLPattern()` function can be used in a web service to determine what parts of
 a URL are present. This is particularly useful when using collection-style URL names,
