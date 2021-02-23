@@ -1443,6 +1443,42 @@ is followed by a newline character. There are no formatting operations available
 This results in the string `"The answer is 42"` followed by a newline character being
 send to the output console.
 
+### fmt.Sscanf()
+The `Sscanf()` function accepts a string of data, a format specification, and one or
+more pointers to base-type values. The data string is processed using the format 
+specification, and the resulting values are written to the parameter variables.
+The function returns the number of items processed, and any error (such as invalid
+value for a given format).
+
+    var age int
+    var temp float
+
+    data := "35 101.2"
+    fmt.Sscanf(data, "%d%f", &age, &temp)
+
+The `%d` format specification causes an integer value to be parsed from the string.
+This is followed by a floating pointer number. These are stored in `age` and `temp`
+respectively.
+
+Any non-format characters in the format string must be present in the input string
+exactly as shown.  For example, 
+
+    data := "age 35 temp 101.2"
+    fmt.Sscanf(data, "age %d temp %f", &age, &temp)
+
+Note that in both the data string and the format string, multiple white-space
+characters (" ", etc) are ignored.  The supported format values are:
+
+| Format | Description |
+|:------:| ----- |
+| %t | Boolean "true" or "false" value |
+| %f | Floating point value |
+| %d | Integer value |
+| %s | String values |
+
+Note that this is a subset of the format operations supported by Go's runtime.
+Also note that _Ego_ does not support a width specification in the format.
+
 ### fmt.Sprintf()
 The `Sprintf()` function works exactly the same as the `Printf{}` function, but returns
 the formatted string as it's result value, instead of printing it anywhere. This lets
