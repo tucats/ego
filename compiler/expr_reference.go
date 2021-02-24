@@ -59,6 +59,21 @@ func (c *Compiler) reference() *errors.EgoError {
 			c.t.Advance(1)
 
 			lastName = c.t.Next()
+			if !tokenizer.IsSymbol(lastName) {
+				return c.NewError(errors.InvalidIdentifierError)
+			}
+
+			lastName = c.Normalize(lastName)
+
+			// Peek ahead. is this a chained call? If so, set the This
+			// value
+			if c.t.Peek(1) == "(" {
+				anon := generateName()
+
+				c.b.Emit(bc.Dup)
+				c.b.Emit(bc.StoreAlways, anon)
+				c.b.Emit(bc.SetThis, anon)
+			}
 
 			c.b.Emit(bc.Member, lastName)
 

@@ -89,5 +89,5 @@ func generateName() string {
 
 	nameMutex.Unlock()
 
-	return fmt.Sprintf("_anon_%d", n)
+	return fmt.Sprintf("$%d", n)
 }

@@ -186,9 +186,9 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 		// Is this a receiver for a function call? If so, handle fetching the runtime
 		// value and storing it as the "this" variable.
-		if c.t.Peek(1) == "." && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == "(" {
+		/* if c.t.Peek(1) == "." && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == "(" {
 			c.b.Emit(bytecode.SetThis, t)
-		}
+		} */
 
 		t = c.Normalize(t)
 		// Is it a generator for a type?
