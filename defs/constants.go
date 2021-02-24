@@ -96,7 +96,6 @@ const (
 const (
 	AutoImportOption      = "auto-import"
 	DisassembleOption     = "disassemble"
-	EnvironmentOption     = "environment"
 	FullSymbolScopeOption = "full-symbol-scope"
 	StaticTypesOption     = "static-types"
 	SymbolTableSizeOption = "symbol-table-size"

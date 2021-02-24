@@ -222,7 +222,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			debug = false
 		}
 
-		// Compile the token stream. Allow the EXIT command only if  we are in "run" mode interactively
+		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
 		comp := compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 		b, err := comp.Compile(mainName, t)
@@ -335,16 +335,6 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 
 	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
 	io.SetConfig(syms, ConfigDisassemble, disassemble)
-
-	// Get a list of all the environment variables and make
-	// a symbol map of their lower-case names
-	if c.GetBool(defs.EnvironmentOption) {
-		list := os.Environ()
-		for _, env := range list {
-			pair := strings.SplitN(env, "=", 2)
-			_ = syms.SetAlways(pair[0], pair[1])
-		}
-	}
 
 	// Add local funcion(s) that extend the Ego function set.
 	_ = syms.SetAlways("eval", runtime.Eval)

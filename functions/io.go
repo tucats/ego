@@ -57,17 +57,19 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	list, err := ExpandPath(path, ext)
 
-	// Rewrap as an interface array
-	result := []interface{}{}
+	// Rewrap as an Ego array
+	result := datatypes.NewArray(datatypes.StringType, 0)
 
 	for _, item := range list {
-		result = append(result, item)
+		result.Append(item)
 	}
 
 	return result, err
 }
 
-// ExpandPath is used to expand a path into a list of fie names.
+// ExpandPath is used to expand a path into a list of fie names. This is
+// also used elsewhere to product path lists, so it must be an exported
+// symbol.
 func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 	names := []string{}
 
@@ -114,7 +116,7 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	path := util.GetString(args[0])
-	result := []interface{}{}
+	result := datatypes.NewArray(datatypes.InterfaceType, 0)
 
 	files, err := ioutil.ReadDir(path)
 	if !errors.Nil(err) {
@@ -122,13 +124,15 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	for _, file := range files {
-		entry := map[string]interface{}{}
-		entry["name"] = file.Name()
-		entry["directory"] = file.IsDir()
-		entry["mode"] = file.Mode().String()
-		entry["size"] = int(file.Size())
-		entry["modified"] = file.ModTime().String()
-		result = append(result, entry)
+		entry := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+
+		_, _ = entry.Set("name", file.Name())
+		_, _ = entry.Set("directory", file.IsDir())
+		_, _ = entry.Set("mode", file.Mode().String())
+		_, _ = entry.Set("size", int(file.Size()))
+		_, _ = entry.Set("modified", file.ModTime().String())
+
+		result.Append(entry)
 	}
 
 	return result, nil

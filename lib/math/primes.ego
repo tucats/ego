@@ -3,8 +3,8 @@ package math
 /* Classic prime number search using sieve method */
 func Primes(size int) []int {
 
-	array t[size+1] = false
-	array r[0]
+	t := make([]bool, size+1)
+	r := make([]int, 0)
 
 	for p := 2;  p < size ; p = p + 1{
 
@@ -21,7 +21,7 @@ func Primes(size int) []int {
 		if next == 0 {
 			break
 		}
-		r = r + next
+		r = append(r, next)
 		p = next - 1
 
 	}

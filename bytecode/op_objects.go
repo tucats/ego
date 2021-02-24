@@ -29,13 +29,20 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	// The only the type that is supported is a map
+	// The only the type that is supported is a map, either native
+	// or Ego map.
 	var v interface{}
 
 	found := false
 
-	mv, ok := m.(map[string]interface{})
-	if ok {
+	switch mv := m.(type) {
+	case *datatypes.EgoMap:
+		v, _, err = mv.Get(name)
+		if err != nil {
+			return err
+		}
+
+	case map[string]interface{}:
 		isPackage := false
 
 		if t, found := datatypes.GetMetadata(mv, datatypes.TypeMDKey); found {
@@ -57,7 +64,8 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		} else {
 			c.lastStruct = nil
 		}
-	} else {
+
+	default:
 		return c.NewError(errors.InvalidTypeError)
 	}
 

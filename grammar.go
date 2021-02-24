@@ -351,12 +351,6 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_AUTOIMPORT",
 	},
 	{
-		LongName:    "environment",
-		ShortName:   "e",
-		Description: "Automatically add environment vars as symbols",
-		OptionType:  cli.BooleanType,
-	},
-	{
 		LongName:    "source-tracing",
 		ShortName:   "x",
 		Description: "Print source lines as they are executed",

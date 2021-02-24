@@ -30,7 +30,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	keys := make([]string, 0)
 
 	for k := range s.Symbols {
-		if !strings.HasPrefix(k, "__") {
+		if !strings.HasPrefix(k, "__") && !strings.HasPrefix(k, "$") {
 			keys = append(keys, k)
 		}
 	}
