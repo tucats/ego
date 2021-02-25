@@ -7,7 +7,7 @@ import (
 
 // compileExit handles the exit statement compilation.
 func (c *Compiler) compileExit() *errors.EgoError {
-	c.b.Emit(bytecode.Load, "util")
+	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
 
 	argCount := 0

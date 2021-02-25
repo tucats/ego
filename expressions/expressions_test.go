@@ -324,37 +324,32 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "min homogeneous args function",
-			expr: "min(15,33,11,6)",
+			expr: "math.Min(15,33,11,6)",
 			want: 6,
 		},
 		{
 			name: "min float args function",
-			expr: "min(3.0, 1.0, 2.0)",
+			expr: "math.Min(3.0, 1.0, 2.0)",
 			want: 1.0,
 		},
 		{
 			name: "min string args function",
-			expr: "min(\"house\", \"cake\", \"pig\" )",
+			expr: "math.Min(\"house\", \"cake\", \"pig\" )",
 			want: "cake",
 		},
 		{
 			name: "min hetergenous args function",
-			expr: "min(15,33.5,\"11\",6)",
+			expr: "math.Min(15,33.5,\"11\",6)",
 			want: 6,
 		},
 		{
-			name: "max hetergenous args function",
-			expr: "max(15.1,33.5,\"11\",6)",
-			want: 33.5,
-		},
-		{
 			name: "sum hetergenous args function",
-			expr: "sum(10.1, 5, \"2\")",
+			expr: "math.Sum(10.1, 5, \"2\")",
 			want: 17.1,
 		},
 		{
 			name: "sum homogeneous args function",
-			expr: "sum(\"abc\", \"137\", \"def\")",
+			expr: "math.Sum(\"abc\", \"137\", \"def\")",
 			want: "abc137def",
 		},
 		{

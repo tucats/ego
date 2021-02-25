@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -77,13 +76,6 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	}
 
 	return result, nil
-}
-
-// UUID implements the uuid() function.
-func UUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	u := uuid.New()
-
-	return u.String(), nil
 }
 
 // Length implements the len() function.

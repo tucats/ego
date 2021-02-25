@@ -7,7 +7,7 @@
     for i, j := range a {
         n = n + j + i
     }
-    want := sum(10,21,32,43,54)
+    want := math.Sum(10,21,32,43,54)
     @assert T.Equal(want, n, "range over array failed")
 }
 
@@ -18,7 +18,7 @@
     for i := range a {
         n = n  + i
     }
-    want := sum(0,1,2,3,4)
+    want := math.Sum(0,1,2,3,4)
     @assert T.Equal(want, n, "range over array with just indexes failed")
 }
 

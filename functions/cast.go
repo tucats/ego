@@ -89,16 +89,11 @@ func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return v.(bool), nil
 }
 
-// Coerce coerces a value to match the type of a model value.
-func Coerce(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return util.Coerce(args[0], args[1]), nil
-}
-
 // Normalize coerces a value to match the type of a model value.
 func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v1, v2 := util.Normalize(args[0], args[1])
 
-	return []interface{}{v1, v2}, nil
+	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
 }
 
 // New implements the new() function. If an integer type number

@@ -9,7 +9,7 @@ func testf( base int, args... int ) int {
 }
 
 got := testf(1,2,3)
-want := sum(1,2,3)
+want := math.Sum(1,2,3)
 
 @assert T.Equal(got, want, "incorrect varargs function result returned")
 @pass
