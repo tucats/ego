@@ -52,10 +52,10 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		v, found = findMember(mv, name)
 		if !found {
 			if isPackage {
-				return c.NewError(errors.UnknownPackageMemberError).Context(name)
+				return c.newError(errors.UnknownPackageMemberError).Context(name)
 			}
 
-			return c.NewError(errors.UnknownMemberError).Context(name)
+			return c.newError(errors.UnknownMemberError).Context(name)
 		}
 
 		// Remember where we loaded this from unless it was a package name
@@ -66,7 +66,7 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	_ = c.stackPush(v)
@@ -120,7 +120,7 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 	switch mv := m.(type) {
 	case map[string]interface{}:
 		if _, found := datatypes.GetMetadata(mv, datatypes.ParentMDKey); found {
-			return c.NewError(errors.NotATypeError)
+			return c.newError(errors.NotATypeError)
 		}
 
 		v, found := mv[name]
@@ -130,13 +130,13 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 				return c.stackPush(v)
 			}
 
-			return c.NewError(errors.UnknownMemberError).Context(name)
+			return c.newError(errors.UnknownMemberError).Context(name)
 		}
 
 		_ = c.stackPush(v)
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return nil

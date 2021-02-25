@@ -24,7 +24,7 @@ func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 	var user, pass string
 
 	if _, ok := c.symbolGet("_authenticated"); !ok {
-		return c.NewError(errors.NotAServiceError)
+		return c.newError(errors.NotAServiceError)
 	}
 
 	kind := util.GetString(i)

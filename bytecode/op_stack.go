@@ -49,7 +49,7 @@ func DropToMarkerImpl(c *Context, i interface{}) *errors.EgoError {
 func StackCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	count := util.GetInt(i)
 	if c.sp <= count {
-		return c.NewError(errors.IncorrectReturnValueCount)
+		return c.newError(errors.IncorrectReturnValueCount)
 	}
 
 	// The marker is an instance of a StackMarker object.
@@ -58,7 +58,7 @@ func StackCheckImpl(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	return c.NewError(errors.IncorrectReturnValueCount)
+	return c.newError(errors.IncorrectReturnValueCount)
 }
 
 // PushImpl instruction processor. This pushes the instruction operand
@@ -141,7 +141,7 @@ func CopyImpl(c *Context, i interface{}) *errors.EgoError {
 }
 
 func GetVarArgsImpl(c *Context, i interface{}) *errors.EgoError {
-	err := c.NewError(errors.VarArgError)
+	err := c.newError(errors.VarArgError)
 	argPos := util.GetInt(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {

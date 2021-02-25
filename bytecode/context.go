@@ -235,7 +235,7 @@ func (c *Context) GetModuleName() string {
 // Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, *errors.EgoError) {
 	if c.sp <= 0 || len(c.stack) < c.sp {
-		return nil, c.NewError(errors.StackUnderflowError)
+		return nil, c.newError(errors.StackUnderflowError)
 	}
 
 	c.sp = c.sp - 1
@@ -368,7 +368,7 @@ func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
-			err = c.NewError(errors.InvalidVarTypeError)
+			err = c.newError(errors.InvalidVarTypeError)
 		}
 	}
 

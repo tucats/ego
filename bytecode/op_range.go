@@ -103,7 +103,7 @@ func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 				// No further init required
 
 			default:
-				err = c.NewError(errors.InvalidTypeError)
+				err = c.newError(errors.InvalidTypeError)
 			}
 
 			r.index = 0

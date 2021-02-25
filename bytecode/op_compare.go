@@ -218,7 +218,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -234,7 +234,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) > v2.(string)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 
@@ -277,7 +277,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -293,7 +293,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) >= v2.(string)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 
@@ -337,7 +337,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -353,7 +353,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) < v2.(string)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 
@@ -396,7 +396,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -411,7 +411,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) <= v2.(string)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 

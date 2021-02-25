@@ -100,7 +100,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 		imp, found := dispatch[i.Operation]
 		if !found {
-			return c.NewError(errors.UnimplementedInstructionError).Context(i.Operation)
+			return c.newError(errors.UnimplementedInstructionError).Context(i.Operation)
 		}
 
 		err = imp(c, i.Operand)
@@ -146,7 +146,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	syms := parentCtx.symbols
-	err := parentCtx.NewError(errors.InvalidFunctionCallError)
+	err := parentCtx.newError(errors.InvalidFunctionCallError)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)
@@ -179,7 +179,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ctx.Tracing = true
 			ui.DebugMode = true
 
-			err = parentCtx.NewError(ctx.Run())
+			err = parentCtx.newError(ctx.Run())
 		}
 	}
 

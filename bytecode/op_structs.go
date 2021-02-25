@@ -73,10 +73,10 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 
 		if !f {
 			if isPackage {
-				return c.NewError(errors.UnknownPackageMemberError).Context(subscript)
+				return c.newError(errors.UnknownPackageMemberError).Context(subscript)
 			}
 
-			return c.NewError(errors.UnknownMemberError).Context(subscript)
+			return c.newError(errors.UnknownMemberError).Context(subscript)
 		}
 
 		err = c.stackPush(v)
@@ -85,7 +85,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		v, _ := a.Get(subscript)
@@ -94,14 +94,14 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		v := a[subscript]
 		err = c.stackPush(v)
 
 	default:
-		err = c.NewError(errors.InvalidTypeError)
+		err = c.newError(errors.InvalidTypeError)
 	}
 
 	return err
@@ -139,19 +139,19 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript1 := util.GetInt(index1)
 		if subscript1 < 0 || subscript1 >= len(a) {
-			return c.NewError(errors.InvalidSliceIndexError).Context(subscript1)
+			return c.newError(errors.InvalidSliceIndexError).Context(subscript1)
 		}
 
 		subscript2 := util.GetInt(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
-			return c.NewError(errors.InvalidSliceIndexError).Context(subscript2)
+			return c.newError(errors.InvalidSliceIndexError).Context(subscript2)
 		}
 
 		v := a[subscript1 : subscript2+1]
 		_ = c.stackPush(v)
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -184,7 +184,7 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 
 	_, ok := m.(map[string]interface{})
 	if !ok {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	_ = datatypes.SetMetadata(m, key, value)
@@ -230,7 +230,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		old, found := datatypes.GetMetadata(a, datatypes.ReadonlyMDKey)
 		if found && !storeAlways {
 			if util.GetBool(old) {
-				return c.NewError(errors.ReadOnlyError)
+				return c.newError(errors.ReadOnlyError)
 			}
 		}
 
@@ -238,12 +238,12 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		old, found = a[subscript]
 		if found {
 			if subscript[0:1] == "_" {
-				return c.NewError(errors.ReadOnlyError)
+				return c.newError(errors.ReadOnlyError)
 			}
 
 			// Check to be sure this isn't a restricted (function code) type
 			if _, ok := old.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
-				return c.NewError(errors.ReadOnlyError)
+				return c.newError(errors.ReadOnlyError)
 			}
 		}
 
@@ -251,14 +251,14 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		// present, with a value that is true, and we are not doing the "store always"
 		if staticFlag, ok := datatypes.GetMetadata(a, datatypes.StaticMDKey); ok && util.GetBool(staticFlag) && !storeAlways {
 			if _, ok := a[subscript]; !ok {
-				return c.NewError(errors.UnknownMemberError).Context(subscript)
+				return c.newError(errors.UnknownMemberError).Context(subscript)
 			}
 		}
 
 		if c.Static {
 			if vv, ok := a[subscript]; ok && vv != nil {
 				if reflect.TypeOf(vv) != reflect.TypeOf(v) {
-					return c.NewError(errors.InvalidVarTypeError)
+					return c.newError(errors.InvalidVarTypeError)
 				}
 			}
 		}
@@ -279,13 +279,13 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		if c.Static {
 			vv, _ := a.Get(subscript)
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.NewError(errors.InvalidVarTypeError)
+				return c.newError(errors.InvalidVarTypeError)
 			}
 		}
 
@@ -300,13 +300,13 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.NewError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
 		}
 
 		if c.Static {
 			vv := a[subscript]
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.NewError(errors.InvalidVarTypeError)
+				return c.newError(errors.InvalidVarTypeError)
 			}
 		}
 
@@ -314,7 +314,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(a)
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -344,11 +344,11 @@ func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if !errors.Nil(err) {
-			return c.NewError(err)
+			return c.newError(err)
 		}
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return nil

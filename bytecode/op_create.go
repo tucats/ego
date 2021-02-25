@@ -135,7 +135,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 				_ = array.SetType(datatypes.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.NewError(errors.InvalidTypeError)
+					return c.newError(errors.InvalidTypeError)
 				}
 			}
 		}
@@ -233,7 +233,7 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 				// are valid.
 				for k := range m {
 					if _, found := modelMap[k]; !strings.HasPrefix(k, "__") && !found {
-						return c.NewError(errors.InvalidFieldError, k)
+						return c.newError(errors.InvalidFieldError, k)
 					}
 				}
 				// Add in any fields from the type model not present
@@ -255,7 +255,7 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 					}
 				}
 			} else {
-				return c.NewError(errors.UnknownTypeError, typeName)
+				return c.newError(errors.UnknownTypeError, typeName)
 			}
 		}
 	} else {

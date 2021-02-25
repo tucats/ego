@@ -137,7 +137,7 @@ func TimerImpl(c *Context, i interface{}) *errors.EgoError {
 	case 1:
 		timerStack := len(c.timers)
 		if timerStack == 0 {
-			return c.NewError(errors.InvalidTimerError)
+			return c.newError(errors.InvalidTimerError)
 		}
 
 		t := c.timers[timerStack-1]
@@ -162,7 +162,7 @@ func TimerImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(msText)
 
 	default:
-		return c.NewError(errors.InvalidTimerError)
+		return c.newError(errors.InvalidTimerError)
 	}
 
 	return nil

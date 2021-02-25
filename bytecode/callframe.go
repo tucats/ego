@@ -8,37 +8,37 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// CallFrame is an object used to store state of the bytecode runtime
+// callFrame is an object used to store state of the bytecode runtime
 // environment just before making a call to a bytecode subroutine. This
 // preserves the state of the stack, PC, and other data at the time
 // of the call. When a bytecode subroutine returns, this object is
 // removed from the stack and used to reset the bytecode runtime state.
-type CallFrame struct {
-	Module     string
-	Line       int
-	Symbols    *symbols.SymbolTable
-	Bytecode   *ByteCode
-	Tokenizer  *tokenizer.Tokenizer
-	ThisStack  []This
-	SingleStep bool
-	PC         int
-	FP         int
+type callFrame struct {
+	module     string
+	line       int
+	symbols    *symbols.SymbolTable
+	bytecode   *ByteCode
+	tokenizer  *tokenizer.Tokenizer
+	thisStack  []This
+	singleStep bool
+	pc         int
+	fp         int
 }
 
-// PushFrame pushes a single object on the stack that represents the state of
+// callframePush pushes a single object on the stack that represents the state of
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
-func (c *Context) PushFrame(tableName string, bc *ByteCode, pc int) {
-	_ = c.stackPush(CallFrame{
-		Symbols:    c.symbols,
-		Bytecode:   c.bc,
-		SingleStep: c.singleStep,
-		Tokenizer:  c.tokenizer,
-		ThisStack:  c.thisStack,
-		PC:         c.pc,
-		FP:         c.fp,
-		Module:     c.bc.Name,
-		Line:       c.line,
+func (c *Context) callframePush(tableName string, bc *ByteCode, pc int) {
+	_ = c.stackPush(callFrame{
+		symbols:    c.symbols,
+		bytecode:   c.bc,
+		singleStep: c.singleStep,
+		tokenizer:  c.tokenizer,
+		thisStack:  c.thisStack,
+		pc:         c.pc,
+		fp:         c.fp,
+		module:     c.bc.Name,
+		line:       c.line,
 	})
 
 	c.fp = c.sp
@@ -55,9 +55,9 @@ func (c *Context) PushFrame(tableName string, bc *ByteCode, pc int) {
 	}
 }
 
-// PopFrame retrieves the call frame information from the stack, and updates
+// callFramePop retrieves the call frame information from the stack, and updates
 // the current bytecode context to reflect the previously-stored state.
-func (c *Context) PopFrame() *errors.EgoError {
+func (c *Context) callFramePop() *errors.EgoError {
 	// First, is there stuff on the stack we want to preserve?
 	topOfStackSlice := c.stack[c.fp : c.sp+1]
 
@@ -70,17 +70,17 @@ func (c *Context) PopFrame() *errors.EgoError {
 		return err
 	}
 
-	if callFrame, ok := cx.(CallFrame); ok {
-		c.line = callFrame.Line
-		c.symbols = callFrame.Symbols
-		c.singleStep = callFrame.SingleStep
-		c.tokenizer = callFrame.Tokenizer
-		c.thisStack = callFrame.ThisStack
-		c.bc = callFrame.Bytecode
-		c.pc = callFrame.PC
-		c.fp = callFrame.FP
+	if callFrame, ok := cx.(callFrame); ok {
+		c.line = callFrame.line
+		c.symbols = callFrame.symbols
+		c.singleStep = callFrame.singleStep
+		c.tokenizer = callFrame.tokenizer
+		c.thisStack = callFrame.thisStack
+		c.bc = callFrame.bytecode
+		c.pc = callFrame.pc
+		c.fp = callFrame.fp
 	} else {
-		return c.NewError(errors.InvalidCallFrameError)
+		return c.newError(errors.InvalidCallFrameError)
 	}
 
 	// Finally, if there _was_ stuff on the stack after the call,
@@ -113,10 +113,10 @@ func (c *Context) FormatFrames(maxDepth int) string {
 	for (maxDepth < 0 || depth < maxDepth) && f > 0 {
 		fx := c.stack[f-1]
 
-		if frame, ok := fx.(CallFrame); ok {
+		if frame, ok := fx.(callFrame); ok {
 			r = r + fmt.Sprintf("from: %12s  (%s)\n",
-				formatLocation(frame.Module, frame.Line), frame.Symbols.Name)
-			f = frame.FP
+				formatLocation(frame.module, frame.line), frame.symbols.Name)
+			f = frame.fp
 
 			depth++
 		} else {

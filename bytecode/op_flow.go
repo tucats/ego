@@ -39,7 +39,7 @@ func PanicImpl(c *Context, i interface{}) *errors.EgoError {
 
 	msg := util.GetString(strValue)
 
-	return c.NewError(errors.Panic).Context(msg)
+	return c.newError(errors.Panic).Context(msg)
 }
 
 // AtLineImpl instruction processor. This identifies the start of a new statement,
@@ -75,7 +75,7 @@ func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	if !util.GetBool(v) {
@@ -91,7 +91,7 @@ func BranchImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	c.pc = address
@@ -112,7 +112,7 @@ func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.NewError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
 	if util.GetBool(v) {
@@ -131,7 +131,7 @@ func LocalCallImpl(c *Context, i interface{}) *errors.EgoError {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
-	c.PushFrame("defer", c.bc, util.GetInt(i))
+	c.callframePush("defer", c.bc, util.GetInt(i))
 
 	return nil
 }
@@ -203,7 +203,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if funcPointer == nil {
-		return c.NewError(errors.InvalidFunctionCallError).Context("<nil>")
+		return c.newError(errors.InvalidFunctionCallError).Context("<nil>")
 	}
 
 	// Depends on the type here as to what we call...
@@ -225,7 +225,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// and a new execution context. Note that this table has no
 		// visibility into the current scope of symbol values.
 
-		c.PushFrame("function "+af.Name, af, 0)
+		c.callframePush("function "+af.Name, af, 0)
 		_ = c.symbolSetAlways("__args", args)
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
@@ -295,11 +295,11 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if !errors.Nil(err) {
-			err = c.NewError(err).In(functions.FindName(af))
+			err = c.newError(err).In(functions.FindName(af))
 		}
 
 	default:
-		return c.NewError(errors.InvalidFunctionCallError).Context(af)
+		return c.newError(errors.InvalidFunctionCallError).Context(af)
 	}
 
 	if !errors.Nil(err) {
@@ -327,7 +327,7 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 	if c.fp > 0 && errors.Nil(err) {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
-		err = c.PopFrame()
+		err = c.callFramePop()
 	} else {
 		c.running = false
 	}
@@ -348,7 +348,7 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	switch v := i.(type) {
 	case []interface{}:
 		if len(v) < 2 || len(v) > 3 {
-			return c.NewError(errors.InvalidArgCheckError)
+			return c.newError(errors.InvalidArgCheckError)
 		}
 
 		min = util.GetInt(v[0])
@@ -369,19 +369,19 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 
 	case []int:
 		if len(v) != 2 {
-			return c.NewError(errors.InvalidArgCheckError)
+			return c.newError(errors.InvalidArgCheckError)
 		}
 
 		min = v[0]
 		max = v[1]
 
 	default:
-		return c.NewError(errors.InvalidArgCheckError)
+		return c.newError(errors.InvalidArgCheckError)
 	}
 
 	v, found := c.symbolGet("__args")
 	if !found {
-		return c.NewError(errors.InvalidArgCheckError)
+		return c.newError(errors.InvalidArgCheckError)
 	}
 
 	// Do the actual compare. Note that if we ended up with a negative
@@ -411,7 +411,7 @@ func TryImpl(c *Context, i interface{}) *errors.EgoError {
 // TryPopImpl instruction processor.
 func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
 	if len(c.try) == 0 {
-		return c.NewError(errors.TryCatchMismatchError)
+		return c.newError(errors.TryCatchMismatchError)
 	}
 
 	if len(c.try) == 1 {

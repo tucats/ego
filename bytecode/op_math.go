@@ -29,7 +29,7 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	switch value := v.(type) {
@@ -64,7 +64,7 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(r)
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	switch vx := v1.(type) {
@@ -113,7 +113,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 
 				for _, vv := range vy {
 					if arrayType != reflect.TypeOf(vv) {
-						return c.NewError(errors.InvalidTypeError)
+						return c.newError(errors.InvalidTypeError)
 					}
 				}
 			}
@@ -140,7 +140,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(vx)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 
 		// All other types are scalar math.
@@ -161,7 +161,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(v1.(bool) && v2.(bool))
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 }
@@ -180,7 +180,7 @@ func AndImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return c.stackPush(util.GetBool(v1) && util.GetBool(v2))
@@ -200,7 +200,7 @@ func OrImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	return c.stackPush(util.GetBool(v1) || util.GetBool(v2))
@@ -223,7 +223,7 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	switch vx := v1.(type) {
@@ -256,7 +256,7 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(s)
 
 		default:
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 	}
 }
@@ -275,7 +275,7 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
@@ -291,7 +291,7 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(v1.(bool) || v2.(bool))
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 }
 
@@ -311,7 +311,7 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	switch v1.(type) {
@@ -336,14 +336,14 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 }
 
 // DivideImpl bytecode instruction processor.
 func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 	if c.sp < 1 {
-		return c.NewError(errors.StackUnderflowError)
+		return c.newError(errors.StackUnderflowError)
 	}
 
 	v2, err := c.Pop()
@@ -358,7 +358,7 @@ func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
@@ -366,19 +366,19 @@ func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {
-			return c.NewError(errors.DivisionByZeroError)
+			return c.newError(errors.DivisionByZeroError)
 		}
 
 		return c.stackPush(v1.(int) / v2.(int))
 
 	case float64:
 		if v2.(float64) == 0 {
-			return c.NewError(errors.DivisionByZeroError)
+			return c.newError(errors.DivisionByZeroError)
 		}
 
 		return c.stackPush(v1.(float64) / v2.(float64))
 
 	default:
-		return c.NewError(errors.InvalidTypeError)
+		return c.newError(errors.InvalidTypeError)
 	}
 }

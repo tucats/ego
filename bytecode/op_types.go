@@ -27,12 +27,12 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
-					err = c.NewError(errors.InvalidArgTypeError)
+					err = c.newError(errors.InvalidArgTypeError)
 				}
 			} else {
 				if t, ok := i.(string); ok {
 					if t != reflect.TypeOf(v).String() {
-						err = c.NewError(errors.InvalidArgTypeError)
+						err = c.newError(errors.InvalidArgTypeError)
 					}
 				} else {
 					if t, ok := i.(int); ok {
@@ -53,7 +53,7 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 							ok = true
 						}
 						if !ok {
-							err = c.NewError(errors.InvalidArgTypeError)
+							err = c.newError(errors.InvalidArgTypeError)
 						}
 					}
 				}
@@ -64,7 +64,7 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			if t > datatypes.PointerType {
 				actualT := datatypes.PointerTo(v) + datatypes.PointerType
 				if t != actualT /* && actualT != datatypes.InterfaceType  */ {
-					return c.NewError(errors.ArgumentTypeError)
+					return c.newError(errors.ArgumentTypeError)
 				}
 			} else {
 				switch t {
@@ -92,14 +92,14 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 				case datatypes.StructType:
 					// If it's not a struct, we can't do anything so fail
 					if _, ok := v.(map[string]interface{}); !ok {
-						return c.NewError(errors.InvalidTypeError)
+						return c.newError(errors.InvalidTypeError)
 					}
 
 				case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
 					// No work at all to do here.
 
 				default:
-					return c.NewError(errors.InvalidTypeError)
+					return c.newError(errors.InvalidTypeError)
 				}
 			}
 		}
@@ -148,7 +148,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	case datatypes.StructType:
 		// If it's not a struct, we can't do anything so fail
 		if _, ok := v.(map[string]interface{}); !ok {
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 
 	case datatypes.InterfaceType, datatypes.UndefinedType:
@@ -156,7 +156,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 
 	default:
 		if t < datatypes.ArrayType {
-			return c.NewError(errors.InvalidTypeError)
+			return c.newError(errors.InvalidTypeError)
 		}
 
 		var base []interface{}
@@ -207,7 +207,7 @@ func AddressOfImpl(c *Context, i interface{}) *errors.EgoError {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.NewError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	return c.stackPush(addr)
@@ -218,22 +218,22 @@ func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.NewError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	if datatypes.IsNil(addr) {
-		return c.NewError(errors.NilPointerReferenceError)
+		return c.newError(errors.NilPointerReferenceError)
 	}
 
 	if content, ok := addr.(*interface{}); ok {
 		if datatypes.IsNil(content) {
-			return c.NewError(errors.NilPointerReferenceError)
+			return c.newError(errors.NilPointerReferenceError)
 		}
 
 		c2 := *content
 		if c3, ok := c2.(*interface{}); ok {
 			if datatypes.IsNil(content) {
-				return c.NewError(errors.NilPointerReferenceError)
+				return c.newError(errors.NilPointerReferenceError)
 			}
 
 			return c.stackPush(*c3)
@@ -242,5 +242,5 @@ func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	return c.NewError(errors.NotAPointer).Context(name)
+	return c.newError(errors.NotAPointer).Context(name)
 }

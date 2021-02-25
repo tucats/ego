@@ -44,7 +44,7 @@ func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if !errors.Nil(err) {
-		return c.NewError(err)
+		return c.newError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -86,7 +86,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 		if sourceChan {
 			err = c.symbolCreate(varname)
 		} else {
-			err = c.NewError(errors.UnknownIdentifierError).Context(x)
+			err = c.newError(errors.UnknownIdentifierError).Context(x)
 		}
 
 		if !errors.Nil(err) {
@@ -100,7 +100,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if !sourceChan && !destChan {
-		return c.NewError(errors.InvalidChannelError)
+		return c.newError(errors.InvalidChannelError)
 	}
 
 	var datum interface{}
@@ -134,7 +134,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err = c.SetGlobal(varname, v)
 	if !errors.Nil(err) {
-		return c.NewError(err)
+		return c.newError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -159,11 +159,11 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 
 	dest, ok := c.symbolGet(name)
 	if !ok {
-		return c.NewError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	if datatypes.IsNil(dest) {
-		return c.NewError(errors.NilPointerReferenceError).Context(name)
+		return c.newError(errors.NilPointerReferenceError).Context(name)
 	}
 
 	src, err := c.Pop()
@@ -194,22 +194,22 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 	case **datatypes.EgoArray:
 		*actual, ok = src.(*datatypes.EgoArray)
 		if !ok {
-			return c.NewError(errors.NotAPointer).Context(name)
+			return c.newError(errors.NotAPointer).Context(name)
 		}
 	case **datatypes.EgoMap:
 		*actual, ok = src.(*datatypes.EgoMap)
 		if !ok {
-			return c.NewError(errors.NotAPointer).Context(name)
+			return c.newError(errors.NotAPointer).Context(name)
 		}
 
 	case **datatypes.Channel:
 		*actual, ok = src.(*datatypes.Channel)
 		if !ok {
-			return c.NewError(errors.NotAPointer).Context(name)
+			return c.newError(errors.NotAPointer).Context(name)
 		}
 
 	default:
-		return c.NewError(errors.NotAPointer).Context(name)
+		return c.newError(errors.NotAPointer).Context(name)
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err = c.symbolSetAlways(varname, v)
 	if !errors.Nil(err) {
-		return c.NewError(err)
+		return c.newError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -249,12 +249,12 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 	if len(name) == 0 {
-		return c.NewError(errors.InvalidIdentifierError).Context(name)
+		return c.newError(errors.InvalidIdentifierError).Context(name)
 	}
 
 	v, found := c.symbolGet(name)
 	if !found {
-		return c.NewError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.UnknownIdentifierError).Context(name)
 	}
 
 	_ = c.stackPush(v)

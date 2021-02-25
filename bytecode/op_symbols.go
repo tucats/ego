@@ -31,12 +31,12 @@ func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
-		return c.NewError(errors.ReadOnlyError)
+		return c.newError(errors.ReadOnlyError)
 	}
 
 	err := c.symbolCreate(n)
 	if !errors.Nil(err) {
-		err = c.NewError(err)
+		err = c.newError(err)
 	}
 
 	return err
@@ -46,7 +46,7 @@ func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
 func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
-		return c.NewError(errors.ReadOnlyError)
+		return c.newError(errors.ReadOnlyError)
 	}
 
 	sp := c.symbols
@@ -60,7 +60,7 @@ func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err := c.symbolCreate(n)
 	if !errors.Nil(err) {
-		err = c.NewError(err)
+		err = c.newError(err)
 	}
 
 	return err
@@ -72,7 +72,7 @@ func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err := c.symbolDelete(n)
 	if !errors.Nil(err) {
-		err = c.NewError(err)
+		err = c.newError(err)
 	}
 
 	return err
@@ -89,7 +89,7 @@ func ConstantImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err = c.constantSet(varname, v)
 	if !errors.Nil(err) {
-		return c.NewError(err)
+		return c.newError(err)
 	}
 
 	return err
