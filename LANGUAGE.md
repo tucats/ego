@@ -1962,8 +1962,47 @@ characters) and they are concatenated together to make a string. In the above
 example, `b` contains the string "thisandthat".
 
 ### strings.Substring(string, start, count)
+The `Substring()` function extracts a portion of the string provided. The
+start position is the first character position to include (1-based), and
+the count is the number of characters to include in the result. For example,
+
+    name := "Abe Lincoln"
+    part := strings.Substring(name, 5, 4)
+
+This would result in `part` containing the string "Linc", representing the
+starting with the fifth character, and being four characters long.
 
 ### strings.Template(name [, struct])
+The `Template()` function executes a template operation, using the supplied
+data structures. See the `@template` directive for more details on creating
+a template name. The struct contains values that can be substituted into the
+template as it is processed. The structure's fields are used as substitution
+names in the template, and the field values is used in it's place in the
+string.
+
+    
+    @template myNameIs `Hello, my name is {{.First}} {{.Last}}`
+
+    person := { First: "Tom", Last: "Smith"}
+    label , err := strings.Template( myNameIs, person )
+
+    if err != nil {
+        fmt.Println(err)
+    } else {
+        fmt.Println(label)
+    }
+
+This program will print the string "Hello, my name is Tom Smith". The template
+substitutions `{{.First}}` and `{{.Last}}` extract the specified field names
+from the structure. Note that, unlike Go templates, you can reference a template
+in another template without taking any special additional actions. So the template
+can use the `{{template "name"}}` syntax, and as long as you have executed an
+@template operation for the _name_ template, then it is automatically included
+in the template before executing the query.
+
+Note that @template creates a symbol with the given template, but that value
+can only be used in the call to strings.Template() to identify the specific
+template to use.
 
 ### strings.ToLower(string)
 The `ToLower()` function converts the characters of a string to the lowercase
@@ -1986,9 +2025,17 @@ given character, the character is not affected in the result.
 
 In this example, the value of `b` will be "BANG+OLAFSEN".
 
-### strings.ToUpper(string)
-
 ### strings.Tokenize(string)
+The `Tokenize()` function uses the built-in tokenizer to break
+a string into its tokens based on the _Ego_ language rules. The
+result is passed back as an array.
+
+    s := "x{} <- f(3, 4)"
+    t := strings.Tokenize(s)
+    
+This results in `t` being a []string array, with contents ["x", "{}", "<-", "f", "(", "3", ",", "4", ")"].
+Note that {} is considered a single token in the language, as is &lt;- so they each occupy a single
+location in the resulting string array.
 
 ### strings.Truncate(string, len)
 The `Truncate()` function will truncate a string that is too long, and add
@@ -2126,12 +2173,53 @@ The table is then printed to the default output and the memory structures are re
 ### time.Sleep(duration)
 
 ## util <a name="util"></a>
+The `util` package contains miscelleneous utility functions that may be convenient
+for developers write writing _Ego_ programs.
 
 ### util.Memory()
+The `Memory()` function generates a report on the current user memory consumption,
+total consumption for the life of the program, system memory on behalf of the _Ego_
+processes, and a count of the number of times the garbage collector that manages
+memory for Ego has been run.
+
+
+    ego> fmt.Println(util.Memory())
+    Memmory stats  2021-02-25 16:43:05.463362 -0500 EST m=+7.977478916
+        Alloc      =    1.420mb
+        TotalAlloc =    1.420mb
+        Sys        =   69.954mb
+        NumGC      =    0
+
+The result of the function is always a string, formatted to be displayed to
+the user.
 
 ### util.Mode()
+The `Mode()` function reports the mode the current program is running under.
+The list of values are:
+
+| Mode | Description |
+| ---- | ----------- |
+| interactive | The `ego` program was run with no program name, acceping console input |
+| server      | The program is running under control of an _Ego_ rest server as a service |
+| test        | The program is running using the `ego test` integration test command |
+| run         | The program is running using `ego run` with an input file or pipe |
+
+&nbsp;
 
 ### util.Symbols()
+The `Symbols()` function generates a report on the current state of the active
+symbol table structure. This prints the symbols defined in each scope (including
+statement blocks, functions, programs, and the root symbol table). For each one,
+the report includes the number of symbol table slots used out of the maximum
+allowed, and then a line for each symbol, showing it's name, type, and
+value.
+
+
+    fmt.Println(util.Symbols())
+
+Note that symbols that are internal to the running of the program are
+not displayed; only symbols created by the user or for defined packages
+are displayed.
 
 ## uuid <a name="uuid"></a>
 The `uuid` package provides support for universal unique identifiers. This is an
