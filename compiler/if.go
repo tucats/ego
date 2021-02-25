@@ -5,9 +5,9 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// If compiles conditional statments. The verb is already
+// compileIf compiles conditional statments. The verb is already
 // removed from the token stream.
-func (c *Compiler) If() *errors.EgoError {
+func (c *Compiler) compileIf() *errors.EgoError {
 	// Compile the conditional expression
 	bc, err := c.Expression()
 	if !errors.Nil(err) {
@@ -23,7 +23,7 @@ func (c *Compiler) If() *errors.EgoError {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the statement to be executed if true
-	err = c.Statement()
+	err = c.compileStatement()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -35,7 +35,7 @@ func (c *Compiler) If() *errors.EgoError {
 		c.b.Emit(bytecode.Branch, 0)
 		_ = c.b.SetAddressHere(b1)
 
-		err = c.Statement()
+		err = c.compileStatement()
 		if !errors.Nil(err) {
 			return err
 		}

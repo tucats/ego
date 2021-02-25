@@ -14,8 +14,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Test compiles the @test directive.
-func (c *Compiler) Test() *errors.EgoError {
+// testDirective compiles the @test directive.
+func (c *Compiler) testDirective() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 
 	testDescription := c.t.Next()

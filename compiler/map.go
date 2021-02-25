@@ -8,30 +8,30 @@ import (
 
 // Map compiles a map type declaration
 
-func (c *Compiler) Map() *errors.EgoError {
+func (c *Compiler) mapDeclaration() *errors.EgoError {
 	if !c.t.IsNext("map") {
-		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
+		return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}
 
 	if !c.t.IsNext("[") {
-		return c.NewError(errors.MissingBracketError)
+		return c.newError(errors.MissingBracketError)
 	}
 
 	// Parse the key type
-	keyType := c.ParseType()
+	keyType := c.parseTypeSpec()
 	if keyType == datatypes.UndefinedType {
-		return c.NewError(errors.InvalidTypeSpecError)
+		return c.newError(errors.InvalidTypeSpecError)
 	}
 
 	// Closing bracket on the key type
 	if !c.t.IsNext("]") {
-		return c.NewError(errors.MissingBracketError)
+		return c.newError(errors.MissingBracketError)
 	}
 
 	// Parse the object type
-	valueType := c.ParseType()
+	valueType := c.parseTypeSpec()
 	if valueType == datatypes.UndefinedType {
-		return c.NewError(errors.InvalidTypeSpecError)
+		return c.newError(errors.InvalidTypeSpecError)
 	}
 
 	// Make a suitable map object and push it on the stack.
@@ -40,7 +40,7 @@ func (c *Compiler) Map() *errors.EgoError {
 	// Eat {}, if not present parse an initializer}
 	if !c.t.IsNext("{}") {
 		if !c.t.IsNext("{") {
-			return c.NewError(errors.MissingBlockError)
+			return c.newError(errors.MissingBlockError)
 		}
 
 		for {
@@ -54,7 +54,7 @@ func (c *Compiler) Map() *errors.EgoError {
 			}
 
 			if !c.t.IsNext(":") {
-				return c.NewError(errors.MissingColonError)
+				return c.newError(errors.MissingColonError)
 			}
 
 			valueBC, err := c.Expression()
@@ -73,31 +73,10 @@ func (c *Compiler) Map() *errors.EgoError {
 			}
 
 			if c.t.Peek(1) != "}" {
-				return c.NewError(errors.MissingEndOfBlockError)
+				return c.newError(errors.MissingEndOfBlockError)
 			}
 		}
 	}
 
 	return nil
-}
-
-func (c *Compiler) ParseType() int {
-	for _, typeDef := range datatypes.TypeDeclarationMap {
-		found := true
-
-		for pos, token := range typeDef.Tokens {
-			eval := c.t.Peek(1 + pos)
-			if eval != token {
-				found = false
-			}
-		}
-
-		if found {
-			c.t.Advance(len(typeDef.Tokens))
-
-			return typeDef.Kind
-		}
-	}
-
-	return datatypes.UndefinedType
 }

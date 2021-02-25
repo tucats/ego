@@ -5,13 +5,13 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func (c *Compiler) Defer() *errors.EgoError {
+func (c *Compiler) compileDefer() *errors.EgoError {
 	start := c.b.Mark()
 	c.b.Emit(bytecode.Branch, 0)
 
 	code := c.b.Mark()
 
-	err := c.Statement()
+	err := c.compileStatement()
 	if errors.Nil(err) {
 		c.b.Emit(bytecode.Return)
 

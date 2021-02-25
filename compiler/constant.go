@@ -7,8 +7,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Constant compiles a constant block.
-func (c *Compiler) Constant() *errors.EgoError {
+// compileConst compiles a constant block.
+func (c *Compiler) compileConst() *errors.EgoError {
 	terminator := ""
 
 	if c.t.IsNext("(") {
@@ -18,13 +18,13 @@ func (c *Compiler) Constant() *errors.EgoError {
 	for terminator == "" || !c.t.IsNext(terminator) {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return c.NewError(errors.InvalidSymbolError)
+			return c.newError(errors.InvalidSymbolError)
 		}
 
-		name = c.Normalize(name)
+		name = c.normalize(name)
 
 		if !c.t.IsNext("=") {
-			return c.NewError(errors.MissingEqualError)
+			return c.newError(errors.MissingEqualError)
 		}
 
 		vx, err := c.Expression()
@@ -37,7 +37,7 @@ func (c *Compiler) Constant() *errors.EgoError {
 
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(util.GetString(i.Operand), c.constants...) {
-				return c.NewError(errors.InvalidConstantError)
+				return c.newError(errors.InvalidConstantError)
 			}
 		}
 

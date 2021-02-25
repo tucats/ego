@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// For compiles the loop statement. This has four syntax types that
+// compileFor compiles the loop statement. This has four syntax types that
 // can be specified.
 // 1. There are three clauses which are separated by ";", followed
 //    by a statement or block that is run as described by the loop
@@ -25,42 +25,11 @@ import (
 //    this form _requires_ that there be at least one break
 //    statement inside the loop, which algorithmically stops
 //    the loop
-func (c *Compiler) For() *errors.EgoError {
+func (c *Compiler) compileFor() *errors.EgoError {
 	c.b.Emit(bytecode.PushScope)
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1) == "{" {
-		// Make a new scope and emit the test expression.
-		c.PushLoop(forLoopType)
-
-		// Remember top of loop. Three is no looping or condition code associated
-		// with the top of the loop.
-		b1 := c.b.Mark()
-
-		// Compile loop body
-		err := c.Statement()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		// Branch back to start of loop
-		c.b.Emit(bytecode.Branch, b1)
-
-		for _, fixAddr := range c.loops.continues {
-			_ = c.b.SetAddress(fixAddr, b1)
-		}
-
-		// Update any break statements. If there are no breaks, this is an illegal loop construct
-		if len(c.loops.breaks) == 0 {
-			return c.NewError(errors.LoopExitError)
-		}
-
-		for _, fixAddr := range c.loops.breaks {
-			_ = c.b.SetAddressHere(fixAddr)
-		}
-
-		c.PopLoop()
-
-		return err
+		return c.simpleFor()
 	}
 
 	// Is this the two-value range thing?
@@ -72,162 +41,242 @@ func (c *Compiler) For() *errors.EgoError {
 		valueName = c.t.Peek(1)
 	}
 
-	indexName = c.Normalize(indexName)
-	valueName = c.Normalize(valueName)
+	indexName = c.normalize(indexName)
+	valueName = c.normalize(valueName)
 
 	// if not an lvalue, assume conditional mode
-	if !c.IsLValue() {
-		bc, err := c.Expression()
-		if !errors.Nil(err) {
-			return c.NewError(errors.MissingForLoopInitializerError)
-		}
-
-		// Make a point of seeing if this is a constant value, which
-		// will require a break statement. We check to see if the test
-		// loads any symbols or calls any functions.
-		ops := bc.Opcodes()
-		isConstant := true
-
-		for _, b := range ops {
-			if b.Operation == bytecode.Load ||
-				b.Operation == bytecode.LoadIndex ||
-				b.Operation == bytecode.Call ||
-				b.Operation == bytecode.LocalCall ||
-				b.Operation == bytecode.Member ||
-				b.Operation == bytecode.ClassMember {
-				isConstant = false
-
-				break
-			}
-		}
-
-		// Make a new scope and emit the test expression.
-		c.PushLoop(conditionalLoopType)
-		// Remember top of loop and generate test
-		b1 := c.b.Mark()
-
-		c.b.Append(bc)
-
-		b2 := c.b.Mark()
-
-		c.b.Emit(bytecode.BranchFalse, 0)
-
-		// Compile loop body
-		opcount := c.b.Mark()
-		stmts := c.statementCount
-
-		err = c.Statement()
-		if !errors.Nil(err) {
-			return err
-		}
-		// If we didn't emit anything other than
-		// the AtLine then this is an invalid loop
-		if c.b.Mark() <= opcount+1 {
-			return c.NewError(errors.LoopBodyError)
-		}
-
-		// Uglier test, but also needs doing. If there was a statement, but
-		// it was a block that did not contain any statments, also empty body.
-		wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
-		if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount-1 {
-			return c.NewError(errors.LoopBodyError)
-		}
-		// Branch back to start of loop
-		c.b.Emit(bytecode.Branch, b1)
-
-		for _, fixAddr := range c.loops.continues {
-			_ = c.b.SetAddress(fixAddr, b1)
-		}
-
-		// Update the loop exit instruction, and any breaks
-		_ = c.b.SetAddressHere(b2)
-
-		if isConstant && len(c.loops.breaks) == 0 {
-			return c.NewError(errors.LoopExitError)
-		}
-
-		for _, fixAddr := range c.loops.breaks {
-			_ = c.b.SetAddressHere(fixAddr)
-		}
-
-		c.b.Emit(bytecode.PopScope)
-		c.PopLoop()
-
-		return nil
+	if !c.isAssignmentTarget() {
+		return c.conditionalFor()
 	}
 
-	indexStore, err := c.LValue()
+	indexStore, err := c.assignmentTarget()
 	if !errors.Nil(err) {
 		return err
 	}
 
 	if !c.t.IsNext(":=") {
-		return c.NewError(errors.MissingLoopAssignmentError)
+		return c.newError(errors.MissingLoopAssignmentError)
 	}
 
 	// Do we compile a range?
 	if c.t.IsNext("range") {
-		c.PushLoop(rangeLoopType)
-
-		// For a range, the index and value targets must be simple names, and cannot
-		// be real lvalues. The actual thing we range is on the stack.
-		bc, err := c.Expression()
-		if !errors.Nil(err) {
-			return c.NewError(err)
-		}
-
-		c.b.Append(bc)
-		c.b.Emit(bytecode.RangeInit, indexName, valueName)
-
-		// Remember top of loop
-		b1 := c.b.Mark()
-
-		// Get new index and value. Destination is as-yet unknown.
-		c.b.Emit(bytecode.RangeNext, 0)
-
-		// Loop body
-		err = c.Statement()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		// Make note of the loop end point where continues fall.
-		b3 := c.b.Mark()
-		// Branch back to start of loop
-		c.b.Emit(bytecode.Branch, b1)
-
-		for _, fixAddr := range c.loops.continues {
-			_ = c.b.SetAddress(fixAddr, b3)
-		}
-
-		_ = c.b.SetAddressHere(b1)
-
-		for _, fixAddr := range c.loops.breaks {
-			_ = c.b.SetAddressHere(fixAddr)
-		}
-
-		c.PopLoop()
-
-		if indexName != "" && indexName != "_" {
-			c.b.Emit(bytecode.SymbolDelete, indexName)
-		}
-
-		if valueName != "" && valueName != "_" {
-			c.b.Emit(bytecode.SymbolDelete, valueName)
-		}
-
-		c.b.Emit(bytecode.PopScope)
-
-		return nil
+		return c.rangeFor(indexName, valueName)
 	}
 
+	return c.iterationFor(indexName, valueName, indexStore)
+}
+
+// loopStackPush creates a new loop context and adds it to the top of the
+// loop stack. This stack retains information about the loop type and
+// the accumulation of breaks and continues that are specfied within
+// this loop body.  A break or continue _only_ applies to the loop scope
+// in which it occurs.
+func (c *Compiler) loopStackPush(loopType int) {
+	loop := Loop{
+		Type:      loopType,
+		breaks:    make([]int, 0),
+		continues: make([]int, 0),
+		Parent:    c.loops,
+	}
+	c.loops = &loop
+}
+
+// loopStackPop discards the top-most loop context on the loop stack.
+func (c *Compiler) loopStackPop() {
+	if c.loops != nil {
+		c.loops = c.loops.Parent
+	} else {
+		ui.Debug(ui.TraceLogger, "=== loop stack empty")
+	}
+}
+
+// Compile a simple for{} loop with no conditional or range. The
+// loop body must contain a break statement or an error is reported.
+func (c *Compiler) simpleFor() *errors.EgoError {
+	// Make a new scope and emit the test expression.
+	c.loopStackPush(forLoopType)
+
+	// Remember top of loop. Three is no looping or condition code associated
+	// with the top of the loop.
+	b1 := c.b.Mark()
+
+	// Compile loop body
+	err := c.compileStatement()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	// Branch back to start of loop
+	c.b.Emit(bytecode.Branch, b1)
+
+	for _, fixAddr := range c.loops.continues {
+		_ = c.b.SetAddress(fixAddr, b1)
+	}
+
+	// Update any break statements. If there are no breaks, this is an illegal loop construct
+	if len(c.loops.breaks) == 0 {
+		return c.newError(errors.LoopExitError)
+	}
+
+	for _, fixAddr := range c.loops.breaks {
+		_ = c.b.SetAddressHere(fixAddr)
+	}
+
+	c.loopStackPop()
+
+	return err
+}
+
+// Compile a conditional for-loop that runs as long as the condition
+// is true.
+func (c *Compiler) conditionalFor() *errors.EgoError {
+	bc, err := c.Expression()
+	if !errors.Nil(err) {
+		return c.newError(errors.MissingForLoopInitializerError)
+	}
+
+	// Make a point of seeing if this is a constant value, which
+	// will require a break statement. We check to see if the test
+	// loads any symbols or calls any functions.
+	ops := bc.Opcodes()
+	isConstant := true
+
+	for _, b := range ops {
+		if b.Operation == bytecode.Load ||
+			b.Operation == bytecode.LoadIndex ||
+			b.Operation == bytecode.Call ||
+			b.Operation == bytecode.LocalCall ||
+			b.Operation == bytecode.Member ||
+			b.Operation == bytecode.ClassMember {
+			isConstant = false
+
+			break
+		}
+	}
+
+	// Make a new scope and emit the test expression.
+	c.loopStackPush(conditionalLoopType)
+	// Remember top of loop and generate test
+	b1 := c.b.Mark()
+
+	c.b.Append(bc)
+
+	b2 := c.b.Mark()
+
+	c.b.Emit(bytecode.BranchFalse, 0)
+
+	// Compile loop body
+	opcount := c.b.Mark()
+	stmts := c.statementCount
+
+	err = c.compileStatement()
+	if !errors.Nil(err) {
+		return err
+	}
+	// If we didn't emit anything other than
+	// the AtLine then this is an invalid loop
+	if c.b.Mark() <= opcount+1 {
+		return c.newError(errors.LoopBodyError)
+	}
+
+	// Uglier test, but also needs doing. If there was a statement, but
+	// it was a block that did not contain any statments, also empty body.
+	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
+	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount-1 {
+		return c.newError(errors.LoopBodyError)
+	}
+	// Branch back to start of loop
+	c.b.Emit(bytecode.Branch, b1)
+
+	for _, fixAddr := range c.loops.continues {
+		_ = c.b.SetAddress(fixAddr, b1)
+	}
+
+	// Update the loop exit instruction, and any breaks
+	_ = c.b.SetAddressHere(b2)
+
+	if isConstant && len(c.loops.breaks) == 0 {
+		return c.newError(errors.LoopExitError)
+	}
+
+	for _, fixAddr := range c.loops.breaks {
+		_ = c.b.SetAddressHere(fixAddr)
+	}
+
+	c.b.Emit(bytecode.PopScope)
+	c.loopStackPop()
+
+	return nil
+}
+
+// Compile a for-loop that is expressed by a range. The index variable name
+// and value variable names are provided. If not specified by the user, they
+// are empty strings.
+func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
+	c.loopStackPush(rangeLoopType)
+
+	// For a range, the index and value targets must be simple names, and cannot
+	// be real lvalues. The actual thing we range is on the stack.
+	bc, err := c.Expression()
+	if !errors.Nil(err) {
+		return c.newError(err)
+	}
+
+	c.b.Append(bc)
+	c.b.Emit(bytecode.RangeInit, indexName, valueName)
+
+	// Remember top of loop
+	b1 := c.b.Mark()
+
+	// Get new index and value. Destination is as-yet unknown.
+	c.b.Emit(bytecode.RangeNext, 0)
+
+	// Loop body
+	err = c.compileStatement()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	// Make note of the loop end point where continues fall.
+	b3 := c.b.Mark()
+	// Branch back to start of loop
+	c.b.Emit(bytecode.Branch, b1)
+
+	for _, fixAddr := range c.loops.continues {
+		_ = c.b.SetAddress(fixAddr, b3)
+	}
+
+	_ = c.b.SetAddressHere(b1)
+
+	for _, fixAddr := range c.loops.breaks {
+		_ = c.b.SetAddressHere(fixAddr)
+	}
+
+	c.loopStackPop()
+
+	if indexName != "" && indexName != "_" {
+		c.b.Emit(bytecode.SymbolDelete, indexName)
+	}
+
+	if valueName != "" && valueName != "_" {
+		c.b.Emit(bytecode.SymbolDelete, valueName)
+	}
+
+	c.b.Emit(bytecode.PopScope)
+
+	return nil
+}
+
+// Compile a for loop using iterations with initializer, conditional, and
+// iterator expressions before the function body.
+func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) *errors.EgoError {
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
 	if indexName == "" && valueName != "" {
-		return c.NewError(errors.InvalidLoopIndexError)
+		return c.newError(errors.InvalidLoopIndexError)
 	}
 
-	c.PushLoop(indexLoopType)
+	c.loopStackPush(indexLoopType)
 
 	// The expression is the initial value of the loop.
 	initializerCode, err := c.Expression()
@@ -239,7 +288,7 @@ func (c *Compiler) For() *errors.EgoError {
 	c.b.Append(indexStore)
 
 	if !c.t.IsNext(";") {
-		return c.NewError(errors.MissingSemicolonError)
+		return c.newError(errors.MissingSemicolonError)
 	}
 
 	// Now get the condition clause that tells us if the loop
@@ -250,19 +299,19 @@ func (c *Compiler) For() *errors.EgoError {
 	}
 
 	if !c.t.IsNext(";") {
-		return c.NewError(errors.MissingSemicolonError)
+		return c.newError(errors.MissingSemicolonError)
 	}
 
 	// Finally, get the clause that updates something
 	// (nominally the index) to eventually trigger the
 	// loop condition.
-	incrementStore, err := c.LValue()
+	incrementStore, err := c.assignmentTarget()
 	if !errors.Nil(err) {
 		return err
 	}
 
 	if !c.t.IsNext("=") {
-		return c.NewError(errors.MissingEqualError)
+		return c.newError(errors.MissingEqualError)
 	}
 
 	incrementCode, err := c.Expression()
@@ -281,7 +330,7 @@ func (c *Compiler) For() *errors.EgoError {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Loop body goes next
-	err = c.Statement()
+	err = c.compileStatement()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -302,18 +351,18 @@ func (c *Compiler) For() *errors.EgoError {
 	}
 
 	c.b.Emit(bytecode.PopScope)
-	c.PopLoop()
+	c.loopStackPop()
 
 	return nil
 }
 
-// Break compiles a break statement. This is a branch, and the
+// compileBreak compiles a break statement. This is a branch, and the
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the breaks list
 // in the compiler context.
-func (c *Compiler) Break() *errors.EgoError {
+func (c *Compiler) compileBreak() *errors.EgoError {
 	if c.loops == nil {
-		return c.NewError(errors.InvalidLoopControlError)
+		return c.newError(errors.InvalidLoopControlError)
 	}
 
 	fixAddr := c.b.Mark()
@@ -324,13 +373,13 @@ func (c *Compiler) Break() *errors.EgoError {
 	return nil
 }
 
-// Continue compiles a continue statement. This is a branch, and the
+// compileContinue compiles a continue statement. This is a branch, and the
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the continues list
 // in the compiler context.
-func (c *Compiler) Continue() *errors.EgoError {
+func (c *Compiler) compileContinue() *errors.EgoError {
 	if c.loops == nil {
-		return c.NewError(errors.InvalidLoopControlError)
+		return c.newError(errors.InvalidLoopControlError)
 	}
 
 	c.loops.continues = append(c.loops.continues, c.b.Mark())
@@ -338,28 +387,4 @@ func (c *Compiler) Continue() *errors.EgoError {
 	c.b.Emit(bytecode.Branch, 0)
 
 	return nil
-}
-
-// PushLoop creates a new loop context and adds it to the top of the
-// loop stack. This stack retains information about the loop type and
-// the accumulation of breaks and continues that are specfied within
-// this loop body.  A break or continue _only_ applies to the loop scope
-// in which it occurs.
-func (c *Compiler) PushLoop(loopType int) {
-	loop := Loop{
-		Type:      loopType,
-		breaks:    make([]int, 0),
-		continues: make([]int, 0),
-		Parent:    c.loops,
-	}
-	c.loops = &loop
-}
-
-// PopLoop discards the top-most loop context on the loop stack.
-func (c *Compiler) PopLoop() {
-	if c.loops != nil {
-		c.loops = c.loops.Parent
-	} else {
-		ui.Debug(ui.TraceLogger, "=== loop stack empty")
-	}
 }

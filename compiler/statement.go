@@ -7,13 +7,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Predefined names used by statement processing.
-const (
-	DirectiveStructureName = "_directives"
-)
-
-// Statement compiles a single statement.
-func (c *Compiler) Statement() *errors.EgoError {
+// compileStatement compiles a single statement.
+func (c *Compiler) compileStatement() *errors.EgoError {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
 	if c.t.IsNext(";") {
@@ -37,7 +32,7 @@ func (c *Compiler) Statement() *errors.EgoError {
 	// symbol table that is used to extend features. These symbols end up in
 	// the runtime context of the running code
 	if c.t.IsNext("@") {
-		return c.Directive()
+		return c.compileDirective()
 	}
 
 	c.statementCount = c.statementCount + 1
@@ -46,7 +41,7 @@ func (c *Compiler) Statement() *errors.EgoError {
 	// so we call a special compile unit that will compile the
 	// function and store it in the bytecode symbol table.
 	if c.t.IsNext("func") {
-		return c.Function(false)
+		return c.compileFunctionDefinition(false)
 	}
 
 	// At this point, we know we're trying to compile a statement,
@@ -54,14 +49,14 @@ func (c *Compiler) Statement() *errors.EgoError {
 	// form runtime error messages as needed.
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 
-	if c.IsFunctionCall() {
-		return c.Call()
+	if c.isFunctionCall() {
+		return c.compileFunctionCall()
 	}
 
 	// If the next item(s) constitute a value LValue, then this is
 	// an assignment statement.
-	if c.IsLValue() {
-		return c.Assignment()
+	if c.isAssignmentTarget() {
+		return c.compileAssignment()
 	}
 
 	// Remaining statement types all have a starting term that defines
@@ -69,81 +64,81 @@ func (c *Compiler) Statement() *errors.EgoError {
 	// handler (which assumes the leading verb has already been consumed)
 	switch c.t.Next() {
 	case "{":
-		return c.Block()
+		return c.compileBlock()
 
 	case "assert":
 		if c.extensionsEnabled {
 			return c.Assert()
 		}
 
-		return c.NewError(errors.UnrecognizedStatementError, c.t.Peek(0))
+		return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
 
 	case "break":
-		return c.Break()
+		return c.compileBreak()
 
 	case "call":
 		if c.extensionsEnabled {
-			return c.Call()
+			return c.compileFunctionCall()
 		}
 
 	case "const":
-		return c.Constant()
+		return c.compileConst()
 
 	case "continue":
-		return c.Continue()
+		return c.compileContinue()
 
 	case "defer":
-		return c.Defer()
+		return c.compileDefer()
 
 	case "exit":
 		if c.exitEnabled {
-			return c.Exit()
+			return c.compileExit()
 		}
 
 	case "for":
-		return c.For()
+		return c.compileFor()
 
 	case "go":
-		return c.Go()
+		return c.compileGo()
 
 	case "if":
-		return c.If()
+		return c.compileIf()
 
 	case "import":
-		return c.Import()
+		return c.compileImport()
 
 	case "package":
-		return c.Package()
+		return c.compilePackage()
 
 	case "print":
 		if c.extensionsEnabled {
-			return c.Print()
+			return c.compilePrint()
 		}
 
 	case "return":
-		return c.Return()
+		return c.compileReturn()
 
 	case "switch":
-		return c.Switch()
+		return c.compileSwitch()
 
 	case "try":
 		if c.extensionsEnabled {
-			return c.Try()
+			return c.compileTry()
 		}
 
 	case "type":
-		return c.Type()
+		return c.compileTypeDefinition()
 
 	case "var":
-		return c.Var()
+		return c.compileVar()
 	}
 
 	// Unknown statement, return an error
-	return c.NewError(errors.UnrecognizedStatementError, c.t.Peek(0))
+	return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
 }
 
-// IsFunctionCall indicates if the token stream points to a function call.
-func (c *Compiler) IsFunctionCall() bool {
+// isFunctionCall indicates if the token stream points to a function call.
+func (c *Compiler) isFunctionCall() bool {
 	// Skip through any referencing tokens to see if we find a function
 	// invocation.
 	pos := 1

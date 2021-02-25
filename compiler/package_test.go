@@ -35,7 +35,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Compiler{}
-			got, err := c.ReadDirectory(tt.args)
+			got, err := c.directoryContents(tt.args)
 			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Compiler.ReadDirectory() error = %v, wantErr %v", err, tt.wantErr)
 

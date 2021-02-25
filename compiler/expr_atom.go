@@ -38,12 +38,12 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 	// Is this the make() function?
 	if t == "make" && c.t.Peek(2) == "(" {
-		return c.Make()
+		return c.makeInvocation()
 	}
 
 	// Is this a map declaration?
 	if t == "map" && c.t.Peek(2) == "[" {
-		return c.Map()
+		return c.mapDeclaration()
 	}
 
 	// Is this the "nil" constant?
@@ -85,12 +85,12 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	if t == "func" && c.t.Peek(2) == "(" {
 		c.t.Advance(1)
 
-		return c.Function(true)
+		return c.compileFunctionDefinition(true)
 	}
 
 	// Is this address-of?
 	if t == "&" && tokenizer.IsSymbol(c.t.Peek(2)) {
-		name := c.Normalize(c.t.Peek(2))
+		name := c.normalize(c.t.Peek(2))
 		c.b.Emit(bytecode.AddressOf, name)
 		c.t.Advance(2)
 
@@ -99,7 +99,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 	// Is this dereference?
 	if t == "*" && tokenizer.IsSymbol(c.t.Peek(2)) {
-		name := c.Normalize(c.t.Peek(2))
+		name := c.normalize(c.t.Peek(2))
 		c.b.Emit(bytecode.DeRef, name)
 		c.t.Advance(2)
 
@@ -116,7 +116,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		}
 
 		if c.t.Next() != ")" {
-			return c.NewError(errors.MissingParenthesisError)
+			return c.newError(errors.MissingParenthesisError)
 		}
 
 		return nil
@@ -184,7 +184,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	if tokenizer.IsSymbol(t) {
 		c.t.Advance(1)
 
-		t = c.Normalize(t)
+		t = c.normalize(t)
 		// Is it a generator for a type?
 		if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
 			c.b.Emit(bytecode.Load, t)
@@ -215,7 +215,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return nil
 	}
 
-	return c.NewError(errors.UnexpectedTokenError, t)
+	return c.newError(errors.UnexpectedTokenError, t)
 }
 
 func (c *Compiler) parseArray() *errors.EgoError {
@@ -228,12 +228,12 @@ func (c *Compiler) parseArray() *errors.EgoError {
 	// already parsed in the expression atom.
 	marker := c.t.Mark()
 
-	kind := c.ParseType()
+	kind := c.parseTypeSpec()
 	if kind != datatypes.UndefinedType {
 		if kind >= datatypes.ArrayType {
 			kind = kind - datatypes.ArrayType
 		} else {
-			return c.NewError(errors.InvalidTypeNameError)
+			return c.newError(errors.InvalidTypeNameError)
 		}
 
 		// It could be a cast operation. If so, remember where we are
@@ -262,7 +262,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext("{") {
-			return c.NewError(errors.MissingBlockError)
+			return c.newError(errors.MissingBlockError)
 		}
 
 		listTerminator = "}"
@@ -315,7 +315,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 					c.b.Emit(bytecode.Array, count)
 
 					if !c.t.IsNext("]") {
-						return c.NewError(errors.InvalidRangeError)
+						return c.newError(errors.InvalidRangeError)
 					}
 
 					return nil
@@ -356,7 +356,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(errors.InvalidListError)
+			return c.newError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -392,15 +392,15 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 			}
 		} else {
 			if !tokenizer.IsSymbol(name) {
-				return c.NewError(errors.InvalidSymbolError, name)
+				return c.newError(errors.InvalidSymbolError, name)
 			}
 		}
 
-		name = c.Normalize(name)
+		name = c.normalize(name)
 
 		// Second element: colon
 		if c.t.Next() != ":" {
-			return c.NewError(errors.MissingColonError)
+			return c.newError(errors.MissingColonError)
 		}
 
 		// Third element: value, which is emitted.
@@ -423,7 +423,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(errors.InvalidListError)
+			return c.newError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -438,7 +438,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	quote := s[0:1]
 	if s[len(s)-1:] != quote {
-		return s[1:], c.NewError(errors.BlockQuoteError, quote)
+		return s[1:], c.newError(errors.BlockQuoteError, quote)
 	}
 
 	return s[1 : len(s)-1], nil

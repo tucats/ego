@@ -14,17 +14,17 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Package compiles a package statement.
-func (c *Compiler) Package() *errors.EgoError {
+// compilePackage compiles a package statement.
+func (c *Compiler) compilePackage() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidPackageName, name)
+		return c.newError(errors.InvalidPackageName, name)
 	}
 
 	name = strings.ToLower(name)
 
 	if (c.PackageName != "") && (c.PackageName != name) {
-		return c.NewError(errors.PackageRedefinitionError)
+		return c.newError(errors.PackageRedefinitionError)
 	}
 
 	c.PackageName = name
@@ -46,14 +46,14 @@ func (c *Compiler) Package() *errors.EgoError {
 	return nil
 }
 
-// Import handles the import statement.
-func (c *Compiler) Import() *errors.EgoError {
+// compileImport handles the import statement.
+func (c *Compiler) compileImport() *errors.EgoError {
 	if c.blockDepth > 0 {
-		return c.NewError(errors.InvalidImportError)
+		return c.newError(errors.InvalidImportError)
 	}
 
 	if c.loops != nil {
-		return c.NewError(errors.InvalidImportError)
+		return c.newError(errors.InvalidImportError)
 	}
 
 	isList := false
@@ -83,7 +83,7 @@ func (c *Compiler) Import() *errors.EgoError {
 		}
 
 		if c.loops != nil {
-			return c.NewError(errors.InvalidImportError)
+			return c.newError(errors.InvalidImportError)
 		}
 
 		// Get the package name from the given string. If this is
@@ -122,7 +122,7 @@ func (c *Compiler) Import() *errors.EgoError {
 		savedSourceFile := c.SourceFile
 
 		// Read the imported object as a file path
-		text, err := c.ReadFile(fileName)
+		text, err := c.fileContents(fileName)
 		if !errors.Nil(err) {
 			// If it wasn't found but we did add some builtins, good enough.
 			// Skip past the filename that was rejected by c.Readfile()...
@@ -147,7 +147,7 @@ func (c *Compiler) Import() *errors.EgoError {
 		c.PackageName = packageName
 
 		for !c.t.AtEnd() {
-			err := c.Statement()
+			err := c.compileStatement()
 			if !errors.Nil(err) {
 				return err
 			}
@@ -155,7 +155,7 @@ func (c *Compiler) Import() *errors.EgoError {
 
 		// If after the import we ended with mismatched block markers, complain
 		if c.blockDepth != savedBlockDepth {
-			return c.NewError(errors.MissingEndOfBlockError, packageName)
+			return c.newError(errors.MissingEndOfBlockError, packageName)
 		}
 
 		// Reset the compiler back to the token stream we were working on
@@ -176,9 +176,9 @@ func (c *Compiler) Import() *errors.EgoError {
 	return nil
 }
 
-// ReadFile reads the text from a file into a string.
-func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
-	s, err := c.ReadDirectory(name)
+// fileContents reads the text from a file into a string.
+func (c *Compiler) fileContents(name string) (string, *errors.EgoError) {
+	s, err := c.directoryContents(name)
 	if errors.Nil(err) {
 		return s, nil
 	}
@@ -199,7 +199,7 @@ func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 			if e2 != nil {
 				c.t.Advance(-1)
 
-				return "", c.NewError(e2)
+				return "", c.newError(e2)
 			}
 		} else {
 			fn = name + ".ego"
@@ -214,8 +214,8 @@ func (c *Compiler) ReadFile(name string) (string, *errors.EgoError) {
 	return string(content), nil
 }
 
-// ReadDirectory reads all the files in a directory into a single string.
-func (c *Compiler) ReadDirectory(name string) (string, *errors.EgoError) {
+// directoryContents reads all the files in a directory into a single string.
+func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 	var b strings.Builder
 
 	r := os.Getenv("EGO_PATH")
@@ -257,7 +257,7 @@ func (c *Compiler) ReadDirectory(name string) (string, *errors.EgoError) {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
 			fname := filepath.Join(dirname, f.Name())
 
-			t, err := c.ReadFile(fname)
+			t, err := c.fileContents(fname)
 			if !errors.Nil(err) {
 				return "", err
 			}

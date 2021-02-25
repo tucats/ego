@@ -5,9 +5,9 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Block compiles a statement block. The leading { has already
+// compileBlock compiles a statement block. The leading { has already
 // been parsed.
-func (c *Compiler) Block() *errors.EgoError {
+func (c *Compiler) compileBlock() *errors.EgoError {
 	parsing := true
 	c.blockDepth = c.blockDepth + 1
 
@@ -18,7 +18,7 @@ func (c *Compiler) Block() *errors.EgoError {
 			break
 		}
 
-		err := c.Statement()
+		err := c.compileStatement()
 		if !errors.Nil(err) {
 			return err
 		}
@@ -27,7 +27,7 @@ func (c *Compiler) Block() *errors.EgoError {
 		_ = c.t.IsNext(";")
 
 		if c.t.AtEnd() {
-			return c.NewError(errors.MissingEndOfBlockError)
+			return c.newError(errors.MissingEndOfBlockError)
 		}
 	}
 

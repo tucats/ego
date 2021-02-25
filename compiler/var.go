@@ -7,8 +7,8 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Var compiles the var statement.
-func (c *Compiler) Var() *errors.EgoError {
+// compileVar compiles the var statement.
+func (c *Compiler) compileVar() *errors.EgoError {
 	names := []string{}
 
 	for {
@@ -16,7 +16,7 @@ func (c *Compiler) Var() *errors.EgoError {
 		if !tokenizer.IsSymbol(name) {
 			c.t.Advance(-1)
 
-			return c.NewError(errors.InvalidSymbolError, name)
+			return c.newError(errors.InvalidSymbolError, name)
 		}
 
 		// See if it's a reserved word.
@@ -27,10 +27,10 @@ func (c *Compiler) Var() *errors.EgoError {
 				break
 			}
 
-			return c.NewError(errors.InvalidSymbolError, name)
+			return c.newError(errors.InvalidSymbolError, name)
 		}
 
-		name = c.Normalize(name)
+		name = c.normalize(name)
 		names = append(names, name)
 
 		if !c.t.IsNext(",") {
@@ -79,7 +79,7 @@ func (c *Compiler) Var() *errors.EgoError {
 		}
 
 		// Not a symbol name, so fail
-		return c.NewError(errors.InvalidTypeSpecError)
+		return c.newError(errors.InvalidTypeSpecError)
 	}
 
 	// We got a built-in type, so emit the model and store it

@@ -60,10 +60,10 @@ func (c *Compiler) reference() *errors.EgoError {
 
 			lastName = c.t.Next()
 			if !tokenizer.IsSymbol(lastName) {
-				return c.NewError(errors.InvalidIdentifierError)
+				return c.newError(errors.InvalidIdentifierError)
 			}
 
-			lastName = c.Normalize(lastName)
+			lastName = c.normalize(lastName)
 
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
@@ -92,12 +92,12 @@ func (c *Compiler) reference() *errors.EgoError {
 				c.b.Emit(bc.LoadSlice)
 
 				if c.t.Next() != "]" {
-					return c.NewError(errors.MissingBracketError)
+					return c.newError(errors.MissingBracketError)
 				}
 			} else {
 				// Nope, singular index
 				if c.t.Next() != "]" {
-					return c.NewError(errors.MissingBracketError)
+					return c.newError(errors.MissingBracketError)
 				}
 
 				c.b.Emit(bc.LoadIndex)

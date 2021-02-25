@@ -2,16 +2,17 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 )
 
-// Switch compiles a switch statement.
-func (c *Compiler) Switch() *errors.EgoError {
+// compileSwitch compiles a switch statement.
+func (c *Compiler) compileSwitch() *errors.EgoError {
 	var defaultBlock *bytecode.ByteCode
 
 	next := 0
 	fixups := make([]int, 0)
-	t := MakeSymbol()
+	t := datatypes.GenerateName()
 
 	// Parse the expression to test
 	tx, err := c.Expression()
@@ -24,7 +25,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 	c.b.Emit(bytecode.Store, t)
 
 	if !c.t.IsNext("{") {
-		return c.NewError(errors.MissingBlockError)
+		return c.newError(errors.MissingBlockError)
 	}
 
 	for !c.t.IsNext("}") {
@@ -35,14 +36,14 @@ func (c *Compiler) Switch() *errors.EgoError {
 		// Could be a default statement:
 		if c.t.IsNext("default") {
 			if !c.t.IsNext(":") {
-				return c.NewError(errors.MissingColonError)
+				return c.newError(errors.MissingColonError)
 			}
 
 			savedBC := c.b
 			c.b = bytecode.New("default switch")
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "}" {
-				err := c.Statement()
+				err := c.compileStatement()
 				if !errors.Nil(err) {
 					return err
 				}
@@ -53,7 +54,7 @@ func (c *Compiler) Switch() *errors.EgoError {
 		} else {
 			// Must be a "case" statement:
 			if !c.t.IsNext("case") {
-				return c.NewError(errors.MissingCaseError)
+				return c.newError(errors.MissingCaseError)
 			}
 
 			cx, err := c.Expression()
@@ -70,11 +71,11 @@ func (c *Compiler) Switch() *errors.EgoError {
 			c.b.Emit(bytecode.BranchFalse, 0)
 
 			if !c.t.IsNext(":") {
-				return c.NewError(errors.MissingColonError)
+				return c.newError(errors.MissingColonError)
 			}
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "default" && c.t.Peek(1) != "}" {
-				err := c.Statement()
+				err := c.compileStatement()
 				if !errors.Nil(err) {
 					return err
 				}

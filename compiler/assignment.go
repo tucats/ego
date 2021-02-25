@@ -4,15 +4,15 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Assignment compiles an assignment statement.
-func (c *Compiler) Assignment() *errors.EgoError {
-	storeLValue, err := c.LValue()
+// compileAssignment compiles an assignment statement.
+func (c *Compiler) compileAssignment() *errors.EgoError {
+	storeLValue, err := c.assignmentTarget()
 	if !errors.Nil(err) {
 		return err
 	}
 
 	if !c.t.AnyNext(":=", "=", "<-") {
-		return c.NewError(errors.MissingAssignmentError)
+		return c.newError(errors.MissingAssignmentError)
 	}
 
 	// If this is a construct like   x := <-ch   skip over the :=

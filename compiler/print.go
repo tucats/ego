@@ -5,14 +5,14 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Print compiles a print statement. The verb is already removed
+// compilePrint compiles a print statement. The verb is already removed
 // from the token stream.
-func (c *Compiler) Print() *errors.EgoError {
+func (c *Compiler) compilePrint() *errors.EgoError {
 	newline := true
 
-	for !c.StatementEnd() {
+	for !c.isStatementEnd() {
 		if c.t.IsNext(",") {
-			return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
+			return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
 		}
 
 		bc, err := c.Expression()

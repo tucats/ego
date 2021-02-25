@@ -5,8 +5,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// NewError generates a new compiler error.
-func (c *Compiler) NewError(err error, args ...interface{}) *errors.EgoError {
+// newError generates a new compiler error.
+func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoError {
 	p := c.t.TokenP
 	if p < 0 {
 		p = 0

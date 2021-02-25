@@ -74,7 +74,7 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.NewError(errors.MissingTermError)
+				return c.newError(errors.MissingTermError)
 			}
 
 			err := c.multDivide()
@@ -125,7 +125,7 @@ func (c *Compiler) multDivide() *errors.EgoError {
 
 		if c.t.AnyNext("^", "*", "/", "|") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.NewError(errors.MissingTermError)
+				return c.newError(errors.MissingTermError)
 			}
 
 			err := c.unary()

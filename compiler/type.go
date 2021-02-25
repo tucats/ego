@@ -10,14 +10,15 @@ import (
 
 type modelIsType struct{}
 
-// Type compiles a type statement.
-func (c *Compiler) Type() *errors.EgoError {
+// compileTypeDefinition compiles a type statement which creates
+// a user-defined type specification.
+func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidSymbolError)
+		return c.newError(errors.InvalidSymbolError)
 	}
 
-	name = c.Normalize(name)
+	name = c.normalize(name)
 	parent := name
 
 	if c.PackageName != "" {
@@ -30,7 +31,7 @@ func (c *Compiler) Type() *errors.EgoError {
 	}
 
 	if c.t.Peek(1) != "{" {
-		return c.NewError(errors.MissingBlockError)
+		return c.newError(errors.MissingBlockError)
 	}
 
 	// If there is no parent, seal the chain by making the link point to a string of our own name.
@@ -78,6 +79,7 @@ func (c *Compiler) Type() *errors.EgoError {
 	return nil
 }
 
+// Compile a specific type definition.
 func (c *Compiler) compileType() *errors.EgoError {
 	// Skip over the optional struct type keyword
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
@@ -86,7 +88,7 @@ func (c *Compiler) compileType() *errors.EgoError {
 
 	// Must start with {
 	if !c.t.IsNext("{") {
-		return c.NewError(errors.MissingBlockError)
+		return c.newError(errors.MissingBlockError)
 	}
 
 	count := 0
@@ -94,10 +96,10 @@ func (c *Compiler) compileType() *errors.EgoError {
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return c.NewError(errors.InvalidSymbolError, name)
+			return c.newError(errors.InvalidSymbolError, name)
 		}
 
-		name = c.Normalize(name)
+		name = c.normalize(name)
 		count = count + 1
 
 		// Skip over the optional struct type keyword
@@ -133,11 +135,12 @@ func (c *Compiler) compileType() *errors.EgoError {
 		}
 
 		if c.t.AtEnd() {
-			return c.NewError(errors.MissingEndOfBlockError)
+			return c.newError(errors.MissingEndOfBlockError)
 		}
 	}
 }
 
+// Parses a token stream for a generic type declaration.
 func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		return nil, c.compileType()
@@ -162,9 +165,9 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	}
 
 	// Not a known type, let's see if it's a user type initialzer.
-	t := c.Normalize(c.t.Next())
+	t := c.normalize(c.t.Next())
 	if !tokenizer.IsSymbol(t) {
-		return nil, c.NewError(errors.InvalidTypeNameError, t)
+		return nil, c.newError(errors.InvalidTypeNameError, t)
 	}
 
 	// Is it a generator for a type?
@@ -198,4 +201,25 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	c.b.Emit(bytecode.Call, 1)
 
 	return modelIsType{}, nil
+}
+
+func (c *Compiler) parseTypeSpec() int {
+	for _, typeDef := range datatypes.TypeDeclarationMap {
+		found := true
+
+		for pos, token := range typeDef.Tokens {
+			eval := c.t.Peek(1 + pos)
+			if eval != token {
+				found = false
+			}
+		}
+
+		if found {
+			c.t.Advance(len(typeDef.Tokens))
+
+			return typeDef.Kind
+		}
+	}
+
+	return datatypes.UndefinedType
 }

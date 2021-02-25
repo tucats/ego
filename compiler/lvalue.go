@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// IsLValue peeks ahead to see if this is likely to be an lValue
+// isAssignmentTarget peeks ahead to see if this is likely to be an lValue
 // object. This is used in cases where the parser might be in an
 // otherwise ambiguous state.
-func (c *Compiler) IsLValue() bool {
+func (c *Compiler) isAssignmentTarget() bool {
 	// Remember were we are, and set it back when done.
 	mark := c.t.Mark()
 	defer c.t.Set(mark)
@@ -53,9 +53,7 @@ func (c *Compiler) IsLValue() bool {
 
 // Check to see if this is a list of lvalues, which can occur
 // in a multi-part assignment.
-//
-// TODO support pointer stores.
-func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
+func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	bc := bytecode.New("lvalue list")
 	count := 0
 
@@ -65,16 +63,16 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	bc.Emit(bytecode.StackCheck, 1)
 
 	if c.t.Peek(1) == "*" {
-		return nil, c.NewError(errors.InvalidSymbolError, "*")
+		return nil, c.newError(errors.InvalidSymbolError, "*")
 	}
 
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return nil, c.NewError(errors.InvalidSymbolError, name)
+			return nil, c.newError(errors.InvalidSymbolError, name)
 		}
 
-		name = c.Normalize(name)
+		name = c.normalize(name)
 		needLoad := true
 
 		// Until we get to the end of the lvalue...
@@ -114,7 +112,7 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	if isLvalueList {
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == "<-" {
-			return nil, c.NewError(errors.InvalidChannelList)
+			return nil, c.newError(errors.InvalidChannelList)
 		}
 
 		// Patch up the stack size check. We can use the SetAddress
@@ -131,14 +129,14 @@ func lvalueList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 
 	c.t.TokenP = savedPosition
 
-	return nil, c.NewError(errors.NotAnLValueListError)
+	return nil, c.newError(errors.NotAnLValueListError)
 }
 
-// LValue compiles the information on the left side of
+// assignmentTarget compiles the information on the left side of
 // an assignment. This information is used later to store the
 // data in the named object.
-func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
-	if bc, err := lvalueList(c); errors.Nil(err) {
+func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
+	if bc, err := assignmentTargetList(c); errors.Nil(err) {
 		return bc, nil
 	}
 
@@ -152,10 +150,10 @@ func (c *Compiler) LValue() (*bytecode.ByteCode, *errors.EgoError) {
 	}
 
 	if !tokenizer.IsSymbol(name) {
-		return nil, c.NewError(errors.InvalidSymbolError, name)
+		return nil, c.newError(errors.InvalidSymbolError, name)
 	}
 
-	name = c.Normalize(name)
+	name = c.normalize(name)
 	needLoad := true
 
 	// Until we get to the end of the lvalue...
@@ -231,7 +229,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 		bc.Append(ix)
 
 		if !c.t.IsNext("]") {
-			return c.NewError(errors.MissingBracketError)
+			return c.newError(errors.MissingBracketError)
 		}
 
 		bc.Emit(bytecode.LoadIndex)
@@ -244,12 +242,12 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 
 		member := c.t.Next()
 		if !tokenizer.IsSymbol(member) {
-			return c.NewError(errors.InvalidSymbolError, member)
+			return c.newError(errors.InvalidSymbolError, member)
 		}
 
 		// Must do this as a push/loadindex in case the struct is
 		// actuall a typed struct.
-		bc.Emit(bytecode.Push, c.Normalize(member))
+		bc.Emit(bytecode.Push, c.normalize(member))
 		bc.Emit(bytecode.LoadIndex)
 
 		return nil

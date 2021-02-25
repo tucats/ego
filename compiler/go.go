@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) Go() *errors.EgoError {
+func (c *Compiler) compileGo() *errors.EgoError {
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
-		return c.NewError(errors.InvalidSymbolError, fName)
+		return c.newError(errors.InvalidSymbolError, fName)
 	}
 
 	// Is it a function constant?
@@ -18,7 +18,7 @@ func (c *Compiler) Go() *errors.EgoError {
 		fName = datatypes.GenerateName()
 
 		// Compile a function literal onto the stack.
-		err := c.Function(true)
+		err := c.compileFunctionDefinition(true)
 		if err != nil {
 			return err
 		}
@@ -29,7 +29,7 @@ func (c *Compiler) Go() *errors.EgoError {
 	c.b.Emit(bc.Push, fName)
 
 	if !c.t.IsNext("(") {
-		return c.NewError(errors.MissingParenthesisError)
+		return c.newError(errors.MissingParenthesisError)
 	}
 
 	argc := 0
@@ -58,7 +58,7 @@ func (c *Compiler) Go() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(errors.InvalidListError)
+			return c.newError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -66,7 +66,7 @@ func (c *Compiler) Go() *errors.EgoError {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
-		return c.NewError(errors.MissingParenthesisError)
+		return c.newError(errors.MissingParenthesisError)
 	}
 
 	c.t.Advance(1)

@@ -33,7 +33,7 @@ func (c *Compiler) functionCall() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.NewError(errors.InvalidListError)
+			return c.newError(errors.InvalidListError)
 		}
 
 		c.t.Advance(1)
@@ -41,7 +41,7 @@ func (c *Compiler) functionCall() *errors.EgoError {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
-		return c.NewError(errors.MissingParenthesisError)
+		return c.newError(errors.MissingParenthesisError)
 	}
 
 	c.t.Advance(1)

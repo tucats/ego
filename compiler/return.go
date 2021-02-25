@@ -7,8 +7,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Return handles the return statement compilation.
-func (c *Compiler) Return() *errors.EgoError {
+// compileReturn handles the return statement compilation.
+func (c *Compiler) compileReturn() *errors.EgoError {
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined.
 	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
@@ -19,14 +19,14 @@ func (c *Compiler) Return() *errors.EgoError {
 	hasReturnValue := false
 	returnCount := 0
 
-	for !c.StatementEnd() {
+	for !c.isStatementEnd() {
 		bc, err := c.Expression()
 		if !errors.Nil(err) {
 			return err
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.NewError(errors.TooManyReturnValues)
+			return c.newError(errors.TooManyReturnValues)
 		}
 
 		bc.Append(c.coercions[returnCount])
@@ -43,7 +43,7 @@ func (c *Compiler) Return() *errors.EgoError {
 	}
 
 	if returnCount < len(c.coercions) {
-		return c.NewError(errors.MissingReturnValues)
+		return c.newError(errors.MissingReturnValues)
 	}
 
 	// If there was a return value, the return values must be
@@ -65,29 +65,6 @@ func (c *Compiler) Return() *errors.EgoError {
 
 	// Stop execution of this stream
 	c.b.Emit(bytecode.Return, hasReturnValue)
-
-	return nil
-}
-
-// Exit handles the exit statement compilation.
-func (c *Compiler) Exit() *errors.EgoError {
-	c.b.Emit(bytecode.Load, "util")
-	c.b.Emit(bytecode.Member, "Exit")
-
-	argCount := 0
-
-	if !c.StatementEnd() {
-		bc, err := c.Expression()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		c.b.Append(bc)
-
-		argCount = 1
-	}
-
-	c.b.Emit(bytecode.Call, argCount)
 
 	return nil
 }

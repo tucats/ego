@@ -15,10 +15,10 @@ type parameter struct {
 	kind int
 }
 
-// Function compiles a function definition. The literal flag indicates if
+// compileFunctionDefinition compiles a function definition. The literal flag indicates if
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
-func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
+func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	var err *errors.EgoError
 
 	coercions := []*bytecode.ByteCode{}
@@ -42,7 +42,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	}
 
 	if c.t.AtEnd() {
-		return c.NewError(errors.MissingFunctionBodyError)
+		return c.newError(errors.MissingFunctionBodyError)
 	}
 	// Create a new bytecode object which will hold the function
 	// generated code.
@@ -133,7 +133,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 
 		// If we got here, but never had a () around this list, it's an error
 		if !hasReturnList {
-			return c.NewError(errors.InvalidReturnTypeList)
+			return c.newError(errors.InvalidReturnTypeList)
 		}
 
 		c.t.Advance(1)
@@ -141,7 +141,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 
 	// If the return types were expressed as a list, there must be a trailing paren.
 	if hasReturnList && !c.t.IsNext(")") {
-		return c.NewError(errors.MissingParenthesisError)
+		return c.newError(errors.MissingParenthesisError)
 	}
 
 	// Now compile a statement or block into the function body. We'll use the
@@ -153,7 +153,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 	cx.b = b
 	cx.coercions = coercions
 
-	err = cx.Statement()
+	err = cx.compileStatement()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -197,7 +197,7 @@ func (c *Compiler) Function(isLiteral bool) *errors.EgoError {
 			c.b.Emit(bytecode.StoreAlways, functionName)
 			//_ = c.s.SetAlways(functionName, b)
 		} else {
-			_ = c.AddPackageFunction(c.PackageName, functionName, b)
+			_ = c.addPackageFunction(c.PackageName, functionName, b)
 		}
 	}
 
@@ -227,16 +227,16 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 		// Validatee that the name of the receiver variable and
 		// the receiver type name are both valid.
 		if !tokenizer.IsSymbol(thisName) {
-			err = c.NewError(errors.InvalidSymbolError, thisName)
+			err = c.newError(errors.InvalidSymbolError, thisName)
 		}
 
 		if !errors.Nil(err) && !tokenizer.IsSymbol(typeName) {
-			err = c.NewError(errors.InvalidSymbolError, typeName)
+			err = c.newError(errors.InvalidSymbolError, typeName)
 		}
 
 		// Must end with a closing paren for the receiver declaration.
 		if !errors.Nil(err) || !c.t.IsNext(")") {
-			err = c.NewError(errors.MissingParenthesisError)
+			err = c.newError(errors.MissingParenthesisError)
 		}
 
 		// Last, but not least, the function name follows the optional
@@ -249,9 +249,9 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 	// Make sure the function name is valid; bail out if not. Otherwise,
 	// normalize it and we're done.
 	if !tokenizer.IsSymbol(functionName) {
-		err = c.NewError(errors.InvalidFunctionName, functionName)
+		err = c.newError(errors.InvalidFunctionName, functionName)
 	} else {
-		functionName = c.Normalize(functionName)
+		functionName = c.normalize(functionName)
 	}
 
 	return
@@ -268,7 +268,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	if c.t.IsNext("(") {
 		for !c.t.IsNext(")") {
 			if c.t.AtEnd() {
-				return parameters, hasVarArgs, c.NewError(errors.MissingParenthesisError)
+				return parameters, hasVarArgs, c.newError(errors.MissingParenthesisError)
 			}
 
 			p := parameter{kind: datatypes.UndefinedType}
@@ -277,7 +277,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			if tokenizer.IsSymbol(name) {
 				p.name = name
 			} else {
-				return nil, false, c.NewError(errors.InvalidFunctionArgument)
+				return nil, false, c.newError(errors.InvalidFunctionArgument)
 			}
 
 			if c.t.IsNext("...") {
@@ -301,7 +301,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			_ = c.t.IsNext(",")
 		}
 	} else {
-		return parameters, hasVarArgs, c.NewError(errors.MissingParameterList)
+		return parameters, hasVarArgs, c.newError(errors.MissingParameterList)
 	}
 
 	return parameters, hasVarArgs, nil

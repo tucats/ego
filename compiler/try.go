@@ -6,16 +6,16 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Try compiles the try statement which allows the program to catch error
+// compileTry compiles the try statement which allows the program to catch error
 // conditions instead of stopping execution on an error.
-func (c *Compiler) Try() *errors.EgoError {
+func (c *Compiler) compileTry() *errors.EgoError {
 	// Generate start of a try block.
 	b1 := c.b.Mark()
 
 	c.b.Emit(bytecode.Try, 0)
 
 	// Statement to try
-	err := c.Statement()
+	err := c.compileStatement()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -26,7 +26,7 @@ func (c *Compiler) Try() *errors.EgoError {
 	_ = c.b.SetAddressHere(b1)
 
 	if !c.t.IsNext("catch") {
-		return c.NewError(errors.MissingCatchError)
+		return c.newError(errors.MissingCatchError)
 	}
 
 	// Is there a named variable that will hold the error?
@@ -34,11 +34,11 @@ func (c *Compiler) Try() *errors.EgoError {
 	if c.t.IsNext("(") {
 		errName := c.t.Next()
 		if !tokenizer.IsSymbol(errName) {
-			return c.NewError(errors.InvalidSymbolError)
+			return c.newError(errors.InvalidSymbolError)
 		}
 
 		if !c.t.IsNext(")") {
-			return c.NewError(errors.MissingParenthesisError)
+			return c.newError(errors.MissingParenthesisError)
 		}
 
 		c.b.Emit(bytecode.SymbolCreate, errName)
@@ -46,7 +46,7 @@ func (c *Compiler) Try() *errors.EgoError {
 		c.b.Emit(bytecode.StoreAlways, errName)
 	}
 
-	err = c.Statement()
+	err = c.compileStatement()
 	if !errors.Nil(err) {
 		return err
 	}

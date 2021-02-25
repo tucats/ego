@@ -130,7 +130,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 	c.t.Reset()
 
 	for !c.t.AtEnd() {
-		err := c.Statement()
+		err := c.compileStatement()
 		if !errors.Nil(err) {
 			return nil, err
 		}
@@ -158,10 +158,10 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 
 		if f.Pkg == pkgname {
 			if f.F != nil {
-				_ = c.AddPackageFunction(pkgname, name, f.F)
+				_ = c.addPackageFunction(pkgname, name, f.F)
 				added = true
 			} else {
-				_ = c.AddPackageValue(pkgname, name, f.V)
+				_ = c.addPackageValue(pkgname, name, f.V)
 			}
 		}
 	}
@@ -174,9 +174,9 @@ func (c *Compiler) Get(name string) (interface{}, bool) {
 	return c.s.Get(name)
 }
 
-// Normalize performs case-normalization based on the current
+// normalize performs case-normalization based on the current
 // compiler settings.
-func (c *Compiler) Normalize(name string) string {
+func (c *Compiler) normalize(name string) string {
 	if c.LowercaseIdentifiers {
 		return strings.ToLower(name)
 	}
@@ -184,10 +184,10 @@ func (c *Compiler) Normalize(name string) string {
 	return name
 }
 
-// AddPackageFunction adds a new package function to the compiler's package dictionary. If the
+// addPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
-func (c *Compiler) AddPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
+func (c *Compiler) addPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -198,7 +198,7 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 	}
 
 	if _, found := fd[name]; found {
-		return c.NewError(errors.FunctionAlreadyExistsError)
+		return c.newError(errors.FunctionAlreadyExistsError)
 	}
 
 	fd[name] = function
@@ -210,7 +210,7 @@ func (c *Compiler) AddPackageFunction(pkgname string, name string, function inte
 // AddPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
-func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
+func (c *Compiler) addPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
 		fd = FunctionDictionary{}
@@ -219,7 +219,7 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 	}
 
 	if _, found := fd[name]; found {
-		return c.NewError(errors.FunctionAlreadyExistsError)
+		return c.newError(errors.FunctionAlreadyExistsError)
 	}
 
 	fd[name] = value
@@ -228,7 +228,8 @@ func (c *Compiler) AddPackageValue(pkgname string, name string, value interface{
 	return nil
 }
 
-// AddPackageToSymbols adds all the defined packages for this compilation to the named symbol table.
+// AddPackageToSymbols adds all the defined packages for this compilation
+// to the given symbol table.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 	for pkgname, dict := range c.packages {
 		m := map[string]interface{}{}
@@ -253,9 +254,9 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 	}
 }
 
-// StatementEnd returns true when the next token is
+// isStatementEnd returns true when the next token is
 // the end-of-statement boundary.
-func (c *Compiler) StatementEnd() bool {
+func (c *Compiler) isStatementEnd() bool {
 	next := c.t.Peek(1)
 
 	return util.InList(next, tokenizer.EndOfTokens, ";", "}")

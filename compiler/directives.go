@@ -10,13 +10,13 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Directive processes a compiler directive. These become symbols generated
+// compileDirective processes a compiler directive. These become symbols generated
 // at compile time that are copied to the compiler's symbol table for processing
 // elsewhere.
-func (c *Compiler) Directive() *errors.EgoError {
+func (c *Compiler) compileDirective() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidDirectiveError, name)
+		return c.newError(errors.InvalidDirectiveError, name)
 	}
 
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
@@ -53,13 +53,13 @@ func (c *Compiler) Directive() *errors.EgoError {
 		return c.Template()
 
 	case "test":
-		return c.Test()
+		return c.testDirective()
 
 	case "type":
 		return c.TypeChecking()
 
 	default:
-		return c.NewError(errors.InvalidDirectiveError, name)
+		return c.newError(errors.InvalidDirectiveError, name)
 	}
 }
 
@@ -67,15 +67,15 @@ func (c *Compiler) Directive() *errors.EgoError {
 // value in the root symbol table, global to all execution.
 func (c *Compiler) Global() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.NewError(errors.InvalidSymbolError)
+		return c.newError(errors.InvalidSymbolError)
 	}
 
 	name := c.t.Next()
 	if strings.HasPrefix(name, "_") || !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidSymbolError, name)
+		return c.newError(errors.InvalidSymbolError, name)
 	}
 
-	name = c.Normalize(name)
+	name = c.normalize(name)
 
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, "")
@@ -96,12 +96,12 @@ func (c *Compiler) Global() *errors.EgoError {
 // Log parses the @log directive.
 func (c *Compiler) Log() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.NewError(errors.InvalidSymbolError)
+		return c.newError(errors.InvalidSymbolError)
 	}
 
 	name := strings.ToUpper(c.t.Next())
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidSymbolError, name)
+		return c.newError(errors.InvalidSymbolError, name)
 	}
 
 	if c.t.AtEnd() {
@@ -124,7 +124,7 @@ func (c *Compiler) Log() *errors.EgoError {
 // value in the root symbol table with the REST calls tatus value.
 func (c *Compiler) RestStatus() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.NewError(errors.InvalidSymbolError)
+		return c.newError(errors.InvalidSymbolError)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -158,7 +158,7 @@ func (c *Compiler) Authenticated() *errors.EgoError {
 	}
 
 	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
-		return c.NewError(errors.InvalidAuthenticationType, token)
+		return c.newError(errors.InvalidAuthenticationType, token)
 	}
 
 	c.b.Emit(bytecode.Auth, token)
@@ -169,7 +169,7 @@ func (c *Compiler) Authenticated() *errors.EgoError {
 // RestResponse processes the @response directive.
 func (c *Compiler) RestResponse() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.NewError(errors.InvalidSymbolError)
+		return c.newError(errors.InvalidSymbolError)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -190,10 +190,10 @@ func (c *Compiler) Template() *errors.EgoError {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.NewError(errors.InvalidSymbolError, name)
+		return c.newError(errors.InvalidSymbolError, name)
 	}
 
-	name = c.Normalize(name)
+	name = c.normalize(name)
 
 	// Get the template string definition
 	bc, err := c.Expression()
@@ -233,7 +233,7 @@ func (c *Compiler) TypeChecking() *errors.EgoError {
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
-		err = c.NewError(errors.InvalidTypeCheckError, t)
+		err = c.newError(errors.InvalidTypeCheckError, t)
 	}
 
 	c.b.Emit(bytecode.StaticTyping)

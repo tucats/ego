@@ -6,13 +6,13 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func (c *Compiler) Make() *errors.EgoError {
+func (c *Compiler) makeInvocation() *errors.EgoError {
 	if !c.t.IsNext("make") {
-		return c.NewError(errors.UnexpectedTokenError, c.t.Peek(1))
+		return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
 	}
 
 	if !c.t.IsNext("(") {
-		return c.NewError(errors.MissingParenthesisError)
+		return c.newError(errors.MissingParenthesisError)
 	}
 
 	c.b.Emit(bytecode.Load, "make")
@@ -40,12 +40,12 @@ func (c *Compiler) Make() *errors.EgoError {
 		}
 
 		if !found {
-			return c.NewError(errors.InvalidTypeSpecError)
+			return c.newError(errors.InvalidTypeSpecError)
 		}
 	}
 
 	if !c.t.IsNext(",") {
-		return c.NewError(errors.InvalidListError)
+		return c.newError(errors.InvalidListError)
 	}
 
 	bc, err := c.Expression()
@@ -54,7 +54,7 @@ func (c *Compiler) Make() *errors.EgoError {
 	c.b.Emit(bytecode.Call, 2)
 
 	if errors.Nil(err) && !c.t.IsNext(")") {
-		err = c.NewError(errors.MissingParenthesisError)
+		err = c.newError(errors.MissingParenthesisError)
 	}
 
 	return err
