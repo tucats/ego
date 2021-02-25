@@ -26,7 +26,7 @@ require (
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7 // indirect
-	golang.org/x/sys v0.0.0-20210223212115-eede4237b368 // indirect
+	golang.org/x/sys v0.0.0-20210225134936-a50acf3fe073 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect
