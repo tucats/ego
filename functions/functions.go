@@ -2,6 +2,7 @@ package functions
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -31,16 +32,16 @@ type MultiValueReturn struct {
 	Value []interface{}
 }
 
-// Any is a constant that defines that a function can have as many arguments
+// any is a constant that defines that a function can have as many arguments
 // as desired.
-const Any = 999999
+const any = math.MaxInt32
 
 // FunctionDictionary is the dictionary of functions. As functions are determined
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true falg to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"$cast":                {Min: 2, Max: 2, F: InternalCast},
-	"append":               {Min: 2, Max: Any, F: Append},
+	"append":               {Min: 2, Max: any, F: Append},
 	"bool":                 {Min: 1, Max: 1, F: Bool},
 	"close":                {Min: 1, Max: 1, F: CloseAny},
 	"delete":               {Min: 1, Max: 2, F: Delete, FullScope: true},
@@ -51,13 +52,13 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"int":                  {Min: 1, Max: 1, F: Int},
 	"len":                  {Min: 1, Max: 1, F: Length},
 	"make":                 {Min: 2, Max: 2, F: Make},
-	"max":                  {Min: 1, Max: Any, F: Max},
+	"max":                  {Min: 1, Max: any, F: Max},
 	"members":              {Min: 1, Max: 1, F: Members},
-	"min":                  {Min: 1, Max: Any, F: Min},
+	"min":                  {Min: 1, Max: any, F: Min},
 	"new":                  {Min: 1, Max: 1, F: New},
 	"reflect":              {Min: 1, Max: 1, F: Reflect},
 	"string":               {Min: 1, Max: 1, F: String},
-	"sum":                  {Min: 1, Max: Any, F: Sum},
+	"sum":                  {Min: 1, Max: any, F: Sum},
 	"type":                 {Min: 1, Max: 1, F: Type},
 	"cipher.Create":        {Min: 1, Max: 2, F: CreateToken, ErrReturn: true},
 	"cipher.Decrypt":       {Min: 2, Max: 2, F: Decrypt, ErrReturn: true},
@@ -65,12 +66,12 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"cipher.Hash":          {Min: 1, Max: 1, F: Hash, ErrReturn: true},
 	"cipher.Token":         {Min: 1, Max: 2, F: Extract},
 	"cipher.Validate":      {Min: 1, Max: 2, F: Validate},
-	"errors.New":           {Min: 1, Max: Any, F: Signal},
-	"fmt.Print":            {Min: 1, Max: Any, F: Print},
-	"fmt.Printf":           {Min: 1, Max: Any, F: Printf, ErrReturn: true},
-	"fmt.Println":          {Min: 0, Max: Any, F: Println},
-	"fmt.Sprintf":          {Min: 1, Max: Any, F: Sprintf},
-	"fmt.Sscanf":           {Min: 3, Max: Any, F: Sscanf, ErrReturn: true},
+	"errors.New":           {Min: 1, Max: any, F: Signal},
+	"fmt.Print":            {Min: 1, Max: any, F: Print},
+	"fmt.Printf":           {Min: 1, Max: any, F: Printf, ErrReturn: true},
+	"fmt.Println":          {Min: 0, Max: any, F: Println},
+	"fmt.Sprintf":          {Min: 1, Max: any, F: Sprintf},
+	"fmt.Sscanf":           {Min: 3, Max: any, F: Sscanf, ErrReturn: true},
 	"io.Delete":            {Min: 1, Max: 1, F: DeleteFile, ErrReturn: true},
 	"io.Expand":            {Min: 1, Max: 2, F: Expand, ErrReturn: true},
 	"io.Open":              {Min: 1, Max: 2, F: OpenFile, ErrReturn: true},
@@ -78,8 +79,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"io.ReadFile":          {Min: 1, Max: 1, F: ReadFile, ErrReturn: true},
 	"io.WriteFile":         {Min: 2, Max: 2, F: WriteFile, ErrReturn: true},
 	"json.UnMarshal":       {Min: 1, Max: 1, F: Decode, ErrReturn: true},
-	"json.Marshal":         {Min: 1, Max: Any, F: Encode, ErrReturn: true},
-	"json.MarshalIndented": {Min: 1, Max: Any, F: EncodeFormatted, ErrReturn: true},
+	"json.Marshal":         {Min: 1, Max: any, F: Encode, ErrReturn: true},
+	"json.MarshalIndented": {Min: 1, Max: any, F: EncodeFormatted, ErrReturn: true},
 	"math.Abs":             {Min: 1, Max: 1, F: Abs},
 	"math.Log":             {Min: 1, Max: 1, F: Log},
 	"math.Sqrt":            {Min: 1, Max: 1, F: Sqrt},
@@ -96,7 +97,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.ContainsAny":  {Min: 2, Max: 2, F: ContainsAny},
 	"strings.EqualFold":    {Min: 2, Max: 2, F: EqualFold},
 	"strings.Fields":       {Min: 1, Max: 1, F: Fields},
-	"strings.Format":       {Min: 0, Max: Any, F: Format},
+	"strings.Format":       {Min: 0, Max: any, F: Format},
 	"strings.Index":        {Min: 2, Max: 2, F: Index},
 	"strings.Ints":         {Min: 1, Max: 1, F: Ints},
 	"strings.Join":         {Min: 2, Max: 2, F: Join},
@@ -105,7 +106,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.ToLower":      {Min: 1, Max: 1, F: Lower},
 	"strings.Right":        {Min: 2, Max: 2, F: Right},
 	"strings.Split":        {Min: 1, Max: 2, F: Split},
-	"strings.String":       {Min: 1, Max: Any, F: ToString},
+	"strings.String":       {Min: 1, Max: any, F: ToString},
 	"strings.Substring":    {Min: 3, Max: 3, F: Substring},
 	"strings.Template":     {Min: 1, Max: 2, F: Template, ErrReturn: true},
 	"strings.Tokenize":     {Min: 1, Max: 1, F: Tokenize},
