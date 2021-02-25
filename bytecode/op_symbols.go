@@ -20,9 +20,14 @@ func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// PopScopeImpl instruction processor.
+// PopScopeImpl instruction processor. This drops the current
+// symbol table and reverts to its parent table. It also flushes
+// any pending "this" stack objects. A chain of receivers
+// cannot span a block, so this is a good time to clean up
+// any asymetric pushes.
 func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	c.symbols = c.symbols.Parent
+	c.thisStack = nil
 
 	return nil
 }
