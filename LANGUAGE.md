@@ -1630,65 +1630,65 @@ contents. The value is not printed to the console as part of this operation.
 The io package supports input/output operations using native files in the file system 
 of the computer running _Ego_. 
 
-### Delete(filename)
+### io.Delete(filename)
 
-### DirList(path)
+### io.DirList(path)
 
-### Expand(path)
+### io.Expand(path)
 
-### Open(filename [, mode])
+### io.Open(filename [, mode])
 
-### ReadDir(path)
+### io.ReadDir(path)
 
-### ReadFile(filename)
+### io.ReadFile(filename)
 
-### WriteFile(filename, string)
+### io.WriteFile(filename, string)
 
 ## json <a name="json"></a>
 
-### Marshal(v)
+### json.Marshal(v)
 
-### MarshalIndented(v)
+### json.MarshalIndented(v)
 
-### UnMarshal(string)
+### json.UnMarshal(string)
 
 ## math <a name="math"></a>
 
-### Abs(n)
+### math.Abs(n)
 
-### Factor(i)
+### math.Factor(i)
 
-### Log(f)
+### math.Log(f)
 
-### Max(...)
+### math.Max(...)
 
-### Min(...)
+### math.Min(...)
 
-### Normalize(a,b)
+### math.Normalize(a,b)
 
-### Primes(i)
+### math.Primes(i)
 
-### Sqrt(f)
+### math.Sqrt(f)
 
-### Sum(...)
+### math.Sum(...)
 
 ## os <a name="os"><a>
 
-### Args()
+### os.Args()
 
-### Exit(i)
+### os.Exit(i)
 
-### Getenv(name)
+### os.Getenv(name)
 
 ## profile <a name="profile"></a>
 
-### Delete(key)
+### profile.Delete(key)
 
-### Get(key)
+### profile.Get(key)
 
-### Keys()
+### profile.Keys()
 
-### Set(key, value)
+### profile.Set(key, value)
 
 ## rest <a name="rest"></a>
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
@@ -2119,27 +2119,27 @@ The table is then printed to the default output and the memory structures are re
 
 ## time
 
-### Now()
+### time.Now()
 
-### Parse(string, model)
+### time.Parse(string, model)
 
-### Sleep(duration)
+### time.Sleep(duration)
 
 ## util <a name="util"></a>
 
-### Memory()
+### util.Memory()
 
-### Mode()
+### util.Mode()
 
-### Symbols()
+### util.Symbols()
 
 ## uuid <a name="uuid"></a>
 
-### New()
+### uuid.New()
 
-### Nil()
+### uuid.Nil()
 
-### Parse(string)
+### uuid.Parse(string)
 
 &nbsp;
 &nbsp;
