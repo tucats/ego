@@ -236,6 +236,23 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			return c.NewError(errors.InvalidTypeNameError)
 		}
 
+		// It could be a cast operation
+
+		if c.t.IsNext("(") {
+			mark := c.t.Mark() - 1
+
+			exp, e2 := c.Expression()
+			if e2 == nil && c.t.IsNext(")") {
+				c.b.Emit(bytecode.Load, "$cast")
+				c.b.Append(exp)
+				c.b.Emit(bytecode.Push, kind+datatypes.ArrayType)
+				c.b.Emit(bytecode.Call, 2)
+
+				return nil
+			}
+
+			c.t.Set(mark)
+		}
 		// Is it an empty declaration, such as []int{} ?
 		if c.t.IsNext("{}") {
 			c.b.Emit(bytecode.Array, 0, kind)

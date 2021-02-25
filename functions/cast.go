@@ -64,6 +64,18 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		}
 	}
 
+	// Is it an integer Ego array?
+	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntType {
+		var b strings.Builder
+
+		for i := 0; i < array.Len(); i++ {
+			rune, _ := array.Get(i)
+			b.WriteRune(int32(util.GetInt(rune)))
+		}
+
+		return b.String(), nil
+	}
+
 	return util.GetString(args[0]), nil
 }
 
@@ -267,5 +279,66 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	default:
 		return v
+	}
+}
+
+// Compiler-generate casting; generally always array types. This is used to
+// convert numeric arrays to a different kind of array, to convert a string
+// to an array of integer (rune) values, etc.
+func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	kind := util.GetInt(args[1])
+	if kind < datatypes.ArrayType {
+		return nil, errors.New(errors.InvalidTypeError)
+	}
+
+	kind = kind - datatypes.ArrayType
+
+	switch actual := args[0].(type) {
+	// Conversion of one array type to another
+	case *datatypes.EgoArray:
+		if kind == actual.ValueType() {
+			return actual, nil
+		}
+
+		r := datatypes.NewArray(kind, actual.Len())
+
+		for i := 0; i < actual.Len(); i++ {
+			v, _ := actual.Get(i)
+
+			switch kind {
+			case datatypes.IntType:
+				_ = r.Set(i, util.GetInt(v))
+
+			case datatypes.FloatType:
+				_ = r.Set(i, util.GetFloat(v))
+
+			case datatypes.StringType:
+				_ = r.Set(i, util.GetString(v))
+
+			case datatypes.BoolType:
+				_ = r.Set(i, util.GetBool(v))
+
+			default:
+				return nil, errors.New(errors.InvalidTypeError)
+			}
+		}
+
+		return r, nil
+
+	case string:
+		if kind != datatypes.IntType {
+			return nil, errors.New(errors.InvalidTypeError)
+		}
+
+		r := datatypes.NewArray(kind, 0)
+
+		for _, rune := range actual {
+			r.Append(int(rune))
+		}
+
+		return r, nil
+
+	default:
+		return nil, errors.New(errors.InvalidTypeError)
 	}
 }
