@@ -40,7 +40,7 @@ func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 
 	err = c.checkType(varname, v)
 	if errors.Nil(err) {
-		err = c.Set(varname, v)
+		err = c.symbolSet(varname, v)
 	}
 
 	if !errors.Nil(err) {
@@ -81,10 +81,10 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 	// so it can receive the channel info regardless of its type.
 	varname := util.GetString(i)
 
-	x, ok := c.Get(varname)
+	x, ok := c.symbolGet(varname)
 	if !ok {
 		if sourceChan {
-			err = c.Create(varname)
+			err = c.symbolCreate(varname)
 		} else {
 			err = c.NewError(errors.UnknownIdentifierError).Context(x)
 		}
@@ -115,7 +115,7 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 		err = x.(*datatypes.Channel).Send(datum)
 	} else {
 		if varname != "_" {
-			err = c.Set(varname, datum)
+			err = c.symbolSet(varname, datum)
 		}
 	}
 
@@ -157,7 +157,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
-	dest, ok := c.Get(name)
+	dest, ok := c.symbolGet(name)
 	if !ok {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
@@ -225,7 +225,7 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get the name.
 	varname := util.GetString(i)
 
-	err = c.SetAlways(varname, v)
+	err = c.symbolSetAlways(varname, v)
 	if !errors.Nil(err) {
 		return c.NewError(err)
 	}
@@ -252,12 +252,12 @@ func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidIdentifierError).Context(name)
 	}
 
-	v, found := c.Get(name)
+	v, found := c.symbolGet(name)
 	if !found {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
-	_ = c.Push(v)
+	_ = c.stackPush(v)
 
 	return nil
 }

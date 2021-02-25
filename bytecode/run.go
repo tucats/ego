@@ -72,7 +72,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		ui.Debug(ui.TraceLogger, "*** Tracing "+c.Name)
 	}
 
-	fullStackListing := util.GetBool(c.GetConfig("full_stack_listing"))
+	fullStackListing := util.GetBool(c.configGet("full_stack_listing"))
 
 	// Loop over the bytecodes and run.
 	for c.running {

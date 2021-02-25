@@ -34,13 +34,13 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch value := v.(type) {
 	case bool:
-		_ = c.Push(!value)
+		_ = c.stackPush(!value)
 
 	case int:
-		_ = c.Push(-value)
+		_ = c.stackPush(-value)
 
 	case float64:
-		_ = c.Push(0.0 - value)
+		_ = c.stackPush(0.0 - value)
 
 	case *datatypes.EgoArray:
 		// Create an array in inverse order.
@@ -51,7 +51,7 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 			_ = r.Set(value.Len()-n-1, d)
 		}
 
-		_ = c.Push(r)
+		_ = c.stackPush(r)
 
 	case []interface{}:
 		// Create an array in inverse order.
@@ -61,7 +61,7 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 			r[len(value)-n-1] = d
 		}
 
-		_ = c.Push(r)
+		_ = c.stackPush(r)
 
 	default:
 		return c.NewError(errors.InvalidTypeError)
@@ -93,7 +93,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch vx := v1.(type) {
 	case error:
-		return c.Push(vx.Error() + util.GetString(v2))
+		return c.stackPush(vx.Error() + util.GetString(v2))
 
 		/*	case *errors.EgoError:
 			_ = vx.Context(v2)
@@ -120,13 +120,13 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 
 			newArray := append(vx, vy...)
 
-			return c.Push(newArray)
+			return c.stackPush(newArray)
 
 		// Everything else is a simple append.
 		default:
 			newArray := append(vx, v2)
 
-			return c.Push(newArray)
+			return c.stackPush(newArray)
 		}
 
 		// You can add a map to another map.
@@ -137,7 +137,7 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 				vx[k] = v
 			}
 
-			return c.Push(vx)
+			return c.stackPush(vx)
 
 		default:
 			return c.NewError(errors.InvalidTypeError)
@@ -149,16 +149,16 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 
 		switch v1.(type) {
 		case int:
-			return c.Push(v1.(int) + v2.(int))
+			return c.stackPush(v1.(int) + v2.(int))
 
 		case float64:
-			return c.Push(v1.(float64) + v2.(float64))
+			return c.stackPush(v1.(float64) + v2.(float64))
 
 		case string:
-			return c.Push(v1.(string) + v2.(string))
+			return c.stackPush(v1.(string) + v2.(string))
 
 		case bool:
-			return c.Push(v1.(bool) && v2.(bool))
+			return c.stackPush(v1.(bool) && v2.(bool))
 
 		default:
 			return c.NewError(errors.InvalidTypeError)
@@ -183,7 +183,7 @@ func AndImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidTypeError)
 	}
 
-	return c.Push(util.GetBool(v1) && util.GetBool(v2))
+	return c.stackPush(util.GetBool(v1) && util.GetBool(v2))
 }
 
 // OrImpl bytecode instruction processor.
@@ -203,7 +203,7 @@ func OrImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidTypeError)
 	}
 
-	return c.Push(util.GetBool(v1) || util.GetBool(v2))
+	return c.stackPush(util.GetBool(v1) || util.GetBool(v2))
 }
 
 // SubtractImpl instruction processor removes two items from the
@@ -237,7 +237,7 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 
-		return c.Push(newArray)
+		return c.stackPush(newArray)
 
 	// Everything else is a scalar subtraction.
 	default:
@@ -245,15 +245,15 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 
 		switch v1.(type) {
 		case int:
-			return c.Push(v1.(int) - v2.(int))
+			return c.stackPush(v1.(int) - v2.(int))
 
 		case float64:
-			return c.Push(v1.(float64) - v2.(float64))
+			return c.stackPush(v1.(float64) - v2.(float64))
 
 		case string:
 			s := strings.ReplaceAll(v1.(string), v2.(string), "")
 
-			return c.Push(s)
+			return c.stackPush(s)
 
 		default:
 			return c.NewError(errors.InvalidTypeError)
@@ -282,13 +282,13 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case int:
-		return c.Push(v1.(int) * v2.(int))
+		return c.stackPush(v1.(int) * v2.(int))
 
 	case float64:
-		return c.Push(v1.(float64) * v2.(float64))
+		return c.stackPush(v1.(float64) * v2.(float64))
 
 	case bool:
-		return c.Push(v1.(bool) || v2.(bool))
+		return c.stackPush(v1.(bool) || v2.(bool))
 
 	default:
 		return c.NewError(errors.InvalidTypeError)
@@ -317,11 +317,11 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {
-			return c.Push(0)
+			return c.stackPush(0)
 		}
 
 		if v2.(int) == 1 {
-			return c.Push(v1)
+			return c.stackPush(v1)
 		}
 
 		prod := v1.(int)
@@ -330,10 +330,10 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 			prod = prod * v1.(int)
 		}
 
-		return c.Push(prod)
+		return c.stackPush(prod)
 
 	case float64:
-		return c.Push(math.Pow(v1.(float64), v2.(float64)))
+		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
 		return c.NewError(errors.InvalidTypeError)
@@ -369,14 +369,14 @@ func DivideImpl(c *Context, i interface{}) *errors.EgoError {
 			return c.NewError(errors.DivisionByZeroError)
 		}
 
-		return c.Push(v1.(int) / v2.(int))
+		return c.stackPush(v1.(int) / v2.(int))
 
 	case float64:
 		if v2.(float64) == 0 {
 			return c.NewError(errors.DivisionByZeroError)
 		}
 
-		return c.Push(v1.(float64) / v2.(float64))
+		return c.stackPush(v1.(float64) / v2.(float64))
 
 	default:
 		return c.NewError(errors.InvalidTypeError)

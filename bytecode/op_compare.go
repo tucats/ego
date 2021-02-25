@@ -32,12 +32,12 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// If both are nil, then they match.
 	if datatypes.IsNil(v1) && datatypes.IsNil(v2) {
-		return c.Push(true)
+		return c.stackPush(true)
 	}
 
 	// Otherwise, if either one is nil, there is no match
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.Push(false)
+		return c.stackPush(false)
 	}
 
 	var r bool
@@ -98,7 +98,7 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }
@@ -128,7 +128,7 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	// IF only one side is nil, they are not equal by definition.
 	if !datatypes.IsNil(v1) && datatypes.IsNil(v2) ||
 		datatypes.IsNil(v1) && !datatypes.IsNil(v2) {
-		return c.Push(true)
+		return c.stackPush(true)
 	}
 
 	var r bool
@@ -180,7 +180,7 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }
@@ -209,7 +209,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.Push(false)
+		_ = c.stackPush(false)
 
 		return nil
 	}
@@ -238,7 +238,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }
@@ -268,7 +268,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.Push(false)
+		_ = c.stackPush(false)
 
 		return nil
 	}
@@ -297,7 +297,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }
@@ -327,7 +327,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Handle nil cases
 	if v1 == nil || v2 == nil {
-		_ = c.Push(false)
+		_ = c.stackPush(false)
 
 		return nil
 	}
@@ -357,7 +357,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }
@@ -387,7 +387,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.Push(false)
+		_ = c.stackPush(false)
 
 		return nil
 	}
@@ -415,7 +415,7 @@ func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	_ = c.Push(r)
+	_ = c.stackPush(r)
 
 	return nil
 }

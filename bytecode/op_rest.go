@@ -23,29 +23,29 @@ import (
 func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 	var user, pass string
 
-	if _, ok := c.Get("_authenticated"); !ok {
+	if _, ok := c.symbolGet("_authenticated"); !ok {
 		return c.NewError(errors.NotAServiceError)
 	}
 
 	kind := util.GetString(i)
 
-	if v, ok := c.Get("_user"); ok {
+	if v, ok := c.symbolGet("_user"); ok {
 		user = util.GetString(v)
 	}
 
-	if v, ok := c.Get("_password"); ok {
+	if v, ok := c.symbolGet("_password"); ok {
 		user = util.GetString(v)
 	}
 
 	tokenValid := false
 
-	if v, ok := c.Get("_token_valid"); ok {
+	if v, ok := c.symbolGet("_token_valid"); ok {
 		tokenValid = util.GetBool(v)
 	}
 
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
 		c.running = false
-		_ = c.SetAlways("_rest_status", http.StatusForbidden)
+		_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 
 		if c.output != nil {
 			c.output.WriteString("403 Forbidden")
@@ -58,7 +58,7 @@ func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 
 	if kind == "user" && user == "" && pass == "" {
 		c.running = false
-		_ = c.SetAlways("_rest_status", http.StatusUnauthorized)
+		_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
 
 		if c.output != nil {
 			c.output.WriteString("401 Not authorized")
@@ -74,12 +74,12 @@ func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 	if kind == "any" {
 		isAuth := false
 
-		if v, ok := c.Get("_authenticated"); ok {
+		if v, ok := c.symbolGet("_authenticated"); ok {
 			isAuth = util.GetBool(v)
 		}
 
 		if !isAuth {
-			_ = c.SetAlways("_rest_status", http.StatusForbidden)
+			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
@@ -96,12 +96,12 @@ func AuthImpl(c *Context, i interface{}) *errors.EgoError {
 	if kind == "admin" || kind == "admintoken" {
 		isAuth := false
 
-		if v, ok := c.Get("_superuser"); ok {
+		if v, ok := c.symbolGet("_superuser"); ok {
 			isAuth = util.GetBool(v)
 		}
 
 		if !isAuth {
-			_ = c.SetAlways("_rest_status", http.StatusForbidden)
+			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 
 			if c.output != nil {
 				c.output.WriteString("403 Forbidden")
@@ -123,7 +123,7 @@ func ResponseImpl(c *Context, i interface{}) *errors.EgoError {
 	// See if we have a media type specified.
 	isJSON := false
 
-	if v, found := c.Get("_json"); found {
+	if v, found := c.symbolGet("_json"); found {
 		isJSON = util.GetBool(v)
 	}
 

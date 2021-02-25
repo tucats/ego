@@ -64,7 +64,7 @@ func StackCheckImpl(c *Context, i interface{}) *errors.EgoError {
 // PushImpl instruction processor. This pushes the instruction operand
 // onto the runtime stack.
 func PushImpl(c *Context, i interface{}) *errors.EgoError {
-	return c.Push(i)
+	return c.stackPush(i)
 }
 
 // DropImpl instruction processor drops items from the stack and
@@ -93,8 +93,8 @@ func DupImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	_ = c.Push(v)
-	_ = c.Push(v)
+	_ = c.stackPush(v)
+	_ = c.stackPush(v)
 
 	return nil
 }
@@ -113,8 +113,8 @@ func SwapImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	_ = c.Push(v1)
-	_ = c.Push(v2)
+	_ = c.stackPush(v1)
+	_ = c.stackPush(v2)
 
 	return nil
 }
@@ -128,14 +128,14 @@ func CopyImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	_ = c.Push(v)
+	_ = c.stackPush(v)
 
 	// Use JSON as a reflection-based cloner
 	var v2 interface{}
 
 	byt, _ := json.Marshal(v)
 	err = errors.New(json.Unmarshal(byt, &v2))
-	_ = c.Push(2)
+	_ = c.stackPush(2)
 
 	return err
 }
@@ -144,15 +144,15 @@ func GetVarArgsImpl(c *Context, i interface{}) *errors.EgoError {
 	err := c.NewError(errors.VarArgError)
 	argPos := util.GetInt(i)
 
-	if arrayV, ok := c.Get("__args"); ok {
+	if arrayV, ok := c.symbolGet("__args"); ok {
 		if args, ok := arrayV.([]interface{}); ok {
 			// If no more args in the list to satisfy, push empty array
 			if len(args) < argPos {
 				r := make([]interface{}, 0)
 
-				return c.Push(r)
+				return c.stackPush(r)
 			} else {
-				return c.Push(args[argPos:])
+				return c.stackPush(args[argPos:])
 			}
 		}
 	}

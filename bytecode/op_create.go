@@ -60,7 +60,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 			_ = array.Set(n, initialValue)
 		}
 
-		_ = c.Push(array)
+		_ = c.stackPush(array)
 
 		return nil
 	}
@@ -79,7 +79,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 
 	array := datatypes.NewArray(datatypes.InterfaceType, size)
 
-	_ = c.Push(array)
+	_ = c.stackPush(array)
 
 	return nil
 }
@@ -143,7 +143,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = array.Set((count-n)-1, v)
 	}
 
-	_ = c.Push(array)
+	_ = c.stackPush(array)
 
 	return nil
 }
@@ -217,7 +217,7 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 	if kind, ok := datatypes.GetMetadata(m, datatypes.TypeMDKey); ok {
 		typeName, _ := kind.(string)
 
-		if model, ok := c.Get(typeName); ok {
+		if model, ok := c.symbolGet(typeName); ok {
 			if modelMap, ok := model.(map[string]interface{}); ok {
 				// Store a pointer to the model object now.
 				datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
@@ -264,7 +264,7 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Put the newly created instance of a struct on the stack.
-	_ = c.Push(m)
+	_ = c.stackPush(m)
 
 	return nil
 }

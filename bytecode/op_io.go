@@ -98,7 +98,7 @@ func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
 	if errors.Nil(err) {
 		t, e2 := template.New(name).Parse(util.GetString(t))
 		if e2 == nil {
-			err = c.Push(t)
+			err = c.stackPush(t)
 		}
 	}
 
@@ -159,7 +159,7 @@ func TimerImpl(c *Context, i interface{}) *errors.EgoError {
 
 		msText := fmt.Sprintf("%4.3f%s", float64(ms)/1000.0, unit)
 
-		_ = c.Push(msText)
+		_ = c.stackPush(msText)
 
 	default:
 		return c.NewError(errors.InvalidTimerError)

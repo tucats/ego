@@ -68,11 +68,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
 			if c.t.Peek(1) == "(" {
-				anon := generateName()
-
-				c.b.Emit(bc.Dup)
-				c.b.Emit(bc.StoreAlways, anon)
-				c.b.Emit(bc.SetThis, anon)
+				c.b.Emit(bc.SetThis)
 			}
 
 			c.b.Emit(bc.Member, lastName)

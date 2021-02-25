@@ -1,10 +1,8 @@
 package compiler
 
 import (
-	"fmt"
-	"sync"
-
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -17,7 +15,7 @@ func (c *Compiler) Go() *errors.EgoError {
 
 	// Is it a function constant?
 	if fName == "func" {
-		fName = generateName()
+		fName = datatypes.GenerateName()
 
 		// Compile a function literal onto the stack.
 		err := c.Function(true)
@@ -75,19 +73,4 @@ func (c *Compiler) Go() *errors.EgoError {
 	c.b.Emit(bc.Go, argc)
 
 	return nil
-}
-
-var nameSequenceNumber int = 0
-var nameMutex sync.Mutex
-
-// Threadsafe name generator.
-func generateName() string {
-	nameMutex.Lock()
-
-	nameSequenceNumber++
-	n := nameSequenceNumber
-
-	nameMutex.Unlock()
-
-	return fmt.Sprintf("$%d", n)
 }

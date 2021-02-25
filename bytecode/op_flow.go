@@ -226,7 +226,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// visibility into the current scope of symbol values.
 
 		c.PushFrame("function "+af.Name, af, 0)
-		_ = c.SetAlways("__args", args)
+		_ = c.symbolSetAlways("__args", args)
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
 		// First, can we check the argument count on behalf of the caller?
@@ -266,17 +266,17 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 
 		// Is this builtin one that requires a "this" variable? If so, get it from
 		// the "this" stack.
-		if v, ok := c.PopThis(); ok {
+		if v, ok := c.popThis(); ok {
 			_ = funcSymbols.SetAlways("__this", v)
 		}
 
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.Push(StackMarker{Desc: "multivalue result"})
+			_ = c.stackPush(StackMarker{Desc: "multivalue result"})
 
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.Push(r.Value[i])
+				_ = c.stackPush(r.Value[i])
 			}
 
 			return nil
@@ -285,9 +285,9 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if df != nil && df.ErrReturn {
-			_ = c.Push(StackMarker{Desc: "builtin result"})
-			_ = c.Push(err)
-			_ = c.Push(result)
+			_ = c.stackPush(StackMarker{Desc: "builtin result"})
+			_ = c.stackPush(err)
+			_ = c.stackPush(result)
 
 			return nil
 		}
@@ -307,7 +307,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if result != nil {
-		_ = c.Push(result)
+		_ = c.stackPush(result)
 	}
 
 	return nil
@@ -379,7 +379,7 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidArgCheckError)
 	}
 
-	v, found := c.Get("__args")
+	v, found := c.symbolGet("__args")
 	if !found {
 		return c.NewError(errors.InvalidArgCheckError)
 	}

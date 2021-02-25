@@ -232,46 +232,6 @@ func (c *Context) GetModuleName() string {
 	return c.bc.Name
 }
 
-// SetConstant is a helper function to define a constant value.
-func (c *Context) SetConstant(name string, v interface{}) *errors.EgoError {
-	return c.symbols.SetConstant(name, v)
-}
-
-// IsConstant is a helper function to define a constant value.
-func (c *Context) IsConstant(name string) bool {
-	return c.symbols.IsConstant(name)
-}
-
-// Get is a helper function that retrieves a symbol value from the associated
-// symbol table.
-func (c *Context) Get(name string) (interface{}, bool) {
-	v, found := c.symbols.Get(name)
-
-	return v, found
-}
-
-// Set is a helper function that sets a symbol value in the associated
-// symbol table.
-func (c *Context) Set(name string, value interface{}) *errors.EgoError {
-	return c.symbols.Set(name, value)
-}
-
-// SetAlways is a helper function that sets a symbol value in the associated
-// symbol table.
-func (c *Context) SetAlways(name string, value interface{}) *errors.EgoError {
-	return c.symbols.SetAlways(name, value)
-}
-
-// Delete deletes a symbol from the current context.
-func (c *Context) Delete(name string) *errors.EgoError {
-	return c.symbols.Delete(name)
-}
-
-// Create creates a symbol.
-func (c *Context) Create(name string) *errors.EgoError {
-	return c.symbols.Create(name)
-}
-
 // Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, *errors.EgoError) {
 	if c.sp <= 0 || len(c.stack) < c.sp {
@@ -282,18 +242,6 @@ func (c *Context) Pop() (interface{}, *errors.EgoError) {
 	v := c.stack[c.sp]
 
 	return v, nil
-}
-
-// Push puts a new items on the stack.
-func (c *Context) Push(v interface{}) *errors.EgoError {
-	if c.sp >= len(c.stack) {
-		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
-	}
-
-	c.stack[c.sp] = v
-	c.sp = c.sp + 1
-
-	return nil
 }
 
 // FormatStack formats the stack for tracing output.
@@ -331,13 +279,65 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 	return b.String()
 }
 
-// GetConfig retrieves a runtime configuration item from the
+// constantSet is a helper function to define a constant value.
+func (c *Context) constantSet(name string, v interface{}) *errors.EgoError {
+	return c.symbols.SetConstant(name, v)
+}
+
+// symbolIsConstant is a helper function to define a constant value.
+func (c *Context) symbolIsConstant(name string) bool {
+	return c.symbols.IsConstant(name)
+}
+
+// symbolGet is a helper function that retrieves a symbol value from the associated
+// symbol table.
+func (c *Context) symbolGet(name string) (interface{}, bool) {
+	v, found := c.symbols.Get(name)
+
+	return v, found
+}
+
+// symbolSet is a helper function that sets a symbol value in the associated
+// symbol table.
+func (c *Context) symbolSet(name string, value interface{}) *errors.EgoError {
+	return c.symbols.Set(name, value)
+}
+
+// symbolSetAlways is a helper function that sets a symbol value in the associated
+// symbol table.
+func (c *Context) symbolSetAlways(name string, value interface{}) *errors.EgoError {
+	return c.symbols.SetAlways(name, value)
+}
+
+// symbolDelete deletes a symbol from the current context.
+func (c *Context) symbolDelete(name string) *errors.EgoError {
+	return c.symbols.Delete(name)
+}
+
+// symbolCreate creates a symbol.
+func (c *Context) symbolCreate(name string) *errors.EgoError {
+	return c.symbols.Create(name)
+}
+
+// stackPush puts a new items on the stack.
+func (c *Context) stackPush(v interface{}) *errors.EgoError {
+	if c.sp >= len(c.stack) {
+		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
+	}
+
+	c.stack[c.sp] = v
+	c.sp = c.sp + 1
+
+	return nil
+}
+
+// configGet retrieves a runtime configuration item from the
 // __config data structure. If not found, it also queries
 // the persistence layer.
-func (c *Context) GetConfig(name string) interface{} {
+func (c *Context) configGet(name string) interface{} {
 	var i interface{}
 
-	if config, ok := c.Get("_config"); ok {
+	if config, ok := c.symbolGet("_config"); ok {
 		if cfgMap, ok := config.(map[string]interface{}); ok {
 			if cfgValue, ok := cfgMap[name]; ok {
 				i = cfgValue
@@ -362,7 +362,7 @@ func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
 		return err
 	}
 
-	if oldValue, ok := c.Get(name); ok {
+	if oldValue, ok := c.symbolGet(name); ok {
 		if oldValue == nil {
 			return err
 		}

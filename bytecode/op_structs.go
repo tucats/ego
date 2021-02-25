@@ -39,7 +39,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		var v interface{}
 
 		if v, _, err = a.Get(index); errors.Nil(err) {
-			err = c.Push(v)
+			err = c.stackPush(v)
 		}
 
 	// Reading from a channel ignores the index value.
@@ -48,7 +48,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 
 		datum, err = a.Receive()
 		if errors.Nil(err) {
-			err = c.Push(datum)
+			err = c.stackPush(datum)
 		}
 
 	// Index into map is just member access.
@@ -79,7 +79,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 			return c.NewError(errors.UnknownMemberError).Context(subscript)
 		}
 
-		err = c.Push(v)
+		err = c.stackPush(v)
 		c.lastStruct = a
 
 	case *datatypes.EgoArray:
@@ -89,7 +89,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v, _ := a.Get(subscript)
-		err = c.Push(v)
+		err = c.stackPush(v)
 
 	case []interface{}:
 		subscript := util.GetInt(index)
@@ -98,7 +98,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v := a[subscript]
-		err = c.Push(v)
+		err = c.stackPush(v)
 
 	default:
 		err = c.NewError(errors.InvalidTypeError)
@@ -131,7 +131,7 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 
 		v, err := a.GetSlice(subscript1, subscript2)
 		if errors.Nil(err) {
-			err = c.Push(v)
+			err = c.stackPush(v)
 		}
 
 		return err
@@ -148,7 +148,7 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v := a[subscript1 : subscript2+1]
-		_ = c.Push(v)
+		_ = c.stackPush(v)
 
 	default:
 		return c.NewError(errors.InvalidTypeError)
@@ -189,7 +189,7 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 
 	_ = datatypes.SetMetadata(m, key, value)
 
-	return c.Push(m)
+	return c.stackPush(m)
 }
 
 // StoreIndexImpl instruction processor.
@@ -214,7 +214,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); errors.Nil(err) {
-			err = c.Push(a)
+			err = c.stackPush(a)
 		}
 
 		if !errors.Nil(err) {
@@ -272,7 +272,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		// If we got a true argument, push the result back on the stack also. This
 		// is needed to create TYPE definitions.
 		if util.GetBool(i) {
-			_ = c.Push(a)
+			_ = c.stackPush(a)
 		}
 
 	// Index into array is integer index
@@ -291,7 +291,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 
 		err = a.Set(subscript, v)
 		if errors.Nil(err) {
-			err = c.Push(a)
+			err = c.stackPush(a)
 		}
 
 		return err
@@ -311,7 +311,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		a[subscript] = v
-		_ = c.Push(a)
+		_ = c.stackPush(a)
 
 	default:
 		return c.NewError(errors.InvalidTypeError)
@@ -340,7 +340,7 @@ func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); errors.Nil(err) {
-			err = c.Push(a)
+			err = c.stackPush(a)
 		}
 
 		if !errors.Nil(err) {
@@ -362,16 +362,16 @@ func FlattenImpl(c *Context, i interface{}) *errors.EgoError {
 		if array, ok := v.(*datatypes.EgoArray); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)
-				_ = c.Push(vv)
+				_ = c.stackPush(vv)
 				c.argCountDelta++
 			}
 		} else if array, ok := v.([]interface{}); ok {
 			for _, vv := range array {
-				_ = c.Push(vv)
+				_ = c.stackPush(vv)
 				c.argCountDelta++
 			}
 		} else {
-			_ = c.Push(v)
+			_ = c.stackPush(v)
 		}
 	}
 

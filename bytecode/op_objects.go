@@ -69,7 +69,7 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.InvalidTypeError)
 	}
 
-	_ = c.Push(v)
+	_ = c.stackPush(v)
 
 	return nil
 }
@@ -127,13 +127,13 @@ func ClassMemberImpl(c *Context, i interface{}) *errors.EgoError {
 		if !found {
 			v, found := searchParents(mv, name)
 			if found {
-				return c.Push(v)
+				return c.stackPush(v)
 			}
 
 			return c.NewError(errors.UnknownMemberError).Context(name)
 		}
 
-		_ = c.Push(v)
+		_ = c.stackPush(v)
 
 	default:
 		return c.NewError(errors.InvalidTypeError)

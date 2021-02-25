@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/util"
@@ -12,11 +13,27 @@ import (
 
 // SetThisImpl implements the SetThis opcode. Given a named value,
 // the current value is pushed on the "this" stack as part of setting
-// up a call, to be retrieved later by the body of the call.
+// up a call, to be retrieved later by the body of the call. IF there
+// is no name operand, assume the top stack value is to be used, and
+// synthesize a name for it.
 func SetThisImpl(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
-	if v, ok := c.Get(name); ok {
-		c.PushThis(name, v)
+	var name string
+
+	if i == nil {
+		v, err := c.Pop()
+		if err != nil {
+			return err
+		}
+
+		_ = c.stackPush(v)
+		name = datatypes.GenerateName()
+		_ = c.symbolSetAlways(name, v)
+	} else {
+		name = util.GetString(i)
+	}
+
+	if v, ok := c.symbolGet(name); ok {
+		c.pushThis(name, v)
 	}
 
 	return nil
@@ -29,15 +46,15 @@ func SetThisImpl(c *Context, i interface{}) *errors.EgoError {
 func GetThisImpl(c *Context, i interface{}) *errors.EgoError {
 	this := util.GetString(i)
 
-	if v, ok := c.PopThis(); ok {
-		return c.SetAlways(this, v)
+	if v, ok := c.popThis(); ok {
+		return c.symbolSetAlways(this, v)
 	}
 
 	return nil
 }
 
-// PushThis adds a receiver value to the "this" stack.
-func (c *Context) PushThis(name string, v interface{}) {
+// pushThis adds a receiver value to the "this" stack.
+func (c *Context) pushThis(name string, v interface{}) {
 	if c.thisStack == nil {
 		c.thisStack = []This{}
 	}
@@ -46,8 +63,8 @@ func (c *Context) PushThis(name string, v interface{}) {
 	c.PrintThisStack("after push")
 }
 
-// PopThis removes a receiver value from this "this" stack.
-func (c *Context) PopThis() (interface{}, bool) {
+// popThis removes a receiver value from this "this" stack.
+func (c *Context) popThis() (interface{}, bool) {
 	c.PrintThisStack("before pop")
 
 	if c.thisStack == nil || len(c.thisStack) == 0 {

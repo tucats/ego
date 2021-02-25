@@ -104,7 +104,7 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 
-		_ = c.Push(v)
+		_ = c.stackPush(v)
 	}
 
 	return err
@@ -178,7 +178,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 		v = array
 	}
 
-	_ = c.Push(v)
+	_ = c.stackPush(v)
 
 	return nil
 }
@@ -210,7 +210,7 @@ func AddressOfImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.NewError(errors.UnknownIdentifierError).Context(name)
 	}
 
-	return c.Push(addr)
+	return c.stackPush(addr)
 }
 
 func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
@@ -236,9 +236,9 @@ func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
 				return c.NewError(errors.NilPointerReferenceError)
 			}
 
-			return c.Push(*c3)
+			return c.stackPush(*c3)
 		} else {
-			return c.Push(c2)
+			return c.stackPush(c2)
 		}
 	}
 
