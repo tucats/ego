@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	xruntime "runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -456,6 +457,8 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	addr := "localhost:" + strconv.Itoa(port)
 
+	go serverHeartbeat()
+
 	var e2 error
 
 	if c.GetBool("not-secure") {
@@ -469,6 +472,24 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	return errors.New(e2)
+}
+
+func serverHeartbeat() {
+	var m xruntime.MemStats
+
+	for {
+		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+		xruntime.ReadMemStats(&m)
+		ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
+			bToMb(m.Alloc), bToMb(m.TotalAlloc), bToMb(m.Sys), m.NumGC)
+
+		// Generate this report in the log every ten minutes.
+		time.Sleep(10 * time.Minute)
+	}
+}
+
+func bToMb(b uint64) float64 {
+	return float64(b) / 1024.0 / 1024.0
 }
 
 // SetCacheSize is the administrative command that sets the server's cache size for
