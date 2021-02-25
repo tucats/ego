@@ -13,9 +13,9 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// MaxHistorySize is the maximum number of lines to retain in
+// maxHistorySize is the maximum number of lines to retain in
 // the persistent history file of command line input.
-const MaxHistorySize = 100
+const maxHistorySize = 100
 
 // ReaderInstance is the readline Instance used for console input.
 var consoleReader *readline.Instance
@@ -70,7 +70,7 @@ func ReadConsoleText(prompt string) string {
 			Prompt:            prompt,
 			HistoryFile:       historyFile,
 			HistorySearchFold: true,
-			HistoryLimit:      MaxHistorySize,
+			HistoryLimit:      maxHistorySize,
 		})
 	}
 	consoleLock.Unlock()

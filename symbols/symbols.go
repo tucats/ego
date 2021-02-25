@@ -11,10 +11,12 @@ import (
 )
 
 // This is the maximum number of symbols that can be created at any
-// given scope.
+// given scope. Exported because it can be set by a caller prior
+// to constructing a symbol table.
 var MaxSymbolsPerScope = 100
 
-// No symbol table will be smaller than this size.
+// No symbol table will be smaller than this size. Exported because
+// it can be set by a caller prior to constructing a symbol table.
 const MinSymbolTableSize = 25
 
 // SymbolTable contains an abstract symbol table.
@@ -29,7 +31,22 @@ type SymbolTable struct {
 	mutex         sync.Mutex
 }
 
-var rootValues = []interface{}{
+// This is the list of symbols that are initialized in the root
+// symbol table. These must match the values in rootValues below.
+// The slot numbers must be sequential starting at zero.
+var rootNames = map[string]int{
+	"_author":    0,
+	"_copyright": 1,
+	"_session":   2,
+	"_config":    3,
+}
+
+// This is a list of the values that are initially stored in the
+// root symbol table. This includes enough additional slots for
+// the designated maximum symbol table size. Note that this size
+// is set at initialization time, so the max slots cannot be changed
+// at runtime for this table.
+var rootValues = append([]interface{}{
 	"Tom Cole",
 	"(c) Copyright 2020, 2021",
 	uuid.NewString(),
@@ -40,29 +57,16 @@ var rootValues = []interface{}{
 			datatypes.TypeMDKey: "config",
 		},
 	},
-	nil, // Note that, for the root symbol table only,
-	nil, // This list of nils represents the slots
-	nil, // available in the root symbol table for new
-	nil, // values. Increase as needed...
-	nil,
-	nil,
-	nil,
-	nil,
-}
+}, make([]interface{}, MaxSymbolsPerScope-len(rootNames))...)
 
 // RootSymbolTable is the parent of all other tables.
 var RootSymbolTable = SymbolTable{
 	Name:          "Root Symbol Table",
 	Parent:        nil,
 	ScopeBoundary: true,
-	Symbols: map[string]int{
-		"_author":    0,
-		"_copyright": 1,
-		"_session":   2,
-		"_config":    3,
-	},
-	ValueSize: 4, // Needs to be the number of non-nil values in rootValues
-	Values:    rootValues,
+	Symbols:       rootNames,
+	ValueSize:     len(rootNames),
+	Values:        rootValues,
 }
 
 // NewSymbolTable generates a new symbol table.
