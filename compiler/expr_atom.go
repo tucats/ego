@@ -236,8 +236,8 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			return c.NewError(errors.InvalidTypeNameError)
 		}
 
-		// It could be a cast operation
-
+		// It could be a cast operation. If so, remember where we are
+		// in case we need to back up, and take a look...
 		if c.t.IsNext("(") {
 			mark := c.t.Mark() - 1
 
