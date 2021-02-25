@@ -40,11 +40,15 @@
    2. [`db` package](#db)
    3. [`fmt` package](#fmt)
    3. [`io` package](#io)
+   3. [`json` package](#json)
+   3. [`math` package](#math)
+   2. [`os` package](#os)
    3. [`rest` package](#rest)
    3. [`sort` package](#sort)
    3. [`strings` package](#strings)
    2. [`tables` package](#tables)
    2. [`util` package](#util)
+   2. [`uuid` package](#uuid)
 
 8. [Directives](#directives)
    1. [@error](#at-error)
@@ -55,23 +59,24 @@
 9. [Testing](#testing)
    1. [The `test` command](#testcmd)
    2. [The `@test` directive](#at-test)
-   3. [The `@assert` directive](#at-test)
-   4. [The `@fail` directive](#at-test)
-   5. [The `@pass` directive](#at-test)
+   3. [The `@assert` directive](#at-assert)
+   4. [The `@fail` directive](#at-fail)
+   5. [The `@pass` directive](#at-pass)
 
 &nbsp;
 &nbsp;
 
 # Introduction to _Ego_ Language <a name="intro"></a>
-_Version 0.2_
+_Version 1.1_
 
 
 This document describes the language _Ego_, which is a scripting 
 language and tool set patterned off of the _Go_ programming language. 
 The _Ego_ language name is a portmanteaux for _Emulated Go_. The data 
 types and language statements are very similar to _Go_ with a few 
-exceptions:
-* If enabled by settings, _Ego_ offers a try/catch model for intercepting runtime errors
+notable exceptions:
+* If enabled by settings, _Ego_ offers a try/catch model for intercepting 
+  runtime errors
 * The language can be run with either dynamic or static typing.
 * The available set of packages that support runtime functionality is limited.
 
@@ -578,24 +583,59 @@ a single value.
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
 | append() | append(list, 5, 6, 7) | Append the items together into an array. |
-| bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
 | close()  | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
 | delete() | delete(emp, "Name")   | Remove the named field from a map, or a struct member |
 | error()  | error("panic") | Generate a runtime error named "panic". |
 | eval()   | eval("3 + 5")  | Evaluate the expression in the string value, and return the result, `8` |
-| float()  | float(33)      | Convert the value to a float, in this case `33.0` |
 | index()  | index(items, 55) | Return the array index of `items` that contains the value `55` |
-| int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
 | len()    | len(items)     | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
 | make()   | make([]int, 5) | Create an array of int values with `5` elements in the array |
-| max()    | max(11, 17, 3) | Return the mathmatically greatest value in the argument list, in this case `17`. |
 | members() | members(emp)  | Return an array of strings containing the struct member names of the argument |
-| min()    | min(5,2,33)    | Return the mathmatically smalles value in the argument list, in this case `2` |
-| string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
-| sum()    | sum(5,6,3)     | Return the arithmetic sum of the values, in this case `14` |
 | type()   | type(emp)      | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
 &nbsp;
 &nbsp;
+
+## Casting
+This refers to functions used to explicitly change the type of a value, or
+convert it to a comparable value where possible.  This can be done for base
+type values (int, bool, string) as well as for arrays.
+
+For base types, the following are available:
+
+
+| Function | Example               | Description |
+| -------- | --------------------- | ----------- |
+| bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
+| float()  | float(33)      | Convert the value to a float, in this case `33.0` |
+| int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
+| string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
+
+A special note about `string()`; it has a feature where if the value passed in is an array of
+integer value, each one is treated as a Unicode rune value and the resulting string is
+the return value.  Any other type is just converted to its default formatted value.
+
+You can also perform conversions on arrays, to a limited degree. This is done with 
+the function:
+
+
+| Function | Example               | Description |
+| -------- | --------------------- | ----------- |
+| []bool() | []bool([1, 5, 0])| Convert the array to a []bool array. |
+| []int()  | []int([1, 5.5, 0])| Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
+| []interface{}() | []interface{}([true, 5, "string"])| Convert the array to a []interface{} array where there are no static types for the array. |
+| []float() | []float([1, 5, 0])| Convert the array to a []float array. |
+| []string() | []string([1, 5, 0])| Convert the array to a []string array. |
+
+In all cases, the result is a typed array of the given cast type. Each 
+element of the array is converted to the target type and stored in the
+array. So []bool() on an array of integers results in an array of bool
+values, where zeros become false and any other value becomes true. The
+special type name interface{} means _no specified type_ and is used
+for arrays with heterogenous values.
+
+Note the special case of []int("string"). If the parameter is not an
+array, but instead is a string value, the resulting []int array contains
+each rune from the original string.
 
 
 ### make
@@ -1307,6 +1347,101 @@ value for x".
 &nbsp;
 
 # Threads <a name="threads"></a>
+Like it's inspiration, _Ego_ supports the idea of "go routines" which are threads 
+that can be started by an _Ego_ program, and which run asynchronously. A go routine
+is always a function invocation, or a function constant value. That function is
+started on a parallel thread, and will exeute independently of the main program.
+
+You can use _channels_ as a communiation mechanism to communicate between the
+go routines and the main program.
+
+## Go 
+Use the `go` statement to start a thread. Here is a very simple example:
+
+
+    func beepLater(duration string) {
+        time.Sleep(duration)
+        fmt.Println("BEEP!")
+    }
+
+    go beepLater("1s")
+
+This example defines a function `beepLater` which is given a duration
+string expression. The function waits for that duration, and then prints
+the message to the console.
+
+The `go` statement starts this thread, passing it the parameters from 
+the current scope, which are copied to the thread and stored in the
+`duration` variable on that thread.
+
+Note that this isn't a very interesting example, but worse; it shows an
+issue with running go routines. If the program above is the only code
+being executed in the program, it will produce no output. This is because
+the main program ends (complets all statements) and that terminates
+the _Ego_ session, even if a thread is still running. The thread is not
+guaranteed to be allowed to run to completion if the program that
+starts it finishes.
+
+## Channels
+We address this synchronization issue (and also allow data to be 
+passed _back_ from the go routine) using channels. Here's a modified
+version of the program:
+
+    func beepLater(duration string, c chan) {
+        time.Sleep(duration)
+        c <- "BEEP"
+    }
+
+    var xc chan
+    go beepLater("1s", xc)
+
+    m := <- xc
+    fmt.Println(m)
+
+In this example program, the main program defines a variable `cx` which
+is a _channel_ variable, of type `chan`. The duration and the channel
+variable are passed to the go routine. Importantly, the program then
+receives data from the channel, using the `<-` notation. This causes the
+main program to wait until a message is put into the channel, and that
+message is stored in the variable m
+
+Meanwhile, the go routine starts running, and performs the wait as
+before. Once the wait is completed, it puts a message (really, any
+value) in the channel, again using a variant of the `<-` syntax to
+show writing a value into a channel.  When this write occurs, the
+main program's receive operation completes and the message is
+printed.
+
+In this way, the go function performs its work, and then sends the
+result back through the channel. The main program will wait for data
+to be stored in the channel before proceeding. The go routine can
+send more than one data item into the channel, simply by issuing 
+more channel write operations. The reciever can either know how 
+many times to read the channel, or can use a `for...range` operation
+on the channel to simply keep receiving data until done.
+
+    
+    func beepLater(count int, c chan) {
+        for i := 0; i &lt; int; i = i + 1 {
+            c <- "Item " + string(i)
+        }
+    }
+    var xc chan
+    go beepLater(5, xc)
+
+    for msg := range xc {
+        fmt.Println("Received ", msg)
+    }
+
+In this case, the caller of the goroutine includes a count of the
+number of messages to send, and that function sends that many 
+mesages. The main program uses the `range` operation on the channel,
+which means "_as many as you recieve_" where each message is stored
+in `msg`. The loop will terminate when the goroutine stops executing.
+The goroutine can also explicitly tell the main program that it is
+done by using the `close()` function on the channel. When this happens,
+the range loop exits. Note that both the main program and the goroutine
+will continue executing to the end even after the channel is closed.
 
 
 &nbsp;
@@ -1495,9 +1630,65 @@ contents. The value is not printed to the console as part of this operation.
 The io package supports input/output operations using native files in the file system 
 of the computer running _Ego_. 
 
+### Delete(filename)
+
+### DirList(path)
+
+### Expand(path)
+
+### Open(filename [, mode])
+
+### ReadDir(path)
+
+### ReadFile(filename)
+
+### WriteFile(filename, string)
+
+## json <a name="json"></a>
+
+### Marshal(v)
+
+### MarshalIndented(v)
+
+### UnMarshal(string)
+
 ## math <a name="math"></a>
 
+### Abs(n)
+
+### Factor(i)
+
+### Log(f)
+
+### Max(...)
+
+### Min(...)
+
+### Normalize(a,b)
+
+### Primes(i)
+
+### Sqrt(f)
+
+### Sum(...)
+
+## os <a name="os"><a>
+
+### Args()
+
+### Exit(i)
+
+### Getenv(name)
+
 ## profile <a name="profile"></a>
+
+### Delete(key)
+
+### Get(key)
+
+### Keys()
+
+### Set(key, value)
 
 ## rest <a name="rest"></a>
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
@@ -1928,8 +2119,27 @@ The table is then printed to the default output and the memory structures are re
 
 ## time
 
-## util
+### Now()
 
+### Parse(string, model)
+
+### Sleep(duration)
+
+## util <a name="util"></a>
+
+### Memory()
+
+### Mode()
+
+### Symbols()
+
+## uuid <a name="uuid"></a>
+
+### New()
+
+### Nil()
+
+### Parse(string)
 
 &nbsp;
 &nbsp;
