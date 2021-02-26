@@ -95,6 +95,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"sort.Floats":          {Min: 1, Max: 1, F: SortFloats},
 	"sort.Ints":            {Min: 1, Max: 1, F: SortInts},
 	"sort.Strings":         {Min: 1, Max: 1, F: SortStrings},
+	"strings.Blockprint":   {Min: 1, Max: 2, F: blockPrint},
 	"strings.Chars":        {Min: 1, Max: 1, F: Chars},
 	"strings.Compare":      {Min: 2, Max: 2, F: Compare},
 	"strings.Contains":     {Min: 2, Max: 2, F: Contains},
