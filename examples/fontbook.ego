@@ -1,0 +1,11 @@
+// Uses the handy https://github.com/common-nighthawk/go-figure package to
+// print out ascii-art-style strings. This job prints the string using
+// each available font.
+
+msg := "Emulated Go"
+
+fonts := strings.Blockfonts()
+
+for _, font := range fonts {
+    fmt.Printf("font: %s\n%s\n\n", font, strings.Blockprint(msg, font))
+}
