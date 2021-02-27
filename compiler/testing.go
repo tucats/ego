@@ -56,8 +56,6 @@ func (c *Compiler) testDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 0)
 
-	//c.b.Emit(bytecode.Newline)
-
 	return nil
 }
 
@@ -320,7 +318,7 @@ func (c *Compiler) TestPass() *errors.EgoError {
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Timer, 1)
 	c.b.Emit(bytecode.Print)
-	c.b.Emit(bytecode.Newline)
+	c.b.Emit(bytecode.Say, true)
 
 	return nil
 }

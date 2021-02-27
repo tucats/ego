@@ -144,6 +144,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			ctx := bytecode.NewContext(syms, b)
 			oldDebugMode = ui.DebugMode
 
+			ctx.EnableConsoleOutput(false)
 			ctx.SetTracing(io.GetConfig(syms, ConfigTrace))
 			if ctx.Tracing() {
 				ui.DebugMode = true

@@ -63,11 +63,26 @@ func LogImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// SayImpl instruction processor. This can be used in place of NewLine to end
-//buffered output, but the output is only displayed if we are not in --quiet mode.
+// SayImpl instruction processor. If the operand is true, output the string as-is,
+// else output it adding a trailing newline. The Say opcode  can be used in place
+// of NewLine to end buffered output, but the output is only displayed if we are
+// not in --quiet mode.
+//
+// This is used by the code generated from @test and @pass, for example, to allow
+// test logging to be quiet if necessary.
 func SayImpl(c *Context, i interface{}) *errors.EgoError {
-	ui.Say("%s\n", c.output.String())
-	c.output = nil
+	msg := ""
+	if c.output != nil {
+		msg = c.output.String()
+		c.output = nil
+	}
+
+	fmt := "%s\n"
+	if util.GetBool(i) && len(msg) > 0 {
+		fmt = "%s"
+	}
+
+	ui.Say(fmt, msg)
 
 	return nil
 }
