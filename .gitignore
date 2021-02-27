@@ -3,6 +3,8 @@ ego.exe
 .DS_Store
 *.code-workspace
 test.ego
+test1.ego
+test2.ego
 ego-server.log
 ego-server.pid
 user-database.json
