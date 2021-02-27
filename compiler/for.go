@@ -146,8 +146,7 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 			b.Operation == bytecode.LoadIndex ||
 			b.Operation == bytecode.Call ||
 			b.Operation == bytecode.LocalCall ||
-			b.Operation == bytecode.Member ||
-			b.Operation == bytecode.ClassMember {
+			b.Operation == bytecode.Member {
 			isConstant = false
 
 			break

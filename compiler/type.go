@@ -48,19 +48,13 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 		return err
 	}
 
-	// Add in the type linkage, and store as the type name. The __parent for a type is
-	// a string that is the name of the type. When a member dereference on a struct
-	// happens that includes a __parent, the __parent object is also checked for the
-	// member if it is NOT a string.
-	c.b.Emit(bytecode.Swap)
-	c.b.Emit(bytecode.StoreMetadata, datatypes.ParentMDKey)
-	c.b.Emit(bytecode.Dup)
-	c.b.Emit(bytecode.Dup)
-
-	// Use the name as the type. Note that StoreIndex will intercept the __
-	// prefix of the index and redirect it into the metadata.
+	// Indicat the type name and that this is a type object
+	// (as opposed to an instance object)
 	c.b.Emit(bytecode.Push, name)
 	c.b.Emit(bytecode.StoreMetadata, datatypes.TypeMDKey)
+
+	c.b.Emit(bytecode.Push, true)
+	c.b.Emit(bytecode.StoreMetadata, datatypes.IsTypeMDKey)
 
 	// Finally, make it a static value now.
 	c.b.Emit(bytecode.Dup) // One more needed for type statement

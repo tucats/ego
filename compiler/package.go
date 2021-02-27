@@ -8,9 +8,8 @@ import (
 
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -29,19 +28,7 @@ func (c *Compiler) compilePackage() *errors.EgoError {
 
 	c.PackageName = name
 
-	// Create a named struct that can be initialized with the symbol names.
-	// This is done by creating a source table and then merging it with the
-	// active table.
-	tmp := symbols.NewSymbolTable("")
-
-	_ = tmp.SetAlways(name, map[string]interface{}{
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.ParentMDKey:   name,
-			datatypes.ReadonlyMDKey: true,
-			datatypes.TypeMDKey:     "package",
-		}})
-
-	c.s.Merge(tmp)
+	c.b.Emit(bytecode.PushPackage, name)
 
 	return nil
 }
@@ -152,6 +139,8 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				return err
 			}
 		}
+
+		c.b.Emit(bytecode.PopPackage)
 
 		// If after the import we ended with mismatched block markers, complain
 		if c.blockDepth != savedBlockDepth {

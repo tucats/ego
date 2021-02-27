@@ -40,7 +40,7 @@ type ByteCode struct {
 	Name         string
 	instructions []Instruction
 	emitPos      int
-	Symbols      *symbols.SymbolTable
+	//Symbols      *symbols.SymbolTable
 }
 
 // New generates and initializes a new bytecode.
@@ -49,7 +49,6 @@ func New(name string) *ByteCode {
 		Name:         name,
 		instructions: make([]Instruction, InitialOpcodeSize),
 		emitPos:      0,
-		Symbols:      &symbols.SymbolTable{Name: name, Symbols: map[string]int{}, Values: make([]interface{}, symbols.MaxSymbolsPerScope)},
 	}
 
 	return &bc

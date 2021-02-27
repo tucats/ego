@@ -12,6 +12,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const registerCount = 4
+
 type This struct {
 	name  string
 	value interface{}
@@ -30,6 +32,8 @@ type Context struct {
 	timers          []time.Time
 	Name            string
 	thisStack       []This
+	packageStack    []packageDef
+	registers       []interface{}
 	lastStruct      interface{}
 	result          interface{}
 	pc              int
@@ -67,6 +71,12 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		static = util.GetBool(s)
 	}
 
+	// If we weren't given a table, create an empty temp table.
+	if s == nil {
+		s = symbols.NewSymbolTable("")
+	}
+
+	// Create the context object.
 	ctx := Context{
 		Name:            name,
 		bc:              b,
@@ -81,24 +91,14 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		fullSymbolScope: true,
 		Tracing:         false,
 		thisStack:       nil,
+		registers:       make([]interface{}, registerCount),
+		packageStack:    make([]packageDef, 0),
 		try:             make([]int, 0),
 		rangeStack:      make([]*Range, 0),
 		timers:          make([]time.Time, 0),
 	}
 	ctxp := &ctx
 	ctxp.SetByteCode(b)
-
-	// If we weren't given a table, create an empty temp table.
-	if s == nil {
-		s = symbols.NewSymbolTable("")
-	}
-
-	// Append any bytecode symbols into the symbol table.
-	if b.Symbols != nil {
-		for k, v := range b.Symbols.Symbols {
-			_ = s.SetAlways(k, v)
-		}
-	}
 
 	return ctxp
 }

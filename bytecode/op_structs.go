@@ -182,14 +182,14 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	_, ok := m.(map[string]interface{})
+	mm, ok := m.(map[string]interface{})
 	if !ok {
 		return c.newError(errors.InvalidTypeError)
 	}
 
-	_ = datatypes.SetMetadata(m, key, value)
+	_ = datatypes.SetMetadata(mm, key, value)
 
-	return c.stackPush(m)
+	return c.stackPush(mm)
 }
 
 // StoreIndexImpl instruction processor.

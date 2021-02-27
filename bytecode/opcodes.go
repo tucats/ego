@@ -29,7 +29,6 @@ const (
 	Array
 	Auth
 	Call
-	ClassMember
 	Coerce
 	Constant
 	Copy
@@ -42,6 +41,7 @@ const (
 	Exp
 	Flatten
 	FromFile
+	GetRegister
 	GetThis
 	GetVarArgs
 	Go
@@ -61,9 +61,11 @@ const (
 	NotEqual
 	Or
 	Panic
+	PopPackage
 	PopScope
 	Print
 	Push
+	PushPackage
 	PushScope
 	RangeInit
 	RangeNext
@@ -71,6 +73,7 @@ const (
 	Response
 	Return
 	Say
+	SetRegister
 	SetThis
 	StackCheck
 	StaticTyping
@@ -120,7 +123,6 @@ var instructionNames = map[OpcodeID]string{
 	BranchFalse:        "BranchFalse",
 	BranchTrue:         "BranchTrue",
 	Call:               "Call",
-	ClassMember:        "ClassMember",
 	Coerce:             "Coerce",
 	Constant:           "Constant",
 	Copy:               "Copy",
@@ -133,6 +135,7 @@ var instructionNames = map[OpcodeID]string{
 	Exp:                "Exp",
 	Flatten:            "Flatten",
 	FromFile:           "FromFile",
+	GetRegister:        "GetRegister",
 	GetThis:            "GetThis",
 	GetVarArgs:         "GetVarArgs",
 	Go:                 "Go",
@@ -153,9 +156,11 @@ var instructionNames = map[OpcodeID]string{
 	NotEqual:           "NotEqual",
 	Or:                 "Or",
 	Panic:              "Panic",
+	PopPackage:         "PopPackage",
 	PopScope:           "PopScope",
 	Print:              "Print",
 	Push:               "Push",
+	PushPackage:        "PushPackage",
 	PushScope:          "PushScope",
 	RangeInit:          "RangeInit",
 	RangeNext:          "RangeNext",
@@ -163,6 +168,7 @@ var instructionNames = map[OpcodeID]string{
 	Response:           "Response",
 	Return:             "Return",
 	Say:                "Say",
+	SetRegister:        "SetRegister",
 	SetThis:            "SetThis",
 	StackCheck:         "StackCheck",
 	StaticTyping:       "StaticTyping",
@@ -202,7 +208,6 @@ func initializeDispatch() {
 			BranchFalse:        BranchFalseImpl,
 			BranchTrue:         BranchTrueImpl,
 			Call:               CallImpl,
-			ClassMember:        ClassMemberImpl,
 			Coerce:             CoerceImpl,
 			Constant:           ConstantImpl,
 			Copy:               CopyImpl,
@@ -215,6 +220,7 @@ func initializeDispatch() {
 			Exp:                ExponentImpl,
 			Flatten:            FlattenImpl,
 			FromFile:           FromFileImpl,
+			GetRegister:        getRegister,
 			GetThis:            GetThisImpl,
 			GetVarArgs:         GetVarArgsImpl,
 			Go:                 GoImpl,
@@ -235,9 +241,11 @@ func initializeDispatch() {
 			NotEqual:           NotEqualImpl,
 			Or:                 OrImpl,
 			Panic:              PanicImpl,
+			PopPackage:         popPackage,
 			PopScope:           PopScopeImpl,
 			Print:              PrintImpl,
 			Push:               PushImpl,
+			PushPackage:        pushPackage,
 			PushScope:          PushScopeImpl,
 			RangeInit:          RangeInitImpl,
 			RangeNext:          RangeNextImpl,
@@ -245,6 +253,7 @@ func initializeDispatch() {
 			Response:           ResponseImpl,
 			Return:             ReturnImpl,
 			Say:                SayImpl,
+			SetRegister:        setRegister,
 			SetThis:            SetThisImpl,
 			StackCheck:         StackCheckImpl,
 			StaticTyping:       StaticTypingImpl,

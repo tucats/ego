@@ -1,0 +1,11 @@
+
+package employee
+
+type Employee struct {
+    id int
+    name string
+}
+
+func (e *Employee) SetName( s string ) {
+    e.name = s
+}

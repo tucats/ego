@@ -173,7 +173,8 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			replica = util.GetInt(replicaX) + 1
 		}
 
-		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
+		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ReplicaMDKey, replica)
+		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.IsTypeMDKey, false)
 
 		dropList := []string{}
 
@@ -201,7 +202,7 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 		// If there is a parent key, override it with this item.
 		if _, ok := datatypes.GetMetadata(r, datatypes.ParentMDKey); ok {
-			datatypes.SetMetadata(r, datatypes.ParentMDKey, args[0])
+			datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ParentMDKey, args[0])
 		}
 
 	default:

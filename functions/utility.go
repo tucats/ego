@@ -414,9 +414,9 @@ func Type(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return datatypes.TypeString(kind + datatypes.ArrayType), nil
 
 	case map[string]interface{}:
-		// IF the parent is a string instead of a map, this is the actual type object
-		if typeName, ok := datatypes.GetMetadata(v, datatypes.ParentMDKey); ok {
-			if _, ok := typeName.(string); ok {
+		// Is this a type object:
+		if f, ok := datatypes.GetMetadata(v, datatypes.IsTypeMDKey); ok {
+			if util.GetBool(f) {
 				return "type", nil
 			}
 		}

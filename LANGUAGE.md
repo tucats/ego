@@ -1486,38 +1486,48 @@ import is a directory in the $EGO_PATH/lib location, then all the
 source files within that directory area read and processed as part
 of one package. 
 
-## db <a name="db"></a>
-The `db` package provides support for accessing a database. Currently, this must be a Postgres
-database or a database that uses the Postgres wire protocol for communicating. The package has
-a `New` function which creates a new database client object.
+The following sections will describe the _built-in_ packages that are
+provided automatically as part of Ego. You can extend the packages
+by writing your own, as described later in the section on User Packages.
 
-With this object, you can execute a SQL query and get back either a fully-formed array of
-struct types (for small result sets) or a row scanning object that is used to step through
-a result set of arbitrary size.
+## db <a name="db"></a>
+The `db` package provides support for accessing a database. Currently, 
+this must be a Postgres database or a database that uses the Postgres 
+wire protocol for communicating. The package has a `New` function which 
+creates a new database client object.
+
+With this object, you can execute a SQL query and get back either a 
+fully-formed array of struct types (for small result sets) or a row 
+scanning object that is used to step through a result set of arbitrary 
+size.
 
 ### db.New("connection-string-url")
-There is a simplified interface to SQL databases available. By default, the only provider supported
-is Postgres at this time.
+There is a simplified interface to SQL databases available. By 
+default, the only provider supported is Postgres at this time.
 
-The result of the db.New() call is a database handle, which can be used to execute statements or
-return results from queries.
+The result of the `db.New()` call is a database handle, which can be 
+used to execute statements or return results from queries.
 
      d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
      r, e := d.QueryResult("select * from foo")
      d.Close()
 
-This example will open a database connection with the specified URL, and perform a query that returns
-a result set. The result set is an Ego array of arrays, containing the values from the result set.
-The Query function call always returns all results, so this could be quite large with a query that
-has no filtering. You can specify parameters to the query as additional argument, which are then
+This example will open a database connection with the specified URL, 
+and perform a query that returns a result set. The result set is an 
+Ego array of arrays, containing the values from the result set. The 
+`QueryResult()` function call always returns all results, so this could be 
+quite large with a query that has no filtering. You can specify p
+arameters to the query as additional argument, which are then
 substituted into the query, as in:
 
      age := 21
      r, e := d.QueryResult("select member where age >= $1", age)
 
-The parameter value of `age` is injected into the query where the $1 string is found.
+The parameter value of `age` is injected into the query where the 
+$1 string is found. 
 
-Once a database handle is created, here are the functions you can call using the handle:
+Once a database handle is created, here are the functions you can 
+call using the handle:
 
 | Function | Description |
 |----------|-------------|
@@ -2259,6 +2269,49 @@ error, the `id` will be nil, and the `err` will describe the error.
 &nbsp;
 
 # User Packages
+You can create your own packages which contain type definitions and
+functions that are used via the package prefix you specify.  Consider
+the following example files.
+
+The first file is "employee.ego" and describes a package. It starts
+with a `package` statement as the first statement item, and then
+defines a type and a function that accepts a value of that type as
+the function receiver.
+
+    package employee
+
+    type Employee struct {
+        id int
+        name string
+    }
+
+    func (e *Employee) SetName( s string ) {
+        e.name = s
+    }
+
+
+The second file is "test.ego" and is the program that will use this package.
+It starts with an `import` statement, which causes the compilation to include
+the package definition within the named file "employee". You can specify the
+file extension of ".ego" but it is not necessary.
+
+    import "employee"
+
+    e := employee.Employee{id:55}
+
+    e.SetName("Frodo")
+
+    fmt.Println("Value is ", e)
+
+
+This program uses the package definitions. It creates an instance of an
+`Employee` from the `employee` package, and initializes one of the fields
+of the type. It then uses the object to invoke a function for that type,
+the `SetName` package. Note that when this is called, you do not specify
+the package name; instead you specify the object that was created using
+the package's definition. In this example, it should print the structure
+contents showing the `id` of 55 and the `name` of "Frodo."
+
 
 ## package
 Use the `package` statement to define a set of related functions in 

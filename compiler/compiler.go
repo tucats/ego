@@ -137,10 +137,10 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 	}
 
 	// Merge in any package definitions
-	c.AddPackageToSymbols(c.b.Symbols)
+	// c.AddPackageToSymbols(c.b.Symbols)
 
 	// Also merge in any other symbols created for this function
-	c.b.Symbols.Merge(c.Symbols())
+	// c.b.Symbols.Merge(c.Symbols())
 
 	return c.b, nil
 }

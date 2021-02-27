@@ -1,4 +1,3 @@
-import strings
 
 @test "functions: strings.Camel()"
 

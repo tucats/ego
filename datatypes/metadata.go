@@ -7,6 +7,7 @@ const (
 	BasetypeMDKey     = "basetype"
 	ElementTypesMDKey = "elements"
 	MembersMDKey      = "members"
+	IsTypeMDKey       = "isType"
 	ParentMDKey       = "parent"
 	ReplicaMDKey      = "replica"
 	ReadonlyMDKey     = "readonly"
@@ -17,12 +18,7 @@ const (
 
 // For a given structure, set a key/value in the metadata. The
 // metadata member and it's map are created if necessary.
-func SetMetadata(value interface{}, key string, v interface{}) bool {
-	m, ok := value.(map[string]interface{})
-	if !ok {
-		return false
-	}
-
+func SetMetadata(m map[string]interface{}, key string, v interface{}) bool {
 	mdx, ok := m[MetadataKey]
 	if !ok {
 		m[MetadataKey] = map[string]interface{}{key: v}
@@ -36,6 +32,7 @@ func SetMetadata(value interface{}, key string, v interface{}) bool {
 	}
 
 	mdxx[key] = v
+	m[MetadataKey] = mdxx
 
 	return true
 }

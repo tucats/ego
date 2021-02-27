@@ -170,6 +170,8 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 // allows type names, etc. to be added to the struct definition
 // The resulting map is then pushed back on the stack.
 func StructImpl(c *Context, i interface{}) *errors.EgoError {
+	var model interface{}
+
 	count := util.GetInt(i)
 	m := map[string]interface{}{}
 
@@ -188,10 +190,12 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
-		// If there is a "__" prefix, this is metadata and is not
-		// stored as a field, but instead as a metadata item (which
-		// is a hidden map-within-the-map).
-		if strings.HasPrefix(name, "__") {
+		// IF this is the model, save it off to the side. Otherwise, if there is a
+		// "__" prefix, in the name this is metadata and is not stored as a field,
+		// but instead as a metadata item (which is a hidden map-within-the-map).
+		if name == "__model" {
+			model = value
+		} else if strings.HasPrefix(name, "__") {
 			datatypes.SetMetadata(m, name[2:], value)
 		} else {
 			m[name] = value
@@ -217,7 +221,13 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 	if kind, ok := datatypes.GetMetadata(m, datatypes.TypeMDKey); ok {
 		typeName, _ := kind.(string)
 
-		if model, ok := c.symbolGet(typeName); ok {
+		if model == nil {
+			model, ok = c.symbolGet(typeName)
+		} else {
+			ok = true
+		}
+
+		if ok {
 			if modelMap, ok := model.(map[string]interface{}); ok {
 				// Store a pointer to the model object now.
 				datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
