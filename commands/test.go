@@ -100,6 +100,12 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		// Tokenize the input
 		t := tokenizer.New(text)
 
+		// If it doesn't start with "@", "test" it's not a test,
+		// but a support file, and we skip it.
+		if len(t.Tokens) < 2 || t.Peek(1) != "@" || t.Peek(2) != "test" {
+			continue
+		}
+
 		// Compile the token stream
 		name := strings.ReplaceAll(fileOrPath, "/", "_")
 		comp := compiler.New(name)

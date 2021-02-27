@@ -1,3 +1,6 @@
+// Note, this is not a test file (no @test) so it will
+// not be run from an ego test command. Instead, it will
+// be available for import by other tests.
 
 package employee
 
