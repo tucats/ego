@@ -1,0 +1,16 @@
+@test "packages: functions"
+
+// Import references path relative to 
+
+import "tests/packages/employee"
+
+{
+    e := employee.Employee{id:155}
+    @assert e.id == 155
+    @assert e.name == ""
+
+    e.SetName("Frodo")
+
+    @assert e.name == "Frodo"
+}
+@pass
