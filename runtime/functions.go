@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
+	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -49,6 +50,17 @@ func AddBuiltinPackages(syms *symbols.SymbolTable) {
 			datatypes.TypeMDKey:     "package",
 			datatypes.ReadonlyMDKey: true,
 		},
+	})
+
+	// Add the sort.Slice function, which must live outside
+	// the function package to avoid import cycles.
+	_ = functions.AddFunction(syms, functions.FunctionDefinition{
+		Name:      "Slice",
+		Pkg:       "sort",
+		Min:       2,
+		Max:       2,
+		FullScope: true,
+		F:         sortSlice,
 	})
 }
 

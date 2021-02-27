@@ -258,8 +258,8 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
 			oldDebugMode = ui.DebugMode
 
-			ctx.Tracing = io.GetConfig(syms, ConfigTrace)
-			if ctx.Tracing {
+			ctx.SetTracing(io.GetConfig(syms, ConfigTrace))
+			if ctx.Tracing() {
 				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
 			}

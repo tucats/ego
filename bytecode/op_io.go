@@ -43,7 +43,7 @@ func PrintImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// If we are instruction tracing, print out a newline anyway so the trace
 	// display isn't made illegible.
-	if c.output == nil && c.Tracing {
+	if c.output == nil && c.tracing {
 		fmt.Println()
 	}
 

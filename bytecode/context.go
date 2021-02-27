@@ -41,7 +41,6 @@ type Context struct {
 	fp              int
 	line            int
 	argCountDelta   int
-	Tracing         bool
 	fullSymbolScope bool
 	running         bool
 	Static          bool
@@ -89,7 +88,6 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		line:            0,
 		symbols:         s,
 		fullSymbolScope: true,
-		Tracing:         false,
 		thisStack:       nil,
 		registers:       make([]interface{}, registerCount),
 		packageStack:    make([]packageDef, 0),
@@ -176,6 +174,10 @@ func (c *Context) GetOutput() string {
 // the console.
 func (c *Context) SetTracing(b bool) {
 	c.tracing = b
+}
+
+func (c *Context) Tracing() bool {
+	return c.tracing
 }
 
 // SetTokenizer sets a tokenizer in the current context for use by
@@ -373,4 +375,8 @@ func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
 	}
 
 	return err
+}
+
+func (c *Context) Result() interface{} {
+	return c.result
 }

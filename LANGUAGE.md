@@ -1905,6 +1905,33 @@ The `sort` package contains functions that can sort an array containing only
 homogeneous base types (int, string, float). If the array contains interfaces
 or structs, it cannot be sorted. The sort occurs "in place" in the array.
 
+### sort.Slice(array, func)
+The `Slice` function allows you to sort an array of non-base type. For example,
+you could create an array of structs; the builtin `sort` functions don't know
+how to sort that structure. You can sort it using the `Slice` function by
+supplying a function constant that is able to decide which of two items in
+the array is _less than_ the other.  Even though the examples could be more
+complex, here's an example using integer values:
+
+
+    a := []int{ 101, 5, 33, -55, 239, 3, 66}
+
+    sort.Slice(a, func(i int, j int) bool {
+        return a[i] < a[j]
+    })
+
+When this runs, the array `a` will be in sorted order. The function constant
+(the _comparison function_) is called by the `sort` package algorithm as many
+times as needed to compare two values in the array. The function _must_ 
+accept two integer values as arguments, and return a bool value. The function
+result is determining if the `i` element of the array is less than the `j`
+element of the array. The `Slice` function manages the sort algorithm, and
+calls back to your supplied function as needed.
+
+Note that the comparison function has to be defined as an anonymous function
+constant in the string, so it has access to values outside the function
+(specifically, the array value)
+
 ### sort.Strings(array)
 The `Strings` function sorts an array of strings. An empty string sorts to
 the start of the list.

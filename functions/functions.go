@@ -234,3 +234,21 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 
 	return fn(s, args)
 }
+
+func AddFunction(syms *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError {
+	// Make sure not a collision
+	if _, ok := FunctionDictionary[fd.Name]; ok {
+		return errors.New(errors.FunctionAlreadyExistsError)
+	}
+
+	FunctionDictionary[fd.Name] = fd
+
+	// Has the package already been constructed? If so, we need to add this to the package.
+	if pkg, ok := syms.Get(fd.Pkg); ok {
+		if p, ok := pkg.(map[string]interface{}); ok {
+			p[fd.Name] = fd.F
+		}
+	}
+
+	return nil
+}

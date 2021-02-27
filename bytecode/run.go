@@ -68,7 +68,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	c.pc = addr
 	c.running = true
 
-	if c.Tracing {
+	if c.tracing {
 		ui.Debug(ui.TraceLogger, "*** Tracing "+c.Name)
 	}
 
@@ -84,7 +84,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 		i := c.bc.instructions[c.pc]
 
-		if c.Tracing {
+		if c.tracing {
 			s := FormatInstruction(i)
 
 			s2 := FormatStack(c.symbols, c.stack[:c.sp], fullStackListing)
@@ -122,11 +122,11 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				// Implicit pop-scope done here.
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
-				if c.Tracing {
+				if c.tracing {
 					ui.Debug(ui.TraceLogger, "*** Branch to %d on error: %s", c.pc, text)
 				}
 			} else {
-				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.Tracing {
+				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.tracing {
 					ui.Debug(ui.TraceLogger, "*** Return error: %s", text)
 				}
 
@@ -135,7 +135,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		}
 	}
 
-	if c.Tracing {
+	if c.tracing {
 		ui.Debug(ui.TraceLogger, "*** End tracing "+c.Name)
 	}
 
@@ -176,7 +176,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			funcSyms.Merge(syms)
 
 			ctx := NewContext(funcSyms, callCode)
-			ctx.Tracing = true
+			ctx.SetTracing(true)
 			ui.DebugMode = true
 
 			err = parentCtx.newError(ctx.Run())

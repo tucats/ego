@@ -1,0 +1,15 @@
+@test "functions: sort.Slice()"
+
+{
+    a := []int{ 101, 5, 33, -55, 239, 3, 66}
+
+    sort.Slice(a, func(i int, j int) bool {
+        return a[i] < a[j]
+    })
+
+    @assert a[0] == -55
+    @assert a[1] == 3
+    @assert a[6] == 239
+    @assert len(a) == 7
+}
+@pass
