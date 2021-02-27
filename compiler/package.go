@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -109,7 +110,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		savedSourceFile := c.SourceFile
 
 		// Read the imported object as a file path
-		text, err := c.fileContents(fileName)
+		text, err := c.readPackageFile(fileName)
 		if !errors.Nil(err) {
 			// If it wasn't found but we did add some builtins, good enough.
 			// Skip past the filename that was rejected by c.Readfile()...
@@ -165,8 +166,8 @@ func (c *Compiler) compileImport() *errors.EgoError {
 	return nil
 }
 
-// fileContents reads the text from a file into a string.
-func (c *Compiler) fileContents(name string) (string, *errors.EgoError) {
+// readPackageFile reads the text from a file into a string.
+func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 	s, err := c.directoryContents(name)
 	if errors.Nil(err) {
 		return s, nil
@@ -181,10 +182,23 @@ func (c *Compiler) fileContents(name string) (string, *errors.EgoError) {
 	if e2 != nil {
 		content, e2 = ioutil.ReadFile(name + ".ego")
 		if !errors.Nil(e2) {
+			// Path name did not resolve. Get the Ego path and try
+			// variations on that.
 			r := os.Getenv("EGO_PATH")
-			fn = filepath.Join(r, "lib", name+".ego")
+			if r == "" {
+				r = persistence.Get(defs.EgoPathSetting)
+			}
 
+			// Try to see if it's in the lib directory under EGO path
+			fn = filepath.Join(r, "lib", name+".ego")
 			content, e2 = ioutil.ReadFile(fn)
+
+			// Nope, see if it's in the path relative to EGO path
+			if e2 != nil {
+				fn = filepath.Join(r, name+".ego")
+				content, e2 = ioutil.ReadFile(fn)
+			}
+
 			if e2 != nil {
 				c.t.Advance(-1)
 
@@ -246,7 +260,7 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
 			fname := filepath.Join(dirname, f.Name())
 
-			t, err := c.fileContents(fname)
+			t, err := c.readPackageFile(fname)
 			if !errors.Nil(err) {
 				return "", err
 			}

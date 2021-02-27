@@ -59,6 +59,11 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
+	// Copy all the constants
+	for k, v := range c.symbols.Constants {
+		pkg[k] = v
+	}
+
 	// Define the attribute of the struct as a package.
 	datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(pkg, datatypes.StaticMDKey, true)

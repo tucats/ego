@@ -1,6 +1,8 @@
 
 package employee
 
+const ManagerID = 100
+
 type Employee struct {
     id int
     name string
