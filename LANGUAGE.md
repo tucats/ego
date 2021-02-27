@@ -50,6 +50,9 @@
    2. [`util` package](#util)
    2. [`uuid` package](#uuid)
 
+7. [User Packages](#packages)
+   1. [The `package` statement](#package)
+
 8. [Directives](#directives)
    1. [@error](#at-error)
    2. [@global](#at-global)
@@ -113,6 +116,8 @@ A value can be a base type; when it is a base type is contains only
 one value at a time, and that value has a specific type.  These are 
 listed here.
 
+&nbsp;
+
 |   Type   | Example  |    Range         | Description  |
 | -------- | -------- | ---------------- | -------------|
 | `nil`    | nil      | nil | The `nil` value indicates no value or type specified |
@@ -124,6 +129,8 @@ listed here.
 
 
 _Note that the numeric range values shown are approximate._
+
+&nbsp;
 
 A value expressed in an _Ego_ program has an implied type. The 
 language processor will attempt to determine the type of the value. 
@@ -386,6 +393,8 @@ The _Ego_ language is, by default, a case-senstive language, such
  or a alphabetic character. Here are some examples of valid and 
  invalid names:
 
+&nbsp;
+
 | Name | Description |
 | ---- | ----------- |
 | a123 | Valid name |
@@ -394,6 +403,8 @@ The _Ego_ language is, by default, a case-senstive language, such
 | _egg | Valid name, but is a read-only variable |
 | 15States | Invalid name, does not start with an alphabetic character |
 | $name | Invalid name, `$` is not a valid symbol character |
+
+&nbsp;
 
 There is a reserved name that is just an underscore, "_". This name 
 means _value we will ignore._ So anytime you need to referene a variable 
@@ -491,26 +502,32 @@ have more limited functionality.
 There are _dereference_ operators that are used to access members of 
 a struct, values of a type, or index into an array.
 
+&nbsp;
+
 | Operator | Example | Description |
 | --- | --- | --- |
 | .   | emp.age | Find the menber named `age` in the struct named `emp` |
 | []  | items[5] | Find the value at index 5 of the array named `items` |
 | {}  | emp{} | Create an instance of a struct of the type `emp` |
-&nbsp;
+
 &nbsp;
 
 There are _monadic_ operators which precede an expression and operate 
 on the single value given.
 
+&nbsp;
+
 | Operator | Example | Description |
 | --- | --- | --- |
 |  -  | -temp | Calculate the negative of the value in `temp` |
 | !  | !active | Calculate the boolean NOT of the value in `active` |
-&nbsp;
+
 &nbsp;
 
 There are _diadic_ operators that work on two values, one of which
 preceeds the operator and one of which follows the operator.
+
+&nbsp;
 
 | Operator | Example | Description |
 | --- | --- | --- |
@@ -519,6 +536,8 @@ preceeds the operator and one of which follows the operator.
 | * | a*b | Calculate the product of the numeric value, or the OR of two boolean values |
 | / | a/b | Calculate the division of the numeric values |
 | ^ | 2^n | Calculate `2` to the power `n` |
+
+&nbsp;
 
 For division, integer values will result in the integer value of 
 the division, so `10/3` will result in `3` as the expression value. 
@@ -540,6 +559,8 @@ preceeds the operator and one of which follows the operator. The
 result of the operator is always a boolean (`true` or `false`) value 
 describing the relationship between the two values.
 
+&nbsp;
+
 | Operator | Example | Description |
 | --- | --- | --- |
 |  ==  | a == b | True if `a` is equal to `b` |
@@ -548,6 +569,8 @@ describing the relationship between the two values.
 |  &gt;= | a &gt;= b | True if `a` is less than or equal to `b` |
 |  &lt; | a &lt; b | True if `a` is greater than `b` |
 |  &lt;= | a &lt;= b | True if `a` is greater than or equal to `b` |
+
+&nbsp;
 
 
 ## Type Conversions<a name="typeconversion"></a>
@@ -580,6 +603,8 @@ there are no values, you still must specify the parenthesis. The function
 may accept a fixed or variable number of arguments, and typically returns 
 a single value.
 
+&nbsp;
+
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
 | append() | append(list, 5, 6, 7) | Append the items together into an array. |
@@ -602,6 +627,8 @@ type values (int, bool, string) as well as for arrays.
 
 For base types, the following are available:
 
+&nbsp;
+
 
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
@@ -610,6 +637,8 @@ For base types, the following are available:
 | int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
 | string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
 
+&nbsp;
+
 A special note about `string()`; it has a feature where if the value passed in is an array of
 integer value, each one is treated as a Unicode rune value and the resulting string is
 the return value.  Any other type is just converted to its default formatted value.
@@ -617,6 +646,7 @@ the return value.  Any other type is just converted to its default formatted val
 You can also perform conversions on arrays, to a limited degree. This is done with 
 the function:
 
+&nbsp;
 
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
@@ -625,6 +655,8 @@ the function:
 | []interface{}() | []interface{}([true, 5, "string"])| Convert the array to a []interface{} array where there are no static types for the array. |
 | []float() | []float([1, 5, 0])| Convert the array to a []float array. |
 | []string() | []string([1, 5, 0])| Convert the array to a []string array. |
+
+&nbsp;
 
 In all cases, the result is a typed array of the given cast type. Each 
 element of the array is converted to the target type and stored in the
@@ -1529,6 +1561,8 @@ $1 string is found.
 Once a database handle is created, here are the functions you can 
 call using the handle:
 
+&nbsp;
+
 | Function | Description |
 |----------|-------------|
 | d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
@@ -1540,15 +1574,21 @@ call using the handle:
 | d.Close() | Terminate the connection to the database and free up resources.
 | d.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
 
+&nbsp;
+
 When you use the Query() call it returns a rowset object. This object can be used to step through the
 result set a row at a time. This allows the underlying driver to manage buffers and large result sets
 without filling up memory with the entire result set at once.
+
+&nbsp;
 
 | Function | Description |
 |----------|-------------|
 | r.Next() | Prepare the next row for reading. Returns false if there are no more rows
 | r.Scan() | Read the next row and create either a struct or an array of the row data
 | r.Close() | End reading rows and release any resources consumed by the rowset read.
+&nbsp;
+&nbsp;
 
 ## fmt <a name="fmt"></a>
 The `fmt` package contains a function library for formatting and printing output to the
@@ -1614,12 +1654,16 @@ exactly as shown.  For example,
 Note that in both the data string and the format string, multiple white-space
 characters (" ", etc) are ignored.  The supported format values are:
 
+&nbsp;
+
 | Format | Description |
 |:------:| ----- |
 | %t | Boolean "true" or "false" value |
 | %f | Floating point value |
 | %d | Integer value |
 | %s | String values |
+
+&nbsp;
 
 Note that this is a subset of the format operations supported by Go's runtime.
 Also note that _Ego_ does not support a width specification in the format.
@@ -1641,18 +1685,121 @@ The io package supports input/output operations using native files in the file s
 of the computer running _Ego_. 
 
 ### io.Delete(filename)
+The `Delete()` function deletes a file from the file system. 
+
+    fn := "newdata.txt"
+    io.Delete(fn)
+
+When this program runs, the physical file "newdata.txt" will have been deleted
+from the file system, assuming the current user has permission to delete the
+file.
 
 ### io.DirList(path)
+The `DirList` function produces a string containing a human-formatted directory
+listing, similar to the Unix "ls" command. The result string is already formatted
+with line breaks, etc.
 
 ### io.Expand(path)
+The `Expand()` function produces an array of strings containing the absolute path
+names of all files found within the given path.
+
+   a := "/tmp"
+   fns := io.Expand(a)
+
+The value of `fns` is a []string and contains the names of each file found in the
+directory "/tmp".
 
 ### io.Open(filename [, mode])
+The `Open()` function opens a file, and returns a file handle that can be used to
+perform specific operations on the file.
+
+    fn := "mydata.txt"
+    mode := "create"
+    f := io.Open(fn, mode)
+
+This program opens a file named "mydata.txt" for output, and creates the file if it
+does not already exist. The mode variable can be one of the following values
+
+&nbsp;
+
+| Mode   | Description |
+|:------:| ----------- |
+| append | The file must exist, and is opened for writing. All new data is written to the end of the file. |
+| create | The file is created (any previous contents are lost) and available for writing. |
+| read   | The file must already exist, and is opened for reading only |
+| write  | The file must already exist, and is opened for writing only |
+
+&nbsp;
+
+Once a file handle is created, you can use the file handle to perform additional operations
+on the file, until you use the `Close()` method of the handle which closes the file so it
+completes all operations and then the handle cannot be used again until another `io.Open()`
+operation. The file handle functions are:
+
+&nbsp;
+
+| Function            | Description |
+| ------------------- | ----------- |
+| Close()             | Close the file, after which the file object can no longer be used. |
+| ReadString()        | Read a line of text from the file and return it as a string |
+| WriteString(string) | Write a string to the output file and add a newline |
+| Write(value)        | Write an arbitrary value to the output file |
+| WriteAt(value, int) | Write an arbitrary value at specific position in the file |
+
+&nbsp;
 
 ### io.ReadDir(path)
+The `ReadDir()` function profiles a list of all the files in a given directory
+path location. This is the form of an array of structures which describe each
+file.
+
+    a := io.ReadDir("/tmp")
+
+This will produce an array `a` containing information on each file in the "/tmp"
+directory. An empty array is returned if there are no files.  Each array structure
+has the following members:
+ 
+&nbsp;
+
+| Field     | Type   | Description |
+| --------- | ------ | ----------- |
+| directory | bool   | true if the entry is a subdirectroy, else false if it is a file |
+| mode      | string | Unix-style mode string for permissions for the file |
+| modified  | string | Timestamp of the last time the file was modified |
+| name      | string | The name of the file |
+| size      | int    | The size of the file contents in bytes |
+
+&nbsp;
+
 
 ### io.ReadFile(filename)
+The `ReadFile` function reads input from a file. If the filename is a "." then the
+function reads a single line of text from stdin (the console or a pipe). Otherwise,
+the filename must be the absolute or relative path to a file in the file system, and
+its' entire contents are returned as a single string value.
+
+    fn := "mydata.txt"
+    s := io.ReadFile(fn)
+
+The variable `s` will contain a string containing the entire contents of the input
+file, including with line breaks. You can use `strings.Split()` to conver this into
+an array of strings based on the line breaks if you wish.
+
+
 
 ### io.WriteFile(filename, string)
+The `WriteFile()` function write a string value to a file. If the file does not
+exist, it is created. If the file previously existed, the contents are over-written
+by the new file.
+
+
+    fn := "mydata.txt"
+    s := io.ReadFile(fn)
+    io.WriteFile("newdata.txt", s)
+
+This reads the contents of the "mydata.txt" file, and then writes it to the
+"newdata.txt" file, in its entirety.
+
 
 ## json <a name="json"></a>
 
@@ -1722,6 +1869,8 @@ The resulting item can be used to make calls using the connection just created. 
 example, if the value of `rest.New()` was stored in the variable `r`, the following
 functions would become available: 
 
+&nbsp;
+
 | Function | Description |
 |----------|-------------|
 | r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
@@ -1732,9 +1881,7 @@ functions would become available:
 | r.Verify(b) | Enable or disable TLS server certificate validation
 | r.Auth(u,p) | Estabish BasicAuth with the given username and password strings
 | r.Token(t) | Establish Bearer token auth with the given token value
-
-
-&nbsp; 
+ 
 &nbsp;     
 
 Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used to examing the HTTP status
@@ -2207,6 +2354,8 @@ the user.
 The `Mode()` function reports the mode the current program is running under.
 The list of values are:
 
+&nbsp;
+
 | Mode | Description |
 | ---- | ----------- |
 | interactive | The `ego` program was run with no program name, acceping console input |
@@ -2214,6 +2363,7 @@ The list of values are:
 | test        | The program is running using the `ego test` integration test command |
 | run         | The program is running using `ego run` with an input file or pipe |
 
+&nbsp;
 &nbsp;
 
 ### util.Symbols()
