@@ -1,8 +1,6 @@
 package bytecode
 
 import (
-	"unicode"
-
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -122,14 +120,7 @@ func (c *Context) syncPackageSymbols() {
 		if pkg, ok := symbols.RootSymbolTable.Get(pkgname); ok {
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range pkgsyms.Symbols {
-					var firstRune rune
-					for _, ch := range k {
-						firstRune = ch
-
-						break
-					}
-
-					if unicode.IsUpper(firstRune) {
+					if util.HasCapitalizedName(k) {
 						m[k] = pkgsyms.Values[v]
 					}
 				}

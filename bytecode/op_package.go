@@ -1,8 +1,6 @@
 package bytecode
 
 import (
-	"unicode"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -73,15 +71,7 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
-		var first rune
-
-		for _, c := range k {
-			first = c
-
-			break
-		}
-
-		if unicode.IsUpper(first) {
+		if util.HasCapitalizedName(k) {
 			v, _ := c.symbols.Get(k)
 			pkg[k] = v
 
@@ -91,15 +81,7 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 
 	// Copy all the exported constants
 	for k, v := range c.symbols.Constants {
-		var first rune
-
-		for _, c := range k {
-			first = c
-
-			break
-		}
-
-		if unicode.IsUpper(first) {
+		if util.HasCapitalizedName(k) {
 			pkg[k] = v
 
 			ui.Debug(ui.ByteCodeLogger, "Copy constant %s to package", k)
