@@ -192,7 +192,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	} else {
 		// Store address of the function, either in the current
 		// compiler's symbol table or active package.
-		if c.PackageName == "" {
+		if /* c.PackageName == "" */ true {
 			c.b.Emit(bytecode.Push, b)
 			c.b.Emit(bytecode.StoreAlways, functionName)
 			//_ = c.s.SetAlways(functionName, b)

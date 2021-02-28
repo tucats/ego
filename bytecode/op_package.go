@@ -1,8 +1,9 @@
 package bytecode
 
 import (
-	"strings"
+	"unicode"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -20,8 +21,23 @@ func pushPackage(c *Context, i interface{}) *errors.EgoError {
 	})
 	c.symbols = symbols.NewChildSymbolTable("package "+name, c.symbols)
 
-	// Create an initialize the package variable
+	// Create an initialize the package variable. If it alreaady exists
+	// as a package (from a previous import or autoimport) re-use it
 	pkg := map[string]interface{}{}
+
+	if v, ok := symbols.RootSymbolTable.Get(name); ok {
+		switch actual := v.(type) {
+		case map[string]interface{}:
+			pkg = actual
+
+			if v, ok := datatypes.GetMetadata(actual, datatypes.SymbolsMDKey); ok {
+				if ps, ok := v.(*symbols.SymbolTable); ok {
+					ps.Parent = c.symbols
+					c.symbols = ps
+				}
+			}
+		}
+	}
 
 	// Define the attribute of the struct as a package.
 	datatypes.SetMetadata(pkg, datatypes.TypeMDKey, "package")
@@ -43,6 +59,10 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 	pkgdef := c.packageStack[size-1]
 	c.packageStack = c.packageStack[:size-1]
 
+	// Verify that we're on the right package.
+	if pkgdef.name != util.GetString(i) {
+		return c.newError(errors.Panic).Context("package name mismatch: " + pkgdef.name)
+	}
 	// Retrieve the package variable
 	pkgx, found := c.symbols.Get(pkgdef.name)
 	if !found {
@@ -51,27 +71,53 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 
 	pkg, _ := pkgx.(map[string]interface{})
 
-	// Copy all the symbols, except any embedded version of the package.
+	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
-		if !strings.HasPrefix(k, "__") && !strings.HasPrefix(k, "$") && k != pkgdef.name {
+		var first rune
+
+		for _, c := range k {
+			first = c
+
+			break
+		}
+
+		if unicode.IsUpper(first) {
 			v, _ := c.symbols.Get(k)
 			pkg[k] = v
+
+			ui.Debug(ui.ByteCodeLogger, "Copy symbol %s to package", k)
 		}
 	}
 
-	// Copy all the constants
+	// Copy all the exported constants
 	for k, v := range c.symbols.Constants {
-		pkg[k] = v
+		var first rune
+
+		for _, c := range k {
+			first = c
+
+			break
+		}
+
+		if unicode.IsUpper(first) {
+			pkg[k] = v
+
+			ui.Debug(ui.ByteCodeLogger, "Copy constant %s to package", k)
+		}
 	}
+
+	// Mark the active symbol table we just used as belonging to a package.
+	c.symbols.Package = pkgdef.name
 
 	// Define the attribute of the struct as a package.
 	datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(pkg, datatypes.StaticMDKey, true)
+	datatypes.SetMetadata(pkg, datatypes.SymbolsMDKey, c.symbols)
 
 	// Reset the active symbol table to the state before we processed
 	// the package.
-	c.symbols = c.symbols.Parent
+	c.popSymbolTable()
 
-	// Store the package definition in the now-current symbol table.
-	return c.symbols.SetAlways(pkgdef.name, pkg)
+	// Store the package definition in the root symbol table.
+	return symbols.RootSymbolTable.SetAlways(pkgdef.name, pkg)
 }

@@ -42,11 +42,8 @@ type Loop struct {
 	continues []int
 }
 
-// FunctionDictionary is a list of functions and the bytecode or native function pointer.
-type FunctionDictionary map[string]interface{}
-
-// PackageDictionary is a list of packages each with a FunctionDictionary.
-type PackageDictionary map[string]FunctionDictionary
+// PackageDictionary is a list of packages each with a function dictionary.
+type PackageDictionary map[string]map[string]interface{}
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
@@ -190,9 +187,9 @@ func (c *Compiler) normalize(name string) string {
 func (c *Compiler) addPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
-		fd = FunctionDictionary{}
+		fd = map[string]interface{}{}
 		fd[datatypes.MetadataKey] = map[string]interface{}{
-			datatypes.TypeMDKey:     "dictionary",
+			datatypes.TypeMDKey:     "package",
 			datatypes.ReadonlyMDKey: true,
 		}
 	}
@@ -204,6 +201,8 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	fd[name] = function
 	c.packages[pkgname] = fd
 
+	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
+
 	return nil
 }
 
@@ -213,7 +212,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 func (c *Compiler) addPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
 	fd, found := c.packages[pkgname]
 	if !found {
-		fd = FunctionDictionary{}
+		fd = map[string]interface{}{}
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, "package")
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
@@ -249,7 +248,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 		datatypes.SetMetadata(m, datatypes.ReadonlyMDKey, true)
 
 		if pkgname != "" {
-			_ = s.SetConstant(pkgname, m)
+			_ = s.SetAlways(pkgname, m)
 		}
 	}
 }

@@ -776,3 +776,18 @@ func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 func bToMb(b uint64) float64 {
 	return float64(b) / 1024.0 / 1024.0
 }
+
+func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var result strings.Builder
+
+	depth := 0
+	p := s
+
+	for p != nil {
+		depth++
+		result.WriteString(fmt.Sprintf("%2d:  %s\n", depth, p.Name))
+		p = p.Parent
+	}
+
+	return result.String(), nil
+}

@@ -150,7 +150,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	syms := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
 
 	exitValue := 0
-	builtinsAdded := false
 
 	for {
 		// Handle special cases.
@@ -225,25 +224,22 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
 		comp := compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
+		// Add the builtin functions
+		comp.AddBuiltins("")
+
+		err := comp.AutoImport(autoImport)
+		if !errors.Nil(err) {
+			fmt.Printf("Unable to auto-import packages: " + err.Error())
+		}
+
+		comp.AddPackageToSymbols(&symbols.RootSymbolTable)
+
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
 			fmt.Printf("Error: %s\n", err.Error())
 
 			exitValue = 1
 		} else {
-			if !builtinsAdded {
-				// Add the builtin functions
-				comp.AddBuiltins("")
-
-				err := comp.AutoImport(autoImport)
-				if !errors.Nil(err) {
-					fmt.Printf("Unable to auto-import packages: " + err.Error())
-				}
-
-				comp.AddPackageToSymbols(syms)
-
-				builtinsAdded = true
-			}
 			oldDebugMode := ui.DebugMode
 
 			if io.GetConfig(syms, ConfigDisassemble) {
@@ -259,6 +255,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			oldDebugMode = ui.DebugMode
 
 			ctx.SetTracing(io.GetConfig(syms, ConfigTrace))
+
 			if ctx.Tracing() {
 				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
@@ -294,10 +291,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			} else {
 				exitValue = 0
 			}
-		}
 
-		if c.GetBool("symbols") {
-			fmt.Println(syms.Format(false))
+			if c.GetBool("symbols") {
+				fmt.Println(syms.Format(false))
+			}
 		}
 
 		if wasCommandLine {

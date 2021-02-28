@@ -22,6 +22,7 @@ const MinSymbolTableSize = 25
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
 	Name          string
+	Package       string
 	Parent        *SymbolTable
 	Symbols       map[string]int
 	Constants     map[string]interface{}

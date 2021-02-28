@@ -13,6 +13,7 @@ const (
 	ReadonlyMDKey     = "readonly"
 	SizeMDKey         = "size"
 	StaticMDKey       = "static"
+	SymbolsMDKey      = "symbols"
 	TypeMDKey         = "type"
 )
 

@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -36,6 +37,8 @@ func (c *Compiler) compilePackage() *errors.EgoError {
 
 // compileImport handles the import statement.
 func (c *Compiler) compileImport() *errors.EgoError {
+	var err *errors.EgoError
+
 	if c.blockDepth > 0 {
 		return c.newError(errors.InvalidImportError)
 	}
@@ -102,13 +105,6 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
 		}
 
-		// Save some state
-		savedPackageName := c.PackageName
-		savedTokenizer := c.t
-		savedBlockDepth := c.blockDepth
-		savedStatementCount := c.statementCount
-		savedSourceFile := c.SourceFile
-
 		// Read the imported object as a file path
 		text, err := c.readPackageFile(fileName)
 		if !errors.Nil(err) {
@@ -129,30 +125,36 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		}
 
 		ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
-		// Set up the new compiler settings
-		c.statementCount = 0
-		c.t = tokenizer.New(text)
-		c.PackageName = packageName
 
-		for !c.t.AtEnd() {
-			err := c.compileStatement()
+		importCompiler := New("import " + fileName)
+		importCompiler.b = bytecode.New("import " + fileName)
+		importCompiler.t = tokenizer.New(text)
+		importCompiler.PackageName = packageName
+
+		for !importCompiler.t.AtEnd() {
+			err := importCompiler.compileStatement()
 			if !errors.Nil(err) {
 				return err
 			}
 		}
 
-		c.b.Emit(bytecode.PopPackage)
+		importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
 		// If after the import we ended with mismatched block markers, complain
-		if c.blockDepth != savedBlockDepth {
+		if importCompiler.blockDepth != 0 {
 			return c.newError(errors.MissingEndOfBlockError, packageName)
 		}
 
-		// Reset the compiler back to the token stream we were working on
-		c.t = savedTokenizer
-		c.PackageName = savedPackageName
-		c.SourceFile = savedSourceFile
-		c.statementCount = savedStatementCount
+		// The import will have generate code that must be run to actuall register
+		// package contents.
+		importSymbols := symbols.NewChildSymbolTable("import "+fileName, &symbols.RootSymbolTable)
+		ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+		ctx.SetTracing(true)
+
+		err = ctx.Run()
+		if err != nil {
+			break
+		}
 
 		if !isList {
 			break
@@ -163,7 +165,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		}
 	}
 
-	return nil
+	return err
 }
 
 // readPackageFile reads the text from a file into a string.

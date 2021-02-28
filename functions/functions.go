@@ -38,7 +38,7 @@ const any = math.MaxInt32
 
 // FunctionDictionary is the dictionary of functions. As functions are determined
 // to allow the return of both a value and an error as multi-part results, add the
-// ErrReturn:true falg to each function definition.
+// ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"$cast":                {Min: 2, Max: 2, F: InternalCast},
 	"append":               {Min: 2, Max: any, F: Append},
@@ -126,6 +126,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"util.Memory":          {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":            {Min: 0, Max: 0, F: GetMode, FullScope: true},
 	"util.Symbols":         {Min: 0, Max: 1, F: FormatSymbols, FullScope: true},
+	"util.SymbolTable":     {Min: 0, Max: 1, F: CurrentSymbolTable, FullScope: true},
 	"uuid.New":             {Min: 0, Max: 0, F: UUIDNew},
 	"uuid.Nil":             {Min: 0, Max: 0, F: UUIDNil},
 	"uuid.Parse":           {Min: 1, Max: 1, F: UUIDParse, ErrReturn: true},

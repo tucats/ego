@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -218,14 +219,27 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 
-		funcSymbols := symbols.NewChildSymbolTable("function "+af.Name, parentTable)
-		funcSymbols.ScopeBoundary = true
+		// If there isn't a package table in the "this" variable, make a
+		// new child table. Otherwise, wire up the table so the package
+		// table becomes the function call table. Note that in the latter
+		// case, this must be done _after_ the call frame is recorded.
+		funcSymbols := c.getPackageSymbols()
+		if funcSymbols == nil {
+			funcSymbols = symbols.NewChildSymbolTable("function "+af.Name, parentTable)
+			funcSymbols.ScopeBoundary = true
+			c.symbols = funcSymbols
 
-		// Make a new symbol table for the function to run with,
-		// and a new execution context. Note that this table has no
-		// visibility into the current scope of symbol values.
+			c.callframePush("function "+af.Name, af, 0)
+		} else {
+			parentTable = c.symbols
+			c.callframePush("function "+af.Name, af, 0)
+			funcSymbols.Name = "pkg func " + af.Name
+			funcSymbols.Parent = parentTable
 
-		c.callframePush("function "+af.Name, af, 0)
+			funcSymbols.ScopeBoundary = true
+			c.symbols = funcSymbols
+		}
+
 		_ = c.symbolSetAlways("__args", args)
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
@@ -321,6 +335,12 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
 	}
+
+	// If we are running in an active package table (such as running a non-receiver
+	// function from the package) then hoist symbol table values from the package
+	// symbol table back to the package object itself so they an be externally
+	// referenced.
+	c.syncPackageSymbols()
 
 	// If FP is zero, there are no frames; this is a return from the main source
 	// of the program or service.
@@ -423,4 +443,42 @@ func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
 	_ = c.symbols.DeleteAlways("_error")
 
 	return nil
+}
+
+// See if the top of the "this" stack is a package, and if so return
+// it's symbol table. The stack is not modified.
+func (c *Context) getPackageSymbols() *symbols.SymbolTable {
+	if len(c.thisStack) == 0 {
+		return nil
+	}
+
+	v := c.thisStack[len(c.thisStack)-1]
+	if m, ok := v.value.(map[string]interface{}); ok {
+		if s, ok := datatypes.GetMetadata(m, datatypes.SymbolsMDKey); ok {
+			if table, ok := s.(*symbols.SymbolTable); ok {
+				if !c.inPackageSymbolTable(table.Package) {
+					ui.Debug(ui.TraceLogger, "Using symbol table from package "+table.Package)
+
+					return table
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// Determine if the current symbol table stack is already within
+// the named package symbol table structure.
+func (c *Context) inPackageSymbolTable(name string) bool {
+	p := c.symbols
+	for p != nil {
+		if p.Package == name {
+			return true
+		}
+
+		p = p.Parent
+	}
+
+	return false
 }

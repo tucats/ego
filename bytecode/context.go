@@ -380,3 +380,18 @@ func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
 func (c *Context) Result() interface{} {
 	return c.result
 }
+
+func (c *Context) popSymbolTable() {
+	name := c.symbols.Name
+	c.symbols = c.symbols.Parent
+
+	for strings.HasPrefix(c.symbols.Name, "pkg func ") {
+		if c.symbols.Parent == nil {
+			break
+		}
+
+		c.symbols = c.symbols.Parent
+	}
+
+	ui.Debug(ui.TraceLogger, "pop table %s, current now %s", name, c.symbols.Name)
+}

@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"unicode"
+
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -25,8 +27,17 @@ func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 // any pending "this" stack objects. A chain of receivers
 // cannot span a block, so this is a good time to clean up
 // any asymetric pushes.
+//
+// Note special logic; if this was a package symbol table, take
+// time to update the reaadonly copies of the values in the package
+// object itself.
 func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
-	c.symbols = c.symbols.Parent
+	// See if we're popping off a package table; if so there is work to do to
+	// copy the values back to the named package object.
+	c.syncPackageSymbols()
+
+	// Pop off the symbol table and clear up the "this" stack
+	c.popSymbolTable()
 	c.thisStack = nil
 
 	return nil
@@ -98,4 +109,31 @@ func ConstantImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	return err
+}
+
+func (c *Context) syncPackageSymbols() {
+	// Before we toss away this, check to see if there are package symbols
+	// that need updating in the package object.
+	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
+		pkgsyms := c.symbols.Parent
+		pkgname := c.symbols.Parent.Package
+		c.popSymbolTable()
+
+		if pkg, ok := symbols.RootSymbolTable.Get(pkgname); ok {
+			if m, ok := pkg.(map[string]interface{}); ok {
+				for k, v := range pkgsyms.Symbols {
+					var firstRune rune
+					for _, ch := range k {
+						firstRune = ch
+
+						break
+					}
+
+					if unicode.IsUpper(firstRune) {
+						m[k] = pkgsyms.Values[v]
+					}
+				}
+			}
+		}
+	}
 }
