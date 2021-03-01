@@ -32,6 +32,7 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 	}
 
 	c.b.Emit(bytecode.PopScope)
+
 	c.blockDepth = c.blockDepth - 1
 
 	return nil

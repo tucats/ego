@@ -342,9 +342,9 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.MaxSymbolsPerScope, _ = c.GetInteger(defs.SymbolTableSizeOption)
-		if symbols.MaxSymbolsPerScope < symbols.MinSymbolTableSize {
-			symbols.MaxSymbolsPerScope = symbols.MinSymbolTableSize
+		symbols.SymbolAllocationSize, _ = c.GetInteger(defs.SymbolTableSizeOption)
+		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 		}
 	}
 

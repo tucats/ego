@@ -81,7 +81,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range pkgsyms.Symbols {
 					if util.HasCapitalizedName(k) {
-						m[k] = pkgsyms.Values[v]
+						m[k] = pkgsyms.GetValue(v)
 					}
 				}
 			}

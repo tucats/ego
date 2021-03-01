@@ -1,7 +1,7 @@
 
 @test "packages: package-local functions"
 
-import "test1"
+import "tests/packages/test1"
 
 func localfuncs() int {    
     test1.SetCounter(42)

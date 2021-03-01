@@ -10,14 +10,14 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// This is the maximum number of symbols that can be created at any
+// This is the number of symbols that can be added to a table at a
 // given scope. Exported because it can be set by a caller prior
 // to constructing a symbol table.
-var MaxSymbolsPerScope = 100
+var SymbolAllocationSize = 64
 
-// No symbol table will be smaller than this size. Exported because
-// it can be set by a caller prior to constructing a symbol table.
-const MinSymbolTableSize = 25
+// No symbol table allocation extent will be smaller than this size.
+// Exported because it is referenced by CLI handlers.
+const MinSymbolAllocationSize = 16
 
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
@@ -26,7 +26,7 @@ type SymbolTable struct {
 	Parent        *SymbolTable
 	Symbols       map[string]int
 	Constants     map[string]interface{}
-	Values        []interface{}
+	Values        [][]interface{}
 	ValueSize     int
 	ScopeBoundary bool
 	mutex         sync.Mutex
@@ -47,18 +47,19 @@ var rootNames = map[string]int{
 // the designated maximum symbol table size. Note that this size
 // is set at initialization time, so the max slots cannot be changed
 // at runtime for this table.
-var rootValues = append([]interface{}{
-	"Tom Cole",
-	"(c) Copyright 2020, 2021",
-	uuid.NewString(),
-	map[string]interface{}{
-		"disassemble": false,
-		"trace":       false,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey: "config",
+var rootValues = [][]interface{}{
+	append([]interface{}{
+		"Tom Cole",
+		"(c) Copyright 2020, 2021",
+		uuid.NewString(),
+		map[string]interface{}{
+			"disassemble": false,
+			"trace":       false,
+			datatypes.MetadataKey: map[string]interface{}{
+				datatypes.TypeMDKey: "config",
+			},
 		},
-	},
-}, make([]interface{}, MaxSymbolsPerScope-len(rootNames))...)
+	}, make([]interface{}, SymbolAllocationSize-len(rootNames))...)}
 
 // RootSymbolTable is the parent of all other tables.
 var RootSymbolTable = SymbolTable{
@@ -76,23 +77,26 @@ func NewSymbolTable(name string) *SymbolTable {
 		Name:      name,
 		Parent:    &RootSymbolTable,
 		Symbols:   map[string]int{},
-		Values:    make([]interface{}, MaxSymbolsPerScope),
 		Constants: map[string]interface{}{},
 	}
+	syms := &symbols
+	syms.initializeValues()
 
-	return &symbols
+	return syms
 }
 
-// NewChildSymbolTable generates a new symbol table with an assigned
-// parent table.
+// NewChildSymbolTableWithSize generates a new symbol table with an assigned
+// parent table. The table is created with a default capacity.
 func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
 		Parent:    parent,
 		Symbols:   map[string]int{},
-		Values:    make([]interface{}, MaxSymbolsPerScope),
 		Constants: map[string]interface{}{},
 	}
+
+	syms := &symbols
+	syms.initializeValues()
 
 	return &symbols
 }
@@ -114,7 +118,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 	vx, f := s.Symbols[name]
 	if f {
-		v = s.Values[vx]
+		v = s.GetValue(vx)
 	}
 
 	if !f {
@@ -141,7 +145,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 
 	vx, f := s.Symbols[name]
 	if f {
-		v = &s.Values[vx]
+		v = s.AddressOfValue(vx)
 	}
 
 	if !f && s.Parent != nil {
@@ -176,7 +180,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
 		s.Symbols = map[string]int{}
-		s.Values = make([]interface{}, MaxSymbolsPerScope)
+		s.initializeValues()
 	}
 
 	// Hack. If this is the "_rest_response" variable, we have
@@ -198,16 +202,12 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	// IF this doesn't exist, allocate more space in the values array
 	vx, ok := syms.Symbols[name]
 	if !ok {
-		if s.ValueSize >= len(s.Values) {
-			return errors.New(errors.TooManyLocalSymbols)
-		}
-
 		vx = s.ValueSize
 		syms.Symbols[name] = s.ValueSize
 		s.ValueSize++
 	}
 
-	syms.Values[vx] = v
+	syms.SetValue(vx, v)
 
 	ui.Debug(ui.SymbolLogger, "+++ in table %s, setalways(%s) = %v [%d]",
 		s.Name, name, util.Format(v), vx)
@@ -219,14 +219,14 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	if s.Symbols == nil {
 		s.Symbols = map[string]int{}
-		s.Values = make([]interface{}, MaxSymbolsPerScope)
+		s.initializeValues()
 	}
 
 	var old interface{}
 
 	oldx, found := s.Symbols[name]
 	if found {
-		old = s.Values[oldx]
+		old = s.GetValue(oldx)
 	}
 
 	// If it was already there, we hae some additional checks to do
@@ -248,7 +248,7 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		return s.Parent.Set(name, v)
 	}
 
-	s.Values[oldx] = v
+	s.SetValue(oldx, v)
 
 	ui.Debug(ui.SymbolLogger, "+++ in table %s, set(%s) = %v [%d]",
 		s.Name, name, util.Format(v), oldx)
@@ -321,12 +321,8 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.SymbolExistsError).Context(name)
 	}
 
-	if s.ValueSize >= len(s.Values) {
-		return errors.New(errors.TooManyLocalSymbols)
-	}
-
 	s.Symbols[name] = s.ValueSize
-	s.Values[s.ValueSize] = nil
+	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 
 	return nil

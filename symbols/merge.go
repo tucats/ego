@@ -25,7 +25,7 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 
 	for k, vx := range st.Symbols {
 		// Is it a struct? If so we may need to merge to it...
-		v := st.Values[vx]
+		v := st.GetValue(vx)
 		switch vv := v.(type) {
 		case map[string]interface{}:
 			// Does the old struct already exist in the compiler table?

@@ -44,7 +44,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.Values[s.Symbols[k]]
+		v := s.GetValue(s.Symbols[k])
 		skip := false
 
 		dt := datatypes.TypeOf(v)

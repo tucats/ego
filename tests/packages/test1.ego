@@ -1,0 +1,11 @@
+package test1
+
+var Counter int
+
+func doubler( n int ) int {
+    return n * 2
+}
+
+func  SetCounter(i int ) {
+    Counter = doubler(i)
+}
