@@ -63,97 +63,108 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		fileName := c.t.Next()
 
-		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
-
-		if isList && fileName == ")" {
-			break
-		}
-
-		if len(fileName) > 2 && fileName[:1] == "\"" {
-			fileName = fileName[1 : len(fileName)-1]
-		}
-
-		if c.loops != nil {
-			return c.newError(errors.InvalidImportError)
-		}
-
-		// Get the package name from the given string. If this is
-		// a file system name, remove the extension if present.
-		packageName := filepath.Base(fileName)
-		if filepath.Ext(packageName) != "" {
-			packageName = packageName[:len(filepath.Ext(packageName))]
-		}
-
-		packageName = strings.ToLower(packageName)
-
-		// If this is an import of a package already processed, no work to do.
-		if _, found := c.s.Get(packageName); found {
-			ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
-
-			continue
-		}
-
-		// If this is an import of the package we're currently importing, no work to do.
-		if packageName == c.PackageName {
-			continue
-		}
-
-		builtinsAdded := c.AddBuiltins(packageName)
-		if builtinsAdded {
-			ui.Debug(ui.CompilerLogger, "+++ Adding builtins for package "+packageName)
+		if _, ok := c.packages[fileName]; ok {
+			ui.Debug(ui.CompilerLogger, "*** Already imported \"%s\", skipping...", fileName)
 		} else {
-			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
-		}
+			ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
-		// Read the imported object as a file path
-		text, err := c.readPackageFile(fileName)
-		if !errors.Nil(err) {
-			// If it wasn't found but we did add some builtins, good enough.
-			// Skip past the filename that was rejected by c.Readfile()...
-			if builtinsAdded {
-				c.t.Advance(1)
+			if isList && fileName == ")" {
+				break
+			}
 
-				if !isList || c.t.IsNext(")") {
-					break
-				}
+			if len(fileName) > 2 && fileName[:1] == "\"" {
+				fileName = fileName[1 : len(fileName)-1]
+			}
+
+			if c.loops != nil {
+				return c.newError(errors.InvalidImportError)
+			}
+
+			// Get the package name from the given string. If this is
+			// a file system name, remove the extension if present.
+			packageName := filepath.Base(fileName)
+			if filepath.Ext(packageName) != "" {
+				packageName = packageName[:len(filepath.Ext(packageName))]
+			}
+
+			packageName = strings.ToLower(packageName)
+
+			// If this is an import of a package already processed, no work to do.
+			if _, found := c.s.Get(packageName); found {
+				ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
 
 				continue
 			}
 
-			// Nope, import had no effect.
-			return err
-		}
+			// If this is an import of the package we're currently importing, no work to do.
+			if packageName == c.PackageName {
+				continue
+			}
 
-		ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
+			builtinsAdded := c.AddBuiltins(packageName)
+			if builtinsAdded {
+				ui.Debug(ui.CompilerLogger, "+++ Adding builtins for package "+packageName)
+			} else {
+				// The nil in the packages list just prevents this from being read again
+				// if it was already processed once.
+				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
+				c.packages[packageName] = nil
+			}
 
-		importCompiler := New("import " + fileName)
-		importCompiler.b = bytecode.New("import " + fileName)
-		importCompiler.t = tokenizer.New(text)
-		importCompiler.PackageName = packageName
-
-		for !importCompiler.t.AtEnd() {
-			err := importCompiler.compileStatement()
+			// Read the imported object as a file path
+			text, err := c.readPackageFile(fileName)
 			if !errors.Nil(err) {
+				// If it wasn't found but we did add some builtins, good enough.
+				// Skip past the filename that was rejected by c.Readfile()...
+				if builtinsAdded {
+					c.t.Advance(1)
+
+					if !isList || c.t.IsNext(")") {
+						break
+					}
+
+					continue
+				}
+
+				// Nope, import had no effect.
 				return err
 			}
-		}
 
-		importCompiler.b.Emit(bytecode.PopPackage, packageName)
+			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-		// If after the import we ended with mismatched block markers, complain
-		if importCompiler.blockDepth != 0 {
-			return c.newError(errors.MissingEndOfBlockError, packageName)
-		}
+			importCompiler := New("import " + fileName)
+			importCompiler.b = bytecode.New("import " + fileName)
+			importCompiler.t = tokenizer.New(text)
+			importCompiler.PackageName = packageName
 
-		// The import will have generate code that must be run to actuall register
-		// package contents.
-		importSymbols := symbols.NewChildSymbolTable("import "+fileName, &symbols.RootSymbolTable)
-		ctx := bytecode.NewContext(importSymbols, importCompiler.b)
-		ctx.SetTracing(true)
+			for !importCompiler.t.AtEnd() {
+				err := importCompiler.compileStatement()
+				if !errors.Nil(err) {
+					return err
+				}
+			}
 
-		err = ctx.Run()
-		if err != nil {
-			break
+			importCompiler.b.Emit(bytecode.PopPackage, packageName)
+
+			// If after the import we ended with mismatched block markers, complain
+			if importCompiler.blockDepth != 0 {
+				return c.newError(errors.MissingEndOfBlockError, packageName)
+			}
+
+			// The import will have generate code that must be run to actually register
+			// package contents.
+			importSymbols := symbols.NewChildSymbolTable("import "+fileName, &symbols.RootSymbolTable)
+			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+			ctx.SetTracing(true)
+
+			err = ctx.Run()
+			if err != nil && !err.Is(errors.Stop) {
+				break
+			}
+
+			if _, ok := c.packages[fileName]; ok {
+				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
+			}
 		}
 
 		if !isList {

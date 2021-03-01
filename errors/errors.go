@@ -86,7 +86,7 @@ func NewMessage(m string) *EgoError {
 }
 
 // Is compares the current error to the supplied error, and
-// return sa boolean indicating if they are the same.
+// return a boolean indicating if they are the same.
 func (e *EgoError) Is(err error) bool {
 	if e == nil {
 		return false
