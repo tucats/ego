@@ -106,7 +106,12 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			mainName = fname
-			text = string(content)
+			text = string(content) + `
+			try {
+				call os.Exit(main())
+			} catch {
+			
+			}`
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
