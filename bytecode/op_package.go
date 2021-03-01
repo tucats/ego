@@ -14,6 +14,16 @@ type packageDef struct {
 
 func pushPackage(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
+
+	// Are we already in this package? Happens when a directory of package
+	// files are concatenated together...
+
+	if len(c.packageStack) > 0 && c.packageStack[len(c.packageStack)-1].name == name {
+		//ui.Debug(ui.CompilerLogger, "+++ Already processing package %s, not pushed", name)
+		return nil
+	}
+
+	// Add the package to the stack, and create a nested symbol table scope.
 	c.packageStack = append(c.packageStack, packageDef{
 		name,
 	})

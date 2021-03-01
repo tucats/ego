@@ -25,5 +25,6 @@ func Primes(size int) []int {
 		p = next - 1
 
 	}
+	fmt.Println(util.Symbols())
 	return r
 }

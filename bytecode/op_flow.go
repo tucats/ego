@@ -213,7 +213,10 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// Find the top of this scope level (typically)
 		parentTable := c.symbols
 
-		if !c.fullSymbolScope {
+		// IF we're not doing full symbol scope, and the function we're
+		// calling isn't "main", then find the correct parent that limits
+		// scope visibility.
+		if !c.fullSymbolScope && af.Name != "main" {
 			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
 				parentTable = parentTable.Parent
 			}
