@@ -1,11 +1,16 @@
 
+func main() int {
 start := time.Now()
-count := 20
+count := 10
 
 for i := 0; i < count; i = i + 1 {
-  x := math.Factor(1234567890)
+   x := math.Factor(1234567890)
 }
 
 finish := time.Now()
 fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
+
+return 0
+ 
+}
 
