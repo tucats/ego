@@ -173,7 +173,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 		compilerInstance = compiler.New(name).ExtensionsEnabled(true)
-
+		compilerInstance.SetInteractive(true)
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {
 			w.WriteHeader(http.StatusBadRequest)
