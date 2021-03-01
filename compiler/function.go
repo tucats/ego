@@ -27,6 +27,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	className := ""
 	byValue := false
 
+	// Increment the function depth for the time we're on this particular function,
+	// and decrement it when we are done.
+	c.functionDepth++
+
+	defer func() { c.functionDepth-- }()
+
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
@@ -151,6 +157,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	cx := New("function " + functionName)
 	cx.t = c.t
 	cx.b = b
+	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 
 	err = cx.compileStatement()

@@ -106,12 +106,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			mainName = fname
-			text = string(content) + `
-			try {
-				call os.Exit(main())
-			} catch {
-			
-			}`
+			text = string(content) + "\n@main main"
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
@@ -238,6 +233,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		comp.AddPackageToSymbols(&symbols.RootSymbolTable)
+		comp.SetInteractive(interactive)
 
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {

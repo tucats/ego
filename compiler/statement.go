@@ -49,60 +49,28 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	// form runtime error messages as needed.
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 
-	if c.isFunctionCall() {
+	// Is it a function call? We donly do this if we are already in
+	// the body of a function.
+
+	if c.functionDepth > 0 && c.isFunctionCall() {
 		return c.compileFunctionCall()
 	}
 
 	// If the next item(s) constitute a value LValue, then this is
 	// an assignment statement.
-	if c.isAssignmentTarget() {
+	if c.functionDepth > 0 && c.isAssignmentTarget() {
 		return c.compileAssignment()
 	}
 
 	// Remaining statement types all have a starting term that defines
 	// which compiler unit to call. For each term, call the appropriate
 	// handler (which assumes the leading verb has already been consumed)
-	switch c.t.Next() {
-	case "{":
-		return c.compileBlock()
+	verb := c.t.Next()
 
-	case "assert":
-		if c.extensionsEnabled {
-			return c.Assert()
-		}
-
-		return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
-
-	case "break":
-		return c.compileBreak()
-
-	case "call":
-		if c.extensionsEnabled {
-			return c.compileFunctionCall()
-		}
-
+	// First, check the statements that can appear anywhere.
+	switch verb {
 	case "const":
 		return c.compileConst()
-
-	case "continue":
-		return c.compileContinue()
-
-	case "defer":
-		return c.compileDefer()
-
-	case "exit":
-		if c.exitEnabled {
-			return c.compileExit()
-		}
-
-	case "for":
-		return c.compileFor()
-
-	case "go":
-		return c.compileGo()
-
-	case "if":
-		return c.compileIf()
 
 	case "import":
 		return c.compileImport()
@@ -110,27 +78,71 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	case "package":
 		return c.compilePackage()
 
-	case "print":
-		if c.extensionsEnabled {
-			return c.compilePrint()
-		}
-
-	case "return":
-		return c.compileReturn()
-
-	case "switch":
-		return c.compileSwitch()
-
-	case "try":
-		if c.extensionsEnabled {
-			return c.compileTry()
-		}
-
 	case "type":
 		return c.compileTypeDefinition()
 
 	case "var":
 		return c.compileVar()
+	}
+
+	// If we are in the body of a function, the rest of these are
+	// also valid.
+	if c.functionDepth > 0 {
+		switch verb {
+		case "{":
+			return c.compileBlock()
+
+		case "assert":
+			if c.extensionsEnabled {
+				return c.Assert()
+			}
+
+			return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
+
+		case "break":
+			return c.compileBreak()
+
+		case "call":
+			if c.extensionsEnabled {
+				return c.compileFunctionCall()
+			}
+
+		case "continue":
+			return c.compileContinue()
+
+		case "defer":
+			return c.compileDefer()
+
+		case "exit":
+			if c.exitEnabled {
+				return c.compileExit()
+			}
+
+		case "for":
+			return c.compileFor()
+
+		case "go":
+			return c.compileGo()
+
+		case "if":
+			return c.compileIf()
+
+		case "print":
+			if c.extensionsEnabled {
+				return c.compilePrint()
+			}
+
+		case "return":
+			return c.compileReturn()
+
+		case "switch":
+			return c.compileSwitch()
+
+		case "try":
+			if c.extensionsEnabled {
+				return c.compileTry()
+			}
+		}
 	}
 
 	// Unknown statement, return an error

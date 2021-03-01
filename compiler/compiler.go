@@ -57,6 +57,7 @@ type Compiler struct {
 	constants            []string
 	deferQueue           []int
 	packages             PackageDictionary
+	functionDepth        int
 	blockDepth           int
 	statementCount       int
 	LowercaseIdentifiers bool
@@ -225,6 +226,12 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	c.packages[pkgname] = fd
 
 	return nil
+}
+
+func (c *Compiler) SetInteractive(b bool) {
+	if b {
+		c.functionDepth++
+	}
 }
 
 // AddPackageToSymbols adds all the defined packages for this compilation

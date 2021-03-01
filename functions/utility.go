@@ -329,7 +329,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 }
 
-// Exit implements the util.exit() function.
+// Exit implements the os.exit() function.
 func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
@@ -344,7 +344,7 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, errors.NewMessage(v)
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("exit()")
+		os.Exit(0)
 	}
 
 	return nil, nil

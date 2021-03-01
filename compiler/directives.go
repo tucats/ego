@@ -40,6 +40,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "log":
 		return c.Log()
 
+	case "main":
+		return c.Main()
+
 	case "pass":
 		return c.TestPass()
 
@@ -61,6 +64,25 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	default:
 		return c.newError(errors.InvalidDirectiveError, name)
 	}
+}
+
+func (c *Compiler) Main() *errors.EgoError {
+	mainName := c.t.Next()
+	if mainName == tokenizer.EndOfTokens || mainName == ";" {
+		mainName = "main"
+	}
+
+	if !tokenizer.IsSymbol(mainName) {
+		return c.newError(errors.InvalidIdentifierError)
+	}
+
+	c.b.Emit(bytecode.Load, "os")
+	c.b.Emit(bytecode.Member, "Exit")
+	c.b.Emit(bytecode.Load, mainName)
+	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Call, 1)
+
+	return nil
 }
 
 // Global parses the @global directive which sets a symbol

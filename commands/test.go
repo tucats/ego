@@ -110,6 +110,10 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		name := strings.ReplaceAll(fileOrPath, "/", "_")
 		comp := compiler.New(name)
 
+		// We set this to "interaactive" mode so tests can include program
+		// text without needing a main
+		comp.SetInteractive(true)
+
 		b, err := comp.Compile(name, t)
 		if !errors.Nil(err) {
 			fmt.Printf("Error: %s\n", err.Error())
