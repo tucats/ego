@@ -76,10 +76,11 @@ func (c *Compiler) Main() *errors.EgoError {
 		return c.newError(errors.InvalidIdentifierError)
 	}
 
-	c.b.Emit(bytecode.Load, "os")
-	c.b.Emit(bytecode.Member, "Exit")
 	c.b.Emit(bytecode.Load, mainName)
 	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Load, "os")
+	c.b.Emit(bytecode.Member, "Exit")
+	c.b.Emit(bytecode.Swap)
 	c.b.Emit(bytecode.Call, 1)
 
 	return nil
