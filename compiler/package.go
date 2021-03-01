@@ -250,10 +250,6 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 
 	fi, err := ioutil.ReadDir(dirname)
 	if !errors.Nil(err) {
-		/* 		if _, ok := err.(*os.PathError); ok {
-			ui.Debug(ui.CompilerLogger, "+++ No such directory")
-		} */
-
 		return "", errors.New(err)
 	}
 

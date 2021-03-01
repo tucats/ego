@@ -1,0 +1,14 @@
+
+@test "packages: package-local functions"
+
+import "test1"
+
+func localfuncs() int {    
+    test1.SetCounter(42)
+    @assert test1.Counter == 84
+    return 0
+}
+
+localfuncs()
+
+@pass
