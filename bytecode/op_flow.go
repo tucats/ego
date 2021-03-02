@@ -443,7 +443,7 @@ func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
 		c.try = c.try[:len(c.try)-1]
 	}
 
-	_ = c.symbols.DeleteAlways("_error")
+	_ = c.symbols.Delete("_error", true)
 
 	return nil
 }

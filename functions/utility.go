@@ -497,7 +497,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	switch v := args[0].(type) {
 	case string:
-		return nil, s.Delete(v)
+		return nil, s.Delete(v, false)
 
 	case *datatypes.EgoMap:
 		_, err := v.Delete(args[1])

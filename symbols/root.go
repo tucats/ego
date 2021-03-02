@@ -29,20 +29,21 @@ var rootBaseValues = []interface{}{
 	},
 }
 
-var rootGrowthValues = make([]interface{}, SymbolAllocationSize-len(rootNames))
-
-var rootInitialBin = append(rootBaseValues, rootGrowthValues...)
-
 // This is a list of the values that are initially stored in the
 // root symbol table. This includes enough additional slots for
 // the designated maximum symbol table size. Note that this size
 // is set at initialization time, so the max slots cannot be changed
 // at runtime for this table.
+var rootGrowthValues = make([]interface{}, SymbolAllocationSize-len(rootNames))
+
+var rootInitialBin = append(rootBaseValues, rootGrowthValues...)
+
 var rootValues = []*[]interface{}{
 	&rootInitialBin,
 }
 
-// RootSymbolTable is the parent of all other tables.
+// RootSymbolTable is the parent of all other tables. It is populated
+// by the initialized structures above.
 var RootSymbolTable = SymbolTable{
 	Name:          "Root Symbol Table",
 	Parent:        nil,
@@ -50,6 +51,7 @@ var RootSymbolTable = SymbolTable{
 	Symbols:       rootNames,
 	ValueSize:     len(rootNames),
 	Values:        rootValues,
+	Constants:     map[string]interface{}{},
 }
 
 // SetGlobal sets a symbol value in the global symbol table.

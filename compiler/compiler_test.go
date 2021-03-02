@@ -117,8 +117,11 @@ func TestCompile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tokens := tokenizer.New(tt.arg)
 			c := New(tt.name)
-			// Make sure PRINT verb works for these tests.
+			// Make sure PRINT verb works for these tests, and that "free form"
+			// statements are permitted without requiring a main()
 			c.extensionsEnabled = true
+			c.SetInteractive(true)
+
 			bc, err := c.Compile("unit test", tokens)
 			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Compile() error = %v, wantErr %v", err, tt.wantErr)

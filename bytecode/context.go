@@ -314,7 +314,7 @@ func (c *Context) symbolSetAlways(name string, value interface{}) *errors.EgoErr
 
 // symbolDelete deletes a symbol from the current context.
 func (c *Context) symbolDelete(name string) *errors.EgoError {
-	return c.symbols.Delete(name)
+	return c.symbols.Delete(name, false)
 }
 
 // symbolCreate creates a symbol.

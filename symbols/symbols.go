@@ -63,10 +63,6 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 
 	defer s.mutex.Unlock()
 
-	if s.Constants == nil {
-		s.Constants = map[string]interface{}{}
-	}
-
 	s.Constants[name] = v
 
 	return nil
@@ -145,13 +141,15 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 }
 
 // Delete removes a symbol from the table. Search from the local symbol
-// up the parent tree until you find the symbol to delete.
-func (s *SymbolTable) Delete(name string) *errors.EgoError {
+// up the parent tree until you find the symbol to delete. If the always
+// flag is set, this deletes even if the name is marked as a readonly
+// variable ("_" as the first character).
+func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 	if len(name) == 0 {
 		return errors.New(errors.InvalidSymbolError)
 	}
 
-	if name[:1] == "_" {
+	if !always && name[:1] == "_" {
 		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
@@ -161,30 +159,7 @@ func (s *SymbolTable) Delete(name string) *errors.EgoError {
 			return errors.New(errors.UnknownSymbolError).Context(name)
 		}
 
-		return s.Parent.Delete(name)
-	}
-
-	delete(s.Symbols, name)
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, delete(%s)",
-		s.Name, name)
-
-	return nil
-}
-
-// DeleteAlways removes a symbol from the table. Search from the local symbol
-// up the parent tree until you find the symbol to delete.
-func (s *SymbolTable) DeleteAlways(name string) *errors.EgoError {
-	if len(name) == 0 {
-		return errors.New(errors.InvalidSymbolError)
-	}
-
-	_, f := s.Symbols[name]
-	if !f {
-		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).Context(name)
-		}
-
-		return s.Parent.DeleteAlways(name)
+		return s.Parent.Delete(name, always)
 	}
 
 	delete(s.Symbols, name)
@@ -200,8 +175,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.InvalidSymbolError)
 	}
 
-	_, found := s.Symbols[name]
-	if found {
+	if _, found := s.Symbols[name]; found {
 		return errors.New(errors.SymbolExistsError).Context(name)
 	}
 
@@ -217,21 +191,15 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 
 // IsConstant determines if a name is a constant value.
 func (s *SymbolTable) IsConstant(name string) bool {
-	if s.Constants != nil {
-		s.mutex.Lock()
+	s.mutex.Lock()
 
-		defer s.mutex.Unlock()
+	defer s.mutex.Unlock()
 
-		_, found := s.Constants[name]
-
-		if found {
-			return true
-		}
-
-		if s.Parent != nil {
-			return s.Parent.IsConstant(name)
-		}
+	if _, found := s.Constants[name]; found {
+		return true
+	} else if s.Parent != nil {
+		return s.Parent.IsConstant(name)
+	} else {
+		return false
 	}
-
-	return false
 }
