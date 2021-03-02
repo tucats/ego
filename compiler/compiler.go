@@ -27,7 +27,7 @@ const (
 // RequiredPackages is the list of packages that are always imported, regardless
 // of user import statements or auto-import profile settings.
 var RequiredPackages []string = []string{
-	"util",
+	"os",
 	"profile",
 }
 
