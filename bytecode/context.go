@@ -40,6 +40,7 @@ type Context struct {
 	sp              int
 	fp              int
 	line            int
+	blockDepth      int
 	argCountDelta   int
 	fullSymbolScope bool
 	running         bool

@@ -191,6 +191,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		return nil
 	}
 
+	// Make sure the bytecode array is truncated to match the final size, so we don't
+	// end up pushing giant arrays of nils on the stack.
+	b.Seal()
+
 	// If it was a literal, push the body of the function (really, a bytecode expression
 	// of the function code) on the stack. Otherwise, let's store it in the symbol table
 	// or package dictionary as appropriate.

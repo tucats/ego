@@ -22,6 +22,7 @@ type callFrame struct {
 	tokenizer  *tokenizer.Tokenizer
 	thisStack  []This
 	singleStep bool
+	blockDepth int
 	pc         int
 	fp         int
 }
@@ -40,6 +41,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int) {
 		fp:         c.fp,
 		module:     c.bc.Name,
 		line:       c.line,
+		blockDepth: c.blockDepth,
 	})
 
 	c.fp = c.sp
@@ -97,6 +99,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 		c.bc = callFrame.bytecode
 		c.pc = callFrame.pc
 		c.fp = callFrame.fp
+		c.blockDepth = callFrame.blockDepth
 	} else {
 		return c.newError(errors.InvalidCallFrameError)
 	}

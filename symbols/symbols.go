@@ -76,11 +76,6 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 // any parent table is affected. This can be used for functions and
 // readonly values.
 func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
-	if s.Symbols == nil {
-		s.Symbols = map[string]int{}
-		s.initializeValues()
-	}
-
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -115,11 +110,6 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 // Set stores a symbol value in the table where it was found.
 func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
-	if s.Symbols == nil {
-		s.Symbols = map[string]int{}
-		s.initializeValues()
-	}
-
 	var old interface{}
 
 	oldx, found := s.Symbols[name]
@@ -165,10 +155,6 @@ func (s *SymbolTable) Delete(name string) *errors.EgoError {
 		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
-	if s.Symbols == nil {
-		return errors.New(errors.UnknownSymbolError).Context(name)
-	}
-
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
@@ -179,6 +165,8 @@ func (s *SymbolTable) Delete(name string) *errors.EgoError {
 	}
 
 	delete(s.Symbols, name)
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, delete(%s)",
+		s.Name, name)
 
 	return nil
 }
@@ -188,10 +176,6 @@ func (s *SymbolTable) Delete(name string) *errors.EgoError {
 func (s *SymbolTable) DeleteAlways(name string) *errors.EgoError {
 	if len(name) == 0 {
 		return errors.New(errors.InvalidSymbolError)
-	}
-
-	if s.Symbols == nil {
-		return errors.New(errors.UnknownSymbolError).Context(name)
 	}
 
 	_, f := s.Symbols[name]
@@ -204,6 +188,8 @@ func (s *SymbolTable) DeleteAlways(name string) *errors.EgoError {
 	}
 
 	delete(s.Symbols, name)
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, delete(%s)",
+		s.Name, name)
 
 	return nil
 }
@@ -222,6 +208,9 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	s.Symbols[name] = s.ValueSize
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
+
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, create(%s) = nil[%d]",
+		s.Name, name, s.ValueSize-1)
 
 	return nil
 }

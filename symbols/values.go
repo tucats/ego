@@ -1,5 +1,7 @@
 package symbols
 
+import "github.com/tucats/ego/app-cli/ui"
+
 func (s *SymbolTable) initializeValues() {
 	bin := make([]interface{}, SymbolAllocationSize)
 	s.Values = make([]*[]interface{}, 1)
@@ -12,6 +14,8 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 	for bin >= len(s.Values) {
 		newBin := make([]interface{}, SymbolAllocationSize)
 		s.Values = append(s.Values, &newBin)
+
+		ui.Debug(ui.SymbolLogger, "+++ in table %s, create new value bin", s.Name)
 	}
 
 	slot := index % SymbolAllocationSize

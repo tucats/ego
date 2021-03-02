@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"strconv"
+
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -14,7 +16,8 @@ import (
 
 // PushScopeImpl instruction processor.
 func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
-	s := symbols.NewChildSymbolTable("block", c.symbols)
+	c.blockDepth++
+	s := symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
 	c.symbols = s
 
 	return nil
@@ -37,6 +40,7 @@ func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	// Pop off the symbol table and clear up the "this" stack
 	c.popSymbolTable()
 	c.thisStack = nil
+	c.blockDepth--
 
 	return nil
 }
