@@ -102,9 +102,17 @@ func Start(c *cli.Context) *errors.EgoError {
 
 		args[userDatabaseArg] = path
 	} else {
-		userDataBaseName, _ := filepath.Abs(defs.DefaultUserdataFileName)
+		udf := persistence.Get(defs.LogonUserdataSetting)
+		if udf == "" {
+			udf = defs.DefaultUserdataFileName
+		}
+
+		if !strings.HasPrefix(strings.ToLower(udf), "postgres://") {
+			udf, _ = filepath.Abs(udf)
+		}
+
 		args = append(args, "--users")
-		args = append(args, userDataBaseName)
+		args = append(args, udf)
 	}
 
 	// If there was a log name, make it a full absolute path.

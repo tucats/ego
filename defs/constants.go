@@ -75,7 +75,7 @@ const (
 	LogonSuperuserSetting = "ego.server.superuser"
 
 	// The file system location where the user database is stored.
-	LogonUserdataSetting = "ego.server.userdata.file"
+	LogonUserdataSetting = "ego.server.userdata"
 
 	// The encryption key for the userdata file. If not present,
 	// the file is not encrypted and is readable json.
