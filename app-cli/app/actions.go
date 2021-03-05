@@ -55,11 +55,15 @@ func QuietAction(c *cli.Context) *errors.EgoError {
 }
 
 func VersionAction(c *cli.Context) *errors.EgoError {
-	fmt.Printf("%s version %s (%s, %s x%d)\n",
+	arch := fmt.Sprintf("%s, %s", runtime.GOOS, runtime.GOARCH)
+	if arch == "darwin, arm64" {
+		arch = "Apple Silicon"
+	}
+
+	fmt.Printf("%s version %s (%s x%d)\n",
 		c.FindGlobal().AppName,
 		c.FindGlobal().Version,
-		runtime.GOOS,
-		runtime.GOARCH,
+		arch,
 		runtime.NumCPU())
 
 	return nil
