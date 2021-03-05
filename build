@@ -8,11 +8,10 @@
 BUILDVER=$(cat buildver.txt)
 
 GO="go"
-GOARCH="amd64"
+#GOARCH="amd64"
 GOOS="darwin"
 
 if [ "$1" == "-a" ]; then
-   GO="go1.16rc1"
    GOARCH=arm64
 fi
 

@@ -1,6 +1,6 @@
 @test "io: db using local postgres"
 
-constr := "postgres://tom:secret@homebase.local/?sslmode=disable"
+constr := "postgres://tom:secret@homebase.local/tom?sslmode=disable"
 d := db.New(constr)
 
 // Is there a working database we can test against?
