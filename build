@@ -18,6 +18,7 @@ fi
 
 if [ "$1" == "-w" ]; then
    GOOS=windows
+   GOARCH=amd64
 fi
 
 if [ "$1" == "-i" ]; then
