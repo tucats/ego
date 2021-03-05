@@ -58,7 +58,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "run", "-k"]
+            "args": ["server", "run", "-k", "-u", "\"postgres://tom:secret@localhost/egoserver?sslmode=disable\""]
         },
         {
             "name": "Display Server cache",

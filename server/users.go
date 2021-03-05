@@ -2,9 +2,7 @@ package server
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/google/uuid"
@@ -19,7 +17,15 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-var userDatabase map[string]defs.User
+type UserIOService interface {
+	ReadUser(name string) (defs.User, *errors.EgoError)
+	WriteUser(user defs.User) *errors.EgoError
+	DeleteUser(name string) *errors.EgoError
+	ListUsers() map[string]defs.User
+	Flush() *errors.EgoError
+}
+
+var service UserIOService
 
 var userDatabaseFile = ""
 
@@ -49,47 +55,14 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 		userDatabaseFile = defs.DefaultUserdataFileName
 	}
 
-	if userDatabaseFile != "" {
-		b, err := ioutil.ReadFile(userDatabaseFile)
-		if errors.Nil(err) {
-			if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
-				r, err := util.Decrypt(string(b), key)
-				if !errors.Nil(err) {
-					return err
-				}
+	var err *errors.EgoError
 
-				b = []byte(r)
-			}
+	ui.Debug(ui.ServerLogger, "Using database definition %s", userDatabaseFile)
 
-			if errors.Nil(err) {
-				err = json.Unmarshal(b, &userDatabase)
-			}
-
-			if !errors.Nil(err) {
-				return errors.New(err)
-			}
-
-			ui.Debug(ui.ServerLogger, "Using stored credentials with %d items", len(userDatabase))
-		}
-	}
-
-	if userDatabase == nil {
-		userDatabase = map[string]defs.User{
-			defaultUser: {
-				ID:          uuid.New(),
-				Name:        defaultUser,
-				Password:    HashString(defaultPassword),
-				Permissions: []string{"root"},
-			},
-		}
-
-		ui.Debug(ui.ServerLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
-	}
+	service, err = defineCredentialServce(userDatabaseFile, defaultUser, defaultPassword)
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
-	var err *errors.EgoError
-
 	su, ok := c.GetString("superuser")
 	if !ok {
 		su = persistence.Get(defs.LogonSuperuserSetting)
@@ -102,6 +75,20 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	return err
 }
 
+func defineCredentialServce(path, user, password string) (UserIOService, *errors.EgoError) {
+	var err *errors.EgoError
+
+	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
+
+	if strings.HasPrefix(strings.ToLower(path), "postgres://") {
+		service, err = NewPostgresService(path, user, password)
+	} else {
+		service, err = NewFileService(path, user, password)
+	}
+
+	return service, err
+}
+
 // setPermission sets a given permission string to true for a given user. Returns an error
 // if the username does not exist.
 func setPermission(user, privilege string, enabled bool) *errors.EgoError {
@@ -109,7 +96,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 
 	privname := strings.ToLower(privilege)
 
-	if u, ok := userDatabase[user]; ok {
+	if u, err := service.ReadUser(user); errors.Nil(err) {
 		if u.Permissions == nil {
 			u.Permissions = []string{"logon"}
 		}
@@ -132,11 +119,19 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 			}
 		}
 
-		userDatabase[user] = u
+		err = service.WriteUser(u)
+		if !errors.Nil(err) {
+			return err
+		}
+
+		err = service.Flush()
+		if !errors.Nil(err) {
+			return err
+		}
 
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		err = errors.New(errors.NoSuchUserError).Context(user)
+		return errors.New(errors.NoSuchUserError).Context(user)
 	}
 
 	return err
@@ -147,7 +142,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 func getPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 
-	if u, ok := userDatabase[user]; ok {
+	if u, ok := service.ReadUser(user); errors.Nil(ok) {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
 
@@ -179,7 +174,7 @@ func findPermission(u defs.User, perm string) int {
 func validatePassword(user, pass string) bool {
 	ok := false
 
-	if u, userExists := userDatabase[user]; userExists {
+	if u, userExists := service.ReadUser(user); errors.Nil(userExists) {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
@@ -234,11 +229,6 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		pass = util.GetString(args[1])
 	}
 
-	// If no user database, then we're done.
-	if userDatabase == nil {
-		return false, nil
-	}
-
 	// If the user exists and the password matches then valid.
 	return validatePassword(user, pass), nil
 }
@@ -254,11 +244,6 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	user = util.GetString(args[0])
 	priv = strings.ToUpper(util.GetString(args[1]))
-
-	// If no user database, then we're done.
-	if userDatabase == nil {
-		return false, nil
-	}
 
 	// If the user exists and the privilege exists, return it's status
 	return getPermission(user, priv), nil
@@ -293,8 +278,8 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			name = strings.ToLower(util.GetString(n))
 		}
 
-		r, ok := userDatabase[name]
-		if !ok {
+		r, ok := service.ReadUser(name)
+		if !errors.Nil(ok) {
 			r = defs.User{
 				Name:        name,
 				ID:          uuid.New(),
@@ -321,8 +306,10 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			}
 		}
 
-		userDatabase[name] = r
-		err = updateUserDatabase()
+		err = service.WriteUser(r)
+		if err == nil {
+			err = service.Flush()
+		}
 	}
 
 	return true, err
@@ -350,10 +337,13 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	name := strings.ToLower(util.GetString(args[0]))
 
-	if _, ok := userDatabase[name]; ok {
-		delete(userDatabase, name)
+	if _, ok := service.ReadUser(name); errors.Nil(ok) {
+		err := service.DeleteUser(name)
+		if !errors.Nil(err) {
+			return false, err
+		}
 
-		return true, updateUserDatabase()
+		return true, service.Flush()
 	}
 
 	return false, nil
@@ -370,8 +360,8 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 	name := strings.ToLower(util.GetString(args[0]))
 
-	t, ok := userDatabase[name]
-	if !ok {
+	t, ok := service.ReadUser(name)
+	if !errors.Nil(ok) {
 		return r, nil
 	}
 
@@ -380,29 +370,6 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	_, _ = r.Set("superuser", getPermission(name, "root"))
 
 	return r, nil
-}
-
-// updateUserDatabase re-writes the user database file with updated values.
-func updateUserDatabase() *errors.EgoError {
-	// Convert the database to a json string
-	b, err := json.MarshalIndent(userDatabase, "", "   ")
-	if !errors.Nil(err) {
-		return errors.New(err)
-	}
-
-	if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
-		r, err := util.Encrypt(string(b), key)
-		if !errors.Nil(err) {
-			return err
-		}
-
-		b = []byte(r)
-	}
-
-	// Write to the database file.
-	err = ioutil.WriteFile(userDatabaseFile, b, 0600)
-
-	return errors.New(err)
 }
 
 // validateToken is a helper function that calls the builtin cipher.validate(). The

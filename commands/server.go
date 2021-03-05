@@ -76,7 +76,7 @@ func Start(c *cli.Context) *errors.EgoError {
 		}
 
 		// Is there a file of user authentication data specified?
-		if v == "--users" {
+		if v == "--users" || v == "-u" {
 			userDatabaseArg = i + 1
 		}
 
@@ -95,7 +95,12 @@ func Start(c *cli.Context) *errors.EgoError {
 	// If there was a userdatabase, udpate it to be an absolute file path.
 	// If not specified, add it as a new option with the default name
 	if userDatabaseArg > 0 {
-		args[userDatabaseArg], _ = filepath.Abs(args[userDatabaseArg])
+		path := args[userDatabaseArg]
+		if !strings.HasPrefix(strings.ToLower(path), "postgres://") {
+			path, _ = filepath.Abs(path)
+		}
+
+		args[userDatabaseArg] = path
 	} else {
 		userDataBaseName, _ := filepath.Abs(defs.DefaultUserdataFileName)
 		args = append(args, "--users")

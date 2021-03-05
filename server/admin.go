@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -61,7 +62,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		name = strings.TrimPrefix(r.URL.Path, "/admin/users/")
 		if name != "" {
-			if ud, ok := userDatabase[name]; ok {
+			if ud, ok := service.ReadUser(name); errors.Nil(ok) {
 				u = ud
 			}
 
@@ -77,10 +78,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
 		case "POST":
-			args := map[string]interface{}{
-				"name":     u.Name,
-				"password": u.Password,
-			}
+			args := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+			_, _ = args.Set("name", u.Name)
+			_, _ = args.Set("password", u.Password)
 
 			// Only replace permissions if the list is non-empty
 			if len(u.Permissions) > 0 {
@@ -91,19 +91,32 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 					perms = append(perms, p)
 				}
 
-				args["permissions"] = perms
+				_, _ = args.Set("permissions", perms)
 			}
 
-			_, err = SetUser(s, []interface{}{args})
+			var response defs.UserReponse
 
-			u := userDatabase[name]
-			u.Name = name
-			response := defs.UserReponse{
-				User: u,
-				RestResponse: defs.RestResponse{
-					Status:  http.StatusOK,
-					Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
-				},
+			_, err = SetUser(s, []interface{}{args})
+			if errors.Nil(err) {
+				u, err = service.ReadUser(name)
+				if errors.Nil(err) {
+					u.Name = name
+					response = defs.UserReponse{
+						User: u,
+						RestResponse: defs.RestResponse{
+							Status:  http.StatusOK,
+							Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
+						},
+					}
+				} else {
+					response = defs.UserReponse{
+						User: u,
+						RestResponse: defs.RestResponse{
+							Status:  http.StatusInternalServerError,
+							Message: err.Error(),
+						},
+					}
+				}
 			}
 
 			if errors.Nil(err) {
@@ -120,8 +133,8 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 		// DELETE A USER
 		case "DELETE":
-			u, exists := userDatabase[name]
-			if !exists {
+			u, exists := service.ReadUser(name)
+			if !errors.Nil(exists) {
 				w.WriteHeader(http.StatusNotFound)
 
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
@@ -204,6 +217,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			result.Status = http.StatusOK
 
+			userDatabase := service.ListUsers()
 			for k, u := range userDatabase {
 				ud := defs.User{}
 				ud.Name = k
