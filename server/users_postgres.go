@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -30,11 +31,16 @@ const (
 		password char varying(128),
 		permissions char varying(1024)) `
 
-	upsertQueryString = `
+	insertQueryString = `
 		insert into ego.credentials(name, id, password, permissions) 
-        	values($1,$2,$3,$4) 
-			on conflict(name) do nothing
-`
+        	values($1,$2,$3,$4) `
+
+	updateQueryString = `
+		update credentials 
+		set password=$2, 
+			permissions=$3 
+		where name=$1`
+
 	readUserQueryString = `
 		select name, id, password, permissions 
     		from ego.credentials where name = $1
@@ -135,10 +141,15 @@ func (pg *PostgresService) ListUsers() map[string]defs.User {
 		}
 
 		user := defs.User{
-			Name:        name,
-			ID:          uuid.MustParse(id),
-			Permissions: strings.Split(perms, ","),
+			Name:     name,
+			ID:       uuid.MustParse(id),
+			Password: "********",
 		}
+
+		if err := json.Unmarshal([]byte(perms), &user.Permissions); err != nil {
+			user.Permissions = []string{}
+		}
+
 		r[name] = user
 	}
 
@@ -177,7 +188,12 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 		user.Name = name
 		user.ID, _ = uuid.Parse(id)
 		user.Password = password
-		user.Permissions = strings.Split(perms, ",")
+
+		err := json.Unmarshal([]byte(perms), &user.Permissions)
+		if err != nil {
+			return user, errors.New(err)
+		}
+
 		found = true
 	}
 
@@ -192,19 +208,37 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 func (pg *PostgresService) WriteUser(user defs.User) *errors.EgoError {
 	var err *errors.EgoError
 
-	permString := strings.Join(user.Permissions, ",")
+	b, _ := json.Marshal(user.Permissions)
+	permString := string(b)
 
 	if user.ID == uuid.Nil {
 		user.ID = uuid.New()
 	}
 
-	_, dberr := pg.db.Exec(upsertQueryString, user.Name, user.ID, user.Password, permString)
+	action := ""
+
+	_, dberr := pg.ReadUser(user.Name)
+	if errors.Nil(dberr) {
+		action = "updated in"
+
+		_, e3 := pg.db.Exec(updateQueryString, user.Name, user.Password, permString)
+		if e3 != nil {
+			dberr = errors.New(e3)
+		}
+	} else {
+		action = "added to"
+		_, e3 := pg.db.Exec(insertQueryString, user.Name, user.ID, user.Password, permString)
+		if e3 != nil {
+			dberr = errors.New(e3)
+		}
+	}
+
 	if dberr != nil {
 		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
 
 		err = errors.New(dberr)
 	} else {
-		ui.Debug(ui.ServerLogger, "Wrote user %s to database", user.Name)
+		ui.Debug(ui.ServerLogger, "User %s %s database", user.Name, action)
 	}
 
 	return err

@@ -58,7 +58,15 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "run", "-k", "-u", "\"postgres://tom:secret@localhost/egoserver?sslmode=disable\""]
+            "args": ["server", "run", "-k"]
+        },
+        {
+            "name": "Upsert user",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["server", "users", "set", "-u", "tom", "-p", "fun", "--permissions", "logon,files"]
         },
         {
             "name": "Display Server cache",
