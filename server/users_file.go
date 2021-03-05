@@ -48,7 +48,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 		}
 	}
 
-	if svc.data == nil {
+	if svc.data == nil || len(svc.data) == 0 {
 		svc.data = map[string]defs.User{
 			defaultUser: {
 				ID:          uuid.New(),
