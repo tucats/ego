@@ -17,6 +17,19 @@ type PostgresService struct {
 }
 
 const (
+	createSchemaQueryString = `
+	create schema if not exists ego`
+
+	probeTableExistsQueryString = `
+	select * from ego.credentials where 1=0`
+
+	createTableQueryString = `
+	create table ego.credentials(
+		name char varying(50) unique,
+		id char(36),
+		password char varying(128),
+		permissions char varying(1024)) `
+
 	upsertQueryString = `
 		insert into ego.credentials(name, id, password, permissions) 
         	values($1,$2,$3,$4) 
@@ -90,9 +103,7 @@ func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOSer
 
 	if errors.Nil(e2) {
 		ui.Debug(ui.DBLogger, "Database credential store %s", svc.constr)
-	}
-
-	if !errors.Nil(e2) {
+	} else {
 		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
 	}
 
@@ -100,10 +111,9 @@ func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOSer
 }
 
 func (pg *PostgresService) ListUsers() map[string]defs.User {
-	var r map[string]defs.User
+	r := map[string]defs.User{}
 
 	rowSet, dberr := pg.db.Query(listUsersQueryString)
-
 	if rowSet != nil {
 		defer rowSet.Close()
 	}
@@ -113,8 +123,6 @@ func (pg *PostgresService) ListUsers() map[string]defs.User {
 
 		return r
 	}
-
-	r = map[string]defs.User{}
 
 	for rowSet.Next() {
 		var name, id, perms string
@@ -167,7 +175,7 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 		}
 
 		user.Name = name
-		user.ID = uuid.MustParse(id)
+		user.ID, _ = uuid.Parse(id)
 		user.Password = password
 		user.Permissions = strings.Split(perms, ",")
 		found = true
@@ -221,28 +229,23 @@ func (pg *PostgresService) DeleteUser(name string) *errors.EgoError {
 	return err
 }
 
+// Required interface, but does no work for the Postgres service.
 func (pg *PostgresService) Flush() *errors.EgoError {
 	var err *errors.EgoError
 
 	return err
 }
 
-// Verify that the database is initialized. TODO this should create
-// the table if it is not found.
+// Verify that the database is initialized.
 func (pg *PostgresService) initializeDatabase() *errors.EgoError {
-	_, dberr := pg.db.Query("select * from ego.credentials where 1=0")
+	_, dberr := pg.db.Query(probeTableExistsQueryString)
 	if dberr != nil {
-		_, dberr = pg.db.Exec(("create schema if not exists ego"))
+		_, dberr = pg.db.Exec(createSchemaQueryString)
 		if dberr != nil {
 			return errors.New(dberr)
 		}
 
-		_, dberr = pg.db.Exec(`
-		create table ego.credentials(
-			name char varying(50) unique,
-			id char(36),
-			password char varying(128),
-			permissions char varying(1024)) `)
+		_, dberr = pg.db.Exec(createTableQueryString)
 
 		if dberr == nil {
 			ui.Debug(ui.ServerLogger, "Created empty credentials table")
