@@ -28,24 +28,29 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	var funcError *errors.EgoError
 
+	// Create a symbol table to use for the slice comparator callbackk function.
+	sliceSymbols := symbols.NewChildSymbolTable("sort slice", s)
+
+	// Coerce the name of the bytecode to represent that it is the
+	// anonymous compare function value. We only do this if it is
+	// actually anonymous.
+	if fn.Name == "" {
+		fn.Name = "(anon)"
+	}
+
+	// Reusable context that will handle each callback.
+	ctx := bytecode.NewContext(sliceSymbols, fn)
+	ctx.SetTracing(true)
+
 	// Use the native sort.Slice function, and provide a comparitor function
 	// whose job is to run the supplied bytecode instructions, passing in
 	// the two native arguments
 	sort.Slice(array.BaseArray(), func(i, j int) bool {
-		sliceSymbols := symbols.NewChildSymbolTable("sort slice", s)
+		// Set the i,j variables as the current function arguments
 		_ = sliceSymbols.SetAlways("__args", []interface{}{i, j})
 
-		// Coerce the name of the bytecode to represent that it is the
-		// anonymous compare function value. We only do this if it is
-		// actually anonymous.
-		if fn.Name == "" {
-			fn.Name = "(anon)"
-		}
-
-		ctx := bytecode.NewContext(sliceSymbols, fn)
-		ctx.SetTracing(true)
-
-		err := ctx.Run()
+		// Run the comparator function
+		err := ctx.RunFromAddress(0)
 		if err != nil {
 			if funcError == nil {
 				funcError = err
@@ -54,9 +59,8 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			return false
 		}
 
-		v := ctx.Result()
-
-		return util.GetBool(v)
+		// Return the result as this function's value.
+		return util.GetBool(ctx.Result())
 	})
 
 	return array, funcError

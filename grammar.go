@@ -189,6 +189,7 @@ var ServerStopGrammar = []cli.Option{
 	},
 }
 
+// ServerStateGrammar  is a common sub-grammar for specifying a port and/or UUID.
 var ServerStateGrammar = []cli.Option{
 	{
 		LongName:            "port",

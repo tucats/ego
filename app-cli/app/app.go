@@ -43,7 +43,7 @@ func New(appName string) *App {
 // SetVersion sets the version number for the application.
 func (app *App) SetVersion(major, minor, delta int) *App {
 	app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
-	symbols.RootSymbolTable.SetAlways("_version", app.Version)
+	_ = symbols.RootSymbolTable.SetAlways("_version", app.Version)
 
 	return app
 }
@@ -52,7 +52,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 // help output.
 func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
-	symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
+	_ = symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
 
 	return app
 }
