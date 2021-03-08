@@ -1,4 +1,4 @@
-@test "io: tables"
+@test "io: table print"
 
 // Note this test is _very_ sensitive to changes in the output format
 {
