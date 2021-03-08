@@ -22,11 +22,16 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	// Fetch the arguments as column headings. If the value is passed by array,
-	// go ahead and extract each array member as a column name.
+	// extract each array member as a column name.
 	headings := []string{}
 
 	for _, h := range args {
-		if list, ok := h.([]interface{}); ok {
+		if list, ok := h.(*datatypes.EgoArray); ok {
+			for idx := 0; idx < list.Len(); idx++ {
+				str, _ := list.Get(idx)
+				headings = append(headings, util.GetString(str))
+			}
+		} else if list, ok := h.([]interface{}); ok {
 			for _, hh := range list {
 				headings = append(headings, util.GetString(hh))
 			}
@@ -45,18 +50,14 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		if strings.HasPrefix(h, ":") && strings.HasSuffix(h, ":") {
 			align[i] = tables.AlignmentCenter
 			headings[i] = strings.TrimPrefix(strings.TrimSuffix(h, ":"), ":")
+		} else if strings.HasPrefix(h, ":") {
+			align[i] = tables.AlignmentLeft
+			headings[i] = strings.TrimPrefix(h, ":")
+		} else if strings.HasSuffix(h, ":") {
+			align[i] = tables.AlignmentRight
+			headings[i] = strings.TrimSuffix(h, ":")
 		} else {
-			if strings.HasPrefix(h, ":") {
-				align[i] = tables.AlignmentLeft
-				headings[i] = strings.TrimPrefix(h, ":")
-			} else {
-				if strings.HasSuffix(h, ":") {
-					align[i] = tables.AlignmentRight
-					headings[i] = strings.TrimSuffix(h, ":")
-				} else {
-					align[i] = tables.AlignmentLeft
-				}
-			}
+			align[i] = tables.AlignmentLeft
 		}
 	}
 
@@ -70,9 +71,12 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		_ = t.SetAlignment(i, v)
 	}
 
-	headingsArray := make([]interface{}, len(headings))
+	// Move the string array of headings into a native array type, which can
+	// be read by the caller.
+	headingsArray := datatypes.NewArray(datatypes.StringType, len(headings))
+
 	for i, h := range headings {
-		headingsArray[i] = h
+		_ = headingsArray.Set(i, h)
 	}
 
 	return map[string]interface{}{
@@ -83,6 +87,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		"Print":    TablePrint,
 		"Format":   TableFormat,
 		"Align":    TableAlign,
+		"String":   TableString,
 		"headings": headingsArray,
 		datatypes.MetadataKey: map[string]interface{}{
 			datatypes.TypeMDKey:     "table",
@@ -123,12 +128,14 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 					err = errors.New(errors.ArgumentCountError)
 				} else {
 					values := make([]string, len(m))
+
 					for k, v := range m {
 						p, ok := t.FindColumn(k)
 						if ok {
 							values[p] = util.GetString(v)
 						}
 					}
+
 					err = t.AddRow(values)
 				}
 			} else {
@@ -276,6 +283,22 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	return err, err
+}
+
+// TableString formats a table as a string in the default output.
+func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	fmt := ui.OutputFormat
+
+	if len(args) > 0 {
+		fmt = util.GetString(args[0])
+	}
+
+	t, err := getTable(s)
+	if errors.Nil(err) {
+		return t.String(fmt)
+	}
+
+	return nil, err
 }
 
 // getTable searches the symbol table for the client receiver ("__this")

@@ -52,6 +52,48 @@ func (t *Table) Print(format string) *errors.EgoError {
 	return nil
 }
 
+// String will output a table using current rows and format specifications.
+func (t *Table) String(format string) (string, *errors.EgoError) {
+	// If there is an orderBy set for the table, do the sort now
+	if t.orderBy >= 0 {
+		_ = t.SortRows(t.orderBy, t.ascending)
+	}
+
+	if format == "" {
+		format = ui.TextFormat
+	}
+
+	var b strings.Builder
+
+	// Based on the selected format, generate the output
+	switch format {
+	case ui.TextFormat:
+		s := t.FormatText()
+		for _, line := range s {
+			b.WriteString(fmt.Sprintf("%s\n", line))
+		}
+
+	case ui.JSONFormat:
+		b.WriteString(t.FormatJSON())
+
+	case ui.JSONIndentedFormat:
+		text := t.FormatJSON()
+
+		var i interface{}
+
+		_ = json.Unmarshal([]byte(text), &i)
+		buf, _ := json.MarshalIndent(i, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+		b.WriteString(string(buf))
+		b.WriteString("\n")
+
+	default:
+		return "", errors.New(errors.InvalidOutputFormatError).Context(format)
+	}
+
+	return b.String(), nil
+}
+
 // FormatJSON will produce the text of the table as JSON.
 func (t *Table) FormatJSON() string {
 	var buffer strings.Builder

@@ -1,0 +1,39 @@
+@test "io: tables"
+
+// Note this test is _very_ sensitive to changes in the output format
+{
+    h := []string{"Name", "Age", "Title"}
+    t := tables.New(h)
+
+    t.AddRow("Tom", "53", "Dad")
+    t.AddRow([]string{"Mary", "47", "Mom"}...)
+
+    str := t.String("json")
+    @assert str == `[{"Name":"Tom","Age":53,"Title":"Dad"},{"Name":"Mary","Age":47,"Title":"Mom"}]`
+
+    str = t.String("text")
+    @assert str == 
+`Name    Age    Title    
+====    ===    =====    
+Tom     53     Dad      
+Mary    47     Mom      
+`
+
+    str = t.String("indented")
+    @assert str == 
+`[
+   {
+      "Age": 53,
+      "Name": "Tom",
+      "Title": "Dad"
+   },
+   {
+      "Age": 47,
+      "Name": "Mary",
+      "Title": "Mom"
+   }
+]
+`
+}
+
+@pass
