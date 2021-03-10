@@ -61,6 +61,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "type":
 		return c.TypeChecking()
 
+	case "url":
+		return c.urlDirective()
+
 	default:
 		return c.newError(errors.InvalidDirectiveError, name)
 	}

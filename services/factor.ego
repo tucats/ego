@@ -15,11 +15,12 @@
 
 
 // Parse apart the URL, which should be a slash and the
-// numeric value to process.
-urlInfo := strings.URLPattern(_path_suffix, "/{{value}}")
+// numeric value to process. This stores the portions of 
+// the URL in a symbol of the given name.
+@url "/{{value}}"
 
 // If the value string is empty, it was not present. Complain.
-if urlInfo.value == "" {
+if value == "" {
     @status 400
     @response "Missing integer to factor"
     return
@@ -27,7 +28,7 @@ if urlInfo.value == "" {
 
 // Convert the value to an integer and get the list of factors.
 try {
-    r := math.Factor(int(urlInfo.value))
+    r := math.Factor(int(value))
 
     // Return a success status and the factors
     @status 200
@@ -36,5 +37,5 @@ try {
 
     // Nope, there was an error so report that.
     @status 400
-    @response e
+    @response fmt.Sprintf("invalid integer: %s", value)
 }

@@ -39,6 +39,7 @@ const (
 	Dup
 	Equal
 	Exp
+	Explode
 	Flatten
 	FromFile
 	GetRegister
@@ -133,6 +134,7 @@ var instructionNames = map[OpcodeID]string{
 	Dup:                "Dup",
 	Equal:              "Equal",
 	Exp:                "Exp",
+	Explode:            "Explode",
 	Flatten:            "Flatten",
 	FromFile:           "FromFile",
 	GetRegister:        "GetRegister",
@@ -218,6 +220,7 @@ func initializeDispatch() {
 			Dup:                DupImpl,
 			Equal:              EqualImpl,
 			Exp:                ExponentImpl,
+			Explode:            ExplodeImpl,
 			Flatten:            FlattenImpl,
 			FromFile:           FromFileImpl,
 			GetRegister:        getRegister,

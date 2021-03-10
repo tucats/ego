@@ -261,3 +261,38 @@ func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 
 	return nil
 }
+
+// ExplodeImpl implements Explode. This accepts a struct on the top of
+// the stack, and creates local variables for each of the members of the
+// struct by their name.
+func ExplodeImpl(c *Context, i interface{}) *errors.EgoError {
+	var err *errors.EgoError
+
+	var v interface{}
+
+	v, err = c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	if m, ok := v.(*datatypes.EgoMap); ok {
+		if m.KeyType() != datatypes.StringType {
+			err = c.newError(errors.InvalidStructError)
+		} else {
+			keys := m.Keys()
+
+			for _, k := range keys {
+				v, _, _ := m.Get(k)
+
+				err = c.symbolSetAlways(util.GetString(k), v)
+				if !errors.Nil(err) {
+					break
+				}
+			}
+		}
+	} else {
+		err = c.newError(errors.InvalidStructError)
+	}
+
+	return err
+}
