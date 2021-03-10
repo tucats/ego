@@ -18,7 +18,7 @@ func blockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	msg := util.GetString(args[0])
 
-	fontName := ""
+	fontName := "standard"
 	if len(args) > 1 {
 		fontName = util.GetString(args[1])
 	}
