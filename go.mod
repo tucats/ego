@@ -14,7 +14,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.9.0
+	github.com/lib/pq v1.10.0
 	github.com/northwesternmutual/grammes v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
@@ -27,7 +27,7 @@ require (
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110 // indirect
-	golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b // indirect
+	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect

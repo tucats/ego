@@ -1,6 +1,8 @@
 package functions
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"time"
@@ -230,4 +232,22 @@ func getTokenKey() string {
 	}
 
 	return key
+}
+
+// Random implements the cipher.Random() function which generates a random token
+// string value using the crypographic randum number generator.
+func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	n := 32
+	if len(args) > 0 {
+		n = util.GetInt(args[0])
+	}
+
+	b := make([]byte, n)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	return base64.URLEncoding.EncodeToString(b), nil
 }

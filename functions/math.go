@@ -2,6 +2,7 @@ package functions
 
 import (
 	"math"
+	"math/rand"
 
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -141,4 +142,14 @@ func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	return math.Log(util.GetFloat(args[0])), nil
+}
+
+// Random implmeents the math.Random function.
+func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	max := util.GetInt(args[0])
+	if max <= 0 {
+		return nil, errors.New(errors.InvalidFunctionArgument).Context(max)
+	}
+
+	return rand.Intn(max), nil
 }
