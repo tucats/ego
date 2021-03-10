@@ -1,0 +1,40 @@
+// /services/factor
+//
+// Simple demonstration web service that parses a value from the
+// URL given and returns a list of the integer factors of that
+// numeric value.
+//
+// There is no authentication required for this request.
+//
+// Status codes:
+//    200    The body of the response is a string with the array
+//           of integers
+//    400    The request was invalid (usually due to a bad integer
+//           expression in the URL). The body of the response is the
+//           text of the error.
+
+
+// Parse apart the URL, which should be a slash and the
+// numeric value to process.
+urlInfo := strings.URLPattern(_path_suffix, "/{{value}}")
+
+// If the value string is empty, it was not present. Complain.
+if urlInfo.value == "" {
+    @status 400
+    @response "Missing integer to factor"
+    return
+}
+
+// Convert the value to an integer and get the list of factors.
+try {
+    r := math.Factor(int(urlInfo.value))
+
+    // Return a success status and the factors
+    @status 200
+    @response r
+} catch (e) {
+
+    // Nope, there was an error so report that.
+    @status 400
+    @response e
+}
