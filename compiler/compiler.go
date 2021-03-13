@@ -3,6 +3,7 @@ package compiler
 import (
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/bytecode"
@@ -234,9 +235,14 @@ func (c *Compiler) SetInteractive(b bool) {
 	}
 }
 
+var packageMerge sync.Mutex
+
 // AddPackageToSymbols adds all the defined packages for this compilation
 // to the given symbol table.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
+	packageMerge.Lock()
+	defer packageMerge.Unlock()
+
 	for pkgname, dict := range c.packages {
 		m := map[string]interface{}{}
 

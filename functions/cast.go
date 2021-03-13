@@ -147,6 +147,11 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		}
 	}
 
+	// If it's a channel, just return the value
+	if typeValue, ok := args[0].(*datatypes.Channel); ok {
+		return typeValue, nil
+	}
+
 	// Otherwise, make a deep copy of the item.
 	r := DeepCopy(args[0], MaxDeepCopyDepth)
 
