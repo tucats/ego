@@ -124,6 +124,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"time.Now":             {Min: 0, Max: 0, F: TimeNow},
 	"time.Parse":           {Min: 1, Max: 2, F: TimeParse, ErrReturn: true},
 	"time.reference":       {V: "Mon Jan 2 15:04:05 -0700 MST 2006"},
+	"time.Since":           {Min: 1, Max: 1, F: TimeSince},
 	"time.Sleep":           {Min: 1, Max: 1, F: Sleep},
 	"util.Memory":          {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":            {Min: 0, Max: 0, F: GetMode, FullScope: true},

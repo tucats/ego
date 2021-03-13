@@ -122,6 +122,23 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return t.Format(layout), nil
 }
 
+func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) != 1 {
+		return nil, errors.New(errors.ArgumentCountError).In("Since()")
+	}
+
+	// Get the time value stored in the argument
+	t, err := getTimeV(args[0])
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	// Calculate duration and return as a string.
+	duration := time.Since(*t)
+
+	return duration.String(), nil
+}
+
 // getTime looks in the symbol table for the "this" receiver, and
 // extracts the time value from it.
 func getTime(symbols *symbols.SymbolTable) (*time.Time, *errors.EgoError) {
