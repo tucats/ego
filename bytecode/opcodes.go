@@ -97,6 +97,7 @@ const (
 	Timer
 	Try
 	TryPop
+	Wait
 
 	// Everything from here on is a branch instruction, whose
 	// operand must be present and is an integer instruction
@@ -194,6 +195,7 @@ var instructionNames = map[OpcodeID]string{
 	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
+	Wait:               "Wait",
 }
 
 func initializeDispatch() {
@@ -280,6 +282,7 @@ func initializeDispatch() {
 			Timer:              TimerImpl,
 			Try:                TryImpl,
 			TryPop:             TryPopImpl,
+			Wait:               wait,
 		}
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
@@ -160,6 +161,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Launch the function call as a separate thread.
 	ui.Debug(ui.TraceLogger, "--> Launching go routine \"%s\" (tracing=%v)", fName, c.tracing)
+	waitGroup.Add(1)
 
 	go GoRoutine(util.GetString(fName), c, args)
 
@@ -484,4 +486,14 @@ func (c *Context) inPackageSymbolTable(name string) bool {
 	}
 
 	return false
+}
+
+func wait(c *Context, i interface{}) *errors.EgoError {
+	if wg, ok := i.(sync.WaitGroup); ok {
+		wg.Wait()
+	} else {
+		waitGroup.Wait()
+	}
+
+	return nil
 }

@@ -64,6 +64,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "url":
 		return c.urlDirective()
 
+	case "wait":
+		return c.waitDirective()
+
 	default:
 		return c.newError(errors.InvalidDirectiveError, name)
 	}
@@ -298,4 +301,12 @@ func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
 	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
 
 	return c.b.SetAddressHere(branch)
+}
+
+// Implement the @wait directive which waits for any outstanding
+// go routines to finish.
+func (c *Compiler) waitDirective() *errors.EgoError {
+	c.b.Emit(bytecode.Wait)
+
+	return nil
 }

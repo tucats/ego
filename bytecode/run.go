@@ -19,6 +19,7 @@ type DispatchMap map[OpcodeID]OpcodeHandler
 
 var dispatch DispatchMap
 var dispatchMux sync.Mutex
+var waitGroup sync.WaitGroup
 
 // GrowStackBy indicates the number of eleemnts to add to the stack when
 // it runs out of space.
@@ -180,6 +181,8 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			ui.DebugMode = true
 
 			err = parentCtx.newError(ctx.Run())
+
+			waitGroup.Done()
 		}
 	}
 
