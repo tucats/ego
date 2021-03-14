@@ -21,7 +21,12 @@ type SymbolTable struct {
 	Values        []*[]interface{}
 	ValueSize     int
 	ScopeBoundary bool
+	isRoot        bool
 	mutex         sync.Mutex
+}
+
+func NewRootSymbolTable(name string) *SymbolTable {
+	return NewChildSymbolTable(name, nil)
 }
 
 // NewSymbolTable generates a new symbol table.
@@ -46,6 +51,11 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		Parent:    parent,
 		Symbols:   map[string]int{},
 		Constants: map[string]interface{}{},
+	}
+
+	if parent == nil {
+		symbols.ScopeBoundary = true
+		symbols.isRoot = true
 	}
 
 	syms := &symbols

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/persistence"
@@ -36,19 +37,27 @@ type cachedCompilationUnit struct {
 	count int
 }
 
+var Session string
+
 var serviceCache = map[string]cachedCompilationUnit{}
 var cacheMutex sync.Mutex
 
+var nextSessionID int32
+
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
-var MaxCachedEntries = 10
+var MaxCachedEntries = 0
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
-	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-	syms := symbols.NewSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+	sessionID := atomic.AddInt32(&nextSessionID, 1)
+	syms := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+
+	ui.Debug(ui.ServerLogger, "[%d] %s %s", sessionID, r.Method, r.URL.Path)
+
+	_ = syms.SetAlways("_session", Session)
 	_ = syms.SetAlways("_method", r.Method)
 	_ = syms.SetAlways("__exec_mode", "server")
 
@@ -123,7 +132,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// the part of the path that is the actual endpoint, so we can locate
 	// the service program. Also, store awaay the full path, the endpoint,
 	// and any suffix that the service might want to process.
-	endpoint := findPath(r.URL.Path)
+	endpoint := findPath(sessionID, r.URL.Path)
 	pathSuffix := path[len(endpoint):]
 
 	if pathSuffix != "" {
@@ -155,7 +164,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		cachedItem.count++
 		serviceCache[endpoint] = cachedItem
 
-		ui.Debug(ui.ServerLogger, "Using cached compilation unit")
+		ui.Debug(ui.ServerLogger, "[%d] Using cached compilation unit", sessionID)
 		cacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+".ego"))
@@ -182,8 +191,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-		// If it compiled successfully, then put it in the cache
-		if errors.Nil(err) {
+		// If it compiled successfully and we are caching, then put
+		// it in the cache
+		if errors.Nil(err) && MaxCachedEntries > 0 {
 			serviceCache[endpoint] = cachedCompilationUnit{
 				age:   time.Now(),
 				c:     compilerInstance,
@@ -206,7 +216,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				delete(serviceCache, key)
-				ui.Debug(ui.ServerLogger, "Endpoint %s aged out of cache", key)
+				ui.Debug(ui.ServerLogger, "[%d] Endpoint %s aged out of cache", sessionID, key)
 			}
 		}
 		cacheMutex.Unlock()
@@ -231,7 +241,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if auth == "" {
 		authenticatedCredentials = false
 
-		ui.Debug(ui.ServerLogger, "No authentication credentials given")
+		ui.Debug(ui.ServerLogger, "[%d] No authentication credentials given", sessionID)
 	} else {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
@@ -240,11 +250,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = syms.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
 
-			ui.Debug(ui.ServerLogger, "Auth using token %s...", token[:20])
+			ui.Debug(ui.ServerLogger, "[%d] Auth using token %s...", sessionID, token[:20])
 		} else {
 			user, pass, authenticatedCredentials = r.BasicAuth()
 			if !authenticatedCredentials {
-				ui.Debug(ui.ServerLogger, "BasicAuth invalid")
+				ui.Debug(ui.ServerLogger, "[%d] BasicAuth invalid", sessionID)
 			} else {
 				authenticatedCredentials = validatePassword(user, pass)
 			}
@@ -252,7 +262,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = syms.SetAlways("_token", "")
 			_ = syms.SetAlways("_token_valid", false)
 
-			ui.Debug(ui.ServerLogger, "Auth using user \"%s\", auth: %v", user, authenticatedCredentials)
+			ui.Debug(ui.ServerLogger, "[%d] Auth using user \"%s\", auth: %v", sessionID,
+				user, authenticatedCredentials)
 		}
 	}
 
@@ -316,7 +327,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
-		ui.Debug(ui.ServerLogger, "STATUS %d", status)
+		ui.Debug(ui.ServerLogger, "[%d] STATUS %d", sessionID, status)
 
 		return
 	}
@@ -330,16 +341,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = io.WriteString(w, string(byteBuffer))
 
-		ui.Debug(ui.ServerLogger, "STATUS %d, sending JSON response", status)
+		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
 	} else {
 		// Otherwise, capture the print buffer.
 		_, _ = io.WriteString(w, ctx.GetOutput())
 
-		ui.Debug(ui.ServerLogger, "STATUS %d, sending TEXT response", status)
+		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
 	}
 }
 
-func findPath(urlPath string) string {
+func findPath(sessionID int32, urlPath string) string {
 	if paths, ok := symbols.RootSymbolTable.Get("__paths"); ok {
 		if pathList, ok := paths.([]string); ok {
 			sort.Slice(pathList, func(i, j int) bool {
@@ -348,8 +359,8 @@ func findPath(urlPath string) string {
 
 			for _, path := range pathList {
 				if strings.HasPrefix(urlPath, path) {
-					ui.Debug(ui.ServerLogger, "Path %s resolves to endpoint %s",
-						urlPath, path)
+					ui.Debug(ui.ServerLogger, "[%d] Path %s resolves to endpoint %s",
+						sessionID, urlPath, path)
 
 					return path
 				}

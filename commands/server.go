@@ -39,6 +39,8 @@ func Start(c *cli.Context) *errors.EgoError {
 			if !c.GetBool("force") {
 				return errors.New(errors.ServerAlreadyRunning).Context(status.PID)
 			}
+		} else {
+			_ = server.RemovePidFile(c)
 		}
 	}
 
@@ -209,11 +211,11 @@ func Stop(c *cli.Context) *errors.EgoError {
 			e2 = proc.Kill()
 			if e2 == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
-
-				err = server.RemovePidFile(c)
 			}
 		}
 	}
+
+	_ = server.RemovePidFile(c)
 
 	return errors.New(err)
 }
@@ -260,8 +262,6 @@ func Restart(c *cli.Context) *errors.EgoError {
 			e2 = proc.Kill()
 			if e2 == nil {
 				ui.Say("Server (pid %d) stopped", status.PID)
-
-				err = server.RemovePidFile(c)
 			}
 		}
 
@@ -269,6 +269,8 @@ func Restart(c *cli.Context) *errors.EgoError {
 			err = errors.New(e2)
 		}
 	}
+
+	_ = server.RemovePidFile(c)
 
 	if errors.Nil(err) {
 		args := status.Args
@@ -363,12 +365,14 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.
-	session, found := c.GetString("session-uuid")
+	var found bool
+
+	server.Session, found = c.GetString("session-uuid")
 	if found {
-		_ = symbols.RootSymbolTable.SetAlways("_session", session)
+		_ = symbols.RootSymbolTable.SetAlways("_session", server.Session)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get("_session")
-		session = util.GetString(s)
+		server.Session = util.GetString(s)
 	}
 
 	debugPath, _ := c.GetString("debug")
@@ -376,7 +380,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}
 
-	ui.Debug(ui.ServerLogger, "Starting server, session %s", session)
+	ui.Debug(ui.ServerLogger, "Starting server, session %s", server.Session)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {

@@ -28,7 +28,8 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoError {
 		e = e.In(c.PackageName)
 	}
 
-	if p >= 0 {
+	// Get the context info if possible.
+	if p >= 0 && p < len(c.t.Line) && p < len(c.t.Pos) {
 		e = e.In(c.PackageName).At(c.t.Line[p], c.t.Pos[p])
 	}
 

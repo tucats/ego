@@ -52,6 +52,7 @@ var RootSymbolTable = SymbolTable{
 	ValueSize:     len(rootNames),
 	Values:        rootValues,
 	Constants:     map[string]interface{}{},
+	isRoot:        true,
 }
 
 // SetGlobal sets a symbol value in the global symbol table.

@@ -98,8 +98,8 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	syms.SetValue(vx, v)
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, setalways(%s) = %v [%d]",
-		s.Name, name, util.Format(v), vx)
+	ui.Debug(ui.SymbolLogger, "+++ in table %s, setalways(%s) slot %d",
+		s.Name, name, vx)
 
 	return nil
 }
