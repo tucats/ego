@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -60,11 +61,36 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 		arch = "Apple Silicon"
 	}
 
-	fmt.Printf("%s version %s (%s x%d)\n",
-		c.FindGlobal().AppName,
-		c.FindGlobal().Version,
-		arch,
-		runtime.NumCPU())
+	if ui.OutputFormat == "text" {
+		fmt.Printf("%s version %s (%s, %s)\n",
+			c.FindGlobal().AppName,
+			c.FindGlobal().Version,
+			runtime.Version(),
+			arch)
+	} else {
+		type VersionInfo struct {
+			Name      string `json:"name"`
+			Version   string `json:"version"`
+			GoVersion string `json:"go"`
+			OS        string `json:"os"`
+			Arch      string `json:"arch"`
+		}
+
+		v := VersionInfo{
+			Name:      c.FindGlobal().AppName,
+			Version:   c.FindGlobal().Version,
+			GoVersion: runtime.Version(),
+			OS:        runtime.GOOS,
+			Arch:      runtime.GOARCH,
+		}
+		if ui.OutputFormat == "json" {
+			b, _ := json.Marshal(v)
+			fmt.Println(string(b))
+		} else {
+			b, _ := json.MarshalIndent(v, "", "  ")
+			fmt.Println(string(b))
+		}
+	}
 
 	return nil
 }
