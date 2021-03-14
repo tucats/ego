@@ -35,14 +35,18 @@ func Start(c *cli.Context) *errors.EgoError {
 	// Is there already a server running? If so, we can't do any more.
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) && status != nil {
-		if _, err := os.FindProcess(status.PID); errors.Nil(err) {
-			if !c.GetBool("force") {
+		if p, err := os.FindProcess(status.PID); errors.Nil(err) {
+			// Signal of 0 does error checking, and will detect if the PID actually
+			// is running. Unix unhelpfully always returns something for FindProcess
+			// if the pid is or was ever running...
+			err := p.Signal(syscall.Signal(0))
+			if errors.Nil(err) && !c.GetBool("force") {
 				return errors.New(errors.ServerAlreadyRunning).Context(status.PID)
 			}
-		} else {
-			_ = server.RemovePidFile(c)
 		}
 	}
+
+	_ = server.RemovePidFile(c)
 
 	// Construct the command line again, but replace the START verb with a RUN
 	// verb. Also, add the flag that says the process is running detached.
