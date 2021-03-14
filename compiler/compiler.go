@@ -350,3 +350,36 @@ func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 
 	return firstError
 }
+
+func (c *Compiler) Clone(withLock bool) *Compiler {
+	cx := Compiler{
+		PackageName:          c.PackageName,
+		SourceFile:           c.SourceFile,
+		b:                    c.b,
+		t:                    c.t,
+		s:                    c.s.Clone(withLock),
+		RootTable:            c.s.Clone(withLock),
+		coercions:            c.coercions,
+		constants:            c.constants,
+		deferQueue:           []int{},
+		packages:             c.packages,
+		LowercaseIdentifiers: c.LowercaseIdentifiers,
+		extensionsEnabled:    c.extensionsEnabled,
+		exitEnabled:          c.exitEnabled,
+	}
+
+	packages := map[string]map[string]interface{}{}
+
+	for n, m := range c.packages {
+		packData := map[string]interface{}{}
+		for k, v := range m {
+			packData[k] = v
+		}
+
+		packages[n] = packData
+	}
+
+	cx.packages = packages
+
+	return &cx
+}

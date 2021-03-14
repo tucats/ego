@@ -158,7 +158,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	cacheMutex.Lock()
 	if cachedItem, ok := serviceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
-		compilerInstance = cachedItem.c
+		compilerInstance = cachedItem.c.Clone(true)
+		compilerInstance.AddPackageToSymbols(syms)
+
 		tokens = cachedItem.t
 		cachedItem.age = time.Now()
 		cachedItem.count++
@@ -183,6 +185,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(syms)
 		compilerInstance.SetInteractive(true)
+
+		compilerInstance.AddBuiltins("")
+
+		err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
+		if !errors.Nil(err) {
+			fmt.Printf("Unable to auto-import packages: " + err.Error())
+		}
+
+		compilerInstance.AddPackageToSymbols(syms)
+
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {
 			w.WriteHeader(http.StatusBadRequest)
@@ -191,6 +203,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
+
 		// If it compiled successfully and we are caching, then put
 		// it in the cache
 		if errors.Nil(err) && MaxCachedEntries > 0 {
@@ -219,6 +232,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				ui.Debug(ui.ServerLogger, "[%d] Endpoint %s aged out of cache", sessionID, key)
 			}
 		}
+
 		cacheMutex.Unlock()
 	}
 
@@ -279,16 +293,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = byteBuffer.ReadFrom(r.Body)
 	bodyText := byteBuffer.String()
 	_ = syms.SetAlways("_body", bodyText)
-
-	// Handle built-ins and auto-import
-	compilerInstance.AddBuiltins("")
-
-	err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
-	if !errors.Nil(err) {
-		fmt.Printf("Unable to auto-import packages: " + err.Error())
-	}
-
-	compilerInstance.AddPackageToSymbols(syms)
 
 	// Run the service code
 	ctx := bytecode.NewContext(syms, serviceCode).SetDebug(debug).SetTokenizer(tokens)
