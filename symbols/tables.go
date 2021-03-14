@@ -71,3 +71,13 @@ func (s *SymbolTable) Lock() {
 func (s *SymbolTable) Unlock() {
 	s.mutex.Unlock()
 }
+
+// Find the root table for this symbol table
+func (s *SymbolTable) Root() *SymbolTable {
+
+	st := s
+	for st.Parent != nil {
+		st = st.Parent
+	}
+	return st
+}

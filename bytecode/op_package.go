@@ -33,7 +33,7 @@ func pushPackage(c *Context, i interface{}) *errors.EgoError {
 	// as a package (from a previous import or autoimport) re-use it
 	pkg := map[string]interface{}{}
 
-	if v, ok := symbols.RootSymbolTable.Get(name); ok {
+	if v, ok := c.symbols.Root().Get(name); ok {
 		switch actual := v.(type) {
 		case map[string]interface{}:
 			pkg = actual
@@ -111,5 +111,5 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 	c.popSymbolTable()
 
 	// Store the package definition in the root symbol table.
-	return symbols.RootSymbolTable.SetAlways(pkgdef.name, pkg)
+	return c.symbols.Root().SetAlways(pkgdef.name, pkg)
 }

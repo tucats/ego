@@ -121,7 +121,7 @@ func (c *Context) syncPackageSymbols() {
 		pkgname := c.symbols.Parent.Package
 		c.popSymbolTable()
 
-		if pkg, ok := symbols.RootSymbolTable.Get(pkgname); ok {
+		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range pkgsyms.Symbols {
 					if util.HasCapitalizedName(k) {
