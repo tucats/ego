@@ -154,7 +154,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// current token stream in progress, and the current bytecode. But otherwise we
 	// use a new compiler context, so any nested operations do not affect the definition
 	// of the function body we're compiling.
-	cx := New("function " + functionName)
+	cx := New("function " + functionName).SetRoot(c.RootTable)
 	cx.t = c.t
 	cx.b = b
 	cx.functionDepth = c.functionDepth

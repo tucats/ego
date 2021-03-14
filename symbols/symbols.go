@@ -3,7 +3,6 @@ package symbols
 import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // Get retrieves a symbol from the current table or any parent
@@ -27,8 +26,8 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		return s.Parent.Get(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, get(%s) = %v [%d]",
-		s.Name, name, v, vx)
+	ui.Debug(ui.SymbolLogger, "%s(%s), get(%s) slot %d",
+		s.Name, s.ID.String(), name, vx)
 
 	return v, f
 }
@@ -50,8 +49,8 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		return s.Parent.Get(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, get(&%s) = %v",
-		s.Name, name, util.Format(v))
+	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
+		s.Name, s.ID, name)
 
 	return v, f
 }
@@ -98,8 +97,8 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	syms.SetValue(vx, v)
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, setalways(%s) slot %d",
-		s.Name, name, vx)
+	ui.Debug(ui.SymbolLogger, "%s(%s), setalways(%s) slot %d",
+		s.Name, s.ID, name, vx)
 
 	return nil
 }
@@ -134,8 +133,8 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 
 	s.SetValue(oldx, v)
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, set(%s) = %v [%d]",
-		s.Name, name, util.Format(v), oldx)
+	ui.Debug(ui.SymbolLogger, "%s(%s), set(%s) = slot %d",
+		s.Name, s.ID, name, oldx)
 
 	return nil
 }
@@ -163,8 +162,8 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 	}
 
 	delete(s.Symbols, name)
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, delete(%s)",
-		s.Name, name)
+	ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
+		s.Name, s.ID, name)
 
 	return nil
 }
@@ -183,8 +182,8 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 
-	ui.Debug(ui.SymbolLogger, "+++ in table %s, create(%s) = nil[%d]",
-		s.Name, name, s.ValueSize-1)
+	ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
+		s.Name, s.ID, name, s.ValueSize-1)
 
 	return nil
 }

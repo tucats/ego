@@ -132,7 +132,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + fileName)
+			importCompiler := New("import " + fileName).SetRoot(c.RootTable)
 			importCompiler.b = bytecode.New("import " + fileName)
 			importCompiler.t = tokenizer.New(text)
 			importCompiler.PackageName = packageName
@@ -153,7 +153,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			// The import will have generate code that must be run to actually register
 			// package contents.
-			importSymbols := symbols.NewChildSymbolTable("import "+fileName, &symbols.RootSymbolTable)
+			importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 			ctx.SetTracing(true)
 

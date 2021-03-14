@@ -53,6 +53,7 @@ type Compiler struct {
 	b                    *bytecode.ByteCode
 	t                    *tokenizer.Tokenizer
 	s                    *symbols.SymbolTable
+	RootTable            *symbols.SymbolTable
 	loops                *Loop
 	coercions            []*bytecode.ByteCode
 	constants            []string
@@ -77,9 +78,20 @@ func New(name string) *Compiler {
 		packages:             PackageDictionary{},
 		LowercaseIdentifiers: false,
 		extensionsEnabled:    persistence.GetBool(ExtensionsSetting),
+		RootTable:            &symbols.RootSymbolTable,
 	}
 
 	return &cInstance
+}
+
+// Override the default root symbol table for this compilation. This determines
+// where package names are stored/found, for example. This is overridden by the
+// web service handlers as they have per-call instances of root.
+func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
+	c.RootTable = s
+	c.s.Parent = s
+
+	return c
 }
 
 // If set to true, the compiler allows the EXIT statement.
@@ -203,7 +215,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	fd[name] = function
 	c.packages[pkgname] = fd
 
-	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
+	_ = c.RootTable.SetAlways(pkgname, fd)
 
 	return nil
 }

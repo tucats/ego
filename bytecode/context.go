@@ -139,7 +139,7 @@ func (c *Context) SetPC(pc int) {
 // SetGlobal stores a value in a the global symbol table that is
 // at the top of the symbol table chain.
 func (c *Context) SetGlobal(name string, value interface{}) *errors.EgoError {
-	return c.symbols.SetGlobal(name, value)
+	return c.symbols.Root().Set(name, value)
 }
 
 // EnableConsoleOutput tells the context to begin capturing all output normally generated

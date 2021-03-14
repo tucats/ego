@@ -132,7 +132,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 	// Get the name.
 	varname := util.GetString(i)
 
-	err = c.SetGlobal(varname, v)
+	err = c.symbols.Root().Set(varname, v)
 	if !errors.Nil(err) {
 		return c.newError(err)
 	}

@@ -181,7 +181,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
-		compilerInstance = compiler.New(name).ExtensionsEnabled(true)
+		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(syms)
 		compilerInstance.SetInteractive(true)
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {
@@ -271,7 +271,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_user", user)
 	_ = syms.SetAlways("_password", pass)
 	_ = syms.SetAlways("_authenticated", authenticatedCredentials)
-	_ = syms.SetGlobal("_rest_status", http.StatusOK)
+	_ = syms.Root().SetAlways("_rest_status", http.StatusOK)
 	_ = syms.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
 
 	// Get the body of the request as a string

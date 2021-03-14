@@ -1,6 +1,11 @@
 package symbols
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/ui"
+)
 
 // This is the number of symbols that can be added to a table at a
 // given scope. Exported because it can be set by a caller prior
@@ -19,6 +24,7 @@ type SymbolTable struct {
 	Symbols       map[string]int
 	Constants     map[string]interface{}
 	Values        []*[]interface{}
+	ID            uuid.UUID
 	ValueSize     int
 	ScopeBoundary bool
 	isRoot        bool
@@ -36,6 +42,7 @@ func NewSymbolTable(name string) *SymbolTable {
 		Parent:    &RootSymbolTable,
 		Symbols:   map[string]int{},
 		Constants: map[string]interface{}{},
+		ID:        uuid.New(),
 	}
 	syms := &symbols
 	syms.initializeValues()
@@ -51,6 +58,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		Parent:    parent,
 		Symbols:   map[string]int{},
 		Constants: map[string]interface{}{},
+		ID:        uuid.New(),
 	}
 
 	if parent == nil {
@@ -72,12 +80,15 @@ func (s *SymbolTable) Unlock() {
 	s.mutex.Unlock()
 }
 
-// Find the root table for this symbol table
+// Find the root table for this symbol table.
 func (s *SymbolTable) Root() *SymbolTable {
-
 	st := s
-	for st.Parent != nil {
+	for !st.isRoot && s.Parent != nil {
 		st = st.Parent
 	}
+
+	ui.Debug(ui.SymbolLogger, "+++ Root of %s(%s): %s(%s)",
+		s.Name, s.ID, st.Name, st.ID)
+
 	return st
 }
