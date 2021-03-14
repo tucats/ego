@@ -47,7 +47,9 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	// At this point, we know we're trying to compile a statement,
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
-	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+	if c.t.TokenP < len(c.t.Line) {
+		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
+	}
 
 	// Is it a function call? We donly do this if we are already in
 	// the body of a function.
