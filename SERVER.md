@@ -1,21 +1,39 @@
-# Ego Web Server
+
+
+
+# Table of Contents
+1. [Introduction](#intro)
+2. [Server Commands](#commands)
+    1. [Starting and Stopping](#startstop)
+    2. [Credentials Management](#credentials)
+    3. [Profile Settings](#profile)
+3. [Writing a Service](#services)
+    1. [Global Variables](#globals)
+    2. [Server Directives](#directives)
+    3. [Server Functions](#functions)
+    4. [Sample Service](#sample)
+
+
+&nbsp;
+&nbsp;
+
+# Ego Web Server <a name="intro"></a>
 
 This documents using the _Ego_ web server capability. You can start Ego as a REST server,
 with a specified port on which to listen for input (the default is 8080). Web service
 requests are handled by the server for administrative functions like logging in or 
 managing user credentials, and by _Ego_ programs for other service functions that
 represent the actual web services features.
-
-
 &nbsp;
 &nbsp;
 
-## Server subcommands
+## Server subcommands <a nanme="commands"></a>
 The `ego server` command has subcommands that describe the operations you can perform. The
 commands that start or stop a rest server or evaluate it's status must be run on the same
 computer that the server itself is running on. For each of the commands below, you can 
-specify the option `--port n` to indicate that you want to control the server listening on the given port number, where
-`n` is an integer value for a publically available port number.
+specify the option `--port n` to indicate that you want to control the server listening 
+on the given port number, where `n` is an integer value for a publically available port 
+number.
 
 | Subcommand | Description |
 |------------| ------------|
@@ -33,16 +51,34 @@ specify the option `--port n` to indicate that you want to control the server li
 &nbsp;
 &nbsp;
 
-The commands that start and stop a server only required native operating system permissions to start or stop
-a process. The commands that affect user credentials in the server can only be executed when logged into the
-server with a process that has `root` privileges, as defined by the credentials database in that server.
+The commands that start and stop a server only required native operating system permissions
+to start or stop a process. The commands that affect user credentials in the server can only 
+be executed when logged into the server with a process that has `root` privileges, as defined 
+by the credentials database in that server.
 
-When a server is running, it generates a log file (in the current directory, by default) which tracks the server startup and status of requests made to the server.
+When a server is running, it generates a log file (in the current directory, by default) which 
+tracks the server startup and status of requests made to the server.
 
-### Starting and Stopping the Server
+### Starting and Stopping the Server<a name="startstop"></a>
 
-The `ego server start` command accepts command line options to describe the port on which to listen, 
-whether or not to use secure HTTPS, and options that control how authentication is handled.
+The `ego server start` command accepts command line options to describe the port on which to 
+listen,  whether or not to use secure HTTPS, and options that control how authentication is 
+handled. The  `ego server stop` command stops a running server. The `ego server restart` stops 
+and restarts a server using the options it was used to start up originally.
+
+You can also run the server from the CLI (instead of detaching it as a process) using the
+`ego server run` command option, which accepts the same options as `ego server start` and runs
+the code directly in the CLI, sending logging to stdout.
+
+When a server is started, a file is created (by default in /tmp) that describes the server
+status and command-line options. This information is re-read when issuing a `ego server status`
+command to display server information. It is also read by the `ego server restart` command to
+determine the command-line options to use with the restarted server.
+
+When a server is stopped via `ego server stop`, the server status file in /tmp is deleted.
+
+Below is additional information about the options that can be used for the `start` and `run`
+commands.
 
 #### Caching
 You can specify a cache size, which controls how many service programs are held in memory and not
@@ -119,34 +155,24 @@ clients.
 &nbsp;
 &nbsp;
 
-## Authentication
-If you do nothing else, the server will start up and support a username of "admin" and a
-password of "password" as the required Basic authentication. You can specify a JSON file
-that contains a map of valid names instead with the `--users` option.  
+## Credentials Management <a name="credentials"></a>
 
-The server would allow two usernames (_admin_ and _user_) with the associated passwords.
-Additionally, if a rest call is received with an Authentication value of token followed
-by a string, that string is made available to the service program, and it must determine
-if the token is acceptable.
+Use the `ego logon` command to logon to the server you have started, using a username and
+password that has root/admin privileges. This communicates with the web server and asks it
+to issue a token that is used for all subsequent administraiton operations. This token is
+valid for 24 hours by default; after 24 hours you must log in again using the username and
+password.
 
-The command line option `--realm` can be used to create the name of the authentication
-realm; if not specified the default realm name is "Ego Server". This is returned as part
-of the 401 HTTP response when authentication is not provided.
+Once you have logged in, you can issue additional `ego server` commands to manage the 
+credentials database used by the web server, and manage the service cache used to
+reduce re-compilation times for services used frequently.
 
-Server startup scans the `services/` directory below the Ego path to find the Ego programs
-that offer endpoint support. This directory structure will map to the endpoints that the
-server responds to.  For example, a service program named `foo` in the `services/` directory 
-will be referenced with an endoint like http://host:port/services/foo
 
-It is the responsibility of each endpoint to do whatever validation is requireed for
-the endpoint. To help support this, a number of global variables are set up for the
-endpoint service program which describe  information about the rest call and the
-credentials (if any) of the caller.
 
 &nbsp;
 &nbsp;
 
-## Profile items
+## Profile items <a name="profile"></a>
 The REST server can be easily controlled by persistent items in the current profile,
 which are set with the `ego profile set` command or via program operation using the
 `profile` package.
@@ -160,7 +186,7 @@ which are set with the `ego profile set` command or via program operation using 
 &nbsp; 
 &nbsp;
 
-## Writing a Service
+# Writing a Service <a name="services"></a>
 
 This section covers details of writing a service. The service program is called automatically
 by the Ego web server when a request comes in with an endpoint URL that matches the service
@@ -168,7 +194,18 @@ file location. The URL is available to the service, along with other variables i
 status of authentication, etc. The service program is then run, and it has responsibility
 for determining the HTTP status and response type of the result.
 
-### Global Variables
+
+Server startup scans the `services/` directory below the Ego path to find the Ego programs
+that offer endpoint support. This directory structure will map to the endpoints that the
+server responds to.  For example, a service program named `foo` in the `services/` directory 
+will be referenced with an endoint like http://host:port/services/foo
+
+It is the responsibility of each endpoint to do whatever validation is requireed for
+the endpoint. To help support this, a number of global variables are set up for the
+endpoint service program which describe  information about the rest call and the
+credentials (if any) of the caller.
+
+## Global Variables <a name="#globals"></a>
 Each time a REST call is made, the program associated with the endpoint is run. When it
 runs, it will have a number of global variables set already that the program can use
 to control its operation.
@@ -186,14 +223,14 @@ to control its operation.
 &nbsp; 
 &nbsp;     
 
-### Server Directives
-There are a few compiler directives that can be used in service programs that are executed by the
-server. These allow for more declarative code.
+## Server Directives <a name="#directives"></a>
+There are a few compiler directives that can be used in service programs that are executed 
+by the server. These allow for more declarative code.
 
 `@authenticated type`
-This requires that the caller of the service be authenticated, and specifies the type of the authentication
-to be performed. This should be at the start of the service code; if the caller is not authenticated then the
-rest of the services does not run.  Valid types are:
+This requires that the caller of the service be authenticated, and specifies the type of the 
+authentication to be performed. This should be at the start of the service code; if the caller 
+is not authenticated then the rest of the services does not run.  Valid types are:
 
 | Type | Description |
 | --- | --- |
@@ -207,9 +244,9 @@ rest of the services does not run.  Valid types are:
 &nbsp;
 
 `@status n`
-This sets the REST return status code to the given integer value. By default, the status value is 200
-for "success" but can be set to any valid integer HTTP status code. For example, 404 means "not found"
-and 403 means "forbidden".
+This sets the REST return status code to the given integer value. By default, the status value i
+s 200 for "success" but can be set to any valid integer HTTP status code. For example, 404 means 
+"not found" and 403 means "forbidden".
 
 `@response v`
 This adds the contents of the expression value `v` to the result set returned to the caller. You
@@ -218,18 +255,19 @@ value of this is also that it automatically detects if the media type is meant t
 results; in this case the value is automatically converted to a JSON string before being added
 to the response.
 
-### Functions
-There are additional functions made available to the Ego programs run as services. These are generally used to support writing
-services for administrative or privileged functions. For example, a service that updates a password would use all of the following
-functions.
+## Functions <a name="functions"></a>
+There are additional functions made available to the Ego programs run as services. These are 
+generally used to support writing services for administrative or privileged functions. For example, 
+a service that updates a password probably would use all of the following functions.
 
 | Function | Description | 
-|----------|------------|
+|----------|-------------|
 | u := getuser(name) | Get the user data for a given user
 | call setuser(u) | Update or create a user with the given user data
 | f := authenticated(user,pass) | Boolean if the username and password are valid
+
 &nbsp; 
 &nbsp;     
 
-## Sample Service
+## Sample Service <a name="sample"></a>
 This section describes the source for a simple service.
