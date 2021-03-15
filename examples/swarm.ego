@@ -1,0 +1,39 @@
+
+func client(ch chan, count int ) {
+
+   status := 200
+   for i := 0; i < count; i = i + 1 {
+      r := rest.New("admin", "password").Media("text").Base("http://localhost:8080")
+      r.Get("/services/factor/10")
+      if r.status != 200 {
+         status = r.status
+      }
+   }
+   ch <- status
+}
+
+func main() int {
+
+   clients := 5
+   ch := make(chan, clients)
+
+   for i := 0; i < clients; i = i + 1 {
+      go client(ch, 100)
+   }
+
+   count := 0
+   for sts := range ch {
+      count = count + 1
+      fmt.Println("Received ", count)
+      if sts != 200 {
+         fmt.Printf("Got bad status: %v\n", sts)
+      }
+      if count >= clients {
+         break
+      }
+   }
+
+   fmt.Printf("Read %d status values\n", count)
+   return 0
+}
+

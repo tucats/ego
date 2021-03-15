@@ -2,6 +2,7 @@ package datatypes
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/errors"
 )
@@ -17,6 +18,7 @@ const (
 	ErrorType
 	ChanType
 	MapType
+	WaitGroupType
 	InterfaceType        // alias for "any"
 	VarArgs              // pseudo type used for varible argument list items
 	UserType             // something defined by a type statement
@@ -50,6 +52,11 @@ var stringInterface interface{} = ""
 
 // TypeDeclarationMap is a dictionary of all the type declaration token sequences.
 var TypeDeclarationMap = []TypeDefinition{
+	{
+		[]string{"sync", ".", "WaitGroup"},
+		sync.WaitGroup{},
+		WaitGroupType,
+	},
 	{
 		[]string{"chan"},
 		chanModel,
@@ -137,6 +144,9 @@ var TypeDeclarationMap = []TypeDefinition{
 // as datatypes.IntType or datatypes.StringType.
 func TypeOf(i interface{}) int {
 	switch i.(type) {
+	case sync.WaitGroup:
+		return WaitGroupType
+
 	case int:
 		return IntType
 
@@ -213,6 +223,9 @@ func IsType(v interface{}, kind int) bool {
 	}
 
 	switch v.(type) {
+	case sync.WaitGroup:
+		return kind == WaitGroupType
+
 	case *int, *int32, *int64:
 		return kind == IntType+PointerType
 

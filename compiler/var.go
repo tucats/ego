@@ -59,6 +59,8 @@ func (c *Compiler) compileVar() *errors.EgoError {
 			kind = typeInfo.Kind
 			model = typeInfo.Model
 			c.t.Advance(len(typeInfo.Tokens))
+
+			break
 		}
 	}
 
