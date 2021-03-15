@@ -247,6 +247,33 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 
 		_ = c.symbolSetAlways("__args", args)
 
+	case functions.NativeFunction:
+		fname := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
+		fname = strings.Replace(fname, "github.com/tucats/ego/", "", 1)
+		funcSymbols := symbols.NewChildSymbolTable("builtin "+fname, c.symbols)
+
+		if v, ok := c.popThis(); ok {
+			_ = funcSymbols.SetAlways("__this", v)
+		}
+
+		result, err = af(funcSymbols, args)
+
+		if r, ok := result.(functions.MultiValueReturn); ok {
+			_ = c.stackPush(StackMarker{Desc: "multivalue result"})
+
+			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
+				_ = c.stackPush(r.Value[i])
+			}
+
+			return nil
+		}
+
+		// Functions implemented natively cannot wrap them up as runtime
+		// errors, so let's help them out.
+		if !errors.Nil(err) {
+			err = c.newError(err).In(functions.FindName(af))
+		}
+
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
 		// First, can we check the argument count on behalf of the caller?
 		df := functions.FindFunction(af)

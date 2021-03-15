@@ -3,6 +3,7 @@ package bytecode
 import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/util"
 )
 
@@ -29,8 +30,6 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	// The only the type that is supported is a map, either native
-	// or Ego map.
 	var v interface{}
 
 	found := false
@@ -66,6 +65,18 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
+		// Is it a native type? If so, see if there is a function for it
+		// with the given name. If so, push that as if it was a builtin.
+		kind := datatypes.TypeOf(mv)
+
+		fn := functions.FindNativeFunction(kind, name)
+		if fn != nil {
+			_ = c.stackPush(fn)
+
+			return nil
+		}
+
+		// Nothing we can do something with, so bail
 		return c.newError(errors.InvalidTypeError)
 	}
 

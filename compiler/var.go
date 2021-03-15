@@ -57,7 +57,8 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 		if match {
 			kind = typeInfo.Kind
-			model = typeInfo.Model
+			model = datatypes.InstanceOf(kind)
+
 			c.t.Advance(len(typeInfo.Tokens))
 
 			break
