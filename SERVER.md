@@ -39,6 +39,83 @@ server with a process that has `root` privileges, as defined by the credentials 
 
 When a server is running, it generates a log file (in the current directory, by default) which tracks the server startup and status of requests made to the server.
 
+### Starting and Stopping the Server
+
+The `ego server start` command accepts command line options to describe the port on which to listen, 
+whether or not to use secure HTTPS, and options that control how authentication is handled.
+
+#### Caching
+You can specify a cache size, which controls how many service programs are held in memory and not
+recompiled. This can be a significant performance benefit. When an endpoint call is made, the
+server checks to see if the cache already contains the compiled code for that function along with
+it's package definitions. If so, it is reused to execute the current service. 
+
+If the service
+program was not in the cache, it will be added to the cache.  When the cache becomes full (has
+met the limit on the number of programs to cache) then the least-recently-used service program
+based on timestamp of the last REST call) is removed from the cache. 
+
+**NOTE: THIS FEATURE IS CURRENTLY NOT WORKING CORRECTLY. DO NOT SPECIFY A CACHE SIZE.** 
+The default cache size is currently set to zero, which disables caching entirely.
+
+#### /code Endpoint
+By default, the server will only run services already stored in the services directory tree
+(more on that below). When you start the web service, you can optionally enable the `\code`
+endpoint. This accepts a text body and runs it as a program directly. This can be used for
+debugging purposes or diagnosing issues with a server. This should **NOT** be left enabled
+by default, as it exposes the server to security risks.
+
+#### Logging
+By default, the server generates a lot file named "ego-server.log" in the current directory
+where the `server start` command is issued. This contains entries describing server operations
+(like records of endpoints called, and HTTP status returned). It also contains a periodic
+display of memory consumption by the server.
+
+You can override the location of the log file using the `--log` command line option, and
+specifying the location and file name where the log file is to be written. The log will
+continue to be written to as long as the server is running. Note that the first line of
+the log file contains the UUID of the server session, so you can correlate a log to a
+running instance of the server.
+
+You can specify `--no-log` if you wish to suppress logging.
+
+#### Port and Security
+Specify the `--port` option to indicate the integer port number that _Ego_ should use to
+listen for REST requests. If not specified, the default is port 8080. You can have multiple
+_Ego_ servers running at one time, as long as they each use a different port number. The
+port number is also used in other commands like `server status` to report on the status of
+a particular instance of the server on the current computer.
+
+By default, _Ego_ servers assume HTTPS communication. This requires that you have specified
+a suitable trusted certificate store in the default location on your system that _Ego_ can
+use to verify server trust.
+
+If you wish to run in insecure mode, you can use the "--not-secure" option direct the server 
+to listen for HTTP requests that are not encrypted. You must not use this mode in a 
+production environment, since it is possible for users to snoop for username/password 
+pairs and authentication tokens. It  is useful to debug issues where you are attempting 
+to isolate whether your are having an issue with trust certificates or not.
+
+#### Authentication
+An _Ego_ web server can serve endpoints that require authentication or not, and whether
+the authentication is done by username/password versus an authentication token. Server
+command options control where the authentication credentails are stored, the default 
+"super user" account, and the security "realm" used for password challenges to web
+clients.
+
+* Use the `--users` command line option to specify either the file system path and
+  file name to use for local JSON data that contains the credentials information, or
+  a "postgres://" URL expression that indicates the Postgres database used to store
+  the credentials (in a schema named "ego-server" that is created if needed).
+* Use the `--superuser` option to specify a "username:password" string indicating 
+  the default superuser. This is only needed when the credentials store is first
+  initialized; it creates a user with the given username and password and gives that
+  user the "ROOT" privilege which makes them able to perform all secured operations.
+* Use the "--realm" option to specify a string that is sent back to web clients when
+  a username/password is required but was not provided. For web clients that are
+  browsers, this string is typically displayed in the username/password prompt from
+  the browser.
+  
 &nbsp;
 &nbsp;
 
