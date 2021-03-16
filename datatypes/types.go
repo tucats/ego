@@ -18,7 +18,9 @@ const (
 	ErrorType
 	ChanType
 	MapType
+	minimumNativeType
 	WaitGroupType
+	maximumNativeType
 	InterfaceType        // alias for "any"
 	VarArgs              // pseudo type used for varible argument list items
 	UserType             // something defined by a type statement
@@ -337,4 +339,27 @@ func IsNil(v interface{}) bool {
 	}
 
 	return false
+}
+
+// Is this type associated with a native Ego type that has
+// extended native function support?
+func IsNative(kind int) bool {
+	return kind > minimumNativeType && kind < maximumNativeType
+}
+
+// For a given type, return the native package that contains
+// it. For example, sync.WaitGroup would return "sync".
+func NativePackage(kind int) string {
+	for _, item := range TypeDeclarationMap {
+		if item.Kind == kind {
+			// If this is a pointer type, skip the pointer token
+			if item.Tokens[0] == "*" {
+				return item.Tokens[1]
+			}
+
+			return item.Tokens[0]
+		}
+	}
+
+	return ""
 }
