@@ -168,17 +168,7 @@ func Start(c *cli.Context) *errors.EgoError {
 		return errors.New(e2)
 	}
 
-	var attr = syscall.ProcAttr{
-		Dir: ".",
-		Env: os.Environ(),
-		Files: []uintptr{
-			os.Stdin.Fd(),
-			logf.Fd(),
-			logf.Fd(),
-		},
-	}
-
-	pid, e2 := syscall.ForkExec(args[0], args, &attr)
+	pid, e2 := runExec(args[0], args, logf)
 
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.
@@ -321,17 +311,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 			return errors.New(err)
 		}
 
-		attr := syscall.ProcAttr{
-			Dir: ".",
-			Env: os.Environ(),
-			Files: []uintptr{
-				os.Stdin.Fd(),
-				logf.Fd(),
-				logf.Fd(),
-			},
-		}
-
-		pid, err := syscall.ForkExec(args[0], args, &attr)
+		pid, err := runExec(args[0], args, logf)
 		if errors.Nil(err) {
 			status.PID = pid
 			status.LogID = logID
