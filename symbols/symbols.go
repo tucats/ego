@@ -46,7 +46,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	}
 
 	if !f && s.Parent != nil {
-		return s.Parent.Get(name)
+		return s.Parent.GetAddress(name)
 	}
 
 	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",

@@ -64,6 +64,11 @@ var TypeDeclarationMap = []TypeDefinition{
 		WaitGroupType,
 	},
 	{
+		[]string{"*", "sync", ".", "WaitGroup"},
+		nil, // Model generated in instance-of
+		WaitGroupType + PointerType,
+	},
+	{
 		[]string{"chan"},
 		chanModel,
 		ChanType,
@@ -149,9 +154,15 @@ var TypeDeclarationMap = []TypeDefinition{
 // and returns an integer containing the datatype specification, such
 // as datatypes.IntType or datatypes.StringType.
 func TypeOf(i interface{}) int {
-	switch i.(type) {
+	switch v := i.(type) {
+	case *interface{}:
+		return TypeOf(*v) + PointerType
+
 	case *sync.WaitGroup:
 		return WaitGroupType
+
+	case **sync.WaitGroup:
+		return WaitGroupType + PointerType
 
 	case int:
 		return IntType
@@ -214,13 +225,20 @@ func TypeString(kind int) string {
 // code here creates a new instance of that type and returns it's address.
 func InstanceOf(kind int) interface{} {
 	// Waitgroups must be uniquely created.
-	if kind == WaitGroupType {
+	switch kind {
+	case WaitGroupType:
 		return &sync.WaitGroup{}
-	}
 
-	for _, typeDef := range TypeDeclarationMap {
-		if typeDef.Kind == kind {
-			return typeDef.Model
+	case WaitGroupType + PointerType:
+		wg := &sync.WaitGroup{}
+
+		return &wg
+
+	default:
+		for _, typeDef := range TypeDeclarationMap {
+			if typeDef.Kind == kind {
+				return typeDef.Model
+			}
 		}
 	}
 
@@ -237,7 +255,10 @@ func IsType(v interface{}, kind int) bool {
 
 	switch v.(type) {
 	case *sync.WaitGroup:
-		return kind == WaitGroupType // Not really an Ego pointer
+		return kind == WaitGroupType
+
+	case **sync.WaitGroup:
+		return kind == WaitGroupType+PointerType
 
 	case *int, *int32, *int64:
 		return kind == IntType+PointerType

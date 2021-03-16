@@ -43,6 +43,21 @@ var NativeFunctionMap = []NativeFunctionDef{
 		Name: "Done",
 		F:    waitGroupDone,
 	},
+	{
+		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Name: "Wait",
+		F:    waitGroupWait,
+	},
+	{
+		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Name: "Add",
+		F:    waitGroupAdd,
+	},
+	{
+		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Name: "Done",
+		F:    waitGroupDone,
+	},
 }
 
 // For a given datatype and name, see if there is a native function that
@@ -65,6 +80,10 @@ func getNativeThis(s *symbols.SymbolTable) interface{} {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil
+	}
+
+	if p, ok := t.(*interface{}); ok {
+		return *p
 	}
 
 	return t
