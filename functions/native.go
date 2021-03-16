@@ -1,16 +1,18 @@
 package functions
 
 import (
-	"sync"
-
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
-// This file contains shims to native functions called
-// against defined types.
+// This file contains support for shims to native functions called against
+// Go-defined types.
+//
+// For each of the native functions that can be called on  a native type,
+// implement the shim wrapper. Each one has the responsibility of validating
+// the argument count, locating the native "this" value, mapping it to the
+// correct type, and then calling the function.
 
 type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)
 
@@ -66,60 +68,4 @@ func getNativeThis(s *symbols.SymbolTable) interface{} {
 	}
 
 	return t
-}
-
-// For each of the native functions that can be called on  a native type,
-// implement the shim wrapper. Each one has the responsibility of validating
-// the argument count, locating the native "this" value, mapping it to the
-// correct type, and then calling the function.
-
-// Waitgroup functions.
-
-// sync.WaitGroup Add() function.
-func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Add()")
-	}
-
-	this := getNativeThis(s)
-	if wg, ok := this.(*sync.WaitGroup); ok {
-		count := util.GetInt(args[0])
-		wg.Add(count)
-
-		return nil, nil
-	}
-
-	return nil, errors.New(errors.InvalidThisError)
-}
-
-// sync.WaitGroup Done() function.
-func waitGroupDone(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) != 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("Done()")
-	}
-
-	this := getNativeThis(s)
-	if wg, ok := this.(*sync.WaitGroup); ok {
-		wg.Done()
-
-		return nil, nil
-	}
-
-	return nil, errors.New(errors.InvalidThisError)
-}
-
-// sync.WaitGroup Wait() function.
-func waitGroupWait(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) != 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("Wait()")
-	}
-
-	this := getNativeThis(s)
-	if wg, ok := this.(*sync.WaitGroup); ok {
-		wg.Wait()
-
-		return nil, nil
-	}
-
-	return nil, errors.New(errors.InvalidThisError)
 }
