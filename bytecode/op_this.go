@@ -83,7 +83,7 @@ func (c Context) PrintThisStack(operation string) {
 	if ui.ActiveLogger(ui.TraceLogger) {
 		var b strings.Builder
 
-		label := "@ " + operation + "; stack ="
+		label := fmt.Sprintf("@ %s; stack(%d)  =", operation, c.threadID)
 
 		if c.thisStack == nil || len(c.thisStack) == 0 {
 			b.WriteString(fmt.Sprintf("%13s%s %v", " ", label, "<empty>"))
@@ -102,6 +102,6 @@ func (c Context) PrintThisStack(operation string) {
 			}
 		}
 
-		ui.Debug(ui.TraceLogger, "%s", b.String())
+		ui.Debug(ui.TraceLogger, b.String())
 	}
 }

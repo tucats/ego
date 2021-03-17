@@ -160,7 +160,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Launch the function call as a separate thread.
-	ui.Debug(ui.TraceLogger, "--> Launching go routine \"%s\" (tracing=%v)", fName, c.tracing)
+	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\" (tracing=%v)", c.threadID, fName, c.tracing)
 	waitGroup.Add(1)
 
 	go GoRoutine(util.GetString(fName), c, args)
@@ -489,7 +489,7 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 		if s, ok := datatypes.GetMetadata(m, datatypes.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package) {
-					ui.Debug(ui.TraceLogger, "Using symbol table from package "+table.Package)
+					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package)
 
 					return table
 				}

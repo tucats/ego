@@ -70,7 +70,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	c.running = true
 
 	if c.tracing {
-		ui.Debug(ui.TraceLogger, "*** Tracing "+c.Name)
+		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 	}
 
 	fullStackListing := util.GetBool(c.configGet("full_stack_listing"))
@@ -89,12 +89,12 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 			s := FormatInstruction(i)
 
 			s2 := FormatStack(c.symbols, c.stack[:c.sp], fullStackListing)
-			if !fullStackListing && len(s2) > 50 {
-				s2 = s2[:50]
+			if !fullStackListing && len(s2) > 80 {
+				s2 = s2[:80]
 			}
 
-			ui.Debug(ui.TraceLogger, "%8s%3d: %-30s stack[%2d]: %s",
-				c.GetModuleName(), c.pc, s, c.sp, s2)
+			ui.Debug(ui.TraceLogger, "(%d) %18s%3d: %-30s stack[%2d]: %s",
+				c.threadID, c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
 
 		c.pc = c.pc + 1
@@ -124,11 +124,11 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
 				if c.tracing {
-					ui.Debug(ui.TraceLogger, "*** Branch to %d on error: %s", c.pc, text)
+					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.pc, text)
 				}
 			} else {
 				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.tracing {
-					ui.Debug(ui.TraceLogger, "*** Return error: %s", text)
+					ui.Debug(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
 				}
 
 				return errors.New(err)
@@ -137,7 +137,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	}
 
 	if c.tracing {
-		ui.Debug(ui.TraceLogger, "*** End tracing "+c.Name)
+		ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
 	}
 
 	return errors.New(err)

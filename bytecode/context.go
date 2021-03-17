@@ -3,6 +3,7 @@ package bytecode
 import (
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -18,6 +19,9 @@ type This struct {
 	name  string
 	value interface{}
 }
+
+// This value is updated atomically during context creation.
+var nextThreadID int32 = 0
 
 // Context holds the runtime information about an instance of bytecode being
 // executed.
@@ -42,6 +46,7 @@ type Context struct {
 	line            int
 	blockDepth      int
 	argCountDelta   int
+	threadID        int32
 	fullSymbolScope bool
 	running         bool
 	Static          bool
@@ -79,6 +84,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// Create the context object.
 	ctx := Context{
 		Name:            name,
+		threadID:        atomic.AddInt32(&nextThreadID, 1),
 		bc:              b,
 		pc:              0,
 		stack:           make([]interface{}, InitialStackSize),
@@ -394,5 +400,5 @@ func (c *Context) popSymbolTable() {
 		c.symbols = c.symbols.Parent
 	}
 
-	ui.Debug(ui.TraceLogger, "pop table %s, current now %s", name, c.symbols.Name)
+	ui.Debug(ui.TraceLogger, "(%d)  pop table %s, current now %s", c.threadID, name, c.symbols.Name)
 }
