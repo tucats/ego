@@ -1938,13 +1938,83 @@ The value of `a` is the sum of `n` and 100, and is identical to the expression `
 value of `c` is 80, which is the sum of all the values in the array. Note that the elipsis "..."
 notation indicates that the array should be converted to a list of parameters.
 
-## os <a name="os"><a>
+## os <a name="os"></a>
+The `os` package provides a number of functions that access operating system features
+for whatever operating system (macOS, Windows, Linux, etc.) you are running on. The results
+and the behavior of the routines can be specific to that operating system. The examples
+shown here are for macOS (the "darwin" Go build).
 
 ### os.Args()
+The `Args{}` function returns an array of the string command line arguments when an _Ego_
+program is run from the shell/command line.  Consider the following simple program:
+
+    func main() int {
+        fmt.Println(os.Args())
+    }
+
+This has a `main` function (the function that is always invoked with the `ego run` command).
+This gets the list of arguments via `os.Args()` and prints it to the standard output.  If
+this is placed in a file -- for example, "args.ego" -- then it can be run with a command
+line similar to:
+
+
+    tom$ ego run args.ego stuff I want
+
+The "tom$" is the shell prompt; the remainder of the command is the command line entered. Note
+that after the name of the program file there are additional command line tokens. The main
+function in "args.ego" will retrieve these and print them, and the output will look like:
+
+    [ "stuff", "I", "want"]
+
+The result is an array where each element of the array is the next token from the original
+command line.
+
 
 ### os.Exit(i)
+The `Exit()` operation stops the execution of the _Ego_ program and it's runtime environment,
+and returns control to the shell/command line where it was invoked. If an optional parameter
+is given, it is an integer that becomes the system return code from the `ego run` command 
+line.
+
+    main() int {
+        if true {
+            os.Exit(55)
+        }
+
+        return 0
+    }
+
+In this example, the condition is always true so the `os.Exit(55)` call is made. When the
+ego command completes, the shell return code ("$?" in most Linux/Unix shells, for example)
+will be the value "55".
+
+If the main program returns a non-zero return code, this has the same effect as calling
+`os.Exit()` with that value. If no `os.Exit()` call is made and the main program simply
+terminates, then the return code value is assumed to be 0, which indicates successful
+completion of the code.
 
 ### os.Getenv(name)
+The `Getenv()` function retrieves an environment variable from the shell that invoked
+the _Ego_ processor. This can be an environment variable from a Linux shell, or a
+DOS-style environment variable from the CMD.EXE Windows shell.  The argument must be
+the name of the variable (case-sensitive) and the result is the value of the environment
+variable. If the variable does not exist, the function always returns an empty string.
+
+    
+    func main() int {
+
+        shell := os.Getenv("SHELL")
+        fmt.Println("You are running the ", shell, " shell program")
+
+        return 0
+    }
+
+Invoking this on a macOS or Linux system while running the "bash" shell will result in
+output similar to:
+
+    
+    You are running the  /bin/bash  shell program
+
 
 ## profile <a name="profile"></a>
 
