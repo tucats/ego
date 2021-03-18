@@ -2640,8 +2640,38 @@ indicating that headings are to be printed, but underlines under those headings 
 The table is then printed to the default output and the memory structures are released.
 
 ## time
+The `time` package assist with functions that access or calculate time/date values. This
+is similar to the "time" package in Go, but has significant differences and is not as
+complete as the _Go_ version.  The `time.Now()` and `time.Parse()` functions each create
+a new `time.time` variable type, which has a set of functions that can be performed
+on it.
+
+| Function     | Example                    | Description                                                     |
+|--------------|---------|------------------------------------------------------------------------------------|
+| Add          | n := t.Add(nt)             | Add one time value to another.                                  |
+| Format       | f := t.Format("Mon Jan 2") | Format the time value according to the reference time.          |
+| SleepUntil   | t.SleepUntil()             | Pause execution until the time arrives.                         |
+| String       | f := t.String()            | Convert the time value to a standard string representation.     |
+| Sub          | n := t.Sub(start)            Subtract a a time value from another.                           |
+
+A note about the `Format()` operator. The foramt string must be comprised of elements from the reference time,
+which is a specific date value "Mon Jan 2 15:04:05 -0700 MST 2006. This value is also availablee as
+`time.reference` if you need to refer to it. Each part of the date has a unique value, so the `Format()` call
+in the table above will print the day of the week, the month, and the day since those are the values used from
+the reference string in the format specification.
 
 ### time.Now()
+The `Now()` function gets the current time at the moment of the call, and sets it as the time value in the
+result.
+
+    now := time.Now()
+    ...
+    elapsed := time.Now().Sub(now)
+
+In this case, the code first captures the current time and stores it in the variable `now`. It then does some other
+work for the program, and when done we want to find out the elapsed time. The value of `elapsed` is a duration string
+that indicates how much time passed between the `now` value and the current time. For example, this could be a 
+value such as "5s" for five seconds of time passing.
 
 ### time.Parse(string, model)
 
