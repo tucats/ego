@@ -2017,14 +2017,47 @@ output similar to:
 
 
 ## profile <a name="profile"></a>
+The `profile` package help manage persistent profile settings. These are the same settings
+that can be accessed from the command line using the `ego profile` command. They apply to
+settings found in the current active profile.
+
+Profile settings all have a name, which is a string value to identify the key. The prefix
+"ego." is reserved for settings related to the _Ego_ compiler, runtime, and server settings.
+You can use any other prefix to store settings related to your particular _Ego_ application
+usage.
+
+The profile values are stored in the .org.fernwood/ego.json file located in your default
+home directory. This file must be readable to access profile settings, and the file is
+rewritten when a setting value is changed and _Ego_ exits.  Note that this file contains
+all the profiles, not just the default profile (or profile specified with the --profile 
+command-line option).
+
 
 ### profile.Delete(key)
+The `Delete()` function deletes a setting from the active profile by name. If the profile
+value does not exist, there is no error.
 
 ### profile.Get(key)
+The `Get()` function retrieves the current value of a given setting by name. For example,
+
+   
+   path := profile.Get("ego.path")
+   
+
+In this case, the variable `path` is a string containing the file system location for the
+_Ego_ main path, where service functions, import libraries, and test programs are found.
+If you request a profile value for a setting that does not exist, an empty string is
+returned.
 
 ### profile.Keys()
+The `Keys()` call returns a string array containing the names of all the profile values that
+are currently set (i.e. have non-empty values). This can be used to determine if a profile
+setting exists or not before getting its value.
 
 ### profile.Set(key, value)
+The `Set()` function creates or updates a profile setting by name, with the given value. The
+value is converted to a string representation and stored in the profile data under the named
+key. The key does not need to exist yet; you can create a new key simply by naming it.
 
 ## rest <a name="rest"></a>
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
