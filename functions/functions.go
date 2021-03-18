@@ -5,6 +5,7 @@ import (
 	"math"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
@@ -121,6 +122,9 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.ToUpper":      {Min: 1, Max: 1, F: Upper},
 	"strings.Truncate":     {Min: 2, Max: 2, F: Truncate},
 	"strings.URLPattern":   {Min: 2, Max: 2, F: URLPattern},
+	"sync.__empty":         {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
+	"sync.WaitGroup":       {V: sync.WaitGroup{}},
+	"sync.Mutex":           {V: sync.Mutex{}},
 	"time.Now":             {Min: 0, Max: 0, F: TimeNow},
 	"time.Parse":           {Min: 1, Max: 2, F: TimeParse, ErrReturn: true},
 	"time.reference":       {V: "Mon Jan 2 15:04:05 -0700 MST 2006"},
@@ -255,4 +259,8 @@ func AddFunction(syms *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoEr
 	}
 
 	return nil
+}
+
+func stubFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	return nil, errors.New(errors.InvalidFunctionName)
 }

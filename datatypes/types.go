@@ -18,9 +18,11 @@ const (
 	ErrorType
 	ChanType
 	MapType
-	minimumNativeType
+	minimumNativeType // Before list of Go-native types mapped to Ego types
 	WaitGroupType
-	maximumNativeType
+	MutexType
+	maximumNativeType // After list of Go-native types
+
 	InterfaceType        // alias for "any"
 	VarArgs              // pseudo type used for varible argument list items
 	UserType             // something defined by a type statement
@@ -67,6 +69,16 @@ var TypeDeclarationMap = []TypeDefinition{
 		[]string{"*", "sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
 		WaitGroupType + PointerType,
+	},
+	{
+		[]string{"sync", ".", "Mutex"},
+		nil, // Model generated in instance-of
+		MutexType,
+	},
+	{
+		[]string{"*", "sync", ".", "Mutex"},
+		nil, // Model generated in instance-of
+		MutexType + PointerType,
 	},
 	{
 		[]string{"chan"},
@@ -164,6 +176,12 @@ func TypeOf(i interface{}) int {
 	case **sync.WaitGroup:
 		return WaitGroupType + PointerType
 
+	case *sync.Mutex:
+		return MutexType
+
+	case **sync.Mutex:
+		return MutexType + PointerType
+
 	case int:
 		return IntType
 
@@ -226,6 +244,14 @@ func TypeString(kind int) string {
 func InstanceOf(kind int) interface{} {
 	// Waitgroups must be uniquely created.
 	switch kind {
+	case MutexType:
+		return &sync.Mutex{}
+
+	case MutexType + PointerType:
+		mt := &sync.Mutex{}
+
+		return &mt
+
 	case WaitGroupType:
 		return &sync.WaitGroup{}
 
@@ -254,6 +280,12 @@ func IsType(v interface{}, kind int) bool {
 	}
 
 	switch v.(type) {
+	case *sync.Mutex:
+		return kind == MutexType
+
+	case **sync.Mutex:
+		return kind == MutexType+PointerType
+
 	case *sync.WaitGroup:
 		return kind == WaitGroupType
 

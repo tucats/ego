@@ -10,15 +10,17 @@ import (
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm() {
-	ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
+	if ui.ActiveLogger(ui.ByteCodeLogger) {
+		ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 
-	for n := 0; n < b.emitPos; n++ {
-		i := b.instructions[n]
-		op := FormatInstruction(i)
-		ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
+		for n := 0; n < b.emitPos; n++ {
+			i := b.instructions[n]
+			op := FormatInstruction(i)
+			ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
+		}
+
+		ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", b.emitPos)
 	}
-
-	ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", b.emitPos)
 }
 
 // FormatInstruction formats a single instruction as a string.

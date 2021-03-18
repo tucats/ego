@@ -8,6 +8,40 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+// Mutex functions.
+
+// sync.Mutex.Lock() function.
+func mutexLock(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) != 0 {
+		return nil, errors.New(errors.ArgumentCountError).In("Lock()")
+	}
+
+	this := getNativeThis(s)
+	if m, ok := this.(*sync.Mutex); ok {
+		m.Lock()
+
+		return nil, nil
+	}
+
+	return nil, errors.New(errors.InvalidThisError)
+}
+
+// sync.Mutex.Unlock() function.
+func mutexUnlock(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) != 0 {
+		return nil, errors.New(errors.ArgumentCountError).In("Unock()")
+	}
+
+	this := getNativeThis(s)
+	if m, ok := this.(*sync.Mutex); ok {
+		m.Unlock()
+
+		return nil, nil
+	}
+
+	return nil, errors.New(errors.InvalidThisError)
+}
+
 // Waitgroup functions.
 
 // sync.WaitGroup Add() function.

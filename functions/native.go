@@ -58,6 +58,26 @@ var NativeFunctionMap = []NativeFunctionDef{
 		Name: "Done",
 		F:    waitGroupDone,
 	},
+	{
+		Kind: datatypes.MutexType,
+		Name: "Lock",
+		F:    mutexLock,
+	},
+	{
+		Kind: datatypes.MutexType,
+		Name: "Unlock",
+		F:    mutexUnlock,
+	},
+	{
+		Kind: datatypes.MutexType + datatypes.PointerType,
+		Name: "Lock",
+		F:    mutexLock,
+	},
+	{
+		Kind: datatypes.MutexType + datatypes.PointerType,
+		Name: "Unlock",
+		F:    mutexUnlock,
+	},
 }
 
 // For a given datatype and name, see if there is a native function that

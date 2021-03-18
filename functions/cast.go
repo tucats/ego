@@ -3,6 +3,7 @@ package functions
 import (
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -145,6 +146,16 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		default:
 			return nil, errors.New(errors.InvalidTypeError).In("new()").Context(typeValue)
 		}
+	}
+
+	// If it's a WaitGroup, make a new one.
+	if _, ok := args[0].(sync.WaitGroup); ok {
+		return datatypes.InstanceOf(datatypes.WaitGroupType), nil
+	}
+
+	// If it's a Mutex, make a new one.
+	if _, ok := args[0].(sync.Mutex); ok {
+		return datatypes.InstanceOf(datatypes.MutexType), nil
 	}
 
 	// If it's a channel, just return the value

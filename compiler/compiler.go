@@ -65,6 +65,7 @@ type Compiler struct {
 	functionDepth        int
 	blockDepth           int
 	statementCount       int
+	disasm               bool
 	LowercaseIdentifiers bool
 	extensionsEnabled    bool
 	exitEnabled          bool // Only true in interactive mode
@@ -125,6 +126,14 @@ func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 // onto a compiler.New...() operation.
 func (c *Compiler) WithNormalization(f bool) *Compiler {
 	c.LowercaseIdentifiers = f
+
+	return c
+}
+
+// Disasm sets the disassembler flag and can be chained
+// onto a compiler.New...() operation.
+func (c *Compiler) Disasm(f bool) *Compiler {
+	c.disasm = f
 
 	return c
 }
@@ -237,7 +246,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	defer c.packages.Mutex.Unlock()
 
 	fd, found := c.packages.Package[pkgname]
-	if !found {
+	if fd == nil || !found {
 		fd = map[string]interface{}{}
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, "package")
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)

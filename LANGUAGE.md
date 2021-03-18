@@ -1415,6 +1415,21 @@ the _Ego_ session, even if a thread is still running. The thread is not
 guaranteed to be allowed to run to completion if the program that
 starts it finishes.
 
+## Synchronization
+Ego provides several data types used to synchronize execution of competing
+threads, and to assist in managing access to resources in a predictable
+way if needed.
+
+| Datatype | Description |
+|----------|-------------|
+| sync.Mutex | A simple mutual exclusion lock for serializing access to a resource |
+| sync.WaitGroup | A way to launch a varying number of go routines and wait for them to complete |
+
+
+See the detailed descriptions in the later sections on the `sync` package
+for more information.
+
+
 ## Channels
 We address this synchronization issue (and also allow data to be 
 passed _back_ from the go routine) using channels. Here's a modified
@@ -2523,6 +2538,88 @@ values stored, as opposed to information about a specfic state.
 The `sync` package provides access to low-level primitive operations used to
 synchronize operations between different go routine threads that might be
 running concurrently.
+
+### sync.Mutex
+This is a type provided by the `sync` package, used to perform simple mutual
+exclusion operations to control access to resources. The mutex can be locked
+by a user, in which case any other thread's attempt to lock the item will
+result in that thread waiting until the mutex is unlocked by the first owner.
+Consider the following code:
+
+    
+    var counter int
+
+    func worker(id int) {
+        counter = counter + 1
+        myCount := counter
+        fmt.Printf("thread %d, counter %d\n", id, myCount)
+    }
+
+    func main() int {
+       workers := 5
+        for i := 0 ; i < workers; i = i + 1 {
+            go worker(i)
+        }
+
+        time.Sleep("1s")
+        return 0
+    }
+
+As written above, the code will launch five go routines that will all do the same
+simple operation -- increment the counter and then print it's value at the time the
+go routine ran.  We know that go routines run in unpredictable order, but even if we
+saw the numbers printed out of order, we would still see the counter values increment
+as 1, 2, 3, 4, and 5.  
+
+But, because the go routines are running simultaneously, between the time one routine
+gets the value of counter, adds one to it, and puts it back, another routine could have
+performed the same operation. This means we would over-write the value from the other
+thread. In this case, the output of the count value might be more like this:
+
+    
+    thread 0, counter 1
+    thread 4, counter 1
+    thread 2, counter 2
+    thread 3, counter 2
+    thread 1, counter 3
+
+
+To fix this, we use a mutex value to block access to the counter for each 
+thread, so they are forced to take turns incrementing the counter.
+
+    var counter int
+    var mutex sync.Mutex
+
+    func worker(id int) {
+        mutex.Lock()
+        counter = counter + 1
+        myCount := counter
+        mutex.Unlock()
+        fmt.Printf("thread %d, counter %d\n", id, myCount)
+    }
+
+    func main() int {
+       workers := 5
+        for i := 0 ; i < workers; i = i + 1 {
+            go worker(i)
+        }
+
+        time.Sleep("1s")
+        return 0
+    }
+
+Now that there is a mutex protecting access to the counter, no matter what order the
+go routines run, the increment of the count value will always be sequential, resulting
+in output that might look like this:
+
+    
+    thread 4, counter 1
+    thread 0, counter 2
+    thread 2, counter 3
+    thread 3, counter 4
+    thread 1, counter 5
+
+
 
 ### sync.WaitGroup
 This is a type provided by the `sync` package. You can declare a variable of this

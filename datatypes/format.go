@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/gopackages/datatypes"
@@ -20,6 +21,19 @@ func Format(element interface{}) string {
 	}
 
 	switch v := element.(type) {
+	// Naked WaitGroup is a model for a type
+	case sync.WaitGroup:
+		return "WaitGroup type"
+	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
+	case *sync.WaitGroup:
+		return "sync.WaitGroup{}"
+
+		// Naked WaitGroup is a model for a type
+	case sync.Mutex:
+		return "Mutex type"
+	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
+	case *sync.Mutex:
+		return "sync.Mutex{}"
 	case *datatypes.Channel:
 		return v.String()
 
@@ -102,7 +116,21 @@ func Format(element interface{}) string {
 		return v.String()
 
 	case *interface{}:
-		return fmt.Sprintf("&%#v", *v)
+		if v != nil {
+			vv := *v
+			switch vv := vv.(type) {
+			case *sync.Mutex:
+				return "&sync.Mutex"
+
+			case *sync.WaitGroup:
+				return "&sync.WaitGroup{}"
+
+			default:
+				return fmt.Sprintf("&%#v", vv)
+			}
+		} else {
+			return "nil<*interface{}>"
+		}
 
 	default:
 		vv := reflect.ValueOf(v)
