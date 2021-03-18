@@ -2712,9 +2712,9 @@ output.
     
     t := tables.New(":Identity", "Age:", "Address")
     
-    t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"})
-    t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"})
-    t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"})
+    t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
+    t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+    t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
     
     t.Sort( "Age", "Identity" )
     
@@ -2729,8 +2729,9 @@ the default is left-aligned.
 
 The data is added
 for three rows. Note that data can be added as either a struct, where the column names
-must match the column names. Alternatively, the values can be added as separate arguments
-to the function, in which case they are added in the order of the column headings.
+must match the structure field names. Alternatively, the values can be added as 
+separate arguments to the function, in which case they are added in the order of the 
+column headings.
 
 The format of the table is further set by sorting the data by Age and then Identity, and 
 indicating that headings are to be printed, but underlines under those headings are not.

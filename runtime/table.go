@@ -127,9 +127,22 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 				if len(args) > 1 {
 					err = errors.New(errors.ArgumentCountError)
 				} else {
-					values := make([]string, len(m))
+					// Count the visible elements of the structure. This is needed to skip
+					// over metadata objects hidden in the map by the Ego type manager.
+					length := 0
+					for k := range m {
+						if !strings.HasPrefix(k, "__") {
+							length++
+						}
+					}
+
+					values := make([]string, length)
 
 					for k, v := range m {
+						if strings.HasPrefix(k, "__") {
+							continue
+						}
+
 						p, ok := t.FindColumn(k)
 						if ok {
 							values[p] = util.GetString(v)
