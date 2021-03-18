@@ -46,6 +46,7 @@
    3. [`rest` package](#rest)
    3. [`sort` package](#sort)
    3. [`strings` package](#strings)
+   3. [`sync` package](#strings)
    2. [`tables` package](#tables)
    2. [`util` package](#util)
    2. [`uuid` package](#uuid)
@@ -1802,12 +1803,51 @@ This reads the contents of the "mydata.txt" file, and then writes it to the
 
 
 ## json <a name="json"></a>
+The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
+as a string value, or convert a JSON string to a comparable _ego_ data value.
 
 ### json.Marshal(v)
+The `Marshal` function converts a value into a JSON string expression, which is the function
+result. Note that unlike its _Go_ counterpart, the `json` package automatically converts the
+value expression to a string as the result.
+
+    a := { name: "Tom", age: 44 }
+    s := json.Marhsal(a)
+
+This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This value can
+be passed as the body of a rest request, for example, to send an instance of this structure
+to the REST service.
 
 ### json.MarshalIndented(v)
+The `MarshalIndented` function converts a value into a JSON string expression, which is the 
+function result. Note that unlike its _Go_ counterpart, the `json` package automatically 
+converts the value expression to a string as the result. The `MarhsalIndent` function differs
+from the standard `Marshal` function in that it provides indentation automatically to make 
+the JSON string more readable.
+
+    a := { name: "Tom", age: 44 }
+    s := json.Marhsal(a)
+
+This results in `s` containing the value 
+
+    {
+        "name" : "Tom",
+        "age" : 44
+    }
+
 
 ### json.UnMarshal(string)
+Given a JSON string expression, this creates the equivalent JSON object value. This may be
+a scalar type (int, string, float) or it may be an array or structure, or a combination of
+them. You do not have to provide a model of the data type; the `UnMarshal` function creates
+one dynamically. This means you are not guaranteed that the resulting structure has all the
+fields you might be expecting.
+
+    a := json.UnMarshal(s) 
+
+If `s` contains the JSON expressions from the `Marshal` example above, the result is a 
+structure { age: 44, name:"Tom"} in the variable `a`. You can use the `members()` function
+to examine if a structure contains a field you expected.
 
 ## math <a name="math"></a>
 
@@ -2306,6 +2346,85 @@ would be:
 If the url did not include the state name field, that would be blank, which could
 tell the service that a GET on this URL was meant to return a list of the state
 values stored, as opposed to information about a specfic state.
+
+## sync <a name="sync"></a>
+The `sync` package provides access to low-level primitive operations used to
+synchronize operations between different go routine threads that might be
+running concurrently.
+
+### sync.WaitGroup
+This is a type provided by the `sync` package. You can declare a variable of this
+type and a WaitGroup is created, and can be stored in a variable. This value is
+used as a _counting semaphore_ and usually supports arbitrary numbers of go
+routine starts and completions.
+
+Consider this example code:
+
+    
+    func thread(id int, wg *sync.WaitGroup) {               [1]
+        fmt.Printf("Thread %d\n", id)
+        wg.Done()                                           [2]
+    }
+    
+    func main() int {
+        var wg sync.WaitGroup                               [3]
+        
+        count := 5
+        for i := 1; i <= count; i = i + 1 {
+            wg.Add(1)                                       [4]
+            go thread(i, &wg)                               [5]
+        }
+        
+        wg.Wait()                                           [6]
+        
+        fmt.Println("all done")
+    }
+    
+This program launches five instances of a go routine thread, and waits for them
+to complete. This simplified exampe does not return a value from the threads, so
+channels are not used. However, the caller must know when all the go routines have
+completed to know it is safe to exit this function. Note that if the code did not
+include the `wg.Wait()` call then the `main` function would exit before most of the
+go routines had a chance to complete.
+
+Here's a breakdown of important steps in this example:
+
+1. In this declaration of the function used as the go routine, a parameter is
+   passed that is a __pointer__ to the WaitGroup variable. This is important
+   because operations on the `WaitGroup` variable must be done on the same
+   instance of that variable.
+
+2. The `Done()` call is made by the go routine when it has completed all it's
+   operations. This could also be implemented as
+
+       defer wg.Done()
+
+    to ensure that it is always executed whenver the function exits.
+
+3.  This declares the instance of the `WaitGroup` variable that will be used
+    for this example. There is no initialization needed; the variable instance
+    starts as a _zero state_ value.
+
+4.  Before launching a go routine, add 1 to the `WaitGroup` value (this can actually
+    be a number other than 1, but must correlate exactly to the number of `Done()`
+    calls that will be made to indicate completion of the task). It is essential
+    that this call be made _before_ the `go` statement to ensure that the go routine
+    does not complete before the `Add()` call can be made.
+
+5.  Note that the `WaitGroup` variable must be passed by address. By default, _Ego_
+    passes all parameters by value (that is, a copy of the value is passed to the
+    funciton). But becuase the functions must operate on the exact same instance
+    of a `WaitGroup` variable, we must pass the address of the value allocated.
+    Note that it is important that this value not go out of scope before the
+    `Wait()` call can be made.
+
+6. The `Wait()` call essentially waits until as many `Done()` calls are made as
+   were indicated by the matching `Add()` calls. Until then, the current program
+   will simply wait, and then resume execution after the last `Done()` is called.
+
+
+&nbsp;
+&nbsp;
 
 ## tables <a name="tables"></a>
 The tables package provides functions to help programs produce text tables of
