@@ -2674,8 +2674,39 @@ that indicates how much time passed between the `now` value and the current time
 value such as "5s" for five seconds of time passing.
 
 ### time.Parse(string, model)
+This converts a text representation of a time into a time value. The first parameter is the text to convert,
+and the second parameter is the "model" which describes the format in which the value is parsed. This uses the
+same specific date values from thee `time.reference` time.
+
+    
+    s := "12/7/1960 15:30"
+    m := "1/2/2006 15:04"
+    t := time.Parse(s, m)
+    
+    
+The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the model showed a month
+of 1 (for January) but was still using the sspecific values from the reference time. The slashes are not part of
+the reference time, so they must exist in the same locations in the string to be converted and will be skipped.
+
+IF there is an error in parsing, the value of `t` will be `nil`. You can find out what the exact error is by 
+allowing the `time.Parse()` function to return two values:
+
+
+    t, e := time.Parse(s, m)
+
+If the value of `t` is `nil` then the value of `e` will be the error code that refelcts the parsing error. If
+the call is made with only one return value specified, then the error is discarded.
 
 ### time.Sleep(duration)
+The `Duration()` function of thee `time` package will sleep for the specified amount of time. The duration
+is expressed as a string. For example,
+
+
+    time.Sleep("10s")
+
+This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include fractional values. While
+the system is sleeping, go routines will continue to run but the current program (or go routine) will stop
+executing for the given duration.
 
 ## util <a name="util"></a>
 The `util` package contains miscelleneous utility functions that may be convenient
