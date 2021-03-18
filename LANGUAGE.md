@@ -1850,24 +1850,93 @@ structure { age: 44, name:"Tom"} in the variable `a`. You can use the `members()
 to examine if a structure contains a field you expected.
 
 ## math <a name="math"></a>
+The `math` package provides basic and extended math operations on common _Ego_ numeric
+data types (usually `int` and `float` values). This is not a complete set of the math 
+function that are offered in the comparable _Go_ package, but will be expanded as needed.
 
 ### math.Abs(n)
+For a given numeric value, return the absolute value of the number. 
+
+    posInt := math.Abs(signedInt)
+
+In this example, `posInt` will always be a positive or zero value.
 
 ### math.Factor(i)
+For a given positive integer `i`, return an array of all the unique factors for that 
+value. The array is always an array of integers. For a prime number, this will always 
+return an array with two elements, one and the prime number. For all other numbers, 
+it returns an array that contains one, the number, and all factors of the number.
+
+    a := math.Factor(11)
+    b := math.Factor(12)
+
+For the first example, `a` contains [1, 11] because 11 is a prime number. The value of
+`b` contains [1, 2, 3, 4, 6, 12].
 
 ### math.Log(f)
+For a given floating point value `f`, return the natural logarithm of the value.
+
+   f := math.Log(2.1)
+
+The value of `f` is 0.7419373447293773.
 
 ### math.Max(...)
+For an arbitrary list of numeric values, return the largest value in the list. The list
+can be sent as individual items, or as an array of items. 
+
+    a := math.Max(n, 100)
+    
+    b := [1, 2, 6, 3, 0]
+    c := math.Max(b...)
+
+The value of `a` is the larger of the value of `n` and the value 100. This is comparable
+to _use the value of `n` but it must be at least 100_. The value of `c` will be 6. The
+elipsis "..." notation indicate that the array b is to be treated as individual parameters
+to the function, and the largest value in the array `b` is 6.
 
 ### math.Min(...)
+For an arbitrary list of numeric values, return the smallest value in the list. The list
+can be sent as individual items, or as an array of items. 
 
-### math.Normalize(a,b)
+    a := math.Min(n, 10)
+    
+    b := [1, 2, 6, 3, 0]
+    c := math.Min(b...)
+
+The value of `a` is the smaller of the value of `n` and the value 1. This is comparable
+to _use the value of `n` but it must be at no larger than 10_. The value of `c` will 
+be 0. The elipsis "..." notation indicate that the array b is to be treated as individual 
+parameters to the function, and the smallest value in the array `b` is 0.
 
 ### math.Primes(i)
+The `Primes` function accepts a positive integer value and returns an array of all the
+prime numbers less than that value. Note that this can take a very long time to compute
+for larger values.
+
+    a := math.Primes(10)
+
+The array `a` will contain the integers [3, 5, 7]. The values '1' and '2' are not considered
+to be prime numbers.
 
 ### math.Sqrt(f)
+Calculate the square root of the numeric value given.
+
+    a := math.Sqrt(2)
+
+The value of `a` will be approximately 1.4142135623730951.
 
 ### math.Sum(...)
+The `Sum` function returns the arithmetic sum of all the numeric values. These can be
+passed as individual values or as an array.
+
+    a := math.Sum(n, 10)
+
+    b := [5, 15, 25, 35]
+    c := math.Sum(b...)
+
+The value of `a` is the sum of `n` and 100, and is identical to the expression `a := n + 10`. The
+value of `c` is 80, which is the sum of all the values in the array. Note that the elipsis "..."
+notation indicates that the array should be converted to a list of parameters.
 
 ## os <a name="os"><a>
 
