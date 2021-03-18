@@ -22,7 +22,7 @@ func main() int {
    }
 
    count := 0
-   for sts := range ch {
+   for _, sts := range ch {
       count = count + 1
       fmt.Println("Received ", count)
       if sts != 200 {

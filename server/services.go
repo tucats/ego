@@ -46,7 +46,7 @@ var nextSessionID int32
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
-var MaxCachedEntries = 0
+var MaxCachedEntries = 10
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and

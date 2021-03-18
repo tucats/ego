@@ -44,7 +44,10 @@ type Loop struct {
 }
 
 // PackageDictionary is a list of packages each with a function dictionary.
-type PackageDictionary map[string]map[string]interface{}
+type PackageDictionary struct {
+	Mutex   sync.Mutex
+	Package map[string]map[string]interface{}
+}
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
@@ -70,12 +73,15 @@ type Compiler struct {
 // New creates a new compiler instance.
 func New(name string) *Compiler {
 	cInstance := Compiler{
-		b:                    nil,
-		t:                    nil,
-		s:                    &symbols.SymbolTable{Name: "compile-unit " + name},
-		constants:            make([]string, 0),
-		deferQueue:           make([]int, 0),
-		packages:             PackageDictionary{},
+		b:          nil,
+		t:          nil,
+		s:          &symbols.SymbolTable{Name: "compile-unit " + name},
+		constants:  make([]string, 0),
+		deferQueue: make([]int, 0),
+		packages: PackageDictionary{
+			Mutex:   sync.Mutex{},
+			Package: map[string]map[string]interface{}{},
+		},
 		LowercaseIdentifiers: false,
 		extensionsEnabled:    persistence.GetBool(ExtensionsSetting),
 		RootTable:            &symbols.RootSymbolTable,
@@ -199,7 +205,10 @@ func (c *Compiler) normalize(name string) string {
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
 func (c *Compiler) addPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
-	fd, found := c.packages[pkgname]
+	c.packages.Mutex.Lock()
+	defer c.packages.Mutex.Unlock()
+
+	fd, found := c.packages.Package[pkgname]
 	if !found {
 		fd = map[string]interface{}{}
 		fd[datatypes.MetadataKey] = map[string]interface{}{
@@ -213,7 +222,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	}
 
 	fd[name] = function
-	c.packages[pkgname] = fd
+	c.packages.Package[pkgname] = fd
 
 	_ = c.RootTable.SetAlways(pkgname, fd)
 
@@ -224,7 +233,10 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
 func (c *Compiler) addPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
-	fd, found := c.packages[pkgname]
+	c.packages.Mutex.Lock()
+	defer c.packages.Mutex.Unlock()
+
+	fd, found := c.packages.Package[pkgname]
 	if !found {
 		fd = map[string]interface{}{}
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, "package")
@@ -236,7 +248,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	}
 
 	fd[name] = value
-	c.packages[pkgname] = fd
+	c.packages.Package[pkgname] = fd
 
 	return nil
 }
@@ -255,7 +267,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
-	for pkgname, dict := range c.packages {
+	for pkgname, dict := range c.packages.Package {
 		m := map[string]interface{}{}
 
 		for k, v := range dict {
@@ -362,24 +374,32 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		coercions:            c.coercions,
 		constants:            c.constants,
 		deferQueue:           []int{},
-		packages:             c.packages,
 		LowercaseIdentifiers: c.LowercaseIdentifiers,
 		extensionsEnabled:    c.extensionsEnabled,
 		exitEnabled:          c.exitEnabled,
 	}
 
-	packages := map[string]map[string]interface{}{}
+	packages := PackageDictionary{
+		Mutex:   sync.Mutex{},
+		Package: map[string]map[string]interface{}{},
+	}
 
-	for n, m := range c.packages {
+	c.packages.Mutex.Lock()
+	defer c.packages.Mutex.Unlock()
+
+	for n, m := range c.packages.Package {
 		packData := map[string]interface{}{}
 		for k, v := range m {
 			packData[k] = v
 		}
 
-		packages[n] = packData
+		packages.Package[n] = packData
 	}
 
-	cx.packages = packages
+	// Put the newly created data in the copy of the compiler, with
+	// it's own mutex
+	cx.packages.Mutex = sync.Mutex{}
+	cx.packages.Package = packages.Package
 
 	return &cx
 }

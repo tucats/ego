@@ -63,7 +63,11 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		fileName := c.t.Next()
 
-		if _, ok := c.packages[fileName]; ok {
+		c.packages.Mutex.Lock()
+		_, ok := c.packages.Package[fileName]
+		c.packages.Mutex.Unlock()
+
+		if ok {
 			ui.Debug(ui.CompilerLogger, "*** Already imported \"%s\", skipping...", fileName)
 		} else {
 			ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
@@ -108,7 +112,9 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				// The nil in the packages list just prevents this from being read again
 				// if it was already processed once.
 				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
-				c.packages[packageName] = nil
+				c.packages.Mutex.Lock()
+				c.packages.Package[packageName] = nil
+				c.packages.Mutex.Unlock()
 			}
 
 			// Read the imported object as a file path
@@ -162,7 +168,11 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				break
 			}
 
-			if _, ok := c.packages[fileName]; ok {
+			c.packages.Mutex.Lock()
+			_, ok := c.packages.Package[fileName]
+			c.packages.Mutex.Unlock()
+
+			if ok {
 				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
 			}
 		}
