@@ -95,18 +95,19 @@ const (
 	SymbolOptCreate
 	Template
 	Timer
-	Try
 	TryPop
 	Wait
 
 	// Everything from here on is a branch instruction, whose
 	// operand must be present and is an integer instruction
-	// address in the bytecode array.
+	// address in the bytecode array. These instructions are
+	// patched with offsets when code is appended.
 	BranchInstructions = iota + BranchInstruction
 	Branch
 	BranchTrue
 	BranchFalse
 	LocalCall
+	Try
 
 	// After this value, additional user branch instructions are
 	// can be defined.

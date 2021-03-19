@@ -15,6 +15,36 @@ import (
 func (c *Compiler) expressionAtom() *errors.EgoError {
 	t := c.t.Peek(1)
 
+	// Is it a short-form try/catch?
+	if t == "?" {
+		catch := c.b.Mark()
+		c.b.Emit(bytecode.Try)
+		c.t.Advance(1)
+
+		err := c.conditional()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		toEnd := c.b.Mark()
+		c.b.Emit(bytecode.Branch)
+		_ = c.b.SetAddressHere(catch)
+
+		if !c.t.IsNext(":") {
+			return c.newError(errors.MissingCatchError)
+		}
+
+		err = c.expressionAtom()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		_ = c.b.SetAddressHere(toEnd)
+		c.b.Emit(bytecode.TryPop)
+
+		return nil
+	}
+
 	// Is it a binary constant? If so, convert to decimal.
 	if strings.HasPrefix(strings.ToLower(t), "0b") {
 		binaryValue := 0

@@ -1322,6 +1322,7 @@ attempt to divide by zero generates a panic error. By default,
 this causes the program to stop running and an error message 
 to be printed out.
 
+
 ## `try` and `catch` <a name="trycatch"></a>
 You can use the `try` statement to run a block of code (in the same
 scope as the enclosing statement) and catch any panic errors that
@@ -1357,6 +1358,41 @@ example:
     }
 
 This can be used in the `catch` block if it needs handle more than one possible error, for example.
+
+## Conditional expression error handling
+If you need to catch a possible error in an expression, you can
+use a short-form of the `try` and `catch` that works within an
+expression.  Consider the following example:
+
+    
+    emp := { name: "Donna", age: 32 }
+    
+    hours := 40
+    pay := emp.wage * hours
+    
+
+This code will generate an error on the statement that attempts
+to reference the structure member `wage`, which does not exist.
+If you think the field might not exist, or you are doing an
+operation that might result in an error (division by zero, perhaps)
+that you have a useful default for, use the conditional expression
+syntax:
+
+
+    
+    emp := { name: "Donna", age: 32 }
+    
+    hours := 40
+    pay := ?emp.wage:25.0 * hours
+
+The "?" indicates that the following expression component (up to the ":")
+is wrapped in a try/catch block. If no error occurs, the expression is 
+used as specified. But if there is an error ("no such structure field",
+for example) then the exprssion after the ":" is used instead. So in the
+above example, because there isn't a `wage` field in this employee's
+record, the program assumes a wage of $25/hour in the calculation of
+the pay.
+
 
 ## Signalling Errors <a name="signalling"></a>
 
