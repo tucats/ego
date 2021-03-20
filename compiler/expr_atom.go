@@ -17,10 +17,9 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 	// Is it a short-form try/catch?
 	if t == "?" {
-
 		c.t.Advance(1)
-		return c.optional()
 
+		return c.optional()
 	}
 
 	// Is it a binary constant? If so, convert to decimal.
@@ -452,7 +451,18 @@ func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	return s[1 : len(s)-1], nil
 }
 
+// Handle the ? optional operation. This preceedes an expression
+// element. If the element causes an error then a default value is
+// provided following a ":" operator. This only works for specific
+// errors such as a nil object reference, invalid type, unknown
+// structure member, or divide-by-zero.
+//
+// This is only supported when extensions are enabled.
 func (c *Compiler) optional() *errors.EgoError {
+	if !c.extensionsEnabled {
+		return c.newError(errors.UnexpectedTokenError).Context("?")
+	}
+
 	catch := c.b.Mark()
 	c.b.Emit(bytecode.Try)
 
