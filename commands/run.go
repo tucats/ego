@@ -255,8 +255,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
 			oldDebugMode = ui.DebugMode
 
-			ctx.SetTracing(io.GetConfig(syms, ConfigTrace))
-
 			if ctx.Tracing() {
 				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
@@ -328,11 +326,6 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	if c.GetBool("trace") {
 		ui.SetLogger(ui.TraceLogger, true)
 	}
-
-	traceLogging := ui.ActiveLogger(ui.TraceLogger)
-
-	io.SetConfig(syms, ConfigTrace, c.GetBool("trace") || traceLogging)
-	io.SetConfig(syms, ConfigDisassemble, disassemble)
 
 	// Add local funcion(s) that extend the Ego function set.
 	_ = syms.SetAlways("eval", runtime.Eval)

@@ -40,7 +40,6 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	// Reusable context that will handle each callback.
 	ctx := bytecode.NewContext(sliceSymbols, fn)
-	ctx.SetTracing(true)
 
 	// Use the native sort.Slice function, and provide a comparitor function
 	// whose job is to run the supplied bytecode instructions, passing in

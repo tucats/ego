@@ -69,7 +69,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	c.pc = addr
 	c.running = true
 
-	if c.tracing {
+	if ui.ActiveLogger(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 	}
 
@@ -85,7 +85,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 		i := c.bc.instructions[c.pc]
 
-		if c.tracing {
+		if c.Tracing() {
 			s := FormatInstruction(i)
 
 			s2 := FormatStack(c.symbols, c.stack[:c.sp], fullStackListing)
@@ -93,7 +93,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				s2 = s2[:80]
 			}
 
-			ui.Debug(ui.TraceLogger, "(%d) %18s%3d: %-30s stack[%2d]: %s",
+			ui.Debug(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
 				c.threadID, c.GetModuleName(), c.pc, s, c.sp, s2)
 		}
 
@@ -113,21 +113,43 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 			// Note that if the error was fatal, the running flag is turned off, which
 			// prevents the try block from being honored (i.e. you cannot catch a fatal
 			// error).
-			if len(c.try) > 0 && c.try[len(c.try)-1] > 0 && c.running {
-				c.pc = c.try[len(c.try)-1]
+			if len(c.try) > 0 && c.try[len(c.try)-1].addr > 0 && c.running {
+				// Do we have a selective set of things we catch?
+				willCatch := true
+
+				try := c.try[len(c.try)-1]
+				if len(try.catches) > 0 {
+					willCatch = false
+
+					for _, e := range try.catches {
+						if e.Equal(err) {
+							willCatch = true
+
+							break
+						}
+					}
+				}
+
+				// If we aren't catching it, just percolate the error
+				if !willCatch {
+					return errors.New(err)
+				}
+
+				// We are catching, so update the PC
+				c.pc = try.addr
 
 				// Zero out the jump point for this try/catch block so recursive
 				// errors don't occur.
-				c.try[len(c.try)-1] = 0
+				c.try[len(c.try)-1].addr = 0
 
 				// Implicit pop-scope done here.
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
-				if c.tracing {
+				if ui.ActiveLogger(ui.TraceLogger) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.pc, text)
 				}
 			} else {
-				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) && c.tracing {
+				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
 				}
 
@@ -136,9 +158,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		}
 	}
 
-	if c.tracing {
-		ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
-	}
+	ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
 
 	return errors.New(err)
 }
@@ -177,9 +197,6 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			funcSyms.Merge(syms)
 
 			ctx := NewContext(funcSyms, callCode)
-			ctx.SetTracing(true)
-			ui.DebugMode = true
-
 			err = parentCtx.newError(ctx.Run())
 
 			waitGroup.Done()

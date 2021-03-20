@@ -20,6 +20,11 @@ type This struct {
 	value interface{}
 }
 
+type TryInfo struct {
+	addr    int
+	catches []*errors.EgoError
+}
+
 // This value is updated atomically during context creation.
 var nextThreadID int32 = 0
 
@@ -30,7 +35,7 @@ type Context struct {
 	bc              *ByteCode
 	symbols         *symbols.SymbolTable
 	tokenizer       *tokenizer.Tokenizer
-	try             []int
+	try             []TryInfo
 	output          *strings.Builder
 	rangeStack      []*Range
 	timers          []time.Time
@@ -53,7 +58,6 @@ type Context struct {
 	debugging       bool
 	singleStep      bool
 	stepOver        bool
-	tracing         bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -98,7 +102,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		thisStack:       nil,
 		registers:       make([]interface{}, registerCount),
 		packageStack:    make([]packageDef, 0),
-		try:             make([]int, 0),
+		try:             make([]TryInfo, 0),
 		rangeStack:      make([]*Range, 0),
 		timers:          make([]time.Time, 0),
 	}
@@ -180,11 +184,11 @@ func (c *Context) GetOutput() string {
 // instruction and the top few items on the stack are printed to
 // the console.
 func (c *Context) SetTracing(b bool) {
-	c.tracing = b
+	ui.SetLogger(ui.TraceLogger, b)
 }
 
 func (c *Context) Tracing() bool {
-	return c.tracing
+	return ui.ActiveLogger(ui.TraceLogger)
 }
 
 // SetTokenizer sets a tokenizer in the current context for use by

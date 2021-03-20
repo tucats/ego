@@ -57,7 +57,7 @@ func AtLineImpl(c *Context, i interface{}) *errors.EgoError {
 		return errors.New(errors.SignalDebugger)
 	}
 	// If we are tracing, put that out now.
-	if c.tracing && c.tokenizer != nil {
+	if c.Tracing() && c.tokenizer != nil {
 		fmt.Printf("%d:  %s\n", c.line, c.tokenizer.GetLine(c.line))
 	}
 
@@ -160,7 +160,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Launch the function call as a separate thread.
-	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\" (tracing=%v)", c.threadID, fName, c.tracing)
+	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
 	waitGroup.Add(1)
 
 	go GoRoutine(util.GetString(fName), c, args)
@@ -448,31 +448,6 @@ func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	if len(va) < min || len(va) > max {
 		return errors.New(errors.ArgumentCountError).In(name)
 	}
-
-	return nil
-}
-
-// TryImpl instruction processor.
-func TryImpl(c *Context, i interface{}) *errors.EgoError {
-	addr := util.GetInt(i)
-	c.try = append(c.try, addr)
-
-	return nil
-}
-
-// TryPopImpl instruction processor.
-func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
-	if len(c.try) == 0 {
-		return c.newError(errors.TryCatchMismatchError)
-	}
-
-	if len(c.try) == 1 {
-		c.try = make([]int, 0)
-	} else {
-		c.try = c.try[:len(c.try)-1]
-	}
-
-	_ = c.symbols.Delete("_error", true)
 
 	return nil
 }

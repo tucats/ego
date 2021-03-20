@@ -15,7 +15,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -135,23 +134,17 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				builtinsAdded = true
 			}
 
-			oldDebugMode := ui.DebugMode
-
-			if io.GetConfig(syms, ConfigDisassemble) {
-				ui.DebugMode = true
+			if ui.ActiveLogger(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 
-			ui.DebugMode = oldDebugMode
-
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b)
-			oldDebugMode = ui.DebugMode
 
 			ctx.EnableConsoleOutput(false)
-			ctx.SetTracing(io.GetConfig(syms, ConfigTrace))
-			if ctx.Tracing() {
+			if c.GetBool("trace") {
 				ui.DebugMode = true
+				ui.SetLogger(ui.TraceLogger, true)
 			}
 
 			// If we are doing source tracing of execution, we'll need to link the tokenzier
@@ -165,8 +158,6 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			if err.Is(errors.Stop) {
 				err = nil
 			}
-
-			ui.DebugMode = oldDebugMode
 
 			if !errors.Nil(err) {
 				fmt.Printf("Error: %s\n", err.Error())

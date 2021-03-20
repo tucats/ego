@@ -17,32 +17,10 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 	// Is it a short-form try/catch?
 	if t == "?" {
-		catch := c.b.Mark()
-		c.b.Emit(bytecode.Try)
+
 		c.t.Advance(1)
+		return c.optional()
 
-		err := c.conditional()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		toEnd := c.b.Mark()
-		c.b.Emit(bytecode.Branch)
-		_ = c.b.SetAddressHere(catch)
-
-		if !c.t.IsNext(":") {
-			return c.newError(errors.MissingCatchError)
-		}
-
-		err = c.expressionAtom()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		_ = c.b.SetAddressHere(toEnd)
-		c.b.Emit(bytecode.TryPop)
-
-		return nil
 	}
 
 	// Is it a binary constant? If so, convert to decimal.
@@ -472,4 +450,35 @@ func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	}
 
 	return s[1 : len(s)-1], nil
+}
+
+func (c *Compiler) optional() *errors.EgoError {
+	catch := c.b.Mark()
+	c.b.Emit(bytecode.Try)
+
+	// What errors do we permit here?
+	c.b.Emit(bytecode.WillCatch, bytecode.OptionalCatchSet)
+
+	err := c.conditional()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	toEnd := c.b.Mark()
+	c.b.Emit(bytecode.Branch)
+	_ = c.b.SetAddressHere(catch)
+
+	if !c.t.IsNext(":") {
+		return c.newError(errors.MissingCatchError)
+	}
+
+	err = c.expressionAtom()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	_ = c.b.SetAddressHere(toEnd)
+	c.b.Emit(bytecode.TryPop)
+
+	return nil
 }

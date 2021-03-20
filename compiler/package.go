@@ -161,7 +161,6 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			// package contents.
 			importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
-			ctx.SetTracing(true)
 
 			err = ctx.Run()
 			if err != nil && !err.Is(errors.Stop) {
