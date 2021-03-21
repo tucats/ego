@@ -44,6 +44,8 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	wasCommandLine := true
 	fullScope := false
 
+	var comp *compiler.Compiler
+
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.GetInteger(defs.SymbolTableSizeOption)
 		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
@@ -222,18 +224,22 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
-		comp := compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
-		// Add the builtin functions
-		comp.AddBuiltins("")
+		if comp == nil {
 
-		err := comp.AutoImport(autoImport)
-		if !errors.Nil(err) {
-			fmt.Printf("Unable to auto-import packages: " + err.Error())
+			comp = compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
+
+			// Add the builtin functions
+			comp.AddBuiltins("")
+
+			err := comp.AutoImport(autoImport)
+			if !errors.Nil(err) {
+				fmt.Printf("Unable to auto-import packages: " + err.Error())
+			}
+
+			comp.AddPackageToSymbols(&symbols.RootSymbolTable)
+			comp.SetInteractive(interactive)
 		}
-
-		comp.AddPackageToSymbols(&symbols.RootSymbolTable)
-		comp.SetInteractive(interactive)
 
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
@@ -241,19 +247,12 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			exitValue = 1
 		} else {
-			oldDebugMode := ui.DebugMode
-
-			if io.GetConfig(syms, ConfigDisassemble) {
-				ui.DebugMode = true
-
+			if ui.ActiveLogger(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 
-			ui.DebugMode = oldDebugMode
-
 			// Run the compiled code
 			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
-			oldDebugMode = ui.DebugMode
 
 			if ctx.Tracing() {
 				ui.DebugMode = true
@@ -280,8 +279,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			if err.Is(errors.Stop) {
 				err = nil
 			}
-
-			ui.DebugMode = oldDebugMode
 
 			if !errors.Nil(err) {
 				fmt.Printf("Error: %s\n", err.Error())

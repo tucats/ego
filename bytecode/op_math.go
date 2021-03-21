@@ -17,11 +17,21 @@ import (
 \******************************************/
 
 // NegateImpl instruction processor pops the top stack
-// item and pushes it's negative. For booleans, this is
-// a "not" operation; for numeric values it is simple
-// negation. For an array, it reverses the order of the
-// array elements.
+// item and pushes it's negative.
+//
+// *  booleans, a logical NOT
+// *  numerics, arithmetic negation
+// *  strings and arrays, reverse of element order
+//
+// If the argument is a boolen true, then this is a boolean
+// NOT operations instead of a negation, which has narrower
+// rules for how it must be processed.
 func NegateImpl(c *Context, i interface{}) *errors.EgoError {
+	kind := util.GetBool(i)
+	if kind {
+		return NotImpl(c, i)
+	}
+
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -41,6 +51,20 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 
 	case float64:
 		_ = c.stackPush(0.0 - value)
+
+	case string:
+		length := 0
+		for range value {
+			length++
+		}
+
+		runes := make([]rune, length)
+		for idx, rune := range value {
+			runes[length-idx-1] = rune
+		}
+
+		result := string(runes)
+		_ = c.stackPush(result)
 
 	case *datatypes.EgoArray:
 		// Create an array in inverse order.
@@ -62,6 +86,44 @@ func NegateImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		_ = c.stackPush(r)
+
+	default:
+		return c.newError(errors.InvalidTypeError)
+	}
+
+	return nil
+}
+
+// NotImpl instruction processor pops the top stack
+// item and pushes it's boolean NOT value.
+func NotImpl(c *Context, i interface{}) *errors.EgoError {
+	v, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v) {
+		return c.newError(errors.InvalidTypeError)
+	}
+
+	switch value := v.(type) {
+	case bool:
+		_ = c.stackPush(!value)
+
+	case int:
+		if value != 0 {
+			_ = c.stackPush(false)
+		} else {
+			_ = c.stackPush(true)
+		}
+
+	case float64:
+		if value != 0.0 {
+			_ = c.stackPush(false)
+		} else {
+			_ = c.stackPush(true)
+		}
 
 	default:
 		return c.newError(errors.InvalidTypeError)
