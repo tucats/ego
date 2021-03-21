@@ -469,7 +469,7 @@ func (c *Compiler) optional() *errors.EgoError {
 	// What errors do we permit here?
 	c.b.Emit(bytecode.WillCatch, bytecode.OptionalCatchSet)
 
-	err := c.conditional()
+	err := c.unary()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -482,7 +482,7 @@ func (c *Compiler) optional() *errors.EgoError {
 		return c.newError(errors.MissingCatchError)
 	}
 
-	err = c.expressionAtom()
+	err = c.unary()
 	if !errors.Nil(err) {
 		return err
 	}

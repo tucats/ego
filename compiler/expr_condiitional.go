@@ -15,8 +15,9 @@ func (c *Compiler) conditional() *errors.EgoError {
 		return err
 	}
 
-	// If this is not a conditional, we're done.
-	if c.t.AtEnd() || c.t.Peek(1) != "?" {
+	// If this is not a conditional, we're done. Conditionals
+	// are only permitted when extensions are enabled.
+	if c.t.AtEnd() || !c.extensionsEnabled || c.t.Peek(1) != "?" {
 		return nil
 	}
 
