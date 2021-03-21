@@ -39,6 +39,8 @@ type cachedCompilationUnit struct {
 
 var Session string
 
+var Version string
+
 var serviceCache = map[string]cachedCompilationUnit{}
 var cacheMutex sync.Mutex
 
@@ -60,6 +62,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = syms.SetAlways("_session", Session)
 	_ = syms.SetAlways("_method", r.Method)
 	_ = syms.SetAlways("__exec_mode", "server")
+	_ = syms.SetAlways("_version", Version)
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = syms.SetAlways("__static_data_types", staticTypes)
