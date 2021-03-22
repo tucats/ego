@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	xruntime "runtime"
 	"strconv"
@@ -359,6 +360,8 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		server.Session = util.GetString(s)
 	}
 
+	server.Version = c.Version
+
 	debugPath, _ := c.GetString("debug")
 	if len(debugPath) > 0 {
 		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
@@ -396,6 +399,8 @@ func RunServer(c *cli.Context) *errors.EgoError {
 			server.PathRoot = persistence.Get(defs.EgoPathSetting)
 		}
 	}
+
+	server.PathRoot = path.Join(server.PathRoot, "lib")
 
 	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")

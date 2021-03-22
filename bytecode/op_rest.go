@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -135,7 +136,8 @@ func ResponseImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if isJSON {
-		b, err := json.Marshal(v)
+		// Use Sanitize to normalize maps and array, and remove metadata
+		b, err := json.Marshal(datatypes.Sanitize(v))
 		if !errors.Nil(err) {
 			return errors.New(err)
 		}
