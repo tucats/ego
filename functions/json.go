@@ -46,12 +46,13 @@ func Seal(i interface{}) interface{} {
 	}
 }
 
-// Encode writes a  JSON string from arbitrary data.
+// Encode writes a JSON string from arbitrary data.
 func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 1 {
-		jsonBuffer, err := json.Marshal(args[0])
+		jsonBuffer, err := json.Marshal(datatypes.Sanitize(args[0]))
+		jsonString := string(jsonBuffer)
 
-		return string(jsonBuffer), errors.New(err)
+		return jsonString, errors.New(err)
 	}
 
 	var b strings.Builder
@@ -63,7 +64,7 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			b.WriteString(", ")
 		}
 
-		jsonBuffer, err := json.Marshal(v)
+		jsonBuffer, err := json.Marshal(datatypes.Sanitize(v))
 		if !errors.Nil(err) {
 			return "", errors.New(err)
 		}
@@ -79,7 +80,7 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // EncodeFormatted writes a  JSON string from arbitrary data.
 func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 1 {
-		jsonBuffer, err := json.MarshalIndent(args[0], "", "  ")
+		jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), "", "  ")
 
 		return string(jsonBuffer), errors.New(err)
 	}
@@ -93,7 +94,7 @@ func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *
 			b.WriteString(", ")
 		}
 
-		jsonBuffer, err := json.MarshalIndent(v, "", "  ")
+		jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(v), "", "  ")
 		if !errors.Nil(err) {
 			return "", errors.New(err)
 		}

@@ -39,7 +39,7 @@ func NewFromArray(valueType int, source []interface{}) *EgoArray {
 	return m
 }
 
-// Make creates a new array pattenered off of the type of the receiver array,
+// Make creates a new array patterned off of the type of the receiver array,
 // of the given size.
 func (a *EgoArray) Make(size int) *EgoArray {
 	m := &EgoArray{
@@ -219,14 +219,14 @@ func (a *EgoArray) Sort() *errors.EgoError {
 
 	switch a.valueType {
 	case StringType:
-		strs := make([]string, a.Len())
+		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
-			strs[i] = util.GetString(v)
+			stringArray[i] = util.GetString(v)
 		}
 
-		sort.Strings(strs)
+		sort.Strings(stringArray)
 
-		for i, v := range strs {
+		for i, v := range stringArray {
 			a.data[i] = v
 		}
 
