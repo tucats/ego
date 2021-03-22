@@ -130,7 +130,7 @@ var instructionNames = map[OpcodeID]string{
 	Coerce:             "Coerce",
 	Constant:           "Constant",
 	Copy:               "Copy",
-	DeRef:              "Deref",
+	DeRef:              "DeRef",
 	Div:                "Div",
 	Drop:               "Drop",
 	DropToMarker:       "DropToMarker",

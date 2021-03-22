@@ -285,7 +285,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 		c.t.Advance(1)
 
-		// Let's experimenally see if this is a range constant expression. This can be
+		// Let's experimentally see if this is a range constant expression. This can be
 		// of the form [start:end] which creates an array of integers between the start
 		// and end values (inclusive). It can also be of the form [:end] which assumes
 		// a start number of 1.
@@ -344,7 +344,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 
 		// If this is an array of a specific type, check to see
-		// if the prevous value was a constant. If it wasn't, or
+		// if the previous value was a constant. If it wasn't, or
 		// was of the wrong type, emit a coerce...
 		if kind != datatypes.UndefinedType {
 			if c.b.NeedsCoerce(kind) {
@@ -451,7 +451,7 @@ func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	return s[1 : len(s)-1], nil
 }
 
-// Handle the ? optional operation. This preceedes an expression
+// Handle the ? optional operation. This precedes an expression
 // element. If the element causes an error then a default value is
 // provided following a ":" operator. This only works for specific
 // errors such as a nil object reference, invalid type, unknown

@@ -164,12 +164,12 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 	if i != nil {
 		key = util.GetString(i)
 	} else {
-		keyx, err := c.Pop()
+		keyInterface, err := c.Pop()
 		if !errors.Nil(err) {
 			return err
 		}
 
-		key = util.GetString(keyx)
+		key = util.GetString(keyInterface)
 	}
 
 	value, err := c.Pop()

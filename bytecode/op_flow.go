@@ -172,7 +172,7 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 // parameters and a return value). The function value must be on the
 // stack, preceded by the function arguments. The operand indicates the
 // number of arguments that are on the stack. The function value must be
-// etiher a pointer to a built-in function, or a pointer to a bytecode
+// either a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
 func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
@@ -389,7 +389,7 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 
 // ArgCheckImpl instruction processor verifies that there are enough items
 // on the stack to satisfy the function's argument list. The operand is the
-// number of values that must be available. Alternaitvely, the operand can be
+// number of values that must be available. Alternatively, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
 func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {

@@ -239,7 +239,7 @@ func (c *Context) SetStepOver(b bool) {
 	c.stepOver = b
 }
 
-// GetModuleName returnes the name of the current module (typically
+// GetModuleName returns the name of the current module (typically
 // the function name or program name).
 func (c *Context) GetModuleName() string {
 	return c.bc.Name

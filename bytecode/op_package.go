@@ -29,7 +29,7 @@ func pushPackage(c *Context, i interface{}) *errors.EgoError {
 	})
 	c.symbols = symbols.NewChildSymbolTable("package "+name, c.symbols)
 
-	// Create an initialize the package variable. If it alreaady exists
+	// Create an initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
 	pkg := map[string]interface{}{}
 

@@ -1,67 +1,73 @@
 
 # Table of Contents
+
 1. [Introduction](#intro)
+
 1. [Data Types](#datatypes)
     1. [Base Types](#basetypes)
     2. [Arrays](#arrays)
-    2. [Structures](#structures)
-    3. [Maps](#maps)
-    3. [Pointers](#pointers)
-    3. [User Types](#usertypes)
-2. [Symbols and Expressions](#symbolsexpressions)
+    3. [Structures](#structures)
+    4. [Maps](#maps)
+    5. [Pointers](#pointers)
+    6. [User Types](#usertypes)
+
+1. [Symbols and Expressions](#symbolsexpressions)
     1. [Symbols and Scope](#symbolsscope)
-    2. [Constants](#const)
-    2. [Operators](#operators)
-    3. [Type Conversion](#typeconversion)
-    4. [Builtin Functions](#builtinfunctions)
-3. [Conditional and Iterative Execution](#flowcontrol)
+    1. [Constants](#const)
+    1. [Operators](#operators)
+    1. [Type Conversion](#typeconversion)
+    1. [Builtin Functions](#builtinfunctions)
+
+1. [Conditional and Iterative Execution](#flow-control)
     1. [If/Else Conditional](#if)
-    2. [For &lt;condition&gt;](#forcond)
-    3. [For &lt;index&gt;](#forindex)
-    4. [For &lt;range&gt;](#forrange)
-    5. [Break and Continue](#breakcont)
-4. [User Functions](#userfuncs)
-    1. [The `func` Statement](#funcstmt)
-    2. [The `return` Statement](#returnstmt)
-    3. [The `defer` Statement](#deferstmt)
-    4. [Function Variables](#funcvars)
-    5. [Function Receivers](#funcreceivers)
-5. [Error Handling](#errors)
-    1. [Try and Catch](#trycatch)
+    2. [For &lt;condition&gt;](#for-conditional)
+    3. [For &lt;index&gt;](#for-index)
+    4. [For &lt;range&gt;](#for-range)
+    5. [Break and Continue](#break-continue)
+
+1. [User Functions](#user-functions)
+    1. [The `func` Statement](#function-statement)
+    2. [The `return` Statement](#return-statement)
+    3. [The `defer` Statement](#defer-statement)
+    4. [Function Variables](#function-variables)
+    5. [Function Receivers](#function-receivers)
+
+1. [Error Handling](#errors)
+    1. [Try and Catch](#try-catch)
     2. [Signalling Errors](#signalling)
 
-6. [Threads](#threads)
+1. [Threads](#threads)
     1. [Go Routines](#goroutine)
     2. [Channels](#channels)
 
-7. [Packages](#packages)
+1. [Packages](#packages)
    1. [The `import` statement](#import)
-   2. [`cipher` package](#cipher)
-   2. [`db` package](#db)
-   3. [`fmt` package](#fmt)
-   3. [`io` package](#io)
-   3. [`json` package](#json)
-   3. [`math` package](#math)
-   2. [`os` package](#os)
-   3. [`rest` package](#rest)
-   3. [`sort` package](#sort)
-   3. [`strings` package](#strings)
-   3. [`sync` package](#strings)
-   2. [`tables` package](#tables)
-   2. [`util` package](#util)
-   2. [`uuid` package](#uuid)
+   1. [`cipher` package](#cipher)
+   1. [`db` package](#db)
+   1. [`fmt` package](#fmt)
+   1. [`io` package](#io)
+   1. [`json` package](#json)
+   1. [`math` package](#math)
+   1. [`os` package](#os)
+   1. [`rest` package](#rest)
+   1. [`sort` package](#sort)
+   1. [`strings` package](#strings)
+   1. [`sync` package](#strings)
+   1. [`tables` package](#tables)
+   1. [`util` package](#util)
+   1. [`uuid` package](#uuid)
 
-7. [User Packages](#packages)
+1. [User Packages](#packages)
    1. [The `package` statement](#package)
 
-8. [Directives](#directives)
+1. [Directives](#directives)
    1. [@error](#at-error)
    2. [@global](#at-global)
    3. [@template](#at-template)
    4. [@type](#at-type)
 
-9. [Testing](#testing)
-   1. [The `test` command](#testcmd)
+1. [Testing](#testing)
+   1. [The `test` command](#at-test)
    2. [The `@test` directive](#at-test)
    3. [The `@assert` directive](#at-assert)
    4. [The `@fail` directive](#at-fail)
@@ -71,50 +77,58 @@
 &nbsp;
 
 # Introduction to _Ego_ Language <a name="intro"></a>
-_Version 1.1_
 
+Version 1.1
 
-This document describes the language _Ego_, which is a scripting 
-language and tool set patterned off of the _Go_ programming language. 
-The _Ego_ language name is a portmanteaux for _Emulated Go_. The data 
-types and language statements are very similar to _Go_ with a few 
+This document describes the language _Ego_, which is a scripting
+language and tool set patterned off of the _Go_ programming language.
+The _Ego_ language name is a portmanteaux for _Emulated Go_. The data
+types and language statements are very similar to _Go_ with a few
 notable exceptions:
-* If enabled by settings, _Ego_ offers a try/catch model for intercepting 
-  runtime errors
-* The language can be run with either dynamic or static typing.
-* The available set of packages that support runtime functionality is limited.
+
+* The _Ego_ type system is simpler than Go, and does not yet offer
+  the idea of typed interfaces.
+* If enabled by settings, _Ego_ offers language extensions such as
+  a try/catch model for intercepting runtime errors and "optional"
+  values similar to Swift.
+* The language can be run with either dynamic or static typing. The
+  default is dynamic, so variable type binding occurs at the moment
+  of use as opposed to part of the compilation process.
+* The available set of packages that support runtime functionality
+  is significantly limited.
 
 The _Ego_ language is run using the `ego` command-line interface. This
-provides the ability to run a program from an external text file, to 
-interactivly enter _Ego_ programming statements, or to run _Ego_ 
-programs as web services. This functionality is documented elsewhere; 
-this guide focusses on writing _Ego_ programs regardless of the runtime 
+provides the ability to run a program from an external text file, to
+interactively enter _Ego_ programming statements, or to run _Ego_
+programs as web services. This functionality is documented elsewhere;
+this guide focusses on writing _Ego_ programs regardless of the runtime
 environment.
 
-The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely 
-available for any use, public or private, including commercial software. 
-The only requirement is that any software that incorporates or makes use 
-of _Ego_ or the packages written by Tom Cole to support must include a 
-statement attributing authorship to _Ego_ and it's runtime environment 
+The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely
+available for any use, public or private, including commercial software.
+The only requirement is that any software that incorporates or makes use
+of _Ego_ or the packages written by Tom Cole to support must include a
+statement attributing authorship to _Ego_ and it's runtime environment
 to Tom Cole.
 
+&nbsp;
+&nbsp;
 
-&nbsp;
-&nbsp;
 # Data Types<a name="datatypes"></a>
 
-The _Ego_ language supports a number of base types which express a 
-single value of some type (string, integer, boolean, etc.). These base 
-types can be members of complex types consisting of arrays (ordered 
-lists) and structs (key/value pairs). Additionally, the user can 
-create types based on the base or complex types, such as a type 
-describing a structure that records information about an employee; 
+The _Ego_ language supports a number of base types which express a
+single value of some type (string, integer, boolean, etc.). These base
+types can be members of complex types consisting of arrays (ordered
+lists), maps (dynamic types key/value pairs) and structs (field-name/value
+pairs). Additionally, the user can
+create types based on the base or complex types, such as a type
+describing a structure that records information about an employee;
 this type can be used to create instances of the structure, etc.
 
 ## Base Types<a name="basetypes"></a>
 
-A value can be a base type; when it is a base type is contains only 
-one value at a time, and that value has a specific type.  These are 
+A value can be a base type; when it is a base type is contains only
+one value at a time, and that value has a specific type.  These are
 listed here.
 
 &nbsp;
@@ -128,100 +142,98 @@ listed here.
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
 | `chan`   |  chan    | any              | A channel, used to communicate values between threads |
 
-
 _Note that the numeric range values shown are approximate._
 
 &nbsp;
 
-A value expressed in an _Ego_ program has an implied type. The 
-language processor will attempt to determine the type of the value. 
-For booelan values, the value can only be `true` or `false`. For 
-numeric types, the language differentiates between integer and float 
-value. The value `1573` will be intepreted as an int value because i
-t has no exponent or factional part, but `-153.35` will be 
-interpreted as a float value because it has a decimal point and a 
-fractional value. A string value enclosed in double quotes (") cannot 
-span multiple lines of text. A string value enclosed in back-quotes 
+A value expressed in an _Ego_ program has an implied type. The
+language processor will attempt to determine the type of the value.
+For Boolean values, the value can only be `true` or `false`. For
+numeric types, the language differentiates between integer and float
+value. The value `1573` will be interpreted as an int value because i
+t has no exponent or factional part, but `-153.35` will be
+interpreted as a float value because it has a decimal point and a
+fractional value. A string value enclosed in double quotes (") cannot
+span multiple lines of text. A string value enclosed in back-quotes
 (`) are allowed to span multiple lines of text if needed.
 
-A `chan` value has no constant expression; it is a type that can be 
-used to create a variable used to communicate between threads. See 
+A `chan` value has no constant expression; it is a type that can be
+used to create a variable used to communicate between threads. See
 the section below on threads for more information.
 
 ## Arrays<a name="arrays"></a>
 
 An array is an ordered list of values. That is, it is a set where each
-value has a numerical position referred to as it's index. The first 
-value in an array has an index value of 0; the second value in the 
-array has an index of 1, and so on. An array has a fixed size; once it 
+value has a numerical position referred to as it's index. The first
+value in an array has an index value of 0; the second value in the
+array has an index of 1, and so on. An array has a fixed size; once it
 is created, you cannot add to the array directly.
 
-Array constants are expressed using square brackets, which contain a 
-list of values separated by commas. The values may be any valid value 
-(base, complex, or user types).  The values do not have to be of the 
+Array constants are expressed using square brackets, which contain a
+list of values separated by commas. The values may be any valid value
+(base, complex, or user types).  The values do not have to be of the
 same type. For example,
 
     [ 101, 335, 153, 19, -55, 0 ]
     [ 123, "Fred", true, 55.738]
 
-The first example is an array of integers. The value at position 0 is 
-`101`. The value at position 1 is `335`, and so on.  The second 
-example is a heterogenous array, where each value is of varying types. 
-For example, the value at position 0 is the integer `123` and the 
+The first example is an array of integers. The value at position 0 is
+`101`. The value at position 1 is `335`, and so on.  The second
+example is a heterogenous array, where each value is of varying types.
+For example, the value at position 0 is the integer `123` and the
 value at position 1 is the string `"Fred"`.
 
-You can also specify a type for the array using a typed array constant. 
+You can also specify a type for the array using a typed array constant.
 For example,
 
     a := []int{101, 102, 103}
 
-In this example, an array is created that can only contain `int` values. 
+In this example, an array is created that can only contain `int` values.
 If you specify a value in the array initialization list that is not an
-`int`, it is converted to an `int` before in is stored. You an then 
+`int`, it is converted to an `int` before in is stored. You an then
 only store `int` values in the array going forward,
 
     a[1] = 1325    // Succeeds
     a[1] = 1325.0  // Failed, must be of type int
 
-
 ## Structures<a name="structures"></a>
 
-A structure (called `struct` in the _Ego_ language) is a set of 
-key/value pairs. The key is an _Ego_ symbol, and the value is any 
-supported value type. Each key must be unique. The values can be 
-read or written in the struct based on the key name. Once a struct 
-is created, it cannot have new keys added to it directly. A struct 
+A structure (called `struct` in the _Ego_ language) is a set of
+key/value pairs. The key is an _Ego_ symbol, and the value is any
+supported value type. Each key must be unique. The values can be
+read or written in the struct based on the key name. Once a struct
+is created, it cannot have new keys added to it directly. A struct
 constant is indicated by braces, as in:
 
     {  Name: "Tom", Age: 53 }
 
-This struct has two members, `Name` and `Age`. Note that the 
-member names (the keys of the key/value pair) are case-sensitive. 
-The struct member `Name` is a string value, and the struct member 
-`Age` is an int value. 
+This struct has two members, `Name` and `Age`. Note that the
+member names (the keys of the key/value pair) are case-sensitive.
+The struct member `Name` is a string value, and the struct member
+`Age` is an int value.
 
 This type of struct is known as an _anonymous_ struct in that it
-does not have a specific type, and in fact the fields are all 
-declared as type interface{} so they can hold any arbitrary values 
-unless static type checking is enabled. 
+does not have a specific type, and in fact the fields are all
+declared as type interface{} so they can hold any arbitrary values
+unless static type checking is enabled.
 
-You cannot add new fields to this struct if you create a struct 
+You cannot add new fields to this struct if you create a struct
 constant with fields already. That is, you cannot
 
     a := { Name: "Bob" }
     a.Age = 43
 
-The second line will generate an error because Age is not a member 
-of the structure. There is one special case of an _anonymous_ 
-struct that can have fields added (or removed) dynamically. This is 
+The second line will generate an error because Age is not a member
+of the structure. There is one special case of an _anonymous_
+struct that can have fields added (or removed) dynamically. This is
 an empty _anonymous_ struct,
 
     a := {}
     a.Name = "Fred"
     a.Gender = "M"
 
-The empty anonymous structure can have fields added to it just by 
-naming them, and they are created as needed. In this case you can 
+The empty anonymous structure can have fields added to it just by
+naming them, and they are created as needed. In this case you can
 also use the delete() function to remove a field,
 
     delete(a, "Gender")
@@ -230,40 +242,41 @@ This removes the field `Gender` from the struct.
 
 ## Maps<a name="maps"></a>
 
-A `map` in the _Ego_ language functions the same as it does in Go. A 
-map is declared as having a key type and a value type, and a hashmap 
-is constructed based on that inforation. You can set a value in the 
+A `map` in the _Ego_ language functions the same as it does in Go. A
+map is declared as having a key type and a value type, and a hashmap
+is constructed based on that information. You can set a value in the
 map and you can fetch a value from the map.
 
-Current, it is a limitation that the only way to create a map is by 
-setting a value to an empty map constant. Map initialization syntax 
+Current, it is a limitation that the only way to create a map is by
+setting a value to an empty map constant. Map initialization syntax
 is not yet supported.  For example,
 
     staff := map[int]string{}
 
-This creates a map (stored in `staff`) that has an integer value as 
-the key, and stores a string value for each unique key. A map can 
-contain only one key of a given value; setting the key value a second 
+This creates a map (stored in `staff`) that has an integer value as
+the key, and stores a string value for each unique key. A map can
+contain only one key of a given value; setting the key value a second
 time just replaces the value of the map for that key.
 
     staff[101] = "Jeff"
     staff[102] = "Susan"
 
-This adds members to the map. Note that the key  _must_ be an integer 
-value, and the value _must_ be a string value because that's how the 
-map was declared. Unlike a variable, a map has a static definition 
-once it is created and cannot contain values of a different type. 
-Attempting to store a boolean in the map results in a runtime error, 
+This adds members to the map. Note that the key  _must_ be an integer
+value, and the value _must_ be a string value because that's how the
+map was declared. Unlike a variable, a map has a static definition
+once it is created and cannot contain values of a different type.
+Attempting to store a boolean in the map results in a runtime error,
 for example.
 
     id := 102
     name := staff[id]
 
-This uses an integer variable to retrieve a value from the map. In this 
-case, the value of `name` will be set to "Susan". If there is nothing 
-in the map with the given key, the value of the exprssion is `nil`.
+This uses an integer variable to retrieve a value from the map. In this
+case, the value of `name` will be set to "Susan". If there is nothing
+in the map with the given key, the value of the expression is `nil`.
 
 ## Pointers<a name="pointers"></a>
+
 The _Ego_ language adopts the Go standards for pointers. Pointers exist
 solely to identify the address of another object. This address can be
 passed across function boundaries to allow the function to modify the
@@ -279,7 +292,7 @@ address of another variable.
 
     fmt.Println(*x)                 (3)
 
-In this example, 
+In this example,
 
 1. A variable `x` is created as a pointer to an integer
 value. At the time of this statement, the value of x is `nil` and
@@ -293,7 +306,7 @@ stored in `x`.
 
 3. This shows dereferencing the pointer value to access the underlying
 value of `42` as the output of the print operation. If you had printed
-the valuel `x` rather than `*x`, it would print the string `&42` to show
+the value `x` rather than `*x`, it would print the string `&42` to show
 that the value points to `42`.
 
 The above examples illustrate basic functions of a pointer, but the
@@ -314,7 +327,7 @@ parameter.
 
 In this somewhat contrived example, the function `hasPositive` does not
 return an integer, it returns a pointer to an integer. The logic of the
-function is such that if a positive value was given, it is returned, 
+function is such that if a positive value was given, it is returned,
 else a nil value is returned as the pointer value indicating _no value_
 returned from the function.
 
@@ -333,8 +346,8 @@ In this example, the function `setter` is given the address of an integer
 and a value to store in that integer. Because the value is passed by
 pointer, the value of `destination` is the address of the value `55`. The
 `setter` function overwrites that with the parameter passed (in this case,
-the value `42`). The result is that the value of x has now been chnaged
-by the function, and the value printed will be "42". 
+the value `42`). The result is that the value of x has now been changed
+by the function, and the value printed will be "42".
 
 This is the only way a function can change a parameter value. By default,
 a value (such as `source` in the example above) gets a copy made and that
@@ -344,10 +357,11 @@ copy local to the function, but the global value (`42`, in this case) would
 not have changed.
 
 ## User Types<a name="usertypes"></a>
-The _Ego_ language includes the ability to create use-defined types. 
-These are limited to `struct` definitions. They allow the program to 
-define a short-hand for a specific type, and then reference that type 
-when creating a new variable of that type. The `type` statement is used 
+
+The _Ego_ language includes the ability to create use-defined types.
+These are limited to `struct` definitions. They allow the program to
+define a short-hand for a specific type, and then reference that type
+when creating a new variable of that type. The `type` statement is used
 to define the type. Here is an example:
 
     type Employee struct {
@@ -355,43 +369,43 @@ to define the type. Here is an example:
        Age     int
     }
 
-This creates a new type called `Employee` which is a struct with 
-two members, `Name` and `Age`. A variable created with this type 
-will always be a struct, and will always contain these two members. 
+This creates a new type called `Employee` which is a struct with
+two members, `Name` and `Age`. A variable created with this type
+will always be a struct, and will always contain these two members.
 You can then create a variable of this type using
 
    e := Employee{}
 
-The `{}` indicates this is a type, and a new structure (of type 
-`Employee`) is created and stored in the variable `e`.  You can 
+The `{}` indicates this is a type, and a new structure (of type
+`Employee`) is created and stored in the variable `e`.  You can
 initialize fields in the struct when you create it if you wish,
 
    a := Employee{ Name: "Robin" }
 
-In this example, a new Employee is created and the `Name` field is 
-initialized to the string "Robin". The value `a` also contains a 
-field `Age` because that was declared in the type, but at this 
-point it contains the zero-value for it's type (in this case, an 
-integer zero). You can only initialize fields in a type that were 
+In this example, a new Employee is created and the `Name` field is
+initialized to the string "Robin". The value `a` also contains a
+field `Age` because that was declared in the type, but at this
+point it contains the zero-value for it's type (in this case, an
+integer zero). You can only initialize fields in a type that were
 declared in the original type.
-
 
 &nbsp;
 &nbsp;
 
 # Variables and Expressions<a name="symbolsexpressions"></a>
 
-This section covers variables (named storage for values) and 
-expressions (sequences of variables, values, and operators that 
+This section covers variables (named storage for values) and
+expressions (sequences of variables, values, and operators that
 result in a computed value).
 
 ## Symbols and Scope<a name="symbolsscope"></a>
-A variable is a named storage location, identified by a _symbol_. 
-The _Ego_ language is, by default, a case-senstive language, such
- that the variables `Age` and `age` are two different values. A 
- symbol names can consist of letters, numbers, or the underscore 
- ("_") character. The first character must be either an underscore 
- or a alphabetic character. Here are some examples of valid and 
+
+A variable is a named storage location, identified by a _symbol_.
+The _Ego_ language is, by default, a case-sensitive language, such
+ that the variables `Age` and `age` are two different values. A
+ symbol names can consist of letters, numbers, or the underscore
+ ("&lowbar;") character. The first character must be either an underscore
+ or a alphabetic character. Here are some examples of valid and
  invalid names:
 
 &nbsp;
@@ -407,80 +421,80 @@ The _Ego_ language is, by default, a case-senstive language, such
 
 &nbsp;
 
-There is a reserved name that is just an underscore, "_". This name 
-means _value we will ignore._ So anytime you need to referene a variable 
-to conform to the syntax of the language, but you do not want or need 
-the value for your particular program, you can specify "_" which is a 
+There is a reserved name that is just an underscore, "&lowbar;". This name
+means _value we will ignore._ So anytime you need to reference a variable
+to conform to the syntax of the language, but you do not want or need
+the value for your particular program, you can specify "&lowbar;" which is a
 short-hand value for "discard this value".
 
-A symbol name that starts with an underscore character is a read-only 
-variable. That is, it's value can be set once when it is created, but 
+A symbol name that starts with an underscore character is a read-only
+variable. That is, it's value can be set once when it is created, but
 can not be changed once it has its initial value. For example, when an
  _Ego_ program runs, there is always a read-only variable called
-  `_version` that can be read to determine the version of the `ego` 
+  `_version` that can be read to determine the version of the `ego`
   command line tool, but the value cannot be set by a user program.
 
-The term _scope_ refers to the mechanism by which a symbol name is 
-resolved to a variable. When an _Ego_ program runs, each individual 
-function, and in fact each basic block (code enclosed within `{...}` 
-braces) has its own scope. A variable that is created at one scope is 
-_visible_ to any scopes that are contained within that scope. For 
-example, a variable created at the first line of a function is visible 
-to all the code within the function. A variable created within a 
-basic-block is only visible within the code inside that basic block. 
-When a scope ends, any variables created in that scope are deleted 
+The term _scope_ refers to the mechanism by which a symbol name is
+resolved to a variable. When an _Ego_ program runs, each individual
+function, and in fact each basic block (code enclosed within `{...}`
+braces) has its own scope. A variable that is created at one scope is
+_visible_ to any scopes that are contained within that scope. For
+example, a variable created at the first line of a function is visible
+to all the code within the function. A variable created within a
+basic-block is only visible within the code inside that basic block.
+When a scope ends, any variables created in that scope are deleted
 and they no longer have a value.
 
-This will become clearer below when we talk about functions and basic 
-blocks. In general, just know that you can reference (read or write) 
-a value to any symbol in your same scope or an outer scope, but you 
-can only create variables at the current scope, and once that scope 
-is completed, the created variables no longer exist. A symbol can be 
-assigned a value using an _assignment_ statement. This consists of the 
-variable name that is to receive the value, and either `=` or `:=`, 
-followed by the value to store in that variable. The difference between 
-the two assignment operators is that `:=` will create a new value in 
-the current scope, while `=` will locate a value that already exists, 
+This will become clearer below when we talk about functions and basic
+blocks. In general, just know that you can reference (read or write)
+a value to any symbol in your same scope or an outer scope, but you
+can only create variables at the current scope, and once that scope
+is completed, the created variables no longer exist. A symbol can be
+assigned a value using an _assignment_ statement. This consists of the
+variable name that is to receive the value, and either `=` or `:=`,
+followed by the value to store in that variable. The difference between
+the two assignment operators is that `:=` will create a new value in
+the current scope, while `=` will locate a value that already exists,
 and write a new value to it.
 
       name := "Bob"
       name = "Mary"
 
-In this example, the first statement uses the `:=` operator, which 
-causes the symbol `name` to be created, and then the string value "Bob" 
-is stored in the variable. If the variable already exists, this is an 
-error and you should use the `=` instead to update an existing value. 
-The `=` operator looks for the named value in the current scope, and 
-if it finds it, the value "Mary" is assigned to it. If the variable 
-does not exist at this scope, but does in an outer scope level, then 
+In this example, the first statement uses the `:=` operator, which
+causes the symbol `name` to be created, and then the string value "Bob"
+is stored in the variable. If the variable already exists, this is an
+error and you should use the `=` instead to update an existing value.
+The `=` operator looks for the named value in the current scope, and
+if it finds it, the value "Mary" is assigned to it. If the variable
+does not exist at this scope, but does in an outer scope level, then
 the variable at the outer scope is updated.
 
-You can also create a variable using the `var` statement, which is 
-followed by a comma-separated list of names and finally a type value. 
-The variables are all created and set to the given type, with an 
+You can also create a variable using the `var` statement, which is
+followed by a comma-separated list of names and finally a type value.
+The variables are all created and set to the given type, with an
 appropriate "zero value" for that type.
 
       var first, last string
       var e1 Employee{}
 
-The second example creates a variable based on a user-defined type 
-`Employee`.  The {} characters causes an instance of that type to be 
-created and stored in the named variable `e1` in this example. The {} 
-charaacters can contain field initializations for the type, such as
+The second example creates a variable based on a user-defined type
+`Employee`.  The {} characters causes an instance of that type to be
+created and stored in the named variable `e1` in this example. The {}
+characters can contain field initializations for the type, such as
 
       var e2 Employee{ Name: "Bob", Age: 55}
 
-The type of `e2` is `Employee` and it contains initialized values for 
-the permitted fields for the type. If the initializer does not specify 
-a value for all fields, the fields not explicitly named are set to 
+The type of `e2` is `Employee` and it contains initialized values for
+the permitted fields for the type. If the initializer does not specify
+a value for all fields, the fields not explicitly named are set to
 zero values for their types.
 
-
 ## Constants <a name="const"></a>
-The `const` statement can define constant values in the current scope. 
-These values are always readonly values and you cannot use a constant 
-name as a variable name. You can specify a single constant or a group 
-of them; to specify more than one in a single statement enclose the 
+
+The `const` statement can define constant values in the current scope.
+These values are always readonly values and you cannot use a constant
+name as a variable name. You can specify a single constant or a group
+of them; to specify more than one in a single statement enclose the
 list in parenthesis:
 
     const answer = 42
@@ -494,26 +508,27 @@ This defines three constant values. Note that the value is set using an
 `=` character since a symbols is not actually being created.
 
 ## Operators<a name="operators"></a>
-Operators is the term for language elements that allow you to perform 
-mathmatical or other other operations using constant values as well as 
-variable values, to produce a new computed value. Some operators can 
-operate on a wide range of different value types, and some operators 
+
+Operators is the term for language elements that allow you to perform
+mathematical or other other operations using constant values as well as
+variable values, to produce a new computed value. Some operators can
+operate on a wide range of different value types, and some operators
 have more limited functionality.
 
-There are _dereference_ operators that are used to access members of 
+There are _dereference_ operators that are used to access members of
 a struct, values of a type, or index into an array.
 
 &nbsp;
 
 | Operator | Example | Description |
 | --- | --- | --- |
-| .   | emp.age | Find the menber named `age` in the struct named `emp` |
+| .   | emp.age | Find the member named `age` in the struct named `emp` |
 | []  | items[5] | Find the value at index 5 of the array named `items` |
 | {}  | emp{} | Create an instance of a struct of the type `emp` |
 
 &nbsp;
 
-There are _monadic_ operators which precede an expression and operate 
+There are _monadic_ operators which precede an expression and operate
 on the single value given.
 
 &nbsp;
@@ -526,7 +541,7 @@ on the single value given.
 &nbsp;
 
 There are _diadic_ operators that work on two values, one of which
-preceeds the operator and one of which follows the operator.
+precedes the operator and one of which follows the operator.
 
 &nbsp;
 
@@ -540,24 +555,24 @@ preceeds the operator and one of which follows the operator.
 
 &nbsp;
 
-For division, integer values will result in the integer value of 
-the division, so `10/3` will result in `3` as the expression value. 
-A floating point value retains the fractional value of the conversion, 
+For division, integer values will result in the integer value of
+the division, so `10/3` will result in `3` as the expression value.
+A floating point value retains the fractional value of the conversion,
 so `10.0/3.0` results in `3.333333333` as the result.
 
-Expressions can be combined together, and follow normal mathematical 
-order of precidence (multiplication and division are done before 
-subtraction and addition). So the expression `a+b*c` will first 
-multiply `b` and `c`, and then add the product to the value of `a`. 
-You can use parenthesis to control the order of evaluation, so 
-`(a+b)*c` will calculate the sum of `a+b` and then multiply that 
+Expressions can be combined together, and follow normal mathematical
+order of precedence (multiplication and division are done before
+subtraction and addition). So the expression `a+b*c` will first
+multiply `b` and `c`, and then add the product to the value of `a`.
+You can use parenthesis to control the order of evaluation, so
+`(a+b)*c` will calculate the sum of `a+b` and then multiply that
 result by the value in `c`.
 &nbsp;
 &nbsp;
 
 There are _relational_ operators that work on two values, one of which
-preceeds the operator and one of which follows the operator. The 
-result of the operator is always a boolean (`true` or `false`) value 
+precedes the operator and one of which follows the operator. The
+result of the operator is always a boolean (`true` or `false`) value
 describing the relationship between the two values.
 
 &nbsp;
@@ -573,35 +588,35 @@ describing the relationship between the two values.
 
 &nbsp;
 
-
 ## Type Conversions<a name="typeconversion"></a>
-When an operation is done on two values (either a variable or a 
-constant value) of the same type, no additional conversion is performed 
+
+When an operation is done on two values (either a variable or a
+constant value) of the same type, no additional conversion is performed
 or required. If the operation is done on two values of different types,
-_Ego_ will convert the values to the same type if possible before 
-performing the operation. For example, the expression `10.0/3` divides 
-an integer value into a floating point value; the _Ego_ languae converts 
-the integer to a floating point value before performing the division. In 
-general, _Ego_ will convert the values to the value that will result in 
+_Ego_ will convert the values to the same type if possible before
+performing the operation. For example, the expression `10.0/3` divides
+an integer value into a floating point value; the _Ego_ language converts
+the integer to a floating point value before performing the division. In
+general, _Ego_ will convert the values to the value that will result in
 minimal or no loss of precision.
 
-These conversions happen automatically, though you can use type casting 
-functions like `int()` or `string()` discussed later to force a specific 
-type of conversion operation. For example, if a boolean value is used in 
-an expression that requires a float value, then the boolean is converted 
+These conversions happen automatically, though you can use type casting
+functions like `int()` or `string()` discussed later to force a specific
+type of conversion operation. For example, if a boolean value is used in
+an expression that requires a float value, then the boolean is converted
 such that `false` is converted to `0.0` and `true` is converted to
  `1.0`. Similarly, if a numeric or boolean value is needed as a string,
-the string value is the formatted version of the original value. So a 
+the string value is the formatted version of the original value. So a
 value of `123.5` as a float becomes the string `"123.5"`.
 
 ## Builtin Functions<a name="builtinfunctions"></a>
 
-The _Ego_ language includes a library of built-in functions which can 
-also be used as elements of an expression, including having the function 
-value be assigned to a variable. A function consists of a name, followed 
-by a list of zero or more values in parenthesis, separated by commas. If 
-there are no values, you still must specify the parenthesis. The function 
-may accept a fixed or variable number of arguments, and typically returns 
+The _Ego_ language includes a library of built-in functions which can
+also be used as elements of an expression, including having the function
+value be assigned to a variable. A function consists of a name, followed
+by a list of zero or more values in parenthesis, separated by commas. If
+there are no values, you still must specify the parenthesis. The function
+may accept a fixed or variable number of arguments, and typically returns
 a single value.
 
 &nbsp;
@@ -622,6 +637,7 @@ a single value.
 &nbsp;
 
 ## Casting
+
 This refers to functions used to explicitly change the type of a value, or
 convert it to a comparable value where possible.  This can be done for base
 type values (int, bool, string) as well as for arrays.
@@ -630,13 +646,12 @@ For base types, the following are available:
 
 &nbsp;
 
-
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
 | bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
 | float()  | float(33)      | Convert the value to a float, in this case `33.0` |
 | int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
-| string() | string(true)   | Convert the argumennt to a string value, in this case `true` |
+| string() | string(true)   | Convert the argument to a string value, in this case `true` |
 
 &nbsp;
 
@@ -644,7 +659,7 @@ A special note about `string()`; it has a feature where if the value passed in i
 integer value, each one is treated as a Unicode rune value and the resulting string is
 the return value.  Any other type is just converted to its default formatted value.
 
-You can also perform conversions on arrays, to a limited degree. This is done with 
+You can also perform conversions on arrays, to a limited degree. This is done with
 the function:
 
 &nbsp;
@@ -659,7 +674,7 @@ the function:
 
 &nbsp;
 
-In all cases, the result is a typed array of the given cast type. Each 
+In all cases, the result is a typed array of the given cast type. Each
 element of the array is converted to the target type and stored in the
 array. So []bool() on an array of integers results in an array of bool
 values, where zeros become false and any other value becomes true. The
@@ -670,12 +685,12 @@ Note the special case of []int("string"). If the parameter is not an
 array, but instead is a string value, the resulting []int array contains
 each rune from the original string.
 
-
 ### make
+
 The `make` pseudo-function is used to allocate an array, or a channel with
 the capacity to hold multiple messages. This is called a pseudo-function
 because part of the parameter processing is handled by the compiler to
-identify the type of the array or channel to create. 
+identify the type of the array or channel to create.
 
 The first argument must be a data type specification, and the second argument
 is the size of the item (array elements or channel messages)
@@ -683,33 +698,31 @@ is the size of the item (array elements or channel messages)
     a := make([]int, 5)
     b := make(chan, 10)
 
-
 The first example creates an array of 5 elements, each of which is of type `int`,
 and initialized to the _zero value_ for the given type. This could have been
-done by using `a := [0,0,0,0,0]` as a statment, but by using the make() function
+done by using `a := [0,0,0,0,0]` as a statement, but by using the make() function
 you can specify the number of elements dynamically at runtime.
 
 The second example creates a channel object capable of holding up to 10 messages.
-Creating a channel like this is required if the channel is shared among many 
-threads. If a channel variable is declare by default, it holds a single message. 
-This means that before a thread can send a value, another thread must read the 
-value; if there are multiple threads waiting to send they are effectively run 
-one-at-a-time. By creating a channel that can hold multiple messages, up to 10 
-(in the above example) threads could send a message to the channel before the 
+Creating a channel like this is required if the channel is shared among many
+threads. If a channel variable is declare by default, it holds a single message.
+This means that before a thread can send a value, another thread must read the
+value; if there are multiple threads waiting to send they are effectively run
+one-at-a-time. By creating a channel that can hold multiple messages, up to 10
+(in the above example) threads could send a message to the channel before the
 first message was read.
 
-
 &nbsp;
 &nbsp;
 
-# Conditional and Iterative Execution <a name="flowcontrol"></a>
+# Conditional and Iterative Execution <a name="flow-control"></a>
 
-We have discussed how variables are created, and how expressions are 
-used to calculate values based on variables, constant values, and 
-functions. However, most interesting programs require some decision 
-making to control the flow of execution based on the values of 
-variables. This section will describe how to make _either/or_ decisions 
-in the code, and how to execute a block of code repeatedly until a 
+We have discussed how variables are created, and how expressions are
+used to calculate values based on variables, constant values, and
+functions. However, most interesting programs require some decision
+making to control the flow of execution based on the values of
+variables. This section will describe how to make _either/or_ decisions
+in the code, and how to execute a block of code repeatedly until a
 condition is met.
 
 ## If-Else <a name="if"></a>
@@ -721,10 +734,10 @@ The general nature of a conditional `if` statement is
      else 
          <statement>
 
-The `else` clause is optional, as described below. In all cases where 
-the syntax says &lt;statement&gt;, it can be a single statement or a 
-basic block which is a set of statements enclosed in braces ("{" and 
-"}"). By convention, even when there is only a single statement in 
+The `else` clause is optional, as described below. In all cases where
+the syntax says &lt;statement&gt;, it can be a single statement or a
+basic block which is a set of statements enclosed in braces ("{" and
+"}"). By convention, even when there is only a single statement in
 the block, a basic block is used for readability.
 
 Consider the following example code:
@@ -734,45 +747,47 @@ Consider the following example code:
         fmt.Println("Not paid enough!")     (3)
     }                                       (4)
     total = total + salary                  (5)
-This introduces a number of new elements to a program, so let's go 
-over them line-by-line. The numbers is parenthesis are not part of 
+
+
+This introduces a number of new elements to a program, so let's go
+over them line-by-line. The numbers is parenthesis are not part of
 the program, but are used to identify each line of the code.
 
-1. This first line calculates a new value by multiplying the `hours` 
-   times the `salary`, and store it in a new value called `salary`. 
-   This uses an assignment statement; the `:=` indicates the variable 
-   does not already exist and will be created by this operation. We 
-   assume the values of `hours` and `wage` were calculated already in 
+1. This first line calculates a new value by multiplying the `hours`
+   times the `salary`, and store it in a new value called `salary`.
+   This uses an assignment statement; the `:=` indicates the variable
+   does not already exist and will be created by this operation. We
+   assume the values of `hours` and `wage` were calculated already in
    the program.
 
 2. This statement performs a conditional evaluation. After the `if`
-   statement, there is a relational expresssion thta can be converted 
+   statement, there is a relational expression that can be converted
    to a boolean value. In this case, if `salary` has a value less than
-   `100.0` then the code will execute some additional statement(s). 
-   After the expression, the `{` character defines the start of a 
-   _basic block_ which is a group of statements that are all executed 
-   together. 
+   `100.0` then the code will execute some additional statement(s).
+   After the expression, the `{` character defines the start of a
+   _basic block_ which is a group of statements that are all executed
+   together.
 
-3. If salary is less than 100.0, then the fmt.Println() operation is 
-   performed. Don't worry that we haven't talked about this yet; its 
-   covered below in the section on the `fmt` package, but it is enough 
-   to know that this produces a line of output with the string 
-   `Not paid enough!`. If, however, the value of `salary` is not less 
-   than 100.0, then the basic block is not executed, and the program 
-   continues with the statement after the block. 
+3. If salary is less than 100.0, then the fmt.Println() operation is
+   performed. Don't worry that we haven't talked about this yet; its
+   covered below in the section on the `fmt` package, but it is enough
+   to know that this produces a line of output with the string
+   `Not paid enough!`. If, however, the value of `salary` is not less
+   than 100.0, then the basic block is not executed, and the program
+   continues with the statement after the block.
 
-4. The `}` character defines the end of the basic block. If the `if` 
-   statement condition is not met, execution continues after this 
+4. The `}` character defines the end of the basic block. If the `if`
+   statement condition is not met, execution continues after this
    end-of-block indicator.
 
-5. This statement will be executed next, regardless of whether 
-   `salary` was less than 100.0 or not. This statement updates the 
+5. This statement will be executed next, regardless of whether
+   `salary` was less than 100.0 or not. This statement updates the
    value of `total` to be the sum of `total` and the `salary`.
 
-Instead of having the `if` statement advance to the next statement 
-if the condition is not true, a second _basic block_ can be defined 
-that has the statements to execute if teh condition is false. That 
-is, the result of the expression will result in one or the other of 
+Instead of having the `if` statement advance to the next statement
+if the condition is not true, a second _basic block_ can be defined
+that has the statements to execute if teh condition is false. That
+is, the result of the expression will result in one or the other of
 two basic blocks being executed.
 
     salary := hours * wage
@@ -782,19 +797,19 @@ two basic blocks being executed.
         scale = "large"
     }
 
-
-In this example, after calculating a value for `salary`, it is 
-compared to see if it is less than 100. If so, then the value 
-`scale` is set to the value `"small"`. But if the value of `salary` 
-is not less than 100, the value of `scale` is set to `"large"`. 
-Regardless of which basic block was executed, after the block 
+In this example, after calculating a value for `salary`, it is
+compared to see if it is less than 100. If so, then the value
+`scale` is set to the value `"small"`. But if the value of `salary`
+is not less than 100, the value of `scale` is set to `"large"`.
+Regardless of which basic block was executed, after the block
 executes, the program resumes with the next statement after the
  `if` statements.
 
-## For _condition_ <a name="forcond"></a>
-The simplest form of iterative execution (also referred to as a 
-"loop") is the `for` statement, followed by a condition, and a 
-statement or basic block that is executed as long as the condition 
+## For _condition_ <a name="for-conditional"></a>
+
+The simplest form of iterative execution (also referred to as a
+"loop") is the `for` statement, followed by a condition, and a
+statement or basic block that is executed as long as the condition
 is true.
 
      for <condition>
@@ -809,48 +824,48 @@ Here is an example
     }                           (5)
 
 1. This line initializes variable `value` to an integer zero.
-2. The `for` statement specifies that as long as the `value` 
-   variable contains a number less than `5` the following basic 
+2. The `for` statement specifies that as long as the `value`
+   variable contains a number less than `5` the following basic
    block will be executed over and over.
 3. This line of the basic block prints the current `value`
-4. This line increments the variable by adding one to itself. 
+4. This line increments the variable by adding one to itself.
    This causes `value` to increase each time the loop runs.
-5. This is the end of the basic block describing the body of 
+5. This is the end of the basic block describing the body of
    the loop that will execute until the condition is no longer true.
 
-This program results in the numbers `0` through `4` being printed 
-to the output. When `value` is incremented to be the value `5`, 
-the condition on line #2 is no longer true, and the loop stops 
+This program results in the numbers `0` through `4` being printed
+to the output. When `value` is incremented to be the value `5`,
+the condition on line #2 is no longer true, and the loop stops
 executing, and the program will continue with whatever follows line 5.
 
-Note that in this example, without line number 4 the program would 
-run forever, because the variable `value` would be initialized to 
+Note that in this example, without line number 4 the program would
+run forever, because the variable `value` would be initialized to
 zero but then never change, so the condition will always be true.
 
+## For _index_ <a name="for-index"></a>
 
-## For _index_ <a name="forindex"></a>
-You can create a `for` loop that explicitly specifies an expression 
-that defines the starting value, ending condition, and how the value 
-changes with each iteration of a loop. For example, 
+You can create a `for` loop that explicitly specifies an expression
+that defines the starting value, ending condition, and how the value
+changes with each iteration of a loop. For example,
 
      for i := 0; i &lt; 10; i = i + 1 {
          fmt.Println(i)
      }
 
-This loop will print the values `0` through `9` to the standard 
-console. The index variable `i` is first initialized with the value 
-`0` from the first `for` statement clause. The second statement 
-clause describes the condition that must be true for the loop body 
-to be executed. This is evaluated before the loop body is run each 
-time. The third clause is the statement that modifies the index 
-value _after_ the body of the loop is run but _before_ the  next 
+This loop will print the values `0` through `9` to the standard
+console. The index variable `i` is first initialized with the value
+`0` from the first `for` statement clause. The second statement
+clause describes the condition that must be true for the loop body
+to be executed. This is evaluated before the loop body is run each
+time. The third clause is the statement that modifies the index
+value _after_ the body of the loop is run but _before_ the  next
 evaluation of the clause that determines if the loop continues.
 
-The variable `i` in the above example is scoped to the `for` 
-statement and it's loop body. That is, after this loop runs, the 
-variable `i` will no longer exist because it was created (using 
+The variable `i` in the above example is scoped to the `for`
+statement and it's loop body. That is, after this loop runs, the
+variable `i` will no longer exist because it was created (using
 the `:=` operator) in the scope of the loop. You can use a simple
- assignment (`=`) of an existing variable if you want the updated 
+ assignment (`=`) of an existing variable if you want the updated
  index value available after the loop body ends.
 
     var i int
@@ -859,14 +874,15 @@ the `:=` operator) in the scope of the loop. You can use a simple
     }
     fmt.Println("The final value of i is ", i)
 
-This example uses a variable that already exists outside the scope 
-of the `for` loop, so the value continues to exist after the loop 
-runs. This allows the final statement to print the value of the 
+This example uses a variable that already exists outside the scope
+of the `for` loop, so the value continues to exist after the loop
+runs. This allows the final statement to print the value of the
 index variable that terminated the loop.
 
-## For _range_ <a name="forrange"></a>
-You can create a loop that indexes over all the values in an array, 
-in sequential order. The index value is the value of the array 
+## For _range_ <a name="for-range"></a>
+
+You can create a loop that indexes over all the values in an array,
+in sequential order. The index value is the value of the array
 element. For example,
 
      ids := [ 101, 143, 202, 17]
@@ -874,35 +890,35 @@ element. For example,
         fmt.Println("Array member ", i, " is ", v)
      }
 
-This example will print a line for each value in the array, in the 
-order they appear in the array.  During each iteration of the loop, 
-the variable `i` will contain the numerical array index  and the 
-variable `v` will contain the actual values from the array for each 
-iteration of the loop body. During execution of the loop body, the 
-value of `i` (the _index_ variable)` contains the next value of the 
-array for each iteration of the loop.  You can also specify a 
-second value, in which case the loop defines an index number as well 
+This example will print a line for each value in the array, in the
+order they appear in the array.  During each iteration of the loop,
+the variable `i` will contain the numerical array index  and the
+variable `v` will contain the actual values from the array for each
+iteration of the loop body. During execution of the loop body, the
+value of `i` (the _index_ variable)` contains the next value of the
+array for each iteration of the loop.  You can also specify a
+second value, in which case the loop defines an index number as well
 as index value, as in:
 
     for _, v := range ids {
         fmt.Println(v)
     }
 
-In this example, for each iteration of the loop, the variable `v` 
-will contain the actual values from the array for each iteration of 
-the loop body. By using the reserved name `_` for the index variable, 
-the index value for each loop is not available.  Similarly, you can 
+In this example, for each iteration of the loop, the variable `v`
+will contain the actual values from the array for each iteration of
+the loop body. By using the reserved name `_` for the index variable,
+the index value for each loop is not available.  Similarly, you can
 use the range to get all the index values of an array:
 
     for i := range ids {
         fmt.Println(v)
     }
 
-In this case, if the array `ids` has 5 values, then this will print 
-the numbers 1 through 5. The value of the array can be accessed inside 
+In this case, if the array `ids` has 5 values, then this will print
+the numbers 1 through 5. The value of the array can be accessed inside
 the body of the loop as `ids[i]`.
 
-Similarly, you can use the `range` construct to step through the values 
+Similarly, you can use the `range` construct to step through the values
 of a map data type. For example,
 
     inventory := map[string]int{}
@@ -914,11 +930,11 @@ of a map data type. For example,
         fmt.Println("There are ", count, " ", product, " in stock.")
     }
 
-When the loop runs, the value of `product` is set to each key in the 
-map, and `count` is set to the value associated with that key. These 
-variables exist only within the body of the loop. Note that if you 
-omit either one and use the `_` variable instead, that item (key or 
-value) is not read from the map. You can use this to generate a list 
+When the loop runs, the value of `product` is set to each key in the
+map, and `count` is set to the value associated with that key. These
+variables exist only within the body of the loop. Note that if you
+omit either one and use the `_` variable instead, that item (key or
+value) is not read from the map. You can use this to generate a list
 of the keys, for example:
 
     names := []string{}
@@ -927,13 +943,13 @@ of the keys, for example:
     }
     fmt.Println("The products are all named", names)
 
-This creates an array of string values, and stores the name of each 
+This creates an array of string values, and stores the name of each
 key in the list by appending them.
 
+## `break` and `continue` <a name="break-continue"></a>
 
-## `break` and `continue` <a name="breakcont"></a>
-Sometimes when running an loop, you may wish to change the flow of 
-execution in the loop based on conditions unrelated to the index 
+Sometimes when running an loop, you may wish to change the flow of
+execution in the loop based on conditions unrelated to the index
 variable. For example, consider:
 
     for i := 1; i &lt; 10; i = i + 1 {
@@ -945,72 +961,72 @@ variable. For example, consider:
         }
         fmt.Println("The value is ", i)  (5)
     }
-    
-This loop will print the values 1, 2, 3, 4, and 6. Here's what 
+
+This loop will print the values 1, 2, 3, 4, and 6. Here's what
 each statement is doing:
 
-1. During each execution of the loop body, the index value is 
-compared to 5. If it is equal to 5 (using the `==` operator), 
-the conditional statment is executed.
-2. The `continue` statement causes control to branch back to the 
-top of the loop. The index value is incremented, and then tested 
-again to see if the loop should run again. The `continue` statement 
-means "stop executing the rest of this loop body, but continue 
+1. During each execution of the loop body, the index value is
+compared to 5. If it is equal to 5 (using the `==` operator),
+the conditional statement is executed.
+2. The `continue` statement causes control to branch back to the
+top of the loop. The index value is incremented, and then tested
+again to see if the loop should run again. The `continue` statement
+means "stop executing the rest of this loop body, but continue
 looping".
-3. Similarly, the index is compared to 7, and if it equal to 7 then 
-the conditional statment is executed.
-4. The `break` statement exits the loop entirely. It means "without 
+3. Similarly, the index is compared to 7, and if it equal to 7 then
+the conditional statement is executed.
+4. The `break` statement exits the loop entirely. It means "without
 changing any of the values, behave as if the loop condition had been met and resume execution after the loop body.
 
 &nbsp;
 &nbsp;
 
+# User Function Definitions <a name="user-functions"></a>
 
-# User Function Definitions <a name="userfuncs"></a>
-In addition to the [Builtin Functions](#builtinfunctions) listed 
-previously, the user program can create functions that can be 
-executed from the _Ego_ program. Just like variables, functions 
-have scope, and can only be accessed from within the program in 
-which they are declared. Most functions are defined in the program 
+In addition to the [Builtin Functions](#builtinfunctions) listed
+previously, the user program can create functions that can be
+executed from the _Ego_ program. Just like variables, functions
+have scope, and can only be accessed from within the program in
+which they are declared. Most functions are defined in the program
 file before the body of the program.
 
-## The `func` Statement <a name="funcstmt"></a>
+## The `func` Statement <a name="function-statement"></a>
 
-Use the `func` statement to declare a function. The function must 
-have a name, optionally a list of parameter values that are passed 
-to the function, and a return type that indicates what the function 
-is expected to return. This is followed by the function body which 
-is executed, with the function arguments all available as local 
+Use the `func` statement to declare a function. The function must
+have a name, optionally a list of parameter values that are passed
+to the function, and a return type that indicates what the function
+is expected to return. This is followed by the function body which
+is executed, with the function arguments all available as local
 variables.  For example,
 
-    func addem( v1 float, v2 float) float {
+    func addValues( v1 float, v2 float) float {
         x := v1 + v2
         return x
     }
 
     // Calculate what a variable value (10.5) added to 3.8 is
     a := 10.5
-    x := addem(a, 3.8)
+    x := addValues(a, 3.8)
     fmt.Println("The sum is ", x)
 
-In this example, the function `addem` is created. It accepts two 
-parameters; each is of type float in this example. The parameter 
-values actually passed in by the caller will be stored in local 
-variables v1 and v2. The function defintiion also indicates that 
+In this example, the function `addValues` is created. It accepts two
+parameters; each is of type float in this example. The parameter
+values actually passed in by the caller will be stored in local
+variables v1 and v2. The function definition also indicates that
 the result of the function will also be a float value.
 
-Parameter types and return type cause type _coercion_ to occur, 
-where values are converted to the required type if they are not 
+Parameter types and return type cause type _coercion_ to occur,
+where values are converted to the required type if they are not
 already the right value type. For example,
 
-    y := addem("15", 2)
+    y := addValues("15", 2)
 
-Would result in `y` containing the floating point value 17.0. 
-This is because the string value "15" would be converted to a 
-float value, and the integer value 2 would be converted to a 
-float value before the body of the function is invoked. So `
-type(v1)` in the function will return "float" as the result, 
-regardless of the type of the value passed in when the function 
+Would result in `y` containing the floating point value 17.0.
+This is because the string value "15" would be converted to a
+float value, and the integer value 2 would be converted to a
+float value before the body of the function is invoked. So
+`type(v1)` in the function will return "float" as the result,
+regardless of the type of the value passed in when the function
 was called.  
 
 The `func` statement allows for a special data type `interface{}`
@@ -1018,32 +1034,33 @@ The `func` statement allows for a special data type `interface{}`
   If the function body needs to know the actual type of the value
    passed, the `type()` function would be used.
 
-A function that does not return a value at all should omit the 
+A function that does not return a value at all should omit the
 return type declaration.
 
-## The `return` Statement  <a name="returnstmt"></a>
+## The `return` Statement  <a name="return-statement"></a>
+
 When a function is ready to return a value the `return` statement
-is used. This identifies an expression that defines what is to be 
-returned. The `return` statement results in this expression being 
-_coerced_ to the data type named in the `func` statement as the 
+is used. This identifies an expression that defines what is to be
+returned. The `return` statement results in this expression being
+_coerced_ to the data type named in the `func` statement as the
 return value.  If the example above had a `string` result type,
 
-    func addem( v1 float, v2 float) string {
+    func addValues( v1 float, v2 float) string {
         x := v1 + v2
         return x
     }
 
-    y := addem(true, 5)
+    y := addValues(true, 5)
 
-The resulting value  for `y` would be the string "6". This is 
+The resulting value  for `y` would be the string "6". This is
 because not only will the boolean `true` value and the integer
- 5 be converted to floating point values, bue the result will 
+ 5 be converted to floating point values, bue the result will
  be converted to a string value when the function exits.
 
-Note that if the `func` statement does not specify a type for 
+Note that if the `func` statement does not specify a type for
 the result, the function is assumed not to return a result at
- all. In this case, the `return` statement cannot specify a 
- function result, and if the `return` statement is the last 
+ all. In this case, the `return` statement cannot specify a
+ function result, and if the `return` statement is the last
  statement then it is optional. For example,
 
     func show( first string, last string) {
@@ -1053,27 +1070,28 @@ the result, the function is assumed not to return a result at
 
     show("Bob", "Smith")
   
-This example will run the function `show` with the two string 
-values, and printe the formatted message "The name is Bob Smith". 
-However, the function doesn't return a value (none specified 
-after the parameter list before the function body) so there is 
-no `return` statement needed in this case. 
+This example will run the function `show` with the two string
+values, and print the formatted message "The name is Bob Smith".
+However, the function doesn't return a value (none specified
+after the parameter list before the function body) so there is
+no `return` statement needed in this case.
 
-Also note that the invocation of the `show` function does not 
-specify a variable in which to store the result, becuase there 
+Also note that the invocation of the `show` function does not
+specify a variable in which to store the result, because there
 is none. In this way you can see that a function can be called
- with a value that can be used in an assignment statement or 
+ with a value that can be used in an assignment statement or
  an expression, or just called and the result value ignored.
-  Even if the `show` function returned a value, the invocation 
+  Even if the `show` function returned a value, the invocation
   ignores the result and it is discarded.
 
-## The `defer` Statement  <a name="deferstmt"></a>
-Sometimes a function may have multiple places where it returns 
-from, but always wants to execute the same block of code to 
+## The `defer` Statement  <a name="defer-statement"></a>
+
+Sometimes a function may have multiple places where it returns
+from, but always wants to execute the same block of code to
 clean up a function (for example, closing a file that had been
  opened). For example,
 
-    func getname() bool {
+    func getName() bool {
         f := io.Open("name")
         defer io.Close(f)
 
@@ -1084,41 +1102,42 @@ clean up a function (for example, closing a file that had been
         return true
     }
 
-In this example, the function opens a file (the `io` package is 
-discussed later). Because we have opened a file, we want to be 
+In this example, the function opens a file (the `io` package is
+discussed later). Because we have opened a file, we want to be
 sure to close it when we're done. This function has two `return`
- statements. We could code it such that before each one, we also 
+ statements. We could code it such that before each one, we also
  call the io.Close() function each time. But the `defer` statement
-  allows the function to specify a statement that will be executed 
-  _whenever the function actually returns_ regardless of which 
+  allows the function to specify a statement that will be executed
+  _whenever the function actually returns_ regardless of which
   branch(es) through the conditional code are executed.
 
-Each `defer` statement identifies a statement or a _basic block_ 
-of statements (enclosed in "{" and "}") to be executed. If there 
-are multiple `defer` statements, they are all executed in the 
-reverse order that they were defined. So the first `defer` 
-statement is always the last one executed before the function 
+Each `defer` statement identifies a statement or a _basic block_
+of statements (enclosed in "{" and "}") to be executed. If there
+are multiple `defer` statements, they are all executed in the
+reverse order that they were defined. So the first `defer`
+statement is always the last one executed before the function
 returns.
 
 Note that `defer` statements are executed when the function comes
- to the end of the function body even if there is no `return` 
- statement, as in the case of a function that does not return a 
+ to the end of the function body even if there is no `return`
+ statement, as in the case of a function that does not return a
  value.
 
-## Function Variable Values  <a name="funcvars"></a>
+## Function Variable Values  <a name="function-variables"></a>
+
 Functions can be values themselves. For example, consider:
 
     p := fmt.Println
 
-This statement gets the value of the function `fmt.Println` and 
-stores it in the variable p. From this point on, if you wanted 
-to call the package function that prints items to the console, 
-instead o fusing `fmt.Println` you can use the variable `p` to 
+This statement gets the value of the function `fmt.Println` and
+stores it in the variable p. From this point on, if you wanted
+to call the package function that prints items to the console,
+instead o fusing `fmt.Println` you can use the variable `p` to
 invoke the function:
 
     p("The answer is", x)
 
-This means that you can pass a function as a parameter to another 
+This means that you can pass a function as a parameter to another
 function. Consider,
 
     func show( fn interface{}, name string) {
@@ -1127,17 +1146,17 @@ function. Consider,
     p := fmt.Println
     show(p, "tom")
 
-In this example, the `show` function has a first parameter that 
-is a function, and a second parameter that is a string.  In the 
-body of the function, the variable `fn` is used to call the 
-`fmt.Println` function. You might use this if you wanted to send 
+In this example, the `show` function has a first parameter that
+is a function, and a second parameter that is a string.  In the
+body of the function, the variable `fn` is used to call the
+`fmt.Println` function. You might use this if you wanted to send
 output to either the console (using `fmt.Println`) or a file
  (using `io.WriteString`). The calling code could make the choice
-  of which function is appropriate, and pass that directly into 
+  of which function is appropriate, and pass that directly into
   the `show` function which makes the call.
 
 You can even create a function literal value, which defines the
- body of the function, and either store it in a variable or pass 
+ body of the function, and either store it in a variable or pass
  it as a parameter. For example,
 
     p := func(first string, last string) string {
@@ -1146,13 +1165,13 @@ You can even create a function literal value, which defines the
 
     name := p("Bob", "Smith")
 
-Note that when defined as a function literal, the `func` keyword 
-is not followed by a function name, but instead contains the 
+Note that when defined as a function literal, the `func` keyword
+is not followed by a function name, but instead contains the
 parameter list, return value type, and function body directly.  
 There is no meaningful difference between the above and declaring
  `func p(first string...` except that the variable `p` has scope
   that might be limited to the current _basic block_ of code.  
-  You can even define a function as a parameter to another 
+  You can even define a function as a parameter to another
   function directly, as in:
 
     func compare( fn interface{}, v1 interface{}, v2 interface) bool {
@@ -1161,33 +1180,34 @@ There is no meaningful difference between the above and declaring
 
     x := compare( func(a1 bool, a2 bool) bool { return a1 == a2 }, true, false)
 
-This somewhat artificial example shows a function named `compare` 
-that has a first parameter that will be a function name, and two 
-additional paramters of unknown type. The invocation of `compare`
+This somewhat artificial example shows a function named `compare`
+that has a first parameter that will be a function name, and two
+additional parameters of unknown type. The invocation of `compare`
 passes a function literal as the first parameter, which is a
 function that compares boolean values. Finally, the actual two
-boolean values are passed as the second and third parameters 
-in the `compare` function call. The `compare` function will 
-immediately invoke the function literal (stored in `fn`) to compare 
+boolean values are passed as the second and third parameters
+in the `compare` function call. The `compare` function will
+immediately invoke the function literal (stored in `fn`) to compare
 two boolean value, and return the result.
 
-A more complex example might be a function whose job is to sort a 
-list of values. Sorting a list of scalar values is available as 
-built-in function to the sort package, but sorting a list of 
-complex types can't be done this way. You could write a sort function, 
-that accepts as a parameter the comparision operation, and that 
-function knows how to decide between two values as to which one sorts 
-first. This lets the sort function you create be generic without regard 
+A more complex example might be a function whose job is to sort a
+list of values. Sorting a list of scalar values is available as
+built-in function to the sort package, but sorting a list of
+complex types can't be done this way. You could write a sort function,
+that accepts as a parameter the comparison operation, and that
+function knows how to decide between two values as to which one sorts
+first. This lets the sort function you create be generic without regard
 for the data types.
 
-## Function Recivers  <a name="funcreceivers"></a>
-A function can be written such that it can only be used when 
+## Function Receivers  <a name="function-receivers"></a>
+
+A function can be written such that it can only be used when
 referenced via a variable of a specific type. This type is created
 by the user, and then the functions that  are written to operate on
 that type use any variable of the type as a _receiver_, which means
-that variable in the function gets the value of the item in the 
-function invocation without it being an explicit parameter. This 
-also allows multiple functions of the same name to exist which 
+that variable in the function gets the value of the item in the
+function invocation without it being an explicit parameter. This
+also allows multiple functions of the same name to exist which
 just reference different types.  For example,
 
     type Employee struct {                        (1)
@@ -1206,26 +1226,26 @@ just reference different types.  For example,
         
     fmt.Println("The name is ", foo.Name())       (4)
 
-Let's take a look more closely at this example to see what's going 
+Let's take a look more closely at this example to see what's going
 on.
 
-1. This defines the type, called `Employee` which has a number of 
+1. This defines the type, called `Employee` which has a number of
    fields associated with it.
-2. This declares a function that has a variable `e` of type 
+2. This declares a function that has a variable `e` of type
    `Employee` as it's receiver. The
    job of this function is to form a string of the employee name.
    Note that the name of the variable is not a parameter, but is
    considered the receiver.
 
-3. This creates an _instance_ of the type `Employee` and stores 
+3. This creates an _instance_ of the type `Employee` and stores
    it in a variable `foo`.
-4. This prints out a label and the value of the `Name` function 
+4. This prints out a label and the value of the `Name` function
    when called using `foo` as
-   the variable instance. The function `Name` cannot be called 
-   directly, it is an unknown symbol unless called with a 
+   the variable instance. The function `Name` cannot be called
+   directly, it is an unknown symbol unless called with a
    receiver of type `Employee` in its invocation.
 
-In the declaration line line (2) above, you could use an asterisk 
+In the declaration line line (2) above, you could use an asterisk
 ("*") character before the receiver's type of `Employee`, as in:
 
     func (e *Employee) SetName(f string, l string)  { 
@@ -1233,31 +1253,31 @@ In the declaration line line (2) above, you could use an asterisk
         e.last = l
     }
 
-This function can be used to set the names in the receiver 
-variable. If the function was declared without the "*" marker, 
-the receiver would actually only be a copy of the instance. So 
-the function `Name()` above can read any of the values from the 
-receiver, if it sets them it is changing a copy of the instance 
-that only exists while the function is executing, and the 
+This function can be used to set the names in the receiver
+variable. If the function was declared without the "*" marker,
+the receiver would actually only be a copy of the instance. So
+the function `Name()` above can read any of the values from the
+receiver, if it sets them it is changing a copy of the instance
+that only exists while the function is executing, and the
 values in the `foo` instance are not changed.
 
-By using the "*" as in the `SetName` example, the receiver `e` 
-isn't a copy of the instance, it is the actual instance. So 
-changes made to the reciever `e` will actually be made in the
-instance variable `foo`. An easy way to remember this is that, 
-without the "*", the receiver does not change the instance that 
+By using the "*" as in the `SetName` example, the receiver `e`
+isn't a copy of the instance, it is the actual instance. So
+changes made to the receiver `e` will actually be made in the
+instance variable `foo`. An easy way to remember this is that,
+without the "*", the receiver does not change the instance that
 makes the call, but with the "*" then changes will affect
 the instance that makes the call.
 
-Because specifying a receiver variable and type means the name 
-of the function is scoped to the type itself, you can have 
+Because specifying a receiver variable and type means the name
+of the function is scoped to the type itself, you can have
 multiple functions with the same name that each has a
-different receiver. An example would be to have each type 
-define a `String()` method whose job is to format the information 
-in the value to be read by a human. The program can then be 
-written such that it doesn't matter was the type of an instance 
-variable. By calling the `String()` function from any instance, 
-it will execute the _appropriate_ `String()` function based on 
+different receiver. An example would be to have each type
+define a `String()` method whose job is to format the information
+in the value to be read by a human. The program can then be
+written such that it doesn't matter was the type of an instance
+variable. By calling the `String()` function from any instance,
+it will execute the _appropriate_ `String()` function based on
 the type.
 
 Note that types can be nested. Consider this example:
@@ -1282,48 +1302,47 @@ Note that types can be nested. Consider this example:
         Manager: false
     }
 
-The type `Employee` contains within it an item `Info` which is 
-of another type, `EmpInfo`. Note that when initializing the 
-fields of the newly-created instance variabel `e`, you must 
-identify the type name for the `Info` field explicitly, since 
-it acts as an instance generator itself for an instance of 
-`EmpInfo` which is then stored in the field `Info` in the 
+The type `Employee` contains within it an item `Info` which is
+of another type, `EmpInfo`. Note that when initializing the
+fields of the newly-created instance variable `e`, you must
+identify the type name for the `Info` field explicitly, since
+it acts as an instance generator itself for an instance of
+`EmpInfo` which is then stored in the field `Info` in the
 structure.
-
 
 &nbsp;
 &nbsp;
 
 # Error Handling <a name="errors"></a>
 
-There are two kinds of errors that can be managed in an 
+There are two kinds of errors that can be managed in an
 _Ego_ program.
 
-The first are user- or runtime-generated errors, which 
-are actually values of a data type called `error`. You can 
-create a new error variable using the `error()` function, 
+The first are user- or runtime-generated errors, which
+are actually values of a data type called `error`. You can
+create a new error variable using the `error()` function,
 as in:
 
     if v == 0 {
         return error("invalid zero value")
     }
 
-This code, executed in a function, would return a value 
-of type `error` that, when printed, indicates the text 
-string given. An `error` can also have value `nil` which 
-means no error is stored in the value. Some runtime 
-functions will return an error value, and your code can 
-check to see if the result is nil versus being an actual 
+This code, executed in a function, would return a value
+of type `error` that, when printed, indicates the text
+string given. An `error` can also have value `nil` which
+means no error is stored in the value. Some runtime
+functions will return an error value, and your code can
+check to see if the result is nil versus being an actual
 error.
 
-The second kind are panic error, which are errors generated 
-by _Ego_ itself while running your program. For example, an 
+The second kind are panic error, which are errors generated
+by _Ego_ itself while running your program. For example, an
 attempt to divide by zero generates a panic error. By default,
-this causes the program to stop running and an error message 
+this causes the program to stop running and an error message
 to be printed out.
 
+## `try` and `catch` <a name="try-catch"></a>
 
-## `try` and `catch` <a name="trycatch"></a>
 You can use the `try` statement to run a block of code (in the same
 scope as the enclosing statement) and catch any panic errors that
 occur during the execution of that block. The error causes the code
@@ -1346,7 +1365,7 @@ divide-by-zero error. When this happens, the remainder of the statements
 
 You can optionally specify the name of a variable that will be created within
 the catch block that contains the actual error encountered. Do this by
-adding the name in parenthesis before the catch block. This can be used 
+adding the name in parenthesis before the catch block. This can be used
 in the `catch` block if it needs handle more than one possible error. For
 example:
 
@@ -1360,16 +1379,15 @@ example:
 This can be used in the `catch` block if it needs handle more than one possible error, for example.
 
 ## Conditional expression error handling
+
 If you need to catch a possible error in an expression, you can
 use a short-form of the `try` and `catch` that works within an
 expression.  Consider the following example:
 
-    
     emp := { name: "Donna", age: 32 }
     
     hours := 40
     pay := emp.wage * hours
-    
 
 This code will generate an error on the statement that attempts
 to reference the structure member `wage`, which does not exist.
@@ -1378,55 +1396,52 @@ operation that might result in an error (division by zero, perhaps)
 that you have a useful default for, use the conditional expression
 syntax:
 
-
-    
     emp := { name: "Donna", age: 32 }
     
     hours := 40
     pay := ?emp.wage:25.0 * hours
 
 The "?" indicates that the following expression component (up to the ":")
-is wrapped in a try/catch block. If no error occurs, the expression is 
+is wrapped in a try/catch block. If no error occurs, the expression is
 used as specified. But if there is an error ("no such structure field",
-for example) then the exprssion after the ":" is used instead. So in the
+for example) then the expression after the ":" is used instead. So in the
 above example, because there isn't a `wage` field in this employee's
 record, the program assumes a wage of $25/hour in the calculation of
 the pay.
 
-
 ## Signalling Errors <a name="signalling"></a>
 
-You can cause a panic error to be signalled from within your 
-code, which would optionally be caught by a try/catch block, 
+You can cause a panic error to be signalled from within your
+code, which would optionally be caught by a try/catch block,
 using the @error directive:
 
     if x == 0 {
         @error "Invalid value for x"
     }
 
-When this code runs, if the value of `x` is zero, then a panic 
-error is signalled with an error message of "Invalid value 
-for x". This error is indistinguishable from a panic error 
-generated by _Ego_ itself. If there is a `catch{}` block, the 
-value of the `_error_` variable will be the string "Invalid 
+When this code runs, if the value of `x` is zero, then a panic
+error is signalled with an error message of "Invalid value
+for x". This error is indistinguishable from a panic error
+generated by _Ego_ itself. If there is a `catch{}` block, the
+value of the `_error_` variable will be the string "Invalid
 value for x".
-
 
 &nbsp;
 &nbsp;
 
 # Threads <a name="threads"></a>
-Like it's inspiration, _Ego_ supports the idea of "go routines" which are threads 
+
+Like it's inspiration, _Ego_ supports the idea of "go routines" which are threads
 that can be started by an _Ego_ program, and which run asynchronously. A go routine
 is always a function invocation, or a function constant value. That function is
-started on a parallel thread, and will exeute independently of the main program.
+started on a parallel thread, and will execute independently of the main program.
 
-You can use _channels_ as a communiation mechanism to communicate between the
+You can use _channels_ as a communication mechanism to communicate between the
 go routines and the main program.
 
-## Go 
-Use the `go` statement to start a thread. Here is a very simple example:
+## Go
 
+Use the `go` statement to start a thread. Here is a very simple example:
 
     func beepLater(duration string) {
         time.Sleep(duration)
@@ -1439,19 +1454,20 @@ This example defines a function `beepLater` which is given a duration
 string expression. The function waits for that duration, and then prints
 the message to the console.
 
-The `go` statement starts this thread, passing it the parameters from 
+The `go` statement starts this thread, passing it the parameters from
 the current scope, which are copied to the thread and stored in the
 `duration` variable on that thread.
 
 Note that this isn't a very interesting example, but worse; it shows an
 issue with running go routines. If the program above is the only code
 being executed in the program, it will produce no output. This is because
-the main program ends (complets all statements) and that terminates
+the main program ends (completes all statements) and that terminates
 the _Ego_ session, even if a thread is still running. The thread is not
 guaranteed to be allowed to run to completion if the program that
 starts it finishes.
 
 ## Synchronization
+
 Ego provides several data types used to synchronize execution of competing
 threads, and to assist in managing access to resources in a predictable
 way if needed.
@@ -1461,13 +1477,12 @@ way if needed.
 | sync.Mutex | A simple mutual exclusion lock for serializing access to a resource |
 | sync.WaitGroup | A way to launch a varying number of go routines and wait for them to complete |
 
-
 See the detailed descriptions in the later sections on the `sync` package
 for more information.
 
-
 ## Channels
-We address this synchronization issue (and also allow data to be 
+
+We address this synchronization issue (and also allow data to be
 passed _back_ from the go routine) using channels. Here's a modified
 version of the program:
 
@@ -1499,12 +1514,11 @@ printed.
 In this way, the go function performs its work, and then sends the
 result back through the channel. The main program will wait for data
 to be stored in the channel before proceeding. The go routine can
-send more than one data item into the channel, simply by issuing 
-more channel write operations. The reciever can either know how 
+send more than one data item into the channel, simply by issuing
+more channel write operations. The receiver can either know how
 many times to read the channel, or can use a `for...range` operation
 on the channel to simply keep receiving data until done.
 
-    
     func beepLater(count int, c chan) {
         for i := 0; i &lt; int; i = i + 1 {
             c <- "Item " + string(i)
@@ -1518,30 +1532,31 @@ on the channel to simply keep receiving data until done.
     }
 
 In this case, the caller of the goroutine includes a count of the
-number of messages to send, and that function sends that many 
-mesages. The main program uses the `range` operation on the channel,
-which means "_as many as you recieve_" where each message is stored
+number of messages to send, and that function sends that many
+messages. The main program uses the `range` operation on the channel,
+which means "_as many as you receive_" where each message is stored
 in `msg`. The loop will terminate when the goroutine stops executing.
 The goroutine can also explicitly tell the main program that it is
 done by using the `close()` function on the channel. When this happens,
 the range loop exits. Note that both the main program and the goroutine
 will continue executing to the end even after the channel is closed.
 
-
 &nbsp;
 &nbsp;
 
 # Packages <a name="packages"></a>
+
 Packages are a mechanism for grouping related functions together. These
 functions are accessed using _dot notation_ to reference the package name
 and then locate the function within that package to call.
 
 Packages may be available to your program automatically if the `ego.compiler.auto-import`
 preference is set to true. If not, you must import each package before you can use it.
-Additionally, packages can be created by the user to extend the runtiem support for
+Additionally, packages can be created by the user to extend the runtime support for
 _Ego_; this is covered later.
 
 ## import <a name="import"></a>
+
 Use the `import` statement to include other files in the compilation
 of this program. The `import` statement cannot appear within any other
 block or function definition. Logically, the statement stops the
@@ -1568,49 +1583,51 @@ Finally, the `import` statement can read an entire directory of source
 files that all contribute to the same package. If the target of the
 import is a directory in the $EGO_PATH/lib location, then all the
 source files within that directory area read and processed as part
-of one package. 
+of one package.
 
 The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages
 by writing your own, as described later in the section on User Packages.
 
 ## db <a name="db"></a>
-The `db` package provides support for accessing a database. Currently, 
-this must be a Postgres database or a database that uses the Postgres 
-wire protocol for communicating. The package has a `New` function which 
+
+The `db` package provides support for accessing a database. Currently,
+this must be a Postgres database or a database that uses the Postgres
+wire protocol for communicating. The package has a `New` function which
 creates a new database client object.
 
-With this object, you can execute a SQL query and get back either a 
-fully-formed array of struct types (for small result sets) or a row 
-scanning object that is used to step through a result set of arbitrary 
+With this object, you can execute a SQL query and get back either a
+fully-formed array of struct types (for small result sets) or a row
+scanning object that is used to step through a result set of arbitrary
 size.
 
 ### db.New("connection-string-url")
-There is a simplified interface to SQL databases available. By 
+
+There is a simplified interface to SQL databases available. By
 default, the only provider supported is Postgres at this time.
 
-The result of the `db.New()` call is a database handle, which can be 
+The result of the `db.New()` call is a database handle, which can be
 used to execute statements or return results from queries.
 
      d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
      r, e := d.QueryResult("select * from foo")
      d.Close()
 
-This example will open a database connection with the specified URL, 
-and perform a query that returns a result set. The result set is an 
-Ego array of arrays, containing the values from the result set. The 
-`QueryResult()` function call always returns all results, so this could be 
-quite large with a query that has no filtering. You can specify p
-arameters to the query as additional argument, which are then
+This example will open a database connection with the specified URL,
+and perform a query that returns a result set. The result set is an
+Ego array of arrays, containing the values from the result set. The
+`QueryResult()` function call always returns all results, so this could be
+quite large with a query that has no filtering. You can specify
+parameters to the query as additional argument, which are then
 substituted into the query, as in:
 
      age := 21
      r, e := d.QueryResult("select member where age >= $1", age)
 
-The parameter value of `age` is injected into the query where the 
-$1 string is found. 
+The parameter value of `age` is injected into the query where the
+$1 string is found.
 
-Once a database handle is created, here are the functions you can 
+Once a database handle is created, here are the functions you can
 call using the handle:
 
 &nbsp;
@@ -1618,7 +1635,7 @@ call using the handle:
 | Function | Description |
 |----------|-------------|
 | d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
-| d.Commit() | Commit the active transation
+| d.Commit() | Commit the active transaction
 | d.Rollback() | Roll back the active transaction
 | d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set.
 | d.Query(q, [, args...]) | Execute a query and return a row set object
@@ -1643,17 +1660,19 @@ without filling up memory with the entire result set at once.
 &nbsp;
 
 ## fmt <a name="fmt"></a>
+
 The `fmt` package contains a function library for formatting and printing output to the
-stdout console. These are generally analagous to the Go functions of the same name. Some
+stdout console. These are generally analogous to the Go functions of the same name. Some
 functions return two values (a result or length, and an error). If the caller does not
 specify that the result is assigned to two variables, then the error is ignored.
 
 Note that only a subset of the equivalent Go functions are supported in _Ego_.
 
 ### fmt.Printf()
+
 The `Printf` function formats one or more values using a format string, and sends the
 resulting string to the standard out. It returns the length in characters of the
-strint written to the output, and an error which will be nil if no error occurred during
+string written to the output, and an error which will be nil if no error occurred during
 format processing.
 
     answer := 42
@@ -1662,16 +1681,17 @@ format processing.
 
 In this example, the format string is processed, and the substitution format operators
 read parameters (in the order encountered) from the call. So the first operator `%s`
-looks for a string value in the variable `kind` and inserts it into the message. It 
+looks for a string value in the variable `kind` and inserts it into the message. It
 uses the second operator `%d` to indicate that it is looking for an integer value which
 is inserted in the string using the value of `answer`.
 
-See the [offical Go documentation](https://golang.org/pkg/fmt/#hdr-Printing) for
+See the [official Go documentation](https://golang.org/pkg/fmt/#hdr-Printing) for
 detailed information on the format operators supported by the fmt package.
 
 ### fmt.Println()
+
 The `Println` function prints one or more items using the default format for their
-data type to the standard out, with a single space placed beteen them. The output
+data type to the standard out, with a single space placed between them. The output
 is followed by a newline character. There are no formatting operations available.
 
     answer := 42
@@ -1681,8 +1701,9 @@ This results in the string `"The answer is 42"` followed by a newline character 
 send to the output console.
 
 ### fmt.Sscanf()
+
 The `Sscanf()` function accepts a string of data, a format specification, and one or
-more pointers to base-type values. The data string is processed using the format 
+more pointers to base-type values. The data string is processed using the format
 specification, and the resulting values are written to the parameter variables.
 The function returns the number of items processed, and any error (such as invalid
 value for a given format).
@@ -1698,7 +1719,7 @@ This is followed by a floating pointer number. These are stored in `age` and `te
 respectively.
 
 Any non-format characters in the format string must be present in the input string
-exactly as shown.  For example, 
+exactly as shown.  For example,
 
     data := "age 35 temp 101.2"
     fmt.Sscanf(data, "age %d temp %f", &age, &temp)
@@ -1721,23 +1742,26 @@ Note that this is a subset of the format operations supported by Go's runtime.
 Also note that _Ego_ does not support a width specification in the format.
 
 ### fmt.Sprintf()
+
 The `Sprintf()` function works exactly the same as the `Printf{}` function, but returns
 the formatted string as it's result value, instead of printing it anywhere. This lets
-you use the formatting operations to construct a string value that includes other 
+you use the formatting operations to construct a string value that includes other
 values in the string.
 
     v := "foobar"
     msg := fmt.Sprintf("Unrecognized value %s")
-    
+
 This creates a string named `msg` which contains "Unrecognized value foobar" as it's
 contents. The value is not printed to the console as part of this operation.
 
 ## io <a name="io"></a>
-The io package supports input/output operations using native files in the file system 
-of the computer running _Ego_. 
+
+The io package supports input/output operations using native files in the file system
+of the computer running _Ego_.
 
 ### io.Delete(filename)
-The `Delete()` function deletes a file from the file system. 
+
+The `Delete()` function deletes a file from the file system.
 
     fn := "newdata.txt"
     io.Delete(fn)
@@ -1747,11 +1771,13 @@ from the file system, assuming the current user has permission to delete the
 file.
 
 ### io.DirList(path)
+
 The `DirList` function produces a string containing a human-formatted directory
 listing, similar to the Unix "ls" command. The result string is already formatted
 with line breaks, etc.
 
 ### io.Expand(path)
+
 The `Expand()` function produces an array of strings containing the absolute path
 names of all files found within the given path.
 
@@ -1762,6 +1788,7 @@ The value of `fns` is a []string and contains the names of each file found in th
 directory "/tmp".
 
 ### io.Open(filename [, mode])
+
 The `Open()` function opens a file, and returns a file handle that can be used to
 perform specific operations on the file.
 
@@ -1801,6 +1828,7 @@ operation. The file handle functions are:
 &nbsp;
 
 ### io.ReadDir(path)
+
 The `ReadDir()` function profiles a list of all the files in a given directory
 path location. This is the form of an array of structures which describe each
 file.
@@ -1810,12 +1838,12 @@ file.
 This will produce an array `a` containing information on each file in the "/tmp"
 directory. An empty array is returned if there are no files.  Each array structure
 has the following members:
- 
+
 &nbsp;
 
 | Field     | Type   | Description |
 | --------- | ------ | ----------- |
-| directory | bool   | true if the entry is a subdirectroy, else false if it is a file |
+| directory | bool   | true if the entry is a subdirectory, else false if it is a file |
 | mode      | string | Unix-style mode string for permissions for the file |
 | modified  | string | Timestamp of the last time the file was modified |
 | name      | string | The name of the file |
@@ -1823,8 +1851,8 @@ has the following members:
 
 &nbsp;
 
-
 ### io.ReadFile(filename)
+
 The `ReadFile` function reads input from a file. If the filename is a "." then the
 function reads a single line of text from stdin (the console or a pipe). Otherwise,
 the filename must be the absolute or relative path to a file in the file system, and
@@ -1834,16 +1862,14 @@ its' entire contents are returned as a single string value.
     s := io.ReadFile(fn)
 
 The variable `s` will contain a string containing the entire contents of the input
-file, including with line breaks. You can use `strings.Split()` to conver this into
+file, including with line breaks. You can use `strings.Split()` to convert this into
 an array of strings based on the line breaks if you wish.
 
-
-
 ### io.WriteFile(filename, string)
+
 The `WriteFile()` function write a string value to a file. If the file does not
 exist, it is created. If the file previously existed, the contents are over-written
 by the new file.
-
 
     fn := "mydata.txt"
     s := io.ReadFile(fn)
@@ -1852,42 +1878,44 @@ by the new file.
 This reads the contents of the "mydata.txt" file, and then writes it to the
 "newdata.txt" file, in its entirety.
 
-
 ## json <a name="json"></a>
+
 The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
 as a string value, or convert a JSON string to a comparable _ego_ data value.
 
 ### json.Marshal(v)
+
 The `Marshal` function converts a value into a JSON string expression, which is the function
 result. Note that unlike its _Go_ counterpart, the `json` package automatically converts the
 value expression to a string as the result.
 
     a := { name: "Tom", age: 44 }
-    s := json.Marhsal(a)
+    s := json.Marshal(a)
 
 This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This value can
 be passed as the body of a rest request, for example, to send an instance of this structure
 to the REST service.
 
 ### json.MarshalIndented(v)
-The `MarshalIndented` function converts a value into a JSON string expression, which is the 
-function result. Note that unlike its _Go_ counterpart, the `json` package automatically 
-converts the value expression to a string as the result. The `MarhsalIndent` function differs
-from the standard `Marshal` function in that it provides indentation automatically to make 
+
+The `MarshalIndented` function converts a value into a JSON string expression, which is the
+function result. Note that unlike its _Go_ counterpart, the `json` package automatically
+converts the value expression to a string as the result. The `MarshalIndent` function differs
+from the standard `Marshal` function in that it provides indentation automatically to make
 the JSON string more readable.
 
     a := { name: "Tom", age: 44 }
-    s := json.Marhsal(a)
+    s := json.Marshal(a)
 
-This results in `s` containing the value 
+This results in `s` containing the value
 
     {
         "name" : "Tom",
         "age" : 44
     }
 
-
 ### json.UnMarshal(string)
+
 Given a JSON string expression, this creates the equivalent JSON object value. This may be
 a scalar type (int, string, float) or it may be an array or structure, or a combination of
 them. You do not have to provide a model of the data type; the `UnMarshal` function creates
@@ -1896,26 +1924,29 @@ fields you might be expecting.
 
     a := json.UnMarshal(s) 
 
-If `s` contains the JSON expressions from the `Marshal` example above, the result is a 
+If `s` contains the JSON expressions from the `Marshal` example above, the result is a
 structure { age: 44, name:"Tom"} in the variable `a`. You can use the `members()` function
 to examine if a structure contains a field you expected.
 
 ## math <a name="math"></a>
+
 The `math` package provides basic and extended math operations on common _Ego_ numeric
-data types (usually `int` and `float` values). This is not a complete set of the math 
+data types (usually `int` and `float` values). This is not a complete set of the math
 function that are offered in the comparable _Go_ package, but will be expanded as needed.
 
 ### math.Abs(n)
-For a given numeric value, return the absolute value of the number. 
+
+For a given numeric value, return the absolute value of the number.
 
     posInt := math.Abs(signedInt)
 
 In this example, `posInt` will always be a positive or zero value.
 
 ### math.Factor(i)
-For a given positive integer `i`, return an array of all the unique factors for that 
-value. The array is always an array of integers. For a prime number, this will always 
-return an array with two elements, one and the prime number. For all other numbers, 
+
+For a given positive integer `i`, return an array of all the unique factors for that
+value. The array is always an array of integers. For a prime number, this will always
+return an array with two elements, one and the prime number. For all other numbers,
 it returns an array that contains one, the number, and all factors of the number.
 
     a := math.Factor(11)
@@ -1925,6 +1956,7 @@ For the first example, `a` contains [1, 11] because 11 is a prime number. The va
 `b` contains [1, 2, 3, 4, 6, 12].
 
 ### math.Log(f)
+
 For a given floating point value `f`, return the natural logarithm of the value.
 
    f := math.Log(2.1)
@@ -1932,8 +1964,9 @@ For a given floating point value `f`, return the natural logarithm of the value.
 The value of `f` is 0.7419373447293773.
 
 ### math.Max(...)
+
 For an arbitrary list of numeric values, return the largest value in the list. The list
-can be sent as individual items, or as an array of items. 
+can be sent as individual items, or as an array of items.
 
     a := math.Max(n, 100)
     
@@ -1942,12 +1975,13 @@ can be sent as individual items, or as an array of items.
 
 The value of `a` is the larger of the value of `n` and the value 100. This is comparable
 to _use the value of `n` but it must be at least 100_. The value of `c` will be 6. The
-elipsis "..." notation indicate that the array b is to be treated as individual parameters
+ellipsis "..." notation indicate that the array b is to be treated as individual parameters
 to the function, and the largest value in the array `b` is 6.
 
 ### math.Min(...)
+
 For an arbitrary list of numeric values, return the smallest value in the list. The list
-can be sent as individual items, or as an array of items. 
+can be sent as individual items, or as an array of items.
 
     a := math.Min(n, 10)
     
@@ -1955,11 +1989,12 @@ can be sent as individual items, or as an array of items.
     c := math.Min(b...)
 
 The value of `a` is the smaller of the value of `n` and the value 1. This is comparable
-to _use the value of `n` but it must be at no larger than 10_. The value of `c` will 
-be 0. The elipsis "..." notation indicate that the array b is to be treated as individual 
+to _use the value of `n` but it must be at no larger than 10_. The value of `c` will
+be 0. The ellipsis "..." notation indicate that the array b is to be treated as individual
 parameters to the function, and the smallest value in the array `b` is 0.
 
 ### math.Primes(i)
+
 The `Primes` function accepts a positive integer value and returns an array of all the
 prime numbers less than that value. Note that this can take a very long time to compute
 for larger values.
@@ -1970,6 +2005,7 @@ The array `a` will contain the integers [3, 5, 7]. The values '1' and '2' are no
 to be prime numbers.
 
 ### math.Sqrt(f)
+
 Calculate the square root of the numeric value given.
 
     a := math.Sqrt(2)
@@ -1977,6 +2013,7 @@ Calculate the square root of the numeric value given.
 The value of `a` will be approximately 1.4142135623730951.
 
 ### math.Sum(...)
+
 The `Sum` function returns the arithmetic sum of all the numeric values. These can be
 passed as individual values or as an array.
 
@@ -1986,16 +2023,18 @@ passed as individual values or as an array.
     c := math.Sum(b...)
 
 The value of `a` is the sum of `n` and 100, and is identical to the expression `a := n + 10`. The
-value of `c` is 80, which is the sum of all the values in the array. Note that the elipsis "..."
+value of `c` is 80, which is the sum of all the values in the array. Note that the ellipsis "..."
 notation indicates that the array should be converted to a list of parameters.
 
 ## os <a name="os"></a>
+
 The `os` package provides a number of functions that access operating system features
 for whatever operating system (macOS, Windows, Linux, etc.) you are running on. The results
 and the behavior of the routines can be specific to that operating system. The examples
 shown here are for macOS (the "darwin" Go build).
 
 ### os.Args()
+
 The `Args{}` function returns an array of the string command line arguments when an _Ego_
 program is run from the shell/command line.  Consider the following simple program:
 
@@ -2008,7 +2047,6 @@ This gets the list of arguments via `os.Args()` and prints it to the standard ou
 this is placed in a file -- for example, "args.ego" -- then it can be run with a command
 line similar to:
 
-
     tom$ ego run args.ego stuff I want
 
 The "tom$" is the shell prompt; the remainder of the command is the command line entered. Note
@@ -2020,11 +2058,11 @@ function in "args.ego" will retrieve these and print them, and the output will l
 The result is an array where each element of the array is the next token from the original
 command line.
 
-
 ### os.Exit(i)
+
 The `Exit()` operation stops the execution of the _Ego_ program and it's runtime environment,
 and returns control to the shell/command line where it was invoked. If an optional parameter
-is given, it is an integer that becomes the system return code from the `ego run` command 
+is given, it is an integer that becomes the system return code from the `ego run` command
 line.
 
     main() int {
@@ -2045,13 +2083,13 @@ terminates, then the return code value is assumed to be 0, which indicates succe
 completion of the code.
 
 ### os.Getenv(name)
+
 The `Getenv()` function retrieves an environment variable from the shell that invoked
 the _Ego_ processor. This can be an environment variable from a Linux shell, or a
 DOS-style environment variable from the CMD.EXE Windows shell.  The argument must be
 the name of the variable (case-sensitive) and the result is the value of the environment
 variable. If the variable does not exist, the function always returns an empty string.
 
-    
     func main() int {
 
         shell := os.Getenv("SHELL")
@@ -2063,11 +2101,10 @@ variable. If the variable does not exist, the function always returns an empty s
 Invoking this on a macOS or Linux system while running the "bash" shell will result in
 output similar to:
 
-    
     You are running the  /bin/bash  shell program
 
-
 ## profile <a name="profile"></a>
+
 The `profile` package help manage persistent profile settings. These are the same settings
 that can be accessed from the command line using the `ego profile` command. They apply to
 settings found in the current active profile.
@@ -2080,20 +2117,19 @@ usage.
 The profile values are stored in the .org.fernwood/ego.json file located in your default
 home directory. This file must be readable to access profile settings, and the file is
 rewritten when a setting value is changed and _Ego_ exits.  Note that this file contains
-all the profiles, not just the default profile (or profile specified with the --profile 
+all the profiles, not just the default profile (or profile specified with the --profile
 command-line option).
 
-
 ### profile.Delete(key)
+
 The `Delete()` function deletes a setting from the active profile by name. If the profile
 value does not exist, there is no error.
 
 ### profile.Get(key)
+
 The `Get()` function retrieves the current value of a given setting by name. For example,
 
-   
    path := profile.Get("ego.path")
-   
 
 In this case, the variable `path` is a string containing the file system location for the
 _Ego_ main path, where service functions, import libraries, and test programs are found.
@@ -2101,16 +2137,19 @@ If you request a profile value for a setting that does not exist, an empty strin
 returned.
 
 ### profile.Keys()
+
 The `Keys()` call returns a string array containing the names of all the profile values that
 are currently set (i.e. have non-empty values). This can be used to determine if a profile
 setting exists or not before getting its value.
 
 ### profile.Set(key, value)
+
 The `Set()` function creates or updates a profile setting by name, with the given value. The
 value is converted to a string representation and stored in the profile data under the named
 key. The key does not need to exist yet; you can create a new key simply by naming it.
 
 ## rest <a name="rest"></a>
+
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
 communicate with a server, authenticate to it (either using username/password or
 an authentication token), and perform GET, POST, and DELETE operations against
@@ -2123,14 +2162,15 @@ If the server being communicated with is an _Ego_ server, then you can use the
 `ego logon` command to create a local token used to authenticate to the server.
 
 ### rest.New(<user, password>)
+
 This returns a rest connection handle (an opaque Go object represented by an Ego symbol
 value). If the optional username and password are specified, then the request will use
-Basic authentication with that username and password. Otherwise, if the logon-token 
+Basic authentication with that username and password. Otherwise, if the logon-token
 preference item is available, it is used as a Bearer token string for authentication.
 
-The resulting item can be used to make calls using the connection just created. For 
+The resulting item can be used to make calls using the connection just created. For
 example, if the value of `rest.New()` was stored in the variable `r`, the following
-functions would become available: 
+functions would become available:
 
 &nbsp;
 
@@ -2142,19 +2182,18 @@ functions would become available:
 | r.Delete(url) | DELETE to the named URL
 | r.Media("type") | Specify the media/content type of the exchange
 | r.Verify(b) | Enable or disable TLS server certificate validation
-| r.Auth(u,p) | Estabish BasicAuth with the given username and password strings
+| r.Auth(u,p) | Establish BasicAuth with the given username and password strings
 | r.Token(t) | Establish Bearer token auth with the given token value
- 
-&nbsp;     
 
-Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used to examing the HTTP status
-code of the last request, the headers returned, and the value of the response body of the last request.
-The response body may be a string (if the media type was not json) or an actual object if the media type
-was json.
+&nbsp;
+
+Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used
+to examine the HTTP status code of the last request, the headers returned, and the value of
+the response body of the last request. The response body may be a string (if the media type
+was not json) or an actual object if the media type was json.
 
 Here's a simple example:
 
-    
     server := rest.New().Base("http://localhost:8080")
     server.Get("/services/debug")
      
@@ -2162,20 +2201,40 @@ Here's a simple example:
         print "Server session ID is ", server.response.session
     }
 
-
 ## sort <a name="sort"></a>
+
 The `sort` package contains functions that can sort an array containing only
-homogeneous base types (int, string, float). If the array contains interfaces
-or structs, it cannot be sorted. The sort occurs "in place" in the array.
+homogeneous base types (int, string, float). If the array contains interface
+or struct types, it cannot be sorted. The sort occurs "in place" in the array.
+
+### sort.Ints(array)
+
+The `Ints` function sorts an array of integers. Negative numbers sort before positive
+numbers.
+
+    a := []int{5, 3, 8, 0, -1}
+    sort.Ints(a)
+
+After this code executes, the value of the array is [-1, 0, 3, 5, 8].
+
+### sort.Floats(array)
+
+The `Floats` function sorts an array of floating point numbers. Negative
+numbers sort before positive numbers.
+
+    a := []float{5.3, 3, 8.001, 0, -1.5}
+    sort.Floats(a)
+
+After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
 
 ### sort.Slice(array, func)
+
 The `Slice` function allows you to sort an array of non-base type. For example,
-you could create an array of structs; the builtin `sort` functions don't know
+you could create an array of struct types; the builtin `sort` functions don't know
 how to sort that structure. You can sort it using the `Slice` function by
 supplying a function constant that is able to decide which of two items in
 the array is _less than_ the other.  Even though the examples could be more
 complex, here's an example using integer values:
-
 
     a := []int{ 101, 5, 33, -55, 239, 3, 66}
 
@@ -2185,7 +2244,7 @@ complex, here's an example using integer values:
 
 When this runs, the array `a` will be in sorted order. The function constant
 (the _comparison function_) is called by the `sort` package algorithm as many
-times as needed to compare two values in the array. The function _must_ 
+times as needed to compare two values in the array. The function _must_
 accept two integer values as arguments, and return a bool value. The function
 result is determining if the `i` element of the array is less than the `j`
 element of the array. The `Slice` function manages the sort algorithm, and
@@ -2196,6 +2255,7 @@ constant in the string, so it has access to values outside the function
 (specifically, the array value)
 
 ### sort.Strings(array)
+
 The `Strings` function sorts an array of strings. An empty string sorts to
 the start of the list.
 
@@ -2203,42 +2263,15 @@ the start of the list.
     sort.Strings(a)
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
-
-### sort.Ints(array)
-The `Ints` function sorts an array of integers. Negative numbers sort before positive
-numbers.
-
-    a := []int{5, 3, 8, 0, -1}
-    sort.Ints(a)
-
-After this code executes, the value of the array is [-1, 0, 3, 5, 8].
-
-
-### sort.Floats(array)
-The `Floats` function sorts an array of floating point nubmers. Negative 
-numbers sort before positive numbers.
-
-    a := []float{5.3, 3, 8.001, 0, -1.5}
-    sort.Floats(a)
-
-After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
-
-### sort.Strings(array)
-The `Strings` function sorts an array of strings. An empty string sorts to
-the start of the list.
-
-    a := []string{"apple", "pear", "", "cherry"}
-    sort.Strings(a)
-
-After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
-
 
 ## strings <a name="strings"></a>
+
 The `strings` package contains a library of functions to support manipulation
-of string data. Unless otherwise noted, strings are intrepreted as a set of
+of string data. Unless otherwise noted, strings are interpreted as a set of
 characters, so some unicode characters can take more than one byte of storage.
 
 ### strings.Chars(s)
+
 The `Chars` function returns an array of string values. Each value represents
 a single character for that position in the string.
 
@@ -2248,6 +2281,7 @@ The value of `runes` is an string array with values ["t", "e", "s", "t"].
 If the string is an empty string, it results in an array of zero elements.
 
 ### strings.Compare(a, b)
+
 The `Compare` function compares two string values, and returns an integer containing
 -1 if the first string is less than the second, 0 if they are equal, or 1 if the
 second value is less than the first value.
@@ -2258,6 +2292,7 @@ This will print the value 1 as the second value sorts higher in order than
 the first value.
 
 ### strings.Contains(str, substr)
+
 The `Contains` function scans a string for a substring and returns a boolean
 value indicating if the substring exists in the string
 
@@ -2266,9 +2301,10 @@ value indicating if the substring exists in the string
 
 In this example, `a` contains the value `true`, and `b` contains the value `false`.
 Note that the substring must match exactly, including whitespace, to be considered
-a match. 
+a match.
 
 ### strings.ContainsAny(str, chars)
+
 The `ContainsAny` function scans a string to see if instances of any of the
 characters from a substring appear in the string.
 
@@ -2281,7 +2317,8 @@ value of `b` is false because the string does not contain any instances of
 ("x", "y", or "z")
 
 ### strings.EqualFold(a, b)
-The `EqualFold` function compares two strings for equality, ignoring differnces
+
+The `EqualFold` function compares two strings for equality, ignoring differences
 in case.
 
     a := strings.EqualFold("symphony b", "Symphony B")
@@ -2290,6 +2327,7 @@ in case.
 In both these examples, the result is `true`.
 
 ### strings.Fields
+
 The `Fields` function breaks a string down into individual strings based on
 whitespace characters.
 
@@ -2299,7 +2337,8 @@ whitespace characters.
 The result is that `b` will contain the array ["this", "is", "a", "test"]
 
 ### strings.Join
-The `Join` function joins together an array of strings with a separator tring.
+
+The `Join` function joins together an array of strings with a separator string.
 The separator is placed between items, but not at the start or end of the
 resulting string.
 
@@ -2311,21 +2350,24 @@ commonly used to create lists (with a "," for separator) or path names (using a
 host-specific path separator like "/" or "\").
 
 ### strings.Format(v)
+
 The `Format()` function returns a string that contains the formatted value of
 the variable passed in. This is the same formatting operation that is done by
 the `io.Println()` function, but the resulting string is returned as the
 function value instead of printed to the console.
 
 ### strings.Index(string, test)
-The `Index` function searches a string for the first occurrance of the test
+
+The `Index` function searches a string for the first occurrence of the test
 string. If it is found, it returns the character position of the first
 character in `string` that contains the value of `test`. If no instance of
 the test string is found, the function returns 0.
 
 ### strings.Ints(string)
+
 The `Ints` function returns an array of integer values. Each value represents
 the Unicode character for that position in the string, expressed as an integer
-value. 
+value.
 
     runes := strings.Ints("test")
 
@@ -2335,6 +2377,7 @@ the string passed is is am empty string, the `Ints` function returns an empty
 array.
 
 ### strings.Left(string, count)
+
 The `Left()` function returns the left-most characters of the given string. If
 the value of the count parameter is less than 1, an empty string is returned.
 If the count value is larger than the string length, then the entire string
@@ -2346,8 +2389,9 @@ is returned.
 In this example, the value of `first` will be "Bob".
 
 ### strings.Length(string)
-The `Length()` function returns the length of a string _in characters_. This 
-is different than the bulitin `len()` function which returns the length of a
+
+The `Length()` function returns the length of a string _in characters_. This
+is different than the builtin `len()` function which returns the length of a
 string in bytes. This difference is because a character can take up more than
 one byte.  For example,
 
@@ -2357,12 +2401,12 @@ one byte.  For example,
 
 In this example, the value of `a` will be 9, which is the number of bytes stored
 in the string. But because the first and last characters are unicode characters
-that take multiple bytes, the value of `b` will be 5, indiating that there are
+that take multiple bytes, the value of `b` will be 5, indicating that there are
 five characters in the string.
 
-
 ### strings.Right(string, count)
-The `Right()` function returns the right-most characters of the given string. 
+
+The `Right()` function returns the right-most characters of the given string.
 If the value of the count parameter is less than 1, an empty string is returned.
 If the count value is larger than the string length, then the entire string
 is returned.
@@ -2373,6 +2417,7 @@ is returned.
 In this example, the value of `last` will be "Smith".
 
 ### strings.Split(string [, delimiter])
+
 The `Split()` function will split a string into an array of strings, based on a
 provided delimiter character. If the character is not present, then a newline
 is assumed as the delimiter character.
@@ -2394,6 +2439,7 @@ This uses the string ", " as the delimiter. Note that this must exactly match, s
 the space is significant. The value of b will be "101", "553", "223", "59"].
 
 ### strings.String(n1, n2...)
+
 The `String()` function will construct a string from an array of numeric values or
 string values.
 
@@ -2404,11 +2450,12 @@ as a Unicode character specification to construct the string.
 
     b := strings.String("this", "and", "that")
 
-You can also specify arguments that are string values (including individual 
+You can also specify arguments that are string values (including individual
 characters) and they are concatenated together to make a string. In the above
 example, `b` contains the string "thisandthat".
 
 ### strings.Substring(string, start, count)
+
 The `Substring()` function extracts a portion of the string provided. The
 start position is the first character position to include (1-based), and
 the count is the number of characters to include in the result. For example,
@@ -2420,6 +2467,7 @@ This would result in `part` containing the string "Linc", representing the
 starting with the fifth character, and being four characters long.
 
 ### strings.Template(name [, struct])
+
 The `Template()` function executes a template operation, using the supplied
 data structures. See the `@template` directive for more details on creating
 a template name. The struct contains values that can be substituted into the
@@ -2427,7 +2475,6 @@ template as it is processed. The structure's fields are used as substitution
 names in the template, and the field values is used in it's place in the
 string.
 
-    
     @template myNameIs `Hello, my name is {{.First}} {{.Last}}`
 
     person := { First: "Tom", Last: "Smith"}
@@ -2452,6 +2499,7 @@ can only be used in the call to strings.Template() to identify the specific
 template to use.
 
 ### strings.ToLower(string)
+
 The `ToLower()` function converts the characters of a string to the lowercase
 version of that character, if there is one. If there is no lowercase for a
 given character, the character is not affected in the result.
@@ -2461,8 +2509,8 @@ given character, the character is not affected in the result.
 
 In this example, the value of `b` will be "mazda626".
 
-
 ### strings.ToUpper(string)
+
 The `ToUpper()` function converts the characters of a string to the uppercase
 version of that character, if there is one. If there is no uppercase value for a
 given character, the character is not affected in the result.
@@ -2473,44 +2521,46 @@ given character, the character is not affected in the result.
 In this example, the value of `b` will be "BANG+OLAFSEN".
 
 ### strings.Tokenize(string)
+
 The `Tokenize()` function uses the built-in tokenizer to break
 a string into its tokens based on the _Ego_ language rules. The
 result is passed back as an array.
 
     s := "x{} <- f(3, 4)"
     t := strings.Tokenize(s)
-    
+
 This results in `t` being a []string array, with contents ["x", "{}", "<-", "f", "(", "3", ",", "4", ")"].
 Note that {} is considered a single token in the language, as is &lt;- so they each occupy a single
 location in the resulting string array.
 
 ### strings.Truncate(string, len)
+
 The `Truncate()` function will truncate a string that is too long, and add
-the elipsis ("...") character at the end to show that there is more informaiton
-that was not included. 
+the ellipsis ("...") character at the end to show that there is more information
+that was not included.
 
     a := "highway bridge out of order"
     msg := strings.Truncate(a, 10)
 
 In this example, the value of `msg` is "highway...". This is to ensure that the
 resulting string is only ten characters long (the length specified as the second
-parameter). If the string is not longer than the gien count, the entire string is
+parameter). If the string is not longer than the given count, the entire string is
 returned.
 
 ### strings.URLPattern()
+
 The `URLPattern()` function can be used in a web service to determine what parts of
 a URL are present. This is particularly useful when using collection-style URL names,
 where each part of the path could define a collection type, followed optionally by
 an instance identifier of a specific member of tht collection, etc.  Consider
 the following example:
 
-
     p := "/services/proc/{{pid}}/memory"
     u := "/services/proc/1553/memory"
 
     m := strings.URLPattern(u,p)
 
-The `p` variable holds a pattern. It contains a number of segments of the URL, and 
+The `p` variable holds a pattern. It contains a number of segments of the URL, and
 for one of them, specifies the indicator for a substitution value. That is, in this
 part of the URL, any value is accepted and will be named "pid". The resulting
 map generated by the call looks like this:
@@ -2527,7 +2577,6 @@ indicating if it was found in the pattern. For the substitution operator(s) in t
 pattern, the map key is the name from the pattern, and the value is the value from
 the URL.  Note that this can be used to determine partial paths:
 
-
     p := "/services/proc/{{pid}}/memory"
     u := "/services/proc/"
 
@@ -2537,7 +2586,7 @@ In this case, the resulting map will have a "pid" member that is an empty string
 and a "memory" value that is false, which indicates neither the substitution value
 or the named field in the URL are present.
 
-You an specify a pattern that covers an entire hierarchy, and the return will 
+You an specify a pattern that covers an entire hierarchy, and the return will
 indicate how much of the hierarchy was returned.
 
     p := "/services/location/state/{{stateName}}/city/{{cityName}}
@@ -2568,21 +2617,22 @@ would be:
 
 If the url did not include the state name field, that would be blank, which could
 tell the service that a GET on this URL was meant to return a list of the state
-values stored, as opposed to information about a specfic state.
+values stored, as opposed to information about a specific state.
 
 ## sync <a name="sync"></a>
+
 The `sync` package provides access to low-level primitive operations used to
 synchronize operations between different go routine threads that might be
 running concurrently.
 
 ### sync.Mutex
+
 This is a type provided by the `sync` package, used to perform simple mutual
 exclusion operations to control access to resources. The mutex can be locked
 by a user, in which case any other thread's attempt to lock the item will
 result in that thread waiting until the mutex is unlocked by the first owner.
 Consider the following code:
 
-    
     var counter int
 
     func worker(id int) {
@@ -2612,15 +2662,13 @@ gets the value of counter, adds one to it, and puts it back, another routine cou
 performed the same operation. This means we would over-write the value from the other
 thread. In this case, the output of the count value might be more like this:
 
-    
     thread 0, counter 1
     thread 4, counter 1
     thread 2, counter 2
     thread 3, counter 2
     thread 1, counter 3
 
-
-To fix this, we use a mutex value to block access to the counter for each 
+To fix this, we use a mutex value to block access to the counter for each
 thread, so they are forced to take turns incrementing the counter.
 
     var counter int
@@ -2648,16 +2696,14 @@ Now that there is a mutex protecting access to the counter, no matter what order
 go routines run, the increment of the count value will always be sequential, resulting
 in output that might look like this:
 
-    
     thread 4, counter 1
     thread 0, counter 2
     thread 2, counter 3
     thread 3, counter 4
     thread 1, counter 5
 
-
-
 ### sync.WaitGroup
+
 This is a type provided by the `sync` package. You can declare a variable of this
 type and a WaitGroup is created, and can be stored in a variable. This value is
 used as a _counting semaphore_ and usually supports arbitrary numbers of go
@@ -2665,7 +2711,6 @@ routine starts and completions.
 
 Consider this example code:
 
-    
     func thread(id int, wg *sync.WaitGroup) {               [1]
         fmt.Printf("Thread %d\n", id)
         wg.Done()                                           [2]
@@ -2684,9 +2729,9 @@ Consider this example code:
         
         fmt.Println("all done")
     }
-    
+
 This program launches five instances of a go routine thread, and waits for them
-to complete. This simplified exampe does not return a value from the threads, so
+to complete. This simplified example does not return a value from the threads, so
 channels are not used. However, the caller must know when all the go routines have
 completed to know it is safe to exit this function. Note that if the code did not
 include the `wg.Wait()` call then the `main` function would exit before most of the
@@ -2704,21 +2749,21 @@ Here's a breakdown of important steps in this example:
 
        defer wg.Done()
 
-    to ensure that it is always executed whenver the function exits.
+    to ensure that it is always executed whenever the function exits.
 
-3.  This declares the instance of the `WaitGroup` variable that will be used
+3. This declares the instance of the `WaitGroup` variable that will be used
     for this example. There is no initialization needed; the variable instance
     starts as a _zero state_ value.
 
-4.  Before launching a go routine, add 1 to the `WaitGroup` value (this can actually
+4. Before launching a go routine, add 1 to the `WaitGroup` value (this can actually
     be a number other than 1, but must correlate exactly to the number of `Done()`
     calls that will be made to indicate completion of the task). It is essential
     that this call be made _before_ the `go` statement to ensure that the go routine
     does not complete before the `Add()` call can be made.
 
-5.  Note that the `WaitGroup` variable must be passed by address. By default, _Ego_
+5. Note that the `WaitGroup` variable must be passed by address. By default, _Ego_
     passes all parameters by value (that is, a copy of the value is passed to the
-    funciton). But becuase the functions must operate on the exact same instance
+    function). But because the functions must operate on the exact same instance
     of a `WaitGroup` variable, we must pass the address of the value allocated.
     Note that it is important that this value not go out of scope before the
     `Wait()` call can be made.
@@ -2727,11 +2772,11 @@ Here's a breakdown of important steps in this example:
    were indicated by the matching `Add()` calls. Until then, the current program
    will simply wait, and then resume execution after the last `Done()` is called.
 
-
 &nbsp;
 &nbsp;
 
 ## tables <a name="tables"></a>
+
 The tables package provides functions to help programs produce text tables of
 data for output. The package allows you to create a table object with a given
 set of column names. You can add rows to the table, sort the table, specify
@@ -2739,13 +2784,13 @@ formatting options for the table, and then generate a text or json version of
 the table data.
 
 ### tables.New("colname" [, "colname"...])
+
 This gives access to the table formatting and printing subsystem for Ego programs. The
-arguments must be the names of the columns in the resulting table. These can be passed 
-as descrete arguments, or as an array of strings. The result is a TableHandle object 
+arguments must be the names of the columns in the resulting table. These can be passed
+as discrete arguments, or as an array of strings. The result is a TableHandle object
 that can be used to insert data into the table structure, sort it, and format it for
 output.
 
-    
     t := tables.New(":Identity", "Age:", "Address")
     
     t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
@@ -2757,23 +2802,24 @@ output.
     t.Format(true,false)
     t.Print()
     t.Close()
-    
-This sample program creates a table with three column headings. The use of the ":" 
+
+This sample program creates a table with three column headings. The use of the ":"
 character controls alignment for the column. If the colon is at the left or right
 side of the heading, that is how the heading is aligned. If no colon is used, then
 the default is left-aligned.
 
 The data is added
 for three rows. Note that data can be added as either a struct, where the column names
-must match the structure field names. Alternatively, the values can be added as 
-separate arguments to the function, in which case they are added in the order of the 
+must match the structure field names. Alternatively, the values can be added as
+separate arguments to the function, in which case they are added in the order of the
 column headings.
 
-The format of the table is further set by sorting the data by Age and then Identity, and 
+The format of the table is further set by sorting the data by Age and then Identity, and
 indicating that headings are to be printed, but underlines under those headings are not.
 The table is then printed to the default output and the memory structures are released.
 
 ## time
+
 The `time` package assist with functions that access or calculate time/date values. This
 is similar to the "time" package in Go, but has significant differences and is not as
 complete as the _Go_ version.  The `time.Now()` and `time.Parse()` functions each create
@@ -2788,13 +2834,15 @@ on it.
 | String       | f := t.String()            | Convert the time value to a standard string representation.     |
 | Sub          | n := t.Sub(start)            Subtract a a time value from another.                           |
 
-A note about the `Format()` operator. The foramt string must be comprised of elements from the reference time,
-which is a specific date value "Mon Jan 2 15:04:05 -0700 MST 2006. This value is also availablee as
-`time.reference` if you need to refer to it. Each part of the date has a unique value, so the `Format()` call
-in the table above will print the day of the week, the month, and the day since those are the values used from
-the reference string in the format specification.
+A note about the `Format()` operator. The format string must be comprised of elements
+from the reference time, which is a specific date value "Mon Jan 2 15:04:05 -0700 MST 2006".
+This value is also available as `time.reference` if you need to refer to it. Each part of the
+date has a unique value, so the `Format()` call in the table above will print the day of the
+week, the month, and the day since those are the values used from the reference string in the
+format specification.
 
 ### time.Now()
+
 The `Now()` function gets the current time at the moment of the call, and sets it as the time value in the
 result.
 
@@ -2804,37 +2852,35 @@ result.
 
 In this case, the code first captures the current time and stores it in the variable `now`. It then does some other
 work for the program, and when done we want to find out the elapsed time. The value of `elapsed` is a duration string
-that indicates how much time passed between the `now` value and the current time. For example, this could be a 
+that indicates how much time passed between the `now` value and the current time. For example, this could be a
 value such as "5s" for five seconds of time passing.
 
 ### time.Parse(string, model)
+
 This converts a text representation of a time into a time value. The first parameter is the text to convert,
 and the second parameter is the "model" which describes the format in which the value is parsed. This uses the
 same specific date values from thee `time.reference` time.
 
-    
     s := "12/7/1960 15:30"
     m := "1/2/2006 15:04"
     t := time.Parse(s, m)
-    
-    
+
 The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the model showed a month
-of 1 (for January) but was still using the sspecific values from the reference time. The slashes are not part of
+of 1 (for January) but was still using the specific values from the reference time. The slashes are not part of
 the reference time, so they must exist in the same locations in the string to be converted and will be skipped.
 
-IF there is an error in parsing, the value of `t` will be `nil`. You can find out what the exact error is by 
+IF there is an error in parsing, the value of `t` will be `nil`. You can find out what the exact error is by
 allowing the `time.Parse()` function to return two values:
-
 
     t, e := time.Parse(s, m)
 
-If the value of `t` is `nil` then the value of `e` will be the error code that refelcts the parsing error. If
+If the value of `t` is `nil` then the value of `e` will be the error code that reflects the parsing error. If
 the call is made with only one return value specified, then the error is discarded.
 
 ### time.Sleep(duration)
+
 The `Duration()` function of thee `time` package will sleep for the specified amount of time. The duration
 is expressed as a string. For example,
-
 
     time.Sleep("10s")
 
@@ -2843,18 +2889,19 @@ the system is sleeping, go routines will continue to run but the current program
 executing for the given duration.
 
 ## util <a name="util"></a>
-The `util` package contains miscelleneous utility functions that may be convenient
+
+The `util` package contains miscellaneous utility functions that may be convenient
 for developers write writing _Ego_ programs.
 
 ### util.Memory()
+
 The `Memory()` function generates a report on the current user memory consumption,
 total consumption for the life of the program, system memory on behalf of the _Ego_
 processes, and a count of the number of times the garbage collector that manages
 memory for Ego has been run.
 
-
     ego> fmt.Println(util.Memory())
-    Memmory stats  2021-02-25 16:43:05.463362 -0500 EST m=+7.977478916
+    Memory stats  2021-02-25 16:43:05.463362 -0500 EST m=+7.977478916
         Alloc      =    1.420mb
         TotalAlloc =    1.420mb
         Sys        =   69.954mb
@@ -2864,6 +2911,7 @@ The result of the function is always a string, formatted to be displayed to
 the user.
 
 ### util.Mode()
+
 The `Mode()` function reports the mode the current program is running under.
 The list of values are:
 
@@ -2871,7 +2919,7 @@ The list of values are:
 
 | Mode | Description |
 | ---- | ----------- |
-| interactive | The `ego` program was run with no program name, acceping console input |
+| interactive | The `ego` program was run with no program name, accepting console input |
 | server      | The program is running under control of an _Ego_ rest server as a service |
 | test        | The program is running using the `ego test` integration test command |
 | run         | The program is running using `ego run` with an input file or pipe |
@@ -2880,13 +2928,13 @@ The list of values are:
 &nbsp;
 
 ### util.Symbols()
+
 The `Symbols()` function generates a report on the current state of the active
 symbol table structure. This prints the symbols defined in each scope (including
 statement blocks, functions, programs, and the root symbol table). For each one,
 the report includes the number of symbol table slots used out of the maximum
 allowed, and then a line for each symbol, showing it's name, type, and
 value.
-
 
     fmt.Println(util.Symbols())
 
@@ -2895,19 +2943,22 @@ not displayed; only symbols created by the user or for defined packages
 are displayed.
 
 ## uuid <a name="uuid"></a>
+
 The `uuid` package provides support for universal unique identifiers. This is an
 industry-standard way of creating an identifier that is (for all practical purposes)
 guaranteed to be unique, even among different instances of `ego` running on different
 computers. A `uuid` value is a string, consisting of groups of hexadecimal values,
-where each group is separated by a hypen. For example, "af315ffd-6c57-46b9-af62-4aac8ba5a212".
+where each group is separated by a hyphen. For example, "af315ffd-6c57-46b9-af62-4aac8ba5a212".
 
 ### uuid.New()
+
 The `New()` function generates a new unique identifier value, and returns the result
 as a string.
 
     id := uuid.New()
 
 ### uuid.Nil()
+
 The `Nil` function generates the _zero value_ for a UUID, which is a UUID that consists
 entirely of zeroes. This value will never be generated by the `New()` function and will
 never match another UUID value.
@@ -2917,6 +2968,7 @@ never match another UUID value.
     }
 
 ### uuid.Parse(string)
+
 The `Parse()` function is used to parse and validate a UUID string value. This is useful
 for string values received via REST API calls, etc. The `Parse()` function returns
 two value; the result of the parse and an error to indicate if the parse was
@@ -2932,6 +2984,7 @@ error, the `id` will be nil, and the `err` will describe the error.
 &nbsp;
 
 # User Packages
+
 You can create your own packages which contain type definitions and
 functions that are used via the package prefix you specify.  Consider
 the following example files.
@@ -2952,7 +3005,6 @@ the function receiver.
         e.name = s
     }
 
-
 The second file is "test.ego" and is the program that will use this package.
 It starts with an `import` statement, which causes the compilation to include
 the package definition within the named file "employee". You can specify the
@@ -2966,7 +3018,6 @@ file extension of ".ego" but it is not necessary.
 
     fmt.Println("Value is ", e)
 
-
 This program uses the package definitions. It creates an instance of an
 `Employee` from the `employee` package, and initializes one of the fields
 of the type. It then uses the object to invoke a function for that type,
@@ -2975,50 +3026,45 @@ the package name; instead you specify the object that was created using
 the package's definition. In this example, it should print the structure
 contents showing the `id` of 55 and the `name` of "Frodo."
 
-
 ## package
-Use the `package` statement to define a set of related functions in 
+
+Use the `package` statement to define a set of related functions in
 a package in the current source file. A give source file can only
 contain one package statement and it must be the first statement.
 
     package factor
 
 This defines that all the functions and constants in this module will
-be defined in the `factor` package, and must be referenced with the 
+be defined in the `factor` package, and must be referenced with the
 `factor` prefix, as in
 
     y := factor.intfact(55)
 
 This calls the function `intfact()` defined in the `factor` package.
 
-
-
 &nbsp;
 &nbsp;
 
 # Directives <a name="directives"></a>
 
-
 Directives are special _Ego_ statements that perform special functions
-outside the normal language syntax, often to influence the runtime 
+outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
-
 
 ## @error <a name="at-error"></a>
 
-You can generate a runtime error by adding in a `@error` directive, 
+You can generate a runtime error by adding in a `@error` directive,
 which is followed by a string expression that is used to formulate
-the error message text. 
+the error message text.
 
-    v = "unknonwn"
+    v = "unknown"
     @error "unrecognized value: " + v
 
 This will result in a runtime error being generated with the error text
 "unrecognized value: unknown". This error can be intercepted in a try/catch
 block if desired.
 
-
-## @global 
+## @global
 
 You can store a value in the Root symbol table (the table that is the
 ultimate parent of all other symbols). You cannot modify an existing
@@ -3031,11 +3077,10 @@ This creates a variable named `base` that is in the root symbol table,
 with the value of the given expression. If you do not specify an expression,
 the variable is created as an empty-string.
 
-
 ## @template <a name="at-template"></a>
 
 You can store away a named Go template as inline code. The template
-can reference any other templates defined. 
+can reference any other templates defined.
 
     @template hello "Greetings, {{.Name}}"
 
@@ -3051,10 +3096,9 @@ stdout console. Note that `hello` becomes a global variable in the program, and
 is a pointer to the template that was previously compiled. This
 global value can only be used with template functions.
 
-
 ## @type static|dynamic <a name="at-type"></a>
 
-You can temporarily change the langauge settings to allow static
+You can temporarily change the language settings to allow static
 typing of data only. When in static mode,
 
 * All values in an array constant must be of the same type

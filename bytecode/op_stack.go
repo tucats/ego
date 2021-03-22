@@ -130,7 +130,7 @@ func CopyImpl(c *Context, i interface{}) *errors.EgoError {
 
 	_ = c.stackPush(v)
 
-	// Use JSON as a reflection-based cloner
+	// Use JSON as a reflection-based clone operation
 	var v2 interface{}
 
 	byt, _ := json.Marshal(v)

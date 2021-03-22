@@ -21,7 +21,7 @@ var dispatch DispatchMap
 var dispatchMux sync.Mutex
 var waitGroup sync.WaitGroup
 
-// GrowStackBy indicates the number of eleemnts to add to the stack when
+// GrowStackBy indicates the number of elements to add to the stack when
 // it runs out of space.
 const GrowStackBy = 50
 

@@ -50,7 +50,7 @@ func PrintImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// LogImpl imeplements the Log directive, which outputs the top stack
+// LogImpl implements the Log directive, which outputs the top stack
 // item to the logger named in the operand.
 func LogImpl(c *Context, i interface{}) *errors.EgoError {
 	logger := util.GetString(i)
@@ -127,7 +127,7 @@ func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
 \******************************************/
 
 // FromFileImpl loads the context tokenizer with the
-// source from a file if it does not alrady exist and
+// source from a file if it does not already exist and
 // we are in debug mode.
 func FromFileImpl(c *Context, i interface{}) *errors.EgoError {
 	if !c.debugging {

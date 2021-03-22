@@ -16,7 +16,7 @@ const InitialOpcodeSize = 20
 // InitialStackSize is the initial stack size.
 const InitialStackSize = 100
 
-// BranchInstruction is the mininum value for a branch instruction, which has
+// BranchInstruction is the minimum value for a branch instruction, which has
 // special meaning during relocation and linking.
 const BranchInstruction = 2000
 
@@ -55,7 +55,7 @@ func New(name string) *ByteCode {
 }
 
 // Emit emits a single instruction. The opcode is required, and can optionally
-// be frollowed by an instruction operand (based on whichever instruction)
+// be followed by an instruction operand (based on whichever instruction)
 // is issued.
 func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 	// If the output capacity is too small, expand it.
@@ -169,7 +169,7 @@ func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, *errors.EgoError) 
 	return c.Pop()
 }
 
-// Opcodes returns the opcode list for this byteocde array.
+// Opcodes returns the opcode list for this bytecode array.
 func (b *ByteCode) Opcodes() []Instruction {
 	return b.instructions[:b.emitPos]
 }

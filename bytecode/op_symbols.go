@@ -27,10 +27,10 @@ func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 // symbol table and reverts to its parent table. It also flushes
 // any pending "this" stack objects. A chain of receivers
 // cannot span a block, so this is a good time to clean up
-// any asymetric pushes.
+// any asymmetric pushes.
 //
 // Note special logic; if this was a package symbol table, take
-// time to update the reaadonly copies of the values in the package
+// time to update the readonly copies of the values in the package
 // object itself.
 func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	// See if we're popping off a package table; if so there is work to do to
@@ -117,15 +117,15 @@ func (c *Context) syncPackageSymbols() {
 	// Before we toss away this, check to see if there are package symbols
 	// that need updating in the package object.
 	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
-		pkgsyms := c.symbols.Parent
+		packageSymbols := c.symbols.Parent
 		pkgname := c.symbols.Parent.Package
 		c.popSymbolTable()
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
 			if m, ok := pkg.(map[string]interface{}); ok {
-				for k, v := range pkgsyms.Symbols {
+				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {
-						m[k] = pkgsyms.GetValue(v)
+						m[k] = packageSymbols.GetValue(v)
 					}
 				}
 			}
