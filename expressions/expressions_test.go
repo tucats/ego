@@ -128,7 +128,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "Invalid unary negation",
 			expr: "-name",
-			want: nil,
+			want: "moT",
 		},
 		{
 			name: "Unary negation of diadic operator",
@@ -352,17 +352,6 @@ func TestNew(t *testing.T) {
 			expr: "math.Sum(\"abc\", \"137\", \"def\")",
 			want: "abc137def",
 		},
-		{
-			name: "Simple true conditional",
-			expr: "true ? 1.1 : 1.0",
-			want: 1.1,
-		},
-		{
-			name: "Simple false conditional",
-			expr: "5 == 6 ? 1.1 : 1.0",
-			want: 1.0,
-		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

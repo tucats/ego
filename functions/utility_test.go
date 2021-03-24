@@ -261,19 +261,6 @@ func TestReflect(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "array of ints",
-			args: args{s: nil, args: []interface{}{
-				[]interface{}{1, 2, 3},
-			}},
-			want: map[string]interface{}{
-				"basetype": "array",
-				"type":     "[]int",
-				"elements": "int",
-				"size":     3,
-			},
-			wantErr: false,
-		},
 		// TODO: Add test cases.
 	}
 
