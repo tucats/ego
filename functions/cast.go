@@ -310,12 +310,13 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return actual, nil
 		}
 
-		r := datatypes.NewArray(kind, actual.Len())
+		elementKind := *kind.ValueType
+		r := datatypes.NewArray(*kind.ValueType, actual.Len())
 
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
-			switch kind {
+			switch elementKind {
 			case datatypes.IntTypeDef:
 				_ = r.Set(i, util.GetInt(v))
 
