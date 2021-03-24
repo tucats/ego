@@ -54,7 +54,7 @@ type UserCollection struct {
 
 // UserResponse describes a user when the information is passed
 // back to a caller as a response object.
-type UserReponse struct {
+type UserResponse struct {
 	User
 	RestResponse
 }

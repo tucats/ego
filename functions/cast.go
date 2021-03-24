@@ -66,7 +66,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	// Is it an integer Ego array?
-	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntType {
+	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntTypeDef {
 		var b strings.Builder
 
 		for i := 0; i < array.Len(); i++ {
@@ -91,7 +91,7 @@ func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // Normalize coerces a value to match the type of a model value.
-func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v1, v2 := util.Normalize(args[0], args[1])
 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
@@ -101,7 +101,7 @@ func Normalize(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 // or a string type name is given, the "zero value" for that type
 // is returned. For an array, struct, or map, a recursive copy is
 // done of the members to a new object which is returned.
-func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {
@@ -150,12 +150,12 @@ func New(syms *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	// If it's a WaitGroup, make a new one.
 	if _, ok := args[0].(sync.WaitGroup); ok {
-		return datatypes.InstanceOf(datatypes.WaitGroupType), nil
+		return datatypes.InstanceOf(datatypes.WGTypeDef), nil
 	}
 
 	// If it's a Mutex, make a new one.
 	if _, ok := args[0].(sync.Mutex); ok {
-		return datatypes.InstanceOf(datatypes.MutexType), nil
+		return datatypes.InstanceOf(datatypes.MutexTypeDef), nil
 	}
 
 	// If it's a channel, just return the value
@@ -298,17 +298,15 @@ func DeepCopy(source interface{}, depth int) interface{} {
 // convert numeric arrays to a different kind of array, to convert a string
 // to an array of integer (rune) values, etc.
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	kind := util.GetInt(args[1])
-	if kind < datatypes.ArrayType {
+	kind := datatypes.GetType(args[1])
+	if !kind.IsArray() {
 		return nil, errors.New(errors.InvalidTypeError)
 	}
-
-	kind = kind - datatypes.ArrayType
 
 	switch actual := args[0].(type) {
 	// Conversion of one array type to another
 	case *datatypes.EgoArray:
-		if kind == actual.ValueType() {
+		if kind.IsType(actual.ValueType()) {
 			return actual, nil
 		}
 
@@ -318,16 +316,16 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			v, _ := actual.Get(i)
 
 			switch kind {
-			case datatypes.IntType:
+			case datatypes.IntTypeDef:
 				_ = r.Set(i, util.GetInt(v))
 
-			case datatypes.FloatType:
+			case datatypes.FloatTypeDef:
 				_ = r.Set(i, util.GetFloat(v))
 
-			case datatypes.StringType:
+			case datatypes.StringTypeDef:
 				_ = r.Set(i, util.GetString(v))
 
-			case datatypes.BoolType:
+			case datatypes.BoolTypeDef:
 				_ = r.Set(i, util.GetBool(v))
 
 			default:
@@ -338,11 +336,11 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	case string:
-		if kind != datatypes.IntType {
+		if !kind.IsType(datatypes.ArrayOfType(datatypes.IntTypeDef)) {
 			return nil, errors.New(errors.InvalidTypeError)
 		}
 
-		r := datatypes.NewArray(kind, 0)
+		r := datatypes.NewArray(datatypes.IntTypeDef, 0)
 
 		for _, rune := range actual {
 			r.Append(int(rune))

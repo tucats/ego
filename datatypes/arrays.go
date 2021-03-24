@@ -7,17 +7,16 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/gopackages/datatypes"
 	"github.com/tucats/gopackages/util"
 )
 
 type EgoArray struct {
 	data      []interface{}
-	valueType int
+	valueType Type
 	immutable int
 }
 
-func NewArray(valueType, size int) *EgoArray {
+func NewArray(valueType Type, size int) *EgoArray {
 	m := &EgoArray{
 		data:      make([]interface{}, size),
 		valueType: valueType,
@@ -29,7 +28,7 @@ func NewArray(valueType, size int) *EgoArray {
 
 // NewFromArray accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array.
-func NewFromArray(valueType int, source []interface{}) *EgoArray {
+func NewFromArray(valueType Type, source []interface{}) *EgoArray {
 	m := &EgoArray{
 		data:      source,
 		valueType: valueType,
@@ -58,7 +57,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 }
 
 func (a *EgoArray) DeepEqual(b *EgoArray) bool {
-	if a.valueType == InterfaceType || b.valueType == InterfaceType {
+	if a.valueType == InterfaceTypeDef || b.valueType == InterfaceTypeDef {
 		return reflect.DeepEqual(a.data, b.data)
 	}
 
@@ -69,18 +68,18 @@ func (a *EgoArray) BaseArray() []interface{} {
 	return a.data
 }
 
-func (a *EgoArray) ValueType() int {
+func (a *EgoArray) ValueType() Type {
 	return a.valueType
 }
 
-func (a *EgoArray) Validate(kind int) *errors.EgoError {
-	if kind == datatypes.InterfaceType {
+func (a *EgoArray) Validate(kind Type) *errors.EgoError {
+	if kind == InterfaceTypeDef {
 		return nil
 	}
 
 	for i := 0; i < a.Len(); i++ {
 		v, _ := a.Get(i)
-		if !datatypes.IsType(v, kind) {
+		if !IsType(v, kind) {
 			return errors.New(errors.WrongArrayValueType)
 		}
 	}
@@ -109,8 +108,8 @@ func (a *EgoArray) Len() int {
 	return len(a.data)
 }
 
-func (a *EgoArray) SetType(i int) *errors.EgoError {
-	if a.valueType == InterfaceType {
+func (a *EgoArray) SetType(i Type) *errors.EgoError {
+	if a.valueType == InterfaceTypeDef {
 		a.valueType = i
 
 		return nil
@@ -218,7 +217,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	var err *errors.EgoError
 
 	switch a.valueType {
-	case StringType:
+	case StringTypeDef:
 		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
 			stringArray[i] = util.GetString(v)
@@ -230,7 +229,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 			a.data[i] = v
 		}
 
-	case IntType:
+	case IntTypeDef:
 		values := make([]int, a.Len())
 		for i, v := range a.data {
 			values[i] = util.GetInt(v)
@@ -242,7 +241,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 			a.data[i] = v
 		}
 
-	case FloatType:
+	case FloatTypeDef:
 		values := make([]float64, a.Len())
 		for i, v := range a.data {
 			values[i] = util.GetFloat(v)

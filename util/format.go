@@ -1,8 +1,6 @@
 package util
 
-import (
-	"github.com/tucats/ego/datatypes"
-)
+import "github.com/tucats/ego/datatypes"
 
 // LineColumnFormat describes the format string for the portion
 // of formatted messages that include a line and column designation.

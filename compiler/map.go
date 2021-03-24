@@ -19,7 +19,7 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 
 	// Parse the key type
 	keyType := c.parseTypeSpec()
-	if keyType == datatypes.UndefinedType {
+	if keyType.Kind == datatypes.UndefinedKind {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
 
@@ -30,7 +30,7 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 
 	// Parse the object type
 	valueType := c.parseTypeSpec()
-	if valueType == datatypes.UndefinedType {
+	if valueType.Kind == datatypes.UndefinedKind {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
 

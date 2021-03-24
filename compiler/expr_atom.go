@@ -236,10 +236,8 @@ func (c *Compiler) parseArray() *errors.EgoError {
 	marker := c.t.Mark()
 
 	kind := c.parseTypeSpec()
-	if kind != datatypes.UndefinedType {
-		if kind >= datatypes.ArrayType {
-			kind = kind - datatypes.ArrayType
-		} else {
+	if kind != datatypes.UndefinedTypeDef {
+		if !kind.IsArray() {
 			return c.newError(errors.InvalidTypeNameError)
 		}
 
@@ -252,7 +250,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			if e2 == nil && c.t.IsNext(")") {
 				c.b.Emit(bytecode.Load, "$cast")
 				c.b.Append(exp)
-				c.b.Emit(bytecode.Push, kind+datatypes.ArrayType)
+				c.b.Emit(bytecode.Push, kind)
 				c.b.Emit(bytecode.Call, 2)
 
 				return nil
@@ -346,7 +344,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		// If this is an array of a specific type, check to see
 		// if the previous value was a constant. If it wasn't, or
 		// was of the wrong type, emit a coerce...
-		if kind != datatypes.UndefinedType {
+		if kind != datatypes.UndefinedTypeDef {
 			if c.b.NeedsCoerce(kind) {
 				c.b.Emit(bytecode.Coerce, kind)
 			}
@@ -369,7 +367,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		c.t.Advance(1)
 	}
 
-	if kind != datatypes.UndefinedType {
+	if kind != datatypes.UndefinedTypeDef {
 		c.b.Emit(bytecode.Array, count, kind)
 	} else {
 		c.b.Emit(bytecode.Array, count)

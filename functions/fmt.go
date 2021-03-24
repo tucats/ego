@@ -100,15 +100,15 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	formatString := util.GetString(args[1])
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
-	ptrs := make([]*interface{}, len(args)-2)
+	pointerList := make([]*interface{}, len(args)-2)
 
 	for i, v := range args[2:] {
-		if datatypes.PointerTo(v) == datatypes.UndefinedType {
+		if datatypes.TypeOfPointer(v) == datatypes.UndefinedTypeDef {
 			return nil, errors.New(errors.NotAPointer)
 		}
 
 		if content, ok := v.(*interface{}); ok {
-			ptrs[i] = content
+			pointerList[i] = content
 		}
 	}
 
@@ -120,7 +120,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	// Stride over the return value pointers, assigning as many
 	// items as we got.
-	for idx, p := range ptrs {
+	for idx, p := range pointerList {
 		if idx >= len(items) {
 			break
 		}

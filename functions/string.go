@@ -52,7 +52,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // Right implements the right() function.
 func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	var cpos int
+	var charPos int
 
 	var b strings.Builder
 
@@ -70,10 +70,10 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	}
 
 	for _, ch := range v {
-		if cpos >= count-p {
+		if charPos >= count-p {
 			b.WriteRune(ch)
 		}
-		cpos++
+		charPos++
 	}
 
 	return b.String(), nil
@@ -189,7 +189,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.StringType, count)
+	r := datatypes.NewArray(datatypes.StringTypeDef, count)
 
 	for i, ch := range v {
 		err := r.Set(i, string(ch))
@@ -213,7 +213,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.IntType, count)
+	r := datatypes.NewArray(datatypes.IntTypeDef, count)
 
 	for i, ch := range v {
 		err := r.Set(i, int(ch))
@@ -357,7 +357,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	// We need to store the result in a native Ego array.
-	r := datatypes.NewArray(datatypes.StringType, len(v))
+	r := datatypes.NewArray(datatypes.StringTypeDef, len(v))
 
 	for i, n := range v {
 		err := r.Set(i, n)
@@ -374,7 +374,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
 
-	r := datatypes.NewArray(datatypes.StringType, len(t.Tokens))
+	r := datatypes.NewArray(datatypes.StringTypeDef, len(t.Tokens))
 
 	var err *errors.EgoError
 
@@ -391,7 +391,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	result := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	result := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
 
 	patternMap, match := ParseURLPattern(util.GetString(args[0]), util.GetString(args[1]))
 	if !match {
@@ -462,7 +462,7 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 		}
 
 		// If this pattern is a substitution operator, get the value now
-		// and store in the maap using the substitution name
+		// and store in the map using the substitution name
 		if strings.HasPrefix(pat, "{{") && strings.HasSuffix(pat, "}}") {
 			name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
 			result[name] = urlParts[idx]
@@ -521,7 +521,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	fields := strings.Fields(a)
 
-	result := datatypes.NewArray(datatypes.StringType, len(fields))
+	result := datatypes.NewArray(datatypes.StringTypeDef, len(fields))
 
 	for idx, f := range fields {
 		_ = result.Set(idx, f)

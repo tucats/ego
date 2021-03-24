@@ -185,12 +185,12 @@ func TestFunctionMembers(t *testing.T) {
 		{
 			name: "simple struct",
 			args: args{[]interface{}{map[string]interface{}{"name": "Tom", "age": 55}}},
-			want: datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
+			want: datatypes.NewFromArray(datatypes.StringTypeDef, []interface{}{"age", "name"}),
 		},
 		{
 			name: "empty struct",
 			args: args{[]interface{}{map[string]interface{}{}}},
-			want: datatypes.NewFromArray(datatypes.StringType, []interface{}{}),
+			want: datatypes.NewFromArray(datatypes.StringTypeDef, []interface{}{}),
 		},
 		{
 			name:    "wrong type struct",
@@ -239,7 +239,7 @@ func TestReflect(t *testing.T) {
 			want: map[string]interface{}{
 				"basetype": "map",
 				"type":     "struct",
-				"members":  datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
+				"members":  datatypes.NewFromArray(datatypes.StringTypeDef, []interface{}{"age", "name"}),
 			},
 			wantErr: false,
 		},

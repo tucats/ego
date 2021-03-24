@@ -185,7 +185,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // and sets the TLS server certificate authentication accordingly. When set to true,
 // a connection will not be made if the server's certificate cannot be authenticated.
 // This is the default mode for HTTPS connections. During debugging, you may wish to
-// turn this off when using self-generated certficates.
+// turn this off when using self-generated certificates.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	client, err := getClient(s)
 	if !errors.Nil(err) {
@@ -354,10 +354,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // of structs.
 func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray {
 	cookies := r.Cookies()
-	result := datatypes.NewArray(datatypes.InterfaceType, len(cookies))
+	result := datatypes.NewArray(datatypes.InterfaceTypeDef, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+		cookie := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
 
 		_, _ = cookie.Set("expires", v.Expires.String())
 		_, _ = cookie.Set("name", v.Name)
@@ -373,7 +373,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
 func headerMap(response *resty.Response) *datatypes.EgoMap {
-	headers := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	headers := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
 
 	for k, v := range response.Header() {
 		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))

@@ -29,8 +29,8 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
 
-	user, hasAdminPrivs := isAdminRequestor(r)
-	if !hasAdminPrivs {
+	user, hasAdminPrivileges := isAdminRequestor(r)
+	if !hasAdminPrivileges {
 		ui.Debug(ui.ServerLogger, "User %s not authorized", user)
 		w.WriteHeader(http.StatusForbidden)
 
@@ -78,7 +78,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
 		case "POST":
-			args := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+			args := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
 			_, _ = args.Set("name", u.Name)
 			_, _ = args.Set("password", u.Password)
 
@@ -94,14 +94,14 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 				_, _ = args.Set("permissions", perms)
 			}
 
-			var response defs.UserReponse
+			var response defs.UserResponse
 
 			_, err = SetUser(s, []interface{}{args})
 			if errors.Nil(err) {
 				u, err = service.ReadUser(name)
 				if errors.Nil(err) {
 					u.Name = name
-					response = defs.UserReponse{
+					response = defs.UserResponse{
 						User: u,
 						RestResponse: defs.RestResponse{
 							Status:  http.StatusOK,
@@ -109,7 +109,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 						},
 					}
 				} else {
-					response = defs.UserReponse{
+					response = defs.UserResponse{
 						User: u,
 						RestResponse: defs.RestResponse{
 							Status:  http.StatusInternalServerError,
@@ -148,7 +148,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 			// Clear the password for the return response object
 			u.Password = ""
-			response := defs.UserReponse{
+			response := defs.UserResponse{
 				User: u,
 				RestResponse: defs.RestResponse{
 					Status:  http.StatusOK,
@@ -194,7 +194,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 					msg = "User not found"
 				}
 
-				result := defs.UserReponse{
+				result := defs.UserResponse{
 					User: u,
 					RestResponse: defs.RestResponse{
 						Status:  status,
@@ -255,8 +255,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
 	w.Header().Add("Content_Type", defs.JSONMediaType)
 
-	user, hasAdminPrivs := isAdminRequestor(r)
-	if !hasAdminPrivs {
+	user, hasAdminPrivileges := isAdminRequestor(r)
+	if !hasAdminPrivileges {
 		ui.Debug(ui.ServerLogger, "User %s not authorized", user)
 		w.WriteHeader(http.StatusForbidden)
 
@@ -360,7 +360,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 func isAdminRequestor(r *http.Request) (string, bool) {
 	var user string
 
-	hasAdminPrivs := false
+	hasAdminPrivileges := false
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
@@ -374,12 +374,12 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 	if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 		token := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(auth), defs.AuthScheme))
 
-		tstr := token
-		if len(tstr) > 20 {
-			tstr = tstr[:20] + "..."
+		tokenString := token
+		if len(tokenString) > 20 {
+			tokenString = tokenString[:20] + "..."
 		}
 
-		ui.Debug(ui.ServerLogger, "Auth using token %s...", tstr)
+		ui.Debug(ui.ServerLogger, "Auth using token %s...", tokenString)
 
 		if validateToken(token) {
 			user := tokenUser(token)
@@ -387,7 +387,7 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 				ui.Debug(ui.ServerLogger, "No username associated with token")
 			}
 
-			hasAdminPrivs = getPermission(user, "root")
+			hasAdminPrivileges = getPermission(user, "root")
 		} else {
 			ui.Debug(ui.ServerLogger, "No valid token presented")
 		}
@@ -398,14 +398,14 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 			ui.Debug(ui.ServerLogger, "Auth using user %s", user)
 
 			if ok := validatePassword(user, pass); ok {
-				hasAdminPrivs = getPermission(user, "root")
+				hasAdminPrivileges = getPermission(user, "root")
 			}
 		}
 	}
 
-	if !hasAdminPrivs && user == "" {
+	if !hasAdminPrivileges && user == "" {
 		user = "<invalid>"
 	}
 
-	return user, hasAdminPrivs
+	return user, hasAdminPrivileges
 }

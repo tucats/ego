@@ -36,17 +36,18 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 					}
 				} else {
 					if t, ok := i.(int); ok {
-						switch t {
-						case datatypes.IntType:
+						dataType := datatypes.TypeOf(t)
+						switch dataType {
+						case datatypes.IntTypeDef:
 							_, ok = v.(int)
 
-						case datatypes.FloatType:
+						case datatypes.FloatTypeDef:
 							_, ok = v.(float64)
 
-						case datatypes.BoolType:
+						case datatypes.BoolTypeDef:
 							_, ok = v.(bool)
 
-						case datatypes.StringType:
+						case datatypes.StringTypeDef:
 							_, ok = v.(string)
 
 						default:
@@ -59,48 +60,28 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 				}
 			}
 		} else {
-			t := util.GetInt(i)
-			// If it's a pointer type, we can't do coercions
-			if t > datatypes.PointerType {
-				actualT := datatypes.PointerTo(v) + datatypes.PointerType
-				if t != actualT /* && actualT != datatypes.InterfaceType  */ {
-					return c.newError(errors.ArgumentTypeError)
-				}
-			} else {
-				switch t {
-				case datatypes.ErrorType:
-					v = errors.New(errors.Panic).Context(v)
+			t := datatypes.GetType(i)
+			switch t {
+			case datatypes.ErrorTypeDef:
+				v = errors.New(errors.Panic).Context(v)
 
-				case datatypes.IntType:
-					v = util.GetInt(v)
+			case datatypes.IntTypeDef:
+				v = util.GetInt(v)
 
-				case datatypes.FloatType:
-					v = util.GetFloat(v)
+			case datatypes.FloatTypeDef:
+				v = util.GetFloat(v)
 
-				case datatypes.StringType:
-					v = util.GetString(v)
+			case datatypes.StringTypeDef:
+				v = util.GetString(v)
 
-				case datatypes.BoolType:
-					v = util.GetBool(v)
+			case datatypes.BoolTypeDef:
+				v = util.GetBool(v)
 
-				case datatypes.ArrayType:
-					// If it's  not already an array, wrap it in one.
-					if _, ok := v.([]interface{}); !ok {
-						v = []interface{}{v}
-					}
+			case datatypes.UndefinedTypeDef, datatypes.InterfaceTypeDef, datatypes.InterfacePtrTypeDef, datatypes.ChanPtrTypeDef, datatypes.ChanTypeDef:
+				// No work at all to do here.
 
-				case datatypes.StructType:
-					// If it's not a struct, we can't do anything so fail
-					if _, ok := v.(map[string]interface{}); !ok {
-						return c.newError(errors.InvalidTypeError)
-					}
-
-				case datatypes.UndefinedType, datatypes.InterfaceType, datatypes.ChanType:
-					// No work at all to do here.
-
-				default:
-					return c.newError(errors.InvalidTypeError)
-				}
+			default:
+				return c.newError(errors.InvalidTypeError)
 			}
 		}
 
@@ -112,7 +93,7 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 
 // CoerceImpl instruction processor.
 func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
-	t := util.GetInt(i)
+	t := datatypes.GetType(i)
 
 	v, err := c.Pop()
 	if !errors.Nil(err) {
@@ -120,45 +101,25 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch t {
-	case datatypes.ErrorType:
+	case datatypes.ErrorTypeDef:
 		v = errors.New(errors.Panic).Context(v)
 
-	case datatypes.IntType:
+	case datatypes.IntTypeDef:
 		v = util.GetInt(v)
 
-	case datatypes.FloatType:
+	case datatypes.FloatTypeDef:
 		v = util.GetFloat(v)
 
-	case datatypes.StringType:
+	case datatypes.StringTypeDef:
 		v = util.GetString(v)
 
-	case datatypes.BoolType:
+	case datatypes.BoolTypeDef:
 		v = util.GetBool(v)
 
-	case datatypes.ArrayType:
-		// If it's  not already an array, wrap it in one.
-		if _, ok := v.(*datatypes.EgoArray); !ok {
-			if _, ok := v.([]interface{}); !ok {
-				array := datatypes.NewArray(datatypes.TypeOf(v), 1)
-				_ = array.Set(0, v)
-				v = array
-			}
-		}
-
-	case datatypes.StructType:
-		// If it's not a struct, we can't do anything so fail
-		if _, ok := v.(map[string]interface{}); !ok {
-			return c.newError(errors.InvalidTypeError)
-		}
-
-	case datatypes.InterfaceType, datatypes.UndefinedType:
+	case datatypes.InterfaceTypeDef, datatypes.UndefinedTypeDef:
 		// No work at all to do here.
 
 	default:
-		if t < datatypes.ArrayType {
-			return c.newError(errors.InvalidTypeError)
-		}
-
 		var base []interface{}
 
 		if a, ok := v.(*datatypes.EgoArray); ok {
@@ -167,7 +128,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 			base = v.([]interface{})
 		}
 
-		elementType := t - datatypes.ArrayType
+		elementType := *t.ValueType
 		array := datatypes.NewArray(elementType, len(base))
 		model := datatypes.InstanceOf(elementType)
 
@@ -183,7 +144,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func (b ByteCode) NeedsCoerce(kind int) bool {
+func (b ByteCode) NeedsCoerce(kind datatypes.Type) bool {
 	// If there are no instructions before this, no coerce is appropriate.
 	pos := b.Mark()
 	if pos == 0 {
@@ -196,7 +157,7 @@ func (b ByteCode) NeedsCoerce(kind int) bool {
 	}
 
 	if i.Operation == Push {
-		return datatypes.TypeOf(i.Operand) != kind
+		return datatypes.IsType(i.Operand, kind)
 	}
 
 	return true

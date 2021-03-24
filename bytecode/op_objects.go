@@ -91,8 +91,8 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 	}
 
 	if p, ok := datatypes.GetMetadata(m, datatypes.ParentMDKey); ok {
-		if pmap, ok := p.(map[string]interface{}); ok {
-			return findMember(pmap, name)
+		if parentMap, ok := p.(map[string]interface{}); ok {
+			return findMember(parentMap, name)
 		}
 	}
 

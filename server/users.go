@@ -59,7 +59,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	ui.Debug(ui.ServerLogger, "Using database definition %s", userDatabaseFile)
 
-	service, err = defineCredentialServce(userDatabaseFile, defaultUser, defaultPassword)
+	service, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
@@ -75,7 +75,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func defineCredentialServce(path, user, password string) (UserIOService, *errors.EgoError) {
+func defineCredentialService(path, user, password string) (UserIOService, *errors.EgoError) {
 	var err *errors.EgoError
 
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
@@ -157,7 +157,7 @@ func getPermission(user, privilege string) bool {
 }
 
 // findPermission searches the permission strings associated with the given user,
-// and returns the position in the permissions array where th ematching name is
+// and returns the position in the permissions array where the matching name is
 // found. It returns -1 if there is no such permission.
 func findPermission(u defs.User, perm string) int {
 	for i, p := range u.Permissions {
@@ -169,7 +169,7 @@ func findPermission(u defs.User, perm string) int {
 	return -1
 }
 
-// validatePassword checks a username and password against the databse and
+// validatePassword checks a username and password against the database and
 // returns true if the user exists and the password is valid.
 func validatePassword(user, pass string) bool {
 	ok := false
@@ -249,7 +249,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return getPermission(user, priv), nil
 }
 
-// SetUser mplements the SetUser() function. For the super user, this function
+// SetUser implements the SetUser() function. For the super user, this function
 // can be used to update user data in the persistent use database for the Ego
 // web server.
 func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
@@ -297,9 +297,9 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 					r.Permissions = []string{}
 
 					for _, p := range m {
-						pname := util.GetString(p)
-						if pname != "." {
-							r.Permissions = append(r.Permissions, pname)
+						permissionName := util.GetString(p)
+						if permissionName != "." {
+							r.Permissions = append(r.Permissions, permissionName)
 						}
 					}
 				}
@@ -357,7 +357,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ArgumentCountError)
 	}
 
-	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	r := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
 	name := strings.ToLower(util.GetString(args[0]))
 
 	t, ok := service.ReadUser(name)

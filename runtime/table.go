@@ -42,7 +42,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Scan over the heading strings and look for alignment cues. If found,
 	// remove the ":" cue character, and record the specified (or default)
-	// alignmnt for each column.
+	// alignment for each column.
 	align := make([]int, len(headings))
 
 	for i := 0; i < len(headings); i = i + 1 {
@@ -73,7 +73,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Move the string array of headings into a native array type, which can
 	// be read by the caller.
-	headingsArray := datatypes.NewArray(datatypes.StringType, len(headings))
+	headingsArray := datatypes.NewArray(datatypes.StringTypeDef, len(headings))
 
 	for i, h := range headings {
 		_ = headingsArray.Set(i, h)

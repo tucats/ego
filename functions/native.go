@@ -17,7 +17,7 @@ import (
 type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)
 
 type NativeFunctionDef struct {
-	Kind int
+	Kind datatypes.Type
 	Name string
 	F    NativeFunction
 }
@@ -29,52 +29,52 @@ type NativeFunctionDef struct {
 // implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: datatypes.WGTypeDef,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: datatypes.WGTypeDef,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: datatypes.WGTypeDef,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Kind: datatypes.WGPtrTypeDef,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Kind: datatypes.WGPtrTypeDef,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WaitGroupType + datatypes.PointerType,
+		Kind: datatypes.WGPtrTypeDef,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.MutexType,
+		Kind: datatypes.MutexTypeDef,
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.MutexType,
+		Kind: datatypes.MutexTypeDef,
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
 	{
-		Kind: datatypes.MutexType + datatypes.PointerType,
+		Kind: datatypes.MutexPtrTypeDef,
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.MutexType + datatypes.PointerType,
+		Kind: datatypes.MutexPtrTypeDef,
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
@@ -82,9 +82,9 @@ var NativeFunctionMap = []NativeFunctionDef{
 
 // For a given datatype and name, see if there is a native function that
 // supports this operation.  If so, return it's function pointer.
-func FindNativeFunction(kind int, name string) NativeFunction {
+func FindNativeFunction(kind datatypes.Type, name string) NativeFunction {
 	for _, f := range NativeFunctionMap {
-		if f.Kind == kind && f.Name == name {
+		if f.Kind.IsType(kind) && f.Name == name {
 			return f.F
 		}
 	}

@@ -11,12 +11,12 @@ import (
 
 // EgoMap is a wrapper around a native Go map. The actual map supports interface items
 // for both key and value. The wrapper contains additional information about the expected
-// types for key and value, as well as a counting semaphore to determie if the map
+// types for key and value, as well as a counting semaphore to determine if the map
 // should be considered immutable (such as during a for...range loop).
 type EgoMap struct {
 	data      map[interface{}]interface{}
-	keyType   int
-	valueType int
+	keyType   Type
+	valueType Type
 	immutable int
 }
 
@@ -24,7 +24,7 @@ type EgoMap struct {
 // key and value types (such as datatypes.StringType or datatypes.FloatType). You can also
 // use datatypes.InterfaceType for a type value, which means any type is accepted. The
 // result is an initialized map that you can begin to store or read values from.
-func NewMap(keyType int, valueType int) *EgoMap {
+func NewMap(keyType Type, valueType Type) *EgoMap {
 	m := &EgoMap{
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,
@@ -37,13 +37,13 @@ func NewMap(keyType int, valueType int) *EgoMap {
 
 // ValueType returns the integer description of the declared key type for
 // this map.
-func (m *EgoMap) KeyType() int {
+func (m *EgoMap) KeyType() Type {
 	return m.keyType
 }
 
 // ValueType returns the integer description of the declared value type for
 // this map.
-func (m *EgoMap) ValueType() int {
+func (m *EgoMap) ValueType() Type {
 	return m.valueType
 }
 
@@ -60,8 +60,8 @@ func (m *EgoMap) ImmutableKeys(b bool) {
 }
 
 // Get reads a value from the map. The key value must be compatible with the
-// type declaration of the map (no coersion occurs). This returns the actual
-// value, or nil if not found. It also returns a falg indicating if the
+// type declaration of the map (no coercion occurs). This returns the actual
+// value, or nil if not found. It also returns a flag indicating if the
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
 func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
@@ -101,7 +101,7 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError
 // ints, or floats they are returned in ascending sorted order.
 func (m *EgoMap) Keys() []interface{} {
 	switch m.keyType {
-	case StringType:
+	case StringTypeDef:
 		idx := 0
 		array := make([]string, len(m.data))
 
@@ -120,7 +120,7 @@ func (m *EgoMap) Keys() []interface{} {
 
 		return result
 
-	case IntType:
+	case IntTypeDef:
 		idx := 0
 		array := make([]int, len(m.data))
 
@@ -139,7 +139,7 @@ func (m *EgoMap) Keys() []interface{} {
 
 		return result
 
-	case FloatType:
+	case FloatTypeDef:
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -219,4 +219,12 @@ func (m *EgoMap) String() string {
 	b.WriteString("}")
 
 	return b.String()
+}
+
+func (m EgoMap) Type() Type {
+	return Type{
+		Name:      "map",
+		KeyType:   &m.keyType,
+		ValueType: &m.valueType,
+	}
 }

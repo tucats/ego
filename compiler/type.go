@@ -48,7 +48,7 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 		return err
 	}
 
-	// Indicat the type name and that this is a type object
+	// Indicate the type name and that this is a type object
 	// (as opposed to an instance object)
 	c.b.Emit(bytecode.Push, name)
 	c.b.Emit(bytecode.StoreMetadata, datatypes.TypeMDKey)
@@ -158,7 +158,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 		}
 	}
 
-	// Not a known type, let's see if it's a user type initialzer.
+	// Not a known type, let's see if it's a user type initializer.
 	t := c.normalize(c.t.Next())
 	if !tokenizer.IsSymbol(t) {
 		return nil, c.newError(errors.InvalidTypeNameError, t)
@@ -197,7 +197,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	return modelIsType{}, nil
 }
 
-func (c *Compiler) parseTypeSpec() int {
+func (c *Compiler) parseTypeSpec() datatypes.Type {
 	for _, typeDef := range datatypes.TypeDeclarationMap {
 		found := true
 
@@ -215,5 +215,5 @@ func (c *Compiler) parseTypeSpec() int {
 		}
 	}
 
-	return datatypes.UndefinedType
+	return datatypes.UndefinedTypeDef
 }

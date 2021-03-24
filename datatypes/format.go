@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -190,40 +189,5 @@ func Format(element interface{}) string {
 		}
 
 		return fmt.Sprintf("kind %v %v", vv.Kind(), v)
-	}
-}
-
-func GetString(v interface{}) string {
-	return fmt.Sprintf("%v", v)
-}
-
-func GetInt(v interface{}) int {
-	switch actual := v.(type) {
-	case int32:
-		return int(actual)
-
-	case int:
-		return actual
-
-	case int64:
-		return int(actual)
-
-	case float32:
-		return int(actual)
-
-	case float64:
-		return int(actual)
-
-	case bool:
-		if actual {
-			return 1
-		}
-
-		return 0
-
-	default:
-		v, _ := strconv.Atoi(fmt.Sprintf("%v", actual))
-
-		return v
 	}
 }

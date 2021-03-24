@@ -1,6 +1,8 @@
 package datatypes
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestPointerTo(t *testing.T) {
 	var v interface{}
@@ -15,27 +17,27 @@ func TestPointerTo(t *testing.T) {
 		{
 			name:  "bool",
 			value: true,
-			want:  BoolType,
+			want:  boolKind,
 		},
 		{
 			name:  "int",
 			value: 55,
-			want:  IntType,
+			want:  intKind,
 		},
 		{
 			name:  "float",
 			value: 1.23,
-			want:  FloatType,
+			want:  floatKind,
 		},
 		{
 			name:  "string",
-			value: "whizzy",
-			want:  StringType,
+			value: "whizz",
+			want:  stringKind,
 		},
 		{
 			name:  "nil",
 			value: nil,
-			want:  InterfaceType,
+			want:  interfaceKind,
 		},
 	}
 
@@ -43,10 +45,68 @@ func TestPointerTo(t *testing.T) {
 		v = tt.value
 		p := &v
 
-		got := PointerTo(p)
+		got := TypeOfPointer(p)
 
-		if got != tt.want {
+		if got.Kind != tt.want {
 			t.Errorf("PointerTo(%s) = %v, want %v", tt.name, got, tt.want)
 		}
+	}
+}
+
+func TestTypeString(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  interface{}
+	}{
+		{
+			name: "int",
+			arg:  intKind,
+		},
+		{
+			name: "int",
+			arg:  Type{Name: "int", Kind: intKind},
+		},
+		{
+			name: "[]int",
+			arg: Type{
+				Name: "[]",
+				Kind: arrayKind,
+				ValueType: &Type{
+					Name: "int",
+					Kind: intKind},
+			},
+		},
+		{
+			name: "[]*int",
+			arg: Type{
+				Name: "[]",
+				Kind: arrayKind,
+				ValueType: &Type{
+					Name:      "*",
+					Kind:      pointerKind,
+					ValueType: &IntTypeDef,
+				},
+			},
+		},
+		{
+			name: "map[string][]int",
+			arg: Type{
+				Name:    "map",
+				Kind:    mapKind,
+				KeyType: &StringTypeDef,
+				ValueType: &Type{
+					Name:      "[]",
+					Kind:      arrayKind,
+					ValueType: &IntTypeDef,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := TypeString(tt.arg); got != tt.name {
+				t.Errorf("TypeString() = %v, want %v", got, tt.name)
+			}
+		})
 	}
 }

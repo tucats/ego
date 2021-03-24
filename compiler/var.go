@@ -40,7 +40,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	// We'll need to use this token string over and over for each name
 	// in the list, so remember where to start.
-	kind := datatypes.UndefinedType
+	kind := datatypes.UndefinedTypeDef
 
 	var model interface{}
 
@@ -65,7 +65,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		}
 	}
 
-	if kind == datatypes.UndefinedType {
+	if kind == datatypes.UndefinedTypeDef {
 		// Is the next item a symbol? If so, assume it's a user
 		// defined type
 		typeName := c.t.Next()
@@ -86,7 +86,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 	}
 
 	// We got a built-in type, so emit the model and store it
-	// in each symbo
+	// in each symbol
 	for _, name := range names {
 		c.b.Emit(bytecode.Push, model)
 		c.b.Emit(bytecode.SymbolCreate, name)

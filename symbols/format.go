@@ -50,13 +50,6 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		dt := datatypes.TypeOf(v)
 		typeString := datatypes.TypeString(dt)
 
-		if dt == datatypes.InterfaceType {
-			xt := datatypes.PointerTo(v)
-			if xt != datatypes.InterfaceType {
-				typeString = datatypes.TypeString(xt + datatypes.PointerType)
-			}
-		}
-
 		switch actual := v.(type) {
 		case *datatypes.EgoMap:
 			typeString = actual.TypeString()

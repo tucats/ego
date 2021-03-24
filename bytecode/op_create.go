@@ -37,8 +37,8 @@ import (
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
 func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
-	parms := util.GetInt(i)
-	if parms == 2 {
+	parameter := util.GetInt(i)
+	if parameter == 2 {
 		initialValue, err := c.Pop()
 		if !errors.Nil(err) {
 			return err
@@ -77,7 +77,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 		size = 0
 	}
 
-	array := datatypes.NewArray(datatypes.InterfaceType, size)
+	array := datatypes.NewArray(datatypes.InterfaceTypeDef, size)
 
 	_ = c.stackPush(array)
 
@@ -110,17 +110,19 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	var arrayType reflect.Type
 
-	var count, kind int
+	var count int
+
+	var kind datatypes.Type
 
 	if args, ok := i.([]interface{}); ok {
 		count = util.GetInt(args[0])
-		kind = util.GetInt(args[1])
+		kind = datatypes.GetType(args[1])
 	} else {
 		count = util.GetInt(i)
-		kind = datatypes.InterfaceType
+		kind = datatypes.InterfaceArrayTypeDef
 	}
 
-	array := datatypes.NewArray(kind, count)
+	array := datatypes.NewArray(*kind.ValueType, count)
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
@@ -139,8 +141,13 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 				}
 			}
 		}
-		// All good, load it into the array.
-		_ = array.Set((count-n)-1, v)
+		// All good, load it into the array after making an attempt at a coercion.
+		v = kind.ValueType.Coerce(v)
+
+		err = array.Set((count-n)-1, v)
+		if err != nil {
+			return err
+		}
 	}
 
 	_ = c.stackPush(array)

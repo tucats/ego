@@ -38,7 +38,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 		Password:    pass,
 		Permissions: permissions,
 	}
-	resp := defs.UserReponse{}
+	resp := defs.UserResponse{}
 
 	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
 	if errors.Nil(err) {
@@ -68,7 +68,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 		user = ui.Prompt("Username: ")
 	}
 
-	resp := defs.UserReponse{}
+	resp := defs.UserResponse{}
 
 	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
 	if errors.Nil(err) {
