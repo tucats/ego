@@ -6,8 +6,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Map compiles a map type declaration
-
+// Map compiles a map type declaration.
 func (c *Compiler) mapDeclaration() *errors.EgoError {
 	if !c.t.IsNext("map") {
 		return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
@@ -18,7 +17,11 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 	}
 
 	// Parse the key type
-	keyType := c.parseTypeSpec()
+	keyType, err := c.parseTypeSpec()
+	if err != nil {
+		return err
+	}
+
 	if keyType.Kind == datatypes.UndefinedKind {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
@@ -29,7 +32,11 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 	}
 
 	// Parse the object type
-	valueType := c.parseTypeSpec()
+	valueType, err := c.parseTypeSpec()
+	if err != nil {
+		return err
+	}
+
 	if valueType.Kind == datatypes.UndefinedKind {
 		return c.newError(errors.InvalidTypeSpecError)
 	}

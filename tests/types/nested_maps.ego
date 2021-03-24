@@ -1,0 +1,14 @@
+@test "types: nested map types"
+{
+
+    // Simple explicit assignments
+    a := map[string]map[string]int{}
+    b := map[string]int{"Tom": 61}
+    a["cole"] = b
+
+    @assert a["cole"]["Tom"] == 61
+    @assert type(a) == "map[string]map[string]int"
+
+}
+
+@pass

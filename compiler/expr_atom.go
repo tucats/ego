@@ -226,7 +226,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 }
 
 func (c *Compiler) parseArray() *errors.EgoError {
-	var err error
+	var err *errors.EgoError
 
 	var listTerminator = ""
 
@@ -235,7 +235,11 @@ func (c *Compiler) parseArray() *errors.EgoError {
 	// already parsed in the expression atom.
 	marker := c.t.Mark()
 
-	kind := c.parseTypeSpec()
+	kind, err := c.parseTypeSpec()
+	if err != nil {
+		return err
+	}
+
 	if kind != datatypes.UndefinedTypeDef {
 		if !kind.IsArray() {
 			return c.newError(errors.InvalidTypeNameError)
@@ -290,12 +294,17 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		t1 := 1
 
+		var e2 error
+
 		if c.t.Peek(1) == ":" {
 			err = nil
 
 			c.t.Advance(-1)
 		} else {
-			t1, err = strconv.Atoi(c.t.Peek(1))
+			t1, e2 = strconv.Atoi(c.t.Peek(1))
+			if e2 != nil {
+				err = errors.New(e2)
+			}
 		}
 
 		if errors.Nil(err) {

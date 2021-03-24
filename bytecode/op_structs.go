@@ -320,7 +320,7 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StoreIndexImpl instruction processor.
+// StoreIntoImpl instruction processor.
 func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
 	if !errors.Nil(err) {

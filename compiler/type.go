@@ -197,7 +197,39 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	return modelIsType{}, nil
 }
 
-func (c *Compiler) parseTypeSpec() datatypes.Type {
+func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
+	if c.t.Peek(1) == "*" {
+		c.t.Advance(1)
+		t, err := c.parseTypeSpec()
+
+		return datatypes.PointerToType(t), err
+	}
+
+	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
+		c.t.Advance(2)
+		t, err := c.parseTypeSpec()
+
+		return datatypes.ArrayOfType(t), err
+	}
+
+	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
+		c.t.Advance(2)
+
+		keyType, err := c.parseTypeSpec()
+		if err != nil {
+			return datatypes.UndefinedTypeDef, err
+		}
+
+		c.t.IsNext("]")
+
+		valueType, err := c.parseTypeSpec()
+		if err != nil {
+			return datatypes.UndefinedTypeDef, err
+		}
+
+		return datatypes.MapOfType(keyType, valueType), nil
+	}
+
 	for _, typeDef := range datatypes.TypeDeclarations {
 		found := true
 
@@ -211,9 +243,9 @@ func (c *Compiler) parseTypeSpec() datatypes.Type {
 		if found {
 			c.t.Advance(len(typeDef.Tokens))
 
-			return typeDef.Kind
+			return typeDef.Kind, nil
 		}
 	}
 
-	return datatypes.UndefinedTypeDef
+	return datatypes.UndefinedTypeDef, nil
 }

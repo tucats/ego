@@ -406,7 +406,14 @@ func IsType(v interface{}, kind Type) bool {
 		return true
 	}
 
-	switch v.(type) {
+	switch actual := v.(type) {
+	case *EgoMap:
+		return kind.IsType(Type{
+			Kind:      mapKind,
+			KeyType:   &actual.keyType,
+			ValueType: &actual.valueType,
+		})
+
 	case *sync.Mutex:
 		return kind.IsKind(mutexKind)
 
@@ -496,6 +503,15 @@ func PointerToType(t Type) Type {
 		Name:      "[]",
 		Kind:      pointerKind,
 		ValueType: &t,
+	}
+}
+
+func MapOfType(key, value Type) Type {
+	return Type{
+		Name:      "map",
+		Kind:      mapKind,
+		KeyType:   &key,
+		ValueType: &value,
 	}
 }
 
