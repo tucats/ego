@@ -29,32 +29,32 @@ type NativeFunctionDef struct {
 // implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
-		Kind: datatypes.WGTypeDef,
+		Kind: datatypes.WaitGroupTypeDef,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WGTypeDef,
+		Kind: datatypes.WaitGroupTypeDef,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WGTypeDef,
+		Kind: datatypes.WaitGroupTypeDef,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.WGPtrTypeDef,
+		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WGPtrTypeDef,
+		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WGPtrTypeDef,
+		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
 		Name: "Done",
 		F:    waitGroupDone,
 	},
@@ -69,12 +69,12 @@ var NativeFunctionMap = []NativeFunctionDef{
 		F:    mutexUnlock,
 	},
 	{
-		Kind: datatypes.MutexPtrTypeDef,
+		Kind: datatypes.PointerToType(datatypes.MutexTypeDef),
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.MutexPtrTypeDef,
+		Kind: datatypes.PointerToType(datatypes.MutexTypeDef),
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},

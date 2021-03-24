@@ -150,7 +150,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 	// If it's a WaitGroup, make a new one.
 	if _, ok := args[0].(sync.WaitGroup); ok {
-		return datatypes.InstanceOf(datatypes.WGTypeDef), nil
+		return datatypes.InstanceOf(datatypes.WaitGroupTypeDef), nil
 	}
 
 	// If it's a Mutex, make a new one.

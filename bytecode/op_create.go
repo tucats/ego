@@ -119,7 +119,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 		kind = datatypes.GetType(args[1])
 	} else {
 		count = util.GetInt(i)
-		kind = datatypes.InterfaceArrayTypeDef
+		kind = datatypes.ArrayOfType(datatypes.InterfaceTypeDef)
 	}
 
 	array := datatypes.NewArray(*kind.ValueType, count)

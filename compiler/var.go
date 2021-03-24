@@ -44,7 +44,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	var model interface{}
 
-	for _, typeInfo := range datatypes.TypeDeclarationMap {
+	for _, typeInfo := range datatypes.TypeDeclarations {
 		match := true
 
 		for idx, token := range typeInfo.Tokens {

@@ -23,7 +23,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 	} else {
 		found := false
 
-		for _, typeDef := range datatypes.TypeDeclarationMap {
+		for _, typeDef := range datatypes.TypeDeclarations {
 			found = true
 
 			for pos, token := range typeDef.Tokens {

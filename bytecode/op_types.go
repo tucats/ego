@@ -61,27 +61,37 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		} else {
 			t := datatypes.GetType(i)
-			switch t {
-			case datatypes.ErrorTypeDef:
-				v = errors.New(errors.Panic).Context(v)
 
-			case datatypes.IntTypeDef:
-				v = util.GetInt(v)
+			// Test for some things that don't resolve in a switch statement. Then test
+			// for the rest using the switch statement.
+			if !t.IsType(datatypes.PointerToType(datatypes.InterfaceTypeDef)) &&
+				!t.IsType(datatypes.PointerToType(datatypes.ChanTypeDef)) {
+				switch t {
+				case datatypes.ErrorTypeDef:
+					v = errors.New(errors.Panic).Context(v)
 
-			case datatypes.FloatTypeDef:
-				v = util.GetFloat(v)
+				case datatypes.IntTypeDef:
+					v = util.GetInt(v)
 
-			case datatypes.StringTypeDef:
-				v = util.GetString(v)
+				case datatypes.FloatTypeDef:
+					v = util.GetFloat(v)
 
-			case datatypes.BoolTypeDef:
-				v = util.GetBool(v)
+				case datatypes.StringTypeDef:
+					v = util.GetString(v)
 
-			case datatypes.UndefinedTypeDef, datatypes.InterfaceTypeDef, datatypes.InterfacePtrTypeDef, datatypes.ChanPtrTypeDef, datatypes.ChanTypeDef:
-				// No work at all to do here.
+				case datatypes.BoolTypeDef:
+					v = util.GetBool(v)
 
-			default:
-				return c.newError(errors.InvalidTypeError)
+				case datatypes.UndefinedTypeDef,
+					datatypes.InterfaceTypeDef,
+					datatypes.PointerToType(datatypes.InterfaceTypeDef),
+					datatypes.PointerToType(datatypes.ChanTypeDef),
+					datatypes.ChanTypeDef:
+					// No work at all to do here.
+
+				default:
+					return c.newError(errors.InvalidTypeError)
+				}
 			}
 		}
 

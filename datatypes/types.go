@@ -50,20 +50,6 @@ var InterfaceTypeDef = Type{
 	ValueType: nil,
 }
 
-var InterfacePtrTypeDef = Type{
-	Name:      "*interface{}",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &InterfaceTypeDef,
-}
-
-var InterfaceArrayTypeDef = Type{
-	Name:      "[]interface{}",
-	Kind:      arrayKind,
-	KeyType:   nil,
-	ValueType: &InterfaceTypeDef,
-}
-
 var ErrorTypeDef = Type{
 	Name: "error",
 	Kind: errorKind,
@@ -76,25 +62,11 @@ var BoolTypeDef = Type{
 	ValueType: nil,
 }
 
-var BoolPtrTypeDef = Type{
-	Name:      "bool",
-	Kind:      boolKind,
-	KeyType:   nil,
-	ValueType: &BoolTypeDef,
-}
-
 var IntTypeDef = Type{
 	Name:      "int",
 	Kind:      intKind,
 	KeyType:   nil,
 	ValueType: nil,
-}
-
-var IntPtrTypeDef = Type{
-	Name:      "*int",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &IntTypeDef,
 }
 
 var FloatTypeDef = Type{
@@ -104,25 +76,11 @@ var FloatTypeDef = Type{
 	ValueType: nil,
 }
 
-var FloatPtrTypeDef = Type{
-	Name:      "*float",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &FloatTypeDef,
-}
-
 var StringTypeDef = Type{
 	Name:      "string",
 	Kind:      stringKind,
 	KeyType:   nil,
 	ValueType: nil,
-}
-
-var StringPtrTypeDef = Type{
-	Name:      "*string",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &StringTypeDef,
 }
 
 var ChanTypeDef = Type{
@@ -132,25 +90,11 @@ var ChanTypeDef = Type{
 	ValueType: nil,
 }
 
-var ChanPtrTypeDef = Type{
-	Name:      "*chan",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &ChanTypeDef,
-}
-
-var WGTypeDef = Type{
+var WaitGroupTypeDef = Type{
 	Name:      "WaitGroup",
 	Kind:      waitGroupKind,
 	KeyType:   nil,
 	ValueType: nil,
-}
-
-var WGPtrTypeDef = Type{
-	Name:      "*WaitGroup",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &WGTypeDef,
 }
 
 var MutexTypeDef = Type{
@@ -158,13 +102,6 @@ var MutexTypeDef = Type{
 	Kind:      mutexKind,
 	KeyType:   nil,
 	ValueType: nil,
-}
-
-var MutexPtrTypeDef = Type{
-	Name:      "*Mutex",
-	Kind:      pointerKind,
-	KeyType:   nil,
-	ValueType: &MutexTypeDef,
 }
 
 var VarArgsTypeDef = Type{
@@ -193,21 +130,21 @@ var boolInterface interface{} = false
 var floatInterface interface{} = 0.0
 var stringInterface interface{} = ""
 
-// TypeDeclarationMap is a dictionary of all the type declaration token sequences.
+// TypeDeclarations is a dictionary of all the type declaration token sequences.
 // This includes _Ego_ types and also native types, such as sync.WaitGroup.  Note
 // that for native types, you may also have to update InstanceOf() to generate a
 // unique instance of the required type, usually via pointer so the native function
 // can reference/update the native value.
-var TypeDeclarationMap = []TypeDefinition{
+var TypeDeclarations = []TypeDefinition{
 	{
 		[]string{"sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		WGTypeDef,
+		WaitGroupTypeDef,
 	},
 	{
 		[]string{"*", "sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		WGPtrTypeDef,
+		PointerToType(WaitGroupTypeDef),
 	},
 	{
 		[]string{"sync", ".", "Mutex"},
@@ -217,7 +154,7 @@ var TypeDeclarationMap = []TypeDefinition{
 	{
 		[]string{"*", "sync", ".", "Mutex"},
 		nil, // Model generated in instance-of
-		MutexPtrTypeDef,
+		PointerToType(MutexTypeDef),
 	},
 	{
 		[]string{"chan"},
@@ -297,27 +234,27 @@ var TypeDeclarationMap = []TypeDefinition{
 	{
 		[]string{"*", "bool"},
 		&boolInterface,
-		BoolPtrTypeDef,
+		PointerToType(BoolTypeDef),
 	},
 	{
 		[]string{"*", "int"},
 		&intInterface,
-		IntPtrTypeDef,
+		PointerToType(IntTypeDef),
 	},
 	{
 		[]string{"*", "float"},
 		&floatInterface,
-		FloatPtrTypeDef,
+		PointerToType(FloatTypeDef),
 	},
 	{
 		[]string{"*", "string"},
 		&stringInterface,
-		StringPtrTypeDef,
+		PointerToType(StringTypeDef),
 	},
 	{
 		[]string{"*", "interface{}"},
 		&interfaceModel,
-		InterfacePtrTypeDef,
+		PointerToType(InterfaceTypeDef),
 	},
 }
 
@@ -327,19 +264,19 @@ var TypeDeclarationMap = []TypeDefinition{
 func TypeOf(i interface{}) Type {
 	switch v := i.(type) {
 	case *interface{}:
-		return InterfacePtrTypeDef
+		return PointerToType(InterfaceTypeDef)
 
 	case *sync.WaitGroup:
-		return WGTypeDef
+		return WaitGroupTypeDef
 
 	case **sync.WaitGroup:
-		return WGPtrTypeDef
+		return PointerToType(WaitGroupTypeDef)
 
 	case *sync.Mutex:
 		return MutexTypeDef
 
 	case **sync.Mutex:
-		return MutexPtrTypeDef
+		return PointerToType(MutexTypeDef)
 
 	case int:
 		return IntTypeDef
@@ -360,16 +297,16 @@ func TypeOf(i interface{}) Type {
 		}
 
 	case *int:
-		return IntPtrTypeDef
+		return PointerToType(IntTypeDef)
 
 	case *float32, *float64:
-		return FloatPtrTypeDef
+		return PointerToType(FloatTypeDef)
 
 	case *string:
-		return StringPtrTypeDef
+		return PointerToType(StringTypeDef)
 
 	case *bool:
-		return BoolPtrTypeDef
+		return PointerToType(BoolTypeDef)
 
 	case *map[string]interface{}:
 		return Type{
@@ -385,7 +322,7 @@ func TypeOf(i interface{}) Type {
 		return v.Type()
 
 	case *Channel:
-		return ChanPtrTypeDef
+		return PointerToType(ChanTypeDef)
 
 	default:
 		return InterfaceTypeDef
@@ -398,7 +335,7 @@ func TypeString(i interface{}) string {
 	}
 
 	if k, ok := i.(int); ok {
-		for _, v := range TypeDeclarationMap {
+		for _, v := range TypeDeclarations {
 			if v.Kind.Kind == k {
 				return v.Kind.Name
 			}
@@ -451,7 +388,7 @@ func InstanceOf(kind Type) interface{} {
 		}
 
 	default:
-		for _, typeDef := range TypeDeclarationMap {
+		for _, typeDef := range TypeDeclarations {
 			if typeDef.Kind == kind {
 				return typeDef.Model
 			}
@@ -563,7 +500,7 @@ func PointerToType(t Type) Type {
 }
 
 // For a given interface pointer, unwrap the pointer and return the type it
-// actually points to
+// actually points to.
 func TypeOfPointer(v interface{}) Type {
 	if p, ok := v.(Type); ok {
 		if p.Kind != pointerKind || p.ValueType == nil {
@@ -629,7 +566,7 @@ func IsNative(kind int) bool {
 // For a given type, return the native package that contains
 // it. For example, sync.WaitGroup would return "sync".
 func NativePackage(kind int) string {
-	for _, item := range TypeDeclarationMap {
+	for _, item := range TypeDeclarations {
 		if item.Kind.Kind == kind {
 			// If this is a pointer type, skip the pointer token
 			if item.Tokens[0] == "*" {

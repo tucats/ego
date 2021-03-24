@@ -140,7 +140,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 		return nil, c.compileType()
 	}
 
-	for _, typeDef := range datatypes.TypeDeclarationMap {
+	for _, typeDef := range datatypes.TypeDeclarations {
 		found := true
 
 		for offset, token := range typeDef.Tokens {
@@ -198,7 +198,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 }
 
 func (c *Compiler) parseTypeSpec() datatypes.Type {
-	for _, typeDef := range datatypes.TypeDeclarationMap {
+	for _, typeDef := range datatypes.TypeDeclarations {
 		found := true
 
 		for pos, token := range typeDef.Tokens {
