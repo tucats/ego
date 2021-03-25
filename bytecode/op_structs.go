@@ -54,7 +54,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	// Index into map is just member access.
 	case map[string]interface{}:
 		subscript := util.GetString(index)
-		isPackage := datatypes.TypeOf(a).IsType(datatypes.PackageTypeDef)
+		isPackage := datatypes.TypeOf(a).IsType(datatypes.PackageType)
 
 		var v interface{}
 

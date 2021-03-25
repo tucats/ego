@@ -50,7 +50,7 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 
 	// Indicate the type name and that this is a type object
 	// (as opposed to an instance object)
-	c.b.Emit(bytecode.Push, datatypes.UserType(name, datatypes.StructTypeDef))
+	c.b.Emit(bytecode.Push, datatypes.UserType(name, datatypes.StructType))
 	c.b.Emit(bytecode.StoreMetadata, datatypes.TypeMDKey)
 
 	c.b.Emit(bytecode.Push, true)
@@ -217,14 +217,14 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 
 		keyType, err := c.parseTypeSpec()
 		if err != nil {
-			return datatypes.UndefinedTypeDef, err
+			return datatypes.UndefinedType, err
 		}
 
 		c.t.IsNext("]")
 
 		valueType, err := c.parseTypeSpec()
 		if err != nil {
-			return datatypes.UndefinedTypeDef, err
+			return datatypes.UndefinedType, err
 		}
 
 		return datatypes.MapOfType(keyType, valueType), nil
@@ -247,5 +247,5 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 		}
 	}
 
-	return datatypes.UndefinedTypeDef, nil
+	return datatypes.UndefinedType, nil
 }

@@ -112,7 +112,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		"verify":        true,
 		"headers":       map[string]interface{}{},
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.UserType("rest", datatypes.StructTypeDef),
+			datatypes.TypeMDKey:     datatypes.UserType("rest", datatypes.StructType),
 			datatypes.ReadonlyMDKey: true,
 		},
 	}, nil
@@ -354,10 +354,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // of structs.
 func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray {
 	cookies := r.Cookies()
-	result := datatypes.NewArray(datatypes.InterfaceTypeDef, len(cookies))
+	result := datatypes.NewArray(datatypes.InterfaceType, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
+		cookie := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 
 		_, _ = cookie.Set("expires", v.Expires.String())
 		_, _ = cookie.Set("name", v.Name)
@@ -373,7 +373,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
 func headerMap(response *resty.Response) *datatypes.EgoMap {
-	headers := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
+	headers := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 
 	for k, v := range response.Header() {
 		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))

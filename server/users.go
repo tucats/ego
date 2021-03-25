@@ -357,7 +357,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ArgumentCountError)
 	}
 
-	r := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
+	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 	name := strings.ToLower(util.GetString(args[0]))
 
 	t, ok := service.ReadUser(name)

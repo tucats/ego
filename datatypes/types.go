@@ -6,7 +6,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Define data types as abstract identifiers.
+// Define data types as abstract identifiers. These are the base
+// types for all other types. For example, a pointer to an integer
+// in constructed from a pointerKind type that references an IntKind
+// type.
 const (
 	undefinedKind = iota
 	intKind
@@ -27,7 +30,7 @@ const (
 	mutexKind
 	maximumNativeType // After list of Go-native types
 
-	VarArgs  // pseudo type used for variable argument list items
+	varArgs  // pseudo type used for variable argument list items
 	userKind // something defined by a type statement
 )
 
@@ -39,234 +42,85 @@ type Type struct {
 }
 
 // Type definitions for each given type.
-var UndefinedTypeDef = Type{
+var UndefinedType = Type{
 	Name: "undefined",
 	Kind: undefinedKind,
 }
 
-var PackageTypeDef = Type{
+var PackageType = Type{
 	Name: "package",
 	Kind: packageKind,
 }
 
-var StructTypeDef = Type{
+var StructType = Type{
 	Name: "struct",
 	Kind: structKind,
 }
 
-var InterfaceTypeDef = Type{
+var InterfaceType = Type{
 	Name:      "interface{}",
 	Kind:      interfaceKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var ErrorTypeDef = Type{
+var ErrorType = Type{
 	Name: "error",
 	Kind: errorKind,
 }
 
-var BoolTypeDef = Type{
+var BoolType = Type{
 	Name:      "bool",
 	Kind:      boolKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var IntTypeDef = Type{
+var IntType = Type{
 	Name:      "int",
 	Kind:      intKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var FloatTypeDef = Type{
+var FloatType = Type{
 	Name:      "float",
 	Kind:      floatKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var StringTypeDef = Type{
+var StringType = Type{
 	Name:      "string",
 	Kind:      stringKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var ChanTypeDef = Type{
+var ChanType = Type{
 	Name:      "chan",
 	Kind:      chanKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var WaitGroupTypeDef = Type{
+var WaitGroupType = Type{
 	Name:      "WaitGroup",
 	Kind:      waitGroupKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var MutexTypeDef = Type{
+var MutexType = Type{
 	Name:      "Mutex",
 	Kind:      mutexKind,
 	KeyType:   nil,
 	ValueType: nil,
 }
 
-var VarArgsTypeDef = Type{
+var VarArgsType = Type{
 	Name: "...",
-	Kind: VarArgs,
-}
-
-// This defines the token structure for various type declarations, including a model of that
-// type and the type designation.
-type TypeDefinition struct {
-	Tokens []string
-	Model  interface{}
-	Kind   Type
-}
-
-// This is the "zero instance" value for various types.
-var interfaceModel interface{}
-var intModel = 0
-var floatModel = 0.0
-var boolModel = false
-var stringModel = ""
-var chanModel = NewChannel(1)
-
-var intInterface interface{} = 0
-var boolInterface interface{} = false
-var floatInterface interface{} = 0.0
-var stringInterface interface{} = ""
-
-// TypeDeclarations is a dictionary of all the type declaration token sequences.
-// This includes _Ego_ types and also native types, such as sync.WaitGroup.  Note
-// that for native types, you may also have to update InstanceOf() to generate a
-// unique instance of the required type, usually via pointer so the native function
-// can reference/update the native value.
-var TypeDeclarations = []TypeDefinition{
-	{
-		[]string{"sync", ".", "WaitGroup"},
-		nil, // Model generated in instance-of
-		WaitGroupTypeDef,
-	},
-	{
-		[]string{"*", "sync", ".", "WaitGroup"},
-		nil, // Model generated in instance-of
-		PointerToType(WaitGroupTypeDef),
-	},
-	{
-		[]string{"sync", ".", "Mutex"},
-		nil, // Model generated in instance-of
-		MutexTypeDef,
-	},
-	{
-		[]string{"*", "sync", ".", "Mutex"},
-		nil, // Model generated in instance-of
-		PointerToType(MutexTypeDef),
-	},
-	{
-		[]string{"chan"},
-		chanModel,
-		ChanTypeDef,
-	},
-	{
-		[]string{"[", "]", "int"},
-		NewArray(IntTypeDef, 0),
-		Type{
-			Name:      "[]int",
-			Kind:      arrayKind,
-			ValueType: &IntTypeDef,
-		},
-	},
-	{
-		[]string{"[", "]", "bool"},
-		NewArray(BoolTypeDef, 0),
-		Type{
-			Name:      "[]bool",
-			Kind:      arrayKind,
-			ValueType: &BoolTypeDef,
-		},
-	},
-	{
-		[]string{"[", "]", "float"},
-		NewArray(FloatTypeDef, 0),
-		Type{
-			Name:      "[]float",
-			Kind:      arrayKind,
-			ValueType: &FloatTypeDef,
-		},
-	},
-	{
-		[]string{"[", "]", "string"},
-		NewArray(StringTypeDef, 0),
-		Type{
-			Name:      "[]string",
-			Kind:      arrayKind,
-			ValueType: &StringTypeDef,
-		},
-	},
-	{
-		[]string{"[", "]", "interface{}"},
-		NewArray(InterfaceTypeDef, 0),
-		Type{
-			Name:      "[]interface{}",
-			Kind:      arrayKind,
-			ValueType: &InterfaceTypeDef,
-		},
-	},
-	{
-		[]string{"bool"},
-		boolModel,
-		BoolTypeDef,
-	},
-	{
-		[]string{"int"},
-		intModel,
-		IntTypeDef,
-	},
-	{
-		[]string{"float"},
-		floatModel,
-		FloatTypeDef,
-	},
-	{
-		[]string{"string"},
-		stringModel,
-		StringTypeDef,
-	},
-	{
-		[]string{"interface{}"},
-		interfaceModel,
-		InterfaceTypeDef,
-	},
-	{
-		[]string{"*", "bool"},
-		&boolInterface,
-		PointerToType(BoolTypeDef),
-	},
-	{
-		[]string{"*", "int"},
-		&intInterface,
-		PointerToType(IntTypeDef),
-	},
-	{
-		[]string{"*", "float"},
-		&floatInterface,
-		PointerToType(FloatTypeDef),
-	},
-	{
-		[]string{"*", "string"},
-		&stringInterface,
-		PointerToType(StringTypeDef),
-	},
-	{
-		[]string{"*", "interface{}"},
-		&interfaceModel,
-		PointerToType(InterfaceTypeDef),
-	},
+	Kind: varArgs,
 }
 
 // For a given struct type, set it's type value in the metadata. If the
@@ -275,37 +129,37 @@ func SetType(m map[string]interface{}, t Type) {
 	SetMetadata(m, TypeMDKey, t)
 }
 
-// TypeOF accepts an interface of arbitrary Ego or native data type,
+// TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns an integer containing the datatype specification, such
 // as datatypes.intKind or datatypes.stringKind.
 func TypeOf(i interface{}) Type {
 	switch v := i.(type) {
 	case *interface{}:
-		return PointerToType(InterfaceTypeDef)
+		return PointerToType(InterfaceType)
 
 	case *sync.WaitGroup:
-		return WaitGroupTypeDef
+		return WaitGroupType
 
 	case **sync.WaitGroup:
-		return PointerToType(WaitGroupTypeDef)
+		return PointerToType(WaitGroupType)
 
 	case *sync.Mutex:
-		return MutexTypeDef
+		return MutexType
 
 	case **sync.Mutex:
-		return PointerToType(MutexTypeDef)
+		return PointerToType(MutexType)
 
 	case int:
-		return IntTypeDef
+		return IntType
 
 	case float32, float64:
-		return FloatTypeDef
+		return FloatType
 
 	case string:
-		return StringTypeDef
+		return StringType
 
 	case bool:
-		return BoolTypeDef
+		return BoolType
 
 	case map[string]interface{}:
 		// Is it a struct with an embedded type metadata item?
@@ -322,16 +176,16 @@ func TypeOf(i interface{}) Type {
 		}
 
 	case *int:
-		return PointerToType(IntTypeDef)
+		return PointerToType(IntType)
 
 	case *float32, *float64:
-		return PointerToType(FloatTypeDef)
+		return PointerToType(FloatType)
 
 	case *string:
-		return PointerToType(StringTypeDef)
+		return PointerToType(StringType)
 
 	case *bool:
-		return PointerToType(BoolTypeDef)
+		return PointerToType(BoolType)
 
 	case *map[string]interface{}:
 		return Type{
@@ -347,10 +201,10 @@ func TypeOf(i interface{}) Type {
 		return v.Type()
 
 	case *Channel:
-		return PointerToType(ChanTypeDef)
+		return PointerToType(ChanType)
 
 	default:
-		return InterfaceTypeDef
+		return InterfaceType
 	}
 }
 
@@ -358,7 +212,6 @@ func (t Type) String() string {
 	switch t.Kind {
 	case userKind:
 		return t.Name
-		//return "type " + t.ValueType.String()
 
 	case mapKind:
 		return "map[" + t.KeyType.String() + "]" + t.ValueType.String()
@@ -379,7 +232,8 @@ func (t Type) String() string {
 // types dictionary, or for some special native objects (like a sync.WaitGroup)
 // code here creates a new instance of that type and returns it's address.
 func InstanceOf(kind Type) interface{} {
-	// Waitgroups must be uniquely created.
+	// Waitgroups and mutexes (and pointers to them) must be uniquely created
+	// to satisfy Go requirements for unique instances for any value.
 	switch kind.Kind {
 	case mutexKind:
 		return &sync.Mutex{}
@@ -533,7 +387,7 @@ func MapOfType(key, value Type) Type {
 func TypeOfPointer(v interface{}) Type {
 	if p, ok := v.(Type); ok {
 		if p.Kind != pointerKind || p.ValueType == nil {
-			return UndefinedTypeDef
+			return UndefinedType
 		}
 
 		return *p.ValueType
@@ -542,7 +396,7 @@ func TypeOfPointer(v interface{}) Type {
 	// Is this a pointer to an actual native interface?
 	p, ok := v.(*interface{})
 	if !ok {
-		return UndefinedTypeDef
+		return UndefinedType
 	}
 
 	actual := *p
@@ -621,7 +475,7 @@ func Package(name string) Type {
 	return Type{
 		Name:      name,
 		Kind:      packageKind,
-		ValueType: &StructTypeDef,
+		ValueType: &StructType,
 	}
 }
 
@@ -669,6 +523,6 @@ func (t Type) IsArray() bool {
 	return t.Kind == arrayKind
 }
 
-func (t Type) IsUser() bool {
+func (t Type) IsUserType() bool {
 	return t.Kind == userKind
 }

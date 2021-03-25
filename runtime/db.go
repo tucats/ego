@@ -60,7 +60,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("database", datatypes.StringTypeDef))
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("database", datatypes.StringType))
 
 	return result, nil
 }
@@ -317,7 +317,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	result["Close"] = rowsClose
 	result["Headings"] = rowsHeadings
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("rows", datatypes.StringTypeDef))
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("rows", datatypes.StringType))
 
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }

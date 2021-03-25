@@ -73,7 +73,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Move the string array of headings into a native array type, which can
 	// be read by the caller.
-	headingsArray := datatypes.NewArray(datatypes.StringTypeDef, len(headings))
+	headingsArray := datatypes.NewArray(datatypes.StringType, len(headings))
 
 	for i, h := range headings {
 		_ = headingsArray.Set(i, h)
@@ -90,7 +90,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		"String":   TableString,
 		"headings": headingsArray,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.UserType("table", datatypes.StructTypeDef),
+			datatypes.TypeMDKey:     datatypes.UserType("table", datatypes.StructType),
 			datatypes.ReadonlyMDKey: true,
 		},
 	}, nil

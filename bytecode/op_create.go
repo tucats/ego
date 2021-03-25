@@ -77,7 +77,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 		size = 0
 	}
 
-	array := datatypes.NewArray(datatypes.InterfaceTypeDef, size)
+	array := datatypes.NewArray(datatypes.InterfaceType, size)
 
 	_ = c.stackPush(array)
 
@@ -119,7 +119,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 		kind = datatypes.GetType(args[1])
 	} else {
 		count = util.GetInt(i)
-		kind = datatypes.ArrayOfType(datatypes.InterfaceTypeDef)
+		kind = datatypes.ArrayOfType(datatypes.InterfaceType)
 	}
 
 	array := datatypes.NewArray(*kind.ValueType, count)
@@ -204,7 +204,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			model = value
 		} else if strings.HasPrefix(name, "__") {
 			if _, ok := value.(datatypes.Type); !ok && name == "__type" {
-				value = datatypes.UserType(util.GetString(value), datatypes.StructTypeDef)
+				value = datatypes.UserType(util.GetString(value), datatypes.StructType)
 			}
 
 			datatypes.SetMetadata(m, name[2:], value)
@@ -233,7 +233,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	typeName := typeInfo.String()
 	ok := (model != nil)
 
-	if model == nil && typeInfo.IsUser() {
+	if model == nil && typeInfo.IsUserType() {
 		model, ok = c.symbolGet(typeInfo.Name)
 	}
 
@@ -279,7 +279,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	} else {
 		// No type, default it to a struct.
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.StructTypeDef)
+		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.StructType)
 	}
 
 	// Put the newly created instance of a struct on the stack.

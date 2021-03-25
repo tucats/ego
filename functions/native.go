@@ -29,52 +29,52 @@ type NativeFunctionDef struct {
 // implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
-		Kind: datatypes.WaitGroupTypeDef,
+		Kind: datatypes.WaitGroupType,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WaitGroupTypeDef,
+		Kind: datatypes.WaitGroupType,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WaitGroupTypeDef,
+		Kind: datatypes.WaitGroupType,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
+		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
+		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupTypeDef),
+		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.MutexTypeDef,
+		Kind: datatypes.MutexType,
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.MutexTypeDef,
+		Kind: datatypes.MutexType,
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.MutexTypeDef),
+		Kind: datatypes.PointerToType(datatypes.MutexType),
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.MutexTypeDef),
+		Kind: datatypes.PointerToType(datatypes.MutexType),
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},

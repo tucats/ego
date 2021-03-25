@@ -77,7 +77,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, map[string]interface{}{
 			"__metadata": map[string]interface{}{
-				datatypes.TypeMDKey:     datatypes.StructTypeDef,
+				datatypes.TypeMDKey:     datatypes.StructType,
 				datatypes.BasetypeMDKey: "map",
 				datatypes.MembersMDKey:  []interface{}{},
 				datatypes.ReplicaMDKey:  0,
@@ -240,7 +240,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		return err
 	}
 
-	if kind != datatypes.UndefinedTypeDef {
+	if kind != datatypes.UndefinedType {
 		if !kind.IsArray() {
 			return c.newError(errors.InvalidTypeNameError)
 		}
@@ -353,7 +353,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		// If this is an array of a specific type, check to see
 		// if the previous value was a constant. If it wasn't, or
 		// was of the wrong type, emit a coerce...
-		if kind != datatypes.UndefinedTypeDef {
+		if kind != datatypes.UndefinedType {
 			if c.b.NeedsCoerce(kind) {
 				c.b.Emit(bytecode.Coerce, kind)
 			}
@@ -376,7 +376,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		c.t.Advance(1)
 	}
 
-	if kind != datatypes.UndefinedTypeDef {
+	if kind != datatypes.UndefinedType {
 		c.b.Emit(bytecode.Array, count, kind)
 	} else {
 		c.b.Emit(bytecode.Array, count)

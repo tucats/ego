@@ -43,7 +43,7 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 
 	case map[string]interface{}:
 		tt := datatypes.TypeOf(mv)
-		isPackage := tt.IsType(datatypes.PackageTypeDef)
+		isPackage := tt.IsType(datatypes.PackageType)
 
 		v, found = findMember(mv, name)
 		if !found {

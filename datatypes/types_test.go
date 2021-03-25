@@ -80,7 +80,7 @@ func TestTypeString(t *testing.T) {
 				ValueType: &Type{
 					Name:      "*",
 					Kind:      pointerKind,
-					ValueType: &IntTypeDef,
+					ValueType: &IntType,
 				},
 			},
 		},
@@ -89,11 +89,11 @@ func TestTypeString(t *testing.T) {
 			arg: Type{
 				Name:    "map",
 				Kind:    mapKind,
-				KeyType: &StringTypeDef,
+				KeyType: &StringType,
 				ValueType: &Type{
 					Name:      "[]",
 					Kind:      arrayKind,
-					ValueType: &IntTypeDef,
+					ValueType: &IntType,
 				},
 			},
 		},

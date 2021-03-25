@@ -101,7 +101,7 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError
 // ints, or floats they are returned in ascending sorted order.
 func (m *EgoMap) Keys() []interface{} {
 	switch m.keyType {
-	case StringTypeDef:
+	case StringType:
 		idx := 0
 		array := make([]string, len(m.data))
 
@@ -120,7 +120,7 @@ func (m *EgoMap) Keys() []interface{} {
 
 		return result
 
-	case IntTypeDef:
+	case IntType:
 		idx := 0
 		array := make([]int, len(m.data))
 
@@ -139,7 +139,7 @@ func (m *EgoMap) Keys() []interface{} {
 
 		return result
 
-	case FloatTypeDef:
+	case FloatType:
 		idx := 0
 		array := make([]float64, len(m.data))
 

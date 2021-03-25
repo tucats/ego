@@ -58,7 +58,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	list, err := ExpandPath(path, ext)
 
 	// Rewrap as an Ego array
-	result := datatypes.NewArray(datatypes.StringTypeDef, 0)
+	result := datatypes.NewArray(datatypes.StringType, 0)
 
 	for _, item := range list {
 		result.Append(item)
@@ -116,7 +116,7 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	path := util.GetString(args[0])
-	result := datatypes.NewArray(datatypes.InterfaceTypeDef, 0)
+	result := datatypes.NewArray(datatypes.InterfaceType, 0)
 
 	files, err := ioutil.ReadDir(path)
 	if !errors.Nil(err) {
@@ -124,7 +124,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	for _, file := range files {
-		entry := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
+		entry := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 
 		_, _ = entry.Set("name", file.Name())
 		_, _ = entry.Set("directory", file.IsDir())

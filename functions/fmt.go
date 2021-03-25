@@ -103,7 +103,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	pointerList := make([]*interface{}, len(args)-2)
 
 	for i, v := range args[2:] {
-		if datatypes.TypeOfPointer(v) == datatypes.UndefinedTypeDef {
+		if datatypes.TypeOfPointer(v) == datatypes.UndefinedType {
 			return nil, errors.New(errors.NotAPointer)
 		}
 

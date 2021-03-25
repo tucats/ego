@@ -163,7 +163,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
-		keys := datatypes.NewArray(datatypes.StringTypeDef, 0)
+		keys := datatypes.NewArray(datatypes.StringType, 0)
 		keyList := v.Keys()
 
 		for i, v := range keyList {
@@ -175,7 +175,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		return keys, nil
 
 	case map[string]interface{}:
-		keys := datatypes.NewArray(datatypes.StringTypeDef, 0)
+		keys := datatypes.NewArray(datatypes.StringType, 0)
 
 		for k := range v {
 			if !strings.HasPrefix(k, "__") {
@@ -195,7 +195,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 // SortStrings implements the sort.Strings function.
 func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType() == datatypes.StringTypeDef {
+		if array.ValueType() == datatypes.StringType {
 			err := array.Sort()
 
 			return array, err
@@ -210,7 +210,7 @@ func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // SortInts implements the sort.Ints function.
 func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.IntTypeDef) {
+		if array.ValueType().IsType(datatypes.IntType) {
 			err := array.Sort()
 
 			return array, err
@@ -225,7 +225,7 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // SortFloats implements the sort.Floats function.
 func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType() == datatypes.FloatTypeDef {
+		if array.ValueType() == datatypes.FloatType {
 			err := array.Sort()
 
 			return array, err
@@ -282,7 +282,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Ints(intArray)
 
-		resultArray := datatypes.NewArray(datatypes.IntTypeDef, len(array))
+		resultArray := datatypes.NewArray(datatypes.IntType, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -299,7 +299,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Float64s(floatArray)
 
-		resultArray := datatypes.NewArray(datatypes.FloatTypeDef, len(array))
+		resultArray := datatypes.NewArray(datatypes.FloatType, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)
@@ -316,7 +316,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Strings(stringArray)
 
-		resultArray := datatypes.NewArray(datatypes.StringTypeDef, len(array))
+		resultArray := datatypes.NewArray(datatypes.StringType, len(array))
 
 		for n, i := range stringArray {
 			_ = resultArray.Set(n, i)
@@ -377,7 +377,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 	default:
 		tt := datatypes.TypeOf(v)
-		if tt == datatypes.UndefinedTypeDef {
+		if tt == datatypes.UndefinedType {
 			vv := reflect.ValueOf(v)
 			if vv.Kind() == reflect.Func {
 				return "builtin", nil
@@ -398,15 +398,15 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		return tt.String(), nil
 
 	case []interface{}:
-		kind := datatypes.UndefinedTypeDef
+		kind := datatypes.UndefinedType
 
 		for _, n := range v {
 			k2 := datatypes.TypeOf(n)
 			if kind != k2 {
-				if kind.IsType(datatypes.UndefinedTypeDef) {
+				if kind.IsType(datatypes.UndefinedType) {
 					kind = k2
 				} else {
-					kind = datatypes.UndefinedTypeDef
+					kind = datatypes.UndefinedType
 				}
 			}
 		}
@@ -449,11 +449,11 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	result := make([]interface{}, 0)
-	kind := datatypes.InterfaceTypeDef
+	kind := datatypes.InterfaceType
 
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
-			if kind != datatypes.InterfaceTypeDef {
+			if kind != datatypes.InterfaceType {
 				if err := array.Validate(kind); !errors.Nil(err) {
 					return nil, err
 				}
@@ -461,13 +461,13 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 			result = append(result, array.BaseArray()...)
 
-			if kind.IsType(datatypes.InterfaceTypeDef) {
+			if kind.IsType(datatypes.InterfaceType) {
 				kind = array.ValueType()
 			}
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
-			if kind != datatypes.InterfaceTypeDef && datatypes.TypeOf(j) != kind {
+			if kind != datatypes.InterfaceType && datatypes.TypeOf(j) != kind {
 				return nil, errors.New(errors.WrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
@@ -533,7 +533,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, found := s.Get("__cli_args")
 	if !found {
-		r = datatypes.NewArray(datatypes.StringTypeDef, 0)
+		r = datatypes.NewArray(datatypes.StringType, 0)
 	}
 
 	return r, nil
@@ -652,7 +652,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		// Sort the member list and forge it into an Ego array
-		members := datatypes.NewFromArray(datatypes.StringTypeDef, util.MakeSortedArray(memberList))
+		members := datatypes.NewFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
 
 		result := m[datatypes.MetadataKey]
 		if result == nil {

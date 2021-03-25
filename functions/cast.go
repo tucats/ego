@@ -66,7 +66,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	// Is it an integer Ego array?
-	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntTypeDef {
+	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntType {
 		var b strings.Builder
 
 		for i := 0; i < array.Len(); i++ {
@@ -150,12 +150,12 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 	// If it's a WaitGroup, make a new one.
 	if _, ok := args[0].(sync.WaitGroup); ok {
-		return datatypes.InstanceOf(datatypes.WaitGroupTypeDef), nil
+		return datatypes.InstanceOf(datatypes.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one.
 	if _, ok := args[0].(sync.Mutex); ok {
-		return datatypes.InstanceOf(datatypes.MutexTypeDef), nil
+		return datatypes.InstanceOf(datatypes.MutexType), nil
 	}
 
 	// If it's a channel, just return the value
@@ -317,16 +317,16 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			v, _ := actual.Get(i)
 
 			switch elementKind {
-			case datatypes.IntTypeDef:
+			case datatypes.IntType:
 				_ = r.Set(i, util.GetInt(v))
 
-			case datatypes.FloatTypeDef:
+			case datatypes.FloatType:
 				_ = r.Set(i, util.GetFloat(v))
 
-			case datatypes.StringTypeDef:
+			case datatypes.StringType:
 				_ = r.Set(i, util.GetString(v))
 
-			case datatypes.BoolTypeDef:
+			case datatypes.BoolType:
 				_ = r.Set(i, util.GetBool(v))
 
 			default:
@@ -337,11 +337,11 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	case string:
-		if !kind.IsType(datatypes.ArrayOfType(datatypes.IntTypeDef)) {
+		if !kind.IsType(datatypes.ArrayOfType(datatypes.IntType)) {
 			return nil, errors.New(errors.InvalidTypeError)
 		}
 
-		r := datatypes.NewArray(datatypes.IntTypeDef, 0)
+		r := datatypes.NewArray(datatypes.IntType, 0)
 
 		for _, rune := range actual {
 			r.Append(int(rune))

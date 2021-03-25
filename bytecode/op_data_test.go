@@ -27,12 +27,12 @@ func TestStructImpl(t *testing.T) {
 				"test": 0,
 				"__metadata": map[string]interface{}{
 					"static":  true,
-					"type":    "usertype",
+					"type":    datatypes.UserType("usertype", datatypes.StructType),
 					"replica": 1,
 					"parent": map[string]interface{}{
 						"__metadata": map[string]interface{}{
 							"static": true,
-							"type":   "usertype",
+							"type":   datatypes.UserType("usertype", datatypes.StructType),
 						},
 						"flag": false,
 						"test": 0,
@@ -50,7 +50,7 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"replica": 0,
 					"static":  true,
-					"type":    "struct",
+					"type":    datatypes.StructType,
 				}},
 			wantErr: false,
 		},
@@ -64,7 +64,7 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
-					"type":    "struct",
+					"type":    datatypes.StructType,
 				}},
 			wantErr: false,
 		},
@@ -77,7 +77,7 @@ func TestStructImpl(t *testing.T) {
 				"test":   123,
 				"__metadata": map[string]interface{}{
 					"static":  true,
-					"type":    "struct",
+					"type":    datatypes.StructType,
 					"replica": 0,
 				}},
 			wantErr: false,
@@ -91,7 +91,7 @@ func TestStructImpl(t *testing.T) {
 				"active": true,
 				"test":   123,
 				"__metadata": map[string]interface{}{
-					"type":   "struct",
+					"type":   datatypes.StructType,
 					"static": true,
 				}},
 			wantErr: true,
@@ -111,7 +111,7 @@ func TestStructImpl(t *testing.T) {
 				"test": 0,
 				"flag": false,
 				datatypes.MetadataKey: map[string]interface{}{
-					datatypes.TypeMDKey:   "usertype",
+					datatypes.TypeMDKey:   datatypes.UserType("usertype", datatypes.StructType),
 					datatypes.StaticMDKey: true,
 				},
 			}
@@ -123,7 +123,7 @@ func TestStructImpl(t *testing.T) {
 			} else if errors.Nil(err) {
 				got, _ := ctx.Pop()
 				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("StructImpl() got = %v, want %v", got, tt.want)
+					t.Errorf("StructImpl()\n  got  %v\n  want %v", got, tt.want)
 				}
 			}
 		})

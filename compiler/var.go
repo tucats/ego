@@ -40,7 +40,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	// We'll need to use this token string over and over for each name
 	// in the list, so remember where to start.
-	kind := datatypes.UndefinedTypeDef
+	kind := datatypes.UndefinedType
 
 	var model interface{}
 
@@ -65,7 +65,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		}
 	}
 
-	if kind == datatypes.UndefinedTypeDef {
+	if kind == datatypes.UndefinedType {
 		// Is the next item a symbol? If so, assume it's a user
 		// defined type
 		typeName := c.t.Next()

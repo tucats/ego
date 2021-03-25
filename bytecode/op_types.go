@@ -38,16 +38,16 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 					if t, ok := i.(int); ok {
 						dataType := datatypes.TypeOf(t)
 						switch dataType {
-						case datatypes.IntTypeDef:
+						case datatypes.IntType:
 							_, ok = v.(int)
 
-						case datatypes.FloatTypeDef:
+						case datatypes.FloatType:
 							_, ok = v.(float64)
 
-						case datatypes.BoolTypeDef:
+						case datatypes.BoolType:
 							_, ok = v.(bool)
 
-						case datatypes.StringTypeDef:
+						case datatypes.StringType:
 							_, ok = v.(string)
 
 						default:
@@ -64,29 +64,29 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 
 			// Test for some things that don't resolve in a switch statement. Then test
 			// for the rest using the switch statement.
-			if !t.IsType(datatypes.PointerToType(datatypes.InterfaceTypeDef)) &&
-				!t.IsType(datatypes.PointerToType(datatypes.ChanTypeDef)) {
+			if !t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) &&
+				!t.IsType(datatypes.PointerToType(datatypes.ChanType)) {
 				switch t {
-				case datatypes.ErrorTypeDef:
+				case datatypes.ErrorType:
 					v = errors.New(errors.Panic).Context(v)
 
-				case datatypes.IntTypeDef:
+				case datatypes.IntType:
 					v = util.GetInt(v)
 
-				case datatypes.FloatTypeDef:
+				case datatypes.FloatType:
 					v = util.GetFloat(v)
 
-				case datatypes.StringTypeDef:
+				case datatypes.StringType:
 					v = util.GetString(v)
 
-				case datatypes.BoolTypeDef:
+				case datatypes.BoolType:
 					v = util.GetBool(v)
 
-				case datatypes.UndefinedTypeDef,
-					datatypes.InterfaceTypeDef,
-					datatypes.PointerToType(datatypes.InterfaceTypeDef),
-					datatypes.PointerToType(datatypes.ChanTypeDef),
-					datatypes.ChanTypeDef:
+				case datatypes.UndefinedType,
+					datatypes.InterfaceType,
+					datatypes.PointerToType(datatypes.InterfaceType),
+					datatypes.PointerToType(datatypes.ChanType),
+					datatypes.ChanType:
 					// No work at all to do here.
 
 				default:
@@ -111,22 +111,22 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch t {
-	case datatypes.ErrorTypeDef:
+	case datatypes.ErrorType:
 		v = errors.New(errors.Panic).Context(v)
 
-	case datatypes.IntTypeDef:
+	case datatypes.IntType:
 		v = util.GetInt(v)
 
-	case datatypes.FloatTypeDef:
+	case datatypes.FloatType:
 		v = util.GetFloat(v)
 
-	case datatypes.StringTypeDef:
+	case datatypes.StringType:
 		v = util.GetString(v)
 
-	case datatypes.BoolTypeDef:
+	case datatypes.BoolType:
 		v = util.GetBool(v)
 
-	case datatypes.InterfaceTypeDef, datatypes.UndefinedTypeDef:
+	case datatypes.InterfaceType, datatypes.UndefinedType:
 		// No work at all to do here.
 
 	default:

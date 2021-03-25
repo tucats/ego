@@ -12,7 +12,7 @@ func GetType(v interface{}) Type {
 		return t
 	}
 
-	return UndefinedTypeDef
+	return UndefinedType
 }
 
 func GetString(v interface{}) string {

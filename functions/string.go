@@ -189,7 +189,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.StringTypeDef, count)
+	r := datatypes.NewArray(datatypes.StringType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, string(ch))
@@ -213,7 +213,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.IntTypeDef, count)
+	r := datatypes.NewArray(datatypes.IntType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, int(ch))
@@ -357,7 +357,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	// We need to store the result in a native Ego array.
-	r := datatypes.NewArray(datatypes.StringTypeDef, len(v))
+	r := datatypes.NewArray(datatypes.StringType, len(v))
 
 	for i, n := range v {
 		err := r.Set(i, n)
@@ -374,7 +374,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	src := util.GetString(args[0])
 	t := tokenizer.New(src)
 
-	r := datatypes.NewArray(datatypes.StringTypeDef, len(t.Tokens))
+	r := datatypes.NewArray(datatypes.StringType, len(t.Tokens))
 
 	var err *errors.EgoError
 
@@ -391,7 +391,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	result := datatypes.NewMap(datatypes.StringTypeDef, datatypes.InterfaceTypeDef)
+	result := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 
 	patternMap, match := ParseURLPattern(util.GetString(args[0]), util.GetString(args[1]))
 	if !match {
@@ -521,7 +521,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	fields := strings.Fields(a)
 
-	result := datatypes.NewArray(datatypes.StringTypeDef, len(fields))
+	result := datatypes.NewArray(datatypes.StringType, len(fields))
 
 	for idx, f := range fields {
 		_ = result.Set(idx, f)
