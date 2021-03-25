@@ -234,7 +234,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	ok := (model != nil)
 
 	if model == nil && typeInfo.IsUser() {
-		model, ok = c.symbolGet(typeName)
+		model, ok = c.symbolGet(typeInfo.Name)
 	}
 
 	if ok {

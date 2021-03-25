@@ -414,7 +414,17 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		return kind.String(), nil
 
 	case map[string]interface{}:
-		return datatypes.TypeOf(v).String(), nil
+		t := datatypes.TypeOf(v)
+
+		// Is this a type object itself? If so, we report it as a type
+		// instead of by it's type name.
+		if isType, ok := datatypes.GetMetadata(v, datatypes.IsTypeMDKey); ok {
+			if util.GetBool(isType) {
+				return "type " + t.ValueType.String(), nil
+			}
+		}
+
+		return t.String(), nil
 
 	case *interface{}:
 		tt := datatypes.TypeOfPointer(v)

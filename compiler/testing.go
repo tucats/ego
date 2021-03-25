@@ -95,7 +95,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	// argument.
 	b := util.GetBool(args[0])
 	if !b {
-		msg := errors.New(errors.TestingAssertError).In("assert()")
+		msg := errors.New(errors.TestingAssertError)
 
 		if len(args) > 1 {
 			msg = msg.Context(args[1])
