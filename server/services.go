@@ -55,17 +55,17 @@ var MaxCachedEntries = 10
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
-	syms := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 
 	ui.Debug(ui.ServerLogger, "[%d] %s %s", sessionID, r.Method, r.URL.Path)
 
-	_ = syms.SetAlways("_session", Session)
-	_ = syms.SetAlways("_method", r.Method)
-	_ = syms.SetAlways("__exec_mode", "server")
-	_ = syms.SetAlways("_version", Version)
+	_ = symbolTable.SetAlways("_session", Session)
+	_ = symbolTable.SetAlways("_method", r.Method)
+	_ = symbolTable.SetAlways("__exec_mode", "server")
+	_ = symbolTable.SetAlways("_version", Version)
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	_ = syms.SetAlways("__static_data_types", staticTypes)
+	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	// Get the query parameters and store as a local varialble
 	queryParameters := r.URL.Query()
@@ -80,17 +80,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		parameterStruct[k] = values
 	}
 
-	_ = syms.SetAlways("_parms", parameterStruct)
+	_ = symbolTable.SetAlways("_parms", parameterStruct)
 
 	// Other setup for REST service execution
-	_ = syms.SetAlways("eval", runtime.Eval)
-	_ = syms.SetAlways("authenticated", Authenticated)
-	_ = syms.SetAlways("permission", Permission)
-	_ = syms.SetAlways("setuser", SetUser)
-	_ = syms.SetAlways("getuser", GetUser)
-	_ = syms.SetAlways("deleteuser", DeleteUser)
-	_ = syms.SetAlways("_rest_response", nil)
-	runtime.AddBuiltinPackages(syms)
+	_ = symbolTable.SetAlways("eval", runtime.Eval)
+	_ = symbolTable.SetAlways("authenticated", Authenticated)
+	_ = symbolTable.SetAlways("permission", Permission)
+	_ = symbolTable.SetAlways("setuser", SetUser)
+	_ = symbolTable.SetAlways("getuser", GetUser)
+	_ = symbolTable.SetAlways("deleteuser", DeleteUser)
+	_ = symbolTable.SetAlways("_rest_response", nil)
+	runtime.AddBuiltinPackages(symbolTable)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.
@@ -113,8 +113,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = syms.SetAlways("_headers", headers)
-	_ = syms.SetAlways("_json", isJSON)
+	_ = symbolTable.SetAlways("_headers", headers)
+	_ = symbolTable.SetAlways("_json", isJSON)
 
 	path := r.URL.Path
 	if path[:1] == "/" {
@@ -142,9 +142,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		pathSuffix = "/" + pathSuffix
 	}
 
-	_ = syms.SetAlways("_path_endpoint", endpoint)
-	_ = syms.SetAlways("_path", "/"+path)
-	_ = syms.SetAlways("_path_suffix", pathSuffix)
+	_ = symbolTable.SetAlways("_path_endpoint", endpoint)
+	_ = symbolTable.SetAlways("_path", "/"+path)
+	_ = symbolTable.SetAlways("_path_suffix", pathSuffix)
 
 	// Now that we know the actual endpoint, see if this is the endpoint
 	// we are debugging.
@@ -162,7 +162,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if cachedItem, ok := serviceCache[endpoint]; ok {
 		serviceCode = cachedItem.b
 		compilerInstance = cachedItem.c.Clone(true)
-		compilerInstance.AddPackageToSymbols(syms)
+		compilerInstance.AddPackageToSymbols(symbolTable)
 
 		tokens = cachedItem.t
 		cachedItem.age = time.Now()
@@ -186,17 +186,18 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
-		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(syms)
+		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
 		compilerInstance.SetInteractive(true)
 
-		compilerInstance.AddBuiltins("")
+		// Add the standard non-package functions
+		compilerInstance.AddStandard(symbolTable)
 
 		err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
 			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
 
-		compilerInstance.AddPackageToSymbols(syms)
+		compilerInstance.AddPackageToSymbols(symbolTable)
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {
@@ -251,8 +252,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := ""
 	pass := ""
-	_ = syms.SetAlways("_token", "")
-	_ = syms.SetAlways("_token_valid", false)
+	_ = symbolTable.SetAlways("_token", "")
+	_ = symbolTable.SetAlways("_token_valid", false)
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
@@ -263,8 +264,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
 			authenticatedCredentials = validateToken(token)
-			_ = syms.SetAlways("_token", token)
-			_ = syms.SetAlways("_token_valid", authenticatedCredentials)
+			_ = symbolTable.SetAlways("_token", token)
+			_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
 
 			ui.Debug(ui.ServerLogger, "[%d] Auth using token %s...", sessionID, token[:20])
@@ -276,8 +277,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				authenticatedCredentials = validatePassword(user, pass)
 			}
 
-			_ = syms.SetAlways("_token", "")
-			_ = syms.SetAlways("_token_valid", false)
+			_ = symbolTable.SetAlways("_token", "")
+			_ = symbolTable.SetAlways("_token_valid", false)
 
 			ui.Debug(ui.ServerLogger, "[%d] Auth using user \"%s\", auth: %v", sessionID,
 				user, authenticatedCredentials)
@@ -285,20 +286,23 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
-	_ = syms.SetAlways("_user", user)
-	_ = syms.SetAlways("_password", pass)
-	_ = syms.SetAlways("_authenticated", authenticatedCredentials)
-	_ = syms.Root().SetAlways("_rest_status", http.StatusOK)
-	_ = syms.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
+	_ = symbolTable.SetAlways("_user", user)
+	_ = symbolTable.SetAlways("_password", pass)
+	_ = symbolTable.SetAlways("_authenticated", authenticatedCredentials)
+	_ = symbolTable.Root().SetAlways("_rest_status", http.StatusOK)
+	_ = symbolTable.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
 
 	// Get the body of the request as a string
 	byteBuffer := new(bytes.Buffer)
 	_, _ = byteBuffer.ReadFrom(r.Body)
 	bodyText := byteBuffer.String()
-	_ = syms.SetAlways("_body", bodyText)
+	_ = symbolTable.SetAlways("_body", bodyText)
+
+	// Add the standard non-package function into this symbol table
+	compilerInstance.AddStandard(symbolTable)
 
 	// Run the service code
-	ctx := bytecode.NewContext(syms, serviceCode).SetDebug(debug).SetTokenizer(tokens)
+	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug).SetTokenizer(tokens)
 	ctx.EnableConsoleOutput(false)
 	ctx.SetTracing(Tracing)
 
@@ -323,7 +327,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
 	status := http.StatusOK
-	if statusValue, ok := syms.Get("_rest_status"); ok {
+	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
 		status = util.GetInt(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+Realm+`"`)
@@ -341,7 +345,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(status)
 
-	responseObject, authenticatedCredentials := syms.Get("_rest_response")
+	responseObject, authenticatedCredentials := symbolTable.Get("_rest_response")
 
 	if authenticatedCredentials && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
