@@ -54,11 +54,7 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	// Index into map is just member access.
 	case map[string]interface{}:
 		subscript := util.GetString(index)
-		isPackage := false
-
-		if t, found := datatypes.GetMetadata(a, datatypes.TypeMDKey); found {
-			isPackage = (util.GetString(t) == "package")
-		}
+		isPackage := datatypes.TypeOf(a).IsType(datatypes.PackageTypeDef)
 
 		var v interface{}
 

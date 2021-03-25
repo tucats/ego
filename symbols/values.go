@@ -28,12 +28,19 @@ import "github.com/tucats/ego/app-cli/ui"
 // address-of values.
 
 // For the current symbol table, allocate the initial values list and
-// create the Values array with it's address.
+// create the Values array with it's address. If the bin map is
+// nil, create it as well.
 func (s *SymbolTable) initializeValues() {
-	bin := make([]interface{}, SymbolAllocationSize)
-	s.Values = make([]*[]interface{}, 1)
-	s.Values[0] = &bin
-	s.ValueSize = 0
+	if s.Symbols == nil {
+		s.Symbols = map[string]int{}
+	}
+
+	if s.Values == nil {
+		bin := make([]interface{}, SymbolAllocationSize)
+		s.Values = make([]*[]interface{}, 1)
+		s.Values[0] = &bin
+		s.ValueSize = 0
+	}
 }
 
 // Given an index and a value, store the value in the Values list.

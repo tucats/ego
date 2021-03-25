@@ -191,7 +191,7 @@ func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
 // TypeString produces a human-readable string describing the map type in Ego
 // native terms.
 func (m *EgoMap) TypeString() string {
-	return fmt.Sprintf("map[%s]%s", TypeString(m.keyType), TypeString(m.valueType))
+	return fmt.Sprintf("map[%s]%s", m.keyType.String(), m.valueType.String())
 }
 
 // String displays a simplified formatted string value of a map, using the Ego

@@ -20,9 +20,15 @@ func Format(element interface{}) string {
 	}
 
 	switch v := element.(type) {
+	case Type:
+		return "T(" + v.String() + ")"
+
+	case *Type:
+		return "T(" + v.String() + ")"
+
 	// Naked WaitGroup is a model for a type
 	case sync.WaitGroup:
-		return "WaitGroup type"
+		return "T(sync.WaitGroup)"
 	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
 	case *sync.WaitGroup:
 		return "sync.WaitGroup{}"

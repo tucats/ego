@@ -56,12 +56,8 @@ func TestPointerTo(t *testing.T) {
 func TestTypeString(t *testing.T) {
 	tests := []struct {
 		name string
-		arg  interface{}
+		arg  Type
 	}{
-		{
-			name: "int",
-			arg:  intKind,
-		},
 		{
 			name: "int",
 			arg:  Type{Name: "int", Kind: intKind},
@@ -104,7 +100,7 @@ func TestTypeString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := TypeString(tt.arg); got != tt.name {
+			if got := tt.arg.String(); got != tt.name {
 				t.Errorf("TypeString() = %v, want %v", got, tt.name)
 			}
 		})

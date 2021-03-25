@@ -172,7 +172,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				p.(map[string]interface{})[n] = d.F
-				datatypes.SetMetadata(p.(map[string]interface{}), datatypes.TypeMDKey, "package")
+				datatypes.SetMetadata(p.(map[string]interface{}), datatypes.TypeMDKey, datatypes.Package(d.Pkg))
 				datatypes.SetMetadata(p.(map[string]interface{}), datatypes.ReadonlyMDKey, true)
 				_ = symbols.SetAlways(d.Pkg, p)
 
@@ -243,7 +243,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	return fn(s, args)
 }
 
-func AddFunction(syms *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError {
+func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError {
 	// Make sure not a collision
 	if _, ok := FunctionDictionary[fd.Name]; ok {
 		return errors.New(errors.FunctionAlreadyExistsError)
@@ -252,7 +252,7 @@ func AddFunction(syms *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoEr
 	FunctionDictionary[fd.Name] = fd
 
 	// Has the package already been constructed? If so, we need to add this to the package.
-	if pkg, ok := syms.Get(fd.Pkg); ok {
+	if pkg, ok := s.Get(fd.Pkg); ok {
 		if p, ok := pkg.(map[string]interface{}); ok {
 			p[fd.Name] = fd.F
 		}

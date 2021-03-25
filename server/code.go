@@ -24,11 +24,11 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create an empty symbol table and store the program arguments.
 	// @TOMCOLE Later this will need to parse the arguments from the URL
-	syms := symbols.NewSymbolTable("REST /code")
-	_ = syms.SetAlways("__exec_mode", "server")
+	symbolTable := symbols.NewSymbolTable("REST /code")
+	_ = symbolTable.SetAlways("__exec_mode", "server")
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	_ = syms.SetAlways("__static_data_types", staticTypes)
+	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	u := r.URL.Query()
 	args := map[string]interface{}{}
@@ -43,7 +43,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 
-	_ = syms.SetAlways("_parms", args)
+	_ = symbolTable.SetAlways("_parms", args)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
@@ -62,17 +62,17 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
 		// Add the builtin functions
-		comp.AddBuiltins("")
+		comp.AddStandard(symbolTable)
 
 		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
 			fmt.Printf("Unable to auto-import packages: " + err.Error())
 		}
 
-		comp.AddPackageToSymbols(syms)
+		comp.AddPackageToSymbols(symbolTable)
 
 		// Run the compiled code
-		ctx := bytecode.NewContext(syms, b)
+		ctx := bytecode.NewContext(symbolTable, b)
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()

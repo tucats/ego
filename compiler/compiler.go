@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -76,7 +77,7 @@ func New(name string) *Compiler {
 	cInstance := Compiler{
 		b:          nil,
 		t:          nil,
-		s:          &symbols.SymbolTable{Name: "compile-unit " + name},
+		s:          symbols.NewRootSymbolTable(name),
 		constants:  make([]string, 0),
 		deferQueue: make([]int, 0),
 		packages: PackageDictionary{
@@ -104,6 +105,14 @@ func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 // If set to true, the compiler allows the EXIT statement.
 func (c *Compiler) ExitEnabled(b bool) *Compiler {
 	c.exitEnabled = b
+
+	return c
+}
+
+// Set the given symbol table as the default symbol table for
+// compilation. This mostly affects how builtins are processed.
+func (c *Compiler) WithSymbols(s *symbols.SymbolTable) *Compiler {
+	c.s = s
 
 	return c
 }
@@ -176,19 +185,53 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 
+	compilerName := "compiler"
+	if c.s != nil {
+		compilerName = c.s.Name
+	}
+
+	ui.Debug(ui.CompilerLogger, "Adding builtin packages to %s", compilerName)
+
 	for name, f := range functions.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot >= 0 {
 			f.Pkg = name[:dot]
-			name = name[dot+1:]
+			f.Name = name[dot+1:]
+			name = f.Name
+		} else {
+			f.Name = name
 		}
 
 		if f.Pkg == pkgname {
-			if f.F != nil {
-				_ = c.addPackageFunction(pkgname, name, f.F)
-				added = true
+			if pkgname == "" && c.s != nil {
+				_ = c.s.SetAlways(name, f.F)
 			} else {
-				_ = c.addPackageValue(pkgname, name, f.V)
+				if f.F != nil {
+					_ = c.addPackageFunction(pkgname, name, f.F)
+					added = true
+				} else {
+					_ = c.addPackageValue(pkgname, name, f.V)
+				}
 			}
+		}
+	}
+
+	return added
+}
+
+// AddStandard adds the package-independent standard functions (like len() or make()) to the
+// given symbol table.
+func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
+	added := false
+
+	if s == nil {
+		return false
+	}
+
+	ui.Debug(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID)
+
+	for name, f := range functions.FunctionDictionary {
+		if dot := strings.Index(name, "."); dot < 0 {
+			_ = s.SetConstant(name, f.F)
 		}
 	}
 
@@ -221,7 +264,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	if !found {
 		fd = map[string]interface{}{}
 		fd[datatypes.MetadataKey] = map[string]interface{}{
-			datatypes.TypeMDKey:     "package",
+			datatypes.TypeMDKey:     datatypes.Package(pkgname),
 			datatypes.ReadonlyMDKey: true,
 		}
 	}
@@ -248,7 +291,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	fd, found := c.packages.Package[pkgname]
 	if fd == nil || !found {
 		fd = map[string]interface{}{}
-		datatypes.SetMetadata(fd, datatypes.TypeMDKey, "package")
+		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
 
@@ -273,15 +316,34 @@ var packageMerge sync.Mutex
 // AddPackageToSymbols adds all the defined packages for this compilation
 // to the given symbol table.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
+	ui.Debug(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID)
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
-	for pkgname, dict := range c.packages.Package {
+	for packageName, packageDictionary := range c.packages.Package {
+		// Skip over any metadata
+		if strings.HasPrefix(packageName, "__") {
+			continue
+		}
+
+		// Do we already have a package of this name defined?
+		_, found := s.Get(packageName)
+		if found {
+			//ui.Debug(ui.CompilerLogger, "Duplicate package %s already in table: %v", packageName, item)
+			continue
+		}
+
 		m := map[string]interface{}{}
 
-		for k, v := range dict {
+		for k, v := range packageDictionary {
+			// Do we already have a package of this name defined?
+			_, found := s.Get(k)
+			if found {
+				ui.Debug(ui.CompilerLogger, "Duplicate package %s already in table", k)
+			}
+
 			// If the package name is empty, we add the individual items
-			if pkgname == "" {
+			if packageName == "" {
 				_ = s.SetConstant(k, v)
 			} else {
 				// Otherwise, copy the entire map
@@ -290,11 +352,11 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 		}
 		// Make sure the package is marked as readonly so the user can't modify
 		// any function definitions, etc. that are built in.
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, "package")
+		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.Package(packageName))
 		datatypes.SetMetadata(m, datatypes.ReadonlyMDKey, true)
 
-		if pkgname != "" {
-			_ = s.SetAlways(pkgname, m)
+		if packageName != "" {
+			_ = s.SetAlways(packageName, m)
 		}
 	}
 }
@@ -317,6 +379,8 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool) *errors.EgoError {
+	ui.Debug(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
+
 	// Start by making a list of the packages. If we need all packages,
 	// scan all the built-in function names for package names. We ignore
 	// functions that don't have package names as those are already

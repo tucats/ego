@@ -138,7 +138,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 }
 
 func (a *EgoArray) TypeString() string {
-	return fmt.Sprintf("[]%s", TypeString(a.valueType))
+	return fmt.Sprintf("[]%s", a.valueType.String())
 }
 
 func (a *EgoArray) String() string {

@@ -17,11 +17,11 @@
     }
     var xx x
     
-    @assert T.Equal(type(i)  , "int"   ) 
-    @assert T.Equal(type(f)  , "float" ) 
-    @assert T.Equal(type(s)  , "string") 
-    @assert T.Equal(type(b)  , "bool"  ) 
-    @assert T.Equal(type(x)  , "type"  ) 
-    @assert T.Equal(type(xx) , "x"     ) 
+    @assert T.Equal(type(i)  , "int"         ) 
+    @assert T.Equal(type(f)  , "float"       ) 
+    @assert T.Equal(type(s)  , "string"      ) 
+    @assert T.Equal(type(b)  , "bool"        ) 
+    @assert T.Equal(type(x)  , "type struct" ) 
+    @assert T.Equal(type(xx) , "x"           ) 
 }
 @pass

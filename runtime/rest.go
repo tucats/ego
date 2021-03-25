@@ -112,7 +112,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		"verify":        true,
 		"headers":       map[string]interface{}{},
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "rest",
+			datatypes.TypeMDKey:     datatypes.UserType("rest", datatypes.StructTypeDef),
 			datatypes.ReadonlyMDKey: true,
 		},
 	}, nil

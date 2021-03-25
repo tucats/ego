@@ -78,6 +78,10 @@ func GetBool(v interface{}) bool {
 // GetString takes a generic interface and returns the string value, using
 // type coercion if needed.
 func GetString(v interface{}) string {
+	if v == nil {
+		return "nil"
+	}
+
 	switch actual := v.(type) {
 	case error:
 		return ""

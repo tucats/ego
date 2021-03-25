@@ -395,7 +395,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 			return "unknown", nil
 		}
 
-		return datatypes.TypeString(tt), nil
+		return tt.String(), nil
 
 	case []interface{}:
 		kind := datatypes.UndefinedTypeDef
@@ -411,28 +411,15 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 			}
 		}
 
-		return datatypes.TypeString(kind), nil
+		return kind.String(), nil
 
 	case map[string]interface{}:
-		// Is this a type object:
-		if f, ok := datatypes.GetMetadata(v, datatypes.IsTypeMDKey); ok {
-			if util.GetBool(f) {
-				return "type", nil
-			}
-		}
-
-		// Otherwise, if there is a type specification, return that.
-		if sv, ok := datatypes.GetMetadata(v, datatypes.TypeMDKey); ok {
-			return util.GetString(sv), nil
-		}
-
-		// Finally, just a generic struct then.
-		return "struct", nil
+		return datatypes.TypeOf(v).String(), nil
 
 	case *interface{}:
 		tt := datatypes.TypeOfPointer(v)
 
-		return datatypes.TypeString(tt), nil
+		return tt.String(), nil
 	}
 }
 

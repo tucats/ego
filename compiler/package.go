@@ -276,9 +276,9 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 	// not supported.
 	for _, f := range fi {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
-			fname := filepath.Join(dirname, f.Name())
+			fileName := filepath.Join(dirname, f.Name())
 
-			t, err := c.readPackageFile(fname)
+			t, err := c.readPackageFile(fileName)
 			if !errors.Nil(err) {
 				return "", err
 			}

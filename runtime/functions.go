@@ -21,40 +21,41 @@ const passwordPromptPrefix = "password~"
 
 // AddBuiltinPackages adds in the pre-defined package receivers
 // for things like the gremlin and rest systems.
-func AddBuiltinPackages(syms *symbols.SymbolTable) {
-	_ = syms.SetAlways("gremlin", map[string]interface{}{
+func AddBuiltinPackages(s *symbols.SymbolTable) {
+	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
+	_ = s.SetAlways("gremlin", map[string]interface{}{
 		"New": GremlinOpen,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "package",
+			datatypes.TypeMDKey:     datatypes.Package("gremlin"),
 			datatypes.ReadonlyMDKey: true,
 		},
 	})
-	_ = syms.SetAlways("rest", map[string]interface{}{
+	_ = s.SetAlways("rest", map[string]interface{}{
 		"New":    RestNew,
 		"Status": RestStatusMessage,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "package",
+			datatypes.TypeMDKey:     datatypes.Package("rest"),
 			datatypes.ReadonlyMDKey: true,
 		},
 	})
-	_ = syms.SetAlways("db", map[string]interface{}{
+	_ = s.SetAlways("db", map[string]interface{}{
 		"New": DBNew,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "package",
+			datatypes.TypeMDKey:     datatypes.Package("db"),
 			datatypes.ReadonlyMDKey: true,
 		},
 	})
-	_ = syms.SetAlways("tables", map[string]interface{}{
+	_ = s.SetAlways("tables", map[string]interface{}{
 		"New": TableNew,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "package",
+			datatypes.TypeMDKey:     datatypes.Package("tables"),
 			datatypes.ReadonlyMDKey: true,
 		},
 	})
 
 	// Add the sort.Slice function, which must live outside
 	// the function package to avoid import cycles.
-	_ = functions.AddFunction(syms, functions.FunctionDefinition{
+	_ = functions.AddFunction(s, functions.FunctionDefinition{
 		Name:      "Slice",
 		Pkg:       "sort",
 		Min:       2,

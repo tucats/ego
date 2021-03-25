@@ -1,5 +1,5 @@
 // Package expressions is a simple expression evaluator. It supports
-// a rudementary symbol table with scoping, and knows about four data
+// a rudimentary symbol table with scoping, and knows about four data
 // types (string, integer, double, and boolean). It does type casting as
 // need automatically.
 package expressions
@@ -253,7 +253,7 @@ func TestNew(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
-					"type":    "struct",
+					"type":    datatypes.StructTypeDef,
 				}, "name": "Tom",
 				"age": 50},
 		},
@@ -338,12 +338,12 @@ func TestNew(t *testing.T) {
 			want: "cake",
 		},
 		{
-			name: "min hetergenous args function",
+			name: "min heterogenous args function",
 			expr: "math.Min(15,33.5,\"11\",6)",
 			want: 6,
 		},
 		{
-			name: "sum hetergenous args function",
+			name: "sum heterogenous args function",
 			expr: "math.Sum(10.1, 5, \"2\")",
 			want: 17.1,
 		},

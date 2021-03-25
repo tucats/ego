@@ -90,7 +90,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		"String":   TableString,
 		"headings": headingsArray,
 		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     "table",
+			datatypes.TypeMDKey:     datatypes.UserType("table", datatypes.StructTypeDef),
 			datatypes.ReadonlyMDKey: true,
 		},
 	}, nil

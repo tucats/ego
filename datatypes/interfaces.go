@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// For a given interface, unwrap it.
 func GetType(v interface{}) Type {
 	if t, ok := v.(Type); ok {
 		return t

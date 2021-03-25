@@ -248,9 +248,9 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.symbolSetAlways("__args", args)
 
 	case functions.NativeFunction:
-		fname := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
-		fname = strings.Replace(fname, "github.com/tucats/ego/", "", 1)
-		funcSymbols := symbols.NewChildSymbolTable("builtin "+fname, c.symbols)
+		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
+		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
+		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
 
 		if v, ok := c.popThis(); ok {
 			_ = funcSymbols.SetAlways("__this", v)
@@ -277,8 +277,8 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
 		// First, can we check the argument count on behalf of the caller?
 		df := functions.FindFunction(af)
-		fname := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
-		fname = strings.Replace(fname, "github.com/tucats/ego/", "", 1)
+		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
+		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 
 		// See if it is a builtin function that needs visibility to the entire
 		// symbol stack without binding the scope to the parent of the current
@@ -307,7 +307,7 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 
-		funcSymbols := symbols.NewChildSymbolTable("builtin "+fname, parentTable)
+		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
 		funcSymbols.ScopeBoundary = true
 
 		// Is this builtin one that requires a "this" variable? If so, get it from
@@ -498,4 +498,15 @@ func wait(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	return nil
+}
+
+func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
+	mode, found := c.symbols.Get("__exec_mode")
+	valid := found && (util.GetString(i) == util.GetString(mode))
+
+	if valid {
+		return nil
+	}
+
+	return errors.New(errors.WrongModeError).Context(mode)
 }

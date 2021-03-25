@@ -172,7 +172,7 @@ func makeTime(t *time.Time) interface{} {
 		"String":     TimeString,
 		"Sub":        TimeSub,
 	}
-	datatypes.SetMetadata(r, datatypes.TypeMDKey, "time")
+	datatypes.SetMetadata(r, datatypes.TypeMDKey, datatypes.UserType("time", datatypes.StructTypeDef))
 
 	return r
 }

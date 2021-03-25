@@ -48,7 +48,7 @@ func pushPackage(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Define the attribute of the struct as a package.
-	datatypes.SetMetadata(pkg, datatypes.TypeMDKey, "package")
+	datatypes.SetType(pkg, datatypes.Package(name))
 
 	return c.symbols.SetAlways(name, pkg)
 }
@@ -72,12 +72,12 @@ func popPackage(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.Panic).Context("package name mismatch: " + pkgdef.name)
 	}
 	// Retrieve the package variable
-	pkgx, found := c.symbols.Get(pkgdef.name)
+	pkgValue, found := c.symbols.Get(pkgdef.name)
 	if !found {
 		return c.newError(errors.MissingPackageStatement)
 	}
 
-	pkg, _ := pkgx.(map[string]interface{})
+	pkg, _ := pkgValue.(map[string]interface{})
 
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {

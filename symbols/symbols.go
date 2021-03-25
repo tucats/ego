@@ -1,6 +1,8 @@
 package symbols
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
@@ -13,23 +15,32 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	vx, f := s.Symbols[name]
-	if f {
-		v = s.GetValue(vx)
+	slot, found := s.Symbols[name]
+	if found {
+		v = s.GetValue(slot)
+	} else {
+		v, found = s.Constants[name]
+		slot = -1
 	}
 
-	if !f {
-		v, f = s.Constants[name]
-	}
-
-	if !f && s.Parent != nil {
+	if !found && s.Parent != nil {
 		return s.Parent.Get(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), get(%s) slot %d",
-		s.Name, s.ID.String(), name, vx)
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		status := "<not found>"
+		if found {
+			status = fmt.Sprintf("%v", v)
+			if len(status) > 60 {
+				status = status[:57] + "..."
+			}
+		}
 
-	return v, f
+		ui.Debug(ui.SymbolLogger, "%s(%s), get(%s) slot %d %s",
+			s.Name, s.ID.String(), name, slot, status)
+	}
+
+	return v, found
 }
 
 // GetAddress retrieves the address of a symbol values from the
@@ -40,19 +51,21 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	vx, f := s.Symbols[name]
-	if f {
-		v = s.AddressOfValue(vx)
+	slot, found := s.Symbols[name]
+	if found {
+		v = s.AddressOfValue(slot)
 	}
 
-	if !f && s.Parent != nil {
+	if !found && s.Parent != nil {
 		return s.Parent.GetAddress(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
-		s.Name, s.ID, name)
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
+			s.Name, s.ID, name)
+	}
 
-	return v, f
+	return v, found
 }
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
@@ -74,31 +87,38 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
-	syms := s
+	symbolTable := s
 
 	if name == "_rest_response" {
-		for syms.Parent != nil && syms.Parent.Parent != nil {
-			syms = syms.Parent
+		for symbolTable.Parent != nil && symbolTable.Parent.Parent != nil {
+			symbolTable = symbolTable.Parent
 		}
 	}
 
 	// See if it's in the current constants table.
-	if syms.IsConstant(name) {
+	if symbolTable.IsConstant(name) {
 		return errors.New(errors.ReadOnlyValueError).Context(name)
 	}
 
 	// IF this doesn't exist, allocate more space in the values array
-	vx, ok := syms.Symbols[name]
+	slot, ok := symbolTable.Symbols[name]
 	if !ok {
-		vx = s.ValueSize
-		syms.Symbols[name] = s.ValueSize
+		slot = s.ValueSize
+		symbolTable.Symbols[name] = s.ValueSize
 		s.ValueSize++
 	}
 
-	syms.SetValue(vx, v)
+	symbolTable.SetValue(slot, v)
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), setalways(%s) slot %d",
-		s.Name, s.ID, name, vx)
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		valueString := fmt.Sprintf("%v", v)
+		if len(valueString) > 60 {
+			valueString = valueString[:57] + "..."
+		}
+
+		ui.Debug(ui.SymbolLogger, "%s(%s), setalways(%s) slot %d %v",
+			s.Name, s.ID, name, slot, valueString)
+	}
 
 	return nil
 }
@@ -107,9 +127,9 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	var old interface{}
 
-	oldx, found := s.Symbols[name]
+	slot, found := s.Symbols[name]
 	if found {
-		old = s.GetValue(oldx)
+		old = s.GetValue(slot)
 	}
 
 	// If it was already there, we hae some additional checks to do
@@ -131,10 +151,12 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		return s.Parent.Set(name, v)
 	}
 
-	s.SetValue(oldx, v)
+	s.SetValue(slot, v)
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), set(%s) = slot %d",
-		s.Name, s.ID, name, oldx)
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		ui.Debug(ui.SymbolLogger, "%s(%s), set(%s) = slot %d",
+			s.Name, s.ID, name, slot)
+	}
 
 	return nil
 }
@@ -162,8 +184,11 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 	}
 
 	delete(s.Symbols, name)
-	ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
-		s.Name, s.ID, name)
+
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
+			s.Name, s.ID, name)
+	}
 
 	return nil
 }
@@ -182,8 +207,10 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
-		s.Name, s.ID, name, s.ValueSize-1)
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
+			s.Name, s.ID, name, s.ValueSize-1)
+	}
 
 	return nil
 }

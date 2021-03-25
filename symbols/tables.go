@@ -44,10 +44,9 @@ func NewSymbolTable(name string) *SymbolTable {
 		Constants: map[string]interface{}{},
 		ID:        uuid.New(),
 	}
-	syms := &symbols
-	syms.initializeValues()
+	symbols.initializeValues()
 
-	return syms
+	return &symbols
 }
 
 // NewChildSymbolTableWithSize generates a new symbol table with an assigned
@@ -66,8 +65,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		symbols.isRoot = true
 	}
 
-	syms := &symbols
-	syms.initializeValues()
+	symbols.initializeValues()
 
 	return &symbols
 }

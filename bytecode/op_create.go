@@ -155,7 +155,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StructImpl implements the Struct opcode
+// structByteCode implements the Struct opcode
 //
 // This is used to create an Ego "struct" constant. A struct is
 // implemented as a map[string]interface{}, where the field
@@ -176,7 +176,7 @@ func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
 // and are stored as metadata in the resulting structure. This
 // allows type names, etc. to be added to the struct definition
 // The resulting map is then pushed back on the stack.
-func StructImpl(c *Context, i interface{}) *errors.EgoError {
+func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	var model interface{}
 
 	count := util.GetInt(i)
@@ -203,6 +203,10 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 		if name == "__model" {
 			model = value
 		} else if strings.HasPrefix(name, "__") {
+			if _, ok := value.(datatypes.Type); !ok && name == "__type" {
+				value = datatypes.UserType(util.GetString(value), datatypes.StructTypeDef)
+			}
+
 			datatypes.SetMetadata(m, name[2:], value)
 		} else {
 			m[name] = value
@@ -225,59 +229,57 @@ func StructImpl(c *Context, i interface{}) *errors.EgoError {
 	// in the metadata, and the type object (of the same name)
 	// is located in the symbol table (previously created by a
 	// type statement).
-	if kind, ok := datatypes.GetMetadata(m, datatypes.TypeMDKey); ok {
-		typeName, _ := kind.(string)
+	typeInfo := datatypes.TypeOf(m)
+	typeName := typeInfo.String()
+	ok := (model != nil)
 
-		if model == nil {
-			model, ok = c.symbolGet(typeName)
-		} else {
-			ok = true
-		}
+	if model == nil && typeInfo.IsUser() {
+		model, ok = c.symbolGet(typeName)
+	}
 
-		if ok {
-			if modelMap, ok := model.(map[string]interface{}); ok {
-				// Store a pointer to the model object now.
-				datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
+	if ok {
+		if modelMap, ok := model.(map[string]interface{}); ok {
+			// Store a pointer to the model object now.
+			datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
 
-				// Update the replica count if needed.
-				if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
-					datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
-				} else {
-					datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 1)
-				}
-
-				// Check all the fields in the new value to ensure they
-				// are valid.
-				for k := range m {
-					if _, found := modelMap[k]; !strings.HasPrefix(k, "__") && !found {
-						return c.newError(errors.InvalidFieldError, k)
-					}
-				}
-				// Add in any fields from the type model not present
-				// in the new structure we're creating. We ignore any
-				// function definitions in the model, as they will be
-				// found later during function invocation if needed
-				// by chasing the model chain.
-				for k, v := range modelMap {
-					vx := reflect.ValueOf(v)
-					if vx.Kind() == reflect.Ptr {
-						ts := vx.String()
-						if ts == "<*bytecode.ByteCode Value>" {
-							continue
-						}
-					}
-
-					if _, found := m[k]; !found {
-						m[k] = v
-					}
-				}
+			// Update the replica count if needed.
+			if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
+				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
 			} else {
-				return c.newError(errors.UnknownTypeError, typeName)
+				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 1)
 			}
+
+			// Check all the fields in the new value to ensure they
+			// are valid.
+			for k := range m {
+				if _, found := modelMap[k]; !strings.HasPrefix(k, "__") && !found {
+					return c.newError(errors.InvalidFieldError, k)
+				}
+			}
+			// Add in any fields from the type model not present
+			// in the new structure we're creating. We ignore any
+			// function definitions in the model, as they will be
+			// found later during function invocation if needed
+			// by chasing the model chain.
+			for k, v := range modelMap {
+				vx := reflect.ValueOf(v)
+				if vx.Kind() == reflect.Ptr {
+					ts := vx.String()
+					if ts == "<*bytecode.ByteCode Value>" {
+						continue
+					}
+				}
+
+				if _, found := m[k]; !found {
+					m[k] = v
+				}
+			}
+		} else {
+			return c.newError(errors.UnknownTypeError, typeName)
 		}
 	} else {
 		// No type, default it to a struct.
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, "struct")
+		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.StructTypeDef)
 	}
 
 	// Put the newly created instance of a struct on the stack.

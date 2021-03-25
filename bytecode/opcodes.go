@@ -56,6 +56,7 @@ const (
 	Log
 	MakeArray
 	Member
+	ModeCheck
 	Mul
 	Negate
 	Newline
@@ -155,7 +156,7 @@ var instructionNames = map[OpcodeID]string{
 	Log:                "Log",
 	MakeArray:          "MakeArray",
 	Member:             "Member",
-	Mul:                "Mul",
+	ModeCheck:          "ModeCheck",
 	Negate:             "Negate",
 	Newline:            "Newline",
 	NotEqual:           "NotEqual",
@@ -243,6 +244,7 @@ func initializeDispatch() {
 			Log:                LogImpl,
 			MakeArray:          MakeArrayImpl,
 			Member:             MemberImpl,
+			ModeCheck:          modeCheckBytecode,
 			Mul:                MultiplyImpl,
 			Negate:             NegateImpl,
 			Newline:            NewlineImpl,
@@ -275,7 +277,7 @@ func initializeDispatch() {
 			StoreInto:          StoreIntoImpl,
 			StoreMetadata:      StoreMetadataImpl,
 			StoreViaPointer:    StoreViaPointerImpl,
-			Struct:             StructImpl,
+			Struct:             structByteCode,
 			Sub:                SubtractImpl,
 			Swap:               SwapImpl,
 			SymbolCreate:       SymbolCreateImpl,

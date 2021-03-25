@@ -117,7 +117,7 @@ func TestStructImpl(t *testing.T) {
 			}
 			_ = ctx.symbols.SetAlways("usertype", model)
 
-			err := StructImpl(ctx, tt.arg)
+			err := structByteCode(ctx, tt.arg)
 			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("StructImpl() error = %v, wantErr %v", err, tt.wantErr)
 			} else if errors.Nil(err) {

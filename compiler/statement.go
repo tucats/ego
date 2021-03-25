@@ -16,7 +16,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	}
 
 	if c.t.IsNext("{}") {
-		// Empty body at end of token array means no more atlines...
+		// Empty body at end of token array means no more at-lines...
 		if c.t.TokenP < len(c.t.Line) {
 			c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 		}
@@ -51,7 +51,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 	}
 
-	// Is it a function call? We donly do this if we are already in
+	// Is it a function call? We only do this if we are already in
 	// the body of a function.
 
 	if c.functionDepth > 0 && c.isFunctionCall() {
@@ -243,7 +243,7 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// If it's the start of an array subexpression, increment
-		// th esubexpression counter and keep going.
+		// the subexpression counter and keep going.
 		if t == "[" {
 			subexpr++
 			pos++

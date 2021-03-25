@@ -8,7 +8,7 @@ import (
 
 // Define data types as abstract identifiers.
 const (
-	UndefinedKind = iota
+	undefinedKind = iota
 	intKind
 	floatKind
 	stringKind
@@ -20,6 +20,7 @@ const (
 	interfaceKind // alias for "any"
 	pointerKind   // Pointer to some type
 	arrayKind     // Array of some type
+	packageKind   // A package
 
 	minimumNativeType // Before list of Go-native types mapped to Ego types
 	waitGroupKind
@@ -27,7 +28,7 @@ const (
 	maximumNativeType // After list of Go-native types
 
 	VarArgs  // pseudo type used for variable argument list items
-	UserType // something defined by a type statement
+	userKind // something defined by a type statement
 )
 
 type Type struct {
@@ -40,7 +41,17 @@ type Type struct {
 // Type definitions for each given type.
 var UndefinedTypeDef = Type{
 	Name: "undefined",
-	Kind: UndefinedKind,
+	Kind: undefinedKind,
+}
+
+var PackageTypeDef = Type{
+	Name: "package",
+	Kind: packageKind,
+}
+
+var StructTypeDef = Type{
+	Name: "struct",
+	Kind: structKind,
 }
 
 var InterfaceTypeDef = Type{
@@ -258,6 +269,12 @@ var TypeDeclarations = []TypeDefinition{
 	},
 }
 
+// For a given struct type, set it's type value in the metadata. If the
+// item is not a struct map then do no work.
+func SetType(m map[string]interface{}, t Type) {
+	SetMetadata(m, TypeMDKey, t)
+}
+
 // TypeOF accepts an interface of arbitrary Ego or native data type,
 // and returns an integer containing the datatype specification, such
 // as datatypes.intKind or datatypes.stringKind.
@@ -291,6 +308,14 @@ func TypeOf(i interface{}) Type {
 		return BoolTypeDef
 
 	case map[string]interface{}:
+		// Is it a struct with an embedded type metadata item?
+		if t, ok := GetMetadata(v, TypeMDKey); ok {
+			if t, ok := t.(Type); ok {
+				return t
+			}
+		}
+
+		// Nope, apparently just an anonymous struct
 		return Type{
 			Name: "struct",
 			Kind: structKind,
@@ -329,36 +354,23 @@ func TypeOf(i interface{}) Type {
 	}
 }
 
-func TypeString(i interface{}) string {
-	if i == nil {
-		return "nil"
+func (t Type) String() string {
+	switch t.Kind {
+	case userKind:
+		return "type " + t.ValueType.String()
+
+	case mapKind:
+		return "map[" + t.KeyType.String() + "]" + t.ValueType.String()
+
+	case pointerKind:
+		return "*" + t.ValueType.String()
+
+	case arrayKind:
+		return "[]" + t.ValueType.String()
+
+	default:
+		return t.Name
 	}
-
-	if k, ok := i.(int); ok {
-		for _, v := range TypeDeclarations {
-			if v.Kind.Kind == k {
-				return v.Kind.Name
-			}
-		}
-	}
-
-	if t, ok := i.(Type); ok {
-		switch t.Kind {
-		case mapKind:
-			return "map[" + TypeString(*t.KeyType) + "]" + TypeString(*t.ValueType)
-
-		case pointerKind:
-			return "*" + TypeString(*t.ValueType)
-
-		case arrayKind:
-			return "[]" + TypeString(*t.ValueType)
-
-		default:
-			return t.Name
-		}
-	}
-
-	return "unknown"
 }
 
 // InstanceOf accepts a kind type indicator, and returns the zero-value
@@ -596,6 +608,22 @@ func NativePackage(kind int) string {
 	return ""
 }
 
+func UserType(name string, base Type) Type {
+	return Type{
+		Name:      name,
+		Kind:      userKind,
+		ValueType: &base,
+	}
+}
+
+func Package(name string) Type {
+	return Type{
+		Name:      name,
+		Kind:      packageKind,
+		ValueType: &StructTypeDef,
+	}
+}
+
 func (t Type) IsType(i Type) bool {
 	if t.Kind != i.Kind {
 		return false
@@ -638,4 +666,8 @@ func (t Type) IsPointerToType(tt int) bool {
 
 func (t Type) IsArray() bool {
 	return t.Kind == arrayKind
+}
+
+func (t Type) IsUser() bool {
+	return t.Kind == userKind
 }

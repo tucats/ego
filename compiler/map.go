@@ -22,7 +22,7 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 		return err
 	}
 
-	if keyType.Kind == datatypes.UndefinedKind {
+	if keyType.IsType(datatypes.UndefinedTypeDef) {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
 
@@ -37,7 +37,7 @@ func (c *Compiler) mapDeclaration() *errors.EgoError {
 		return err
 	}
 
-	if valueType.Kind == datatypes.UndefinedKind {
+	if valueType.IsType(datatypes.UndefinedTypeDef) {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
 

@@ -86,10 +86,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	argc := c.GetParameterCount()
 	if argc > 0 {
-		fname := c.GetParameter(0)
+		fileName := c.GetParameter(0)
 
 		// If the input file is "." then we read all of stdin
-		if fname == "." {
+		if fileName == "." {
 			text = ""
 			mainName = "console"
 
@@ -99,15 +99,15 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 		} else {
 			// Otherwise, use the parameter as a filename
-			content, err := ioutil.ReadFile(fname)
+			content, err := ioutil.ReadFile(fileName)
 			if !errors.Nil(err) {
-				content, err = ioutil.ReadFile(fname + ".ego")
+				content, err = ioutil.ReadFile(fileName + ".ego")
 				if !errors.Nil(err) {
-					return errors.New(err).Context(fname)
+					return errors.New(err).Context(fileName)
 				}
 			}
 
-			mainName = fname
+			mainName = fileName
 			text = string(content) + "\n@main main"
 		}
 		// Remaining command line arguments are stored
@@ -149,7 +149,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	}
 
 	// Set up the symbol table.
-	syms := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
+	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
 
 	exitValue := 0
 
@@ -164,13 +164,13 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		if len(text) > 8 && text[:8] == "%include" {
-			fname := strings.TrimSpace(text[8:])
+			fileName := strings.TrimSpace(text[8:])
 
-			content, err := ioutil.ReadFile(fname)
+			content, err := ioutil.ReadFile(fileName)
 			if !errors.Nil(err) {
-				content, err = ioutil.ReadFile(fname + ".ego")
+				content, err = ioutil.ReadFile(fileName + ".ego")
 				if !errors.Nil(err) {
-					return errors.New(err).Context(fname)
+					return errors.New(err).Context(fileName)
 				}
 			}
 			// Convert []byte to string
@@ -229,7 +229,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			comp = compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 			// Add the builtin functions
-			comp.AddBuiltins("")
+			comp.AddStandard(&symbols.RootSymbolTable)
 
 			err := comp.AutoImport(autoImport)
 			if !errors.Nil(err) {
@@ -251,14 +251,14 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			// Run the compiled code
-			ctx := bytecode.NewContext(syms, b).SetDebug(debug)
+			ctx := bytecode.NewContext(symbolTable, b).SetDebug(debug)
 
 			if ctx.Tracing() {
 				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
 			}
 
-			// If we are doing source tracing of execution, we'll need to link the tokenzier
+			// If we are doing source tracing of execution, we'll need to link the tokenizer
 			// back to the execution context. If you don't need source tracing, you can use
 			// the simpler CompileString() function which doesn't require a discrete tokenizer.
 			if c.GetBool("source-tracing") || debug {
@@ -288,7 +288,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			if c.GetBool("symbols") {
-				fmt.Println(syms.Format(false))
+				fmt.Println(symbolTable.Format(false))
 			}
 		}
 
@@ -308,15 +308,15 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable("file " + mainName)
+	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
-	_ = syms.SetAlways("__cli_args", programArgs)
-	_ = syms.SetAlways("__static_data_types", staticTypes)
+	_ = symbolTable.SetAlways("__cli_args", programArgs)
+	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	if interactive {
-		_ = syms.SetAlways("__exec_mode", "interactive")
+		_ = symbolTable.SetAlways("__exec_mode", "interactive")
 	} else {
-		_ = syms.SetAlways("__exec_mode", "run")
+		_ = symbolTable.SetAlways("__exec_mode", "run")
 	}
 
 	if c.GetBool("trace") {
@@ -324,10 +324,10 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	}
 
 	// Add local funcion(s) that extend the Ego function set.
-	_ = syms.SetAlways("eval", runtime.Eval)
-	_ = syms.SetAlways("prompt", runtime.Prompt)
+	_ = symbolTable.SetAlways("eval", runtime.Eval)
+	_ = symbolTable.SetAlways("prompt", runtime.Prompt)
 
-	runtime.AddBuiltinPackages(syms)
+	runtime.AddBuiltinPackages(symbolTable)
 
-	return syms
+	return symbolTable
 }

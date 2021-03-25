@@ -48,7 +48,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		skip := false
 
 		dt := datatypes.TypeOf(v)
-		typeString := datatypes.TypeString(dt)
+		typeString := dt.String()
 
 		switch actual := v.(type) {
 		case *datatypes.EgoMap:

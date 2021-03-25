@@ -37,15 +37,15 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	// If there was a password specified in the URL, blank it out now before we log it.
-	if pstr, found := url.User.Password(); found {
-		connStr = strings.ReplaceAll(connStr, ":"+pstr+"@", ":"+strings.Repeat("*", len(pstr))+"@")
+	if secretString, found := url.User.Password(); found {
+		connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
 	}
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 
 	result := map[string]interface{}{
 		"client":      db,
-		"AsStruct":    DBAsStruct,
+		"AsStruct":    DataBaseAsStruct,
 		"Begin":       DBBegin,
 		"Commit":      DBCommit,
 		"Rollback":    DBRollback,
@@ -60,7 +60,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, "database")
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("database", datatypes.StringTypeDef))
 
 	return result, nil
 }
@@ -130,11 +130,11 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return nil, err
 }
 
-// DBAsStruct sets the asStruct flag. When true, result sets from queries are an array
+// DataBaseAsStruct sets the asStruct flag. When true, result sets from queries are an array
 // of structs, where the struct members are the same as the result set column names. When
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
-func DBAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError)
 	}
@@ -317,7 +317,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	result["Close"] = rowsClose
 	result["Headings"] = rowsHeadings
 	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, "rows")
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.UserType("rows", datatypes.StringTypeDef))
 
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }

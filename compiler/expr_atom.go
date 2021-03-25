@@ -77,7 +77,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, map[string]interface{}{
 			"__metadata": map[string]interface{}{
-				datatypes.TypeMDKey:     "struct",
+				datatypes.TypeMDKey:     datatypes.StructTypeDef,
 				datatypes.BasetypeMDKey: "map",
 				datatypes.MembersMDKey:  []interface{}{},
 				datatypes.ReplicaMDKey:  0,

@@ -50,7 +50,7 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 
 	// Indicate the type name and that this is a type object
 	// (as opposed to an instance object)
-	c.b.Emit(bytecode.Push, name)
+	c.b.Emit(bytecode.Push, datatypes.UserType(name, datatypes.StructTypeDef))
 	c.b.Emit(bytecode.StoreMetadata, datatypes.TypeMDKey)
 
 	c.b.Emit(bytecode.Push, true)

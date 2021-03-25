@@ -150,7 +150,7 @@ func (c *Compiler) Log() *errors.EgoError {
 }
 
 // RestStatus parses the @status directive which sets a symbol
-// value in the root symbol table with the REST calls tatus value.
+// value in the root symbol table with the REST call status value.
 func (c *Compiler) RestStatus() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.newError(errors.InvalidSymbolError)
@@ -281,26 +281,9 @@ func (c *Compiler) atStatementEnd() bool {
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
 func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
-	c.b.Emit(bytecode.Load, "__exec_mode")
-	c.b.Emit(bytecode.Push, mode)
-	c.b.Emit(bytecode.Equal)
+	c.b.Emit(bytecode.ModeCheck, mode)
 
-	branch := c.b.Mark()
-
-	if check {
-		c.b.Emit(bytecode.BranchTrue, 0)
-	} else {
-		c.b.Emit(bytecode.BranchFalse, 0)
-	}
-
-	c.b.Emit(bytecode.Push, errors.WrongModeError)
-	c.b.Emit(bytecode.Push, ": ")
-	c.b.Emit(bytecode.Load, "__exec_mode")
-	c.b.Emit(bytecode.Add)
-	c.b.Emit(bytecode.Add)
-	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
-
-	return c.b.SetAddressHere(branch)
+	return nil
 }
 
 // Implement the @wait directive which waits for any outstanding

@@ -34,7 +34,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
 
 	// Create an empty symbol table and store the program arguments.
-	syms := symbols.NewSymbolTable("Unit Tests")
+	symbolTable := symbols.NewSymbolTable("Unit Tests")
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 
 	if c.WasFound("static-types") {
@@ -42,12 +42,12 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	}
 
 	// Add test-specific functions and values
-	_ = syms.SetAlways("eval", runtime.Eval)
-	_ = syms.SetAlways("table", runtime.Table)
-	_ = syms.SetAlways("__exec_mode", "test")
-	_ = syms.SetAlways("__static_data_types", staticTypes)
+	_ = symbolTable.SetAlways("eval", runtime.Eval)
+	_ = symbolTable.SetAlways("table", runtime.Table)
+	_ = symbolTable.SetAlways("__exec_mode", "test")
+	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
-	runtime.AddBuiltinPackages(syms)
+	runtime.AddBuiltinPackages(symbolTable)
 
 	exitValue := 0
 	builtinsAdded := false
@@ -121,7 +121,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		} else {
 			if !builtinsAdded {
 				// Add the builtin functions
-				comp.AddBuiltins("")
+				comp.AddStandard(symbolTable)
 
 				// Always autoimport
 				err := comp.AutoImport(true)
@@ -129,7 +129,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 					fmt.Printf("Unable to auto-import packages: " + err.Error())
 				}
 
-				comp.AddPackageToSymbols(syms)
+				comp.AddPackageToSymbols(symbolTable)
 
 				builtinsAdded = true
 			}
@@ -139,7 +139,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			}
 
 			// Run the compiled code
-			ctx := bytecode.NewContext(syms, b)
+			ctx := bytecode.NewContext(symbolTable, b)
 
 			ctx.EnableConsoleOutput(false)
 			if c.GetBool("trace") {
@@ -147,7 +147,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				ui.SetLogger(ui.TraceLogger, true)
 			}
 
-			// If we are doing source tracing of execution, we'll need to link the tokenzier
+			// If we are doing source tracing of execution, we'll need to link the tokenizer
 			// back to the execution context. If you don't need source tracing, you can use
 			// the simpler CompileString() function which doesn't require a discrete tokenizer.
 			if c.GetBool("source-tracing") {
@@ -203,9 +203,9 @@ func ReadDirectory(name string) (string, *errors.EgoError) {
 	// not supported.
 	for _, f := range fi {
 		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
-			fname := filepath.Join(dirname, f.Name())
+			fileName := filepath.Join(dirname, f.Name())
 
-			t, err := ReadFile(fname)
+			t, err := ReadFile(fileName)
 			if !errors.Nil(err) {
 				return "", err
 			}
