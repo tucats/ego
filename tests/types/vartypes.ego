@@ -12,8 +12,8 @@
     var b bool 
 
     type x struct {
-        name string,
-        age int,
+        name string
+        age int
     }
     var xx x
     
@@ -21,7 +21,7 @@
     @assert T.Equal(type(f)  , "float"       ) 
     @assert T.Equal(type(s)  , "string"      ) 
     @assert T.Equal(type(b)  , "bool"        ) 
-    @assert T.Equal(type(x)  , "type struct" ) 
-    @assert T.Equal(type(xx) , "x struct"    ) 
+    @assert T.Equal(type(x)  , "type struct{age int, name string}" ) 
+    @assert T.Equal(type(xx) , "x"    ) 
 }
 @pass

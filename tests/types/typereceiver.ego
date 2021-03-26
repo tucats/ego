@@ -16,7 +16,7 @@
 
     @assert T.Equal(emp.name, "Tom")
     @assert T.Equal(emp.age, 55) 
-    @assert T.Equal(type(emp), "Employee struct")  
+    @assert T.Equal(type(emp), "Employee")  
 }
 
 @pass

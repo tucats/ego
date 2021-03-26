@@ -93,6 +93,8 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 
 	// Arrays
 	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
+		c.t.Advance(2)
+
 		valueType, err := c.parseType()
 		if err != nil {
 			return datatypes.UndefinedType, err

@@ -152,6 +152,11 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
+			// If we are disassembling, do it now for the imported definitions.
+			if ui.ActiveLogger(ui.ByteCodeLogger) {
+				importCompiler.b.Disasm()
+			}
+
 			// If after the import we ended with mismatched block markers, complain
 			if importCompiler.blockDepth != 0 {
 				return c.newError(errors.MissingEndOfBlockError, packageName)

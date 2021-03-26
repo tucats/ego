@@ -3,6 +3,7 @@ package bytecode
 import (
 	"fmt"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -30,7 +31,7 @@ type callFrame struct {
 // callframePush pushes a single object on the stack that represents the state of
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
-func (c *Context) callframePush(tableName string, bc *ByteCode, pc int) {
+func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
 	_ = c.stackPush(callFrame{
 		symbols:    c.symbols,
 		bytecode:   c.bc,
@@ -44,9 +45,12 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int) {
 		blockDepth: c.blockDepth,
 	})
 
+	ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, tableName, c.symbols.Name)
+
 	c.fp = c.sp
 	c.result = nil
 	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols)
+	c.symbols.ScopeBoundary = boundary
 	c.line = 0
 	c.bc = bc
 	c.pc = pc
@@ -91,6 +95,9 @@ func (c *Context) callFramePop() *errors.EgoError {
 	}
 
 	if callFrame, ok := cx.(callFrame); ok {
+		ui.Debug(ui.TraceLogger, "(%d)  pop symbol table \"%s\", current now \"%s\"",
+			c.threadID, c.symbols.Name, callFrame.symbols.Name)
+
 		c.line = callFrame.line
 		c.symbols = callFrame.symbols
 		c.singleStep = callFrame.singleStep

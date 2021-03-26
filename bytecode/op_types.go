@@ -39,7 +39,6 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 						dataType := datatypes.TypeOf(t)
 						if dataType.IsType(datatypes.IntType) {
 							_, ok = v.(int)
-
 						} else if dataType.IsType(datatypes.BoolType) {
 							_, ok = v.(bool)
 						} else if dataType.IsType(datatypes.StringType) {
@@ -120,7 +119,7 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 
 		elementType := *t.ValueType
 		array := datatypes.NewArray(elementType, len(base))
-		model := datatypes.InstanceOf(elementType)
+		model := datatypes.InstanceOfKind(elementType)
 
 		for i, element := range base {
 			_ = array.Set(i, util.Coerce(element, model))

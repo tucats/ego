@@ -133,7 +133,7 @@ func LocalCallImpl(c *Context, i interface{}) *errors.EgoError {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
-	c.callframePush("defer", c.bc, util.GetInt(i))
+	c.callframePush("defer", c.bc, util.GetInt(i), false)
 
 	return nil
 }
@@ -230,14 +230,15 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 		// case, this must be done _after_ the call frame is recorded.
 		funcSymbols := c.getPackageSymbols()
 		if funcSymbols == nil {
-			funcSymbols = symbols.NewChildSymbolTable("function "+af.Name, parentTable)
-			funcSymbols.ScopeBoundary = true
-			c.symbols = funcSymbols
+			//			funcSymbols = symbols.NewChildSymbolTable("function "+af.Name, parentTable)
+			//			funcSymbols.ScopeBoundary = true
+			//			c.symbols = funcSymbols
+			ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, c.symbols.Name, parentTable.Name)
 
-			c.callframePush("function "+af.Name, af, 0)
+			c.callframePush("function "+af.Name, af, 0, true)
 		} else {
 			parentTable = c.symbols
-			c.callframePush("function "+af.Name, af, 0)
+			c.callframePush("function "+af.Name, af, 0, false)
 			funcSymbols.Name = "pkg func " + af.Name
 			funcSymbols.Parent = parentTable
 

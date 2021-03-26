@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -182,6 +183,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := util.GetInt(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
+	typeInfo := datatypes.StructType
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the array.
@@ -201,17 +203,14 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
-		// IF this is the model, save it off to the side. Otherwise, if there is a
-		// "__" prefix, in the name this is metadata and is not stored as a field,
-		// but instead as a metadata item (which is a hidden map-within-the-map).
-		if name == "__model" {
-			model = value
-		} else if strings.HasPrefix(name, "__") {
-			if _, ok := value.(datatypes.Type); !ok && name == "__type" {
-				value = datatypes.UserType(util.GetString(value), datatypes.StructType)
+		// If this is the type, use it to make a model. Otherwise, put it in the structure.
+		if name == "__type" {
+			if t, ok := value.(datatypes.Type); ok {
+				typeInfo = t
+				model = t.InstanceOf(&t)
+			} else {
+				fmt.Printf("DEBUG: Unexpected type value: %v\n", value)
 			}
-
-			datatypes.SetMetadata(m, name[2:], value)
 		} else {
 			m[name] = value
 		}
@@ -233,20 +232,14 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	// in the metadata, and the type object (of the same name)
 	// is located in the symbol table (previously created by a
 	// type statement).
-	typeInfo := datatypes.TypeOf(m)
 	typeName := typeInfo.String()
 	ok := (model != nil)
 
-	if model == nil && typeInfo.IsUserType() {
-		model, ok = c.symbolGet(typeInfo.Name)
-	}
+	datatypes.SetMetadata(m, datatypes.TypeMDKey, typeInfo)
 
 	if ok {
 		if modelMap, ok := model.(map[string]interface{}); ok {
-			// Store a pointer to the model object now.
-			datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
-
-			// Update the replica count if needed.
+			// datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
 			if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
 				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
 			} else {

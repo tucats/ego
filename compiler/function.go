@@ -174,23 +174,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// Add trailing return to ensure we close out the scope correctly
 	cx.b.Emit(bytecode.Return)
 
-	// If there was a receiver, make sure this function is added to the type structure
-	if className != "" {
-		c.b.Emit(bytecode.Push, b)
-
-		if c.PackageName != "" {
-			c.b.Emit(bytecode.Load, c.PackageName)
-			c.b.Emit(bytecode.Member, className)
-		} else {
-			c.b.Emit(bytecode.Load, className)
-		}
-
-		c.b.Emit(bytecode.Push, functionName)
-		c.b.Emit(bytecode.StoreIndex, true)
-
-		return nil
-	}
-
 	// Make sure the bytecode array is truncated to match the final size, so we don't
 	// end up pushing giant arrays of nils on the stack.
 	b.Seal()
@@ -203,14 +186,21 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	if isLiteral {
 		c.b.Emit(bytecode.Push, b)
 	} else {
-		// Store address of the function, either in the current
-		// compiler's symbol table or active package.
-		if /* c.PackageName == "" */ true {
+		if className != "" {
+			// If there was a receiver, make sure this function is added to the type structure
+			t, ok := c.Types[className]
+			if !ok {
+				return c.newError(errors.InvalidTypeError)
+			}
+
+			// Update the function in the type map, and generate new code
+			// to update the type definition in the symbol table.
+			t.AddFunction(functionName, b)
+			c.b.Emit(bytecode.Push, t)
+			c.b.Emit(bytecode.StoreAlways, className)
+		} else {
 			c.b.Emit(bytecode.Push, b)
 			c.b.Emit(bytecode.StoreAlways, functionName)
-			//_ = c.s.SetAlways(functionName, b)
-		} else {
-			_ = c.addPackageFunction(c.PackageName, functionName, b)
 		}
 	}
 

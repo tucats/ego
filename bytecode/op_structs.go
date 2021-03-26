@@ -188,8 +188,8 @@ func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(mm)
 }
 
-// StoreIndexImpl instruction processor.
-func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
+// storeIndexByteCode instruction processor.
+func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	storeAlways := util.GetBool(i)
 
 	index, err := c.Pop()
@@ -208,6 +208,9 @@ func StoreIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch a := destination.(type) {
+	case datatypes.Type:
+		a.AddFunction(util.GetString(index), v)
+
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); errors.Nil(err) {
 			err = c.stackPush(a)

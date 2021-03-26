@@ -86,6 +86,9 @@ func GetString(v interface{}) string {
 	case error:
 		return ""
 
+	case datatypes.Type:
+		return actual.String()
+
 	case *datatypes.EgoArray:
 		return actual.String()
 

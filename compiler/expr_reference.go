@@ -29,9 +29,6 @@ func (c *Compiler) reference() *errors.EgoError {
 			colon := c.t.Peek(3)
 
 			if tokenizer.IsSymbol(name) && colon == ":" {
-				c.b.Emit(bc.Dup)
-				c.b.Emit(bc.Push, "__model")
-				c.b.Emit(bc.LoadIndex, "__type")
 				c.b.Emit(bc.Push, "__type")
 
 				err := c.expressionAtom()
@@ -41,7 +38,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 				i := c.b.Opcodes()
 				ix := i[len(i)-1]
-				ix.Operand = util.GetInt(ix.Operand) + 2 // __type and __model
+				ix.Operand = util.GetInt(ix.Operand) + 1 // __type
 				i[len(i)-1] = ix
 			} else {
 				parsing = false
@@ -83,12 +80,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			} else {
 				// Is it a generator for a type?
 				if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
-					c.b.Emit(bc.Dup)
-					c.b.Emit(bc.SetRegister, 1)
-					c.b.Emit(bytecode.LoadIndex, "__type")
 					c.b.Emit(bytecode.Push, "__type")
-					c.b.Emit(bc.GetRegister, 1)
-					c.b.Emit(bc.Push, "__model")
 
 					err := c.expressionAtom()
 					if !errors.Nil(err) {
@@ -97,7 +89,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 					i := c.b.Opcodes()
 					ix := i[len(i)-1]
-					ix.Operand = util.GetInt(ix.Operand) + 2 // __type and __model
+					ix.Operand = util.GetInt(ix.Operand) + 1 // __type and
 					i[len(i)-1] = ix
 
 					return nil

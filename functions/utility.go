@@ -375,27 +375,15 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case *datatypes.Channel:
 		return "chan", nil
 
-	default:
-		tt := datatypes.TypeOf(v)
-		if tt.IsUndefined() {
-			vv := reflect.ValueOf(v)
-			if vv.Kind() == reflect.Func {
-				return "builtin", nil
-			}
+	case datatypes.Type:
+		typeName := v.String()
 
-			if vv.Kind() == reflect.Ptr {
-				ts := vv.String()
-				if ts == "<*bytecode.ByteCode Value>" {
-					return "func", nil
-				}
-
-				return fmt.Sprintf("ptr %s", ts), nil
-			}
-
-			return "unknown", nil
+		space := strings.Index(typeName, " ")
+		if space > 0 {
+			typeName = typeName[space+1:]
 		}
 
-		return tt.String(), nil
+		return "type " + typeName, nil
 
 	case []interface{}:
 		kind := datatypes.UndefinedType
@@ -424,10 +412,36 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 			}
 		}
 
+		if t.IsUserType() {
+			return t.Name, nil
+		}
+
 		return t.String(), nil
 
 	case *interface{}:
 		tt := datatypes.TypeOfPointer(v)
+
+		return tt.String(), nil
+
+	default:
+		tt := datatypes.TypeOf(v)
+		if tt.IsUndefined() {
+			vv := reflect.ValueOf(v)
+			if vv.Kind() == reflect.Func {
+				return "builtin", nil
+			}
+
+			if vv.Kind() == reflect.Ptr {
+				ts := vv.String()
+				if ts == "<*bytecode.ByteCode Value>" {
+					return "func", nil
+				}
+
+				return fmt.Sprintf("ptr %s", ts), nil
+			}
+
+			return "unknown", nil
+		}
 
 		return tt.String(), nil
 	}

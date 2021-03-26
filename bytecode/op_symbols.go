@@ -3,6 +3,7 @@ package bytecode
 import (
 	"strconv"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -16,9 +17,13 @@ import (
 
 // PushScopeImpl instruction processor.
 func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
+	oldName := c.symbols.Name
+
 	c.blockDepth++
 	s := symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
 	c.symbols = s
+
+	ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, c.symbols.Name, oldName)
 
 	return nil
 }
@@ -96,8 +101,8 @@ func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// ConstantImpl instruction processor.
-func ConstantImpl(c *Context, i interface{}) *errors.EgoError {
+// constantByteCode instruction processor.
+func constantByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err

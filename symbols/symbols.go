@@ -77,6 +77,11 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 
 	s.Constants[name] = v
 
+	if ui.ActiveLogger(ui.SymbolLogger) {
+		ui.Debug(ui.SymbolLogger, "%s(%s), constant(%s) %v",
+			s.Name, s.ID, name, v)
+	}
+
 	return nil
 }
 

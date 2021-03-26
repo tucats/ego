@@ -7,11 +7,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// MemberImpl instruction processor. This pops two values from
+// memberByteCode instruction processor. This pops two values from
 // the stack (the first must be a string and the second a
 // map) and indexes into the map to get the matching value
 // and puts back on the stack.
-func MemberImpl(c *Context, i interface{}) *errors.EgoError {
+func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	var name string
 
 	if i != nil {
@@ -47,11 +47,17 @@ func MemberImpl(c *Context, i interface{}) *errors.EgoError {
 
 		v, found = findMember(mv, name)
 		if !found {
-			if isPackage {
-				return c.newError(errors.UnknownPackageMemberError).Context(name)
+			// Okay, could it be a function based on the type of this object?
+			fv := tt.GetFunction(name)
+			if fv == nil {
+				if isPackage {
+					return c.newError(errors.UnknownPackageMemberError).Context(name)
+				}
+
+				return c.newError(errors.UnknownMemberError).Context(name)
 			}
 
-			return c.newError(errors.UnknownMemberError).Context(name)
+			v = fv
 		}
 
 		// Remember where we loaded this from unless it was a package name
@@ -87,11 +93,13 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 		return v, true
 	}
 
-	if p, ok := datatypes.GetMetadata(m, datatypes.ParentMDKey); ok {
-		if parentMap, ok := p.(map[string]interface{}); ok {
-			return findMember(parentMap, name)
+	/*
+		if p, ok := datatypes.GetMetadata(m, datatypes.ParentMDKey); ok {
+			if parentMap, ok := p.(map[string]interface{}); ok {
+				return findMember(parentMap, name)
+			}
 		}
-	}
+	*/
 
 	return nil, false
 }

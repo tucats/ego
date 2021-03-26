@@ -40,6 +40,7 @@ type Type struct {
 	Name      string
 	Kind      int
 	Fields    map[string]Type
+	Functions map[string]interface{}
 	KeyType   *Type
 	ValueType *Type
 }
@@ -216,6 +217,34 @@ func TypeOf(i interface{}) Type {
 	}
 }
 
+func (t Type) FunctionsList() string {
+	if t.Functions == nil || len(t.Functions) == 0 {
+		return ""
+	}
+
+	b := strings.Builder{}
+	b.WriteString(",")
+
+	keys := make([]string, 0)
+
+	for k := range t.Functions {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(",")
+		}
+
+		b.WriteString(k)
+		b.WriteString("()")
+	}
+
+	return b.String()
+}
+
 func (t Type) String() string {
 	switch t.Kind {
 	case userKind:
@@ -263,44 +292,6 @@ func (t Type) String() string {
 	default:
 		return t.Name
 	}
-}
-
-// InstanceOf accepts a kind type indicator, and returns the zero-value
-// model of that type. This uses either the model value found in the
-// types dictionary, or for some special native objects (like a sync.WaitGroup)
-// code here creates a new instance of that type and returns it's address.
-func InstanceOf(kind Type) interface{} {
-	// Waitgroups and mutexes (and pointers to them) must be uniquely created
-	// to satisfy Go requirements for unique instances for any value.
-	switch kind.Kind {
-	case mutexKind:
-		return &sync.Mutex{}
-
-	case waitGroupKind:
-		return &sync.WaitGroup{}
-
-	case pointerKind:
-		switch kind.ValueType.Kind {
-		case mutexKind:
-			mt := &sync.Mutex{}
-
-			return &mt
-
-		case waitGroupKind:
-			wg := &sync.WaitGroup{}
-
-			return &wg
-		}
-
-	default:
-		for _, typeDef := range TypeDeclarations {
-			if typeDef.Kind.IsType(kind) {
-				return typeDef.Model
-			}
-		}
-	}
-
-	return nil
 }
 
 // IsType accepts an arbitrary value that is either an Ego or native data
@@ -628,4 +619,28 @@ func (t Type) Field(name string) (Type, *errors.EgoError) {
 
 func (t Type) IsUndefined() bool {
 	return t.Kind == undefinedKind
+}
+
+func (t *Type) AddFunction(name string, v interface{}) {
+	if t.Functions == nil {
+		t.Functions = map[string]interface{}{}
+	}
+
+	t.Functions[name] = v
+}
+
+func (t Type) GetFunction(name string) interface{} {
+	var v interface{}
+
+	ok := false
+
+	if t.Functions != nil {
+		v, ok = t.Functions[name]
+	}
+
+	if !ok && t.Kind == userKind && t.ValueType != nil {
+		return t.ValueType.GetFunction(name)
+	}
+
+	return v
 }

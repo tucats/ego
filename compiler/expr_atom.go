@@ -195,7 +195,6 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		// Is it a generator for a type?
 		if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
 			c.b.Emit(bytecode.Load, t)
-			c.b.Emit(bytecode.LoadIndex, "__type")
 			c.b.Emit(bytecode.Push, "__type")
 
 			err := c.expressionAtom()
