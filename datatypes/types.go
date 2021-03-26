@@ -214,7 +214,7 @@ func TypeOf(i interface{}) Type {
 func (t Type) String() string {
 	switch t.Kind {
 	case userKind:
-		return t.Name
+		return t.Name + " " + t.ValueType.String()
 
 	case mapKind:
 		return "map[" + t.KeyType.String() + "]" + t.ValueType.String()

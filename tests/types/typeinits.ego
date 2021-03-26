@@ -7,7 +7,7 @@
 
     e := emp{name:"Bob", age:55}
     
-    @assert T.Equal(type(e), "emp",  "Wrong type of created struct" )
+    @assert T.Equal(type(e), "emp struct",  "Wrong type of created struct" )
     @assert T.Equal(e.name,  "Bob",  "Wrong name value in type" )
     @assert T.Equal(e.age,  55 ,     "Wrong age value in type" )
 }
