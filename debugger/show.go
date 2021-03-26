@@ -22,16 +22,16 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	case "breaks", "breakpoints":
 		ShowBreaks()
 
-	case "symbols", "syms":
+	case "symbols":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
 		}
 
 		fmt.Println(s.Format(true))
 
 	case "line":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
 		}
 
 		text := tx.GetLine(line)
@@ -44,7 +44,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tokens.Peek(4) != tokenizer.EndOfTokens {
-				return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(4))
+				return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(4))
 			}
 
 			if tx != "all" {
@@ -59,27 +59,27 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	case "scope":
-		syms := s
+		symbolTable := s
 		depth := 0
 
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnepectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
 		}
 
 		fmt.Printf("Symbol table scope:\n")
 
-		for syms != nil {
+		for symbolTable != nil {
 			idx := "local"
 
 			if depth > 0 {
 				idx = fmt.Sprintf("%5d", depth)
 			}
 
-			fmt.Printf("\t%s:  %s, %d symbols\n", idx, syms.Name, len(syms.Symbols))
+			fmt.Printf("\t%s:  %s, %d symbols\n", idx, symbolTable.Name, len(symbolTable.Symbols))
 
 			depth++
 
-			syms = syms.Parent
+			symbolTable = symbolTable.Parent
 		}
 
 	case "source":

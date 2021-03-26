@@ -10,6 +10,8 @@ import (
 
 type modelIsType struct{}
 
+var modernTypes = true
+
 // compileTypeDefinition compiles a type statement which creates
 // a user-defined type specification.
 func (c *Compiler) compileTypeDefinition() *errors.EgoError {
@@ -25,6 +27,9 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 		parent = c.PackageName
 	}
 
+	if modernTypes {
+		return c.typeEmitter(name)
+	}
 	// Make sure this is a legit type definition
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
 		c.t.Advance(1)

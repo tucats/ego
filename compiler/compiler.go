@@ -63,6 +63,7 @@ type Compiler struct {
 	constants            []string
 	deferQueue           []int
 	packages             PackageDictionary
+	Types                map[string]datatypes.Type
 	functionDepth        int
 	blockDepth           int
 	statementCount       int
@@ -80,6 +81,7 @@ func New(name string) *Compiler {
 		s:          symbols.NewRootSymbolTable(name),
 		constants:  make([]string, 0),
 		deferQueue: make([]int, 0),
+		Types:      map[string]datatypes.Type{},
 		packages: PackageDictionary{
 			Mutex:   sync.Mutex{},
 			Package: map[string]map[string]interface{}{},

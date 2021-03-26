@@ -44,6 +44,11 @@ type Type struct {
 	ValueType *Type
 }
 
+type Field struct {
+	Name string
+	Type Type
+}
+
 // Type definitions for each given type.
 var UndefinedType = Type{
 	Name: "undefined",
@@ -503,6 +508,20 @@ func Struct(name string) Type {
 		Kind:   structKind,
 		Fields: map[string]Type{},
 	}
+}
+
+func StructWithFields(name string, fields ...Field) Type {
+	t := Type{
+		Name:   name,
+		Kind:   structKind,
+		Fields: map[string]Type{},
+	}
+
+	for _, field := range fields {
+		_ = t.AddField(field.Name, field.Type)
+	}
+
+	return t
 }
 
 func UserType(name string, base Type) Type {
