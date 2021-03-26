@@ -16,7 +16,7 @@ import (
 *                                         *
 \******************************************/
 
-// NegateImpl instruction processor pops the top stack
+// negateByteCode instruction processor pops the top stack
 // item and pushes it's negative.
 //
 // *  booleans, a logical NOT
@@ -26,7 +26,7 @@ import (
 // If the argument is a boolen true, then this is a boolean
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
-func NegateImpl(c *Context, i interface{}) *errors.EgoError {
+func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 	kind := util.GetBool(i)
 	if kind {
 		return NotImpl(c, i)
@@ -236,8 +236,8 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
-// AndImpl bytecode instruction processor.
-func AndImpl(c *Context, i interface{}) *errors.EgoError {
+// andByteCode bytecode instruction processor.
+func andByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -256,8 +256,8 @@ func AndImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(util.GetBool(v1) && util.GetBool(v2))
 }
 
-// OrImpl bytecode instruction processor.
-func OrImpl(c *Context, i interface{}) *errors.EgoError {
+// orByteCode bytecode instruction processor.
+func orByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -276,11 +276,11 @@ func OrImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(util.GetBool(v1) || util.GetBool(v2))
 }
 
-// SubtractImpl instruction processor removes two items from the
+// subtractByteCode instruction processor removes two items from the
 // stack and subtracts them. For numeric values, this is arithmetic
 // subtraction. For an array, the item to be subtracted is removed
 // from the array (in any array location it is found).
-func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
+func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -331,8 +331,8 @@ func SubtractImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
-// MultiplyImpl bytecode instruction processor.
-func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
+// multiplyByteCode bytecode instruction processor.
+func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -365,8 +365,8 @@ func MultiplyImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
-// ExponentImpl bytecode instruction processor.
-func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
+// exponentByteCode bytecode instruction processor.
+func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -410,9 +410,9 @@ func ExponentImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
-// DivideImpl bytecode instruction processor.
-func DivideImpl(c *Context, i interface{}) *errors.EgoError {
-	if c.sp < 1 {
+// divideByteCode bytecode instruction processor.
+func divideByteCode(c *Context, i interface{}) *errors.EgoError {
+	if c.stackPointer < 1 {
 		return c.newError(errors.StackUnderflowError)
 	}
 

@@ -96,7 +96,7 @@ func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 	return nil, false
 }
 
-func StoreBytecodeImpl(c *Context, i interface{}) *errors.EgoError {
+func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
 	var v interface{}

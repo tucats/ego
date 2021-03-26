@@ -5,7 +5,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func setRegister(c *Context, i interface{}) *errors.EgoError {
+func setRegisterByteCode(c *Context, i interface{}) *errors.EgoError {
 	idx := util.GetInt(i)
 	if idx < 0 || idx >= registerCount {
 		return c.newError(errors.RegisterAddressError)
@@ -21,7 +21,7 @@ func setRegister(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func getRegister(c *Context, i interface{}) *errors.EgoError {
+func getRegisterByteCode(c *Context, i interface{}) *errors.EgoError {
 	idx := util.GetInt(i)
 	if idx < 0 || idx >= registerCount {
 		return c.newError(errors.RegisterAddressError)

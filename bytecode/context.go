@@ -31,23 +31,23 @@ var nextThreadID int32 = 0
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
-	stack           []interface{}
+	Name            string
 	bc              *ByteCode
 	symbols         *symbols.SymbolTable
 	tokenizer       *tokenizer.Tokenizer
-	try             []TryInfo
-	output          *strings.Builder
+	stack           []interface{}
+	tryStack        []TryInfo
 	rangeStack      []*Range
-	timers          []time.Time
-	Name            string
+	timerStack      []time.Time
 	thisStack       []This
 	packageStack    []packageDef
 	registers       []interface{}
+	output          *strings.Builder
 	lastStruct      interface{}
 	result          interface{}
-	pc              int
-	sp              int
-	fp              int
+	programCounter  int
+	stackPointer    int
+	framePointer    int
 	line            int
 	blockDepth      int
 	argCountDelta   int
@@ -90,10 +90,10 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		Name:            name,
 		threadID:        atomic.AddInt32(&nextThreadID, 1),
 		bc:              b,
-		pc:              0,
+		programCounter:  0,
 		stack:           make([]interface{}, InitialStackSize),
-		sp:              0,
-		fp:              0,
+		stackPointer:    0,
+		framePointer:    0,
 		running:         false,
 		Static:          static,
 		line:            0,
@@ -102,9 +102,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		thisStack:       nil,
 		registers:       make([]interface{}, registerCount),
 		packageStack:    make([]packageDef, 0),
-		try:             make([]TryInfo, 0),
+		tryStack:        make([]TryInfo, 0),
 		rangeStack:      make([]*Range, 0),
-		timers:          make([]time.Time, 0),
+		timerStack:      make([]time.Time, 0),
 	}
 	ctxp := &ctx
 	ctxp.SetByteCode(b)
@@ -143,7 +143,7 @@ func (c *Context) SetFullSymbolScope(b bool) *Context {
 // SetPC sets the program counter (PC) which indicates the
 // next instruction number to execute.
 func (c *Context) SetPC(pc int) {
-	c.pc = pc
+	c.programCounter = pc
 }
 
 // SetGlobal stores a value in a the global symbol table that is
@@ -247,12 +247,12 @@ func (c *Context) GetModuleName() string {
 
 // Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, *errors.EgoError) {
-	if c.sp <= 0 || len(c.stack) < c.sp {
+	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
 		return nil, c.newError(errors.StackUnderflowError)
 	}
 
-	c.sp = c.sp - 1
-	v := c.stack[c.sp]
+	c.stackPointer = c.stackPointer - 1
+	v := c.stack[c.stackPointer]
 
 	return v, nil
 }
@@ -334,12 +334,12 @@ func (c *Context) symbolCreate(name string) *errors.EgoError {
 
 // stackPush puts a new items on the stack.
 func (c *Context) stackPush(v interface{}) *errors.EgoError {
-	if c.sp >= len(c.stack) {
+	if c.stackPointer >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
 
-	c.stack[c.sp] = v
-	c.sp = c.sp + 1
+	c.stack[c.stackPointer] = v
+	c.stackPointer = c.stackPointer + 1
 
 	return nil
 }

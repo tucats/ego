@@ -25,13 +25,13 @@ var catchSets = [][]*errors.EgoError{
 	},
 }
 
-// TryImpl instruction processor.
-func TryImpl(c *Context, i interface{}) *errors.EgoError {
+// tryByteCode instruction processor.
+func tryByteCode(c *Context, i interface{}) *errors.EgoError {
 	try := TryInfo{
 		addr:    util.GetInt(i),
 		catches: make([]*errors.EgoError, 0),
 	}
-	c.try = append(c.try, try)
+	c.tryStack = append(c.tryStack, try)
 
 	return nil
 }
@@ -39,12 +39,12 @@ func TryImpl(c *Context, i interface{}) *errors.EgoError {
 // WillCatch instruction. This lets the code specify which errors
 // are permitted to be caught; if the list is empty then all errors
 // are caught.
-func willCatch(c *Context, i interface{}) *errors.EgoError {
-	if len(c.try) == 0 {
+func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
+	if len(c.tryStack) == 0 {
 		return c.newError(errors.TryCatchMismatchError)
 	}
 
-	try := c.try[len(c.try)-1]
+	try := c.tryStack[len(c.tryStack)-1]
 	if try.catches == nil {
 		try.catches = make([]*errors.EgoError, 0)
 	}
@@ -75,21 +75,21 @@ func willCatch(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.InvalidTypeError)
 	}
 
-	c.try[len(c.try)-1] = try
+	c.tryStack[len(c.tryStack)-1] = try
 
 	return nil
 }
 
-// TryPopImpl instruction processor.
-func TryPopImpl(c *Context, i interface{}) *errors.EgoError {
-	if len(c.try) == 0 {
+// tryPopByteCode instruction processor.
+func tryPopByteCode(c *Context, i interface{}) *errors.EgoError {
+	if len(c.tryStack) == 0 {
 		return c.newError(errors.TryCatchMismatchError)
 	}
 
-	if len(c.try) == 1 {
-		c.try = make([]TryInfo, 0)
+	if len(c.tryStack) == 1 {
+		c.tryStack = make([]TryInfo, 0)
 	} else {
-		c.try = c.try[:len(c.try)-1]
+		c.tryStack = c.tryStack[:len(c.tryStack)-1]
 	}
 
 	_ = c.symbols.Delete("_error", true)

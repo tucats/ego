@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// StoreImpl implements the Store opcode
+// storeByteCode implements the Store opcode
 //
 // Inputs:
 //    operand    - The name of the variable in which
@@ -25,7 +25,7 @@ import (
 // considered a read-only variable, so if the stack
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
-func StoreImpl(c *Context, i interface{}) *errors.EgoError {
+func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -63,7 +63,7 @@ func StoreImpl(c *Context, i interface{}) *errors.EgoError {
 }
 
 // StoreChan instruction processor.
-func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
+func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
 	if !errors.Nil(err) {
@@ -122,8 +122,8 @@ func StoreChanImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// StoreGlobalImpl instruction processor.
-func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
+// storeGlobalByteCode instruction processor.
+func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -154,7 +154,7 @@ func StoreGlobalImpl(c *Context, i interface{}) *errors.EgoError {
 
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
-func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
+func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	dest, ok := c.symbolGet(name)
@@ -215,8 +215,8 @@ func StoreViaPointerImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StoreAlwaysImpl instruction processor.
-func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
+// storeAlwaysByteCode instruction processor.
+func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -245,8 +245,8 @@ func StoreAlwaysImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// LoadImpl instruction processor.
-func LoadImpl(c *Context, i interface{}) *errors.EgoError {
+// loadByteCode instruction processor.
+func loadByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 	if len(name) == 0 {
 		return c.newError(errors.InvalidIdentifierError).Context(name)
@@ -262,10 +262,10 @@ func LoadImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// ExplodeImpl implements Explode. This accepts a struct on the top of
+// explodeByteCode implements Explode. This accepts a struct on the top of
 // the stack, and creates local variables for each of the members of the
 // struct by their name.
-func ExplodeImpl(c *Context, i interface{}) *errors.EgoError {
+func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
 	var v interface{}

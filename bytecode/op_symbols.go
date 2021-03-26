@@ -15,8 +15,8 @@ import (
 *                                         *
 \******************************************/
 
-// PushScopeImpl instruction processor.
-func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
+// pushScopeByteCode instruction processor.
+func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 	oldName := c.symbols.Name
 
 	c.blockDepth++
@@ -28,7 +28,7 @@ func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// PopScopeImpl instruction processor. This drops the current
+// popScopeByteCode instruction processor. This drops the current
 // symbol table and reverts to its parent table. It also flushes
 // any pending "this" stack objects. A chain of receivers
 // cannot span a block, so this is a good time to clean up
@@ -37,7 +37,7 @@ func PushScopeImpl(c *Context, i interface{}) *errors.EgoError {
 // Note special logic; if this was a package symbol table, take
 // time to update the readonly copies of the values in the package
 // object itself.
-func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
+func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 	// See if we're popping off a package table; if so there is work to do to
 	// copy the values back to the named package object.
 	c.syncPackageSymbols()
@@ -50,8 +50,8 @@ func PopScopeImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// SymbolCreateImpl instruction processor.
-func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
+// symbolCreateByteCode instruction processor.
+func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ReadOnlyError)
@@ -65,8 +65,8 @@ func SymbolCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// SymbolOptCreateImpl instruction processor.
-func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
+// symbolCreateIfByteCode instruction processor.
+func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ReadOnlyError)
@@ -89,8 +89,8 @@ func SymbolOptCreateImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// SymbolDeleteImpl instruction processor.
-func SymbolDeleteImpl(c *Context, i interface{}) *errors.EgoError {
+// symbolDeleteByteCode instruction processor.
+func symbolDeleteByteCode(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 
 	err := c.symbolDelete(n)

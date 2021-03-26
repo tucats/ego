@@ -12,10 +12,10 @@ import (
 
 // This manages operations on structures (structs, maps, and arrays)
 
-// LoadIndexImpl instruction processor. If the operand is non-nil then
+// loadIndexByteCode instruction processor. If the operand is non-nil then
 // it is used as the index value, else the index value comes from the
 // stack.
-func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
+func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
 	var index interface{}
@@ -103,8 +103,8 @@ func LoadIndexImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// LoadSliceImpl instruction processor.
-func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
+// loadSliceByteCode instruction processor.
+func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 	index2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -153,8 +153,8 @@ func LoadSliceImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StoreMetadataImpl instruction processor.
-func StoreMetadataImpl(c *Context, i interface{}) *errors.EgoError {
+// storeMetadataByteCode instruction processor.
+func storeMetadataByteCode(c *Context, i interface{}) *errors.EgoError {
 	var key string
 
 	if i != nil {
@@ -319,8 +319,8 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StoreIntoImpl instruction processor.
-func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
+// storeIntoByteCode instruction processor.
+func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
 	index, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -353,7 +353,7 @@ func StoreIntoImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func FlattenImpl(c *Context, i interface{}) *errors.EgoError {
+func flattenByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.argCountDelta = 0
 
 	v, err := c.Pop()

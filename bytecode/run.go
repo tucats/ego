@@ -48,7 +48,7 @@ func (c *Context) Run() *errors.EgoError {
 
 // Used to resume execution after an event like the debugger being invoked.
 func (c *Context) Resume() *errors.EgoError {
-	return c.RunFromAddress(c.pc)
+	return c.RunFromAddress(c.programCounter)
 }
 
 func (c *Context) IsRunning() bool {
@@ -66,7 +66,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	dispatchMux.Unlock()
 
 	// Reset the runtime context.
-	c.pc = addr
+	c.programCounter = addr
 	c.running = true
 
 	if ui.ActiveLogger(ui.TraceLogger) {
@@ -77,27 +77,27 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 	// Loop over the bytecodes and run.
 	for c.running {
-		if c.pc >= len(c.bc.instructions) {
+		if c.programCounter >= len(c.bc.instructions) {
 			c.running = false
 
 			break
 		}
 
-		i := c.bc.instructions[c.pc]
+		i := c.bc.instructions[c.programCounter]
 
 		if c.Tracing() {
 			s := FormatInstruction(i)
 
-			s2 := FormatStack(c.symbols, c.stack[:c.sp], fullStackListing)
+			s2 := FormatStack(c.symbols, c.stack[:c.stackPointer], fullStackListing)
 			if !fullStackListing && len(s2) > 80 {
 				s2 = s2[:80]
 			}
 
 			ui.Debug(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
-				c.threadID, c.GetModuleName(), c.pc, s, c.sp, s2)
+				c.threadID, c.GetModuleName(), c.programCounter, s, c.stackPointer, s2)
 		}
 
-		c.pc = c.pc + 1
+		c.programCounter = c.programCounter + 1
 
 		imp, found := dispatch[i.Operation]
 		if !found {
@@ -113,11 +113,11 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 			// Note that if the error was fatal, the running flag is turned off, which
 			// prevents the try block from being honored (i.e. you cannot catch a fatal
 			// error).
-			if len(c.try) > 0 && c.try[len(c.try)-1].addr > 0 && c.running {
+			if len(c.tryStack) > 0 && c.tryStack[len(c.tryStack)-1].addr > 0 && c.running {
 				// Do we have a selective set of things we catch?
 				willCatch := true
 
-				try := c.try[len(c.try)-1]
+				try := c.tryStack[len(c.tryStack)-1]
 				if len(try.catches) > 0 {
 					willCatch = false
 
@@ -136,17 +136,17 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				}
 
 				// We are catching, so update the PC
-				c.pc = try.addr
+				c.programCounter = try.addr
 
 				// Zero out the jump point for this try/catch block so recursive
 				// errors don't occur.
-				c.try[len(c.try)-1].addr = 0
+				c.tryStack[len(c.tryStack)-1].addr = 0
 
 				// Implicit pop-scope done here.
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
 				if ui.ActiveLogger(ui.TraceLogger) {
-					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.pc, text)
+					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
 				}
 			} else {
 				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) {

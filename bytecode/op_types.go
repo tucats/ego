@@ -10,7 +10,7 @@ import (
 
 // StaticTypeOpcode implements the StaticType opcode, which
 // sets the static typing flag for the current context.
-func StaticTypingImpl(c *Context, i interface{}) *errors.EgoError {
+func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if errors.Nil(err) {
 		c.Static = util.GetBool(v)
@@ -20,7 +20,7 @@ func StaticTypingImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
+func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if errors.Nil(err) {
 		// If we're doing strict type checking...
@@ -87,8 +87,8 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// CoerceImpl instruction processor.
-func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
+// coerceByteCode instruction processor.
+func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	t := datatypes.GetType(i)
 
 	v, err := c.Pop()
@@ -152,7 +152,7 @@ func (b ByteCode) NeedsCoerce(kind datatypes.Type) bool {
 	return true
 }
 
-func AddressOfImpl(c *Context, i interface{}) *errors.EgoError {
+func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)
@@ -163,7 +163,7 @@ func AddressOfImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(addr)
 }
 
-func DeRefImpl(c *Context, i interface{}) *errors.EgoError {
+func derefByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)

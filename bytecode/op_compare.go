@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// EqualImpl implements the Equal opcode
+// equalByteCode implements the Equal opcode
 //
 // Inputs:
 //    stack+0    - The item to be compared
@@ -18,7 +18,7 @@ import (
 // and a type-specific test for equality is done.
 // If the values are equal, then true is pushed
 // back on the stack, else false.
-func EqualImpl(c *Context, i interface{}) *errors.EgoError {
+func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
@@ -103,7 +103,7 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// NotEqualImpl implements the NotEqual opcode
+// notEqualByteCode implements the NotEqual opcode
 //
 // Inputs:
 //    stack+0    - The item to be compared
@@ -113,7 +113,7 @@ func EqualImpl(c *Context, i interface{}) *errors.EgoError {
 // and a type-specific test for equality is done.
 // If the values are not equal, then true is pushed
 // back on the stack, else false.
-func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
+func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
@@ -185,7 +185,7 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// GreaterThanImpl implements the GreaterThan opcode
+// greaterThanByteCode implements the GreaterThan opcode
 //
 // Inputs:
 //    stack+0    - The item to be compared
@@ -196,7 +196,7 @@ func NotEqualImpl(c *Context, i interface{}) *errors.EgoError {
 // If the top value is greater than the second
 // value, then true is pushed back on the stack,
 // else false.
-func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
+func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
@@ -243,7 +243,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// GreaterThanOrEqualImpl implements the GreaterThanOrEqual
+// greaterThanOrEqualByteCode implements the GreaterThanOrEqual
 //  opcode
 //
 // Inputs:
@@ -255,7 +255,7 @@ func GreaterThanImpl(c *Context, i interface{}) *errors.EgoError {
 // If the top value is greater than or equal to the
 // second value, then true is pushed back on the stack,
 // else false.
-func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
+func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
@@ -302,7 +302,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// LessThanImpl implements the LessThan opcode
+// lessThanByteCode implements the LessThan opcode
 //
 // Inputs:
 //    stack+0    - The item to be compared
@@ -313,7 +313,7 @@ func GreaterThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
 // If the top value is less than the second
 // value, then true is pushed back on the stack,
 // else false.
-func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
+func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
@@ -362,7 +362,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// LessThanOrEqualImpl implements the LessThanOrEqual
+// lessThanOrEqualByteCode implements the LessThanOrEqual
 // opcode
 //
 // Inputs:
@@ -374,7 +374,7 @@ func LessThanImpl(c *Context, i interface{}) *errors.EgoError {
 // If the top value is less than or equal to the
 // second value, then true is pushed back on the
 // stack, else false.
-func LessThanOrEqualImpl(c *Context, i interface{}) *errors.EgoError {
+func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Terms pushed in reverse order.
 	v2, err := c.Pop()
 	if !errors.Nil(err) {

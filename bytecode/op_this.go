@@ -11,12 +11,12 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// SetThisImpl implements the SetThis opcode. Given a named value,
+// setThisByteCode implements the SetThis opcode. Given a named value,
 // the current value is pushed on the "this" stack as part of setting
 // up a call, to be retrieved later by the body of the call. IF there
 // is no name operand, assume the top stack value is to be used, and
 // synthesize a name for it.
-func SetThisImpl(c *Context, i interface{}) *errors.EgoError {
+func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
 	var name string
 
 	if i == nil {
@@ -39,11 +39,11 @@ func SetThisImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// GetThisImpl implements the GetThis opcode. Given a value name,
+// getThisByteCode implements the GetThis opcode. Given a value name,
 // get the top-most item from the "this" stack and store it in the
 // named value. This is done as part of prologue of a function that
 // has a receiver.
-func GetThisImpl(c *Context, i interface{}) *errors.EgoError {
+func getThisByteCode(c *Context, i interface{}) *errors.EgoError {
 	this := util.GetString(i)
 
 	if v, ok := c.popThis(); ok {

@@ -38,8 +38,8 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		singleStep: c.singleStep,
 		tokenizer:  c.tokenizer,
 		thisStack:  c.thisStack,
-		pc:         c.pc,
-		fp:         c.fp,
+		pc:         c.programCounter,
+		fp:         c.framePointer,
 		module:     c.bc.Name,
 		line:       c.line,
 		blockDepth: c.blockDepth,
@@ -47,13 +47,13 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 
 	ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, tableName, c.symbols.Name)
 
-	c.fp = c.sp
+	c.framePointer = c.stackPointer
 	c.result = nil
 	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols)
 	c.symbols.ScopeBoundary = boundary
 	c.line = 0
 	c.bc = bc
-	c.pc = pc
+	c.programCounter = pc
 
 	// Now that we've saved state on the stack, if we are in step-over mode,
 	// then turn off single stepping
@@ -66,11 +66,11 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 // the current bytecode context to reflect the previously-stored state.
 func (c *Context) callFramePop() *errors.EgoError {
 	// First, is there stuff on the stack we want to preserve?
-	topOfStackSlice := c.stack[c.fp : c.sp+1]
+	topOfStackSlice := c.stack[c.framePointer : c.stackPointer+1]
 
 	// Now retrieve the runtime context stored on the stack and
 	// indicated by the fp (frame pointer)
-	c.sp = c.fp
+	c.stackPointer = c.framePointer
 	cx, err := c.Pop()
 
 	if !errors.Nil(err) {
@@ -104,8 +104,8 @@ func (c *Context) callFramePop() *errors.EgoError {
 		c.tokenizer = callFrame.tokenizer
 		c.thisStack = callFrame.thisStack
 		c.bc = callFrame.bytecode
-		c.pc = callFrame.pc
-		c.fp = callFrame.fp
+		c.programCounter = callFrame.pc
+		c.framePointer = callFrame.fp
 		c.blockDepth = callFrame.blockDepth
 	} else {
 		return c.newError(errors.InvalidCallFrameError)
@@ -114,8 +114,8 @@ func (c *Context) callFramePop() *errors.EgoError {
 	// Finally, if there _was_ stuff on the stack after the call,
 	// it might be a multi-value return, so push that back.
 	if len(topOfStackSlice) > 0 {
-		c.stack = append(c.stack[:c.sp], topOfStackSlice...)
-		c.sp = c.sp + len(topOfStackSlice)
+		c.stack = append(c.stack[:c.stackPointer], topOfStackSlice...)
+		c.stackPointer = c.stackPointer + len(topOfStackSlice)
 	} else {
 		// Alternatively, it could be a single-value return using the
 		// result holder. If so, push that on the stack and clear it.
@@ -133,7 +133,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 // the frame pointer (FP) in the current context which points to the
 // saved frame. Its FP points to the previous saved frame, and so on.
 func (c *Context) FormatFrames(maxDepth int) string {
-	f := c.fp
+	f := c.framePointer
 	depth := 1
 	r := fmt.Sprintf("Call frames:\n  at: %12s  (%s)\n",
 		formatLocation(c.GetModuleName(), c.line), c.symbols.Name)

@@ -18,9 +18,9 @@ import (
 *                                         *
 \******************************************/
 
-// PrintImpl instruction processor. If the operand is given, it represents the number of items
+// printByteCode instruction processor. If the operand is given, it represents the number of items
 // to remove from the stack and print to stdout.
-func PrintImpl(c *Context, i interface{}) *errors.EgoError {
+func printByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := 1
 	if i != nil {
 		count = util.GetInt(i)
@@ -50,9 +50,9 @@ func PrintImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// LogImpl implements the Log directive, which outputs the top stack
+// logByteCode implements the Log directive, which outputs the top stack
 // item to the logger named in the operand.
-func LogImpl(c *Context, i interface{}) *errors.EgoError {
+func logByteCode(c *Context, i interface{}) *errors.EgoError {
 	logger := util.GetString(i)
 
 	msg, err := c.Pop()
@@ -63,14 +63,14 @@ func LogImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// SayImpl instruction processor. If the operand is true, output the string as-is,
+// sayByteCode instruction processor. If the operand is true, output the string as-is,
 // else output it adding a trailing newline. The Say opcode  can be used in place
 // of NewLine to end buffered output, but the output is only displayed if we are
 // not in --quiet mode.
 //
 // This is used by the code generated from @test and @pass, for example, to allow
 // test logging to be quiet if necessary.
-func SayImpl(c *Context, i interface{}) *errors.EgoError {
+func sayByteCode(c *Context, i interface{}) *errors.EgoError {
 	msg := ""
 	if c.output != nil {
 		msg = c.output.String()
@@ -87,8 +87,8 @@ func SayImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// NewlineImpl instruction processor generates a newline character to stdout.
-func NewlineImpl(c *Context, i interface{}) *errors.EgoError {
+// newlineByteCode instruction processor generates a newline character to stdout.
+func newlineByteCode(c *Context, i interface{}) *errors.EgoError {
 	if c.output == nil {
 		fmt.Printf("\n")
 	} else {
@@ -104,9 +104,9 @@ func NewlineImpl(c *Context, i interface{}) *errors.EgoError {
 *                                         *
 \******************************************/
 
-// TemplateImpl compiles a template string from the stack and stores it in
+// templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
-func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
+func templateByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	t, err := c.Pop()
@@ -126,10 +126,10 @@ func TemplateImpl(c *Context, i interface{}) *errors.EgoError {
 *                                         *
 \******************************************/
 
-// FromFileImpl loads the context tokenizer with the
+// fromFileByteCode loads the context tokenizer with the
 // source from a file if it does not already exist and
 // we are in debug mode.
-func FromFileImpl(c *Context, i interface{}) *errors.EgoError {
+func fromFileByteCode(c *Context, i interface{}) *errors.EgoError {
 	if !c.debugging {
 		return nil
 	}
@@ -142,21 +142,21 @@ func FromFileImpl(c *Context, i interface{}) *errors.EgoError {
 	return errors.New(err)
 }
 
-func TimerImpl(c *Context, i interface{}) *errors.EgoError {
+func timerByteCode(c *Context, i interface{}) *errors.EgoError {
 	mode := util.GetInt(i)
 	switch mode {
 	case 0:
 		t := time.Now()
-		c.timers = append(c.timers, t)
+		c.timerStack = append(c.timerStack, t)
 
 	case 1:
-		timerStack := len(c.timers)
+		timerStack := len(c.timerStack)
 		if timerStack == 0 {
 			return c.newError(errors.InvalidTimerError)
 		}
 
-		t := c.timers[timerStack-1]
-		c.timers = c.timers[:timerStack-1]
+		t := c.timerStack[timerStack-1]
+		c.timerStack = c.timerStack[:timerStack-1]
 		now := time.Now()
 		elapsed := now.Sub(t)
 		ms := elapsed.Milliseconds()

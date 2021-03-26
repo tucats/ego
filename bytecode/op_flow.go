@@ -21,17 +21,17 @@ import (
 *                                         *
 \******************************************/
 
-// StopImpl instruction processor causes the current execution context to
+// stopByteCode instruction processor causes the current execution context to
 // stop executing immediately.
-func StopImpl(c *Context, i interface{}) *errors.EgoError {
+func stopByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
 	return errors.New(errors.Stop)
 }
 
-// PanicImpl instruction processor generates an error. The boolean flag is used
+// panicByteCode instruction processor generates an error. The boolean flag is used
 // to indicate if this is a fatal error that stops Ego, versus a user error.
-func PanicImpl(c *Context, i interface{}) *errors.EgoError {
+func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.running = !util.GetBool(i)
 
 	strValue, err := c.Pop()
@@ -44,10 +44,10 @@ func PanicImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.newError(errors.Panic).Context(msg)
 }
 
-// AtLineImpl instruction processor. This identifies the start of a new statement,
+// atLineByteCode instruction processor. This identifies the start of a new statement,
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
-func AtLineImpl(c *Context, i interface{}) *errors.EgoError {
+func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.line = util.GetInt(i)
 	c.stepOver = false
 	_ = c.symbols.SetAlways("__line", c.line)
@@ -64,10 +64,10 @@ func AtLineImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// BranchFalseImpl instruction processor branches to the instruction named in
+// branchFalseByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean FALSE value. Otherwise,
 // execution continues with the next instruction.
-func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
+func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
 	if !errors.Nil(err) {
@@ -81,30 +81,30 @@ func BranchFalseImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if !util.GetBool(v) {
-		c.pc = address
+		c.programCounter = address
 	}
 
 	return nil
 }
 
-// BranchImpl instruction processor branches to the instruction named in
+// branchByteCode instruction processor branches to the instruction named in
 // the operand.
-func BranchImpl(c *Context, i interface{}) *errors.EgoError {
+func branchByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
 		return c.newError(errors.InvalidBytecodeAddress).Context(address)
 	}
 
-	c.pc = address
+	c.programCounter = address
 
 	return nil
 }
 
-// BranchTrueImpl instruction processor branches to the instruction named in
+// branchTrueByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean TRUE value. Otherwise,
 // execution continues with the next instruction.
-func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
+func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get test value
 	v, err := c.Pop()
 	if !errors.Nil(err) {
@@ -118,18 +118,18 @@ func BranchTrueImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if util.GetBool(v) {
-		c.pc = address
+		c.programCounter = address
 	}
 
 	return nil
 }
 
-// LocalCallImpl runs a subroutine (a function that has no parameters and
+// localCallByteCode runs a subroutine (a function that has no parameters and
 // no return value) that is compiled into the same bytecode as the current
 // instruction stream. This is used to implement defer statement blocks, for
 // example, so when defers have been generated then a local call is added to
 // the return statement(s) for the block.
-func LocalCallImpl(c *Context, i interface{}) *errors.EgoError {
+func localCallByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
@@ -138,7 +138,7 @@ func LocalCallImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func GoImpl(c *Context, i interface{}) *errors.EgoError {
+func goByteCode(c *Context, i interface{}) *errors.EgoError {
 	argc := i.(int) + c.argCountDelta
 	c.argCountDelta = 0
 
@@ -168,13 +168,13 @@ func GoImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// CallImpl instruction processor calls a function (which can have
+// callByteCode instruction processor calls a function (which can have
 // parameters and a return value). The function value must be on the
 // stack, preceded by the function arguments. The operand indicates the
 // number of arguments that are on the stack. The function value must be
 // either a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
-func CallImpl(c *Context, i interface{}) *errors.EgoError {
+func callByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
 	var funcPointer interface{}
@@ -360,9 +360,9 @@ func CallImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// ReturnImpl implements the return opcode which returns from a called function
+// returnByteCode implements the return opcode which returns from a called function
 // or local subroutine.
-func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
+func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err error
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
@@ -377,7 +377,7 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// If FP is zero, there are no frames; this is a return from the main source
 	// of the program or service.
-	if c.fp > 0 && errors.Nil(err) {
+	if c.framePointer > 0 && errors.Nil(err) {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
 		err = c.callFramePop()
@@ -388,12 +388,12 @@ func ReturnImpl(c *Context, i interface{}) *errors.EgoError {
 	return errors.New(err)
 }
 
-// ArgCheckImpl instruction processor verifies that there are enough items
+// argCheckByteCode instruction processor verifies that there are enough items
 // on the stack to satisfy the function's argument list. The operand is the
 // number of values that must be available. Alternatively, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
-func ArgCheckImpl(c *Context, i interface{}) *errors.EgoError {
+func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	min := 0
 	max := 0
 	name := "function call"
@@ -491,7 +491,7 @@ func (c *Context) inPackageSymbolTable(name string) bool {
 	return false
 }
 
-func wait(c *Context, i interface{}) *errors.EgoError {
+func waitByteCode(c *Context, i interface{}) *errors.EgoError {
 	if wg, ok := i.(sync.WaitGroup); ok {
 		wg.Wait()
 	} else {

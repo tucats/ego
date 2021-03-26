@@ -21,7 +21,7 @@ type Range struct {
 	index     int
 }
 
-// RangeInitImpl implements the RangeInit opcode
+// rangeInitByteCode implements the RangeInit opcode
 //
 // Inputs:
 //    operand    - an array of two strings containing
@@ -41,7 +41,7 @@ type Range struct {
 // pushed on a stack in the runtime context where it
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
-func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
+func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 	var v interface{}
 
 	var err *errors.EgoError
@@ -114,7 +114,7 @@ func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-// RangeNextImpl implements the RangeNext opcode
+// rangeNextByteCode implements the RangeNext opcode
 //
 // Inputs:
 //    operand    - The bytecode address to branch to
@@ -133,21 +133,21 @@ func RangeInitImpl(c *Context, i interface{}) *errors.EgoError {
 //    The value (map member, array index, channel)
 //    is stored in the value variable. The index
 //     number is also stored in the index variable.
-func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
+func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
 	destination := util.GetInt(i)
 
 	stackSize := len(c.rangeStack)
 	if stackSize == 0 {
-		c.pc = destination
+		c.programCounter = destination
 	} else {
 		r := c.rangeStack[stackSize-1]
 
 		switch actual := r.value.(type) {
 		case string:
 			if r.index >= len(r.keySet) {
-				c.pc = destination
+				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				key := r.keySet[r.index]
@@ -166,7 +166,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 
 		case map[string]interface{}:
 			if r.index >= len(r.keySet) {
-				c.pc = destination
+				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				key := r.keySet[r.index]
@@ -184,7 +184,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 
 		case *datatypes.EgoMap:
 			if r.index >= len(r.keySet) {
-				c.pc = destination
+				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 
 				actual.ImmutableKeys(false)
@@ -214,7 +214,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 			var datum interface{}
 
 			if actual.IsEmpty() {
-				c.pc = destination
+				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				datum, err = actual.Receive()
@@ -228,14 +228,14 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 
 					r.index++
 				} else {
-					c.pc = destination
+					c.programCounter = destination
 					c.rangeStack = c.rangeStack[:stackSize-1]
 				}
 			}
 
 		case *datatypes.EgoArray:
 			if r.index >= actual.Len() {
-				c.pc = destination
+				c.programCounter = destination
 				actual.Immutable(false)
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
@@ -255,7 +255,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 
 		case []interface{}:
 			if r.index >= len(actual) {
-				c.pc = destination
+				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				if r.indexName != "" && r.indexName != "_" {
@@ -268,7 +268,7 @@ func RangeNextImpl(c *Context, i interface{}) *errors.EgoError {
 			}
 
 		default:
-			c.pc = destination
+			c.programCounter = destination
 		}
 	}
 

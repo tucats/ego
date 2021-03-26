@@ -24,11 +24,11 @@ func NewStackMarker(label string, count int) StackMarker {
 *                                         *
 \******************************************/
 
-// DropToMarkerImpl discards items on the stack until it
+// dropToMarkerByteCode discards items on the stack until it
 // finds a marker value, at which point it stops. This is
 // used to discard unused return values on the stack. IF there
 // is no marker, this drains the stack.
-func DropToMarkerImpl(c *Context, i interface{}) *errors.EgoError {
+func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 	found := false
 	for !found {
 		v, err := c.Pop()
@@ -42,18 +42,18 @@ func DropToMarkerImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// StackCheckImpl has an integer argument, and verifies
+// stackCheckByteCode has an integer argument, and verifies
 // that there are this many items on the stack, which is
 // used to verify that multiple return-values on the stack
 // are present.
-func StackCheckImpl(c *Context, i interface{}) *errors.EgoError {
+func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := util.GetInt(i)
-	if c.sp <= count {
+	if c.stackPointer <= count {
 		return c.newError(errors.IncorrectReturnValueCount)
 	}
 
 	// The marker is an instance of a StackMarker object.
-	v := c.stack[c.sp-(count+1)]
+	v := c.stack[c.stackPointer-(count+1)]
 	if _, ok := v.(StackMarker); ok {
 		return nil
 	}
@@ -61,16 +61,16 @@ func StackCheckImpl(c *Context, i interface{}) *errors.EgoError {
 	return c.newError(errors.IncorrectReturnValueCount)
 }
 
-// PushImpl instruction processor. This pushes the instruction operand
+// pushByteCode instruction processor. This pushes the instruction operand
 // onto the runtime stack.
-func PushImpl(c *Context, i interface{}) *errors.EgoError {
+func pushByteCode(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(i)
 }
 
-// DropImpl instruction processor drops items from the stack and
+// dropByteCode instruction processor drops items from the stack and
 // discards them. By default, one item is dropped, but an integer
 // operand can be specified indicating how many items to drop.
-func DropImpl(c *Context, i interface{}) *errors.EgoError {
+func dropByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := 1
 	if i != nil {
 		count = util.GetInt(i)
@@ -86,8 +86,8 @@ func DropImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// DupImpl instruction processor duplicates the top stack item.
-func DupImpl(c *Context, i interface{}) *errors.EgoError {
+// dupByteCode instruction processor duplicates the top stack item.
+func dupByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -99,10 +99,10 @@ func DupImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// SwapImpl instruction processor exchanges the top two
+// swapByteCode instruction processor exchanges the top two
 // stack items. It is an error if there are not at least
 // two items on the stack.
-func SwapImpl(c *Context, i interface{}) *errors.EgoError {
+func swapByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -119,10 +119,10 @@ func SwapImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// CopyImpl instruction processor makes a copy of the topmost
+// copyByteCode instruction processor makes a copy of the topmost
 // object. This is different than duplicating, as it creates a
 // entire deep copy of the object.
-func CopyImpl(c *Context, i interface{}) *errors.EgoError {
+func copyByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -140,7 +140,7 @@ func CopyImpl(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-func GetVarArgsImpl(c *Context, i interface{}) *errors.EgoError {
+func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 	err := c.newError(errors.VarArgError)
 	argPos := util.GetInt(i)
 

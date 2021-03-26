@@ -12,7 +12,7 @@ type packageDef struct {
 	name string
 }
 
-func pushPackage(c *Context, i interface{}) *errors.EgoError {
+func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	// Are we already in this package? Happens when a directory of package
@@ -57,7 +57,7 @@ func pushPackage(c *Context, i interface{}) *errors.EgoError {
 // package. The current (package-specific) symbol table is drained
 // and any visible names are copied into the package structure, which
 // is then saved in the current symbol table.
-func popPackage(c *Context, i interface{}) *errors.EgoError {
+func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	size := len(c.packageStack)
 	if size == 0 {
 		return c.newError(errors.MissingPackageStatement)

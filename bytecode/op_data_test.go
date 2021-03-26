@@ -93,10 +93,10 @@ func TestStructImpl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := &Context{
-				stack:   tt.stack,
-				sp:      len(tt.stack),
-				Static:  tt.static,
-				symbols: symbols.NewSymbolTable("test bench"),
+				stack:        tt.stack,
+				stackPointer: len(tt.stack),
+				Static:       tt.static,
+				symbols:      symbols.NewSymbolTable("test bench"),
 			}
 
 			model := map[string]interface{}{

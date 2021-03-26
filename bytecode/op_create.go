@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// MakeArrayImpl implements the MakeArray opcode
+// makeArrayByteCode implements the MakeArray opcode
 //
 // This is used when a make() pseudo-function is called,
 // or the user creates a typed array constant like []int{}.
@@ -37,7 +37,7 @@ import (
 // The function allocates a new EgoArray of the given size
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
-func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
+func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 	parameter := util.GetInt(i)
 	if parameter == 2 {
 		initialValue, err := c.Pop()
@@ -85,7 +85,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// ArrayImpl implements the Array opcode
+// arrayByteCode implements the Array opcode
 //
 // This is used to create an anonymous array constant
 // value, such as [true, "fred"] in the Ego language.
@@ -108,7 +108,7 @@ func MakeArrayImpl(c *Context, i interface{}) *errors.EgoError {
 // are loaded into the array. The resulting array is validated
 // if static types are enabled. The resulting array is then
 // pushed back on the stack.
-func ArrayImpl(c *Context, i interface{}) *errors.EgoError {
+func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 	var arrayType reflect.Type
 
 	var count int
