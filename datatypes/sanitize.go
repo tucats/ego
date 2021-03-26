@@ -2,8 +2,6 @@ package datatypes
 
 import (
 	"strings"
-
-	"github.com/tucats/gopackages/util"
 )
 
 // For any given _Ego_ object type, remove any metadata from it
@@ -20,7 +18,7 @@ func Sanitize(v interface{}) interface{} {
 
 		for _, key := range keys {
 			value, _, _ := v.Get(key)
-			result[util.GetString(key)] = value
+			result[GetString(key)] = value
 		}
 
 		return result

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/gopackages/util"
 )
 
 // EgoMap is a wrapper around a native Go map. The actual map supports interface items
@@ -105,7 +104,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]string, len(m.data))
 
 		for k := range m.data {
-			array[idx] = util.GetString(k)
+			array[idx] = GetString(k)
 			idx++
 		}
 
@@ -123,7 +122,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]int, len(m.data))
 
 		for k := range m.data {
-			array[idx] = util.GetInt(k)
+			array[idx] = GetInt(k)
 			idx++
 		}
 
@@ -141,7 +140,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = util.GetFloat(k)
+			array[idx] = GetFloat(k)
 			idx++
 		}
 

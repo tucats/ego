@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/gopackages/util"
 )
 
 type EgoArray struct {
@@ -219,7 +218,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	if a.valueType.IsType(StringType) {
 		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
-			stringArray[i] = util.GetString(v)
+			stringArray[i] = GetString(v)
 		}
 
 		sort.Strings(stringArray)
@@ -230,7 +229,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	} else if a.valueType.IsType(IntType) {
 		values := make([]int, a.Len())
 		for i, v := range a.data {
-			values[i] = util.GetInt(v)
+			values[i] = GetInt(v)
 		}
 
 		sort.Ints(values)
@@ -241,7 +240,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	} else if a.valueType.IsType(FloatType) {
 		values := make([]float64, a.Len())
 		for i, v := range a.data {
-			values[i] = util.GetFloat(v)
+			values[i] = GetFloat(v)
 		}
 
 		sort.Float64s(values)

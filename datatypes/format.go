@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/gopackages/datatypes"
 )
 
 func Format(element interface{}) string {
@@ -39,7 +38,7 @@ func Format(element interface{}) string {
 	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
 	case *sync.Mutex:
 		return "sync.Mutex{}"
-	case *datatypes.Channel:
+	case *Channel:
 		return v.String()
 
 	case error:
