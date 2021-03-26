@@ -29,14 +29,6 @@ func TestStructImpl(t *testing.T) {
 					"static":  true,
 					"type":    datatypes.UserType("usertype", datatypes.StructType),
 					"replica": 1,
-					"parent": map[string]interface{}{
-						"__metadata": map[string]interface{}{
-							"static": true,
-							"type":   datatypes.UserType("usertype", datatypes.StructType),
-						},
-						"flag": false,
-						"test": 0,
-					},
 				}},
 			wantErr: false,
 			static:  true,

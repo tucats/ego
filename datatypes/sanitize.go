@@ -17,8 +17,14 @@ func Sanitize(v interface{}) interface{} {
 		keys := v.Keys()
 
 		for _, key := range keys {
+			if keyString, ok := key.(string); ok {
+				if strings.HasPrefix(keyString, "__") {
+					continue
+				}
+			}
+
 			value, _, _ := v.Get(key)
-			result[GetString(key)] = value
+			result[GetString(key)] = Sanitize(value)
 		}
 
 		return result
@@ -28,7 +34,7 @@ func Sanitize(v interface{}) interface{} {
 
 		for key, value := range v {
 			if !strings.HasPrefix(key, "__") {
-				result[key] = value
+				result[key] = Sanitize(value)
 			}
 		}
 

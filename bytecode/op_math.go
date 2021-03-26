@@ -132,12 +132,12 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// AddImpl bytecode instruction processor. This removes the top two
+// addByteCode bytecode instruction processor. This removes the top two
 // items and adds them together. For boolean values, this is an OR
 // operation. For numeric values, it is arithmetic addition. For
 // strings or arrays, it concatenates the two items. For a struct,
 // it merges the addend into the first struct.
-func AddImpl(c *Context, i interface{}) *errors.EgoError {
+func addByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -156,11 +156,6 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 	switch vx := v1.(type) {
 	case error:
 		return c.stackPush(vx.Error() + util.GetString(v2))
-
-		/*	case *errors.EgoError:
-			_ = vx.Context(v2)
-
-			return c.Push(vx) */
 
 	// Is it a native array we are concatenating to?
 	case []interface{}:
@@ -195,9 +190,22 @@ func AddImpl(c *Context, i interface{}) *errors.EgoError {
 	case map[string]interface{}:
 		switch vy := v2.(type) {
 		case map[string]interface{}:
+			t := datatypes.Struct("")
+
 			for k, v := range vy {
-				vx[k] = v
+				if !strings.HasPrefix(k, "__") {
+					vx[k] = v
+				}
 			}
+
+			for k, v := range vx {
+				if !strings.HasPrefix(k, "__") {
+					_ = t.AddField(k, datatypes.TypeOf(v))
+				}
+			}
+
+			// Write updated type info
+			datatypes.SetMetadata(vx, datatypes.TypeMDKey, t)
 
 			return c.stackPush(vx)
 

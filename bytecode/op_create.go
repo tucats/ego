@@ -239,7 +239,6 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if ok {
 		if modelMap, ok := model.(map[string]interface{}); ok {
-			// datatypes.SetMetadata(m, datatypes.ParentMDKey, model)
 			if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
 				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
 			} else {

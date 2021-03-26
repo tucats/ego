@@ -9,8 +9,6 @@ const (
 	BasetypeMDKey     = "basetype"
 	ElementTypesMDKey = "elements"
 	MembersMDKey      = "members"
-	IsTypeMDKey       = "isType"
-	ParentMDKey       = "parent"
 	ReplicaMDKey      = "replica"
 	ReadonlyMDKey     = "readonly"
 	SizeMDKey         = "size"

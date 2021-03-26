@@ -404,14 +404,6 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case map[string]interface{}:
 		t := datatypes.TypeOf(v)
 
-		// Is this a type object itself? If so, we report it as a type
-		// instead of by it's type name.
-		if isType, ok := datatypes.GetMetadata(v, datatypes.IsTypeMDKey); ok {
-			if util.GetBool(isType) {
-				return "type " + t.ValueType.String(), nil
-			}
-		}
-
 		if t.IsUserType() {
 			return t.Name, nil
 		}
@@ -774,19 +766,21 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var m runtime.MemStats
 
-	var result strings.Builder
+	result := map[string]interface{}{}
 
 	runtime.ReadMemStats(&m)
 
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
 
-	result.WriteString(fmt.Sprintf("Memory stats  %v\n", time.Now()))
-	result.WriteString(fmt.Sprintf("   Alloc      = %8.3fmb\n", bToMb(m.Alloc)))
-	result.WriteString(fmt.Sprintf("   TotalAlloc = %8.3fmb\n", bToMb(m.TotalAlloc)))
-	result.WriteString(fmt.Sprintf("   Sys        = %8.3fmb\n", bToMb(m.Sys)))
-	result.WriteString(fmt.Sprintf("   NumGC      = %4d\n", m.NumGC))
+	result["time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
+	result["current"] = bToMb(m.Alloc)
+	result["total"] = bToMb(m.TotalAlloc)
+	result["system"] = bToMb(m.Sys)
+	result["gc"] = int(m.NumGC)
 
-	return result.String(), nil
+	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.StructType)
+
+	return result, nil
 }
 
 func bToMb(b uint64) float64 {

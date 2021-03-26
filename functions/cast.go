@@ -195,7 +195,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ReplicaMDKey, replica)
-		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.IsTypeMDKey, false)
 
 		dropList := []string{}
 
@@ -219,11 +218,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 		for _, name := range dropList {
 			delete(r.(map[string]interface{}), name)
-		}
-
-		// If there is a parent key, override it with this item.
-		if _, ok := datatypes.GetMetadata(r, datatypes.ParentMDKey); ok {
-			datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ParentMDKey, args[0])
 		}
 
 	default:

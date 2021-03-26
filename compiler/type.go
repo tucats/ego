@@ -59,7 +59,6 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 	c.b.Emit(bytecode.StoreMetadata, datatypes.TypeMDKey)
 
 	c.b.Emit(bytecode.Push, true)
-	c.b.Emit(bytecode.StoreMetadata, datatypes.IsTypeMDKey)
 
 	// Finally, make it a static value now.
 	c.b.Emit(bytecode.Dup) // One more needed for type statement

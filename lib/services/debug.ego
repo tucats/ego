@@ -19,7 +19,11 @@ if _json {
     r.version     = _version
     r.token_valid = _token_valid
     r.session     = _session 
-    r.memory      = util.Memory()
+    r.time        = time.Now().String()
+
+    m := util.Memory()
+    delete(m, "time")
+    r.memory      = m
 
     if _token_valid {
         // If the token was valid, get some additional info about the user it represents
@@ -32,7 +36,7 @@ if _json {
     // If there was a body, this was a POST so return the body as
     // a real value.
     if _body != "" {
-        r.posted = json.Unmarshal(_body)
+        r.posted = json.UnMarshal(_body)
     }
     @response r
     return
@@ -42,7 +46,14 @@ r := `Healthy %s mode at %s
     version %s,
     user    %s,
     session %s,
-    
-%s
+
+Memory usage:
+    Current  %3.3fmb
+    Total    %3.3fmb
+    System   %3.3fmb
+    NumGC    %d    
 `
-@response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,util.Memory())
+m := util.Memory()
+
+@response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
+    m.current, m.total, m.system, m.gc)

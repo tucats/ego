@@ -253,7 +253,10 @@ func TestNew(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
-					"type":    datatypes.StructType,
+					"type": datatypes.StructWithFields("",
+						datatypes.Field{Name: "age", Type: datatypes.IntType},
+						datatypes.Field{Name: "name", Type: datatypes.StringType},
+					),
 				}, "name": "Tom",
 				"age": 50},
 		},
@@ -378,7 +381,7 @@ func TestNew(t *testing.T) {
 						t.Errorf("Expression test, got %v, want %v", v1, tt.want)
 					}
 				} else if !reflect.DeepEqual(v1, tt.want) {
-					t.Errorf("Expression test, got %v, want %v", v1, tt.want)
+					t.Errorf("Expression test, \n  got %v\n want %v", v1, tt.want)
 				}
 			}
 		})

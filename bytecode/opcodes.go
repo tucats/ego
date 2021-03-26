@@ -205,7 +205,7 @@ var instructionNames = map[OpcodeID]string{
 func initializeDispatch() {
 	if dispatch == nil {
 		dispatch = DispatchMap{
-			Add:                AddImpl,
+			Add:                addByteCode,
 			AddressOf:          AddressOfImpl,
 			And:                AndImpl,
 			ArgCheck:           ArgCheckImpl,
