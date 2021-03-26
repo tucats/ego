@@ -309,8 +309,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return actual, nil
 		}
 
-		elementKind := *kind.ValueType
-		r := datatypes.NewArray(*kind.ValueType, actual.Len())
+		elementKind := *kind.BaseType()
+		r := datatypes.NewArray(*kind.BaseType(), actual.Len())
 
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
@@ -331,7 +331,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	case string:
-		if !kind.IsType(datatypes.ArrayOfType(datatypes.IntType)) {
+		if !kind.IsType(datatypes.Array(datatypes.IntType)) {
 			return nil, errors.New(errors.InvalidTypeError)
 		}
 

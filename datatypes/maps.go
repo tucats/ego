@@ -218,8 +218,9 @@ func (m *EgoMap) String() string {
 
 func (m EgoMap) Type() Type {
 	return Type{
-		Name:      "map",
-		KeyType:   &m.keyType,
-		ValueType: &m.valueType,
+		name:      "map",
+		kind:      mapKind,
+		keyType:   &m.keyType,
+		valueType: &m.valueType,
 	}
 }

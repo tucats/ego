@@ -33,16 +33,16 @@ const (
 	maximumNativeType // After list of Go-native types
 
 	varArgs  // pseudo type used for variable argument list items
-	userKind // something defined by a type statement
+	typeKind // something defined by a type statement
 )
 
 type Type struct {
-	Name      string
-	Kind      int
-	Fields    map[string]Type
-	Functions map[string]interface{}
-	KeyType   *Type
-	ValueType *Type
+	name      string
+	kind      int
+	fields    map[string]Type
+	functions map[string]interface{}
+	keyType   *Type
+	valueType *Type
 }
 
 type Field struct {
@@ -50,113 +50,235 @@ type Field struct {
 	Type Type
 }
 
-// Type definitions for each given type.
-var UndefinedType = Type{
-	Name: "undefined",
-	Kind: undefinedKind,
+// Return a string containing the list of reciver functions for
+// this type. If there are no functions defined, it returns an
+// empty string. The results are a comma-separated list of function
+// names plus "()".
+func (t Type) FunctionNameList() string {
+	if t.functions == nil || len(t.functions) == 0 {
+		return ""
+	}
+
+	b := strings.Builder{}
+	b.WriteString(",")
+
+	keys := make([]string, 0)
+
+	for k := range t.functions {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(",")
+		}
+
+		b.WriteString(k)
+		b.WriteString("()")
+	}
+
+	return b.String()
 }
 
-var PackageType = Type{
-	Name: "package",
-	Kind: packageKind,
+// Produce a human-readable version of the type definition.
+func (t Type) String() string {
+	switch t.kind {
+	case typeKind:
+		return t.name + " " + t.valueType.String()
+
+	case mapKind:
+		return "map[" + t.keyType.String() + "]" + t.valueType.String()
+
+	case pointerKind:
+		return "*" + t.valueType.String()
+
+	case arrayKind:
+		return "[]" + t.valueType.String()
+
+	case structKind:
+		// If there are fields, let's include that in the type info?
+		b := strings.Builder{}
+		b.WriteString("struct")
+
+		if t.fields != nil && len(t.fields) > 0 {
+			b.WriteString("{")
+
+			keys := make([]string, 0)
+			for k := range t.fields {
+				keys = append(keys, k)
+			}
+
+			sort.Strings(keys)
+
+			for i, k := range keys {
+				if i > 0 {
+					b.WriteString(", ")
+				}
+
+				b.WriteString(k)
+				b.WriteString(" ")
+				b.WriteString(t.fields[k].String())
+			}
+
+			b.WriteString("}")
+		}
+
+		return b.String()
+
+	default:
+		return t.name
+	}
 }
 
-var StructType = Type{
-	Name: "struct",
-	Kind: structKind,
+func (t Type) IsType(i Type) bool {
+	if t.kind != i.kind {
+		return false
+	}
+
+	if t.keyType != nil && i.keyType == nil {
+		return false
+	}
+
+	if t.valueType != nil && i.valueType == nil {
+		return false
+	}
+
+	if t.keyType != nil && i.keyType != nil {
+		if !t.keyType.IsType(*i.keyType) {
+			return false
+		}
+	}
+
+	if t.valueType != nil && i.valueType != nil {
+		if !t.valueType.IsType(*i.valueType) {
+			return false
+		}
+	}
+
+	return true
 }
 
-var InterfaceType = Type{
-	Name:      "interface{}",
-	Kind:      interfaceKind,
-	KeyType:   nil,
-	ValueType: nil,
+// Returns true if the current type is an array.
+func (t Type) IsArray() bool {
+	return t.kind == arrayKind
 }
 
-var ErrorType = Type{
-	Name: "error",
-	Kind: errorKind,
+// Returns true if the current type is a type definition created
+// by code (as opposed to a base type).
+func (t Type) IsTypeDefinition() bool {
+	return t.kind == typeKind
 }
 
-var BoolType = Type{
-	Name:      "bool",
-	Kind:      boolKind,
-	KeyType:   nil,
-	ValueType: nil,
+// For a given type, add a new field of the given name and type. Returns
+// an error if the current type is not a structure, or if the field already
+// is defined.
+func (t *Type) AddField(name string, ofType Type) *errors.EgoError {
+	if t.kind != structKind {
+		return errors.New(errors.InvalidStructError)
+	}
+
+	if t.fields == nil {
+		t.fields = map[string]Type{}
+	} else {
+		if _, found := t.fields[name]; found {
+			return errors.New(errors.InvalidFieldError)
+		}
+	}
+
+	t.fields[name] = ofType
+
+	return nil
 }
 
-var IntType = Type{
-	Name:      "int",
-	Kind:      intKind,
-	KeyType:   nil,
-	ValueType: nil,
+// Retrieve the type of a field by name. The current type must
+// be a structure type, and the field name must exist.
+func (t Type) Field(name string) (Type, *errors.EgoError) {
+	if t.kind != structKind {
+		return UndefinedType, errors.New(errors.InvalidStructError)
+	}
+
+	if t.fields == nil {
+		return UndefinedType, errors.New(errors.InvalidFieldError)
+	}
+
+	ofType, found := t.fields[name]
+	if !found {
+		return UndefinedType, errors.New(errors.InvalidFieldError)
+	}
+
+	return ofType, nil
 }
 
-var FloatType = Type{
-	Name:      "float",
-	Kind:      floatKind,
-	KeyType:   nil,
-	ValueType: nil,
+// Return true if the curren type is the undefined type.
+func (t Type) IsUndefined() bool {
+	return t.kind == undefinedKind
 }
 
-var StringType = Type{
-	Name:      "string",
-	Kind:      stringKind,
-	KeyType:   nil,
-	ValueType: nil,
+// Add a function definition to a type. The name of the
+// function is given, and an interface value (which should
+// be either the bytecode for a compiled function, or a
+// function pointer for a built-in function).
+func (t *Type) AddFunction(name string, v interface{}) {
+	if t.functions == nil {
+		t.functions = map[string]interface{}{}
+	}
+
+	t.functions[name] = v
 }
 
-var ChanType = Type{
-	Name:      "chan",
-	Kind:      chanKind,
-	KeyType:   nil,
-	ValueType: nil,
+// Retrieve a receiver function from the given type. Returns
+// nil if there is no such function.
+func (t Type) Function(name string) interface{} {
+	var v interface{}
+
+	ok := false
+
+	if t.functions != nil {
+		v, ok = t.functions[name]
+	}
+
+	if !ok && t.kind == typeKind && t.valueType != nil {
+		return t.valueType.Function(name)
+	}
+
+	return v
 }
 
-var WaitGroupType = Type{
-	Name:      "WaitGroup",
-	Kind:      waitGroupKind,
-	KeyType:   nil,
-	ValueType: nil,
+// For a given type, return the type of it's base type. So for
+// an array, this is the type of each array element. For a pointer,
+// it is the type it points to.
+func (t Type) BaseType() *Type {
+	return t.valueType
 }
 
-var MutexType = Type{
-	Name:      "Mutex",
-	Kind:      mutexKind,
-	KeyType:   nil,
-	ValueType: nil,
-}
-
-var VarArgsType = Type{
-	Name: "...",
-	Kind: varArgs,
-}
-
-// For a given struct type, set it's type value in the metadata. If the
-// item is not a struct map then do no work.
-func SetType(m map[string]interface{}, t Type) {
-	SetMetadata(m, TypeMDKey, t)
+// Return the name of the type (not the same as the
+// formatted string, but usually refers to a user-defined
+// type name).
+func (t Type) Name() string {
+	return t.name
 }
 
 // TypeOf accepts an interface of arbitrary Ego or native data type,
-// and returns an integer containing the datatype specification, such
-// as datatypes.intKind or datatypes.stringKind.
+// and returns the associated type specification, such as datatypes.intKind
+// or datatypes.stringKind.
 func TypeOf(i interface{}) Type {
 	switch v := i.(type) {
 	case *interface{}:
-		return PointerToType(InterfaceType)
+		return Pointer(InterfaceType)
 
 	case *sync.WaitGroup:
 		return WaitGroupType
 
 	case **sync.WaitGroup:
-		return PointerToType(WaitGroupType)
+		return Pointer(WaitGroupType)
 
 	case *sync.Mutex:
 		return MutexType
 
 	case **sync.Mutex:
-		return PointerToType(MutexType)
+		return Pointer(MutexType)
 
 	case int:
 		return IntType
@@ -180,29 +302,29 @@ func TypeOf(i interface{}) Type {
 
 		// Nope, apparently just an anonymous struct
 		return Type{
-			Name: "struct",
-			Kind: structKind,
+			name: "struct",
+			kind: structKind,
 		}
 
 	case *int:
-		return PointerToType(IntType)
+		return Pointer(IntType)
 
 	case *float32, *float64:
-		return PointerToType(FloatType)
+		return Pointer(FloatType)
 
 	case *string:
-		return PointerToType(StringType)
+		return Pointer(StringType)
 
 	case *bool:
-		return PointerToType(BoolType)
+		return Pointer(BoolType)
 
 	case *map[string]interface{}:
 		return Type{
-			Name: "*struct",
-			Kind: pointerKind,
-			ValueType: &Type{
-				Name: "struct",
-				Kind: structKind,
+			name: "*struct",
+			kind: pointerKind,
+			valueType: &Type{
+				name: "struct",
+				kind: structKind,
 			},
 		}
 
@@ -210,216 +332,33 @@ func TypeOf(i interface{}) Type {
 		return v.Type()
 
 	case *Channel:
-		return PointerToType(ChanType)
+		return Pointer(ChanType)
 
 	default:
 		return InterfaceType
 	}
 }
 
-func (t Type) FunctionsList() string {
-	if t.Functions == nil || len(t.Functions) == 0 {
-		return ""
-	}
-
-	b := strings.Builder{}
-	b.WriteString(",")
-
-	keys := make([]string, 0)
-
-	for k := range t.Functions {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
-	for i, k := range keys {
-		if i > 0 {
-			b.WriteString(",")
-		}
-
-		b.WriteString(k)
-		b.WriteString("()")
-	}
-
-	return b.String()
-}
-
-func (t Type) String() string {
-	switch t.Kind {
-	case userKind:
-		return t.Name + " " + t.ValueType.String()
-
-	case mapKind:
-		return "map[" + t.KeyType.String() + "]" + t.ValueType.String()
-
-	case pointerKind:
-		return "*" + t.ValueType.String()
-
-	case arrayKind:
-		return "[]" + t.ValueType.String()
-
-	case structKind:
-		// If there are fields, let's include that in the type info?
-		b := strings.Builder{}
-		b.WriteString("struct")
-
-		if t.Fields != nil && len(t.Fields) > 0 {
-			b.WriteString("{")
-
-			keys := make([]string, 0)
-			for k := range t.Fields {
-				keys = append(keys, k)
-			}
-
-			sort.Strings(keys)
-
-			for i, k := range keys {
-				if i > 0 {
-					b.WriteString(", ")
-				}
-
-				b.WriteString(k)
-				b.WriteString(" ")
-				b.WriteString(t.Fields[k].String())
-			}
-
-			b.WriteString("}")
-		}
-
-		return b.String()
-
-	default:
-		return t.Name
-	}
-}
-
 // IsType accepts an arbitrary value that is either an Ego or native data
 // value, and a type specification, and indicates if it is of the provided
 // Ego datatype indicator.
-func IsType(v interface{}, kind Type) bool {
-	if kind.Kind == interfaceKind {
+func IsType(v interface{}, t Type) bool {
+	if t.kind == interfaceKind {
 		return true
 	}
 
-	switch actual := v.(type) {
-	case *EgoMap:
-		return kind.IsType(Type{
-			Kind:      mapKind,
-			KeyType:   &actual.keyType,
-			ValueType: &actual.valueType,
-		})
-
-	case *sync.Mutex:
-		return kind.IsKind(mutexKind)
-
-	case **sync.Mutex:
-		return kind.IsPointerToType(mutexKind)
-
-	case *sync.WaitGroup:
-		return kind.IsKind(waitGroupKind)
-
-	case **sync.WaitGroup:
-		return kind.IsPointerToType(waitGroupKind)
-
-	case *int, *int32, *int64:
-		return kind.IsPointerToType(intKind)
-
-	case *float32, *float64:
-		return kind.IsPointerToType(floatKind)
-
-	case *string:
-		return kind.IsPointerToType(stringKind)
-
-	case *bool:
-		return kind.IsPointerToType(boolKind)
-
-	case *[]interface{}:
-		return kind.Kind == pointerKind &&
-			kind.ValueType != nil &&
-			kind.ValueType.Kind == arrayKind &&
-			kind.ValueType.ValueType != nil &&
-			kind.ValueType.ValueType.Kind == interfaceKind
-
-	case *map[string]interface{}:
-		if typeName, ok := GetMetadata(v, TypeMDKey); ok {
-			return typeName == kind.Name
-		}
-
-		return kind.Kind == pointerKind &&
-			kind.ValueType != nil &&
-			kind.ValueType.Kind == structKind
-
-	case int, int32, int64:
-		return kind.IsKind(intKind)
-
-	case float32, float64:
-		return kind.IsKind(floatKind)
-
-	case string:
-		return kind.IsKind(stringKind)
-
-	case bool:
-		return kind.IsKind(boolKind)
-
-	case []interface{}:
-		return kind.Kind == arrayKind &&
-			kind.ValueType != nil &&
-			kind.ValueType.Kind == interfaceKind
-
-	case map[string]interface{}:
-		if typeName, ok := GetMetadata(v, TypeMDKey); ok {
-			return typeName == kind.Name
-		}
-
-		return kind.IsKind(structKind)
-
-	case EgoMap:
-		return kind.IsKind(mapKind)
-
-	case error:
-		return kind.IsKind(errorKind)
-	}
-
-	return false
-}
-
-// For a given type, construct a type that is an array of it.
-func ArrayOfType(t Type) Type {
-	return Type{
-		Name:      "[]",
-		Kind:      arrayKind,
-		ValueType: &t,
-	}
-}
-
-// For a given type, construct a type that is an pointer to a value of that type.
-func PointerToType(t Type) Type {
-	return Type{
-		Name:      "[]",
-		Kind:      pointerKind,
-		ValueType: &t,
-	}
-}
-
-func MapOfType(key, value Type) Type {
-	return Type{
-		Name:      "map",
-		Kind:      mapKind,
-		KeyType:   &key,
-		ValueType: &value,
-	}
+	return t.IsType(TypeOf(v))
 }
 
 // For a given interface pointer, unwrap the pointer and return the type it
 // actually points to.
 func TypeOfPointer(v interface{}) Type {
 	if p, ok := v.(Type); ok {
-		if p.Kind != pointerKind || p.ValueType == nil {
+		if p.kind != pointerKind || p.valueType == nil {
 			return UndefinedType
 		}
 
-		return *p.ValueType
+		return *p.valueType
 	}
 
 	// Is this a pointer to an actual native interface?
@@ -433,6 +372,9 @@ func TypeOfPointer(v interface{}) Type {
 	return TypeOf(actual)
 }
 
+// Determine if the given value is "nil". This an be either an actual
+// nil value, or a value that represents the "nil values" for the given
+// type (which are recorded as the address of the zero value).
 func IsNil(v interface{}) bool {
 	// Is it outright a nil value?
 	if v == nil {
@@ -471,15 +413,15 @@ func IsNil(v interface{}) bool {
 
 // Is this type associated with a native Ego type that has
 // extended native function support?
-func IsNative(kind int) bool {
+func IsNativeType(kind int) bool {
 	return kind > minimumNativeType && kind < maximumNativeType
 }
 
 // For a given type, return the native package that contains
 // it. For example, sync.WaitGroup would return "sync".
-func NativePackage(kind int) string {
+func PackageForKind(kind int) string {
 	for _, item := range TypeDeclarations {
-		if item.Kind.Kind == kind {
+		if item.Kind.kind == kind {
 			// If this is a pointer type, skip the pointer token
 			if item.Tokens[0] == "*" {
 				return item.Tokens[1]
@@ -490,157 +432,4 @@ func NativePackage(kind int) string {
 	}
 
 	return ""
-}
-
-// Create a new instance of a struct type, ready to have the fields filled in.
-func Struct(name string) Type {
-	return Type{
-		Name:   name,
-		Kind:   structKind,
-		Fields: map[string]Type{},
-	}
-}
-
-func StructWithFields(name string, fields ...Field) Type {
-	t := Type{
-		Name:   name,
-		Kind:   structKind,
-		Fields: map[string]Type{},
-	}
-
-	for _, field := range fields {
-		_ = t.AddField(field.Name, field.Type)
-	}
-
-	return t
-}
-
-func UserType(name string, base Type) Type {
-	return Type{
-		Name:      name,
-		Kind:      userKind,
-		ValueType: &base,
-	}
-}
-
-func Package(name string) Type {
-	return Type{
-		Name:      name,
-		Kind:      packageKind,
-		ValueType: &StructType,
-	}
-}
-
-func (t Type) IsType(i Type) bool {
-	if t.Kind != i.Kind {
-		return false
-	}
-
-	if t.KeyType != nil && i.KeyType == nil {
-		return false
-	}
-
-	if t.ValueType != nil && i.ValueType == nil {
-		return false
-	}
-
-	if t.KeyType != nil && i.KeyType != nil {
-		if !t.KeyType.IsType(*i.KeyType) {
-			return false
-		}
-	}
-
-	if t.ValueType != nil && i.ValueType != nil {
-		if !t.ValueType.IsType(*i.ValueType) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (t Type) IsKind(baseType int) bool {
-	return t.Kind == baseType
-}
-
-func (t Type) IsPointerToType(tt int) bool {
-	if t.Kind != pointerKind || t.ValueType == nil {
-		return false
-	}
-
-	return t.ValueType.Kind == tt
-}
-
-func (t Type) IsArray() bool {
-	return t.Kind == arrayKind
-}
-
-func (t Type) IsUserType() bool {
-	return t.Kind == userKind
-}
-
-// For a given type, add a new field of the given name and type. Returns
-// an error if the current type is not a structure, or if the field already
-// is defined.
-func (t *Type) AddField(name string, ofType Type) *errors.EgoError {
-	if t.Kind != structKind {
-		return errors.New(errors.InvalidStructError)
-	}
-
-	if t.Fields == nil {
-		t.Fields = map[string]Type{}
-	} else {
-		if _, found := t.Fields[name]; found {
-			return errors.New(errors.InvalidFieldError)
-		}
-	}
-
-	t.Fields[name] = ofType
-
-	return nil
-}
-
-func (t Type) Field(name string) (Type, *errors.EgoError) {
-	if t.Kind != structKind {
-		return UndefinedType, errors.New(errors.InvalidStructError)
-	}
-
-	if t.Fields == nil {
-		return UndefinedType, errors.New(errors.InvalidFieldError)
-	}
-
-	ofType, found := t.Fields[name]
-	if !found {
-		return UndefinedType, errors.New(errors.InvalidFieldError)
-	}
-
-	return ofType, nil
-}
-
-func (t Type) IsUndefined() bool {
-	return t.Kind == undefinedKind
-}
-
-func (t *Type) AddFunction(name string, v interface{}) {
-	if t.Functions == nil {
-		t.Functions = map[string]interface{}{}
-	}
-
-	t.Functions[name] = v
-}
-
-func (t Type) GetFunction(name string) interface{} {
-	var v interface{}
-
-	ok := false
-
-	if t.Functions != nil {
-		v, ok = t.Functions[name]
-	}
-
-	if !ok && t.Kind == userKind && t.ValueType != nil {
-		return t.ValueType.GetFunction(name)
-	}
-
-	return v
 }

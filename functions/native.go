@@ -44,17 +44,17 @@ var NativeFunctionMap = []NativeFunctionDef{
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(datatypes.WaitGroupType),
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(datatypes.WaitGroupType),
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(datatypes.WaitGroupType),
 		Name: "Done",
 		F:    waitGroupDone,
 	},
@@ -69,12 +69,12 @@ var NativeFunctionMap = []NativeFunctionDef{
 		F:    mutexUnlock,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.MutexType),
+		Kind: datatypes.Pointer(datatypes.MutexType),
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.PointerToType(datatypes.MutexType),
+		Kind: datatypes.Pointer(datatypes.MutexType),
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},

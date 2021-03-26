@@ -27,7 +27,7 @@ func TestStructImpl(t *testing.T) {
 				"test": 0,
 				"__metadata": map[string]interface{}{
 					"static":  true,
-					"type":    datatypes.UserType("usertype", datatypes.StructType),
+					"type":    datatypes.TypeDefinition("usertype", datatypes.StructType),
 					"replica": 1,
 				}},
 			wantErr: false,
@@ -103,7 +103,7 @@ func TestStructImpl(t *testing.T) {
 				"test": 0,
 				"flag": false,
 				datatypes.MetadataKey: map[string]interface{}{
-					datatypes.TypeMDKey:   datatypes.UserType("usertype", datatypes.StructType),
+					datatypes.TypeMDKey:   datatypes.TypeDefinition("usertype", datatypes.StructType),
 					datatypes.StaticMDKey: true,
 				},
 			}

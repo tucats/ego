@@ -47,7 +47,7 @@ func TestPointerTo(t *testing.T) {
 
 		got := TypeOfPointer(p)
 
-		if got.Kind != tt.want {
+		if got.kind != tt.want {
 			t.Errorf("PointerTo(%s) = %v, want %v", tt.name, got, tt.want)
 		}
 	}
@@ -60,40 +60,40 @@ func TestTypeString(t *testing.T) {
 	}{
 		{
 			name: "int",
-			arg:  Type{Name: "int", Kind: intKind},
+			arg:  Type{name: "int", kind: intKind},
 		},
 		{
 			name: "[]int",
 			arg: Type{
-				Name: "[]",
-				Kind: arrayKind,
-				ValueType: &Type{
-					Name: "int",
-					Kind: intKind},
+				name: "[]",
+				kind: arrayKind,
+				valueType: &Type{
+					name: "int",
+					kind: intKind},
 			},
 		},
 		{
 			name: "[]*int",
 			arg: Type{
-				Name: "[]",
-				Kind: arrayKind,
-				ValueType: &Type{
-					Name:      "*",
-					Kind:      pointerKind,
-					ValueType: &IntType,
+				name: "[]",
+				kind: arrayKind,
+				valueType: &Type{
+					name:      "*",
+					kind:      pointerKind,
+					valueType: &IntType,
 				},
 			},
 		},
 		{
 			name: "map[string][]int",
 			arg: Type{
-				Name:    "map",
-				Kind:    mapKind,
-				KeyType: &StringType,
-				ValueType: &Type{
-					Name:      "[]",
-					Kind:      arrayKind,
-					ValueType: &IntType,
+				name:    "map",
+				kind:    mapKind,
+				keyType: &StringType,
+				valueType: &Type{
+					name:      "[]",
+					kind:      arrayKind,
+					valueType: &IntType,
 				},
 			},
 		},

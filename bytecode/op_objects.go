@@ -48,7 +48,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		v, found = findMember(mv, name)
 		if !found {
 			// Okay, could it be a function based on the type of this object?
-			fv := tt.GetFunction(name)
+			fv := tt.Function(name)
 			if fv == nil {
 				if isPackage {
 					return c.newError(errors.UnknownPackageMemberError).Context(name)

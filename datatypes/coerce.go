@@ -1,7 +1,7 @@
 package datatypes
 
 func (t Type) Coerce(v interface{}) interface{} {
-	switch t.Kind {
+	switch t.kind {
 	case intKind:
 		return GetInt(v)
 

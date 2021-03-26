@@ -2,7 +2,7 @@ package datatypes
 
 // This defines the token structure for various type declarations, including a model of that
 // type and the type designation.
-type TypeDefinition struct {
+type TypeDeclaration struct {
 	Tokens []string
 	Model  interface{}
 	Kind   Type
@@ -26,7 +26,7 @@ var stringInterface interface{} = ""
 // that for native types, you may also have to update InstanceOf() to generate a
 // unique instance of the required type, usually via pointer so the native function
 // can reference/update the native value.
-var TypeDeclarations = []TypeDefinition{
+var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
@@ -35,7 +35,7 @@ var TypeDeclarations = []TypeDefinition{
 	{
 		[]string{"*", "sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		PointerToType(WaitGroupType),
+		Pointer(WaitGroupType),
 	},
 	{
 		[]string{"sync", ".", "Mutex"},
@@ -45,7 +45,7 @@ var TypeDeclarations = []TypeDefinition{
 	{
 		[]string{"*", "sync", ".", "Mutex"},
 		nil, // Model generated in instance-of
-		PointerToType(MutexType),
+		Pointer(MutexType),
 	},
 	{
 		[]string{"chan"},
@@ -55,27 +55,27 @@ var TypeDeclarations = []TypeDefinition{
 	{
 		[]string{"[", "]", "int"},
 		NewArray(IntType, 0),
-		ArrayOfType(IntType),
+		Array(IntType),
 	},
 	{
 		[]string{"[", "]", "bool"},
 		NewArray(BoolType, 0),
-		ArrayOfType(BoolType),
+		Array(BoolType),
 	},
 	{
 		[]string{"[", "]", "float"},
 		NewArray(FloatType, 0),
-		ArrayOfType(FloatType),
+		Array(FloatType),
 	},
 	{
 		[]string{"[", "]", "string"},
 		NewArray(StringType, 0),
-		ArrayOfType(StringType),
+		Array(StringType),
 	},
 	{
 		[]string{"[", "]", "interface{}"},
 		NewArray(InterfaceType, 0),
-		ArrayOfType(InterfaceType),
+		Array(InterfaceType),
 	},
 	{
 		[]string{"bool"},
@@ -105,26 +105,26 @@ var TypeDeclarations = []TypeDefinition{
 	{
 		[]string{"*", "bool"},
 		&boolInterface,
-		PointerToType(BoolType),
+		Pointer(BoolType),
 	},
 	{
 		[]string{"*", "int"},
 		&intInterface,
-		PointerToType(IntType),
+		Pointer(IntType),
 	},
 	{
 		[]string{"*", "float"},
 		&floatInterface,
-		PointerToType(FloatType),
+		Pointer(FloatType),
 	},
 	{
 		[]string{"*", "string"},
 		&stringInterface,
-		PointerToType(StringType),
+		Pointer(StringType),
 	},
 	{
 		[]string{"*", "interface{}"},
 		&interfaceModel,
-		PointerToType(InterfaceType),
+		Pointer(InterfaceType),
 	},
 }

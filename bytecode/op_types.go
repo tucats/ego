@@ -68,12 +68,12 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				v = util.GetString(v)
 			} else if t.IsType(datatypes.BoolType) {
 				v = util.GetBool(v)
-			} else if t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) ||
-				t.IsType(datatypes.PointerToType(datatypes.ChanType)) ||
+			} else if t.IsType(datatypes.Pointer(datatypes.InterfaceType)) ||
+				t.IsType(datatypes.Pointer(datatypes.ChanType)) ||
 				t.IsUndefined() ||
 				t.IsType(datatypes.InterfaceType) ||
-				t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) ||
-				t.IsType(datatypes.PointerToType(datatypes.ChanType)) ||
+				t.IsType(datatypes.Pointer(datatypes.InterfaceType)) ||
+				t.IsType(datatypes.Pointer(datatypes.ChanType)) ||
 				t.IsType(datatypes.ChanType) {
 				// No work to do here
 			} else {
@@ -117,7 +117,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 			base = v.([]interface{})
 		}
 
-		elementType := *t.ValueType
+		elementType := *t.BaseType()
 		array := datatypes.NewArray(elementType, len(base))
 		model := datatypes.InstanceOfKind(elementType)
 

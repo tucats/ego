@@ -15,7 +15,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "struct type",
-			arg:  UserType("bang", StructType),
+			arg:  TypeDefinition("bang", StructType),
 			want: "T(bang)",
 		},
 		{
@@ -30,7 +30,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "array type",
-			arg:  ArrayOfType(IntType),
+			arg:  Array(IntType),
 			want: "T([]int)",
 		},
 

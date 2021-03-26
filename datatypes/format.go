@@ -20,7 +20,7 @@ func Format(element interface{}) string {
 
 	switch v := element.(type) {
 	case Type:
-		return "T(" + v.String() + v.FunctionsList() + ")"
+		return "T(" + v.String() + v.FunctionNameList() + ")"
 
 	case *Type:
 		return "T(" + v.String() + ")"

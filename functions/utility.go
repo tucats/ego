@@ -404,8 +404,8 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case map[string]interface{}:
 		t := datatypes.TypeOf(v)
 
-		if t.IsUserType() {
-			return t.Name, nil
+		if t.IsTypeDefinition() {
+			return t.Name(), nil
 		}
 
 		return t.String(), nil

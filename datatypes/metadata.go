@@ -17,6 +17,12 @@ const (
 	TypeMDKey         = "type"
 )
 
+// For a given struct type, set it's type value in the metadata. If the
+// item is not a struct map then do no work.
+func SetType(m map[string]interface{}, t Type) {
+	SetMetadata(m, TypeMDKey, t)
+}
+
 // For a given structure, set a key/value in the metadata. The
 // metadata member and it's map are created if necessary.
 func SetMetadata(m map[string]interface{}, key string, v interface{}) bool {

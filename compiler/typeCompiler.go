@@ -27,7 +27,7 @@ func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) 
 		return datatypes.UndefinedType, err
 	}
 
-	typeInfo := datatypes.UserType(name, baseType)
+	typeInfo := datatypes.TypeDefinition(name, baseType)
 	c.Types[name] = typeInfo
 
 	return typeInfo, nil
@@ -66,12 +66,12 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 			return datatypes.UndefinedType, err
 		}
 
-		return datatypes.MapOfType(keyType, valueType), nil
+		return datatypes.Map(keyType, valueType), nil
 	}
 
 	// Structures
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
-		t := datatypes.Struct("struct")
+		t := datatypes.Structure("struct")
 		c.t.Advance(2)
 
 		for !c.t.IsNext("}") {
@@ -100,7 +100,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 			return datatypes.UndefinedType, err
 		}
 
-		return datatypes.ArrayOfType(valueType), nil
+		return datatypes.Array(valueType), nil
 	}
 
 	// Known base types?

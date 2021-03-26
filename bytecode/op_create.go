@@ -120,10 +120,10 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 		kind = datatypes.GetType(args[1])
 	} else {
 		count = util.GetInt(i)
-		kind = datatypes.ArrayOfType(datatypes.InterfaceType)
+		kind = datatypes.Array(datatypes.InterfaceType)
 	}
 
-	array := datatypes.NewArray(*kind.ValueType, count)
+	array := datatypes.NewArray(*kind.BaseType(), count)
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
@@ -143,7 +143,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 		// All good, load it into the array after making an attempt at a coercion.
-		v = kind.ValueType.Coerce(v)
+		v = kind.BaseType().Coerce(v)
 
 		err = array.Set((count-n)-1, v)
 		if err != nil {
@@ -275,7 +275,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	} else {
 		// No type, default it to a struct.
-		t := datatypes.Struct("<anon>")
+		t := datatypes.Structure("<anon>")
 		for _, name := range fields {
 			_ = t.AddField(name, datatypes.TypeOf(m[name]))
 		}

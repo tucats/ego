@@ -9,8 +9,8 @@ import (
 func InstanceOfKind(kind Type) interface{} {
 	// Waitgroups and mutexes (and pointers to them) must be uniquely created
 	// to satisfy Go requirements for unique instances for any value.
-	switch kind.Kind {
-	case userKind:
+	switch kind.kind {
+	case typeKind:
 		return kind.InstanceOf(nil)
 
 	case mutexKind:
@@ -20,7 +20,7 @@ func InstanceOfKind(kind Type) interface{} {
 		return &sync.WaitGroup{}
 
 	case pointerKind:
-		switch kind.ValueType.Kind {
+		switch kind.valueType.kind {
 		case mutexKind:
 			mt := &sync.Mutex{}
 
@@ -44,11 +44,11 @@ func InstanceOfKind(kind Type) interface{} {
 }
 
 func (t Type) InstanceOf(superType *Type) interface{} {
-	if t.Kind == userKind {
-		return t.ValueType.InstanceOf(&t)
+	if t.kind == typeKind {
+		return t.valueType.InstanceOf(&t)
 	}
 
-	if t.Kind == structKind {
+	if t.kind == structKind {
 		result := map[string]interface{}{}
 
 		if superType == nil {
@@ -57,21 +57,21 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 
 		SetMetadata(result, TypeMDKey, *superType)
 
-		for fieldName, fieldType := range t.Fields {
+		for fieldName, fieldType := range t.fields {
 			result[fieldName] = fieldType.InstanceOf(nil)
 		}
 
 		return result
 	}
 
-	if t.Kind == arrayKind {
-		result := NewArray(*t.ValueType, 0)
+	if t.kind == arrayKind {
+		result := NewArray(*t.valueType, 0)
 
 		return result
 	}
 
-	if t.Kind == mapKind {
-		result := NewMap(*t.KeyType, *t.ValueType)
+	if t.kind == mapKind {
+		result := NewMap(*t.keyType, *t.valueType)
 
 		return result
 	}
