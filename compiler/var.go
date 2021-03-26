@@ -65,7 +65,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		}
 	}
 
-	if kind == datatypes.UndefinedType {
+	if kind.IsUndefined() {
 		// Is the next item a symbol? If so, assume it's a user
 		// defined type
 		typeName := c.t.Next()

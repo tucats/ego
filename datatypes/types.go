@@ -1,6 +1,8 @@
 package datatypes
 
 import (
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/tucats/ego/errors"
@@ -37,6 +39,7 @@ const (
 type Type struct {
 	Name      string
 	Kind      int
+	Fields    map[string]Type
 	KeyType   *Type
 	ValueType *Type
 }
@@ -222,6 +225,36 @@ func (t Type) String() string {
 	case arrayKind:
 		return "[]" + t.ValueType.String()
 
+	case structKind:
+		// If there are fields, let's include that in the type info?
+		b := strings.Builder{}
+		b.WriteString("struct")
+
+		if t.Fields != nil && len(t.Fields) > 0 {
+			b.WriteString("{")
+
+			keys := make([]string, 0)
+			for k := range t.Fields {
+				keys = append(keys, k)
+			}
+
+			sort.Strings(keys)
+
+			for i, k := range keys {
+				if i > 0 {
+					b.WriteString(", ")
+				}
+
+				b.WriteString(k)
+				b.WriteString(" ")
+				b.WriteString(t.Fields[k].String())
+			}
+
+			b.WriteString("}")
+		}
+
+		return b.String()
+
 	default:
 		return t.Name
 	}
@@ -256,7 +289,7 @@ func InstanceOf(kind Type) interface{} {
 
 	default:
 		for _, typeDef := range TypeDeclarations {
-			if typeDef.Kind == kind {
+			if typeDef.Kind.IsType(kind) {
 				return typeDef.Model
 			}
 		}
@@ -463,6 +496,15 @@ func NativePackage(kind int) string {
 	return ""
 }
 
+// Create a new instance of a struct type, ready to have the fields filled in.
+func Struct(name string) Type {
+	return Type{
+		Name:   name,
+		Kind:   structKind,
+		Fields: map[string]Type{},
+	}
+}
+
 func UserType(name string, base Type) Type {
 	return Type{
 		Name:      name,
@@ -525,4 +567,46 @@ func (t Type) IsArray() bool {
 
 func (t Type) IsUserType() bool {
 	return t.Kind == userKind
+}
+
+// For a given type, add a new field of the given name and type. Returns
+// an error if the current type is not a structure, or if the field already
+// is defined.
+func (t *Type) AddField(name string, ofType Type) *errors.EgoError {
+	if t.Kind != structKind {
+		return errors.New(errors.InvalidStructError)
+	}
+
+	if t.Fields == nil {
+		t.Fields = map[string]Type{}
+	} else {
+		if _, found := t.Fields[name]; found {
+			return errors.New(errors.InvalidFieldError)
+		}
+	}
+
+	t.Fields[name] = ofType
+
+	return nil
+}
+
+func (t Type) Field(name string) (Type, *errors.EgoError) {
+	if t.Kind != structKind {
+		return UndefinedType, errors.New(errors.InvalidStructError)
+	}
+
+	if t.Fields == nil {
+		return UndefinedType, errors.New(errors.InvalidFieldError)
+	}
+
+	ofType, found := t.Fields[name]
+	if !found {
+		return UndefinedType, errors.New(errors.InvalidFieldError)
+	}
+
+	return ofType, nil
+}
+
+func (t Type) IsUndefined() bool {
+	return t.Kind == undefinedKind
 }

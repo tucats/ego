@@ -37,22 +37,19 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 				} else {
 					if t, ok := i.(int); ok {
 						dataType := datatypes.TypeOf(t)
-						switch dataType {
-						case datatypes.IntType:
+						if dataType.IsType(datatypes.IntType) {
 							_, ok = v.(int)
 
-						case datatypes.FloatType:
-							_, ok = v.(float64)
-
-						case datatypes.BoolType:
+						} else if dataType.IsType(datatypes.BoolType) {
 							_, ok = v.(bool)
-
-						case datatypes.StringType:
+						} else if dataType.IsType(datatypes.StringType) {
 							_, ok = v.(string)
-
-						default:
+						} else if dataType.IsType(datatypes.FloatType) {
+							_, ok = v.(float64)
+						} else {
 							ok = true
 						}
+
 						if !ok {
 							err = c.newError(errors.InvalidArgTypeError)
 						}
@@ -62,36 +59,26 @@ func RequiredTypeImpl(c *Context, i interface{}) *errors.EgoError {
 		} else {
 			t := datatypes.GetType(i)
 
-			// Test for some things that don't resolve in a switch statement. Then test
-			// for the rest using the switch statement.
-			if !t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) &&
-				!t.IsType(datatypes.PointerToType(datatypes.ChanType)) {
-				switch t {
-				case datatypes.ErrorType:
-					v = errors.New(errors.Panic).Context(v)
-
-				case datatypes.IntType:
-					v = util.GetInt(v)
-
-				case datatypes.FloatType:
-					v = util.GetFloat(v)
-
-				case datatypes.StringType:
-					v = util.GetString(v)
-
-				case datatypes.BoolType:
-					v = util.GetBool(v)
-
-				case datatypes.UndefinedType,
-					datatypes.InterfaceType,
-					datatypes.PointerToType(datatypes.InterfaceType),
-					datatypes.PointerToType(datatypes.ChanType),
-					datatypes.ChanType:
-					// No work at all to do here.
-
-				default:
-					return c.newError(errors.InvalidTypeError)
-				}
+			if t.IsType(datatypes.ErrorType) {
+				v = errors.New(errors.Panic).Context(v)
+			} else if t.IsType(datatypes.IntType) {
+				v = util.GetInt(v)
+			} else if t.IsType(datatypes.FloatType) {
+				v = util.GetFloat(v)
+			} else if t.IsType(datatypes.StringType) {
+				v = util.GetString(v)
+			} else if t.IsType(datatypes.BoolType) {
+				v = util.GetBool(v)
+			} else if t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) ||
+				t.IsType(datatypes.PointerToType(datatypes.ChanType)) ||
+				t.IsUndefined() ||
+				t.IsType(datatypes.InterfaceType) ||
+				t.IsType(datatypes.PointerToType(datatypes.InterfaceType)) ||
+				t.IsType(datatypes.PointerToType(datatypes.ChanType)) ||
+				t.IsType(datatypes.ChanType) {
+				// No work to do here
+			} else {
+				return c.newError(errors.InvalidTypeError)
 			}
 		}
 
@@ -110,26 +97,19 @@ func CoerceImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	switch t {
-	case datatypes.ErrorType:
-		v = errors.New(errors.Panic).Context(v)
+	if t.IsType(datatypes.ErrorType) {
 
-	case datatypes.IntType:
+	} else if t.IsType(datatypes.IntType) {
 		v = util.GetInt(v)
-
-	case datatypes.FloatType:
+	} else if t.IsType(datatypes.FloatType) {
 		v = util.GetFloat(v)
-
-	case datatypes.StringType:
-		v = util.GetString(v)
-
-	case datatypes.BoolType:
+	} else if t.IsType(datatypes.BoolType) {
 		v = util.GetBool(v)
-
-	case datatypes.InterfaceType, datatypes.UndefinedType:
-		// No work at all to do here.
-
-	default:
+	} else if t.IsType(datatypes.StringType) {
+		v = util.GetString(v)
+	} else if t.IsType(datatypes.InterfaceType) || t.IsUndefined() {
+		// No work to do here.
+	} else {
 		var base []interface{}
 
 		if a, ok := v.(*datatypes.EgoArray); ok {

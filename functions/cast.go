@@ -66,7 +66,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	// Is it an integer Ego array?
-	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType() == datatypes.IntType {
+	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType().IsType(datatypes.IntType) {
 		var b strings.Builder
 
 		for i := 0; i < array.Len(); i++ {
@@ -316,20 +316,15 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
-			switch elementKind {
-			case datatypes.IntType:
+			if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, util.GetInt(v))
-
-			case datatypes.FloatType:
+			} else if elementKind.IsType(datatypes.FloatType) {
 				_ = r.Set(i, util.GetFloat(v))
-
-			case datatypes.StringType:
+			} else if elementKind.IsType(datatypes.StringType) {
 				_ = r.Set(i, util.GetString(v))
-
-			case datatypes.BoolType:
+			} else if elementKind.IsType(datatypes.BoolType) {
 				_ = r.Set(i, util.GetBool(v))
-
-			default:
+			} else {
 				return nil, errors.New(errors.InvalidTypeError)
 			}
 		}

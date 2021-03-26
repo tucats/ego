@@ -181,6 +181,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	count := util.GetInt(i)
 	m := map[string]interface{}{}
+	fields := make([]string, 0)
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the array.
@@ -191,6 +192,9 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		name := util.GetString(nx)
+		if !strings.HasPrefix(name, "__") {
+			fields = append(fields, name)
+		}
 
 		value, err := c.Pop()
 		if !errors.Nil(err) {
@@ -279,7 +283,12 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	} else {
 		// No type, default it to a struct.
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.StructType)
+		t := datatypes.Struct("<anon>")
+		for _, name := range fields {
+			_ = t.AddField(name, datatypes.TypeOf(m[name]))
+		}
+
+		datatypes.SetMetadata(m, datatypes.TypeMDKey, t)
 	}
 
 	// Put the newly created instance of a struct on the stack.

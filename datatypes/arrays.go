@@ -57,7 +57,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 }
 
 func (a *EgoArray) DeepEqual(b *EgoArray) bool {
-	if a.valueType == InterfaceType || b.valueType == InterfaceType {
+	if a.valueType.IsType(InterfaceType) || b.valueType.IsType(InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
 	}
 
@@ -73,7 +73,7 @@ func (a *EgoArray) ValueType() Type {
 }
 
 func (a *EgoArray) Validate(kind Type) *errors.EgoError {
-	if kind == InterfaceType {
+	if kind.IsType(InterfaceType) {
 		return nil
 	}
 
@@ -109,7 +109,7 @@ func (a *EgoArray) Len() int {
 }
 
 func (a *EgoArray) SetType(i Type) *errors.EgoError {
-	if a.valueType == InterfaceType {
+	if a.valueType.IsType(InterfaceType) {
 		a.valueType = i
 
 		return nil
@@ -216,8 +216,7 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 func (a *EgoArray) Sort() *errors.EgoError {
 	var err *errors.EgoError
 
-	switch a.valueType {
-	case StringType:
+	if a.valueType.IsType(StringType) {
 		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
 			stringArray[i] = util.GetString(v)
@@ -228,8 +227,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		for i, v := range stringArray {
 			a.data[i] = v
 		}
-
-	case IntType:
+	} else if a.valueType.IsType(IntType) {
 		values := make([]int, a.Len())
 		for i, v := range a.data {
 			values[i] = util.GetInt(v)
@@ -240,8 +238,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		for i, v := range values {
 			a.data[i] = v
 		}
-
-	case FloatType:
+	} else if a.valueType.IsType(FloatType) {
 		values := make([]float64, a.Len())
 		for i, v := range a.data {
 			values[i] = util.GetFloat(v)
@@ -252,8 +249,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		for i, v := range values {
 			a.data[i] = v
 		}
-
-	default:
+	} else {
 		err = errors.New(errors.InvalidArgTypeError)
 	}
 

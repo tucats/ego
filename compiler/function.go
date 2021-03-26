@@ -101,7 +101,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 
 		// If this argument is not interface{} or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
-		if !p.kind.IsType(datatypes.UndefinedType) && !p.kind.IsType(datatypes.VarArgsType) {
+		if !p.kind.IsUndefined() && !p.kind.IsType(datatypes.VarArgsType) {
 			b.Emit(bytecode.RequiredType, p.kind)
 		}
 		// Generate code to store the value on top of the stack into the local

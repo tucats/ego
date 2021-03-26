@@ -276,7 +276,7 @@ func ExplodeImpl(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if m, ok := v.(*datatypes.EgoMap); ok {
-		if m.KeyType() != datatypes.StringType {
+		if !m.KeyType().IsType(datatypes.StringType) {
 			err = c.newError(errors.InvalidStructError)
 		} else {
 			keys := m.Keys()

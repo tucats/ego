@@ -195,7 +195,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 // SortStrings implements the sort.Strings function.
 func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType() == datatypes.StringType {
+		if array.ValueType().IsType(datatypes.StringType) {
 			err := array.Sort()
 
 			return array, err
@@ -225,7 +225,7 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // SortFloats implements the sort.Floats function.
 func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType() == datatypes.FloatType {
+		if array.ValueType().IsType(datatypes.FloatType) {
 			err := array.Sort()
 
 			return array, err
@@ -377,7 +377,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 	default:
 		tt := datatypes.TypeOf(v)
-		if tt == datatypes.UndefinedType {
+		if tt.IsUndefined() {
 			vv := reflect.ValueOf(v)
 			if vv.Kind() == reflect.Func {
 				return "builtin", nil
@@ -402,8 +402,8 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		for _, n := range v {
 			k2 := datatypes.TypeOf(n)
-			if kind != k2 {
-				if kind.IsType(datatypes.UndefinedType) {
+			if !kind.IsType(k2) {
+				if kind.IsUndefined() {
 					kind = k2
 				} else {
 					kind = datatypes.UndefinedType
@@ -453,7 +453,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
-			if kind != datatypes.InterfaceType {
+			if !kind.IsType(datatypes.InterfaceType) {
 				if err := array.Validate(kind); !errors.Nil(err) {
 					return nil, err
 				}
@@ -467,7 +467,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
-			if kind != datatypes.InterfaceType && datatypes.TypeOf(j) != kind {
+			if !kind.IsType(datatypes.InterfaceType) && !datatypes.TypeOf(j).IsType(kind) {
 				return nil, errors.New(errors.WrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
@@ -654,19 +654,24 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		// Sort the member list and forge it into an Ego array
 		members := datatypes.NewFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
 
-		result := m[datatypes.MetadataKey]
-		if result == nil {
+		result := map[string]interface{}{}
+
+		metadata := m[datatypes.MetadataKey]
+		if metadata == nil {
 			result = map[string]interface{}{
 				datatypes.MembersMDKey:  members,
 				datatypes.TypeMDKey:     "struct",
 				datatypes.BasetypeMDKey: "map",
 			}
 		} else {
-			if mm, ok := result.(map[string]interface{}); ok {
-				mm[datatypes.MembersMDKey] = members
-				mm[datatypes.BasetypeMDKey] = "map"
-				// We don't show the parent object
-				delete(mm, datatypes.ParentMDKey)
+			if mm, ok := metadata.(map[string]interface{}); ok {
+				result[datatypes.MembersMDKey] = members
+				result[datatypes.BasetypeMDKey] = "map"
+				result[datatypes.TypeMDKey] = "struct"
+				// If there's a Type designation, convert it to string format.
+				if t, ok := mm[datatypes.TypeMDKey].(datatypes.Type); ok {
+					result["declaration"] = t.String()
+				}
 			}
 		}
 

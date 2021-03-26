@@ -240,7 +240,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		return err
 	}
 
-	if kind != datatypes.UndefinedType {
+	if !kind.IsUndefined() {
 		if !kind.IsArray() {
 			return c.newError(errors.InvalidTypeNameError)
 		}
@@ -353,7 +353,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		// If this is an array of a specific type, check to see
 		// if the previous value was a constant. If it wasn't, or
 		// was of the wrong type, emit a coerce...
-		if kind != datatypes.UndefinedType {
+		if !kind.IsUndefined() {
 			if c.b.NeedsCoerce(kind) {
 				c.b.Emit(bytecode.Coerce, kind)
 			}
@@ -376,7 +376,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		c.t.Advance(1)
 	}
 
-	if kind != datatypes.UndefinedType {
+	if !kind.IsUndefined() {
 		c.b.Emit(bytecode.Array, count, kind)
 	} else {
 		c.b.Emit(bytecode.Array, count)
