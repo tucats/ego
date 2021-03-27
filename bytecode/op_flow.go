@@ -230,9 +230,6 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		// case, this must be done _after_ the call frame is recorded.
 		funcSymbols := c.getPackageSymbols()
 		if funcSymbols == nil {
-			//			funcSymbols = symbols.NewChildSymbolTable("function "+af.Name, parentTable)
-			//			funcSymbols.ScopeBoundary = true
-			//			c.symbols = funcSymbols
 			ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, c.symbols.Name, parentTable.Name)
 
 			c.callframePush("function "+af.Name, af, 0, true)

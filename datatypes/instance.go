@@ -4,14 +4,32 @@ import (
 	"sync"
 )
 
-// InstanceOfKind accepts a kind type indicator, and returns the zero-value
+// InstanceOfType accepts a kind type indicator, and returns the zero-value
 // model of that type. This only applies to base types.
-func InstanceOfKind(kind Type) interface{} {
-	// Waitgroups and mutexes (and pointers to them) must be uniquely created
-	// to satisfy Go requirements for unique instances for any value.
-	switch kind.kind {
+func InstanceOfType(t Type) interface{} {
+	switch t.kind {
+	case structKind:
+		m := map[string]interface{}{}
+		SetType(m, t)
+
+		for k, v := range t.fields {
+			m[k] = InstanceOfType(v)
+		}
+
+		return m
+
+	case mapKind:
+		m := NewMap(*t.keyType, *t.valueType)
+
+		return m
+
+	case arrayKind:
+		m := NewArray(t, 0)
+
+		return m
+
 	case typeKind:
-		return kind.InstanceOf(nil)
+		return t.InstanceOf(nil)
 
 	case mutexKind:
 		return &sync.Mutex{}
@@ -20,7 +38,7 @@ func InstanceOfKind(kind Type) interface{} {
 		return &sync.WaitGroup{}
 
 	case pointerKind:
-		switch kind.valueType.kind {
+		switch t.valueType.kind {
 		case mutexKind:
 			mt := &sync.Mutex{}
 
@@ -33,8 +51,9 @@ func InstanceOfKind(kind Type) interface{} {
 		}
 
 	default:
+		// Base types can read the "zero value" from the declarations table.
 		for _, typeDef := range TypeDeclarations {
-			if typeDef.Kind.IsType(kind) {
+			if typeDef.Kind.IsType(t) {
 				return typeDef.Model
 			}
 		}
@@ -76,5 +95,5 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 		return result
 	}
 
-	return InstanceOfKind(t)
+	return InstanceOfType(t)
 }

@@ -95,7 +95,7 @@ func Array(t Type) Type {
 // Construct a type that is a pointer to the given type.
 func Pointer(t Type) Type {
 	return Type{
-		name:      "[]",
+		name:      "*",
 		kind:      pointerKind,
 		valueType: &t,
 	}

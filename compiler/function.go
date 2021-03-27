@@ -61,8 +61,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 
 	// Generate the argument check. IF there are variable arguments,
 	// the maximum parameter count is set to -1.
-	b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
-
 	maxArgCount := len(parameters)
 	if hasVarArgs {
 		maxArgCount = -1

@@ -51,7 +51,6 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 	c.result = nil
 	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols)
 	c.symbols.ScopeBoundary = boundary
-	c.line = 0
 	c.bc = bc
 	c.programCounter = pc
 

@@ -155,12 +155,12 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 	// If it's a WaitGroup, make a new one.
 	if _, ok := args[0].(sync.WaitGroup); ok {
-		return datatypes.InstanceOfKind(datatypes.WaitGroupType), nil
+		return datatypes.InstanceOfType(datatypes.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one.
 	if _, ok := args[0].(sync.Mutex); ok {
-		return datatypes.InstanceOfKind(datatypes.MutexType), nil
+		return datatypes.InstanceOfType(datatypes.MutexType), nil
 	}
 
 	// If it's a channel, just return the value

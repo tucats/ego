@@ -40,29 +40,9 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	// We'll need to use this token string over and over for each name
 	// in the list, so remember where to start.
-	kind := datatypes.UndefinedType
-
-	var model interface{}
-
-	for _, typeInfo := range datatypes.TypeDeclarations {
-		match := true
-
-		for idx, token := range typeInfo.Tokens {
-			if c.t.Peek(idx+1) != token {
-				match = false
-
-				break
-			}
-		}
-
-		if match {
-			kind = typeInfo.Kind
-			model = datatypes.InstanceOfKind(kind)
-
-			c.t.Advance(len(typeInfo.Tokens))
-
-			break
-		}
+	kind, err := c.parseTypeSpec()
+	if err != nil {
+		return err
 	}
 
 	if kind.IsUndefined() {
@@ -85,8 +65,10 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		return c.newError(errors.InvalidTypeSpecError)
 	}
 
-	// We got a built-in type, so emit the model and store it
+	// We got a defined type, so emit the model and store it
 	// in each symbol
+	model := datatypes.InstanceOfType(kind)
+
 	for _, name := range names {
 		c.b.Emit(bytecode.Push, model)
 		c.b.Emit(bytecode.SymbolCreate, name)

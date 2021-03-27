@@ -46,7 +46,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 		immutable: 0,
 	}
 
-	model := InstanceOfKind(a.valueType)
+	model := InstanceOfType(a.valueType)
 
 	for index := range m.data {
 		m.data[index] = model

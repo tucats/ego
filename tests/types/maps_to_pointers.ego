@@ -1,0 +1,13 @@
+@test "types: maps of pointer types"
+{
+
+    var a map[string]*int
+
+    age := 55
+    a["name"] = &age
+
+    b := a["name"]
+    @assert *b == 55
+    @assert type(a) == "map[string]*int"
+}
+@pass

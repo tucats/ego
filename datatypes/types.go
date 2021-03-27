@@ -132,6 +132,12 @@ func (t Type) String() string {
 	}
 }
 
+// Return true if this type is a pointer to something.
+func (t Type) IsPointer() bool {
+	return t.kind == pointerKind
+}
+
+// Return true if this type is the same as the provided type.
 func (t Type) IsType(i Type) bool {
 	if t.kind != i.kind {
 		return false
@@ -266,7 +272,9 @@ func (t Type) Name() string {
 func TypeOf(i interface{}) Type {
 	switch v := i.(type) {
 	case *interface{}:
-		return Pointer(InterfaceType)
+		baseType := TypeOf(*v)
+
+		return Pointer(baseType)
 
 	case *sync.WaitGroup:
 		return WaitGroupType

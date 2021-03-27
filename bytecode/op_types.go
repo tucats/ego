@@ -58,26 +58,26 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 		} else {
 			t := datatypes.GetType(i)
 
-			if t.IsType(datatypes.ErrorType) {
-				v = errors.New(errors.Panic).Context(v)
-			} else if t.IsType(datatypes.IntType) {
-				v = util.GetInt(v)
-			} else if t.IsType(datatypes.FloatType) {
-				v = util.GetFloat(v)
-			} else if t.IsType(datatypes.StringType) {
-				v = util.GetString(v)
-			} else if t.IsType(datatypes.BoolType) {
-				v = util.GetBool(v)
-			} else if t.IsType(datatypes.Pointer(datatypes.InterfaceType)) ||
-				t.IsType(datatypes.Pointer(datatypes.ChanType)) ||
-				t.IsUndefined() ||
-				t.IsType(datatypes.InterfaceType) ||
-				t.IsType(datatypes.Pointer(datatypes.InterfaceType)) ||
-				t.IsType(datatypes.Pointer(datatypes.ChanType)) ||
-				t.IsType(datatypes.ChanType) {
-				// No work to do here
-			} else {
-				return c.newError(errors.InvalidTypeError)
+			// If it's not interface type, check it out...
+			if !t.IsType(datatypes.InterfaceType) {
+				if t.IsType(datatypes.ErrorType) {
+					v = errors.New(errors.Panic).Context(v)
+				}
+
+				actualType := datatypes.TypeOf(v)
+				if !actualType.IsType(t) {
+					return c.newError(errors.ArgumentTypeError)
+				}
+
+				if t.IsType(datatypes.IntType) {
+					v = util.GetInt(v)
+				} else if t.IsType(datatypes.FloatType) {
+					v = util.GetFloat(v)
+				} else if t.IsType(datatypes.StringType) {
+					v = util.GetString(v)
+				} else if t.IsType(datatypes.BoolType) {
+					v = util.GetBool(v)
+				}
 			}
 		}
 
@@ -119,7 +119,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		elementType := *t.BaseType()
 		array := datatypes.NewArray(elementType, len(base))
-		model := datatypes.InstanceOfKind(elementType)
+		model := datatypes.InstanceOfType(elementType)
 
 		for i, element := range base {
 			_ = array.Set(i, util.Coerce(element, model))
