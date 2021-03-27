@@ -101,7 +101,21 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	if t.IsType(datatypes.ErrorType) {
+	// Some types cannot be coerced, so must match.
+	if t.Kind() == datatypes.MapKind ||
+		t.Kind() == datatypes.StructKind ||
+		t.Kind() == datatypes.ArrayKind {
+		if !t.IsType(datatypes.TypeOf(v)) {
+			return c.newError(errors.InvalidTypeError)
+		}
+	}
+
+	// @tomcole restructure this back as a switch statement based on Kind()
+	if t.Kind() == datatypes.MapKind {
+
+	} else if t.Kind() == datatypes.StructKind {
+
+	} else if t.IsType(datatypes.ErrorType) {
 
 	} else if t.IsType(datatypes.IntType) {
 		v = util.GetInt(v)

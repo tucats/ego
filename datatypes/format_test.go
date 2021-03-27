@@ -16,7 +16,7 @@ func TestFormat(t *testing.T) {
 		{
 			name: "struct type",
 			arg:  TypeDefinition("bang", StructType),
-			want: "T(bang)",
+			want: "T(bang struct)",
 		},
 		{
 			name: "struct",
