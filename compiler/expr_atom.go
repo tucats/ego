@@ -187,7 +187,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType(true); err == nil {
-			// Is there an initialial value for the type?
+			// Is there an initial value for the type?
 			if c.t.Peek(1) == "{" {
 				err = c.compileInitializer(typeSpec)
 

@@ -1,0 +1,21 @@
+@test "types: nested initializers"
+
+{
+
+   a := []map[string]int{
+      {
+         "tom":55,
+         "mary":52,
+      },
+      {
+         "sarah":15,
+         "chelsea":19,
+      }
+   }
+
+
+   @assert type(a) == "[]map[string]int"
+   @assert a[0]["tom"] == 55
+
+}
+@pass
