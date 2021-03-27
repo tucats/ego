@@ -43,6 +43,10 @@ type ByteCode struct {
 	//Symbols      *symbols.SymbolTable
 }
 
+// Set this to true for structure to be generated as native EgoStruct
+// types rather than maps with hidden keys.
+var NativeStructures = false
+
 // New generates and initializes a new bytecode.
 func New(name string) *ByteCode {
 	bc := ByteCode{

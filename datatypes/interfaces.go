@@ -106,3 +106,55 @@ func GetBool(v interface{}) bool {
 
 	return false
 }
+
+func DeepCopy(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	switch actual := v.(type) {
+	case int:
+		return actual
+	case string:
+		return actual
+	case bool:
+		return actual
+	case float64:
+		return actual
+
+	case *EgoArray:
+		size := actual.Len()
+		result := NewArray(actual.valueType, size)
+
+		for i := 0; i < size; i++ {
+			v, _ := actual.Get(i)
+			_ = result.Set(i, DeepCopy(v))
+		}
+
+		return result
+
+	case *EgoMap:
+		result := NewMap(actual.keyType, actual.valueType)
+		keys := actual.Keys()
+
+		for _, k := range keys {
+			v, _, _ := actual.Get(k)
+			_, _ = result.Set(k, DeepCopy(v))
+		}
+
+		return result
+
+	case *EgoStruct:
+		result := actual.Copy()
+		result.fields = map[string]interface{}{}
+
+		for k, v := range actual.fields {
+			result.fields[k] = DeepCopy(v)
+		}
+
+		return result
+
+	default:
+		return nil // Unsupported type, like pointers
+	}
+}

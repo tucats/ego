@@ -79,6 +79,10 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 				r.runes = runes
 
 			case map[string]interface{}:
+				if NativeStructures {
+					return c.newError(errors.InvalidTypeError)
+				}
+
 				r.keySet = []interface{}{}
 				i := 0
 
@@ -165,6 +169,10 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 		case map[string]interface{}:
+			if NativeStructures {
+				return c.newError(errors.InvalidTypeError)
+			}
+
 			if r.index >= len(r.keySet) {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]

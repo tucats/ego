@@ -351,6 +351,9 @@ func TypeOf(i interface{}) Type {
 	case *EgoMap:
 		return v.Type()
 
+	case *EgoStruct:
+		return v.typeDef
+
 	case *Channel:
 		return Pointer(ChanType)
 

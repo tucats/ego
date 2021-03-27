@@ -16,6 +16,8 @@ func AddressOf(v interface{}) (interface{}, *errors.EgoError) {
 		return &actual, nil
 	case map[string]interface{}:
 		return &actual, nil
+	case *EgoStruct:
+		return &actual, nil
 	case *EgoMap:
 		return &actual, nil
 	case *EgoArray:

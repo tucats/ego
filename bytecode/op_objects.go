@@ -41,6 +41,9 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
+	case *datatypes.EgoStruct:
+		v, _ = mv.Get(name)
+
 	case map[string]interface{}:
 		tt := datatypes.TypeOf(mv)
 		isPackage := tt.IsType(datatypes.PackageType)

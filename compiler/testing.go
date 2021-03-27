@@ -42,8 +42,14 @@ func (c *Compiler) testDirective() *errors.EgoError {
 
 	pad := strings.Repeat(" ", padSize)
 
-	// Generate code to create a Test object
+	// Generate code to create a Test object. Make a native struct
+	// if they are in play...
+	//if bytecode.NativeStructures {
+	//	c.b.Emit(bytecode.Push, datatypes.NewStructFromMap(test))
+	// } else {
 	c.b.Emit(bytecode.Push, test)
+	//}
+
 	c.b.Emit(bytecode.StoreAlways, "T")
 
 	// Generate code to report that the test is starting.

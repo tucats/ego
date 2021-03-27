@@ -57,6 +57,9 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		case *datatypes.EgoArray:
 			typeString = actual.TypeString()
 
+		case *datatypes.EgoStruct:
+			typeString = actual.TypeString()
+
 		case func(*SymbolTable, []interface{}) (interface{}, error):
 			if !includeBuiltins {
 				continue

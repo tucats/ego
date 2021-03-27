@@ -53,6 +53,10 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Index into map is just member access.
 	case map[string]interface{}:
+		if NativeStructures {
+			return c.newError(errors.InvalidTypeError)
+		}
+
 		subscript := util.GetString(index)
 		isPackage := datatypes.TypeOf(a).IsType(datatypes.PackageType)
 
@@ -75,6 +79,12 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.newError(errors.UnknownMemberError).Context(subscript)
 		}
 
+		err = c.stackPush(v)
+		c.lastStruct = a
+
+	case *datatypes.EgoStruct:
+		key := util.GetString(index)
+		v, _ := a.Get(key)
 		err = c.stackPush(v)
 		c.lastStruct = a
 
@@ -220,9 +230,23 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 			return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
+	case *datatypes.EgoStruct:
+		key := util.GetString(index)
+
+		err = a.Set(key, v)
+		if errors.Nil(err) {
+			return c.newError(err)
+		}
+
+		_ = c.stackPush(a)
+
 	// Index into map is just member access. Make sure it's not
 	// a read-only member or a function pointer...
 	case map[string]interface{}:
+		if NativeStructures {
+			return c.newError(errors.InvalidTypeError)
+		}
+
 		subscript := util.GetString(index)
 
 		// Does this member have a flag marking it as readonly?

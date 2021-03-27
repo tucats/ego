@@ -69,15 +69,21 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is an empty struct?
 	if t == "{}" {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, map[string]interface{}{
-			"__metadata": map[string]interface{}{
-				datatypes.TypeMDKey:     datatypes.StructType,
-				datatypes.BasetypeMDKey: "map",
-				datatypes.MembersMDKey:  []interface{}{},
-				datatypes.ReplicaMDKey:  0,
-				datatypes.StaticMDKey:   false,
-			},
-		})
+
+		// If we're doing native structures, this is an empty (non-static) structure.
+		if bytecode.NativeStructures {
+			c.b.Emit(bytecode.Push, datatypes.NewStructFromMap(map[string]interface{}{}))
+		} else {
+			c.b.Emit(bytecode.Push, map[string]interface{}{
+				"__metadata": map[string]interface{}{
+					datatypes.TypeMDKey:     datatypes.StructType,
+					datatypes.BasetypeMDKey: "map",
+					datatypes.MembersMDKey:  []interface{}{},
+					datatypes.ReplicaMDKey:  0,
+					datatypes.StaticMDKey:   false,
+				},
+			})
+		}
 
 		return nil
 	}

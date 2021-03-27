@@ -186,8 +186,12 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(newArray)
 		}
 
-		// You can add a map to another map.
+		// You can add a map to another map if we're not in native structure mode.
 	case map[string]interface{}:
+		if NativeStructures {
+			return c.newError(errors.InvalidTypeError)
+		}
+
 		switch vy := v2.(type) {
 		case map[string]interface{}:
 			t := datatypes.Structure()

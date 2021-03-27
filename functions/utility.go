@@ -174,6 +174,9 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 
 		return keys, nil
 
+	case *datatypes.EgoStruct:
+		return v.FieldNamesArray(), nil
+
 	case map[string]interface{}:
 		keys := datatypes.NewArray(datatypes.StringType, 0)
 
@@ -364,6 +367,9 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		return v.TypeString(), nil
 
 	case *datatypes.EgoArray:
+		return v.TypeString(), nil
+
+	case *datatypes.EgoStruct:
 		return v.TypeString(), nil
 
 	case nil:
@@ -644,6 +650,10 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 				return result, nil
 			}
 		}
+	}
+
+	if m, ok := args[0].(*datatypes.EgoStruct); ok {
+		return m.Reflect(), nil
 	}
 
 	// Is it an Ego structure?

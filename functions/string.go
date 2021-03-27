@@ -303,7 +303,11 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	if len(args) == 1 {
 		err = tree.Execute(&r, nil)
 	} else {
-		err = tree.Execute(&r, args[1])
+		if structure, ok := args[1].(*datatypes.EgoStruct); ok {
+			err = tree.Execute(&r, structure.ToMap())
+		} else {
+			err = tree.Execute(&r, args[1])
+		}
 	}
 
 	return r.String(), errors.New(err)

@@ -5,10 +5,11 @@ import (
 	"os"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // OpcodeHandler defines a function that implements an opcode.
@@ -73,7 +74,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 	}
 
-	fullStackListing := util.GetBool(c.configGet("full_stack_listing"))
+	fullStackListing := persistence.GetBool(defs.FullStackListingSetting)
 
 	// Loop over the bytecodes and run.
 	for c.running {

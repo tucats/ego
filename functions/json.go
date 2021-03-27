@@ -25,6 +25,11 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 func Seal(i interface{}) interface{} {
 	switch actualValue := i.(type) {
+	case *datatypes.EgoStruct:
+		actualValue.SetStatic(true)
+
+		return actualValue
+
 	case map[string]interface{}:
 		for k, v := range actualValue {
 			actualValue[k] = Seal(v)

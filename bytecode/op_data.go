@@ -54,8 +54,8 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case map[string]interface{}:
-			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
+		case *datatypes.EgoStruct:
+			a.SetReadonly(true)
 		}
 	}
 
@@ -144,8 +144,8 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case map[string]interface{}:
-			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
+		case *datatypes.EgoStruct:
+			a.SetReadonly(true)
 		}
 	}
 
@@ -237,8 +237,8 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case map[string]interface{}:
-			datatypes.SetMetadata(a, datatypes.ReadonlyMDKey, true)
+		case *datatypes.EgoStruct:
+			a.SetReadonly(true)
 		}
 	}
 

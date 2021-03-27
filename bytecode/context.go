@@ -344,23 +344,6 @@ func (c *Context) stackPush(v interface{}) *errors.EgoError {
 	return nil
 }
 
-// configGet retrieves a runtime configuration item from the
-// __config data structure. If not found, it also queries
-// the persistence layer.
-func (c *Context) configGet(name string) interface{} {
-	var i interface{}
-
-	if config, ok := c.symbolGet("_config"); ok {
-		if cfgMap, ok := config.(map[string]interface{}); ok {
-			if cfgValue, ok := cfgMap[name]; ok {
-				i = cfgValue
-			}
-		}
-	}
-
-	return i
-}
-
 // checkType is a utility function used to determine if a given value
 // could be stored in a named symbol. When the value is nil or static
 // type checking is disabled (the default) then no action occurs.

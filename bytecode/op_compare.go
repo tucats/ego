@@ -53,7 +53,7 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *errors.EgoError:
 		r = a.Equal(v2)
 
-	case map[string]interface{}:
+	case *datatypes.EgoStruct:
 		r = reflect.DeepEqual(v1, v2)
 
 	case *datatypes.EgoMap:
@@ -153,7 +153,7 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case map[string]interface{}:
+	case *datatypes.EgoStruct:
 		r = !reflect.DeepEqual(v1, v2)
 
 	case []interface{}:

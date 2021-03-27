@@ -49,9 +49,17 @@ const (
 	// readline?
 	UseReadline = "ego.console.readline"
 
+	// Set to true if the full stack should be listed during
+	// tracing.
+	FullStackListingSetting = "ego.compiler.full.stack"
+
 	// Should the Ego program(s) be run with "static" or
 	// "dynamic" typing? The default is "dynamic".
 	StaticTypesSetting = "ego.compiler.types"
+
+	// Feature flag to enable native structures (rather than
+	// maps with hidden metadata). Defaults to false.
+	NativeStructuresSetting = "ego.compiler.native.structures"
 
 	// The base URL of the Ego server providing application services.
 	ApplicationServerSetting = "ego.application.server"

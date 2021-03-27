@@ -33,6 +33,8 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	// Set extensions to be enabled for this run.
 	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
 
+	bytecode.NativeStructures = persistence.GetBool(defs.NativeStructuresSetting)
+
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests")
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2

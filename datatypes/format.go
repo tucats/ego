@@ -113,6 +113,9 @@ func Format(element interface{}) string {
 	case string:
 		return "\"" + v + "\""
 
+	case *EgoStruct:
+		return v.String()
+
 	case *EgoArray:
 		return v.String()
 

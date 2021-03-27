@@ -36,6 +36,8 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
+	bytecode.NativeStructures = persistence.GetBool(defs.NativeStructuresSetting)
+
 	programArgs := make([]interface{}, 0)
 	mainName := "main"
 	prompt := c.MainProgram + "> "
