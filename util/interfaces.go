@@ -58,7 +58,12 @@ func GetInt(v interface{}) int {
 		return 0
 	}
 
-	return Coerce(v, 1).(int)
+	value := Coerce(v, 1)
+	if value == nil {
+		return 0
+	}
+
+	return value.(int)
 }
 
 // GetBool takes a generic interface and returns the boolean value, using
@@ -116,7 +121,12 @@ func GetFloat(v interface{}) float64 {
 		return 0.0
 	}
 
-	return Coerce(v, float64(0)).(float64)
+	value := Coerce(v, float64(0))
+	if value == nil {
+		return 0.0
+	}
+
+	return value.(float64)
 }
 
 // Coerce returns the value after it has been converted to the type of the

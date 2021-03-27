@@ -219,7 +219,7 @@ func (m *EgoMap) String() string {
 func (m EgoMap) Type() Type {
 	return Type{
 		name:      "map",
-		kind:      mapKind,
+		kind:      MapKind,
 		keyType:   &m.keyType,
 		valueType: &m.valueType,
 	}

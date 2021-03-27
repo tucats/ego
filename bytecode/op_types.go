@@ -89,6 +89,11 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // coerceByteCode instruction processor.
 func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
+	// If we are in static mode, we don't do any coersions.
+	if c.Static {
+		return nil
+	}
+
 	t := datatypes.GetType(i)
 
 	v, err := c.Pop()

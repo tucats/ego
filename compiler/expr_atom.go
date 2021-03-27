@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 func (c *Compiler) expressionAtom() *errors.EgoError {
@@ -46,11 +45,6 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is this the make() function?
 	if t == "make" && c.t.Peek(2) == "(" {
 		return c.makeInvocation()
-	}
-
-	// Is this a map declaration?
-	if t == "map" && c.t.Peek(2) == "[" {
-		return c.mapDeclaration()
 	}
 
 	// Is this the "nil" constant?
@@ -130,7 +124,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this an array constant?
-	if t == "[" {
+	if t == "[" && c.t.Peek(2) != "]" {
 		return c.parseArray()
 	}
 
@@ -188,39 +182,41 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return err
 	}
 
-	if tokenizer.IsSymbol(t) {
-		c.t.Advance(1)
+	// Watch out for function calls here...
+	if c.t.Peek(2) != "(" {
+		marker := c.t.Mark()
 
-		t = c.normalize(t)
-		// Is it a generator for a type?
-		if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
-			c.b.Emit(bytecode.Load, t)
-			c.b.Emit(bytecode.Push, "__type")
+		if typeSpec, err := c.parseType(true); err == nil {
+			// Is there an initialial value for the type?
+			if c.t.Peek(1) == "{" {
+				err = c.compileInitializer(typeSpec)
 
-			err := c.expressionAtom()
-			if !errors.Nil(err) {
 				return err
 			}
 
-			i := c.b.Opcodes()
-			ix := i[len(i)-1]
-			ix.Operand = util.GetInt(ix.Operand) + 1
-			i[len(i)-1] = ix
+			if c.t.IsNext("{}") {
+				c.b.Emit(bytecode.Load, "new")
+				c.b.Emit(bytecode.Push, typeSpec)
+				c.b.Emit(bytecode.Call, 1)
+			} else {
+				c.b.Emit(bytecode.Push, typeSpec)
+			}
 
 			return nil
 		}
 
-		if c.t.IsNext("{}") {
-			c.b.Emit(bytecode.Load, "new")
-			c.b.Emit(bytecode.Load, t)
-			c.b.Emit(bytecode.Call, 1)
-		} else {
-			c.b.Emit(bytecode.Load, t)
-		}
+		c.t.Set(marker)
+	}
+
+	// Is it just a symbol needing a load?
+	if tokenizer.IsSymbol(t) {
+		c.b.Emit(bytecode.Load, t)
+		c.t.Advance(1)
 
 		return nil
 	}
 
+	// Not something we know what to do with...
 	return c.newError(errors.UnexpectedTokenError, t)
 }
 

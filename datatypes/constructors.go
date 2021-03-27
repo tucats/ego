@@ -4,76 +4,76 @@ package datatypes
 
 var UndefinedType = Type{
 	name: "undefined",
-	kind: undefinedKind,
+	kind: UndefinedKind,
 }
 
 var PackageType = Type{
 	name: "package",
-	kind: packageKind,
+	kind: PackageKind,
 }
 
 var StructType = Type{
 	name: "struct",
-	kind: structKind,
+	kind: StructKind,
 }
 
 var InterfaceType = Type{
 	name:      "interface{}",
-	kind:      interfaceKind,
+	kind:      InterfaceKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var ErrorType = Type{
 	name: "error",
-	kind: errorKind,
+	kind: ErrorKind,
 }
 
 var BoolType = Type{
 	name:      "bool",
-	kind:      boolKind,
+	kind:      BoolKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var IntType = Type{
 	name:      "int",
-	kind:      intKind,
+	kind:      IntKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var FloatType = Type{
 	name:      "float",
-	kind:      floatKind,
+	kind:      FloatKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var StringType = Type{
 	name:      "string",
-	kind:      stringKind,
+	kind:      StringKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var ChanType = Type{
 	name:      "chan",
-	kind:      chanKind,
+	kind:      ChanKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var WaitGroupType = Type{
 	name:      "WaitGroup",
-	kind:      waitGroupKind,
+	kind:      WaitGroupKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var MutexType = Type{
 	name:      "Mutex",
-	kind:      mutexKind,
+	kind:      MutexKind,
 	keyType:   nil,
 	valueType: nil,
 }
@@ -87,7 +87,7 @@ var VarArgsType = Type{
 func Array(t Type) Type {
 	return Type{
 		name:      "[]",
-		kind:      arrayKind,
+		kind:      ArrayKind,
 		valueType: &t,
 	}
 }
@@ -96,7 +96,7 @@ func Array(t Type) Type {
 func Pointer(t Type) Type {
 	return Type{
 		name:      "*",
-		kind:      pointerKind,
+		kind:      PointerKind,
 		valueType: &t,
 	}
 }
@@ -105,7 +105,7 @@ func Pointer(t Type) Type {
 func Map(key, value Type) Type {
 	return Type{
 		name:      "map",
-		kind:      mapKind,
+		kind:      MapKind,
 		keyType:   &key,
 		valueType: &value,
 	}
@@ -116,7 +116,7 @@ func Map(key, value Type) Type {
 func Structure(fields ...Field) Type {
 	t := Type{
 		name:   "struct",
-		kind:   structKind,
+		kind:   StructKind,
 		fields: map[string]Type{},
 	}
 
@@ -132,7 +132,7 @@ func Structure(fields ...Field) Type {
 func TypeDefinition(name string, base Type) Type {
 	return Type{
 		name:      name,
-		kind:      typeKind,
+		kind:      TypeKind,
 		valueType: &base,
 	}
 }
@@ -141,7 +141,7 @@ func TypeDefinition(name string, base Type) Type {
 func Package(name string) Type {
 	return Type{
 		name:      name,
-		kind:      packageKind,
+		kind:      PackageKind,
 		valueType: &StructType,
 	}
 }

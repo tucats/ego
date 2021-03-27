@@ -16,14 +16,9 @@ import (
 // or the user creates a typed array constant like []int{}.
 //
 // Inputs:
-//    operand    - indicates if initial value given
-//
-//    If operand == 2
-//    stack+0    - The initial value to store
-//    stack+1    - The size of the array
-//
-//	  If operand == 1
-//    stack+0    - The sie of the array
+//    operand    - Count of array items to create
+//    stack+0    - the array count
+//    stack+n    - each array value in reverse order
 //
 // If the operand is equal to 2, then the stack has an
 // initial value that is stored in each element of the
@@ -38,51 +33,26 @@ import (
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
 func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
-	parameter := util.GetInt(i)
-	if parameter == 2 {
-		initialValue, err := c.Pop()
-		if !errors.Nil(err) {
-			return err
-		}
+	var baseType datatypes.Type
 
-		sv, err := c.Pop()
-		if !errors.Nil(err) {
-			return err
-		}
+	count := util.GetInt(i)
 
-		size := util.GetInt(sv)
-		if size < 0 {
-			size = 0
-		}
-
-		array := datatypes.NewArray(datatypes.TypeOf(initialValue), size)
-
-		for n := 0; n < size; n++ {
-			_ = array.Set(n, initialValue)
-		}
-
-		_ = c.stackPush(array)
-
-		return nil
+	if v, err := c.Pop(); err == nil {
+		baseType = datatypes.GetType(v)
 	}
 
-	// No initializer, so get the size and make it
-	// a non-negative integer.
-	sv, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	a := datatypes.NewArray(baseType, count)
+
+	for i := 0; i < count; i++ {
+		if v, err := c.Pop(); err == nil {
+			err = a.Set(count-i-1, v)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	size := util.GetInt(sv)
-	if size < 0 {
-		size = 0
-	}
-
-	array := datatypes.NewArray(datatypes.InterfaceType, size)
-
-	_ = c.stackPush(array)
-
-	return nil
+	return c.stackPush(a)
 }
 
 // arrayByteCode implements the Array opcode
@@ -287,4 +257,45 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.stackPush(m)
 
 	return nil
+}
+
+// Create a new map. The argument is the number of key/value pairs on the
+// stack, preceded by the key and value types.
+func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
+	count := util.GetInt(i)
+
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	keyType := datatypes.GetType(v)
+
+	v, err = c.Pop()
+	if err != nil {
+		return err
+	}
+
+	valueType := datatypes.GetType(v)
+
+	m := datatypes.NewMap(keyType, valueType)
+
+	for i := 0; i < count; i++ {
+		v, err := c.Pop()
+		if err != nil {
+			return err
+		}
+
+		k, err := c.Pop()
+		if err != nil {
+			return err
+		}
+
+		_, err = m.Set(k, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.stackPush(m)
 }

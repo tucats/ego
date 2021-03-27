@@ -12,6 +12,10 @@ func GetType(v interface{}) Type {
 		return t
 	}
 
+	if t, ok := v.(*Type); ok {
+		return *t
+	}
+
 	return UndefinedType
 }
 

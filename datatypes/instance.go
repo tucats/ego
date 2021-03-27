@@ -8,7 +8,7 @@ import (
 // model of that type. This only applies to base types.
 func InstanceOfType(t Type) interface{} {
 	switch t.kind {
-	case structKind:
+	case StructKind:
 		m := map[string]interface{}{}
 		SetType(m, t)
 
@@ -18,33 +18,33 @@ func InstanceOfType(t Type) interface{} {
 
 		return m
 
-	case mapKind:
+	case MapKind:
 		m := NewMap(*t.keyType, *t.valueType)
 
 		return m
 
-	case arrayKind:
+	case ArrayKind:
 		m := NewArray(t, 0)
 
 		return m
 
-	case typeKind:
+	case TypeKind:
 		return t.InstanceOf(nil)
 
-	case mutexKind:
+	case MutexKind:
 		return &sync.Mutex{}
 
-	case waitGroupKind:
+	case WaitGroupKind:
 		return &sync.WaitGroup{}
 
-	case pointerKind:
+	case PointerKind:
 		switch t.valueType.kind {
-		case mutexKind:
+		case MutexKind:
 			mt := &sync.Mutex{}
 
 			return &mt
 
-		case waitGroupKind:
+		case WaitGroupKind:
 			wg := &sync.WaitGroup{}
 
 			return &wg
@@ -63,11 +63,11 @@ func InstanceOfType(t Type) interface{} {
 }
 
 func (t Type) InstanceOf(superType *Type) interface{} {
-	if t.kind == typeKind {
+	if t.kind == TypeKind {
 		return t.valueType.InstanceOf(&t)
 	}
 
-	if t.kind == structKind {
+	if t.kind == StructKind {
 		result := map[string]interface{}{}
 
 		if superType == nil {
@@ -83,13 +83,13 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 		return result
 	}
 
-	if t.kind == arrayKind {
+	if t.kind == ArrayKind {
 		result := NewArray(*t.valueType, 0)
 
 		return result
 	}
 
-	if t.kind == mapKind {
+	if t.kind == MapKind {
 		result := NewMap(*t.keyType, *t.valueType)
 
 		return result

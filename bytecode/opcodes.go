@@ -55,6 +55,7 @@ const (
 	LoadSlice
 	Log
 	MakeArray
+	MakeMap
 	Member
 	ModeCheck
 	Mul
@@ -155,6 +156,7 @@ var instructionNames = map[OpcodeID]string{
 	LocalCall:          "LocalCall",
 	Log:                "Log",
 	MakeArray:          "MakeArray",
+	MakeMap:            "MakeMap",
 	Member:             "Member",
 	ModeCheck:          "ModeCheck",
 	Negate:             "Negate",
@@ -243,6 +245,7 @@ func initializeDispatch() {
 			LocalCall:          localCallByteCode,
 			Log:                logByteCode,
 			MakeArray:          makeArrayByteCode,
+			MakeMap:            makeMapByteCode,
 			Member:             memberByteCode,
 			ModeCheck:          modeCheckBytecode,
 			Mul:                multiplyByteCode,

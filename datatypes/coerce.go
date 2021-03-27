@@ -2,16 +2,16 @@ package datatypes
 
 func (t Type) Coerce(v interface{}) interface{} {
 	switch t.kind {
-	case intKind:
+	case IntKind:
 		return GetInt(v)
 
-	case floatKind:
+	case FloatKind:
 		return GetFloat(v)
 
-	case stringKind:
+	case StringKind:
 		return GetString(v)
 
-	case boolKind:
+	case BoolKind:
 		return GetBool(v)
 	}
 

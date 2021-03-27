@@ -22,7 +22,7 @@ func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) 
 		return datatypes.UndefinedType, c.newError(errors.DuplicateTypeNameError).Context(name)
 	}
 
-	baseType, err := c.parseType()
+	baseType, err := c.parseType(false)
 	if err != nil {
 		return datatypes.UndefinedType, err
 	}
@@ -33,16 +33,19 @@ func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) 
 	return typeInfo, nil
 }
 
-func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
+func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) {
 	found := false
+	name := ""
 
-	// Is it a previously defined type?
-	name := c.t.Peek(1)
-	if tokenizer.IsSymbol(name) {
-		if t, ok := c.Types[name]; ok {
-			c.t.Advance(1)
+	if !anonymous {
+		// Is it a previously defined type?
+		name = c.t.Peek(1)
+		if tokenizer.IsSymbol(name) {
+			if t, ok := c.Types[name]; ok {
+				c.t.Advance(1)
 
-			return t, nil
+				return t, nil
+			}
 		}
 	}
 
@@ -52,7 +55,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
 		c.t.Advance(2)
 
-		keyType, err := c.parseType()
+		keyType, err := c.parseType(false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}
@@ -61,7 +64,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 			return datatypes.UndefinedType, c.newError(errors.MissingBracketError)
 		}
 
-		valueType, err := c.parseType()
+		valueType, err := c.parseType(false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}
@@ -80,7 +83,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 				return datatypes.UndefinedType, c.newError(errors.InvalidSymbolError)
 			}
 
-			fieldType, err := c.parseType()
+			fieldType, err := c.parseType(false)
 			if err != nil {
 				return datatypes.UndefinedType, err
 			}
@@ -95,7 +98,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 		c.t.Advance(2)
 
-		valueType, err := c.parseType()
+		valueType, err := c.parseType(false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}

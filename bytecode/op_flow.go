@@ -211,6 +211,17 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Depends on the type here as to what we call...
 	switch af := funcPointer.(type) {
+	case datatypes.Type:
+		// Calls to a type are really an attempt to cast the value.
+		args = append(args, af)
+
+		v, err := functions.InternalCast(c.symbols, args)
+		if errors.Nil(err) {
+			err = c.stackPush(v)
+		}
+
+		return err
+
 	case *ByteCode:
 		// Find the top of this scope level (typically)
 		parentTable := c.symbols

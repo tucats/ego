@@ -17,27 +17,27 @@ func TestPointerTo(t *testing.T) {
 		{
 			name:  "bool",
 			value: true,
-			want:  boolKind,
+			want:  BoolKind,
 		},
 		{
 			name:  "int",
 			value: 55,
-			want:  intKind,
+			want:  IntKind,
 		},
 		{
 			name:  "float",
 			value: 1.23,
-			want:  floatKind,
+			want:  FloatKind,
 		},
 		{
 			name:  "string",
 			value: "whizz",
-			want:  stringKind,
+			want:  StringKind,
 		},
 		{
 			name:  "nil",
 			value: nil,
-			want:  interfaceKind,
+			want:  InterfaceKind,
 		},
 	}
 
@@ -60,26 +60,26 @@ func TestTypeString(t *testing.T) {
 	}{
 		{
 			name: "int",
-			arg:  Type{name: "int", kind: intKind},
+			arg:  Type{name: "int", kind: IntKind},
 		},
 		{
 			name: "[]int",
 			arg: Type{
 				name: "[]",
-				kind: arrayKind,
+				kind: ArrayKind,
 				valueType: &Type{
 					name: "int",
-					kind: intKind},
+					kind: IntKind},
 			},
 		},
 		{
 			name: "[]*int",
 			arg: Type{
 				name: "[]",
-				kind: arrayKind,
+				kind: ArrayKind,
 				valueType: &Type{
 					name:      "*",
-					kind:      pointerKind,
+					kind:      PointerKind,
 					valueType: &IntType,
 				},
 			},
@@ -88,11 +88,11 @@ func TestTypeString(t *testing.T) {
 			name: "map[string][]int",
 			arg: Type{
 				name:    "map",
-				kind:    mapKind,
+				kind:    MapKind,
 				keyType: &StringType,
 				valueType: &Type{
 					name:      "[]",
-					kind:      arrayKind,
+					kind:      ArrayKind,
 					valueType: &IntType,
 				},
 			},

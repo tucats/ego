@@ -10,30 +10,30 @@ import (
 
 // Define data types as abstract identifiers. These are the base
 // types for all other types. For example, a pointer to an integer
-// in constructed from a pointerKind type that references an IntKind
+// in constructed from a PointerKind type that references an IntKind
 // type.
 const (
-	undefinedKind = iota
-	intKind
-	floatKind
-	stringKind
-	boolKind
-	structKind
-	errorKind
-	chanKind
-	mapKind
-	interfaceKind // alias for "any"
-	pointerKind   // Pointer to some type
-	arrayKind     // Array of some type
-	packageKind   // A package
+	UndefinedKind = iota
+	IntKind
+	FloatKind
+	StringKind
+	BoolKind
+	StructKind
+	ErrorKind
+	ChanKind
+	MapKind
+	InterfaceKind // alias for "any"
+	PointerKind   // Pointer to some type
+	ArrayKind     // Array of some type
+	PackageKind   // A package
 
 	minimumNativeType // Before list of Go-native types mapped to Ego types
-	waitGroupKind
-	mutexKind
+	WaitGroupKind
+	MutexKind
 	maximumNativeType // After list of Go-native types
 
 	varArgs  // pseudo type used for variable argument list items
-	typeKind // something defined by a type statement
+	TypeKind // something defined by a type statement
 )
 
 type Type struct {
@@ -85,19 +85,19 @@ func (t Type) FunctionNameList() string {
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	switch t.kind {
-	case typeKind:
+	case TypeKind:
 		return t.name + " " + t.valueType.String()
 
-	case mapKind:
+	case MapKind:
 		return "map[" + t.keyType.String() + "]" + t.valueType.String()
 
-	case pointerKind:
+	case PointerKind:
 		return "*" + t.valueType.String()
 
-	case arrayKind:
+	case ArrayKind:
 		return "[]" + t.valueType.String()
 
-	case structKind:
+	case StructKind:
 		// If there are fields, let's include that in the type info?
 		b := strings.Builder{}
 		b.WriteString("struct")
@@ -132,9 +132,15 @@ func (t Type) String() string {
 	}
 }
 
+// For a given type, return it's kind (i.e. int, string, etc.). This
+// is mostly used for parsing, and for switch statements.
+func (t Type) Kind() int {
+	return t.kind
+}
+
 // Return true if this type is a pointer to something.
 func (t Type) IsPointer() bool {
-	return t.kind == pointerKind
+	return t.kind == PointerKind
 }
 
 // Return true if this type is the same as the provided type.
@@ -168,20 +174,20 @@ func (t Type) IsType(i Type) bool {
 
 // Returns true if the current type is an array.
 func (t Type) IsArray() bool {
-	return t.kind == arrayKind
+	return t.kind == ArrayKind
 }
 
 // Returns true if the current type is a type definition created
 // by code (as opposed to a base type).
 func (t Type) IsTypeDefinition() bool {
-	return t.kind == typeKind
+	return t.kind == TypeKind
 }
 
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.
 func (t *Type) DefineField(name string, ofType Type) *errors.EgoError {
-	if t.kind != structKind {
+	if t.kind != StructKind {
 		return errors.New(errors.InvalidStructError)
 	}
 
@@ -201,7 +207,7 @@ func (t *Type) DefineField(name string, ofType Type) *errors.EgoError {
 // Retrieve the type of a field by name. The current type must
 // be a structure type, and the field name must exist.
 func (t Type) Field(name string) (Type, *errors.EgoError) {
-	if t.kind != structKind {
+	if t.kind != StructKind {
 		return UndefinedType, errors.New(errors.InvalidStructError)
 	}
 
@@ -219,7 +225,7 @@ func (t Type) Field(name string) (Type, *errors.EgoError) {
 
 // Return true if the curren type is the undefined type.
 func (t Type) IsUndefined() bool {
-	return t.kind == undefinedKind
+	return t.kind == UndefinedKind
 }
 
 // Add a function definition to a type. The name of the
@@ -245,18 +251,24 @@ func (t Type) Function(name string) interface{} {
 		v, ok = t.functions[name]
 	}
 
-	if !ok && t.kind == typeKind && t.valueType != nil {
+	if !ok && t.kind == TypeKind && t.valueType != nil {
 		return t.valueType.Function(name)
 	}
 
 	return v
 }
 
-// For a given type, return the type of it's base type. So for
+// For a given type, return the type of its base type. So for
 // an array, this is the type of each array element. For a pointer,
 // it is the type it points to.
 func (t Type) BaseType() *Type {
 	return t.valueType
+}
+
+// For a given type, return the key type. This only applies to arrays
+// and will return a nil pointer for any other type.
+func (t Type) KeyType() *Type {
+	return t.keyType
 }
 
 // Return the name of the type (not the same as the
@@ -311,7 +323,7 @@ func TypeOf(i interface{}) Type {
 		// Nope, apparently just an anonymous struct
 		return Type{
 			name: "struct",
-			kind: structKind,
+			kind: StructKind,
 		}
 
 	case *int:
@@ -329,10 +341,10 @@ func TypeOf(i interface{}) Type {
 	case *map[string]interface{}:
 		return Type{
 			name: "*struct",
-			kind: pointerKind,
+			kind: PointerKind,
 			valueType: &Type{
 				name: "struct",
-				kind: structKind,
+				kind: StructKind,
 			},
 		}
 
@@ -351,7 +363,7 @@ func TypeOf(i interface{}) Type {
 // value, and a type specification, and indicates if it is of the provided
 // Ego datatype indicator.
 func IsType(v interface{}, t Type) bool {
-	if t.kind == interfaceKind {
+	if t.kind == InterfaceKind {
 		return true
 	}
 
@@ -362,7 +374,7 @@ func IsType(v interface{}, t Type) bool {
 // actually points to.
 func TypeOfPointer(v interface{}) Type {
 	if p, ok := v.(Type); ok {
-		if p.kind != pointerKind || p.valueType == nil {
+		if p.kind != PointerKind || p.valueType == nil {
 			return UndefinedType
 		}
 
