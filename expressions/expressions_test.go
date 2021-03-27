@@ -253,7 +253,7 @@ func TestNew(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
-					"type": datatypes.Structure("",
+					"type": datatypes.Structure(
 						datatypes.Field{Name: "age", Type: datatypes.IntType},
 						datatypes.Field{Name: "name", Type: datatypes.StringType},
 					),

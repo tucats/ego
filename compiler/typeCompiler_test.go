@@ -30,7 +30,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			name:     "struct",
 			arg:      "struct{ age int name string }",
 			typeName: "type1",
-			want: datatypes.TypeDefinition("type1", datatypes.Structure("struct",
+			want: datatypes.TypeDefinition("type1", datatypes.Structure(
 				datatypes.Field{Name: "age", Type: datatypes.IntType},
 				datatypes.Field{Name: "name", Type: datatypes.StringType},
 			)),

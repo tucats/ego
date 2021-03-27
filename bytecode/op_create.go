@@ -275,9 +275,9 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	} else {
 		// No type, default it to a struct.
-		t := datatypes.Structure("<anon>")
+		t := datatypes.Structure()
 		for _, name := range fields {
-			_ = t.AddField(name, datatypes.TypeOf(m[name]))
+			_ = t.DefineField(name, datatypes.TypeOf(m[name]))
 		}
 
 		datatypes.SetMetadata(m, datatypes.TypeMDKey, t)

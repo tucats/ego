@@ -26,9 +26,11 @@ func TestStructImpl(t *testing.T) {
 				"flag": true,
 				"test": 0,
 				"__metadata": map[string]interface{}{
-					"static":  true,
-					"type":    datatypes.TypeDefinition("usertype", datatypes.StructType),
-					"replica": 1,
+					"static": true,
+					"type": datatypes.Structure(
+						datatypes.Field{Name: "flag", Type: datatypes.BoolType},
+					),
+					"replica": 0,
 				}},
 			wantErr: false,
 			static:  true,
@@ -42,7 +44,9 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"replica": 0,
 					"static":  true,
-					"type":    datatypes.StructType,
+					"type": datatypes.Structure(
+						datatypes.Field{Name: "test", Type: datatypes.IntType},
+					),
 				}},
 			wantErr: false,
 		},
@@ -99,15 +103,12 @@ func TestStructImpl(t *testing.T) {
 				symbols:      symbols.NewSymbolTable("test bench"),
 			}
 
-			model := map[string]interface{}{
-				"test": 0,
-				"flag": false,
-				datatypes.MetadataKey: map[string]interface{}{
-					datatypes.TypeMDKey:   datatypes.TypeDefinition("usertype", datatypes.StructType),
-					datatypes.StaticMDKey: true,
-				},
-			}
-			_ = ctx.symbols.SetAlways("usertype", model)
+			typeDef := datatypes.TypeDefinition("usertype", datatypes.Structure(
+				datatypes.Field{Name: "active", Type: datatypes.BoolType},
+				datatypes.Field{Name: "test", Type: datatypes.IntType},
+			))
+
+			_ = ctx.symbols.SetAlways("usertype", typeDef)
 
 			err := structByteCode(ctx, tt.arg)
 			if (!errors.Nil(err)) != tt.wantErr {

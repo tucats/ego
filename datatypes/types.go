@@ -180,7 +180,7 @@ func (t Type) IsTypeDefinition() bool {
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.
-func (t *Type) AddField(name string, ofType Type) *errors.EgoError {
+func (t *Type) DefineField(name string, ofType Type) *errors.EgoError {
 	if t.kind != structKind {
 		return errors.New(errors.InvalidStructError)
 	}

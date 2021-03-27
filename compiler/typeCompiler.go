@@ -71,7 +71,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 
 	// Structures
 	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
-		t := datatypes.Structure("struct")
+		t := datatypes.Structure()
 		c.t.Advance(2)
 
 		for !c.t.IsNext("}") {
@@ -85,7 +85,7 @@ func (c *Compiler) parseType() (datatypes.Type, *errors.EgoError) {
 				return datatypes.UndefinedType, err
 			}
 
-			_ = t.AddField(name, fieldType)
+			_ = t.DefineField(name, fieldType)
 		}
 
 		return t, nil

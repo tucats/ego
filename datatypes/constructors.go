@@ -111,18 +111,17 @@ func Map(key, value Type) Type {
 	}
 }
 
-// Construct a structure type of the given name, with optional field
-// definitions. You can add additional fields using the AddField method
-// on the result of this function.
-func Structure(name string, fields ...Field) Type {
+// Construct a structure type, with optional field definitions. You
+// can later add additional fields using the AddField method.
+func Structure(fields ...Field) Type {
 	t := Type{
-		name:   name,
+		name:   "struct",
 		kind:   structKind,
 		fields: map[string]Type{},
 	}
 
 	for _, field := range fields {
-		_ = t.AddField(field.Name, field.Type)
+		_ = t.DefineField(field.Name, field.Type)
 	}
 
 	return t

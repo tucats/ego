@@ -190,7 +190,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 	case map[string]interface{}:
 		switch vy := v2.(type) {
 		case map[string]interface{}:
-			t := datatypes.Structure("")
+			t := datatypes.Structure()
 
 			for k, v := range vy {
 				if !strings.HasPrefix(k, "__") {
@@ -200,7 +200,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 
 			for k, v := range vx {
 				if !strings.HasPrefix(k, "__") {
-					_ = t.AddField(k, datatypes.TypeOf(v))
+					_ = t.DefineField(k, datatypes.TypeOf(v))
 				}
 			}
 
