@@ -106,7 +106,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// Compile the token stream
-		name := strings.ReplaceAll(fileOrPath, "/", "_")
+		name := filepath.Base(fileOrPath)
 		comp := compiler.New(name)
 
 		// We set this to "interaactive" mode so tests can include program
