@@ -10,6 +10,11 @@ import (
 )
 
 func TestStructImpl(t *testing.T) {
+	typeDef := datatypes.TypeDefinition("usertype", datatypes.Structure(
+		datatypes.Field{Name: "active", Type: datatypes.BoolType},
+		datatypes.Field{Name: "test", Type: datatypes.IntType},
+	))
+
 	tests := []struct {
 		name    string
 		stack   []interface{}
@@ -21,16 +26,14 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member incomplete test",
 			arg:   2,
-			stack: []interface{}{"usertype", "__type", true, "flag"},
+			stack: []interface{}{typeDef, "__type", true, "active"},
 			want: map[string]interface{}{
-				"flag": true,
-				"test": 0,
+				"active": true,
+				"test":   0,
 				"__metadata": map[string]interface{}{
-					"static": true,
-					"type": datatypes.Structure(
-						datatypes.Field{Name: "flag", Type: datatypes.BoolType},
-					),
-					"replica": 0,
+					"static":  true,
+					"type":    typeDef,
+					"replica": 1,
 				}},
 			wantErr: false,
 			static:  true,
@@ -60,7 +63,10 @@ func TestStructImpl(t *testing.T) {
 				"__metadata": map[string]interface{}{
 					"static":  true,
 					"replica": 0,
-					"type":    datatypes.StructType,
+					"type": datatypes.Structure(
+						datatypes.Field{Name: "active", Type: datatypes.BoolType},
+						datatypes.Field{Name: "test", Type: datatypes.IntType},
+					),
 				}},
 			wantErr: false,
 		},
@@ -72,8 +78,11 @@ func TestStructImpl(t *testing.T) {
 				"active": true,
 				"test":   123,
 				"__metadata": map[string]interface{}{
-					"static":  true,
-					"type":    datatypes.StructType,
+					"static": true,
+					"type": datatypes.Structure(
+						datatypes.Field{Name: "active", Type: datatypes.BoolType},
+						datatypes.Field{Name: "test", Type: datatypes.IntType},
+					),
 					"replica": 0,
 				}},
 			wantErr: false,
@@ -82,7 +91,7 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member invalid static test",
 			arg:   3,
-			stack: []interface{}{"usertype", "__type", true, "invalid", 123, "test"},
+			stack: []interface{}{typeDef, "__type", true, "invalid", 123, "test"},
 			want: map[string]interface{}{
 				"active": true,
 				"test":   123,
@@ -102,11 +111,6 @@ func TestStructImpl(t *testing.T) {
 				Static:       tt.static,
 				symbols:      symbols.NewSymbolTable("test bench"),
 			}
-
-			typeDef := datatypes.TypeDefinition("usertype", datatypes.Structure(
-				datatypes.Field{Name: "active", Type: datatypes.BoolType},
-				datatypes.Field{Name: "test", Type: datatypes.IntType},
-			))
 
 			_ = ctx.symbols.SetAlways("usertype", typeDef)
 
