@@ -620,12 +620,10 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
-		result := map[string]interface{}{
+		return datatypes.NewStructFromMap(map[string]interface{}{
 			datatypes.TypeMDKey:     "builtin",
 			datatypes.BasetypeMDKey: "builtin " + name,
-		}
-
-		return result, nil
+		}), nil
 	}
 
 	// If it's a bytecode.Bytecode pointer, use reflection to get the
@@ -642,12 +640,10 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 					name = "<anonymous>"
 				}
 
-				result := map[string]interface{}{
+				return datatypes.NewStructFromMap(map[string]interface{}{
 					datatypes.TypeMDKey:     "func",
 					datatypes.BasetypeMDKey: "func " + name,
-				}
-
-				return result, nil
+				}), nil
 			}
 		}
 	}
@@ -656,7 +652,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return m.Reflect(), nil
 	}
 
-	// Is it an Ego structure?
+	// Is it an Ego package?
 	if m, ok := args[0].(map[string]interface{}); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
@@ -695,7 +691,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			}
 		}
 
-		return result, nil
+		return datatypes.NewStructFromMap(result), nil
 	}
 
 	// Is it an Ego map datatype?
@@ -719,7 +715,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			datatypes.BasetypeMDKey: "[]interface{}",
 		}
 
-		return result, nil
+		return datatypes.NewStructFromMap(result), nil
 	}
 
 	if e, ok := args[0].(*errors.EgoError); ok {
@@ -728,20 +724,20 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		if e.Is(errors.UserError) {
 			text := datatypes.GetString(e.GetContext())
 
-			return map[string]interface{}{
+			return datatypes.NewStructFromMap(map[string]interface{}{
 				datatypes.TypeMDKey:     "error",
 				datatypes.BasetypeMDKey: "error",
 				"error":                 wrappedError.Error(),
 				"text":                  text,
-			}, nil
+			}), nil
 		}
 
-		return map[string]interface{}{
+		return datatypes.NewStructFromMap(map[string]interface{}{
 			datatypes.TypeMDKey:     "error",
 			datatypes.BasetypeMDKey: "error",
 			"error":                 wrappedError.Error(),
 			"text":                  e.Error(),
-		}, nil
+		}), nil
 	}
 
 	typeString, err := Type(s, args)
@@ -771,10 +767,10 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			result[datatypes.ElementTypesMDKey] = types
 		}
 
-		return result, nil
+		return datatypes.NewStructFromMap(result), nil
 	}
 
-	return map[string]interface{}{}, err
+	return nil, err
 }
 
 func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
