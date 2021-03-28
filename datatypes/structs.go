@@ -84,11 +84,19 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 		readonly = GetBool(value)
 	}
 
+	fields := map[string]interface{}{}
+
+	for k, v := range m {
+		if k != MetadataKey {
+			fields[k] = v
+		}
+	}
+
 	result := EgoStruct{
 		static:   static,
 		typeDef:  t,
 		readonly: readonly,
-		fields:   m,
+		fields:   fields,
 	}
 
 	return &result
@@ -166,11 +174,14 @@ func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 		}
 	}
 
-	if s.strongTyping && s.typeDef.fields != nil {
+	if s.typeDef.fields != nil {
 		if t, ok := s.typeDef.fields[name]; ok {
-			if !IsType(value, t) {
+			// Does it have to match already?
+			if s.strongTyping && !IsType(value, t) {
 				return errors.New(errors.InvalidTypeError)
 			}
+			// Make sure it is compatible with the field type.
+			value = t.Coerce(value)
 		}
 	}
 

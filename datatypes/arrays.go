@@ -117,7 +117,24 @@ func (a *EgoArray) SetType(i Type) *errors.EgoError {
 	return errors.New(errors.ImmutableArrayError)
 }
 
+// Force the size of the array. Existing values are retained if the
+// array grows; existing values are truncated if the size is reduced.
+func (a *EgoArray) SetSize(size int) {
+	if size < 0 {
+		size = 0
+	}
+
+	d := make([]interface{}, size)
+	for i, v := range a.data {
+		d[i] = v
+	}
+
+	a.data = d
+}
+
 func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
+	v := value
+
 	if a.immutable > 0 {
 		return errors.New(errors.ImmutableArrayError)
 	}
@@ -127,11 +144,29 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 		return errors.New(errors.ArrayBoundsError)
 	}
 
-	if !IsType(value, a.valueType) {
+	// Address float/int issues before testing the type.
+	if a.valueType.kind == IntKind {
+		if x, ok := v.(float64); ok {
+			v = int(x)
+		}
+	}
+
+	if a.valueType.kind == FloatKind {
+		if x, ok := v.(int); ok {
+			v = float64(x)
+		} else if x, ok := v.(int32); ok {
+			v = float64(x)
+		} else if x, ok := v.(int64); ok {
+			v = float64(x)
+		}
+	}
+
+	// Now, ensure it's of the right type for this array.
+	if !IsType(v, a.valueType) {
 		return errors.New(errors.WrongArrayValueType)
 	}
 
-	a.data[index] = value
+	a.data[index] = v
 
 	return nil
 }

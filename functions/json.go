@@ -17,8 +17,73 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	jsonBuffer := util.GetString(args[0])
 	err := json.Unmarshal([]byte(jsonBuffer), &v)
 
-	// If its a struct, make sure it has the static attribute
-	v = Seal(v)
+	// If there is no model, assume a generic return value is okay
+	if len(args) < 2 {
+		return v, errors.New(err)
+	}
+
+	// There is a model, so do some mapping if possible.
+	pointer, ok := args[1].(*interface{})
+	if !ok {
+		return nil, errors.New(errors.InvalidPointerTypeError)
+	}
+
+	value := *pointer
+
+	// Structure
+	if target, ok := value.(*datatypes.EgoStruct); ok {
+		if m, ok := v.(map[string]interface{}); ok {
+			for k, v := range m {
+				err = target.Set(k, v)
+				if !errors.Nil(err) {
+					return nil, errors.New(err)
+				}
+			}
+		} else {
+			return nil, errors.New(errors.InvalidTypeError)
+		}
+
+		return target, nil
+	}
+
+	// Map
+	if target, ok := value.(*datatypes.EgoMap); ok {
+		if m, ok := v.(map[string]interface{}); ok {
+			for k, v := range m {
+				_, err = target.Set(k, v)
+				if !errors.Nil(err) {
+					return nil, errors.New(err)
+				}
+			}
+		} else {
+			return nil, errors.New(errors.InvalidTypeError)
+		}
+
+		return target, nil
+	}
+
+	// Array
+	if target, ok := value.(*datatypes.EgoArray); ok {
+		if m, ok := v.([]interface{}); ok {
+			// The target data size may be wrong, fix it
+			target.SetSize(len(m))
+			for k, v := range m {
+				err = target.Set(k, v)
+				if !errors.Nil(err) {
+					return nil, errors.New(err)
+				}
+			}
+		} else {
+			return nil, errors.New(errors.InvalidTypeError)
+		}
+
+		return target, nil
+	}
+
+	if !datatypes.TypeOf(v).IsType(datatypes.TypeOf(value)) {
+		err = errors.New(errors.InvalidTypeError)
+		v = nil
+	}
 
 	return v, errors.New(err)
 }

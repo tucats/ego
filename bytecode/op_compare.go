@@ -54,7 +54,12 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 		r = a.Equal(v2)
 
 	case *datatypes.EgoStruct:
-		r = reflect.DeepEqual(v1, v2)
+		a2, ok := v2.(*datatypes.EgoStruct)
+		if ok {
+			r = reflect.DeepEqual(a, a2)
+		} else {
+			r = false
+		}
 
 	case *datatypes.EgoMap:
 		r = reflect.DeepEqual(v1, v2)

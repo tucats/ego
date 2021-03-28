@@ -77,7 +77,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"io.ReadDir":           {Min: 1, Max: 1, F: ReadDir, ErrReturn: true},
 	"io.ReadFile":          {Min: 1, Max: 1, F: ReadFile, ErrReturn: true},
 	"io.WriteFile":         {Min: 2, Max: 2, F: WriteFile, ErrReturn: true},
-	"json.UnMarshal":       {Min: 1, Max: 1, F: Decode, ErrReturn: true},
+	"json.Unmarshal":       {Min: 1, Max: 2, F: Decode, ErrReturn: true},
 	"json.Marshal":         {Min: 1, Max: any, F: Encode, ErrReturn: true},
 	"json.MarshalIndented": {Min: 1, Max: any, F: EncodeFormatted, ErrReturn: true},
 	"math.Abs":             {Min: 1, Max: 1, F: Abs},

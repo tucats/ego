@@ -12,6 +12,9 @@ func Sanitize(v interface{}) interface{} {
 	case *EgoArray:
 		return v.data
 
+	case *EgoStruct:
+		return v.fields
+
 	case *EgoMap:
 		result := map[string]interface{}{}
 		keys := v.Keys()

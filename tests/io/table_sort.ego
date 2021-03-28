@@ -8,7 +8,7 @@
     t.AddRow([]string{"Mary", "47", "Mom"}...)
     t.Sort("Name")
 
-    r := json.UnMarshal(t.String("json"))
+    r := json.Unmarshal(t.String("json"))
 
     // Resulting table should be ordered by Name
     @assert r[0].Name == "Mary"
@@ -16,7 +16,7 @@
 
     t.Sort("~Age")
 
-    r = json.UnMarshal(t.String("json"))
+    r = json.Unmarshal(t.String("json"))
 
     // Resulting table should be ordered by Age in descending order
     @assert r[0].Age == 53

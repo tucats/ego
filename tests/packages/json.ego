@@ -1,0 +1,53 @@
+
+@test "packages: json"
+
+{
+    anon := {age:55, name:"Tom"}
+    s := json.MarshalIndented(anon)
+
+    // This test is sensitive to formatting.
+    @assert s == 
+`{
+  "age": 55,
+  "name": "Tom"
+}`
+
+    s = json.Marshal(anon)
+    @assert s == `{"age":55,"name":"Tom"}`
+
+    // Verify that the unmarshal will overwrite existing values.
+    anon.age = -1
+    anon.name = "aka"
+
+    a2, e := json.Unmarshal(s, &anon)
+    if e != nil {
+        fmt.Println("Error: ", e)
+    }
+
+    @assert a2 == {age:55, name:"Tom"}
+
+    // Same string but restore as a map
+    m := map[string]interface{}{}
+
+    a3, e := json.Unmarshal(s, &m)
+    if e != nil {
+        fmt.Println("Error: ", e)
+    }
+
+    @assert type(m) == "map[string]interface{}"
+    @assert m["age"] == 55
+    @assert m["name"] == "Tom"
+
+    // Can we restore values into an array?
+    s = "[1, 2, 3]"
+    a := []int{}
+
+    a4, e := json.Unmarshal(s, &a)
+    if e != nil {
+        fmt.Println("Error: ", e)
+    }
+}
+
+@pass
+
+
