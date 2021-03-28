@@ -31,9 +31,19 @@ func NewStackMarker(label string, count int) StackMarker {
 func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 	found := false
 	for !found {
+		// Don't drop across stack frames.
+		if c.stackPointer <= c.framePointer {
+			break
+		}
+
 		v, err := c.Pop()
 		if !errors.Nil(err) {
 			break
+		}
+
+		// Was this an error that was abandoned by the assignment operation?
+		if e, ok := v.(*errors.EgoError); ok {
+			return e
 		}
 
 		_, found = v.(StackMarker)

@@ -66,7 +66,11 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 // the current bytecode context to reflect the previously-stored state.
 func (c *Context) callFramePop() *errors.EgoError {
 	// First, is there stuff on the stack we want to preserve?
-	topOfStackSlice := c.stack[c.framePointer : c.stackPointer+1]
+	topOfStackSlice := []interface{}{}
+
+	if c.framePointer <= c.stackPointer+1 {
+		topOfStackSlice = c.stack[c.framePointer : c.stackPointer+1]
+	}
 
 	// Now retrieve the runtime context stored on the stack and
 	// indicated by the fp (frame pointer)

@@ -140,6 +140,9 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		return bc, nil
 	}
 
+	// Add a marker in the regular code stream here
+	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "lvalue"})
+
 	bc := bytecode.New("lvalue")
 	isPointer := false
 
@@ -185,6 +188,8 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 
 		patchStore(bc, name, isPointer, c.t.Peek(1) == "<-")
 	}
+
+	bc.Emit(bytecode.DropToMarker)
 
 	return bc, nil
 }
