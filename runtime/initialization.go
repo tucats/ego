@@ -18,16 +18,18 @@ func InitProfileDefaults() *errors.EgoError {
 
 	// The default values we check for.
 	settings := map[string]string{
-		defs.EgoPathSetting:           egopath,
-		defs.AutoImportSetting:        "true",
-		defs.CaseNormalizedSetting:    "false",
-		defs.StaticTypesSetting:       "dynamic",
-		defs.OutputFormatSetting:      "text",
-		defs.ExtensionsEnabledSetting: "false",
-		defs.UseReadline:              "true",
-		defs.TokenExpirationSetting:   "24h",
-		defs.TokenKeySetting:          strings.ReplaceAll(uuid.New().String()+uuid.New().String(), "-", ""),
-		defs.ExitOnBlankSetting:       "false",
+		defs.EgoPathSetting:              egopath,
+		defs.AutoImportSetting:           "true",
+		defs.CaseNormalizedSetting:       "false",
+		defs.StaticTypesSetting:          "dynamic",
+		defs.OutputFormatSetting:         "text",
+		defs.ExtensionsEnabledSetting:    "false",
+		defs.UseReadline:                 "true",
+		defs.TokenExpirationSetting:      "24h",
+		defs.TokenKeySetting:             strings.ReplaceAll(uuid.New().String()+uuid.New().String(), "-", ""),
+		defs.ExitOnBlankSetting:          "false",
+		defs.ThrowUncheckedErrorsSetting: "true",
+		defs.FullStackTraceSetting:       "false",
 	}
 
 	// See if there is a value for each on of these. If no

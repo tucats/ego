@@ -1,12 +1,15 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -31,33 +34,35 @@ var nextThreadID int32 = 0
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
-	Name            string
-	bc              *ByteCode
-	symbols         *symbols.SymbolTable
-	tokenizer       *tokenizer.Tokenizer
-	stack           []interface{}
-	tryStack        []TryInfo
-	rangeStack      []*Range
-	timerStack      []time.Time
-	thisStack       []This
-	packageStack    []packageDef
-	registers       []interface{}
-	output          *strings.Builder
-	lastStruct      interface{}
-	result          interface{}
-	programCounter  int
-	stackPointer    int
-	framePointer    int
-	line            int
-	blockDepth      int
-	argCountDelta   int
-	threadID        int32
-	fullSymbolScope bool
-	running         bool
-	Static          bool
-	debugging       bool
-	singleStep      bool
-	stepOver        bool
+	Name                 string
+	bc                   *ByteCode
+	symbols              *symbols.SymbolTable
+	tokenizer            *tokenizer.Tokenizer
+	stack                []interface{}
+	tryStack             []TryInfo
+	rangeStack           []*Range
+	timerStack           []time.Time
+	thisStack            []This
+	packageStack         []packageDef
+	registers            []interface{}
+	output               *strings.Builder
+	lastStruct           interface{}
+	result               interface{}
+	programCounter       int
+	stackPointer         int
+	framePointer         int
+	line                 int
+	blockDepth           int
+	argCountDelta        int
+	threadID             int32
+	fullSymbolScope      bool
+	running              bool
+	Static               bool
+	debugging            bool
+	singleStep           bool
+	stepOver             bool
+	throwUncheckedErrors bool
+	fullStackTrace       bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -85,24 +90,26 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 
 	// Create the context object.
 	ctx := Context{
-		Name:            name,
-		threadID:        atomic.AddInt32(&nextThreadID, 1),
-		bc:              b,
-		programCounter:  0,
-		stack:           make([]interface{}, InitialStackSize),
-		stackPointer:    0,
-		framePointer:    0,
-		running:         false,
-		Static:          static,
-		line:            0,
-		symbols:         s,
-		fullSymbolScope: true,
-		thisStack:       nil,
-		registers:       make([]interface{}, registerCount),
-		packageStack:    make([]packageDef, 0),
-		tryStack:        make([]TryInfo, 0),
-		rangeStack:      make([]*Range, 0),
-		timerStack:      make([]time.Time, 0),
+		Name:                 name,
+		threadID:             atomic.AddInt32(&nextThreadID, 1),
+		bc:                   b,
+		programCounter:       0,
+		stack:                make([]interface{}, InitialStackSize),
+		stackPointer:         0,
+		framePointer:         0,
+		running:              false,
+		Static:               static,
+		line:                 0,
+		symbols:              s,
+		fullSymbolScope:      true,
+		thisStack:            nil,
+		throwUncheckedErrors: persistence.GetBool(defs.ThrowUncheckedErrorsSetting),
+		fullStackTrace:       persistence.GetBool(defs.FullStackTraceSetting),
+		registers:            make([]interface{}, registerCount),
+		packageStack:         make([]packageDef, 0),
+		tryStack:             make([]TryInfo, 0),
+		rangeStack:           make([]*Range, 0),
+		timerStack:           make([]time.Time, 0),
 	}
 	ctxp := &ctx
 	ctxp.SetByteCode(b)
@@ -264,7 +271,7 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 	}
 
 	if newlines {
-		b.WriteString("\n")
+		b.WriteString("stack elements:\n")
 	}
 
 	for n := len(s) - 1; n >= 0; n = n - 1 {
@@ -276,10 +283,10 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 			}
 		}
 
-		/*
-			str := functions.FormatAsString(syms, s[n])
-			b.WriteString(str)
-		*/
+		if newlines {
+			b.WriteString(fmt.Sprintf("%90s      [%2d]:   ", " ", n))
+		}
+
 		b.WriteString(util.Format(s[n]))
 
 		if !newlines && b.Len() > 50 {

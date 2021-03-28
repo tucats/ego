@@ -95,6 +95,15 @@ const (
 	// A string indicating the duration of a token before it is
 	// considered expired. Examples are "15m" or "24h".
 	TokenExpirationSetting = "ego.token.expiration"
+
+	// If true, functions that return multiple values including an
+	// error that do not assign that error to a value will result in
+	// the error being thrown.
+	ThrowUncheckedErrorsSetting = "ego.runtime.unchecked.errors"
+
+	// If true, the TRACE operation will print the full stack instead of
+	// a shorter single-line version.
+	FullStackTraceSetting = "ego.runtime.stack.trace"
 )
 
 // This section contains the names of the command-line options. These often

@@ -43,7 +43,9 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		// Was this an error that was abandoned by the assignment operation?
 		if e, ok := v.(*errors.EgoError); ok {
-			return e
+			if !errors.Nil(e) && c.throwUncheckedErrors {
+				return e
+			}
 		}
 
 		_, found = v.(StackMarker)

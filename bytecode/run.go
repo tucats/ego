@@ -5,9 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -74,8 +72,6 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 	}
 
-	fullStackListing := persistence.GetBool(defs.FullStackListingSetting)
-
 	// Loop over the bytecodes and run.
 	for c.running {
 		if c.programCounter >= len(c.bc.instructions) {
@@ -89,8 +85,8 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		if c.Tracing() {
 			s := FormatInstruction(i)
 
-			s2 := FormatStack(c.symbols, c.stack[:c.stackPointer], fullStackListing)
-			if !fullStackListing && len(s2) > 80 {
+			s2 := FormatStack(c.symbols, c.stack[:c.stackPointer], c.fullStackTrace)
+			if !c.fullStackTrace && len(s2) > 80 {
 				s2 = s2[:80]
 			}
 
