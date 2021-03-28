@@ -7,8 +7,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+var NativeStructures = false
+
 type EgoStruct struct {
 	typeDef      Type
+	typeName     string
 	static       bool
 	readonly     bool
 	strongTyping bool
@@ -18,8 +21,11 @@ type EgoStruct struct {
 
 func NewStruct(t Type) *EgoStruct {
 	// IF this is a user type, get the base type.
+	typeName := ""
 	baseType := t
+
 	for baseType.IsTypeDefinition() {
+		typeName = t.name
 		baseType = *baseType.BaseType()
 	}
 
@@ -44,9 +50,10 @@ func NewStruct(t Type) *EgoStruct {
 
 	// Create the structure and pass it back.
 	result := EgoStruct{
-		typeDef: baseType,
-		static:  static,
-		fields:  fields,
+		typeDef:  baseType,
+		static:   static,
+		fields:   fields,
+		typeName: typeName,
 	}
 
 	return &result
@@ -193,6 +200,10 @@ func (s EgoStruct) FieldNamesArray() *EgoArray {
 }
 
 func (s EgoStruct) TypeString() string {
+	if s.typeName != "" {
+		return s.typeName
+	}
+
 	if s.typeDef.IsTypeDefinition() {
 		return s.typeDef.name
 	}
@@ -239,7 +250,13 @@ func (s EgoStruct) Reflect() *EgoStruct {
 	m := map[string]interface{}{}
 
 	m["type"] = s.TypeString()
-	m["basetype"] = "struct"
+	if s.typeDef.IsTypeDefinition() {
+		m["basetype"] = s.typeDef.BaseType().String()
+	} else {
+		m["basetype"] = s.typeDef.String()
+	}
+
+	m["native"] = true
 	m["members"] = s.FieldNamesArray()
 	m["replicas"] = s.replica
 	m["readonly"] = s.readonly

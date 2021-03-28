@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -83,6 +84,10 @@ func (c *Context) callFramePop() *errors.EgoError {
 		pkgname := c.symbols.Parent.Package
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
+			if _, ok := pkg.(*datatypes.EgoStruct); ok {
+				fmt.Printf("DEBUG: map/struct confusion: callFramePop()")
+			}
+
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range pkgsyms.Symbols {
 					if util.HasCapitalizedName(k) {

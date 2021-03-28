@@ -79,5 +79,13 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 		}
 	}
 
+	// Is it a type we already know about?
+	typeName := c.t.Peek(1)
+	if typeDef, ok := c.Types[typeName]; ok {
+		c.t.Advance(1)
+
+		return typeDef, nil
+	}
+
 	return datatypes.UndefinedType, nil
 }

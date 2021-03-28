@@ -1,9 +1,11 @@
 package bytecode
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -127,6 +129,10 @@ func (c *Context) syncPackageSymbols() {
 		c.popSymbolTable()
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
+			if _, ok := pkg.(*datatypes.EgoStruct); ok {
+				fmt.Printf("DEBUG: map/struct confusion: syncPackageSymbols()")
+			}
+
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {

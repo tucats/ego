@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -34,6 +35,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
 
 	bytecode.NativeStructures = persistence.GetBool(defs.NativeStructuresSetting)
+	datatypes.NativeStructures = bytecode.NativeStructures
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests")

@@ -202,14 +202,12 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	// in the metadata, and the type object (of the same name)
 	// is located in the symbol table (previously created by a
 	// type statement).
-	typeName := typeInfo.String()
-	ok := (model != nil)
-
 	datatypes.SetMetadata(m, datatypes.TypeMDKey, typeInfo)
 
-	if ok {
-		if modelMap, ok := model.(map[string]interface{}); ok {
-			if replica, ok := datatypes.GetMetadata(m, datatypes.ReadonlyMDKey); ok {
+	if model != nil {
+		switch model := model.(type) {
+		case *datatypes.EgoStruct:
+			if replica, ok := datatypes.GetMetadata(model, datatypes.ReadonlyMDKey); ok {
 				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
 			} else {
 				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 1)
@@ -218,16 +216,19 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			// Check all the fields in the new value to ensure they
 			// are valid.
 			for k := range m {
-				if _, found := modelMap[k]; !strings.HasPrefix(k, "__") && !found {
+				if _, found := model.Get(k); !strings.HasPrefix(k, "__") && !found {
 					return c.newError(errors.InvalidFieldError, k)
 				}
 			}
+
 			// Add in any fields from the type model not present
 			// in the new structure we're creating. We ignore any
 			// function definitions in the model, as they will be
 			// found later during function invocation if needed
 			// by chasing the model chain.
-			for k, v := range modelMap {
+			for _, k := range model.FieldNames() {
+				v, _ := model.Get(k)
+
 				vx := reflect.ValueOf(v)
 				if vx.Kind() == reflect.Ptr {
 					ts := vx.String()
@@ -240,8 +241,42 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 					m[k] = v
 				}
 			}
-		} else {
-			return c.newError(errors.UnknownTypeError, typeName)
+
+		case map[string]interface{}:
+			if replica, ok := datatypes.GetMetadata(model, datatypes.ReadonlyMDKey); ok {
+				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
+			} else {
+				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 1)
+			}
+
+			// Check all the fields in the new value to ensure they
+			// are valid.
+			for k := range m {
+				if _, found := model[k]; !strings.HasPrefix(k, "__") && !found {
+					return c.newError(errors.InvalidFieldError, k)
+				}
+			}
+			// Add in any fields from the type model not present
+			// in the new structure we're creating. We ignore any
+			// function definitions in the model, as they will be
+			// found later during function invocation if needed
+			// by chasing the model chain.
+			for k, v := range model {
+				vx := reflect.ValueOf(v)
+				if vx.Kind() == reflect.Ptr {
+					ts := vx.String()
+					if ts == "<*bytecode.ByteCode Value>" {
+						continue
+					}
+				}
+
+				if _, found := m[k]; !found {
+					m[k] = v
+				}
+			}
+
+		default:
+			return c.newError(errors.UnknownTypeError).Context(typeInfo.String())
 		}
 	} else {
 		// No type, default it to a struct.

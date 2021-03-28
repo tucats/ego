@@ -469,6 +469,10 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 	}
 
 	v := c.thisStack[len(c.thisStack)-1]
+	if _, ok := v.value.(*datatypes.EgoStruct); ok {
+		fmt.Printf("DEBUG: map/struct confusion: getPackageSymbols()")
+	}
+
 	if m, ok := v.value.(map[string]interface{}); ok {
 		if s, ok := datatypes.GetMetadata(m, datatypes.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {

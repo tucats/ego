@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -35,6 +37,9 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if v, ok := c.symbols.Root().Get(name); ok {
 		switch actual := v.(type) {
+		case *datatypes.EgoStruct:
+			fmt.Printf("DEBUG: map/struct confusion: pushPackageByteCode()")
+
 		case map[string]interface{}:
 			pkg = actual
 
@@ -75,6 +80,10 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	pkgValue, found := c.symbols.Get(pkgdef.name)
 	if !found {
 		return c.newError(errors.MissingPackageStatement)
+	}
+
+	if _, ok := pkgValue.(*datatypes.EgoStruct); ok {
+		fmt.Printf("DEBUG: map/struct confusion: popPackageByteCode()")
 	}
 
 	pkg, _ := pkgValue.(map[string]interface{})

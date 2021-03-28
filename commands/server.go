@@ -18,6 +18,8 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
@@ -347,6 +349,12 @@ func RunServer(c *cli.Context) *errors.EgoError {
 			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 		}
 	}
+
+	// Ick, globals. However, these tell various components if we care about native
+	// datatypes.EgoStruct structures (native) versus building them as maps with
+	// hidden metadata keys.
+	bytecode.NativeStructures = persistence.GetBool(defs.NativeStructuresSetting)
+	datatypes.NativeStructures = bytecode.NativeStructures
 
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.

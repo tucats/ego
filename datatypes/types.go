@@ -82,6 +82,14 @@ func (t Type) FunctionNameList() string {
 	return b.String()
 }
 
+func (t Type) TypeString() string {
+	if t.IsTypeDefinition() {
+		return t.name
+	}
+
+	return t.String()
+}
+
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	switch t.kind {

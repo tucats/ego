@@ -677,6 +677,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			result = map[string]interface{}{
 				datatypes.MembersMDKey:  members,
 				datatypes.TypeMDKey:     "struct",
+				"native":                false,
 				datatypes.BasetypeMDKey: "map",
 			}
 		} else {
@@ -684,9 +685,15 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 				result[datatypes.MembersMDKey] = members
 				result[datatypes.BasetypeMDKey] = "map"
 				result[datatypes.TypeMDKey] = "struct"
+				result["native"] = false
 				// If there's a Type designation, convert it to string format.
 				if t, ok := mm[datatypes.TypeMDKey].(datatypes.Type); ok {
-					result["declaration"] = t.String()
+					if t.IsTypeDefinition() {
+						result["basetype"] = t.BaseType().String()
+					} else {
+						result["basetype"] = t.String()
+					}
+					result["type"] = t.TypeString()
 				}
 			}
 		}

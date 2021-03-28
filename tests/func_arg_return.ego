@@ -1,0 +1,39 @@
+
+@test "types: complex function parm and arg types"
+{
+
+   func x() map[string]*int {
+
+      a := map[string]*int{}
+
+      tomAge := 55
+      maryAge := 44
+
+      a["tom"] = &tomAge
+      a["mary"] = &maryAge
+
+      tomAge = 61
+
+      return a
+   }
+
+   func y( m map[string]map[string]int ) int {
+      return m["cole"]["tom"] * 2
+   }
+   
+   m := x()
+
+   p := m["tom"]
+   @assert *p == 61
+
+   xm := map[string]map[string]int {
+      "cole": {
+         "tom": 30
+      }
+   }
+   z := y(xm)
+   @assert z == 60
+
+}
+
+@pass

@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -67,7 +66,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	// We got a defined type, so emit the model and store it
 	// in each symbol
-	model := datatypes.InstanceOfType(kind)
+	model := kind.InstanceOf(&kind) // datatypes.InstanceOfType(kind)
 
 	for _, name := range names {
 		c.b.Emit(bytecode.Push, model)

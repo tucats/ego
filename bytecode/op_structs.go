@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -186,6 +187,10 @@ func storeMetadataByteCode(c *Context, i interface{}) *errors.EgoError {
 	m, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if _, ok := m.(*datatypes.EgoStruct); ok {
+		fmt.Printf("DEBUG: map/struct confusion: storeMetadataByteCode()")
 	}
 
 	mm, ok := m.(map[string]interface{})
