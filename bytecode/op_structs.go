@@ -204,7 +204,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		key := util.GetString(index)
 
 		err = a.Set(key, v)
-		if errors.Nil(err) {
+		if !errors.Nil(err) {
 			return c.newError(err)
 		}
 

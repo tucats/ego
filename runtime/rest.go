@@ -143,6 +143,8 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	_ = r.Set(mediaTypeFieldName, defs.JSONMediaType)
 	_ = r.Set(verifyFieldName, true)
 
+	r.SetReadonly(true)
+
 	return r, nil
 }
 
@@ -193,8 +195,8 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	this := getThisRest(s)
 	c = nil
-	_ = this.Set(clientFieldName, nil)
-	_ = this.Set(statusFieldName, 0)
+	this.SetAlways(clientFieldName, nil)
+	this.SetAlways(statusFieldName, 0)
 
 	return true, nil
 }
@@ -219,7 +221,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
 
-	_ = this.Set(verifyFieldName, verify)
+	this.SetAlways(verifyFieldName, verify)
 
 	return this, nil
 }
@@ -243,7 +245,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		base = persistence.Get(defs.LogonServerSetting)
 	}
 
-	_ = this.Set(baseURLFieldName, base)
+	this.SetAlways(baseURLFieldName, base)
 
 	return this, nil
 }
@@ -307,7 +309,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	this := getThisRest(s)
 	media := util.GetString(args[0])
-	_ = this.Set(mediaTypeFieldName, media)
+	this.SetAlways(mediaTypeFieldName, media)
 
 	return this, nil
 }
@@ -343,27 +345,27 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	response, e2 := r.Get(url)
 	if e2 != nil {
-		_ = this.Set(statusFieldName, http.StatusServiceUnavailable)
+		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
 		return nil, errors.New(e2)
 	}
 
-	_ = this.Set("cookies", fetchCookies(s, response))
+	this.SetAlways("cookies", fetchCookies(s, response))
 	status := response.StatusCode()
-	_ = this.Set(statusFieldName, status)
-	_ = this.Set(headersFieldName, headerMap(response))
+	this.SetAlways(statusFieldName, status)
+	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
 
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse interface{}
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		_ = this.Set(responseFieldName, jsonResponse)
+		this.SetAlways(responseFieldName, jsonResponse)
 
 		return jsonResponse, errors.New(err)
 	}
 
-	_ = this.Set(responseFieldName, rb)
+	this.SetAlways(responseFieldName, rb)
 
 	return rb, nil
 }
@@ -449,27 +451,27 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	response, e2 := r.Post(url)
 	if e2 != nil {
-		_ = this.Set(statusFieldName, http.StatusServiceUnavailable)
+		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
 		return nil, errors.New(e2)
 	}
 
 	status := response.StatusCode()
-	_ = this.Set("cookies", fetchCookies(s, response))
-	_ = this.Set(statusFieldName, status)
-	_ = this.Set(headersFieldName, headerMap(response))
+	this.SetAlways("cookies", fetchCookies(s, response))
+	this.SetAlways(statusFieldName, status)
+	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
 
 	if isJSON {
 		var jsonResponse interface{}
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		_ = this.Set(responseFieldName, jsonResponse)
+		this.SetAlways(responseFieldName, jsonResponse)
 
 		return jsonResponse, errors.New(err)
 	}
 
-	_ = this.Set(responseFieldName, rb)
+	this.SetAlways(responseFieldName, rb)
 
 	return rb, nil
 }
@@ -521,27 +523,27 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
-		_ = this.Set(statusFieldName, http.StatusServiceUnavailable)
+		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
 		return nil, errors.New(e2)
 	}
 
 	status := response.StatusCode()
-	_ = this.Set("cookies", fetchCookies(s, response))
-	_ = this.Set(statusFieldName, status)
-	_ = this.Set(headersFieldName, headerMap(response))
+	this.SetAlways("cookies", fetchCookies(s, response))
+	this.SetAlways(statusFieldName, status)
+	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
 
 	if isJSON {
 		var jsonResponse interface{}
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
-		_ = this.Set(responseFieldName, jsonResponse)
+		this.SetAlways(responseFieldName, jsonResponse)
 
 		return jsonResponse, errors.New(err)
 	}
 
-	_ = this.Set(responseFieldName, rb)
+	this.SetAlways(responseFieldName, rb)
 
 	return rb, nil
 }
