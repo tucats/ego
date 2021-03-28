@@ -2,6 +2,7 @@ package datatypes
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -223,4 +224,53 @@ func (m EgoMap) Type() Type {
 		keyType:   &m.keyType,
 		valueType: &m.valueType,
 	}
+}
+
+// Given a map whose keys and values are simple types (string, int, float, bool),
+// create a new EgoMap with the appropriate types, populated with the values from
+// the source map.
+func NewMapFromMap(sourceMap interface{}) *EgoMap {
+	valueType := InterfaceType
+	keyType := InterfaceType
+
+	valueKind := reflect.TypeOf(sourceMap).Elem().Kind()
+	keyKind := reflect.TypeOf(sourceMap).Key().Kind()
+
+	switch valueKind {
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		valueType = IntType
+
+	case reflect.Float32, reflect.Float64:
+		valueType = FloatType
+
+	case reflect.Bool:
+		valueType = BoolType
+
+	case reflect.String:
+		valueType = StringType
+	}
+
+	switch keyKind {
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		keyType = IntType
+
+	case reflect.Float32, reflect.Float64:
+		keyType = FloatType
+
+	case reflect.Bool:
+		keyType = BoolType
+
+	case reflect.String:
+		keyType = StringType
+	}
+
+	result := NewMap(keyType, valueType)
+	val := reflect.ValueOf(sourceMap)
+
+	for _, key := range val.MapKeys() {
+		value := val.MapIndex(key)
+		_, _ = result.Set(key.Interface(), value.Interface())
+	}
+
+	return result
 }
