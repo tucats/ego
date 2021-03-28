@@ -193,7 +193,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 
 			// Update the function in the type map, and generate new code
 			// to update the type definition in the symbol table.
-			t.AddFunction(functionName, b)
+			t.DefineFunction(functionName, b)
 			c.b.Emit(bytecode.Push, t)
 			c.b.Emit(bytecode.StoreAlways, className)
 		} else {

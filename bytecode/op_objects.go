@@ -42,7 +42,11 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	case *datatypes.EgoStruct:
-		v, _ = mv.Get(name)
+		// Could be a structure member, or a request to fetch a receiver function.
+		v, found = mv.Get(name)
+		if !found {
+			v = datatypes.TypeOf(mv).Function(name)
+		}
 
 	case map[string]interface{}:
 		tt := datatypes.TypeOf(mv)

@@ -24,7 +24,13 @@ func NewStruct(t Type) *EgoStruct {
 
 	for baseType.IsTypeDefinition() {
 		typeName = t.name
+
+		// If there are receiver functions in the type definition,
+		// make them part of this structure as well.
 		baseType = *baseType.BaseType()
+		if baseType.functions == nil {
+			baseType.functions = t.functions
+		}
 	}
 
 	// It must be a structure

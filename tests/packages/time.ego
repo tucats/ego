@@ -1,0 +1,17 @@
+
+@test "packages: time.Time object type"
+
+{
+
+    t1 := time.Parse("Dec 1 1960", "Jan 2 2006")
+    t2 := time.Parse("Dec 2 1960", "Jan 2 2006")
+    e := t2.Sub(t1)
+
+    @assert t1.String() == "Thu Dec 1 00:00:00 UTC 1960"
+    @assert e == "24h0m0s"
+    @assert type(t1) == "time.Time"
+}
+
+@pass
+
+

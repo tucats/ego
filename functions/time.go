@@ -11,6 +11,23 @@ import (
 
 const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
+var timeType *datatypes.Type
+
+func initializeType() {
+	if timeType == nil {
+		structType := datatypes.Structure()
+		_ = structType.DefineField("time", datatypes.InterfaceType)
+
+		t := datatypes.TypeDefinition("time.Time", structType)
+		t.DefineFunction("Add", TimeAdd)
+		t.DefineFunction("Format", TimeFormat)
+		t.DefineFunction("SleepUntil", TimeSleep)
+		t.DefineFunction("String", TimeString)
+		t.DefineFunction("Sub", TimeSub)
+		timeType = &t
+	}
+}
+
 // TimeNow implements time.now().
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	t := time.Now()
@@ -152,8 +169,8 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, *errors.EgoError) {
 // getTimeV extracts a time.Time value from an Ego time
 // object, by looking in the [time] member.
 func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
-	if m, ok := timeV.(map[string]interface{}); ok {
-		if tv, ok := m["time"]; ok {
+	if m, ok := timeV.(*datatypes.EgoStruct); ok {
+		if tv, ok := m.Get("time"); ok {
 			if tp, ok := tv.(*time.Time); ok {
 				return tp, nil
 			}
@@ -163,16 +180,12 @@ func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
 	return nil, errors.New(errors.NoFunctionReceiver).In("time function")
 }
 
+// Make a time object with the given time value.
 func makeTime(t *time.Time) interface{} {
-	r := map[string]interface{}{
-		"time":       t,
-		"Add":        TimeAdd,
-		"Format":     TimeFormat,
-		"SleepUntil": TimeSleep,
-		"String":     TimeString,
-		"Sub":        TimeSub,
-	}
-	datatypes.SetMetadata(r, datatypes.TypeMDKey, datatypes.TypeDefinition("time", datatypes.StructType))
+	initializeType()
+
+	r := datatypes.NewStruct(*timeType)
+	_ = r.Set("time", t)
 
 	return r
 }

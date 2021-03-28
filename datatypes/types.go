@@ -191,6 +191,16 @@ func (t Type) IsTypeDefinition() bool {
 	return t.kind == TypeKind
 }
 
+// Define a function for a type, that can be used as a receiver
+// function for this type.
+func (t *Type) DefineFunction(name string, value interface{}) {
+	if t.functions == nil {
+		t.functions = map[string]interface{}{}
+	}
+
+	t.functions[name] = value
+}
+
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.
@@ -234,18 +244,6 @@ func (t Type) Field(name string) (Type, *errors.EgoError) {
 // Return true if the curren type is the undefined type.
 func (t Type) IsUndefined() bool {
 	return t.kind == UndefinedKind
-}
-
-// Add a function definition to a type. The name of the
-// function is given, and an interface value (which should
-// be either the bytecode for a compiled function, or a
-// function pointer for a built-in function).
-func (t *Type) AddFunction(name string, v interface{}) {
-	if t.functions == nil {
-		t.functions = map[string]interface{}{}
-	}
-
-	t.functions[name] = v
 }
 
 // Retrieve a receiver function from the given type. Returns
