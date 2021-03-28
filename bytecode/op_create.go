@@ -289,13 +289,9 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Put the newly created instance of a struct on the stack.
-	if NativeStructures {
-		structure := datatypes.NewStructFromMap(m)
+	structure := datatypes.NewStructFromMap(m)
 
-		return c.stackPush(structure)
-	} else {
-		return c.stackPush(m)
-	}
+	return c.stackPush(structure)
 }
 
 // Create a new map. The argument is the number of key/value pairs on the

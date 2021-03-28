@@ -3,11 +3,9 @@ package bytecode
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
@@ -51,37 +49,6 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		if errors.Nil(err) {
 			err = c.stackPush(datum)
 		}
-
-	// Index into map is just member access.
-	case map[string]interface{}:
-		if NativeStructures {
-			return c.newError(errors.InvalidTypeError)
-		}
-
-		subscript := util.GetString(index)
-		isPackage := datatypes.TypeOf(a).IsType(datatypes.PackageType)
-
-		var v interface{}
-
-		var f bool
-
-		// If it's a metadata key name, redirect.
-		if strings.HasPrefix(subscript, "__") {
-			v, f = datatypes.GetMetadata(a, subscript[2:])
-		} else {
-			v, f = a[subscript]
-		}
-
-		if !f {
-			if isPackage {
-				return c.newError(errors.UnknownPackageMemberError).Context(subscript)
-			}
-
-			return c.newError(errors.UnknownMemberError).Context(subscript)
-		}
-
-		err = c.stackPush(v)
-		c.lastStruct = a
 
 	case *datatypes.EgoStruct:
 		key := util.GetString(index)
@@ -205,8 +172,6 @@ func storeMetadataByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // storeIndexByteCode instruction processor.
 func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
-	storeAlways := util.GetBool(i)
-
 	index, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
@@ -244,64 +209,6 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		_ = c.stackPush(a)
-
-	// Index into map is just member access. Make sure it's not
-	// a read-only member or a function pointer...
-	case map[string]interface{}:
-		if NativeStructures {
-			return c.newError(errors.InvalidTypeError)
-		}
-
-		subscript := util.GetString(index)
-
-		// Does this member have a flag marking it as readonly?
-		old, found := datatypes.GetMetadata(a, datatypes.ReadonlyMDKey)
-		if found && !storeAlways {
-			if util.GetBool(old) {
-				return c.newError(errors.ReadOnlyError)
-			}
-		}
-
-		// Does this item already exist and is readonly?
-		old, found = a[subscript]
-		if found {
-			if subscript[0:1] == "_" {
-				return c.newError(errors.ReadOnlyError)
-			}
-
-			// Check to be sure this isn't a restricted (function code) type
-			if _, ok := old.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
-				return c.newError(errors.ReadOnlyError)
-			}
-		}
-
-		// Is this a static (i.e. no new members) struct? The __static entry must be
-		// present, with a value that is true, and we are not doing the "store always"
-		if staticFlag, ok := datatypes.GetMetadata(a, datatypes.StaticMDKey); ok && util.GetBool(staticFlag) && !storeAlways {
-			if _, ok := a[subscript]; !ok {
-				return c.newError(errors.UnknownMemberError).Context(subscript)
-			}
-		}
-
-		if c.Static {
-			if vv, ok := a[subscript]; ok && vv != nil {
-				if reflect.TypeOf(vv) != reflect.TypeOf(v) {
-					return c.newError(errors.InvalidVarTypeError)
-				}
-			}
-		}
-
-		if strings.HasPrefix(subscript, "__") {
-			datatypes.SetMetadata(a, subscript[2:], v)
-		} else {
-			a[subscript] = v
-		}
-
-		// If we got a true argument, push the result back on the stack also. This
-		// is needed to create TYPE definitions.
-		if util.GetBool(i) {
-			_ = c.stackPush(a)
-		}
 
 	// Index into array is integer index
 	case *datatypes.EgoArray:

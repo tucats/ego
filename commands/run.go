@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -36,9 +35,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
 		return err
 	}
-
-	bytecode.NativeStructures = persistence.GetBool(defs.NativeStructuresSetting)
-	datatypes.NativeStructures = bytecode.NativeStructures
 
 	programArgs := make([]interface{}, 0)
 	mainName := "main"

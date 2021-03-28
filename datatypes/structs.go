@@ -7,8 +7,6 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-var NativeStructures = false
-
 type EgoStruct struct {
 	typeDef      Type
 	typeName     string

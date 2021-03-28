@@ -186,37 +186,6 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(newArray)
 		}
 
-		// You can add a map to another map if we're not in native structure mode.
-	case map[string]interface{}:
-		if NativeStructures {
-			return c.newError(errors.InvalidTypeError)
-		}
-
-		switch vy := v2.(type) {
-		case map[string]interface{}:
-			t := datatypes.Structure()
-
-			for k, v := range vy {
-				if !strings.HasPrefix(k, "__") {
-					vx[k] = v
-				}
-			}
-
-			for k, v := range vx {
-				if !strings.HasPrefix(k, "__") {
-					_ = t.DefineField(k, datatypes.TypeOf(v))
-				}
-			}
-
-			// Write updated type info
-			datatypes.SetMetadata(vx, datatypes.TypeMDKey, t)
-
-			return c.stackPush(vx)
-
-		default:
-			return c.newError(errors.InvalidTypeError)
-		}
-
 		// All other types are scalar math.
 	default:
 		v1, v2 = util.Normalize(v1, v2)

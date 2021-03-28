@@ -76,19 +76,7 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 			superType = &StructType
 		}
 
-		if NativeStructures {
-			return NewStruct(*superType)
-		}
-
-		result := map[string]interface{}{}
-
-		SetMetadata(result, TypeMDKey, *superType)
-
-		for fieldName, fieldType := range t.fields {
-			result[fieldName] = fieldType.InstanceOf(nil)
-		}
-
-		return result
+		return NewStruct(*superType)
 	}
 
 	if t.kind == ArrayKind {

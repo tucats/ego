@@ -1,8 +1,6 @@
 package bytecode
 
 import (
-	"strings"
-
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
@@ -78,21 +76,6 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 				r.keySet = keySet
 				r.runes = runes
 
-			case map[string]interface{}:
-				if NativeStructures {
-					return c.newError(errors.InvalidTypeError)
-				}
-
-				r.keySet = []interface{}{}
-				i := 0
-
-				for k := range actual {
-					if !strings.HasPrefix(k, "__") {
-						r.keySet = append(r.keySet, k)
-						i++
-					}
-				}
-
 			case *datatypes.EgoMap:
 				r.keySet = actual.Keys()
 				actual.ImmutableKeys(true)
@@ -163,28 +146,6 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 
 				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
 					err = c.symbols.Set(r.valueName, string(value))
-				}
-
-				r.index++
-			}
-
-		case map[string]interface{}:
-			if NativeStructures {
-				return c.newError(errors.InvalidTypeError)
-			}
-
-			if r.index >= len(r.keySet) {
-				c.programCounter = destination
-				c.rangeStack = c.rangeStack[:stackSize-1]
-			} else {
-				key := r.keySet[r.index]
-
-				if r.indexName != "" && r.indexName != "_" {
-					err = c.symbols.Set(r.indexName, key)
-				}
-
-				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
-					err = c.symbols.Set(r.valueName, actual[util.GetString(key)])
 				}
 
 				r.index++
