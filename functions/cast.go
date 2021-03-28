@@ -168,6 +168,11 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		return typeValue, nil
 	}
 
+	// If it's a native struct, it has it's own deep copy.
+	if structValue, ok := args[0].(*datatypes.EgoStruct); ok {
+		return datatypes.DeepCopy(structValue), nil
+	}
+
 	// Otherwise, make a deep copy of the item.
 	r := DeepCopy(args[0], MaxDeepCopyDepth)
 

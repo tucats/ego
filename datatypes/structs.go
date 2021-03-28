@@ -117,6 +117,12 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 func (s *EgoStruct) Get(name string) (interface{}, bool) {
 	value, ok := s.fields[name]
 
+	// If its not a field, it might be locatable via the typedef's
+	// declared receiver functions.
+	if !ok {
+		value, ok = s.typeDef.functions[name]
+	}
+
 	return value, ok
 }
 

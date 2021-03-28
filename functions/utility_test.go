@@ -239,6 +239,7 @@ func TestReflect(t *testing.T) {
 			want: map[string]interface{}{
 				"basetype": "map",
 				"type":     "struct",
+				"native":   false,
 				"members":  datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
 			},
 			wantErr: false,
