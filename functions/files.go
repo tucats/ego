@@ -15,7 +15,36 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const fileMemberName = "file"
+const (
+	fileFieldName    = "File"
+	nameFieldName    = "Name"
+	validFieldName   = "Valid"
+	scannerFieldName = "Scanner"
+	modeFieldName    = "Mode"
+)
+
+var fileType *datatypes.Type
+
+func initializeFileType() {
+	if fileType == nil {
+		structType := datatypes.Structure()
+		_ = structType.DefineField(fileFieldName, datatypes.InterfaceType)
+		_ = structType.DefineField(validFieldName, datatypes.BoolType)
+		_ = structType.DefineField(nameFieldName, datatypes.StringType)
+		_ = structType.DefineField(modeFieldName, datatypes.StringType)
+
+		t := datatypes.TypeDefinition("io.File", structType)
+
+		t.DefineFunction("Close", Close)
+		t.DefineFunction("ReadString", ReadString)
+		t.DefineFunction("WriteString", WriteString)
+		t.DefineFunction("Write", Write)
+		t.DefineFunction("WriteAt", WriteAt)
+		t.DefineFunction("String", AsString)
+
+		fileType = &t
+	}
+}
 
 // OpenFile opens a file.
 func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
@@ -30,19 +59,26 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, errors.New(err)
 	}
 
-	if len(args) > 1 {
-		modeValue := strings.ToLower(util.GetString(args[1]))
+	modeValue := "input"
 
+	if len(args) > 1 {
+		modeValue = strings.ToLower(util.GetString(args[1]))
+
+		// Is it a valid mode name?
+		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
+			return nil, errors.New(errors.InvalidFileModeError).Context(modeValue)
+		}
 		// If we are opening for output mode, delete the file if it already
 		// exists
-		if util.InList(modeValue, "true", "create", "output") {
+		if util.InList(modeValue, "create", "write", "output") {
 			_ = os.Remove(fname)
 			mode = os.O_CREATE | os.O_WRONLY
-		}
-
-		// For append, adjust the mode bits
-		if modeValue == "append" {
+			modeValue = "output"
+		} else if modeValue == "append" {
+			// For append, adjust the mode bits
 			mode = os.O_APPEND | os.O_WRONLY
+		} else {
+			modeValue = "input"
 		}
 	}
 
@@ -55,20 +91,14 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, errors.New(err)
 	}
 
-	fobj := map[string]interface{}{
-		"Close":        Close,
-		"ReadString":   ReadString,
-		"WriteString":  WriteString,
-		"Write":        Write,
-		"WriteAt":      WriteAt,
-		fileMemberName: f,
-		"valid":        true,
-		"name":         fname,
-		"String":       AsString,
-	}
+	initializeFileType()
 
-	datatypes.SetMetadata(fobj, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(fobj, datatypes.TypeMDKey, "file")
+	fobj := datatypes.NewStruct(*fileType)
+	fobj.SetReadonly(true)
+	fobj.SetAlways(fileFieldName, f)
+	fobj.SetAlways(validFieldName, true)
+	fobj.SetAlways(nameFieldName, fname)
+	fobj.SetAlways(modeFieldName, modeValue)
 
 	return fobj, nil
 }
@@ -83,18 +113,18 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	b.WriteString("<file")
 
-	if bx, ok := f["valid"]; ok {
+	if bx, ok := f.Get(validFieldName); ok {
 		if util.GetBool(bx) {
 			b.WriteString("; open")
 			b.WriteString("; name \"")
 
-			if name, ok := f["name"]; ok {
+			if name, ok := f.Get(nameFieldName); ok {
 				b.WriteString(util.GetString(name))
 			}
 
 			b.WriteString("\"")
 
-			if f, ok := f[fileMemberName]; ok {
+			if f, ok := f.Get(fileFieldName); ok {
 				b.WriteString(fmt.Sprintf("; fileptr %v", f))
 			}
 
@@ -111,13 +141,13 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThis(s *symbols.SymbolTable) map[string]interface{} {
+func getThis(s *symbols.SymbolTable) *datatypes.EgoStruct {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil
 	}
 
-	this, ok := t.(map[string]interface{})
+	this, ok := t.(*datatypes.EgoStruct)
 	if !ok {
 		return nil
 	}
@@ -129,8 +159,8 @@ func getThis(s *symbols.SymbolTable) map[string]interface{} {
 // handle-based function.
 func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
 	this := getThis(s)
-	if v, ok := this["valid"]; ok && util.GetBool(v) {
-		fh, ok := this[fileMemberName]
+	if v, ok := this.Get(validFieldName); ok && util.GetBool(v) {
+		fh, ok := this.Get(fileFieldName)
 		if ok {
 			f, ok := fh.(*os.File)
 			if ok {
@@ -150,22 +180,17 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 	f, err := getFile("Close", s)
 	if errors.Nil(err) {
-		this := getThis(s)
-		this["valid"] = false
-
 		e2 := f.Close()
-		if e2 == nil {
-			delete(this, "Close")
-			delete(this, "ReadString")
-			delete(this, "Write")
-			delete(this, "WriteAt")
-			delete(this, "WriteString")
-			delete(this, fileMemberName)
-			delete(this, "name")
-			delete(this, "file")
-		} else {
+		if e2 != nil {
 			err = errors.New(e2)
 		}
+
+		this := getThis(s)
+
+		this.SetAlways(validFieldName, false)
+		this.SetAlways(modeFieldName, "closed")
+		this.SetAlways(fileFieldName, nil)
+		this.SetAlways(nameFieldName, "")
 	}
 
 	return err, nil
@@ -186,10 +211,10 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	this := getThis(s)
 
-	scanX, found := this["scanner"]
+	scanX, found := this.Get(scannerFieldName)
 	if !found {
 		scanner = bufio.NewScanner(f)
-		this["scanner"] = scanner
+		this.SetAlways(scannerFieldName, scanner)
 	} else {
 		scanner = scanX.(*bufio.Scanner)
 	}

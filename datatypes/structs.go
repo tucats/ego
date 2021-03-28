@@ -140,6 +140,12 @@ func (s EgoStruct) ToMap() map[string]interface{} {
 	return result
 }
 
+// Store a value in the structure under the given name. This ignores type safety,
+// static, or readonly attributes, so be VERY sure the value is the right type!
+func (s *EgoStruct) SetAlways(name string, value interface{}) {
+	s.fields[name] = value
+}
+
 func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 	if s.readonly {
 		return errors.New(errors.ReadOnlyError)

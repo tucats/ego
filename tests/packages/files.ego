@@ -1,0 +1,32 @@
+
+@test "packages: io.File object type"
+
+{
+    name := "file-" + uuid.New()
+
+    f := io.Open(name, "create")
+    f.WriteString("test")
+    f.Close()
+
+    f2, e := io.Open(name, "read")
+    if e != nil {
+        fmt.Println("open read error: ", e)
+    }
+
+    t , e := f2.ReadString()
+    if e != nil {
+        fmt.Println("readstring error: ", e)
+        fmt.Println(f2)
+    }
+
+    f2.Close()
+    io.Delete(name)
+
+    @assert t == "test"
+    @assert f2.Name == ""
+    @assert f2.Valid == false
+}
+
+@pass
+
+
