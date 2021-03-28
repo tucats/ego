@@ -686,13 +686,10 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 				result[datatypes.BasetypeMDKey] = "map"
 				result[datatypes.TypeMDKey] = "struct"
 				result["native"] = false
+				result["basetype"] = "package"
+
 				// If there's a Type designation, convert it to string format.
 				if t, ok := mm[datatypes.TypeMDKey].(datatypes.Type); ok {
-					if t.IsTypeDefinition() {
-						result["basetype"] = t.BaseType().String()
-					} else {
-						result["basetype"] = t.String()
-					}
 					result["type"] = t.TypeString()
 				}
 			}

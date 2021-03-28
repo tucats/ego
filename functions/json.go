@@ -67,6 +67,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		if m, ok := v.([]interface{}); ok {
 			// The target data size may be wrong, fix it
 			target.SetSize(len(m))
+
 			for k, v := range m {
 				err = target.Set(k, v)
 				if !errors.Nil(err) {
