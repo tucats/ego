@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"gopkg.in/resty.v1"
 )
 
 func Format(element interface{}) string {
@@ -132,6 +133,9 @@ func Format(element interface{}) string {
 			case *sync.WaitGroup:
 				return "&sync.WaitGroup{}"
 
+			case *resty.Client:
+				return "&rest.Client{}"
+
 			default:
 				return fmt.Sprintf("&%#v", vv)
 			}
@@ -173,7 +177,8 @@ func Format(element interface{}) string {
 				}
 			}
 
-			return fmt.Sprintf("ptr %s %#v", ts, element)
+			//return fmt.Sprintf("ptr %s %v", ts, element)
+			return fmt.Sprintf("ptr %s", ts)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {

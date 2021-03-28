@@ -48,6 +48,10 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			v = datatypes.TypeOf(mv).Function(name)
 		}
 
+		if v == nil {
+			return c.newError(errors.UnknownMemberError).Context(name)
+		}
+
 	case map[string]interface{}:
 		tt := datatypes.TypeOf(mv)
 		isPackage := tt.IsType(datatypes.PackageType)

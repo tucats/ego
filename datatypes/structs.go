@@ -102,6 +102,10 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	return &result
 }
 
+func (s *EgoStruct) GetType() Type {
+	return s.typeDef
+}
+
 func (s *EgoStruct) IsReplica() *EgoStruct {
 	s.replica++
 

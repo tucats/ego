@@ -64,8 +64,6 @@ type Context struct {
 // array. A context holds the runtime state of a given execution unit (program counter,
 // runtime stack, symbol table) and is used to actually run bytecode. The bytecode
 // can continue to be modified after it is associated with a context.
-// @TOMCOLE Is this a good idea? Should a context take a snapshot of the bytecode at
-// the time so it is immutable?
 func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	name := ""
 	if b != nil {

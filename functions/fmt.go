@@ -73,12 +73,12 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	return text, errors.New(e2)
 }
 
-// UseString will attempt to use the String() function of the
-// object passed in, if it is a typed struct.  Otherwise, it
+// FormatAsString will attempt to use the String() function of the
+// object type passed in, if it is a typed struct.  Otherwise, it
 // just returns the Unquoted format value.
 func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
-	if m, ok := v.(map[string]interface{}); ok {
-		if f, ok := m["String"]; ok && f != nil {
+	if m, ok := v.(*datatypes.EgoStruct); ok {
+		if f := m.GetType().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				_ = local.SetAlways("__this", v)

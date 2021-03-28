@@ -42,10 +42,6 @@ var ProfileDirty = false
 
 // Configurations is a map keyed by the configuration name for each
 // configuration in the config file.
-//
-// @TOMCOLE This is currently a public symbol. Is this really needed?
-// Check on the JSON code to determine if it can handle a private
-// symbol at the top level...
 var Configurations map[string]Configuration
 
 // Load reads in the named profile, if it exists.

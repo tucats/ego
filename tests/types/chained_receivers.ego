@@ -9,6 +9,6 @@
     url := "http://localhost:8080"
     r := rest.New().Media("text").Base(url)
     @assert T.Equal(r.baseURL, url)
-    @assert T.Equal(r.media_type, "text")
+    @assert T.Equal(r.mediaType, "text")
 }
 @pass
