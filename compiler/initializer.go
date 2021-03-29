@@ -7,8 +7,15 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Compile an initializer, given a type definition.
+// Compile an initializer, given a type definition. This can be a literal
+// initializer in braces or a simple value.
 func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
+	if !c.t.IsNext("{") {
+		// It's not an initializer constant, but it could still be an expression. Try the
+		// top-level expression compiler.
+		return c.conditional()
+	}
+
 	base := t
 	if t.IsTypeDefinition() {
 		base = *t.BaseType()
@@ -16,9 +23,6 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 
 	switch base.Kind() {
 	case datatypes.StructKind:
-		if !c.t.IsNext("{") {
-			return c.newError(errors.MissingBracketError)
-		}
 
 		count := 0
 
@@ -66,10 +70,6 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 		return nil
 
 	case datatypes.MapKind:
-		if !c.t.IsNext("{") {
-			return c.newError(errors.MissingBracketError)
-		}
-
 		count := 0
 
 		for !c.t.IsNext("}") {
@@ -110,10 +110,6 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 		return nil
 
 	case datatypes.ArrayKind:
-		if !c.t.IsNext("{") {
-			return c.newError(errors.MissingBracketError)
-		}
-
 		count := 0
 
 		for !c.t.IsNext("}") {

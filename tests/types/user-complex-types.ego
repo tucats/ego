@@ -12,9 +12,10 @@
         Manager bool
     }
 
+    name := []string{"Bob", "Smith"}
     e := Employee{
         Info: { 
-            Name: {"Bob", "Smith"},
+            Name: name,
             ID:   101,
         },
     }
