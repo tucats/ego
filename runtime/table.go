@@ -11,6 +11,29 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+var tableTypeDef *datatypes.Type
+
+func initTableTypeDef() {
+	if tableTypeDef == nil {
+		t := datatypes.Structure()
+		_ = t.DefineField(tableFieldName, datatypes.InterfaceType)
+		_ = t.DefineField(headingsFieldName, datatypes.Array(datatypes.StringType))
+
+		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
+
+		t.DefineFunction("AddRow", TableAddRow)
+		t.DefineFunction("Close", TableClose)
+		t.DefineFunction("Sort", TableSort)
+		t.DefineFunction("Print", TablePrint)
+		t.DefineFunction("Format", TableFormat)
+		t.DefineFunction("Align", TableAlign)
+		t.DefineFunction("String", TableString)
+
+		typeDef := datatypes.TypeDefinition(tableTypeDefinitionName, t)
+		tableTypeDef = &typeDef
+	}
+}
+
 // TableNew implements the New() table package function. This accepts a list
 // of column names (as individual arguments or an array of strings) and allocates
 // a new table. Additionally, the column names can contain alignment information;
@@ -79,21 +102,14 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		_ = headingsArray.Set(i, h)
 	}
 
-	return map[string]interface{}{
-		"table":    t,
-		"AddRow":   TableAddRow,
-		"Close":    TableClose,
-		"Sort":     TableSort,
-		"Print":    TablePrint,
-		"Format":   TableFormat,
-		"Align":    TableAlign,
-		"String":   TableString,
-		"headings": headingsArray,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.TypeDefinition("table", datatypes.StructType),
-			datatypes.ReadonlyMDKey: true,
-		},
-	}, nil
+	initTableTypeDef()
+
+	result := datatypes.NewStruct(*tableTypeDef)
+	result.SetAlways(tableFieldName, t)
+	result.SetAlways(headingsFieldName, headingsArray)
+	result.SetReadonly(true)
+
+	return result, nil
 }
 
 // TableClose closes the table handle, and releases any memory resources
@@ -104,12 +120,8 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, err
 	}
 
-	this := getThis(s)
-	this["table"] = nil
-	this["AddRow"] = tableReleased
-	this["Sort"] = tableReleased
-	this["Print"] = tableReleased
-	this["Format"] = tableReleased
+	this := getThisStruct(s)
+	this.SetAlways(tableFieldName, nil)
 
 	return true, err
 }
@@ -123,24 +135,16 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	t, err := getTable(s)
 	if errors.Nil(err) {
 		if len(args) > 0 {
-			if m, ok := args[0].(map[string]interface{}); ok {
+			if m, ok := args[0].(*datatypes.EgoStruct); ok {
 				if len(args) > 1 {
 					err = errors.New(errors.ArgumentCountError)
 				} else {
-					// Count the visible elements of the structure. This is needed to skip
-					// over metadata objects hidden in the map by the Ego type manager.
-					length := 0
-					for k := range m {
-						if !strings.HasPrefix(k, "__") {
-							length++
-						}
-					}
+					values := make([]string, len(m.FieldNames()))
 
-					values := make([]string, length)
-
-					for k, v := range m {
-						if strings.HasPrefix(k, "__") {
-							continue
+					for _, k := range m.FieldNames() {
+						v := m.GetAlways(k)
+						if v == nil {
+							return nil, errors.New(errors.InvalidFieldError)
 						}
 
 						p, ok := t.FindColumn(k)
@@ -319,8 +323,8 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(map[string]interface{}); ok {
-			if tbl, ok := gc["table"]; ok {
+		if gc, ok := g.(*datatypes.EgoStruct); ok {
+			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {
 						return nil, errors.New(errors.TableClosedError)
@@ -333,10 +337,4 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 	}
 
 	return nil, errors.New(errors.NoFunctionReceiver)
-}
-
-// Utility function that becomes the table handle function pointer for a closed
-// table handle.
-func tableReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return nil, errors.New(errors.TableClosedError)
 }

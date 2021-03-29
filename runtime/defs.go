@@ -3,22 +3,29 @@ package runtime
 // Definitions, etc.
 
 const (
-	restTypeDefinitionName         = "rest.Client"
+	// Type names for runtime types.
+
 	databaseTypeDefinitionName     = "db.Client"
 	databaseRowsTypeDefinitionName = "db.Rows"
+	restTypeDefinitionName         = "rest.Client"
+	tableTypeDefinitionName        = "tables.Table"
 
-	databaseDriverName   = "postgres"
+	// Field names for runtime types.
+
 	asStructFieldName    = "asStruct"
-	rowCountFieldName    = "rowCount"
-	constrFieldName      = "constr"
-	transactionFieldName = "transaction"
-	clientFieldName      = "client"
 	baseURLFieldName     = "baseURL"
+	clientFieldName      = "client"
+	constrFieldName      = "constr"
+	databaseDriverName   = "postgres"
+	dbFieldName          = "db"
+	headersFieldName     = "headers"
+	headingsFieldName    = "headings"
 	mediaTypeFieldName   = "mediaType"
 	responseFieldName    = "response"
-	statusFieldName      = "status"
-	verifyFieldName      = "verify"
-	headersFieldName     = "headers"
+	rowCountFieldName    = "rowCount"
 	rowsFieldName        = "rows"
-	dbFieldName          = "db"
+	statusFieldName      = "status"
+	tableFieldName       = "table"
+	transactionFieldName = "transaction"
+	verifyFieldName      = "verify"
 )

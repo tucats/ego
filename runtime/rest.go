@@ -575,22 +575,6 @@ func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
 	return this
 }
 
-// getThis returns a map for the "this" object in the current
-// symbol table.
-func getThis(s *symbols.SymbolTable) map[string]interface{} {
-	t, ok := s.Get("__this")
-	if !ok {
-		return nil
-	}
-
-	this, ok := t.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	return this
-}
-
 // Exchange is a helper wrapper around a rest call.
 func Exchange(endpoint, method string, body interface{}, response interface{}) *errors.EgoError {
 	var resp *resty.Response

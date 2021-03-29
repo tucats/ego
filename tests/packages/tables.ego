@@ -1,0 +1,29 @@
+@test "packages: tables"
+{
+
+    t := tables.New("Name", "Age")
+    
+    t.AddRow("Tom", 51)
+    t.AddRow("Mary", 48)
+
+    t.AddRow({ Name: "Sarah", Age: 22})
+
+    t.Sort("Name")
+
+    got := t.String()
+
+    // Note, this is very sensitive to formatting
+    expect := 
+`Name     Age    
+=====    ===    
+Mary     48     
+Sarah    22     
+Tom      51     
+`
+    @assert got == expect
+    @assert t.headings[0] == "Name"
+    @assert t.headings[1] == "Age"
+
+}
+
+@pass
