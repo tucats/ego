@@ -23,7 +23,6 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 
 	switch base.Kind() {
 	case datatypes.StructKind:
-
 		count := 0
 
 		for !c.t.IsNext("}") {

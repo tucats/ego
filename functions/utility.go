@@ -652,6 +652,9 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return m.Reflect(), nil
 	}
 
+	if m, ok := args[0].(datatypes.Type); ok {
+		return m.Reflect(), nil
+	}
 	// Is it an Ego package?
 	if m, ok := args[0].(map[string]interface{}); ok {
 		// Make a list of the visible member names

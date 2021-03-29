@@ -23,17 +23,33 @@ func (c *Compiler) testDirective() *errors.EgoError {
 		testDescription = testDescription[1 : len(testDescription)-1]
 	}
 
-	test := map[string]interface{}{}
-	test["assert"] = TestAssert
-	test["fail"] = TestFail
-	test["isType"] = TestIsType
-	test["Nil"] = TestNil
-	test["NotNil"] = TestNotNil
-	test["True"] = TestTrue
-	test["False"] = TestFalse
-	test["Equal"] = TestEqual
-	test["NotEqual"] = TestNotEqual
-	test["description"] = testDescription
+	// Define the type of the "test" object.
+	testType := datatypes.TypeDefinition("Testing",
+		datatypes.Structure(datatypes.Field{
+			Name: "description",
+			Type: datatypes.StringType,
+		}))
+
+	// Define the type receiver functions
+	testType.DefineFunction("assert", TestAssert)
+	testType.DefineFunction("fail", TestFail)
+	testType.DefineFunction("isType", TestIsType)
+	testType.DefineFunction("Nil", TestNil)
+	testType.DefineFunction("NotNil", TestNotNil)
+	testType.DefineFunction("True", TestTrue)
+	testType.DefineFunction("False", TestFalse)
+	testType.DefineFunction("Equal", TestEqual)
+	testType.DefineFunction("NotEqual", TestNotEqual)
+
+	// Let's define the type so it's visible to the code (if needed)
+	c.b.Emit(bytecode.Push, testType)
+	c.b.Emit(bytecode.SymbolOptCreate, "Testing")
+	c.b.Emit(bytecode.StoreAlways, "Testing")
+
+	// Create an instance of the object, and assign the value to
+	// the data field.
+	test := datatypes.NewStruct(testType)
+	test.SetAlways("description", testDescription)
 
 	padSize := 50 - len(testDescription)
 	if padSize < 0 {
@@ -42,13 +58,7 @@ func (c *Compiler) testDirective() *errors.EgoError {
 
 	pad := strings.Repeat(" ", padSize)
 
-	// Generate code to create a Test object. Make a native struct
-	// if they are in play...
-	//if bytecode.NativeStructures {
-	//	c.b.Emit(bytecode.Push, datatypes.NewStructFromMap(test))
-	// } else {
 	c.b.Emit(bytecode.Push, test)
-	//}
 
 	c.b.Emit(bytecode.StoreAlways, "T")
 

@@ -492,3 +492,37 @@ func PackageForKind(kind int) string {
 
 	return ""
 }
+
+// Generate a reflection object that describes the type.
+func (t Type) Reflect() *EgoStruct {
+	r := map[string]interface{}{}
+
+	r["type"] = t.TypeString()
+	if t.IsTypeDefinition() {
+		r["basetype"] = t.valueType.TypeString()
+		r["type"] = "type"
+	}
+
+	if t.name != "" {
+		r["name"] = t.name
+	}
+
+	if t.functions != nil && len(t.functions) > 0 {
+		functions := NewArray(StringType, len(t.functions))
+
+		names := make([]string, 0)
+		for k := range t.functions {
+			names = append(names, k)
+		}
+
+		sort.Strings(names)
+
+		for i, k := range names {
+			_ = functions.Set(i, k)
+		}
+
+		r["functions"] = functions
+	}
+
+	return NewStructFromMap(r)
+}
