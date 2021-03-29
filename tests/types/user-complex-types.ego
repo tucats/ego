@@ -1,4 +1,5 @@
-@test "types: nested user-defined types"
+
+@test "types: user types in complex types"
 
 {
     type EmpInfo struct {
@@ -17,8 +18,13 @@
             ID:   101,
         },
     }
-    
-    @assert T.Equal(e.Info.Name[0], "Bob")
-    @assert T.Equal(e.Manager, false)
+
+    type Employees map[int]Employee
+
+    employeeList := Employees{}
+    employeeList[101] = e
+
+    @assert employeeList[101].Info.Name[0] == "Bob"
+   
 }
 @pass

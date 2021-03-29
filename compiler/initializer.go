@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // Compile an initializer, given a type definition.
@@ -14,6 +15,56 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 	}
 
 	switch base.Kind() {
+	case datatypes.StructKind:
+		if !c.t.IsNext("{") {
+			return c.newError(errors.MissingBracketError)
+		}
+
+		count := 0
+
+		for !c.t.IsNext("}") {
+			// Pairs of name:value
+			name := c.t.Next()
+			if !tokenizer.IsSymbol(name) {
+				return c.newError(errors.InvalidSymbolError)
+			}
+
+			name = c.normalize(name)
+
+			ft, err := base.Field(name)
+			if !errors.Nil(err) {
+				return err
+			}
+
+			if !c.t.IsNext(":") {
+				return c.newError(errors.MissingColonError)
+			}
+
+			err = c.compileInitializer(ft)
+			if !errors.Nil(err) {
+				return err
+			}
+
+			// Now emit the name (names always come first on the stack)
+			c.b.Emit(bytecode.Push, name)
+
+			count++
+
+			if c.t.IsNext("}") {
+				break
+			}
+
+			if !c.t.IsNext(",") {
+				return c.newError(errors.InvalidListError)
+			}
+		}
+
+		c.b.Emit(bytecode.Push, t)
+		c.b.Emit(bytecode.Push, "__type")
+		c.b.Emit(bytecode.Struct, count+1)
+
+		return nil
+
 	case datatypes.MapKind:
 		if !c.t.IsNext("{") {
 			return c.newError(errors.MissingBracketError)
@@ -94,7 +145,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			return err
 		}
 
-		// If we are doing dynamic typing, let's allow a coercsion as well.
+		// If we are doing dynamic typing, let's allow a coercion as well.
 		c.b.Emit(bytecode.Coerce, base)
 
 		return nil

@@ -162,7 +162,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	}
 
 	// Now, ensure it's of the right type for this array.
-	if !IsType(v, a.valueType) {
+	if !IsBaseType(v, a.valueType) {
 		return errors.New(errors.WrongArrayValueType)
 	}
 

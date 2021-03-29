@@ -89,7 +89,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // coerceByteCode instruction processor.
 func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
-	// If we are in static mode, we don't do any coersions.
+	// If we are in static mode, we don't do any coercions.
 	if c.Static {
 		return nil
 	}
@@ -114,7 +114,25 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	if t.Kind() == datatypes.MapKind {
 
 	} else if t.Kind() == datatypes.StructKind {
+		// Check all the fields in the struct to ensure they exist in the type.
+		vv := v.(*datatypes.EgoStruct)
+		for _, k := range vv.FieldNames() {
+			_, e2 := t.Field(k)
+			if !errors.Nil(e2) {
+				return e2
+			}
+		}
 
+		// Verify that all the fields in the type are found in the object; if not,
+		// create a zero-value for that type.
+		for _, k := range t.FieldNames() {
+			if _, found := vv.Get(k); !found {
+				ft, _ := t.Field(k)
+				vv.SetAlways(k, datatypes.InstanceOfType(ft))
+			}
+		}
+
+		v = vv
 	} else if t.IsType(datatypes.ErrorType) {
 
 	} else if t.IsType(datatypes.IntType) {

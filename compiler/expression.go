@@ -15,6 +15,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
 	cx := New("expression eval")
 	cx.t = c.t
 	cx.b = bytecode.New("subexpression")
+	cx.Types = c.Types
 
 	err := cx.conditional()
 	if errors.Nil(err) {

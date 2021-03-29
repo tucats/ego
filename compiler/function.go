@@ -24,7 +24,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	coercions := []*bytecode.ByteCode{}
 	thisName := ""
 	functionName := ""
-	className := ""
+	receiverType := ""
 	byValue := false
 
 	// Increment the function depth for the time we're on this particular function,
@@ -36,7 +36,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
-		functionName, thisName, className, byValue, err = c.parseFunctionName()
+		functionName, thisName, receiverType, byValue, err = c.parseFunctionName()
 		if !errors.Nil(err) {
 			return err
 		}
@@ -155,6 +155,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	cx := New("function " + functionName).SetRoot(c.RootTable)
 	cx.t = c.t
 	cx.b = b
+	cx.Types = c.Types
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 
@@ -162,6 +163,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	if !errors.Nil(err) {
 		return err
 	}
+
+	// If there were updated types, let's make sure we have them now. @TOMCOLE this may not
+	// be needed as the Types structure is addressed by reference?
+	c.Types = cx.Types
 
 	// Generate the deferral invocations, if any, in reverse order
 	// that they were defined.
@@ -184,9 +189,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	if isLiteral {
 		c.b.Emit(bytecode.Push, b)
 	} else {
-		if className != "" {
+		if receiverType != "" {
 			// If there was a receiver, make sure this function is added to the type structure
-			t, ok := c.Types[className]
+			t, ok := c.Types[receiverType]
 			if !ok {
 				return c.newError(errors.InvalidTypeError)
 			}
@@ -194,8 +199,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 			// Update the function in the type map, and generate new code
 			// to update the type definition in the symbol table.
 			t.DefineFunction(functionName, b)
+			c.Types[receiverType] = t
+
 			c.b.Emit(bytecode.Push, t)
-			c.b.Emit(bytecode.StoreAlways, className)
+			c.b.Emit(bytecode.StoreAlways, receiverType)
 		} else {
 			c.b.Emit(bytecode.Push, b)
 			c.b.Emit(bytecode.StoreAlways, functionName)

@@ -50,7 +50,7 @@ type Field struct {
 	Type Type
 }
 
-// Return a string containing the list of reciver functions for
+// Return a string containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
 // empty string. The results are a comma-separated list of function
 // names plus "()".
@@ -222,6 +222,23 @@ func (t *Type) DefineField(name string, ofType Type) *errors.EgoError {
 	return nil
 }
 
+// Return a list of all the fieldnames for the type. The array is empty if
+// this is not a struct type.
+func (t Type) FieldNames() []string {
+	keys := make([]string, 0)
+	if t.kind != StructKind {
+		return keys
+	}
+
+	for k := range t.fields {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
 // Retrieve the type of a field by name. The current type must
 // be a structure type, and the field name must exist.
 func (t Type) Field(name string) (Type, *errors.EgoError) {
@@ -241,7 +258,7 @@ func (t Type) Field(name string) (Type, *errors.EgoError) {
 	return ofType, nil
 }
 
-// Return true if the curren type is the undefined type.
+// Return true if the current type is the undefined type.
 func (t Type) IsUndefined() bool {
 	return t.kind == UndefinedKind
 }
@@ -377,6 +394,19 @@ func IsType(v interface{}, t Type) bool {
 	}
 
 	return t.IsType(TypeOf(v))
+}
+
+// Compare the value to the base type of the type given. This recursively peels
+// away any type definition layers and compares the value type to the ultimate
+// base type.  If the type passed in is already a base type, this is no different
+// than calling IsType() directly.
+func IsBaseType(v interface{}, t Type) bool {
+	valid := IsType(v, t)
+	if !valid && t.IsTypeDefinition() {
+		valid = IsBaseType(v, *t.valueType)
+	}
+
+	return valid
 }
 
 // For a given interface pointer, unwrap the pointer and return the type it

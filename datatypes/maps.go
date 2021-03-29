@@ -83,11 +83,11 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError
 		return false, errors.New(errors.ImmutableMapError)
 	}
 
-	if !IsType(key, m.keyType) {
+	if !IsBaseType(key, m.keyType) {
 		return false, errors.New(errors.WrongMapKeyType).Context(key)
 	}
 
-	if !IsType(value, m.valueType) {
+	if !IsBaseType(value, m.valueType) {
 		return false, errors.New(errors.WrongMapValueType).Context(value)
 	}
 

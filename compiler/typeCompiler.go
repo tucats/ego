@@ -125,5 +125,13 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 		}
 	}
 
+	// User type known to this compilation?
+	typeName := c.t.Peek(1)
+	if t, found := c.Types[typeName]; found {
+		c.t.Advance(1)
+
+		return t, nil
+	}
+
 	return datatypes.UndefinedType, c.newError(errors.InvalidTypeError)
 }
