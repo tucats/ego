@@ -20,7 +20,7 @@ import (
 const MaxRedirectCount = 10
 
 // This maps HTTP status codes to a message string.
-var codes = map[int]string{
+var httpStatusCodeMessages = map[int]string{
 	http.StatusContinue:                     "Continue",
 	http.StatusSwitchingProtocols:           "Switching protocol",
 	http.StatusProcessing:                   "Processing",
@@ -78,17 +78,7 @@ var codes = map[int]string{
 
 var restType *datatypes.Type
 
-const (
-	restTypeDefinitionName = "rest.Client"
-
-	clientFieldName    = "client"
-	baseURLFieldName   = "baseURL"
-	mediaTypeFieldName = "mediaType"
-	responseFieldName  = "response"
-	statusFieldName    = "status"
-	verifyFieldName    = "verify"
-	headersFieldName   = "headers"
-)
+const ()
 
 func initializeRestType() {
 	if restType == nil {
@@ -178,7 +168,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 	}
 
 	code := util.GetInt(args[0])
-	if text, ok := codes[code]; ok {
+	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil
 	}
 
@@ -193,7 +183,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	c.GetClient().CloseIdleConnections()
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	c = nil
 	this.SetAlways(clientFieldName, nil)
 	this.SetAlways(statusFieldName, 0)
@@ -212,7 +202,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	verify := true
 
 	if len(args) == 1 {
@@ -236,7 +226,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	base := ""
 
 	if len(args) > 0 {
@@ -259,7 +249,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 
 	if len(args) != 2 {
 		return nil, errors.New(errors.ArgumentCountError)
@@ -281,7 +271,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 
 	if len(args) > 1 {
 		return nil, errors.New(errors.ArgumentCountError)
@@ -307,7 +297,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	media := util.GetString(args[0])
 	this.SetAlways(mediaTypeFieldName, media)
 
@@ -326,7 +316,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError)
@@ -417,7 +407,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	client.SetRedirectPolicy()
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	url := applyBaseURL(util.GetString(args[0]), this)
 
 	if len(args) > 1 {
@@ -489,7 +479,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, err
 	}
 
-	this := getThisRest(s)
+	this := getThisStruct(s)
 	url := applyBaseURL(util.GetString(args[0]), this)
 
 	if len(args) > 1 {
@@ -571,7 +561,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, *errors.EgoError) {
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThisRest(s *symbols.SymbolTable) *datatypes.EgoStruct {
+func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil

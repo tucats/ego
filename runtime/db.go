@@ -15,6 +15,33 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var dbTypeDef *datatypes.Type
+
+func initDBTypeDef() {
+	if dbTypeDef == nil {
+		t := datatypes.Structure()
+		_ = t.DefineField(clientFieldName, datatypes.InterfaceType)
+		_ = t.DefineField(asStructFieldName, datatypes.BoolType)
+		_ = t.DefineField(rowCountFieldName, datatypes.IntType)
+		_ = t.DefineField(transactionFieldName, datatypes.InterfaceType)
+		_ = t.DefineField(constrFieldName, datatypes.StringType)
+
+		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
+
+		t.DefineFunction("Begin", DBBegin)
+		t.DefineFunction("Commit", DBCommit)
+		t.DefineFunction("Rollback", DBRollback)
+		t.DefineFunction("Query", DBQueryRows)
+		t.DefineFunction("QueryResult", DBQuery)
+		t.DefineFunction("Execute", DBExecute)
+		t.DefineFunction("Close", DBClose)
+		t.DefineFunction("AsStruct", DataBaseAsStruct)
+
+		typeDef := datatypes.TypeDefinition(databaseTypeDefinitionName, t)
+		dbTypeDef = &typeDef
+	}
+}
+
 // DBNew implements the New() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
@@ -22,6 +49,8 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	if len(args) != 1 {
 		return nil, errors.New(errors.ArgumentCountError)
 	}
+
+	initDBTypeDef()
 
 	// Get the connection string, which MUST be in URL format.
 	connStr := util.GetString(args[0])
@@ -31,7 +60,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		return nil, errors.New(err)
 	}
 
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open(databaseDriverName, connStr)
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
@@ -43,24 +72,12 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 
-	result := map[string]interface{}{
-		"client":      db,
-		"AsStruct":    DataBaseAsStruct,
-		"Begin":       DBBegin,
-		"Commit":      DBCommit,
-		"Rollback":    DBRollback,
-		"Query":       DBQueryRows,
-		"QueryResult": DBQuery,
-		"Execute":     DBExecute,
-		"Close":       DBClose,
-		"constr":      connStr,
-		"asStruct":    false,
-		"rowCount":    0,
-		"transaction": nil,
-	}
-
-	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.TypeDefinition("database", datatypes.StringType))
+	result := datatypes.NewStruct(*dbTypeDef)
+	result.SetAlways(clientFieldName, db)
+	result.SetAlways(constrFieldName, connStr)
+	result.SetAlways(asStructFieldName, false)
+	result.SetAlways(rowCountFieldName, 0)
+	result.SetReadonly(true)
 
 	return result, nil
 }
@@ -73,14 +90,14 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	d, tx, err := getDBClient(s)
 	if errors.Nil(err) {
-		this := getThis(s)
+		this := getThisStruct(s)
 
 		if tx == nil {
 			var e2 error
 
 			tx, e2 = d.Begin()
 			if e2 == nil {
-				this["transaction"] = tx
+				this.SetAlways(transactionFieldName, tx)
 			}
 		} else {
 			err = errors.New(errors.TransactionAlreadyActive)
@@ -96,7 +113,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	_, tx, err := getDBClient(s)
 	if errors.Nil(err) {
-		this := getThis(s)
+		this := getThisStruct(s)
 
 		if tx != nil {
 			err = errors.New(tx.Rollback())
@@ -104,7 +121,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 			err = errors.New(errors.NoTransactionActiveError)
 		}
 
-		this["transaction"] = nil
+		this.SetAlways(transactionFieldName, nil)
 	}
 
 	return nil, err
@@ -116,7 +133,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	_, tx, err := getDBClient(s)
 	if errors.Nil(err) {
-		this := getThis(s)
+		this := getThisStruct(s)
 
 		if tx != nil {
 			err = errors.New(tx.Commit())
@@ -124,7 +141,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			err = errors.New(errors.NoTransactionActiveError)
 		}
 
-		this["transaction"] = nil
+		this.SetAlways(transactionFieldName, nil)
 	}
 
 	return nil, err
@@ -144,8 +161,8 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 		return nil, err
 	}
 
-	this := getThis(s)
-	this["asStruct"] = util.GetBool(args[0])
+	this := getThisStruct(s)
+	this.SetAlways(asStructFieldName, util.GetBool(args[0]))
 
 	return this, nil
 }
@@ -162,16 +179,12 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		err = errors.New(tx.Rollback())
 	}
 
-	this := getThis(s)
-	this["client"] = nil
-	this["AsStruct"] = dbReleased
-	this["Query"] = dbReleased
-	this["QueryRows"] = dbReleased
-	this["Execute"] = dbReleased
-	this["constr"] = ""
-	this["transaction"] = nil
-	this["asStruct"] = false
-	this["rowCount"] = -1
+	this := getThisStruct(s)
+	this.SetAlways(clientFieldName, nil)
+	this.SetAlways(constrFieldName, "")
+	this.SetAlways(transactionFieldName, nil)
+	this.SetAlways(asStructFieldName, false)
+	this.SetAlways(rowCountFieldName, -1)
 
 	return true, err
 }
@@ -184,9 +197,9 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
-	this := getThis(s)
-	asStruct := util.GetBool(this["asStruct"])
-	this["rowCount"] = -1
+	this := getThisStruct(s)
+	asStruct := util.GetBool(this.GetAlways(asStructFieldName))
+	this.SetAlways(rowCountFieldName, -1)
 
 	var rows *sql.Rows
 
@@ -262,12 +275,12 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	// Need to convert the results from a slice to an actual array
-	this["rowCount"] = size
-	r := make([]interface{}, size)
+	this.SetAlways(rowCountFieldName, size)
+	r := make([]interface{}, size) // @tomcole this should be a proper array.
 
 	if asStruct {
 		for i, v := range mapResult {
-			r[i] = v
+			r[i] = datatypes.NewMapFromMap(v) // @tomcole this should convert the map to a structure
 		}
 	} else {
 		for i, v := range arrayResult {
@@ -275,125 +288,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
-}
-
-// DBQueryRows executes a query, with optional parameter substitution, and returns row object
-// for subsequent calls to fetch the data.
-func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	db, tx, err := getDBClient(s)
-	if !errors.Nil(err) {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
-	}
-
-	this := getThis(s)
-	this["rowCount"] = -1
-	query := util.GetString(args[0])
-
-	var rows *sql.Rows
-
-	var e2 error
-
-	if tx == nil {
-		ui.Debug(ui.DBLogger, "QueryRows: %s", query)
-
-		rows, e2 = db.Query(query, args[1:]...)
-	} else {
-		ui.Debug(ui.DBLogger, "(Tx) QueryRows: %s", query)
-
-		rows, e2 = tx.Query(query, args[1:]...)
-	}
-
-	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(e2)}}, errors.New(e2)
-	}
-
-	result := map[string]interface{}{}
-	result["rows"] = rows
-	result["client"] = db
-	result["db"] = this
-	result["Next"] = rowsNext
-	result["Scan"] = rowsScan
-	result["Close"] = rowsClose
-	result["Headings"] = rowsHeadings
-	datatypes.SetMetadata(result, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.TypeDefinition("rows", datatypes.StringType))
-
-	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
-}
-
-func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	this := getThis(s)
-	rows := this["rows"].(*sql.Rows)
-
-	err := rows.Close()
-
-	this["rows"] = nil
-	this["client"] = nil
-	this["Next"] = dbReleased
-	this["Scan"] = dbReleased
-	this["Headings"] = dbReleased
-
-	ui.Debug(ui.DBLogger, "rows.Close() called")
-
-	return err, nil
-}
-
-func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	this := getThis(s)
-	rows := this["rows"].(*sql.Rows)
-	result := make([]interface{}, 0)
-
-	columns, err := rows.Columns()
-	if errors.Nil(err) {
-		for _, name := range columns {
-			result = append(result, name)
-		}
-	}
-
-	return result, errors.New(err)
-}
-
-func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	this := getThis(s)
-	rows := this["rows"].(*sql.Rows)
-	active := rows.Next()
-
-	ui.Debug(ui.DBLogger, "rows.Next() = %v", active)
-
-	return active, nil
-}
-
-func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	this := getThis(s)
-	rows := this["rows"].(*sql.Rows)
-	db := this["db"].(map[string]interface{})
-	asStruct := util.GetBool(db["asStruct"])
-	columns, _ := rows.Columns()
-	colTypes, _ := rows.ColumnTypes()
-	colCount := len(columns)
-	rowTemplate := make([]interface{}, colCount)
-	rowValues := make([]interface{}, colCount)
-
-	for i := range colTypes {
-		rowTemplate[i] = &rowValues[i]
-	}
-
-	if err := rows.Scan(rowTemplate...); !errors.Nil(err) {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
-	}
-
-	if asStruct {
-		rowMap := map[string]interface{}{}
-
-		for i, v := range columns {
-			rowMap[v] = rowValues[i]
-		}
-
-		return functions.MultiValueReturn{Value: []interface{}{rowMap, nil}}, nil
-	}
-
-	return functions.MultiValueReturn{Value: []interface{}{rowValues, nil}}, nil
+	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewFromArray(datatypes.InterfaceType, r), err}}, err
 }
 
 // DBExecute executes a SQL statement, and returns the number of rows that were
@@ -427,8 +322,8 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	}
 
 	r, err := sqlResult.RowsAffected()
-	this := getThis(s)
-	this["rowCount"] = int(r)
+	this := getThisStruct(s)
+	this.SetAlways(rowCountFieldName, int(r))
 
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
 
@@ -440,14 +335,14 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // the native client object.
 func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, *errors.EgoError) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(map[string]interface{}); ok {
-			if client, ok := gc["client"]; ok {
+		if gc, ok := g.(*datatypes.EgoStruct); ok {
+			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {
 						return nil, nil, errors.New(errors.DatabaseClientClosedError)
 					}
 
-					tx := gc["transaction"]
+					tx := gc.GetAlways(transactionFieldName)
 					if tx == nil {
 						return cp, nil, nil
 					} else {
@@ -459,10 +354,4 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, *errors.EgoErr
 	}
 
 	return nil, nil, errors.New(errors.NoFunctionReceiver)
-}
-
-// Utility function that becomes the db handle function pointer for a closed
-// db connection handle.
-func dbReleased(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return nil, errors.New(errors.DatabaseClientClosedError)
 }

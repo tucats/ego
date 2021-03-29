@@ -130,6 +130,15 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 	return s
 }
 
+// GetAlways retrieves a value from the named field. No error checking is done
+// to verify that the field exists; if it does not then a nil value is returned.
+// This is a short-cut used in runtime code to access well-known fields from
+// pre-defined object types, such as a db.Client().
+func (s *EgoStruct) GetAlways(name string) interface{} {
+	value := s.fields[name]
+
+	return value
+}
 func (s *EgoStruct) Get(name string) (interface{}, bool) {
 	value, ok := s.fields[name]
 
