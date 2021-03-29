@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -163,7 +164,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	r["session"] = t.AuthID.String()
 	r["id"] = t.TokenID.String()
 
-	return r, errors.New(err)
+	return datatypes.NewStructFromMap(r), errors.New(err)
 }
 
 // CreateToken creates a new token with a username and a data payload.

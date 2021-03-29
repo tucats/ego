@@ -390,8 +390,8 @@ func tokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if util.GetBool(v) {
 		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
-		if m, ok := t.(map[string]interface{}); ok {
-			if n, ok := m["name"]; ok {
+		if m, ok := t.(*datatypes.EgoStruct); ok {
+			if n, ok := m.Get("name"); ok {
 				return util.GetString(n)
 			}
 		}
