@@ -27,14 +27,10 @@ func TestStructImpl(t *testing.T) {
 			name:  "two member incomplete test",
 			arg:   2,
 			stack: []interface{}{typeDef, "__type", true, "active"},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,
-				"__metadata": map[string]interface{}{
-					"static":  true,
-					"type":    typeDef,
-					"replica": 1,
-				}},
+			}).SetStatic(true).AsType(typeDef),
 			wantErr: false,
 			static:  true,
 		},
@@ -42,67 +38,34 @@ func TestStructImpl(t *testing.T) {
 			name:  "one member test",
 			arg:   1,
 			stack: []interface{}{123, "test"},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"test": 123,
-				"__metadata": map[string]interface{}{
-					"replica": 0,
-					"static":  true,
-					"type": datatypes.Structure(
-						datatypes.Field{Name: "test", Type: datatypes.IntType},
-					),
-				}},
+			}).SetStatic(true),
 			wantErr: false,
 		},
 		{
 			name:  "two member test",
 			arg:   2,
 			stack: []interface{}{true, "active", 123, "test"},
-			want: map[string]interface{}{
-				"active": true,
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"test":   123,
-				"__metadata": map[string]interface{}{
-					"static":  true,
-					"replica": 0,
-					"type": datatypes.Structure(
-						datatypes.Field{Name: "active", Type: datatypes.BoolType},
-						datatypes.Field{Name: "test", Type: datatypes.IntType},
-					),
-				}},
-			wantErr: false,
-		},
-		{
-			name:  "two member valid static test",
-			arg:   2,
-			stack: []interface{}{true, "active", 123, "test"},
-			want: map[string]interface{}{
 				"active": true,
-				"test":   123,
-				"__metadata": map[string]interface{}{
-					"static": true,
-					"type": datatypes.Structure(
-						datatypes.Field{Name: "active", Type: datatypes.BoolType},
-						datatypes.Field{Name: "test", Type: datatypes.IntType},
-					),
-					"replica": 0,
-				}},
+			}).SetStatic(true),
 			wantErr: false,
-			static:  true,
 		},
 		{
 			name:  "two member invalid static test",
 			arg:   3,
 			stack: []interface{}{typeDef, "__type", true, "invalid", 123, "test"},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"active": true,
-				"test":   123,
-				"__metadata": map[string]interface{}{
-					"type":   datatypes.StructType,
-					"static": true,
-				}},
+				"test":   0,
+			}).SetStatic(true).AsType(typeDef),
 			wantErr: true,
 			static:  true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := &Context{
@@ -119,7 +82,9 @@ func TestStructImpl(t *testing.T) {
 				t.Errorf("StructImpl() error = %v, wantErr %v", err, tt.wantErr)
 			} else if errors.Nil(err) {
 				got, _ := ctx.Pop()
-				if !reflect.DeepEqual(got, tt.want) {
+				f := reflect.DeepEqual(got, tt.want)
+
+				if !f {
 					t.Errorf("StructImpl()\n  got  %v\n  want %v", got, tt.want)
 				}
 			}

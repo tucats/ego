@@ -130,6 +130,14 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 	return s
 }
 
+// This is used only by the unit testing to explicitly set the type
+// of a structure. It changes no data, only updates the type value.
+func (s *EgoStruct) AsType(t Type) *EgoStruct {
+	s.typeDef = t
+
+	return s
+}
+
 // GetAlways retrieves a value from the named field. No error checking is done
 // to verify that the field exists; if it does not then a nil value is returned.
 // This is a short-cut used in runtime code to access well-known fields from

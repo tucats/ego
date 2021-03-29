@@ -247,20 +247,6 @@ func TestNew(t *testing.T) {
 			want: 12,
 		},
 		{
-			name: "add two maps",
-			expr: "{name:\"Tom\"} + { age:50}",
-			want: map[string]interface{}{
-				"__metadata": map[string]interface{}{
-					"static":  true,
-					"replica": 0,
-					"type": datatypes.Structure(
-						datatypes.Field{Name: "age", Type: datatypes.IntType},
-						datatypes.Field{Name: "name", Type: datatypes.StringType},
-					),
-				}, "name": "Tom",
-				"age": 50},
-		},
-		{
 			name: "len of string function",
 			expr: "len(name) + 4",
 			want: 7,

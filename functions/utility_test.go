@@ -236,30 +236,30 @@ func TestReflect(t *testing.T) {
 					"age":  55,
 				},
 			}},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"basetype": "map",
 				"type":     "struct",
 				"native":   false,
 				"members":  datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
-			},
+			}),
 			wantErr: false,
 		},
 		{
 			name: "simple integer value",
 			args: args{s: nil, args: []interface{}{33}},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"basetype": "int",
 				"type":     "int",
-			},
+			}),
 			wantErr: false,
 		},
 		{
 			name: "simple string value",
 			args: args{s: nil, args: []interface{}{"stuff"}},
-			want: map[string]interface{}{
+			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"basetype": "string",
 				"type":     "string",
-			},
+			}),
 			wantErr: false,
 		},
 		// TODO: Add test cases.
