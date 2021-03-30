@@ -8,7 +8,14 @@
     t.AddRow([]string{"Mary", "47", "Mom"}...)
     t.Sort("Name")
 
-    r := json.Unmarshal(t.String("json"))
+    // Note that in order to get a usable value, we must
+    // specify a prototype of what we want the json to be
+    // returned as.
+    r := []struct{Name string 
+                 Age int 
+                 Title string }{}
+
+    json.Unmarshal(t.String("json"), &r)
 
     // Resulting table should be ordered by Name
     @assert r[0].Name == "Mary"
@@ -16,7 +23,10 @@
 
     t.Sort("~Age")
 
-    r = json.Unmarshal(t.String("json"))
+    r = []struct{Name string   
+                 Age int 
+                 Title string }{}
+    json.Unmarshal(t.String("json"), &r)
 
     // Resulting table should be ordered by Age in descending order
     @assert r[0].Age == 53
