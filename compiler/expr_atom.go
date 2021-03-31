@@ -58,7 +58,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is an empty struct?
 	if t == "{}" {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, datatypes.NewStructFromMap(map[string]interface{}{}))
+		c.b.Emit(bytecode.Push, datatypes.NewStruct(datatypes.StructType).SetStatic(false))
 
 		return nil
 	}

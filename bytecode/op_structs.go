@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/tucats/ego/datatypes"
@@ -129,45 +128,6 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	return nil
-}
-
-// storeMetadataByteCode instruction processor.
-func storeMetadataByteCode(c *Context, i interface{}) *errors.EgoError {
-	var key string
-
-	if i != nil {
-		key = util.GetString(i)
-	} else {
-		keyInterface, err := c.Pop()
-		if !errors.Nil(err) {
-			return err
-		}
-
-		key = util.GetString(keyInterface)
-	}
-
-	value, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
-	}
-
-	m, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
-	}
-
-	if _, ok := m.(*datatypes.EgoStruct); ok {
-		fmt.Printf("DEBUG: map/struct confusion: storeMetadataByteCode()")
-	}
-
-	mm, ok := m.(map[string]interface{})
-	if !ok {
-		return c.newError(errors.InvalidTypeError)
-	}
-
-	_ = datatypes.SetMetadata(mm, key, value)
-
-	return c.stackPush(mm)
 }
 
 // storeIndexByteCode instruction processor.

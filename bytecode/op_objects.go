@@ -52,6 +52,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.newError(errors.UnknownMemberError).Context(name)
 		}
 
+	// @tomcole should be a package
 	case map[string]interface{}:
 		tt := datatypes.TypeOf(mv)
 		isPackage := tt.IsType(datatypes.PackageType)
@@ -99,6 +100,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
+// @tomcole this should operate on a package type.
 func findMember(m map[string]interface{}, name string) (interface{}, bool) {
 	if v, ok := m[name]; ok {
 		return v, true

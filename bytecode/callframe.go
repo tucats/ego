@@ -92,7 +92,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 				fmt.Printf("DEBUG: map/struct confusion: callFramePop()")
 			}
 
-			// should be an ego package type
+			// @tomcole should be an ego package type
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {

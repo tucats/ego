@@ -9,10 +9,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// GetMap extracts a struct from an abstract interface. Returns nil
-// if the interface did not contain a struct/map.
+// GetMap extracts a map from an abstract interface. Returns nil
+// if the interface did not contain a map.
+// @tomcole should be package
 func GetMap(v interface{}) map[string]interface{} {
-	if m, ok := v.(map[string]interface{}); ok {
+	if m, ok := v.(map[string]interface{}); ok { // @tomcole should be package
 		return m
 	}
 
@@ -33,7 +34,7 @@ func GetArray(v interface{}) []interface{} {
 // type coercion if needed.
 func GetInt64(v interface{}) int64 {
 	switch v.(type) {
-	case map[string]interface{}, []interface{}, nil:
+	case map[string]interface{}, []interface{}, nil: // @tomcole should be package
 		return int64(0)
 
 	case error:
@@ -54,7 +55,7 @@ func GetInt(v interface{}) int {
 	case error:
 		return 0
 
-	case map[string]interface{}, []interface{}, nil:
+	case map[string]interface{}, []interface{}, nil: // @tomcole should be package
 		return 0
 	}
 
@@ -73,7 +74,7 @@ func GetBool(v interface{}) bool {
 	case error:
 		return false
 
-	case map[string]interface{}, []interface{}, nil:
+	case map[string]interface{}, []interface{}, nil: // @tomcole should be package
 		return false
 	}
 
@@ -100,7 +101,7 @@ func GetString(v interface{}) string {
 	case *datatypes.EgoMap:
 		return actual.String()
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package
 		return Format(v)
 
 	case []interface{}, nil:
@@ -117,7 +118,7 @@ func GetFloat(v interface{}) float64 {
 	case error:
 		return 0.0
 
-	case map[string]interface{}, []interface{}, nil:
+	case map[string]interface{}, []interface{}, nil: // @tomcole should be package
 		return 0.0
 	}
 
@@ -316,8 +317,8 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 		case []interface{}:
 			return []interface{}{}, v2
 
-		case map[string]interface{}:
-			return map[string]interface{}{}, v2
+		case map[string]interface{}: // @tomcole should be package
+			return map[string]interface{}{}, v2 // @tomcole should be package
 		}
 
 	case string:

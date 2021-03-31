@@ -33,6 +33,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Create an initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
+	// @tomcole should be a package
 	pkg := map[string]interface{}{}
 
 	if v, ok := c.symbols.Root().Get(name); ok {
@@ -40,6 +41,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 		case *datatypes.EgoStruct:
 			fmt.Printf("DEBUG: map/struct confusion: pushPackageByteCode()")
 
+		// @tomcole should be a package
 		case map[string]interface{}:
 			pkg = actual
 
@@ -86,6 +88,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 		fmt.Printf("DEBUG: map/struct confusion: popPackageByteCode()")
 	}
 
+	// @tomcole should be a package
 	pkg, _ := pkgValue.(map[string]interface{})
 
 	// Copy all the upper-case ("external") symbols names to the package level.

@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -80,7 +81,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		parameterStruct[k] = values
 	}
 
-	_ = symbolTable.SetAlways("_parms", parameterStruct)
+	_ = symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(parameterStruct))
 
 	// Other setup for REST service execution
 	_ = symbolTable.SetAlways("eval", runtime.Eval)
@@ -113,7 +114,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = symbolTable.SetAlways("_headers", headers)
+	_ = symbolTable.SetAlways("_headers", datatypes.NewMapFromMap(headers))
 	_ = symbolTable.SetAlways("_json", isJSON)
 
 	path := r.URL.Path

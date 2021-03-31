@@ -26,6 +26,7 @@ const (
 
 // For a given struct type, set it's type value in the metadata. If the
 // item is not a struct map then do no work.
+// @tomcole should be package.
 func SetType(m map[string]interface{}, t Type) {
 	SetMetadata(m, TypeMDKey, t)
 }
@@ -51,7 +52,7 @@ func SetMetadata(object interface{}, key string, v interface{}) bool {
 		return true
 	}
 
-	// This is/should be a package.
+	// @tomcole This is/should be a package.
 	if m, ok := object.(map[string]interface{}); ok {
 		if !ok {
 			return false
@@ -85,7 +86,7 @@ func GetMetadata(value interface{}, key string) (interface{}, bool) {
 		}
 	}
 
-	// This is a package.
+	// @tomcole This is a package.
 	if m, ok := value.(map[string]interface{}); ok {
 		v, ok := m[key]
 

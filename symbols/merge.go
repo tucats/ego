@@ -27,13 +27,13 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 		// Is it a struct? If so we may need to merge to it...
 		v := st.GetValue(vx)
 		switch vv := v.(type) {
-		case map[string]interface{}:
+		case map[string]interface{}: // @tomcole should be package  **double check this***
 			// Does the old struct already exist in the compiler table?
 			old, found := s.Get(k)
 			if found {
 				// Is the existing value also a struct?
 				switch oldmap := old.(type) {
-				case map[string]interface{}:
+				case map[string]interface{}: // @tomcole should be package
 					// Copy the values into the existing map
 					for newkeyword, newvalue := range vv {
 						oldmap[newkeyword] = newvalue
@@ -63,13 +63,13 @@ func (s *SymbolTable) Merge(st *SymbolTable) {
 	for k, v := range st.Constants {
 		// Is it a struct? If so we may need to merge to it...
 		switch vv := v.(type) {
-		case map[string]interface{}:
+		case map[string]interface{}: // @tomcole should be package
 			// Does the old struct already exist in the compiler table?
 			old, found := s.Get(k)
 			if found {
 				// Is the existing value also a struct?
 				switch oldmap := old.(type) {
-				case map[string]interface{}:
+				case map[string]interface{}: // @tomcole should be package
 					// Copy the values into the existing map
 					for newkeyword, newvalue := range vv {
 						oldmap[newkeyword] = newvalue

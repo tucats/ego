@@ -133,6 +133,7 @@ func (c *Context) syncPackageSymbols() {
 				fmt.Printf("DEBUG: map/struct confusion: syncPackageSymbols()")
 			}
 
+			// @tomcole should be a package
 			if m, ok := pkg.(map[string]interface{}); ok {
 				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {

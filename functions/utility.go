@@ -103,7 +103,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	case *datatypes.EgoMap:
 		return len(arg.Keys()), nil
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package, and probably not allowed here.
 		keys := make([]string, 0)
 
 		for k := range arg {
@@ -177,7 +177,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	case *datatypes.EgoStruct:
 		return v.FieldNamesArray(), nil
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package
 		keys := datatypes.NewArray(datatypes.StringType, 0)
 
 		for k := range v {
@@ -391,7 +391,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		return "type " + typeName, nil
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package
 		// Should be a package
 		t := datatypes.TypeOf(v)
 
@@ -498,7 +498,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 		return v, err
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package, and probably not allowed here.
 		key := util.GetString(args[1])
 		delete(v, key)
 
@@ -582,11 +582,6 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 			array[i] = 0.0
 		}
 
-	case map[string]interface{}:
-		for i := range array {
-			array[i] = map[string]interface{}{}
-		}
-
 	default:
 		fmt.Printf("DEBUG: v = %#v\n", kind)
 	}
@@ -641,7 +636,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return m.Reflect(), nil
 	}
 	// Is it an Ego package?
-	if m, ok := args[0].(map[string]interface{}); ok {
+	if m, ok := args[0].(map[string]interface{}); ok { // @tomcole should be package
 		// Make a list of the visible member names
 		memberList := []string{}
 
@@ -730,9 +725,7 @@ func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	result["system"] = bToMb(m.Sys)
 	result["gc"] = int(m.NumGC)
 
-	datatypes.SetMetadata(result, datatypes.TypeMDKey, datatypes.StructType)
-
-	return result, nil
+	return datatypes.NewStructFromMap(result), nil
 }
 
 func bToMb(b uint64) float64 {

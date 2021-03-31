@@ -23,26 +23,26 @@ const passwordPromptPrefix = "password~"
 // for things like the gremlin and rest systems.
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
-	_ = s.SetAlways("gremlin", map[string]interface{}{
+	_ = s.SetAlways("gremlin", map[string]interface{}{ // @tomcole should be package
 		"New":                   GremlinOpen,
 		datatypes.TypeMDKey:     datatypes.Package("gremlin"),
 		datatypes.ReadonlyMDKey: true,
 	})
 
-	_ = s.SetAlways("rest", map[string]interface{}{
+	_ = s.SetAlways("rest", map[string]interface{}{ // @tomcole should be package
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,
 		datatypes.TypeMDKey:     datatypes.Package("rest"),
 		datatypes.ReadonlyMDKey: true,
 	})
 
-	_ = s.SetAlways("db", map[string]interface{}{
+	_ = s.SetAlways("db", map[string]interface{}{ // @tomcole should be package
 		"New":                   DBNew,
 		datatypes.TypeMDKey:     datatypes.Package("db"),
 		datatypes.ReadonlyMDKey: true,
 	})
 
-	_ = s.SetAlways("tables", map[string]interface{}{
+	_ = s.SetAlways("tables", map[string]interface{}{ // @tomcole should be package
 		"New":                   TableNew,
 		datatypes.TypeMDKey:     datatypes.Package("tables"),
 		datatypes.ReadonlyMDKey: true,

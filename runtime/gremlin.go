@@ -97,7 +97,7 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		client, err = grammes.DialWithWebSocket(url)
 	}
 
-	return map[string]interface{}{
+	return map[string]interface{}{ // @tomcole should be a typed struct
 		"client":                client,
 		"Query":                 GremlinQuery,
 		"Map":                   GremlinMap,
@@ -373,7 +373,7 @@ func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, *errors.Eg
 		return nil, errors.New(errors.NoFunctionReceiver)
 	}
 
-	gc, ok := g.(map[string]interface{})
+	gc, ok := g.(map[string]interface{}) // @tomcole should be struct
 	if !ok {
 		return nil, errors.New(errors.InvalidGremlinClientError)
 	}

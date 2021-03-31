@@ -159,19 +159,19 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			// definition.
 			p, found := symbols.Get(d.Pkg)
 			if !found {
-				p = map[string]interface{}{}
+				p = map[string]interface{}{} // @tomcole should be package
 
 				ui.Debug(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
 			// Is this a value bound to the package, or a function?
 			if d.V != nil {
-				p.(map[string]interface{})[n] = d.V
+				p.(map[string]interface{})[n] = d.V // @tomcole should be package
 
 				_ = symbols.SetAlways(d.Pkg, p)
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
-				pm := p.(map[string]interface{})
+				pm := p.(map[string]interface{}) // @tomcole should be package
 				pm[n] = d.F
 				datatypes.SetMetadata(pm, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
 				datatypes.SetMetadata(pm, datatypes.ReadonlyMDKey, true)
@@ -254,7 +254,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
-		if p, ok := pkg.(map[string]interface{}); ok {
+		if p, ok := pkg.(map[string]interface{}); ok { // @tomcole should be package
 			p[fd.Name] = fd.F
 		}
 	}

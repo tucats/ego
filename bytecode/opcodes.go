@@ -87,7 +87,6 @@ const (
 	StoreGlobal
 	StoreIndex
 	StoreInto
-	StoreMetadata
 	StoreViaPointer
 	Struct
 	Sub
@@ -188,7 +187,6 @@ var instructionNames = map[OpcodeID]string{
 	StoreGlobal:        "StoreGlobal",
 	StoreIndex:         "StoreIndex",
 	StoreInto:          "StoreInto",
-	StoreMetadata:      "StoreMetadata",
 	StoreViaPointer:    "StoreViaPointer",
 	Struct:             "Struct",
 	Sub:                "Sub",
@@ -278,7 +276,6 @@ func initializeDispatch() {
 			StoreGlobal:        storeGlobalByteCode,
 			StoreIndex:         storeIndexByteCode,
 			StoreInto:          storeIntoByteCode,
-			StoreMetadata:      storeMetadataByteCode,
 			StoreViaPointer:    storeViaPointerByteCode,
 			Struct:             structByteCode,
 			Sub:                subtractByteCode,

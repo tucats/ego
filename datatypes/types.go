@@ -335,7 +335,7 @@ func TypeOf(i interface{}) Type {
 	case bool:
 		return BoolType
 
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package
 		// Is it a struct with an embedded type metadata item?
 		if t, ok := GetMetadata(v, TypeMDKey); ok {
 			if t, ok := t.(Type); ok {
@@ -361,7 +361,7 @@ func TypeOf(i interface{}) Type {
 	case *bool:
 		return Pointer(BoolType)
 
-	case *map[string]interface{}:
+	case *map[string]interface{}: // @tomcole should be package.
 		return Type{
 			name: "*struct",
 			kind: PointerKind,

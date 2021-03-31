@@ -85,8 +85,8 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	name := "test"
 
 	if m, ok := s.Get("T"); ok {
-		if structMap, ok := m.(map[string]interface{}); ok {
-			if nameString, ok := structMap["description"]; ok {
+		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
+			if nameString, ok := testStruct.Get("description"); ok {
 				name = util.GetString(nameString)
 			}
 		}
@@ -125,7 +125,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return true, nil
 }
 
-// TestIsType implements the T.assert() function.
+// TestIsType implements the T.type() function.
 func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
 		return nil, errors.New(errors.ArgumentCountError).In("IsType()")
@@ -135,8 +135,8 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	name := "test"
 
 	if m, ok := s.Get("T"); ok {
-		if structMap, ok := m.(map[string]interface{}); ok {
-			if nameString, ok := structMap["name"]; ok {
+		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
+			if nameString, ok := testStruct.Get("name"); ok {
 				name = util.GetString(nameString)
 			}
 		}
@@ -172,8 +172,8 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	name := "test"
 
 	if m, ok := s.Get("T"); ok {
-		if structMap, ok := m.(map[string]interface{}); ok {
-			if nameString, ok := structMap["description"]; ok {
+		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
+			if nameString, ok := testStruct.Get("description"); ok {
 				name = util.GetString(nameString)
 			}
 		}

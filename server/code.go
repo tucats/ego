@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -43,7 +44,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 
-	_ = symbolTable.SetAlways("_parms", args)
+	_ = symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(args))
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)

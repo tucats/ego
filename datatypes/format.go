@@ -61,6 +61,7 @@ func Format(element interface{}) string {
 	case float64:
 		return fmt.Sprintf("%v", v)
 
+	// @tomcole should be a package
 	case map[string]interface{}:
 		var b strings.Builder
 

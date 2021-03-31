@@ -173,6 +173,8 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		return datatypes.DeepCopy(structValue), nil
 	}
 
+	// @tomcole should we also handle maps and arrays here?
+
 	// Otherwise, make a deep copy of the item.
 	r := DeepCopy(args[0], MaxDeepCopyDepth)
 
@@ -191,7 +193,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	case string:
 	case float64:
 	case []interface{}:
-	case map[string]interface{}:
+	case map[string]interface{}: // @tomcole should be package
 		// Create the replica count if needed, and update it.
 		replica := 0
 
@@ -199,7 +201,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			replica = util.GetInt(replicaX) + 1
 		}
 
-		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ReplicaMDKey, replica)
+		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ReplicaMDKey, replica) // @tomcole should be package
 
 		dropList := []string{}
 
@@ -222,7 +224,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 		for _, name := range dropList {
-			delete(r.(map[string]interface{}), name)
+			delete(r.(map[string]interface{}), name) // @tomcole should be package
 		}
 
 	default:
@@ -287,8 +289,8 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case map[string]interface{}:
-		r := map[string]interface{}{}
+	case map[string]interface{}: // @tomcole should be package
+		r := map[string]interface{}{} // @tomcole should be package
 
 		for k, d := range v {
 			r[k] = DeepCopy(d, depth-1)
