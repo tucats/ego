@@ -200,7 +200,7 @@ func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(addr)
 }
 
-func derefByteCode(c *Context, i interface{}) *errors.EgoError {
+func deRefByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)

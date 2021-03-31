@@ -276,19 +276,19 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	// Need to convert the results from a slice to an actual array
 	this.SetAlways(rowCountFieldName, size)
-	r := make([]interface{}, size) // @tomcole this should be a proper array.
+	r := datatypes.NewArray(datatypes.InterfaceType, size)
 
 	if asStruct {
 		for i, v := range mapResult {
-			r[i] = datatypes.NewMapFromMap(v) // @tomcole this should convert the map to a structure
+			r.SetAlways(i, datatypes.NewStructFromMap(v))
 		}
 	} else {
 		for i, v := range arrayResult {
-			r[i] = v
+			r.SetAlways(i, v)
 		}
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewFromArray(datatypes.InterfaceType, r), err}}, err
+	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
 }
 
 // DBExecute executes a SQL statement, and returns the number of rows that were

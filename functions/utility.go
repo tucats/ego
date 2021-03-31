@@ -103,16 +103,8 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	case *datatypes.EgoMap:
 		return len(arg.Keys()), nil
 
-	case map[string]interface{}: // @tomcole should be package, and probably not allowed here.
-		keys := make([]string, 0)
-
-		for k := range arg {
-			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
-				keys = append(keys, k)
-			}
-		}
-
-		return len(keys), nil
+	case map[string]interface{}: // @tomcole should be package
+		return nil, errors.New(errors.InvalidTypeError)
 
 	case []interface{}:
 		return len(arg), nil
@@ -498,11 +490,8 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 		return v, err
 
-	case map[string]interface{}: // @tomcole should be package, and probably not allowed here.
-		key := util.GetString(args[1])
-		delete(v, key)
-
-		return v, nil
+	case map[string]interface{}: // @tomcole should be package
+		return nil, errors.New(errors.InvalidTypeError)
 
 	case *datatypes.EgoArray:
 		i := util.GetInt(args[1])

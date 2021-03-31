@@ -219,7 +219,7 @@ func initializeDispatch() {
 			Coerce:             coerceByteCode,
 			Constant:           constantByteCode,
 			Copy:               copyByteCode,
-			DeRef:              derefByteCode,
+			DeRef:              deRefByteCode,
 			Div:                divideByteCode,
 			Drop:               dropByteCode,
 			DropToMarker:       dropToMarkerByteCode,

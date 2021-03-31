@@ -68,7 +68,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
-	// Get the query parameters and store as a local varialble
+	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
 	parameterStruct := map[string]interface{}{}
 
@@ -134,7 +134,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// The endpoint might have trailing path stuff; if so we need to find
 	// the part of the path that is the actual endpoint, so we can locate
-	// the service program. Also, store awaay the full path, the endpoint,
+	// the service program. Also, store the full path, the endpoint,
 	// and any suffix that the service might want to process.
 	endpoint := findPath(sessionID, r.URL.Path)
 	pathSuffix := path[len(endpoint):]

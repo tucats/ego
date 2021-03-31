@@ -106,12 +106,6 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 		return found, err
 
-	case map[string]interface{}: // @tomcole should be package
-		key := util.GetString(args[1])
-		_, found := arg[key]
-
-		return found, nil
-
 	default:
 		v := util.GetString(args[0])
 		p := util.GetString(args[1])

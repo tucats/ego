@@ -164,10 +164,6 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		return err
 	}
 
-	// If there were updated types, let's make sure we have them now. @TOMCOLE this may not
-	// be needed as the Types structure is addressed by reference?
-	c.Types = cx.Types
-
 	// Generate the deferral invocations, if any, in reverse order
 	// that they were defined.
 	for i := len(cx.deferQueue) - 1; i >= 0; i = i - 1 {

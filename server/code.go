@@ -24,7 +24,6 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
 	// Create an empty symbol table and store the program arguments.
-	// @TOMCOLE Later this will need to parse the arguments from the URL
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	_ = symbolTable.SetAlways("__exec_mode", "server")
 

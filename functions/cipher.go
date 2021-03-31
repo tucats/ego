@@ -32,8 +32,8 @@ type Token struct {
 
 // Hash implements the cipher.hash() function. For an arbitrary string
 // value, it computes a crypotraphic hash of the value, and returns it
-// as a 32-character string containing the hexademical hash value. Hashes
-// are irreversable.
+// as a 32-character string containing the hexadecimal hash value. Hashes
+// are irreversible.
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	return util.Hash(util.GetString(args[0])), nil
 }
@@ -71,7 +71,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		reportErr = util.GetBool(args[1])
 	}
 
-	// Take the token value, and de-hexify it.
+	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if !errors.Nil(err) {
 		if reportErr {
@@ -125,7 +125,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var err error
 
-	// Take the token value, and de-hexify it.
+	// Take the token value, and decode the hex string.
 	b, err := hex.DecodeString(util.GetString(args[0]))
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
@@ -236,7 +236,7 @@ func getTokenKey() string {
 }
 
 // Random implements the cipher.Random() function which generates a random token
-// string value using the crypographic randum number generator.
+// string value using the cryptographic random number generator.
 func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	n := 32
 	if len(args) > 0 {

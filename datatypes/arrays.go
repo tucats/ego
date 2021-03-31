@@ -171,6 +171,43 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	return nil
 }
 
+func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
+	v := value
+
+	if a.immutable > 0 {
+		return
+	}
+
+	index := getInt(i)
+	if index < 0 || index >= len(a.data) {
+		return
+	}
+
+	// Address float/int issues before testing the type.
+	if a.valueType.kind == IntKind {
+		if x, ok := v.(float64); ok {
+			v = int(x)
+		}
+	}
+
+	if a.valueType.kind == FloatKind {
+		if x, ok := v.(int); ok {
+			v = float64(x)
+		} else if x, ok := v.(int32); ok {
+			v = float64(x)
+		} else if x, ok := v.(int64); ok {
+			v = float64(x)
+		}
+	}
+
+	// Now, ensure it's of the right type for this array.
+	if !IsBaseType(v, a.valueType) {
+		return
+	}
+
+	a.data[index] = v
+}
+
 func (a *EgoArray) TypeString() string {
 	return fmt.Sprintf("[]%s", a.valueType.String())
 }
