@@ -373,7 +373,7 @@ func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, *errors.Eg
 		return nil, errors.New(errors.NoFunctionReceiver)
 	}
 
-	gc, ok := g.(map[string]interface{}) // @tomcole should be struct
+	gc, ok := g.(map[string]interface{}) // @tomcole should be struct, when gremlin is updated to create type
 	if !ok {
 		return nil, errors.New(errors.InvalidGremlinClientError)
 	}

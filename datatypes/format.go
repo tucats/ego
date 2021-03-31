@@ -61,8 +61,7 @@ func Format(element interface{}) string {
 	case float64:
 		return fmt.Sprintf("%v", v)
 
-	// @tomcole should be a package
-	case map[string]interface{}:
+	case EgoPackage:
 		var b strings.Builder
 
 		// Make a list of the keys, ignoring hidden members whose name
@@ -76,7 +75,7 @@ func Format(element interface{}) string {
 		}
 
 		sort.Strings(keys)
-		b.WriteString("{")
+		b.WriteString("package{")
 
 		for n, k := range keys {
 			i := v[k]
@@ -92,23 +91,6 @@ func Format(element interface{}) string {
 		}
 
 		b.WriteString(" }")
-
-		return b.String()
-
-	case []interface{}:
-		var b strings.Builder
-
-		b.WriteRune('[')
-
-		for n, i := range v {
-			if n > 0 {
-				b.WriteString(", ")
-			}
-
-			b.WriteString(Format(i))
-		}
-
-		b.WriteRune(']')
 
 		return b.String()
 

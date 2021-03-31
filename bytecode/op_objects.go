@@ -52,32 +52,21 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.newError(errors.UnknownMemberError).Context(name)
 		}
 
-	// @tomcole should be a package
-	case map[string]interface{}:
+	case datatypes.EgoPackage:
 		tt := datatypes.TypeOf(mv)
-		isPackage := tt.IsType(datatypes.PackageType)
 
 		v, found = findMember(mv, name)
 		if !found {
 			// Okay, could it be a function based on the type of this object?
 			fv := tt.Function(name)
 			if fv == nil {
-				if isPackage {
-					return c.newError(errors.UnknownPackageMemberError).Context(name)
-				}
-
-				return c.newError(errors.UnknownMemberError).Context(name)
+				return c.newError(errors.UnknownPackageMemberError).Context(name)
 			}
 
 			v = fv
 		}
 
-		// Remember where we loaded this from unless it was a package name
-		if !isPackage {
-			c.lastStruct = m
-		} else {
-			c.lastStruct = nil
-		}
+		c.lastStruct = m
 
 	default:
 		// Is it a native type? If so, see if there is a function for it
@@ -100,8 +89,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-// @tomcole this should operate on a package type.
-func findMember(m map[string]interface{}, name string) (interface{}, bool) {
+func findMember(m datatypes.EgoPackage, name string) (interface{}, bool) {
 	if v, ok := m[name]; ok {
 		return v, true
 	}

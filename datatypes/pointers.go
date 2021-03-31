@@ -14,7 +14,7 @@ func AddressOf(v interface{}) (interface{}, *errors.EgoError) {
 		return &actual, nil
 	case float64:
 		return &actual, nil
-	case map[string]interface{}: // @tomcole should be package
+	case EgoPackage:
 		return &actual, nil
 	case *EgoStruct:
 		return &actual, nil
@@ -41,7 +41,7 @@ func Dereference(v interface{}) (interface{}, *errors.EgoError) {
 		return *actual, nil
 	case *float64:
 		return *actual, nil
-	case *map[string]interface{}: // @tomcole should be package
+	case *EgoPackage:
 		return *actual, nil
 	case **EgoMap:
 		return *actual, nil

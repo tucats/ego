@@ -111,10 +111,10 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		rangeStack:           make([]*Range, 0),
 		timerStack:           make([]time.Time, 0),
 	}
-	ctxp := &ctx
-	ctxp.SetByteCode(b)
+	contextPointer := &ctx
+	contextPointer.SetByteCode(b)
 
-	return ctxp
+	return contextPointer
 }
 
 // GetLine retrieves the current line number from the

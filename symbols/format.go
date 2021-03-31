@@ -65,7 +65,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 				continue
 			}
 
-		case map[string]interface{}: // @tomcole should be package
+		case datatypes.EgoPackage:
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
 				typeString = util.GetString(tsx)
 			}

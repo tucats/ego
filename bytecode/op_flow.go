@@ -470,8 +470,7 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 
 	v := c.thisStack[len(c.thisStack)-1]
 
-	// @tomcole Should be an ego package
-	if m, ok := v.value.(map[string]interface{}); ok {
+	if m, ok := v.value.(datatypes.EgoPackage); ok {
 		if s, ok := datatypes.GetMetadata(m, datatypes.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package) {

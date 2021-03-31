@@ -163,14 +163,14 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
-	syms := parentCtx.symbols
+	parentSymbols := parentCtx.symbols
 	err := parentCtx.newError(errors.InvalidFunctionCallError)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)
 
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
-	if fCode, ok := syms.Get(fName); ok {
+	if fCode, ok := parentSymbols.Get(fName); ok {
 		if bc, ok := fCode.(*ByteCode); ok {
 			if true {
 				ui.DebugMode = true
@@ -190,10 +190,9 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			// Only the root symbol table is thread-safe, so each go routine is isolated from the
 			// symbol scope it was run from. But we need the function definitions, etc. so copy the
 			// function values from the previous symbol table.
-			funcSyms := symbols.NewChildSymbolTable("Go routine "+fName, syms)
-			funcSyms.Merge(syms)
+			functionSymbols := symbols.NewChildSymbolTable("Go routine "+fName, parentSymbols)
 
-			ctx := NewContext(funcSyms, callCode)
+			ctx := NewContext(functionSymbols, callCode)
 			err = parentCtx.newError(ctx.Run())
 
 			waitGroup.Done()

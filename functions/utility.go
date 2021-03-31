@@ -103,7 +103,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	case *datatypes.EgoMap:
 		return len(arg.Keys()), nil
 
-	case map[string]interface{}: // @tomcole should be package
+	case datatypes.EgoPackage:
 		return nil, errors.New(errors.InvalidTypeError)
 
 	case []interface{}:
@@ -169,7 +169,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	case *datatypes.EgoStruct:
 		return v.FieldNamesArray(), nil
 
-	case map[string]interface{}: // @tomcole should be package
+	case datatypes.EgoPackage:
 		keys := datatypes.NewArray(datatypes.StringType, 0)
 
 		for k := range v {
@@ -383,8 +383,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		return "type " + typeName, nil
 
-	case map[string]interface{}: // @tomcole should be package
-		// Should be a package
+	case datatypes.EgoPackage:
 		t := datatypes.TypeOf(v)
 
 		if t.IsTypeDefinition() {
@@ -489,9 +488,6 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		_, err := v.Delete(args[1])
 
 		return v, err
-
-	case map[string]interface{}: // @tomcole should be package
-		return nil, errors.New(errors.InvalidTypeError)
 
 	case *datatypes.EgoArray:
 		i := util.GetInt(args[1])
@@ -625,7 +621,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return m.Reflect(), nil
 	}
 	// Is it an Ego package?
-	if m, ok := args[0].(map[string]interface{}); ok { // @tomcole should be package
+	if m, ok := args[0].(datatypes.EgoPackage); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
 

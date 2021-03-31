@@ -135,6 +135,7 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 // of a structure. It changes no data, only updates the type value.
 func (s *EgoStruct) AsType(t Type) *EgoStruct {
 	s.typeDef = t
+	s.typeName = t.name
 
 	return s
 }
@@ -269,6 +270,10 @@ func (s EgoStruct) String() string {
 
 	keys := make([]string, 0)
 	b := strings.Builder{}
+
+	if s.typeName != "" {
+		b.WriteString(s.typeName)
+	}
 
 	b.WriteString("{ ")
 

@@ -33,16 +33,14 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Create an initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
-	// @tomcole should be a package
-	pkg := map[string]interface{}{}
+	pkg := datatypes.EgoPackage{}
 
 	if v, ok := c.symbols.Root().Get(name); ok {
 		switch actual := v.(type) {
 		case *datatypes.EgoStruct:
 			fmt.Printf("DEBUG: map/struct confusion: pushPackageByteCode()")
 
-		// @tomcole should be a package
-		case map[string]interface{}:
+		case datatypes.EgoPackage:
 			pkg = actual
 
 			if v, ok := datatypes.GetMetadata(actual, datatypes.SymbolsMDKey); ok {
@@ -88,8 +86,10 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 		fmt.Printf("DEBUG: map/struct confusion: popPackageByteCode()")
 	}
 
-	// @tomcole should be a package
-	pkg, _ := pkgValue.(map[string]interface{})
+	pkg, _ := pkgValue.(datatypes.EgoPackage)
+	if pkg == nil {
+		pkg = datatypes.EgoPackage{}
+	}
 
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
@@ -113,7 +113,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Mark the active symbol table we just used as belonging to a package.
 	c.symbols.Package = pkgdef.name
 
-	// Define the attribute of the struct as a package.
+	// Define the attribute of the package.
 	datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
 	datatypes.SetMetadata(pkg, datatypes.StaticMDKey, true)
 	datatypes.SetMetadata(pkg, datatypes.SymbolsMDKey, c.symbols)

@@ -26,72 +26,20 @@ const (
 
 // For a given struct type, set it's type value in the metadata. If the
 // item is not a struct map then do no work.
-// @tomcole should be package.
-func SetType(m map[string]interface{}, t Type) {
+func SetType(m EgoPackage, t Type) {
 	SetMetadata(m, TypeMDKey, t)
 }
 
 // For a given structure, set a key/value in the metadata. The
 // metadata member and it's map are created if necessary.
-func SetMetadata(object interface{}, key string, v interface{}) bool {
-	if m, ok := object.(*EgoStruct); ok {
-		switch key {
-		case ReadonlyMDKey:
-			m.readonly = GetBool(v)
-
-		case StaticMDKey:
-			m.static = GetBool(v)
-
-		case ReplicaMDKey:
-			m.replica = GetInt(v)
-
-		default:
-			return false
-		}
-
-		return true
-	}
-
-	// @tomcole This is/should be a package.
-	if m, ok := object.(map[string]interface{}); ok {
-		if !ok {
-			return false
-		}
-
-		m[key] = v
-	}
-
-	return true
+func SetMetadata(m EgoPackage, key string, v interface{}) {
+	m[key] = v
 }
 
 // For a given struct, fetch a metadata value by key. The boolean flag
 // indicates if the value was found or has to be created.
-func GetMetadata(value interface{}, key string) (interface{}, bool) {
-	if s, ok := value.(*EgoStruct); ok {
-		switch key {
-		case TypeMDKey:
-			return s.typeDef, true
+func GetMetadata(value EgoPackage, key string) (interface{}, bool) {
+	v, ok := value[key]
 
-		case ReadonlyMDKey:
-			return s.readonly, true
-
-		case ReplicaMDKey:
-			return s.replica, true
-
-		case StaticMDKey:
-			return s.static, true
-
-		default:
-			return nil, false
-		}
-	}
-
-	// @tomcole This is a package.
-	if m, ok := value.(map[string]interface{}); ok {
-		v, ok := m[key]
-
-		return v, ok
-	}
-
-	return nil, false
+	return v, ok
 }

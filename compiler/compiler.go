@@ -45,10 +45,9 @@ type Loop struct {
 }
 
 // PackageDictionary is a list of packages each with a function dictionary.
-// @tomcole should be a map of package types.
 type PackageDictionary struct {
 	Mutex   sync.Mutex
-	Package map[string]map[string]interface{}
+	Package map[string]datatypes.EgoPackage
 }
 
 // Compiler is a structure defining what we know about the compilation.
@@ -85,7 +84,7 @@ func New(name string) *Compiler {
 		Types:      map[string]datatypes.Type{},
 		packages: PackageDictionary{
 			Mutex:   sync.Mutex{},
-			Package: map[string]map[string]interface{}{}, // @tomcole should be package type
+			Package: map[string]datatypes.EgoPackage{},
 		},
 		LowercaseIdentifiers: false,
 		extensionsEnabled:    persistence.GetBool(ExtensionsSetting),
@@ -265,8 +264,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 
 	fd, found := c.packages.Package[pkgname]
 	if !found {
-		// @tomcole Should be a package
-		fd = map[string]interface{}{}
+		fd = datatypes.EgoPackage{}
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
@@ -292,8 +290,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 
 	fd, found := c.packages.Package[pkgname]
 	if fd == nil || !found {
-		// @tomcole should be a package type.
-		fd = map[string]interface{}{}
+		fd = datatypes.EgoPackage{}
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
@@ -336,8 +333,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 			continue
 		}
 
-		// @tomcole should be a package
-		m := map[string]interface{}{}
+		m := datatypes.EgoPackage{}
 
 		for k, v := range packageDictionary {
 			// Do we already have a package of this name defined?
@@ -458,14 +454,14 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 
 	packages := PackageDictionary{
 		Mutex:   sync.Mutex{},
-		Package: map[string]map[string]interface{}{}, // @tomcole should be a package
+		Package: map[string]datatypes.EgoPackage{},
 	}
 
 	c.packages.Mutex.Lock()
 	defer c.packages.Mutex.Unlock()
 
 	for n, m := range c.packages.Package {
-		packData := map[string]interface{}{} // @tomcole should be a package
+		packData := datatypes.EgoPackage{}
 		for k, v := range m {
 			packData[k] = v
 		}

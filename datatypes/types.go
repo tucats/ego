@@ -1,6 +1,7 @@
 package datatypes
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -49,6 +50,8 @@ type Field struct {
 	Name string
 	Type Type
 }
+
+type EgoPackage map[string]interface{}
 
 // Return a string containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
@@ -335,19 +338,16 @@ func TypeOf(i interface{}) Type {
 	case bool:
 		return BoolType
 
-	case map[string]interface{}: // @tomcole should be package
-		// Is it a struct with an embedded type metadata item?
+	case EgoPackage:
 		if t, ok := GetMetadata(v, TypeMDKey); ok {
 			if t, ok := t.(Type); ok {
 				return t
 			}
 		}
 
-		// Nope, apparently just an anonymous struct
-		return Type{
-			name: "struct",
-			kind: StructKind,
-		}
+		fmt.Printf("DEBUG: Getting type of a package with no type: %#v\n", v)
+
+		return UndefinedType
 
 	case *int:
 		return Pointer(IntType)
@@ -361,15 +361,8 @@ func TypeOf(i interface{}) Type {
 	case *bool:
 		return Pointer(BoolType)
 
-	case *map[string]interface{}: // @tomcole should be package.
-		return Type{
-			name: "*struct",
-			kind: PointerKind,
-			valueType: &Type{
-				name: "struct",
-				kind: StructKind,
-			},
-		}
+	case *EgoPackage:
+		return Pointer(TypeOf(*v))
 
 	case *EgoMap:
 		return v.Type()

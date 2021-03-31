@@ -32,7 +32,7 @@ func Sanitize(v interface{}) interface{} {
 
 		return result
 
-	case map[string]interface{}: // @tomcole should be package
+	case EgoPackage:
 		result := map[string]interface{}{}
 
 		for key, value := range v {

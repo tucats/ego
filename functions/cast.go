@@ -193,7 +193,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	case string:
 	case float64:
 	case []interface{}:
-	case map[string]interface{}: // @tomcole should be package
+	case datatypes.EgoPackage:
 		// Create the replica count if needed, and update it.
 		replica := 0
 
@@ -201,7 +201,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			replica = util.GetInt(replicaX) + 1
 		}
 
-		datatypes.SetMetadata(r.(map[string]interface{}), datatypes.ReplicaMDKey, replica) // @tomcole should be package
+		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
 
 		dropList := []string{}
 
@@ -224,7 +224,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 		for _, name := range dropList {
-			delete(r.(map[string]interface{}), name) // @tomcole should be package
+			delete(v, name)
 		}
 
 	default:
@@ -289,8 +289,8 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case map[string]interface{}: // @tomcole should be package
-		r := map[string]interface{}{} // @tomcole should be package
+	case datatypes.EgoPackage:
+		r := datatypes.EgoPackage{}
 
 		for k, d := range v {
 			r[k] = DeepCopy(d, depth-1)

@@ -69,6 +69,12 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			target.SetSize(len(m))
 
 			for k, v := range m {
+				if target.ValueType().Kind() == datatypes.StructKind {
+					if mm, ok := v.(map[string]interface{}); ok {
+						v = datatypes.NewStructFromMap(mm)
+					}
+				}
+
 				err = target.Set(k, v)
 				if !errors.Nil(err) {
 					return nil, errors.New(err)
@@ -96,18 +102,10 @@ func Seal(i interface{}) interface{} {
 
 		return actualValue
 
-	case map[string]interface{}:
-		for k, v := range actualValue {
-			actualValue[k] = Seal(v)
-		}
-
-		datatypes.SetMetadata(actualValue, datatypes.StaticMDKey, true)
-
-		return actualValue
-
-	case []interface{}:
-		for k, v := range actualValue {
-			actualValue[k] = Seal(v)
+	case *datatypes.EgoArray:
+		for i := 0; i <= actualValue.Len(); i++ {
+			element, _ := actualValue.Get(i)
+			actualValue.SetAlways(i, Seal(element))
 		}
 
 		return actualValue

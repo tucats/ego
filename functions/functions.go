@@ -157,25 +157,28 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			// Does package already exist? IF not, make it. The package
 			// is just a struct containing where each member is a function
 			// definition.
-			p, found := symbols.Get(d.Pkg)
-			if !found {
-				p = map[string]interface{}{} // @tomcole should be package
 
+			pkg := datatypes.EgoPackage{}
+
+			if p, found := symbols.Get(d.Pkg); found {
+				if pp, ok := p.(datatypes.EgoPackage); ok {
+					pkg = pp
+				}
+			} else {
 				ui.Debug(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
 			// Is this a value bound to the package, or a function?
 			if d.V != nil {
-				p.(map[string]interface{})[n] = d.V // @tomcole should be package
+				pkg[n] = d.V
 
-				_ = symbols.SetAlways(d.Pkg, p)
+				_ = symbols.SetAlways(d.Pkg, pkg)
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
-				pm := p.(map[string]interface{}) // @tomcole should be package
-				pm[n] = d.F
-				datatypes.SetMetadata(pm, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
-				datatypes.SetMetadata(pm, datatypes.ReadonlyMDKey, true)
-				_ = symbols.SetAlways(d.Pkg, pm)
+				pkg[n] = d.F
+				datatypes.SetMetadata(pkg, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
+				datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
+				_ = symbols.SetAlways(d.Pkg, pkg)
 
 				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
@@ -254,7 +257,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
-		if p, ok := pkg.(map[string]interface{}); ok { // @tomcole should be package
+		if p, ok := pkg.(datatypes.EgoPackage); ok {
 			p[fd.Name] = fd.F
 		}
 	}

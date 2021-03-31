@@ -155,6 +155,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
 	typeInfo := datatypes.StructType
+	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the array.
@@ -179,6 +180,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			if t, ok := value.(datatypes.Type); ok {
 				typeInfo = t
 				model = t.InstanceOf(&t)
+				typeName = t.Name()
 			} else {
 				fmt.Printf("DEBUG: Unexpected type value: %v\n", value)
 			}
@@ -187,32 +189,10 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	// If we are in static mode, or this is a non-empty definition,
-	// mark the structure as having static members. That means you
-	// cannot modify the field names or add/delete fields.
-	if c.Static || count > 0 {
-		datatypes.SetMetadata(m, datatypes.StaticMDKey, true)
-	}
-
-	// Mark this as replica 0, which means this could be used
-	// as a type.
-	datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 0)
-
-	// If this has a custom type, validate the fields against
-	// the fields in the type model. The type name must be set
-	// in the metadata, and the type object (of the same name)
-	// is located in the symbol table (previously created by a
-	// type statement).
-	datatypes.SetMetadata(m, datatypes.TypeMDKey, typeInfo)
-
 	if model != nil {
 		switch model := model.(type) {
 		case *datatypes.EgoStruct:
-			if replica, ok := datatypes.GetMetadata(model, datatypes.ReadonlyMDKey); ok {
-				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, util.GetInt(replica)+1)
-			} else {
-				datatypes.SetMetadata(m, datatypes.ReplicaMDKey, 1)
-			}
+			model.IsReplica()
 
 			// Check all the fields in the new value to ensure they
 			// are valid.
@@ -252,12 +232,23 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		for _, name := range fields {
 			_ = t.DefineField(name, datatypes.TypeOf(m[name]))
 		}
-
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, t)
 	}
 
 	// Put the newly created instance of a struct on the stack.
 	structure := datatypes.NewStructFromMap(m)
+
+	if typeName != "" {
+		structure.AsType(typeInfo)
+	}
+	// If we are in static mode, or this is a non-empty definition,
+	// mark the structure as having static members. That means you
+	// cannot modify the field names or add/delete fields.
+	if c.Static || count > 0 {
+		structure.SetStatic(true)
+	}
+
+	// Mark this as replica 0, which means this could be used
+	// as a type.
 
 	return c.stackPush(structure)
 }
