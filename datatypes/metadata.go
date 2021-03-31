@@ -1,20 +1,27 @@
 package datatypes
 
-import "fmt"
-
 // Common metadata keys.
 const (
-	MetadataKey = "__metadata"
+	MetadataPrefix = "__"
 
-	BasetypeMDKey     = "basetype"
-	ElementTypesMDKey = "elements"
-	MembersMDKey      = "members"
-	ReplicaMDKey      = "replica"
-	ReadonlyMDKey     = "readonly"
-	SizeMDKey         = "size"
-	StaticMDKey       = "static"
-	SymbolsMDKey      = "symbols"
-	TypeMDKey         = "type"
+	BasetypeMDName    = "basetype"
+	BasetypeMDKey     = MetadataPrefix + BasetypeMDName
+	ElementTypesName  = "elements"
+	ElementTypesMDKey = MetadataPrefix + ElementTypesName
+	MembersMDName     = "members"
+	MembersMDKey      = MetadataPrefix + MembersMDName
+	ReplicaMDName     = "replica"
+	ReplicaMDKey      = MetadataPrefix + ReplicaMDName
+	ReadonlyMDName    = "readonly"
+	ReadonlyMDKey     = MetadataPrefix + ReadonlyMDName
+	SizeMDName        = "size"
+	SizeMDKey         = MetadataPrefix + SizeMDName
+	StaticMDName      = "static"
+	StaticMDKey       = MetadataPrefix + StaticMDName
+	SymbolsMDName     = "symbols"
+	SymbolsMDKey      = MetadataPrefix + SymbolsMDName
+	TypeMDName        = "type"
+	TypeMDKey         = MetadataPrefix + TypeMDName
 )
 
 // For a given struct type, set it's type value in the metadata. If the
@@ -44,28 +51,13 @@ func SetMetadata(object interface{}, key string, v interface{}) bool {
 		return true
 	}
 
+	// This is/should be a package.
 	if m, ok := object.(map[string]interface{}); ok {
-		// Debugging check. We require that "type" be a Type value
-		if key == TypeMDKey {
-			if _, ok := v.(Type); !ok {
-				fmt.Printf("DEBUG: Storing type other than Type: %v\n", v)
-			}
-		}
-
-		metadataValue, ok := m[MetadataKey]
-		if !ok {
-			m[MetadataKey] = map[string]interface{}{key: v}
-
-			return true
-		}
-
-		metadataMap, ok := metadataValue.(map[string]interface{})
 		if !ok {
 			return false
 		}
 
-		metadataMap[key] = v
-		m[MetadataKey] = metadataMap
+		m[key] = v
 	}
 
 	return true
@@ -93,21 +85,11 @@ func GetMetadata(value interface{}, key string) (interface{}, bool) {
 		}
 	}
 
+	// This is a package.
 	if m, ok := value.(map[string]interface{}); ok {
-		if md, ok := m[MetadataKey]; ok {
-			if mdx, ok := md.(map[string]interface{}); ok {
-				v, ok := mdx[key]
+		v, ok := m[key]
 
-				// Debugging check.
-				if ok && key == TypeMDKey {
-					if _, ok := v.(Type); !ok {
-						fmt.Printf("DEBUG: Retrieving type other than Type: %v\n", v)
-					}
-				}
-
-				return v, ok
-			}
-		}
+		return v, ok
 	}
 
 	return nil, false

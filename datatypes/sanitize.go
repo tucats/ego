@@ -21,7 +21,7 @@ func Sanitize(v interface{}) interface{} {
 
 		for _, key := range keys {
 			if keyString, ok := key.(string); ok {
-				if strings.HasPrefix(keyString, "__") {
+				if strings.HasPrefix(keyString, MetadataPrefix) {
 					continue
 				}
 			}
@@ -36,7 +36,7 @@ func Sanitize(v interface{}) interface{} {
 		result := map[string]interface{}{}
 
 		for key, value := range v {
-			if !strings.HasPrefix(key, "__") {
+			if !strings.HasPrefix(key, MetadataPrefix) {
 				result[key] = Sanitize(value)
 			}
 		}

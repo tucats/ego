@@ -2,7 +2,6 @@ package symbols
 
 import (
 	"github.com/google/uuid"
-	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 )
 
@@ -13,20 +12,12 @@ var rootNames = map[string]int{
 	"_author":    0,
 	"_copyright": 1,
 	"_session":   2,
-	"_config":    3,
 }
 
 var rootBaseValues = []interface{}{
 	"Tom Cole",
 	"(c) Copyright 2020, 2021",
 	uuid.NewString(),
-	map[string]interface{}{
-		"disassemble": false,
-		"trace":       false,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey: "config",
-		},
-	},
 }
 
 // This is a list of the values that are initially stored in the

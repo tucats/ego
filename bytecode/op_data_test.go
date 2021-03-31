@@ -26,7 +26,7 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member incomplete test",
 			arg:   2,
-			stack: []interface{}{typeDef, "__type", true, "active"},
+			stack: []interface{}{typeDef, datatypes.TypeMDKey, true, "active"},
 			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,
@@ -56,7 +56,7 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member invalid static test",
 			arg:   3,
-			stack: []interface{}{typeDef, "__type", true, "invalid", 123, "test"},
+			stack: []interface{}{typeDef, datatypes.TypeMDKey, true, "invalid", 123, "test"},
 			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,

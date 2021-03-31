@@ -107,7 +107,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		keys := make([]string, 0)
 
 		for k := range arg {
-			if !strings.HasPrefix(k, "__") {
+			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
 				keys = append(keys, k)
 			}
 		}
@@ -181,7 +181,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		keys := datatypes.NewArray(datatypes.StringType, 0)
 
 		for k := range v {
-			if !strings.HasPrefix(k, "__") {
+			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
 				keys.Append(k)
 			}
 		}
@@ -391,23 +391,8 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		return "type " + typeName, nil
 
-	case []interface{}:
-		kind := datatypes.UndefinedType
-
-		for _, n := range v {
-			k2 := datatypes.TypeOf(n)
-			if !kind.IsType(k2) {
-				if kind.IsUndefined() {
-					kind = k2
-				} else {
-					kind = datatypes.UndefinedType
-				}
-			}
-		}
-
-		return kind.String(), nil
-
 	case map[string]interface{}:
+		// Should be a package
 		t := datatypes.TypeOf(v)
 
 		if t.IsTypeDefinition() {
@@ -621,8 +606,8 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
 		return datatypes.NewStructFromMap(map[string]interface{}{
-			datatypes.TypeMDKey:     "builtin",
-			datatypes.BasetypeMDKey: "builtin " + name,
+			datatypes.TypeMDName:     "builtin",
+			datatypes.BasetypeMDName: "builtin " + name,
 		}), nil
 	}
 
@@ -641,8 +626,8 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 				}
 
 				return datatypes.NewStructFromMap(map[string]interface{}{
-					datatypes.TypeMDKey:     "func",
-					datatypes.BasetypeMDKey: "func " + name,
+					datatypes.TypeMDName:     "func",
+					datatypes.BasetypeMDName: "func " + name,
 				}), nil
 			}
 		}
@@ -661,7 +646,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		memberList := []string{}
 
 		for k := range m {
-			if !strings.HasPrefix(k, "__") {
+			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
 				memberList = append(memberList, k)
 			}
 		}
@@ -670,52 +655,26 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		members := datatypes.NewFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
 
 		result := map[string]interface{}{}
+		result[datatypes.MembersMDName] = members
+		result[datatypes.TypeMDName] = "package"
+		result["native"] = false
 
-		metadata := m[datatypes.MetadataKey]
-		if metadata == nil {
-			result = map[string]interface{}{
-				datatypes.MembersMDKey:  members,
-				datatypes.TypeMDKey:     "struct",
-				"native":                false,
-				datatypes.BasetypeMDKey: "map",
-			}
-		} else {
-			if mm, ok := metadata.(map[string]interface{}); ok {
-				result[datatypes.MembersMDKey] = members
-				result[datatypes.BasetypeMDKey] = "map"
-				result[datatypes.TypeMDKey] = "struct"
-				result["native"] = false
-				result["basetype"] = "package"
-
-				// If there's a Type designation, convert it to string format.
-				if t, ok := mm[datatypes.TypeMDKey].(datatypes.Type); ok {
-					result["type"] = t.TypeString()
-				}
-			}
+		t := datatypes.TypeOf(m)
+		if t.IsTypeDefinition() {
+			result[datatypes.TypeMDName] = t.Name()
+			result[datatypes.BasetypeMDName] = "package"
 		}
 
 		return datatypes.NewStructFromMap(result), nil
-	}
-
-	// Is it an Ego map datatype?
-	if m, ok := args[0].(*datatypes.EgoMap); ok {
-		// Make a list of the visible member names
-		result := map[string]interface{}{
-			datatypes.SizeMDKey:     len(m.Keys()),
-			datatypes.TypeMDKey:     m.TypeString(),
-			datatypes.BasetypeMDKey: "map[interface{}]interface{}",
-		}
-
-		return result, nil
 	}
 
 	// Is it an Ego array datatype?
 	if m, ok := args[0].(*datatypes.EgoArray); ok {
 		// Make a list of the visible member names
 		result := map[string]interface{}{
-			datatypes.SizeMDKey:     m.Len(),
-			datatypes.TypeMDKey:     m.TypeString(),
-			datatypes.BasetypeMDKey: "[]interface{}",
+			datatypes.SizeMDName:     m.Len(),
+			datatypes.TypeMDName:     m.TypeString(),
+			datatypes.BasetypeMDName: "[]interface{}",
 		}
 
 		return datatypes.NewStructFromMap(result), nil
@@ -728,46 +687,26 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			text := datatypes.GetString(e.GetContext())
 
 			return datatypes.NewStructFromMap(map[string]interface{}{
-				datatypes.TypeMDKey:     "error",
-				datatypes.BasetypeMDKey: "error",
-				"error":                 wrappedError.Error(),
-				"text":                  text,
+				datatypes.TypeMDName:     "error",
+				datatypes.BasetypeMDName: "error",
+				"error":                  wrappedError.Error(),
+				"text":                   text,
 			}), nil
 		}
 
 		return datatypes.NewStructFromMap(map[string]interface{}{
-			datatypes.TypeMDKey:     "error",
-			datatypes.BasetypeMDKey: "error",
-			"error":                 wrappedError.Error(),
-			"text":                  e.Error(),
+			datatypes.TypeMDName:     "error",
+			datatypes.BasetypeMDName: "error",
+			"error":                  wrappedError.Error(),
+			"text":                   e.Error(),
 		}), nil
 	}
 
 	typeString, err := Type(s, args)
 	if errors.Nil(err) {
 		result := map[string]interface{}{
-			datatypes.TypeMDKey:     typeString,
-			datatypes.BasetypeMDKey: typeString,
-		}
-		if array, ok := args[0].([]interface{}); ok {
-			result[datatypes.SizeMDKey] = len(array)
-			types := "nil"
-
-			for _, a := range array {
-				ts, _ := Type(s, []interface{}{a})
-				tsx := util.GetString(ts)
-
-				if types == "nil" {
-					types = tsx
-				} else if types != tsx {
-					types = "mixed"
-
-					break
-				}
-			}
-
-			result[datatypes.BasetypeMDKey] = "array"
-			result[datatypes.ElementTypesMDKey] = types
+			datatypes.TypeMDName:     typeString,
+			datatypes.BasetypeMDName: typeString,
 		}
 
 		return datatypes.NewStructFromMap(result), nil

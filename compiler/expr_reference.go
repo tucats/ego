@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -29,7 +30,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			colon := c.t.Peek(3)
 
 			if tokenizer.IsSymbol(name) && colon == ":" {
-				c.b.Emit(bc.Push, "__type")
+				c.b.Emit(bc.Push, datatypes.TypeMDKey)
 
 				err := c.expressionAtom()
 				if !errors.Nil(err) {
@@ -80,7 +81,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			} else {
 				// Is it a generator for a type?
 				if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
-					c.b.Emit(bytecode.Push, "__type")
+					c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 					err := c.expressionAtom()
 					if !errors.Nil(err) {

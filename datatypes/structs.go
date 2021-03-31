@@ -86,8 +86,9 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 
 	fields := map[string]interface{}{}
 
+	// Copy all the map items except any metadata items.
 	for k, v := range m {
-		if k != MetadataKey {
+		if !strings.HasPrefix(k, MetadataPrefix) {
 			fields[k] = v
 		}
 	}
@@ -171,8 +172,10 @@ func (s EgoStruct) ToMap() map[string]interface{} {
 
 // Store a value in the structure under the given name. This ignores type safety,
 // static, or readonly attributes, so be VERY sure the value is the right type!
-func (s *EgoStruct) SetAlways(name string, value interface{}) {
+func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
 	s.fields[name] = value
+
+	return s
 }
 
 func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
@@ -226,7 +229,7 @@ func (s EgoStruct) FieldNames() []string {
 	keys := make([]string, 0)
 
 	for k := range s.fields {
-		if !strings.HasPrefix(k, "__") {
+		if !strings.HasPrefix(k, MetadataPrefix) {
 			keys = append(keys, k)
 		}
 	}
@@ -270,7 +273,7 @@ func (s EgoStruct) String() string {
 	b.WriteString("{ ")
 
 	for k := range s.fields {
-		if !strings.HasPrefix(k, "__") {
+		if !strings.HasPrefix(k, MetadataPrefix) {
 			keys = append(keys, k)
 		}
 	}

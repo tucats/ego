@@ -4,8 +4,7 @@
 {
     p := reflect(strings)
 
-    @assert p.basetype == "package"
-    @assert p.type == "strings"
+    @assert p.type == "package"
     @assert index(p.members, "Camel") > -1
     @assert p.native == false
 }

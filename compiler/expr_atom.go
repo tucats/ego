@@ -55,17 +55,6 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return nil
 	}
 
-	// Is an interface?
-	if t == "interface{}" {
-		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, map[string]interface{}{
-			datatypes.MetadataKey: map[string]interface{}{
-				datatypes.TypeMDKey: "interface{}",
-			}})
-
-		return nil
-	}
-
 	// Is an empty struct?
 	if t == "{}" {
 		c.t.Advance(1)

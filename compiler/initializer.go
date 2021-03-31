@@ -63,7 +63,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 		}
 
 		c.b.Emit(bytecode.Push, t)
-		c.b.Emit(bytecode.Push, "__type")
+		c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 		c.b.Emit(bytecode.Struct, count+1)
 
 		return nil

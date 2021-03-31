@@ -264,11 +264,10 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 
 	fd, found := c.packages.Package[pkgname]
 	if !found {
+		// Should be a package
 		fd = map[string]interface{}{}
-		fd[datatypes.MetadataKey] = map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.Package(pkgname),
-			datatypes.ReadonlyMDKey: true,
-		}
+		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
+		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
 
 	if _, found := fd[name]; found {
@@ -324,7 +323,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 
 	for packageName, packageDictionary := range c.packages.Package {
 		// Skip over any metadata
-		if strings.HasPrefix(packageName, "__") {
+		if strings.HasPrefix(packageName, datatypes.MetadataPrefix) {
 			continue
 		}
 

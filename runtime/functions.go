@@ -24,33 +24,28 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
 	_ = s.SetAlways("gremlin", map[string]interface{}{
-		"New": GremlinOpen,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.Package("gremlin"),
-			datatypes.ReadonlyMDKey: true,
-		},
+		"New":                   GremlinOpen,
+		datatypes.TypeMDKey:     datatypes.Package("gremlin"),
+		datatypes.ReadonlyMDKey: true,
 	})
+
 	_ = s.SetAlways("rest", map[string]interface{}{
-		"New":    RestNew,
-		"Status": RestStatusMessage,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.Package("rest"),
-			datatypes.ReadonlyMDKey: true,
-		},
+		"New":                   RestNew,
+		"Status":                RestStatusMessage,
+		datatypes.TypeMDKey:     datatypes.Package("rest"),
+		datatypes.ReadonlyMDKey: true,
 	})
+
 	_ = s.SetAlways("db", map[string]interface{}{
-		"New": DBNew,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.Package("db"),
-			datatypes.ReadonlyMDKey: true,
-		},
+		"New":                   DBNew,
+		datatypes.TypeMDKey:     datatypes.Package("db"),
+		datatypes.ReadonlyMDKey: true,
 	})
+
 	_ = s.SetAlways("tables", map[string]interface{}{
-		"New": TableNew,
-		datatypes.MetadataKey: map[string]interface{}{
-			datatypes.TypeMDKey:     datatypes.Package("tables"),
-			datatypes.ReadonlyMDKey: true,
-		},
+		"New":                   TableNew,
+		datatypes.TypeMDKey:     datatypes.Package("tables"),
+		datatypes.ReadonlyMDKey: true,
 	})
 
 	// Add the sort.Slice function, which must live outside

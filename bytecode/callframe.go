@@ -84,18 +84,19 @@ func (c *Context) callFramePop() *errors.EgoError {
 	// Before we toss away this, check to see if there are package symbols
 	// that need updating in the package object.
 	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
-		pkgsyms := c.symbols.Parent
-		pkgname := c.symbols.Parent.Package
+		packageSymbols := c.symbols.Parent
+		packageName := c.symbols.Parent.Package
 
-		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
+		if pkg, ok := c.symbols.Root().Get(packageName); ok {
 			if _, ok := pkg.(*datatypes.EgoStruct); ok {
 				fmt.Printf("DEBUG: map/struct confusion: callFramePop()")
 			}
 
+			// should be an ego package type
 			if m, ok := pkg.(map[string]interface{}); ok {
-				for k, v := range pkgsyms.Symbols {
+				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {
-						m[k] = pkgsyms.GetValue(v)
+						m[k] = packageSymbols.GetValue(v)
 					}
 				}
 			}

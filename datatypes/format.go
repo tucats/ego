@@ -65,11 +65,11 @@ func Format(element interface{}) string {
 		var b strings.Builder
 
 		// Make a list of the keys, ignoring hidden members whose name
-		// starts with "__"
+		// starts with datatypes.MetadataPrefix
 		keys := make([]string, 0)
 
 		for k := range v {
-			if len(k) < 2 || k[0:2] != "__" {
+			if len(k) < 2 || k[0:2] != MetadataPrefix {
 				keys = append(keys, k)
 			}
 		}

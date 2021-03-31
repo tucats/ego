@@ -171,10 +171,11 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 				_ = symbols.SetAlways(d.Pkg, p)
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
-				p.(map[string]interface{})[n] = d.F
-				datatypes.SetMetadata(p.(map[string]interface{}), datatypes.TypeMDKey, datatypes.Package(d.Pkg))
-				datatypes.SetMetadata(p.(map[string]interface{}), datatypes.ReadonlyMDKey, true)
-				_ = symbols.SetAlways(d.Pkg, p)
+				pm := p.(map[string]interface{})
+				pm[n] = d.F
+				datatypes.SetMetadata(pm, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
+				datatypes.SetMetadata(pm, datatypes.ReadonlyMDKey, true)
+				_ = symbols.SetAlways(d.Pkg, pm)
 
 				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
