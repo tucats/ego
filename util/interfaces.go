@@ -34,7 +34,7 @@ func GetArray(v interface{}) []interface{} {
 // type coercion if needed.
 func GetInt64(v interface{}) int64 {
 	switch v.(type) {
-	case []interface{}, nil:
+	case nil:
 		return int64(0)
 
 	case error:
@@ -55,7 +55,7 @@ func GetInt(v interface{}) int {
 	case error:
 		return 0
 
-	case []interface{}, nil:
+	case nil:
 		return 0
 	}
 
@@ -313,9 +313,6 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 
 		case float64:
 			return float64(0), v2
-
-		case []interface{}:
-			return []interface{}{}, v2
 		}
 
 	case string:

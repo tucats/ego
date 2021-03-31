@@ -106,9 +106,6 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	case datatypes.EgoPackage:
 		return nil, errors.New(errors.InvalidTypeError)
 
-	case []interface{}:
-		return len(arg), nil
-
 	case nil:
 		return 0, nil
 
@@ -252,9 +249,6 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		switch v := a.(type) {
 		case *datatypes.EgoArray:
 			array = append(array, v.BaseArray()...)
-
-		case []interface{}:
-			array = append(array, v...)
 
 		default:
 			array = append(array, v)
@@ -494,16 +488,6 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		err := v.Delete(i)
 
 		return v, err
-
-	case []interface{}:
-		i := util.GetInt(args[1])
-		if i < 0 || i >= len(v) {
-			return nil, errors.New(errors.InvalidArrayIndexError).In("delete()")
-		}
-
-		r := append(v[:i], v[i+1:]...)
-
-		return r, nil
 
 	default:
 		return nil, errors.New(errors.InvalidTypeError).In("delete()")

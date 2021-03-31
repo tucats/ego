@@ -233,22 +233,8 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		case int:
 			b.WriteRune(rune(a))
 
-		case []interface{}:
-			for _, c := range a {
-				switch k := c.(type) {
-				case int:
-					b.WriteRune(rune(k))
-
-				case string:
-					b.WriteString(util.GetString(c))
-
-				default:
-					return nil, errors.New(errors.InvalidTypeError).In("string()")
-				}
-			}
-
 		default:
-			return nil, errors.New(errors.ArgumentCountError).In("string()")
+			return nil, errors.New(errors.ArgumentCountError).In("String()")
 		}
 	}
 
@@ -260,12 +246,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	var err error
 
 	if len(args) == 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("template()")
+		return nil, errors.New(errors.ArgumentCountError).In("Template()")
 	}
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.New(errors.InvalidTypeError).In("template()")
+		return nil, errors.New(errors.InvalidTypeError).In("Template()")
 	}
 
 	root := tree.Tree.Root
@@ -277,12 +263,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				return nil, errors.New(errors.InvalidTemplateName).In("template()").Context(templateNode.Name)
+				return nil, errors.New(errors.InvalidTemplateName).In("Template()").Context(templateNode.Name)
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.New(errors.InvalidTypeError).In("template()")
+				return nil, errors.New(errors.InvalidTypeError).In("Template()")
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)

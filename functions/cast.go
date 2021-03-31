@@ -192,7 +192,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	case int:
 	case string:
 	case float64:
-	case []interface{}:
 	case datatypes.EgoPackage:
 		// Create the replica count if needed, and update it.
 		replica := 0

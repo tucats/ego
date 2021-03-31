@@ -2,7 +2,6 @@ package bytecode
 
 import (
 	"math"
-	"reflect"
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
@@ -77,16 +76,6 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		_ = c.stackPush(r)
 
-	case []interface{}:
-		// Create an array in inverse order.
-		r := make([]interface{}, len(value))
-
-		for n, d := range value {
-			r[len(value)-n-1] = d
-		}
-
-		_ = c.stackPush(r)
-
 	default:
 		return c.newError(errors.InvalidTypeError)
 	}
@@ -156,35 +145,6 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch vx := v1.(type) {
 	case error:
 		return c.stackPush(vx.Error() + util.GetString(v2))
-
-	// Is it a native array we are concatenating to?
-	case []interface{}:
-		switch vy := v2.(type) {
-		// Array requires a deep concatenation.
-		case []interface{}:
-			// If we're in static type mode, each member of the
-			// array being added must match the type of the target
-			// array.
-			if c.Static {
-				arrayType := reflect.TypeOf(vx[0])
-
-				for _, vv := range vy {
-					if arrayType != reflect.TypeOf(vv) {
-						return c.newError(errors.InvalidTypeError)
-					}
-				}
-			}
-
-			newArray := append(vx, vy...)
-
-			return c.stackPush(newArray)
-
-		// Everything else is a simple append.
-		default:
-			newArray := append(vx, v2)
-
-			return c.stackPush(newArray)
-		}
 
 		// All other types are scalar math.
 	default:
@@ -269,38 +229,22 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.InvalidTypeError)
 	}
 
-	switch vx := v1.(type) {
-	// For an array, make a copy removing the item to be subtracted.
-	case []interface{}:
-		newArray := make([]interface{}, 0)
+	v1, v2 = util.Normalize(v1, v2)
 
-		for _, v := range vx {
-			if !reflect.DeepEqual(v2, v) {
-				newArray = append(newArray, v)
-			}
-		}
+	switch v1.(type) {
+	case int:
+		return c.stackPush(v1.(int) - v2.(int))
 
-		return c.stackPush(newArray)
+	case float64:
+		return c.stackPush(v1.(float64) - v2.(float64))
 
-	// Everything else is a scalar subtraction.
+	case string:
+		s := strings.ReplaceAll(v1.(string), v2.(string), "")
+
+		return c.stackPush(s)
+
 	default:
-		v1, v2 = util.Normalize(v1, v2)
-
-		switch v1.(type) {
-		case int:
-			return c.stackPush(v1.(int) - v2.(int))
-
-		case float64:
-			return c.stackPush(v1.(float64) - v2.(float64))
-
-		case string:
-			s := strings.ReplaceAll(v1.(string), v2.(string), "")
-
-			return c.stackPush(s)
-
-		default:
-			return c.newError(errors.InvalidTypeError)
-		}
+		return c.newError(errors.InvalidTypeError)
 	}
 }
 

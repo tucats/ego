@@ -65,6 +65,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		err = c.stackPush(v)
 
 	case []interface{}:
+		// Needed for varars processing
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
 			return c.newError(errors.InvalidArrayIndexError).Context(subscript)

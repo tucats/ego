@@ -69,15 +69,9 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 		case *datatypes.EgoArray:
 			r = a.DeepEqual(b)
 
-		case []interface{}:
-			r = reflect.DeepEqual(a.BaseArray(), b)
-
 		default:
 			r = false
 		}
-
-	case []interface{}:
-		r = reflect.DeepEqual(v1, v2)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -161,9 +155,6 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoStruct:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case []interface{}:
-		r = !reflect.DeepEqual(v1, v2)
-
 	default:
 		v1, v2 = util.Normalize(v1, v2)
 
@@ -222,7 +213,7 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
+	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
 		return c.newError(errors.InvalidTypeError)
 
 	default:
@@ -281,7 +272,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
+	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
 		return c.newError(errors.InvalidTypeError)
 
 	default:
@@ -341,7 +332,7 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
+	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
 		return c.newError(errors.InvalidTypeError)
 
 	default:
@@ -400,7 +391,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	var r bool
 
 	switch v1.(type) {
-	case []interface{}, *datatypes.EgoMap, *datatypes.EgoArray:
+	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
 		return c.newError(errors.InvalidTypeError)
 
 	default:

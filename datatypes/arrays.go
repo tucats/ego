@@ -240,9 +240,6 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 
 func (a *EgoArray) Append(i interface{}) {
 	switch v := i.(type) {
-	case []interface{}:
-		a.data = append(a.data, v...)
-
 	case *EgoArray:
 		a.data = append(a.data, v.data)
 
