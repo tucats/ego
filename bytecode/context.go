@@ -392,5 +392,6 @@ func (c *Context) popSymbolTable() {
 		c.symbols = c.symbols.Parent
 	}
 
-	ui.Debug(ui.TraceLogger, "(%d)  pop symbol table \"%s\", current now \"%s\"", c.threadID, name, c.symbols.Name)
+	ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
+		c.threadID, name, c.symbols.Name)
 }

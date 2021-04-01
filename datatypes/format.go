@@ -132,7 +132,7 @@ func Format(element interface{}) string {
 		// IF it's an internal function, show it's name. If it is a standard builtin from the
 		// function library, show the short form of the name.
 		if vv.Kind() == reflect.Func {
-			if ui.DebugMode {
+			if true /* ui.DebugMode */ {
 				name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
 				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)

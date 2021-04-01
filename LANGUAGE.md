@@ -142,7 +142,11 @@ listed here.
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
 | `chan`   |  chan    | any              | A channel, used to communicate values between threads |
 
-_Note that the numeric range values shown are approximate._
+_Note that the numeric range values shown are approximate._ Also,
+_Ego_ supports a single `float` type which is always 64-bits in
+size, compared to _Go_ which has different floating point sizes
+available. Similarly, the only integer type supported in _Ego_
+is `int` which is a 64-bit integer.
 
 &nbsp;
 
@@ -169,7 +173,7 @@ value in an array has an index value of 0; the second value in the
 array has an index of 1, and so on. An array has a fixed size; once it
 is created, you cannot add to the array directly.
 
-Array constants are expressed using square brackets, which contain a
+Array constants can be expressed using square brackets, which contain a
 list of values separated by commas. The values may be any valid value
 (base, complex, or user types).  The values do not have to be of the
 same type. For example,
@@ -183,8 +187,9 @@ example is a heterogenous array, where each value is of varying types.
 For example, the value at position 0 is the integer `123` and the
 value at position 1 is the string `"Fred"`.
 
-You can also specify a type for the array using a typed array constant.
-For example,
+These kinds of arrays are _anonymous_ arrays, in that they have no
+specific type for the values. You can also specify a type for the 
+array using a typed array constant. For example,
 
     a := []int{101, 102, 103}
 
@@ -233,12 +238,8 @@ an empty _anonymous_ struct,
     a.Gender = "M"
 
 The empty anonymous structure can have fields added to it just by
-naming them, and they are created as needed. In this case you can
-also use the delete() function to remove a field,
+naming them, and they are created as needed.
 
-    delete(a, "Gender")
-
-This removes the field `Gender` from the struct.
 
 ## Maps<a name="maps"></a>
 
@@ -431,8 +432,8 @@ A symbol name that starts with an underscore character is a read-only
 variable. That is, it's value can be set once when it is created, but
 can not be changed once it has its initial value. For example, when an
  _Ego_ program runs, there is always a read-only variable called
-  `_version` that can be read to determine the version of the `ego`
-  command line tool, but the value cannot be set by a user program.
+`_version` that can be read to determine the version of the `ego`
+command line tool, but the value cannot be set by a user program.
 
 The term _scope_ refers to the mechanism by which a symbol name is
 resolved to a variable. When an _Ego_ program runs, each individual
@@ -526,6 +527,11 @@ a struct, values of a type, or index into an array.
 | []  | items[5] | Find the value at index 5 of the array named `items` |
 | {}  | emp{} | Create an instance of a struct of the type `emp` |
 
+The `[]` operator can also be used to access a map, by supplying the key value
+in the brackets. This key value must be of the same type as the map's declared
+key type. So if the map is declared as `map[string]int` then the key must be
+of type `string`.
+
 &nbsp;
 
 There are _monadic_ operators which precede an expression and operate
@@ -534,9 +540,9 @@ on the single value given.
 &nbsp;
 
 | Operator | Example | Description |
-| --- | --- | --- |
-|  -  | -temp | Calculate the negative of the value in `temp` |
-| !  | !active | Calculate the boolean NOT of the value in `active` |
+| -------- | ------- | --- |
+|  -       | -temp   | Calculate the negative of the value in `temp` |
+| !        | !active | Calculate the boolean NOT of the value in `active` |
 
 &nbsp;
 
@@ -546,12 +552,12 @@ precedes the operator and one of which follows the operator.
 &nbsp;
 
 | Operator | Example | Description |
-| --- | --- | --- |
-|  +  | a+b | Calculate the sum of numeric values, or the AND of two boolean values. For strings, concatenate the strings |
-| - | a-b | Calculate the difference of the integer or float values |
-| * | a*b | Calculate the product of the numeric value, or the OR of two boolean values |
-| / | a/b | Calculate the division of the numeric values |
-| ^ | 2^n | Calculate `2` to the power `n` |
+| -------- | ------- | ----------- |
+|  +       | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
+| -        | a-b     | Calculate the difference of the integer or float values |
+| *        | a*b     | Calculate the product of the numeric value, or the OR of two boolean values |
+| /        | a/b     | Calculate the division of the numeric values |
+| ^        | 2^n     | Calculate `2` to the power `n` |
 
 &nbsp;
 
@@ -592,7 +598,7 @@ describing the relationship between the two values.
 
 When an operation is done on two values (either a variable or a
 constant value) of the same type, no additional conversion is performed
-or required. If the operation is done on two values of different types,
+or required. If the operation is performed on two values of different types,
 _Ego_ will convert the values to the same type if possible before
 performing the operation. For example, the expression `10.0/3` divides
 an integer value into a floating point value; the _Ego_ language converts

@@ -24,7 +24,8 @@ func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 	s := symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
 	c.symbols = s
 
-	ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, c.symbols.Name, oldName)
+	ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
+		c.threadID, c.symbols.Name, oldName)
 
 	return nil
 }

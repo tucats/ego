@@ -49,7 +49,8 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		blockDepth: c.blockDepth,
 	})
 
-	ui.Debug(ui.TraceLogger, "(%d) push symbol table \"%s\", was \"%s\"", c.threadID, tableName, c.symbols.Name)
+	ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
+		c.threadID, tableName, c.symbols.Name)
 
 	c.framePointer = c.stackPointer
 	c.result = nil
@@ -106,7 +107,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 	}
 
 	if callFrame, ok := cx.(CallFrame); ok {
-		ui.Debug(ui.TraceLogger, "(%d)  pop symbol table \"%s\", current now \"%s\"",
+		ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
 		c.line = callFrame.Line
