@@ -11,14 +11,17 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// callFrame is an object used to store state of the bytecode runtime
+// CallFrame is an object used to store state of the bytecode runtime
 // environment just before making a call to a bytecode subroutine. This
 // preserves the state of the stack, PC, and other data at the time
 // of the call. When a bytecode subroutine returns, this object is
 // removed from the stack and used to reset the bytecode runtime state.
-type callFrame struct {
-	module     string
-	line       int
+//
+// Note that this is exported (as are Module and Line within it) to support
+// formatting of trace data using reflection.
+type CallFrame struct {
+	Module     string
+	Line       int
 	symbols    *symbols.SymbolTable
 	bytecode   *ByteCode
 	tokenizer  *tokenizer.Tokenizer
@@ -33,7 +36,7 @@ type callFrame struct {
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
 func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
-	_ = c.stackPush(callFrame{
+	_ = c.stackPush(CallFrame{
 		symbols:    c.symbols,
 		bytecode:   c.bc,
 		singleStep: c.singleStep,
@@ -41,8 +44,8 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		thisStack:  c.thisStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
-		module:     c.bc.Name,
-		line:       c.line,
+		Module:     c.bc.Name,
+		Line:       c.line,
 		blockDepth: c.blockDepth,
 	})
 
@@ -102,11 +105,11 @@ func (c *Context) callFramePop() *errors.EgoError {
 		}
 	}
 
-	if callFrame, ok := cx.(callFrame); ok {
+	if callFrame, ok := cx.(CallFrame); ok {
 		ui.Debug(ui.TraceLogger, "(%d)  pop symbol table \"%s\", current now \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
-		c.line = callFrame.line
+		c.line = callFrame.Line
 		c.symbols = callFrame.symbols
 		c.singleStep = callFrame.singleStep
 		c.tokenizer = callFrame.tokenizer
@@ -149,9 +152,9 @@ func (c *Context) FormatFrames(maxDepth int) string {
 	for (maxDepth < 0 || depth < maxDepth) && f > 0 {
 		fx := c.stack[f-1]
 
-		if frame, ok := fx.(callFrame); ok {
+		if frame, ok := fx.(CallFrame); ok {
 			r = r + fmt.Sprintf("from: %12s  (%s)\n",
-				formatLocation(frame.module, frame.line), frame.symbols.Name)
+				formatLocation(frame.Module, frame.Line), frame.symbols.Name)
 			f = frame.fp
 
 			depth++

@@ -267,7 +267,7 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 	var b strings.Builder
 
 	if len(s) == 0 {
-		return "<EOS>"
+		return "<empty>"
 	}
 
 	if newlines {
