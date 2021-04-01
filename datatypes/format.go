@@ -75,7 +75,7 @@ func Format(element interface{}) string {
 		}
 
 		sort.Strings(keys)
-		b.WriteString("package{")
+		b.WriteString("Pkg<")
 
 		for n, k := range keys {
 			i := v[k]
@@ -90,7 +90,7 @@ func Format(element interface{}) string {
 			b.WriteString(Format(i))
 		}
 
-		b.WriteString(" }")
+		b.WriteString(" >")
 
 		return b.String()
 
@@ -137,9 +137,9 @@ func Format(element interface{}) string {
 				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
-				return "builtin " + name
+				return name + "()"
 			} else {
-				return "builtin"
+				return "<builtin>"
 			}
 		}
 
@@ -154,13 +154,12 @@ func Format(element interface{}) string {
 				if ui.DebugMode {
 					name := fmt.Sprintf("%v", e.Field(0).Interface())
 
-					return "func " + name
+					return name + "()"
 				} else {
-					return "func"
+					return "<func>"
 				}
 			}
 
-			//return fmt.Sprintf("ptr %s %v", ts, element)
 			return fmt.Sprintf("ptr %s", ts)
 		}
 
@@ -168,7 +167,7 @@ func Format(element interface{}) string {
 			e := reflect.ValueOf(v).Field(0)
 			name := fmt.Sprintf("%v", e.Interface())
 
-			return fmt.Sprintf("<%s>", name)
+			return fmt.Sprintf("M<%s>", name)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
@@ -177,7 +176,7 @@ func Format(element interface{}) string {
 			e = reflect.ValueOf(v).Field(1)
 			line := GetInt(e.Interface())
 
-			return fmt.Sprintf("<frame %s:%d>", module, line)
+			return fmt.Sprintf("F<%s:%d>", module, line)
 		}
 
 		if ui.DebugMode {

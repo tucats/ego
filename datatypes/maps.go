@@ -196,7 +196,7 @@ func (m *EgoMap) TypeString() string {
 func (m *EgoMap) String() string {
 	var b strings.Builder
 
-	b.WriteString("{")
+	b.WriteString("[")
 
 	for i, k := range m.Keys() {
 		v, _, _ := m.Get(k)
@@ -206,13 +206,13 @@ func (m *EgoMap) String() string {
 		}
 
 		if s, ok := v.(string); ok {
-			b.WriteString(fmt.Sprintf("%v: \"%s\"", k, s))
+			b.WriteString(fmt.Sprintf("%s: \"%s\"", Format(k), s))
 		} else {
-			b.WriteString(fmt.Sprintf("%v: %s", k, Format(v)))
+			b.WriteString(fmt.Sprintf("%s: %s", Format(k), Format(v)))
 		}
 	}
 
-	b.WriteString("}")
+	b.WriteString("]")
 
 	return b.String()
 }
