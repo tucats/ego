@@ -51,8 +51,6 @@ type Field struct {
 	Type Type
 }
 
-type EgoPackage map[string]interface{}
-
 // Return a string containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
 // empty string. The results are a comma-separated list of function
