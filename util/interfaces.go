@@ -108,7 +108,14 @@ func GetString(v interface{}) string {
 		return ""
 	}
 
-	return Coerce(v, "").(string)
+	coercedValue := Coerce(v, "")
+	if coercedValue == nil {
+		fmt.Printf("DEBUG: failed coerce of %#v\n", v)
+
+		return ""
+	}
+
+	return coercedValue.(string)
 }
 
 // GetFloat takes a generic interface and returns the float64 value, using
