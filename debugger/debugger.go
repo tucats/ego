@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/errors"
@@ -119,19 +120,24 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = Show(s, tokens, line, c)
 
 			case "set":
-				err = runAfterFirstToken(s, tokens)
+				err = runAfterFirstToken(s, tokens, false)
 
 			case "call":
-				err = runAfterFirstToken(s, tokens)
+				err = runAfterFirstToken(s, tokens, true)
 
 			case "print":
 				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
 				t2 := tokenizer.New(text)
 
+				traceMode := ui.ActiveLogger(ui.TraceLogger)
+				ui.SetLogger(ui.TraceLogger, false)
+
 				err = compiler.Run("debugger", s, t2)
 				if err.Is(errors.Stop) {
 					err = nil
 				}
+
+				ui.SetLogger(ui.TraceLogger, traceMode)
 
 			case "break":
 				err = Break(c, tokens)
@@ -159,12 +165,22 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 	return err
 }
 
-func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.EgoError {
+func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool) *errors.EgoError {
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text)
 
-	return compiler.Run("debugger", s, t2)
+	traceMode := ui.ActiveLogger(ui.TraceLogger)
+
+	defer ui.SetLogger(ui.TraceLogger, traceMode)
+	ui.SetLogger(ui.TraceLogger, allowTrace)
+
+	err := compiler.Run("debugger", s, t2)
+	if err.Is(errors.Stop) {
+		err = nil
+	}
+
+	return err
 }
 
 // getLine reads a line of text from the console, and requires that it contain matching

@@ -258,13 +258,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				ui.SetLogger(ui.DebugLogger, true)
 			}
 
-			// If we are doing source tracing of execution, we'll need to link the tokenizer
-			// back to the execution context. If you don't need source tracing, you can use
-			// the simpler CompileString() function which doesn't require a discrete tokenizer.
-			if c.GetBool("source-tracing") || debug {
-				ctx.SetTracing(true)
-			}
-
 			ctx.SetTokenizer(t)
 			ctx.SetFullSymbolScope(fullScope)
 

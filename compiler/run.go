@@ -15,8 +15,11 @@ func RunString(name string, s *symbols.SymbolTable, stmt string) *errors.EgoErro
 // Given a token stream, compile and execute it immediately.
 func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.EgoError {
 	c := New(name)
-
 	c.ExtensionsEnabled(true)
+
+	// Set the depth >0 so we will process all statements without requiring a function
+	// body.
+	c.functionDepth = 1
 
 	bc, err := c.Compile(name, t)
 	if errors.Nil(err) {
