@@ -1,6 +1,8 @@
 package symbols
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -35,8 +37,9 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 			}
 		}
 
-		ui.Debug(ui.SymbolLogger, "%s(%s), get \"%s\", slot %d = %s",
-			s.Name, s.ID.String(), name, slot, status)
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
+			s.Name, s.ID.String(), quotedName, slot, status)
 	}
 
 	return v, found
@@ -77,7 +80,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	s.Constants[name] = v
 
 	if ui.ActiveLogger(ui.SymbolLogger) {
-		ui.Debug(ui.SymbolLogger, "%s(%s), constant(%s) %s",
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
 			s.Name, s.ID, name, datatypes.Format(v))
 	}
 
@@ -120,8 +123,9 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 			valueString = valueString[:57] + "..."
 		}
 
-		ui.Debug(ui.SymbolLogger, "%s(%s), setalways \"%s\", slot %d = %s",
-			s.Name, s.ID, name, slot, valueString)
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
+			s.Name, s.ID, quotedName, slot, valueString)
 	}
 
 	return nil
@@ -163,8 +167,9 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 			valueString = valueString[:57] + "..."
 		}
 
-		ui.Debug(ui.SymbolLogger, "%s(%s), set \"%s\", slot %d = %s",
-			s.Name, s.ID, name, slot, valueString)
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
+			s.Name, s.ID, quotedName, slot, valueString)
 	}
 
 	return nil

@@ -217,6 +217,12 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		}
 	}
 
+	// If we added one ore more functions, update the package definition
+	// in the root symbol table for this builtin package.
+	if added {
+		_ = c.RootTable.SetAlways(pkgname, c.packages.Package[pkgname])
+	}
+
 	return added
 }
 
@@ -276,8 +282,6 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	fd[name] = function
 	c.packages.Package[pkgname] = fd
 
-	_ = c.RootTable.SetAlways(pkgname, fd)
-
 	return nil
 }
 
@@ -329,7 +333,6 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 		// Do we already have a package of this name defined?
 		_, found := s.Get(packageName)
 		if found {
-			//ui.Debug(ui.CompilerLogger, "Duplicate package %s already in table: %v", packageName, item)
 			continue
 		}
 
