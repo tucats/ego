@@ -45,12 +45,20 @@
             "args": ["run", "test.ego", "--trace"]
         },
         {
-            "name": "Test test.ego",
+            "name": "test test.ego",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "args": ["test", "test.ego"]
+        },
+        {
+            "name": "Trace test test.ego",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["-d", "trace", "test", "test.ego"]
         },
         {
             "name": "Local ego server",

@@ -54,6 +54,11 @@ func (c *Compiler) compileFor() *errors.EgoError {
 		return err
 	}
 
+	// Because we put a marker on the stack during the
+	// assignment, whenever we're done with the loop,
+	// drop the marker.
+	defer c.b.Emit(bytecode.DropToMarker)
+
 	if !c.t.IsNext(":=") {
 		return c.newError(errors.MissingLoopAssignmentError)
 	}

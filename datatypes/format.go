@@ -137,6 +137,10 @@ func Format(element interface{}) string {
 				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
+				if name == "" {
+					name = "<anon>"
+				}
+
 				return name + "()"
 			} else {
 				return "<builtin>"
@@ -153,6 +157,9 @@ func Format(element interface{}) string {
 
 				if ui.DebugMode {
 					name := fmt.Sprintf("%v", e.Field(0).Interface())
+					if name == "" {
+						name = "<anon>"
+					}
 
 					return name + "()"
 				} else {
@@ -177,6 +184,16 @@ func Format(element interface{}) string {
 			line := GetInt(e.Interface())
 
 			return fmt.Sprintf("F<%s:%d>", module, line)
+		}
+
+		// If it's a slice of an interface array, used to pass compound
+		// parameters to bytecodes, then format it as {a, b, c}
+
+		valueString := fmt.Sprintf("%v", v)
+		valueKind := vv.Kind()
+
+		if valueKind == reflect.Slice {
+			return valueString
 		}
 
 		if ui.DebugMode {

@@ -255,7 +255,8 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 			c.symbols = funcSymbols
 		}
 
-		_ = c.symbolSetAlways("__args", args)
+		// Recode the argument list as a native array
+		_ = c.symbolSetAlways("__args", datatypes.NewFromArray(datatypes.InterfaceType, args))
 
 	case functions.NativeFunction:
 		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
@@ -269,7 +270,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(StackMarker{Desc: "multivalue result"})
+			_ = c.stackPush(StackMarker{Desc: "results"})
 
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.stackPush(r.Value[i])
@@ -329,7 +330,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(StackMarker{Desc: "multivalue result"})
+			_ = c.stackPush(StackMarker{Desc: "results"})
 
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.stackPush(r.Value[i])
@@ -341,7 +342,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if df != nil && df.ErrReturn {
-			_ = c.stackPush(StackMarker{Desc: "builtin result"})
+			_ = c.stackPush(StackMarker{Desc: "result"})
 			_ = c.stackPush(err)
 			_ = c.stackPush(result)
 
@@ -449,14 +450,16 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Do the actual compare. Note that if we ended up with a negative
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
-	va := v.([]interface{})
+	if va, ok := v.(*datatypes.EgoArray); ok {
+		if max < 0 {
+			max = va.Len()
+		}
 
-	if max < 0 {
-		max = len(va)
-	}
-
-	if len(va) < min || len(va) > max {
-		return errors.New(errors.ArgumentCountError).In(name)
+		if va.Len() < min || va.Len() > max {
+			return errors.New(errors.ArgumentCountError).In(name)
+		}
+	} else {
+		return errors.New(errors.InvalidArgCheckError)
 	}
 
 	return nil

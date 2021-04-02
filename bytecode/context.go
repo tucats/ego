@@ -287,7 +287,14 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 			b.WriteString(fmt.Sprintf("%90s      [%2d]:   ", " ", n))
 		}
 
-		b.WriteString(util.Format(s[n]))
+		// If it's a string, escape the newlines for readability.
+		if stringValue, ok := s[n].(string); ok {
+			stringValue = strings.ReplaceAll(stringValue, "\t", "\\t")
+			stringValue = strings.ReplaceAll(stringValue, "\n", "\\n")
+			b.WriteString(stringValue)
+		} else {
+			b.WriteString(util.Format(s[n]))
+		}
 
 		if !newlines && b.Len() > 50 {
 			return b.String()[:50] + "..."

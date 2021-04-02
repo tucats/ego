@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -157,14 +158,19 @@ func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 	argPos := util.GetInt(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {
-		if args, ok := arrayV.([]interface{}); ok {
+		if args, ok := arrayV.(*datatypes.EgoArray); ok {
 			// If no more args in the list to satisfy, push empty array
-			if len(args) < argPos {
-				r := make([]interface{}, 0)
+			if args.Len() < argPos {
+				r := datatypes.NewArray(datatypes.InterfaceType, 0)
 
 				return c.stackPush(r)
 			} else {
-				return c.stackPush(args[argPos:])
+				value, err := args.GetSlice(argPos, args.Len())
+				if !errors.Nil(err) {
+					return err
+				}
+
+				return c.stackPush(datatypes.NewFromArray(datatypes.InterfaceType, value))
 			}
 		}
 	}

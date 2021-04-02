@@ -23,16 +23,18 @@ func (b *ByteCode) Disasm() {
 	}
 }
 
+var maxInstructionNameWidth = 0
+
 // FormatInstruction formats a single instruction as a string.
 func FormatInstruction(i Instruction) string {
 	opname, found := instructionNames[i.Operation]
 
 	// What is the maximum opcode name length?
-	width := 0
-
-	for _, k := range instructionNames {
-		if len(k) > width {
-			width = len(k)
+	if maxInstructionNameWidth == 0 {
+		for _, k := range instructionNames {
+			if len(k) > maxInstructionNameWidth {
+				maxInstructionNameWidth = len(k)
+			}
 		}
 	}
 
@@ -40,8 +42,10 @@ func FormatInstruction(i Instruction) string {
 		opname = fmt.Sprintf("Unknown %d", i.Operation)
 	}
 
-	opname = (opname + strings.Repeat(" ", width))[:width]
+	opname = (opname + strings.Repeat(" ", maxInstructionNameWidth))[:maxInstructionNameWidth]
 	f := util.Format(i.Operand)
+	f = strings.ReplaceAll(f, "\n", "\\n")
+	f = strings.ReplaceAll(f, "\t", "\\t")
 
 	if i.Operand == nil {
 		f = ""

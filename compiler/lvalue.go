@@ -141,7 +141,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 	}
 
 	// Add a marker in the regular code stream here
-	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "lvalue"})
+	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "let"})
 
 	bc := bytecode.New("lvalue")
 	isPointer := false
