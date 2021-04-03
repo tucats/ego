@@ -10,8 +10,8 @@ import (
 )
 
 // GetMap extracts a map from an abstract interface. Returns nil
-// if the interface did not contain a map. Note this is NOT a map
-// and is used by the gremlin package for actual maps.
+// if the interface did not contain a map. Note this is NOT an
+// Ego map, but rather is used by the gremlin package for actual maps.
 func GetMap(v interface{}) map[string]interface{} {
 	if m, ok := v.(map[string]interface{}); ok {
 		return m

@@ -16,6 +16,48 @@ func TestTokenize(t *testing.T) {
 		want []string
 	}{
 		{
+			name: "compound token",
+			args: args{
+				src: "{}",
+			},
+			want: []string{"{}"},
+		},
+		{
+			name: "embedded compound token",
+			args: args{
+				src: "stuff{}here",
+			},
+			want: []string{"stuff", "{}", "here"},
+		},
+		{
+			name: "interface{} compound token",
+			args: args{
+				src: "var x interface{}",
+			},
+			want: []string{"var", "x", "interface{}"},
+		},
+		{
+			name: "elipsis compound token",
+			args: args{
+				src: "fmt(stuff...)",
+			},
+			want: []string{"fmt", "(", "stuff", "...", ")"},
+		},
+		{
+			name: "assignment, LEQ compound tokens",
+			args: args{
+				src: "a := 5 <= 6",
+			},
+			want: []string{"a", ":=", "5", "<=", "6"},
+		},
+		{
+			name: "channel compound tokens",
+			args: args{
+				src: "x <- 55 -> stuff",
+			},
+			want: []string{"x", "<-", "55", "->", "stuff"},
+		},
+		{
 			name: "Simple alphanumeric name",
 			args: args{
 				src: "wage55",
@@ -43,7 +85,6 @@ func TestTokenize(t *testing.T) {
 			},
 			want: []string{"name", "+", "\"User\""},
 		},
-
 		{
 			name: "Float expression",
 			args: args{
@@ -51,7 +92,6 @@ func TestTokenize(t *testing.T) {
 			},
 			want: []string{"3.14", "+", "2"},
 		},
-
 		// TODO: Add test cases.
 	}
 
