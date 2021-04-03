@@ -106,45 +106,6 @@ func TestTokenize(t *testing.T) {
 	}
 }
 
-func Test_stripComments(t *testing.T) {
-	type args struct {
-		source string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "No comments",
-			args: args{
-				source: `there are no comments here to speak of.
-And if there were, you wouldn't find them.`,
-			},
-			want: `there are no comments here to speak of.
-And if there were, you wouldn't find them.`,
-		},
-		{
-			name: "First line comment",
-			args: args{
-				source: `#there are no comments here to speak of.
-And if there were, you wouldn't find them.`,
-			},
-			want: `
-And if there were, you wouldn't find them.`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := stripComments(tt.args.source); got != tt.want {
-				t.Errorf("stripComments() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestIsSymbol(t *testing.T) {
 	type args struct {
 		s string

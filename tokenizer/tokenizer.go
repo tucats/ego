@@ -158,7 +158,7 @@ func (t *Tokenizer) Next() string {
 	}
 
 	token := t.Tokens[t.TokenP]
-	t.TokenP = t.TokenP + 1
+	t.TokenP++
 
 	return token
 }
@@ -182,9 +182,7 @@ func (t *Tokenizer) Advance(p int) {
 	t.TokenP = t.TokenP + p
 	if t.TokenP < 0 {
 		t.TokenP = 0
-	}
-
-	if t.TokenP >= len(t.Tokens) {
+	} else if t.TokenP > len(t.Tokens) {
 		t.TokenP = len(t.Tokens)
 	}
 }
@@ -215,31 +213,6 @@ func (t *Tokenizer) AnyNext(test ...string) bool {
 	}
 
 	return false
-}
-
-func stripComments(source string) string {
-	var result strings.Builder
-
-	ignore := false
-	startOfLine := true
-
-	for _, c := range source {
-		// Is this a # on the start of a line? If so, start
-		// ignoring characters. If it's the end of line, then
-		// reset to end-of-line and resume processing characters.
-		// Finally, if nothing else, copy character if not ignoring.
-		if c == '#' && startOfLine {
-			ignore = true
-		} else if c == '\n' {
-			ignore = false
-			startOfLine = true
-			result.WriteRune(c)
-		} else if !ignore {
-			result.WriteRune(c)
-		}
-	}
-
-	return result.String()
 }
 
 // IsSymbol is a utility function to determine if a token is a symbol name.
@@ -305,12 +278,14 @@ func splitLines(src string) []string {
 
 // GetSource returns the entire string of the tokenizer.
 func (t *Tokenizer) GetSource() string {
-	r := ""
+	result := strings.Builder{}
+
 	for _, line := range t.Source {
-		r = r + line + "\n"
+		result.WriteString(line)
+		result.WriteRune('\n')
 	}
 
-	return r
+	return result.String()
 }
 
 // GetTokens returns a string representing the tokens
@@ -319,10 +294,8 @@ func (t *Tokenizer) GetTokens(pos1, pos2 int, spacing bool) string {
 	p1 := pos1
 	if p1 < 0 {
 		p1 = 0
-	} else {
-		if p1 > len(t.Tokens) {
-			p1 = len(t.Tokens)
-		}
+	} else if p1 > len(t.Tokens) {
+		p1 = len(t.Tokens)
 	}
 
 	p2 := pos2
