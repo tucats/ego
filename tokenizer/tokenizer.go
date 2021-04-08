@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"text/scanner"
-
-	"github.com/tucats/ego/util"
+	"unicode"
 )
 
 // Tokenizer is an instance of a tokenized string.
@@ -23,6 +22,9 @@ const (
 
 	// ToTheEnd means to advance the token stream to the end.
 	ToTheEnd = 9999
+
+	// The string format for display line and column info.
+	LineColumnFormat = "at %d:%d"
 )
 
 // This describes a token that is "crushed"; that is converting a sequence
@@ -148,7 +150,7 @@ func (t *Tokenizer) PositionString() string {
 		p = len(t.Line) - 1
 	}
 
-	return fmt.Sprintf(util.LineColumnFormat, t.Line[p], t.Pos[p])
+	return fmt.Sprintf(LineColumnFormat, t.Line[p], t.Pos[p])
 }
 
 // Next gets the next token in the tokenizer.
@@ -218,11 +220,11 @@ func (t *Tokenizer) AnyNext(test ...string) bool {
 // IsSymbol is a utility function to determine if a token is a symbol name.
 func IsSymbol(s string) bool {
 	for n, c := range s {
-		if isLetter(c) {
+		if c == '_' || unicode.IsLetter(c) {
 			continue
 		}
 
-		if isDigit(c) && n > 0 {
+		if n > 0 && unicode.IsDigit(c) {
 			continue
 		}
 
@@ -230,26 +232,6 @@ func IsSymbol(s string) bool {
 	}
 
 	return true
-}
-
-func isLetter(c rune) bool {
-	for _, d := range "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		if c == d {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isDigit(c rune) bool {
-	for _, d := range "0123456789" {
-		if c == d {
-			return true
-		}
-	}
-
-	return false
 }
 
 // GetLine returns a given line of text from the token stream.
