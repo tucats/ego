@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/util"
 
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var dbTypeDef *datatypes.Type
@@ -60,7 +61,12 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		return nil, errors.New(err)
 	}
 
-	db, err := sql.Open(databaseDriverName, connStr)
+	scheme := url.Scheme
+	if scheme == "sqlite3" {
+		connStr = strings.TrimPrefix(connStr, scheme+"://")
+	}
+
+	db, err := sql.Open(url.Scheme, connStr)
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}

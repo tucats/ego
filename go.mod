@@ -15,6 +15,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.0
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/northwesternmutual/grammes v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect

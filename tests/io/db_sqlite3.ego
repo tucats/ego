@@ -1,0 +1,64 @@
+@test "io: db using integrated sqlite3"
+{
+
+    constr := "sqlite3://foo.db"
+    d := db.New(constr)
+
+    // Is there a working database we can test against?
+    _, e := d.Query("select 0 where 1=0")
+    if e != nil {
+        // Nothing to do
+        msg := "(unavailable) "
+        bs := ""
+        for i := 0; i < len(msg); i = i + 1 {
+            bs = bs + "\u0008"
+        }
+        fmt.Printf("%s%s", bs, msg)
+    } else {
+
+        // Delete the test table if it already exists.
+        _, e := d.Execute("drop table if exists members")
+        @assert T.Nil(e, "drop table failed")
+
+        // Create the empty test table.
+        _, e := d.Execute("create table members(id integer, name char varying(50))")
+        @assert T.Nil(e, "create table failed")
+
+        // Fill the table with five entries.
+        names := [ "Tom", "Mary", "Sarah", "Chelsea", "Tony" ]
+        for i := 0; i < len(names) ; i = i + 1 {
+            _, e := d.Execute("insert into members values($1, $2)", 101+i, names[i])
+            @assert T.Equal(d.rowCount, 1, "rowcount not updated correctly on insert")
+            @assert T.Nil(e, "insert failed")
+        }
+
+        // Read the data base in array format, where the entire result set is a single
+        // array of rows, each of which is an array of columns.
+        r, e := d.QueryResult("select * from members order by name")
+        @assert T.Nil(e, "select failed" )
+        @assert T.Equal(len(r), 5, "wrong number of rows returned")
+        @assert T.Equal(d.rowCount, 5, "wrong number of rows in result handle")
+        @assert T.Equal(r[0][1], "Chelsea", "unexpected result set value(s)")
+
+        // Do a query with an argument, and in "struct" mode which returns each row as
+        // a structure, where each column is a field in the structure.
+        d.AsStruct(true)
+        r2, e := d.Query("select * from members where name = $1", "Tony")
+        for r2.Next() {
+            info := r2.Scan()
+            @assert T.Equal(info.name, "Tony",  "incorrect name returned from query")
+            @assert T.Equal(int(info.id), 105,  "incorrect id returned from query")
+        }
+
+        // Done with the row set
+        r2.Close()
+
+        // Done with the database
+        d.Close()
+        @assert T.Equal(d.rowCount, -1, "rowcount not updated after close")
+
+        io.Delete("foo.db")
+    }
+}
+
+@pass
