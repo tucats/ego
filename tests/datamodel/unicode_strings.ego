@@ -1,0 +1,11 @@
+@test "datamodel: non-ascii string values"
+
+{
+    x := "دانش"  // Persion character set and writing direction
+
+    @assert len(x) == 8              // Bytes
+    @assert strings.Length(x) == 4   // characters
+    @assert strings.Left(x,1) == "د" // First character
+}
+
+@pass
