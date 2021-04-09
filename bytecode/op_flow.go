@@ -271,7 +271,6 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
 			_ = c.stackPush(StackMarker{Desc: "results"})
-
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.stackPush(r.Value[i])
 			}
@@ -342,7 +341,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if df != nil && df.ErrReturn {
-			_ = c.stackPush(StackMarker{Desc: "result"})
+			_ = c.stackPush(StackMarker{Desc: "results"})
 			_ = c.stackPush(err)
 			_ = c.stackPush(result)
 

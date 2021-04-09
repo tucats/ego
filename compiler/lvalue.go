@@ -120,8 +120,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 		// integer instruction argument.
 		_ = bc.SetAddress(0, count)
 
-		// Also, add an instruction that will drop the marker (nil)
-		// value
+		// Also, add an instruction that will drop the marker value
 		bc.Emit(bytecode.DropToMarker)
 
 		return bc, nil
@@ -189,7 +188,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		patchStore(bc, name, isPointer, c.t.Peek(1) == "<-")
 	}
 
-	bc.Emit(bytecode.DropToMarker)
+	bc.Emit(bytecode.DropToMarker, bytecode.StackMarker{Desc: "let"})
 
 	return bc, nil
 }

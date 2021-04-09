@@ -31,6 +31,12 @@ func NewStackMarker(label string, count int) StackMarker {
 // is no marker, this drains the stack.
 func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 	found := false
+	target := ""
+
+	if m, ok := i.(StackMarker); ok {
+		target = m.Desc
+	}
+
 	for !found {
 		// Don't drop across stack frames.
 		if c.stackPointer <= c.framePointer {
@@ -49,7 +55,12 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 
+		// See if we've hit a stack marker. If we were asked to
+		// drop to a specific one, also test the market name.
 		_, found = v.(StackMarker)
+		if found && i != nil {
+			found = v.(StackMarker).Desc == target
+		}
 	}
 
 	return nil

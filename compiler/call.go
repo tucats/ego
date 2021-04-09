@@ -25,7 +25,7 @@ func (c *Compiler) compileFunctionCall() *errors.EgoError {
 	c.b.Append(bc)
 
 	// We don't care about the result values, so flush to the marker.
-	c.b.Emit(bytecode.DropToMarker)
+	c.b.Emit(bytecode.DropToMarker, bytecode.StackMarker{Desc: "call"})
 
 	return nil
 }
