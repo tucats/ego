@@ -36,8 +36,35 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoMap:
 		var v interface{}
 
-		if v, _, err = a.Get(index); errors.Nil(err) {
-			err = c.stackPush(v)
+		// @tomcole a bit of a hack here. If this is a map index,
+		// and we know the next instruction is a StackCheck 2, then
+		// it is the condition that allows for an optional second
+		// value indicating if the map value was found or not.
+		//
+		// If the list-based lvalue processor changes it's use of
+		// the StackCheck opcode this will need to be revised!
+		pc := c.programCounter
+		opcodes := c.bc.Opcodes()
+		twoValues := false
+
+		if len(opcodes) > pc {
+			next := opcodes[pc]
+			if count, ok := next.Operand.(int); ok && count == 2 && (next.Operation == StackCheck) {
+				found := false
+
+				if v, found, err = a.Get(index); errors.Nil(err) {
+					_ = c.stackPush(StackMarker{Desc: "results"})
+					_ = c.stackPush(found)
+					err = c.stackPush(v)
+					twoValues = true
+				}
+			}
+		}
+
+		if !twoValues {
+			if v, _, err = a.Get(index); errors.Nil(err) {
+				err = c.stackPush(v)
+			}
 		}
 
 	// Reading from a channel ignores the index value.

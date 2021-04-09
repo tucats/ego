@@ -1,0 +1,23 @@
+@test "datamodel: map indexing with found indicator"
+{
+    m := map[string]int { "tom" : 55}
+
+    // Item is found
+    v, ok := m["tom"]
+    @assert v == 55
+    @assert ok == true
+
+    // Item is not found
+    v, ok = m["sue"]
+    @assert v == nil
+    @assert ok == false
+
+    // Item is found
+    v = m["tom"]
+    @assert v == 55
+
+    // Item is not found
+    v = m["sue"]
+    @assert v == nil
+}
+@pass
