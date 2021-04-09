@@ -57,7 +57,7 @@
         d.Close()
         @assert T.Equal(d.rowCount, -1, "rowcount not updated after close")
 
-        io.Delete("foo.db")
+        os.Remove("foo.db")
     }
 }
 

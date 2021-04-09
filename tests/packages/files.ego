@@ -20,7 +20,7 @@
     }
 
     f2.Close()
-    io.Delete(name)
+    os.Remove(name)
 
     @assert t == "test"
     @assert f2.Name == ""

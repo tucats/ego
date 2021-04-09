@@ -38,7 +38,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return len(text), errors.New(err)
 }
 
-// DeleteFile delete a file.
+// DeleteFile deletes a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	fileName := util.GetString(args[0])
 	err := os.Remove(fileName)

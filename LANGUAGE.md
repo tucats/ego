@@ -1765,16 +1765,6 @@ contents. The value is not printed to the console as part of this operation.
 The io package supports input/output operations using native files in the file system
 of the computer running _Ego_.
 
-### io.Delete(filename)
-
-The `Delete()` function deletes a file from the file system.
-
-    fn := "newdata.txt"
-    io.Delete(fn)
-
-When this program runs, the physical file "newdata.txt" will have been deleted
-from the file system, assuming the current user has permission to delete the
-file.
 
 ### io.DirList(path)
 
@@ -2108,6 +2098,17 @@ Invoking this on a macOS or Linux system while running the "bash" shell will res
 output similar to:
 
     You are running the  /bin/bash  shell program
+
+### os.Remove(filename)
+
+The `Remove()` function deletes a file from the file system.
+
+    fn := "newdata.txt"
+    os.Remove(fn)
+
+When this program runs, the physical file "newdata.txt" will have been deleted
+from the file system, assuming the current user has permission to delete the
+file.
 
 ## profile <a name="profile"></a>
 
