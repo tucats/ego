@@ -15,6 +15,9 @@ if [ "$1" == "-a" ]; then
    GOARCH=arm64
 fi
 
+if [ "$1" == "-l" ]; then
+   GOOS="linux"
+fi
 
 if [ "$1" == "-w" ]; then
    GOOS=windows
