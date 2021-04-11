@@ -1,15 +1,16 @@
 @test "io: io.Expand() testing"
+// This also tests the filepath.Join function
 
 {
     here := profile.Get("ego.path")
-    want := [here+"/main.go"]
-    got := io.Expand(here+"/main.go")
+    want := [filepath.Join(here, "main.go")]
+    got := io.Expand(filepath.Join(here,"main.go"))
     @assert T.Equal(want, got, "single path name with no extension" )
 }
 
 {
     here := profile.Get("ego.path")
-    want := here + "/app-cli/app/actions.go"
+    want := filepath.Join(here, "app-cli/app/actions.go")
     got := io.Expand(here, ".go")
     gotf := got[0]
     @assert T.Equal(want, gotf,  "single path name with .go extension")
@@ -17,8 +18,8 @@
 
 {
     here := profile.Get("ego.path")
-    want := here + "/tests/README.md"
-    got := io.Expand(here + "/tests")
+    want := filepath.Join(here, "tests/README.md")
+    got := io.Expand(filepath.Join(here, "tests"))
     @assert T.True(len(got)>0, "did not return a list")
     @assert T.Equal(got[0], want, "single level deep directory, got " + string(got))
 }
