@@ -17,6 +17,28 @@ GO="go"
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
 
+if [ "$1" == "-all" ]; then
+   mkdir -p builds/linux
+   mkdir -p builds/macos/intel
+   mkdir -p builds/macos/applesilicon/
+   mkdir -p builds/windows
+
+   echo Linux x86...
+   GOARCH=amd64 GOOS=linux $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/linux/ego
+
+   echo Mac x86...
+   GOARCH=amd64 GOOS=darwin $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/macos/intel/ego
+
+   echo Mac Apple Silicon
+   GOARCH=arm64 GOOS=darwin $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/macos/applesilicon/ego
+
+   echo Windows x86
+   GOARCH=amd64 GOOS=windows $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/windows/ego.exe
+
+   exit 0
+fi
+
+
 if [ "$1" == "-a" ]; then
    GOARCH=arm64
    GOOS=darwin
