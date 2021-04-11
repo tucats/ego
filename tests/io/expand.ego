@@ -1,21 +1,24 @@
 @test "io: io.Expand() testing"
 
 {
-    want := ["/Users/tom/go/src/github.com/tucats/ego/main.go"]
-    got := io.Expand("/Users/tom/go/src/github.com/tucats/ego/main.go")
+    here := profile.Get("ego.path")
+    want := [here+"/main.go"]
+    got := io.Expand(here+"/main.go")
     @assert T.Equal(want, got, "single path name with no extension" )
 }
 
 {
-    want := "/Users/tom/go/src/github.com/tucats/ego/app-cli/app/actions.go"
-    got := io.Expand("/Users/tom/go/src/github.com/tucats/ego/", ".go")
+    here := profile.Get("ego.path")
+    want := here + "/app-cli/app/actions.go"
+    got := io.Expand(here, ".go")
     gotf := got[0]
     @assert T.Equal(want, gotf,  "single path name with .go extension")
 }
 
 {
-    want := "/Users/tom/go/src/github.com/tucats/ego/tests/README.md"
-    got := io.Expand("/Users/tom/go/src/github.com/tucats/ego/tests")
+    here := profile.Get("ego.path")
+    want := here + "/tests/README.md"
+    got := io.Expand(here + "/tests")
     @assert T.True(len(got)>0, "did not return a list")
     @assert T.Equal(got[0], want, "single level deep directory, got " + string(got))
 }
