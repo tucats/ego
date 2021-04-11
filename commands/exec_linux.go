@@ -1,4 +1,3 @@
-// build darwin linux
 package commands
 
 import (

@@ -1,5 +1,11 @@
 # Build script for Ego that injects version number, and optionally
-# increments it.
+# increments it. By default, the build is for the current OS and
+# architecture, but you can use command line options to choose
+# cross-build operations.
+#
+#   -a     Build for Apple Silicon (darwin arm64)
+#   -l     Build for Linux (linux amd64)
+#   -w     Build for Windows (windows amd64)
 #
 #   -i     Increment the build number before injecting it.
 #          By default, uses the current build number
@@ -9,14 +15,16 @@ BUILDVER=$(cat buildver.txt)
 
 GO="go"
 GOARCH=`go env GOARCH`
-GOOS="darwin"
+GOOS=`go env GOOS`
 
 if [ "$1" == "-a" ]; then
    GOARCH=arm64
+   GOOS=darwin
 fi
 
 if [ "$1" == "-l" ]; then
    GOOS="linux"
+   GOOS=amd64
 fi
 
 if [ "$1" == "-w" ]; then
@@ -36,7 +44,7 @@ if [ "$1" == "-i" ]; then
    echo $BUILDVER >buildver.txt
 fi
 
-echo Build $BUILDVER on $GOARCH
+echo Build $BUILDVER on $GOOS $GOARCH
 GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "-X main.BuildVersion=$BUILDVER"
 
 if [ "$1" == "-i" ]; then
