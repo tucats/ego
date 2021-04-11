@@ -1,6 +1,7 @@
 package datatypes
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -273,4 +274,34 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 	}
 
 	return result
+}
+
+func (m EgoMap) MarshalJSON() ([]byte, error) {
+	b := strings.Builder{}
+	b.WriteString("{")
+
+	// Need to use the sorted list of names so results are deterministic,
+	// as opposed to ranging over the fields directly.
+	keys := m.Keys()
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(",")
+		}
+
+		v, _, _ := m.Get(k)
+		key := GetString(k)
+
+		jsonBytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		b.WriteString(fmt.Sprintf(`"%s":%s`, key, string(jsonBytes)))
+	}
+
+	b.WriteString("}")
+
+	buff := b.String()
+
+	return []byte(buff), nil
 }

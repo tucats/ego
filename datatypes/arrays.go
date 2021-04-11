@@ -1,6 +1,7 @@
 package datatypes
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -322,4 +323,28 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	}
 
 	return err
+}
+
+func (a EgoArray) MarshalJSON() ([]byte, error) {
+	b := strings.Builder{}
+	b.WriteString("[")
+
+	for k, v := range a.data {
+		if k > 0 {
+			b.WriteString(",")
+		}
+
+		jsonBytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		b.WriteString(string(jsonBytes))
+	}
+
+	b.WriteString("]")
+
+	buff := b.String()
+
+	return []byte(buff), nil
 }

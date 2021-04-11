@@ -1,6 +1,8 @@
 package datatypes
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -319,4 +321,33 @@ func (s EgoStruct) Reflect() *EgoStruct {
 	m["static"] = s.static
 
 	return NewStructFromMap(m)
+}
+
+func (s EgoStruct) MarshalJSON() ([]byte, error) {
+	b := strings.Builder{}
+	b.WriteString("{")
+
+	// Need to use the sorted list of names so results are deterministic,
+	// as opposed to ranging over the fields directly.
+	keys := s.FieldNames()
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(",")
+		}
+
+		v := s.GetAlways(k)
+
+		jsonBytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		b.WriteString(fmt.Sprintf(`"%s":%s`, k, string(jsonBytes)))
+	}
+
+	b.WriteString("}")
+
+	buff := b.String()
+
+	return []byte(buff), nil
 }
