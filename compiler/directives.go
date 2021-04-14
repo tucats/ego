@@ -26,40 +26,46 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 		return c.Assert()
 
 	case "authenticated":
-		return c.Authenticated()
+		return c.authenticatedDirective()
 
 	case "error":
-		return c.Error()
+		return c.errorDirective()
 
 	case "fail":
 		return c.Fail()
 
 	case "global":
-		return c.Global()
+		return c.globalDirective()
+
+	case "json":
+		return c.jsonDirective()
 
 	case "log":
-		return c.Log()
+		return c.logDirective()
 
 	case "main":
-		return c.Main()
+		return c.mainDirective()
 
 	case "pass":
 		return c.TestPass()
 
 	case "response":
-		return c.RestResponse()
+		return c.responseDirective()
 
 	case "status":
-		return c.RestStatus()
+		return c.statusDirective()
 
 	case "template":
-		return c.Template()
+		return c.templateDirective()
 
 	case "test":
 		return c.testDirective()
 
+	case "text":
+		return c.textDirective()
+
 	case "type":
-		return c.TypeChecking()
+		return c.typeDirective()
 
 	case "url":
 		return c.urlDirective()
@@ -72,7 +78,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	}
 }
 
-func (c *Compiler) Main() *errors.EgoError {
+func (c *Compiler) mainDirective() *errors.EgoError {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == ";" {
 		mainName = "main"
@@ -82,19 +88,23 @@ func (c *Compiler) Main() *errors.EgoError {
 		return c.newError(errors.InvalidIdentifierError)
 	}
 
+	stackMarker := bytecode.StackMarker{Desc: "main"}
+
+	c.b.Emit(bytecode.Push, stackMarker)
 	c.b.Emit(bytecode.Load, mainName)
 	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.DropToMarker, stackMarker)
+	c.b.Emit(bytecode.Push, 0)
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
-	c.b.Emit(bytecode.Swap)
-	c.b.Emit(bytecode.Call, 1)
+	c.b.Emit(bytecode.Call, 0)
 
 	return nil
 }
 
-// Global parses the @global directive which sets a symbol
+// globalDirective parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
-func (c *Compiler) Global() *errors.EgoError {
+func (c *Compiler) globalDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.newError(errors.InvalidSymbolError)
 	}
@@ -122,8 +132,40 @@ func (c *Compiler) Global() *errors.EgoError {
 	return nil
 }
 
-// Log parses the @log directive.
-func (c *Compiler) Log() *errors.EgoError {
+// Parse the @json directive.
+func (c *Compiler) jsonDirective() *errors.EgoError {
+	_ = c.modeCheck("server", true)
+	c.b.Emit(bytecode.Load, "_json")
+
+	branch := c.b.Mark()
+	c.b.Emit(bytecode.BranchFalse, 0)
+
+	err := c.compileStatement()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	return c.b.SetAddressHere(branch)
+}
+
+// Parse the @text directive.
+func (c *Compiler) textDirective() *errors.EgoError {
+	_ = c.modeCheck("server", true)
+	c.b.Emit(bytecode.Load, "_json")
+
+	branch := c.b.Mark()
+	c.b.Emit(bytecode.BranchTrue, 0)
+
+	err := c.compileStatement()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	return c.b.SetAddressHere(branch)
+}
+
+// logDirective parses the @log directive.
+func (c *Compiler) logDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.newError(errors.InvalidSymbolError)
 	}
@@ -149,9 +191,9 @@ func (c *Compiler) Log() *errors.EgoError {
 	return nil
 }
 
-// RestStatus parses the @status directive which sets a symbol
+// statusDirective parses the @status directive which sets a symbol
 // value in the root symbol table with the REST call status value.
-func (c *Compiler) RestStatus() *errors.EgoError {
+func (c *Compiler) statusDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.newError(errors.InvalidSymbolError)
 	}
@@ -175,7 +217,7 @@ func (c *Compiler) RestStatus() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) Authenticated() *errors.EgoError {
+func (c *Compiler) authenticatedDirective() *errors.EgoError {
 	var token string
 
 	_ = c.modeCheck("server", true)
@@ -195,8 +237,8 @@ func (c *Compiler) Authenticated() *errors.EgoError {
 	return nil
 }
 
-// RestResponse processes the @response directive.
-func (c *Compiler) RestResponse() *errors.EgoError {
+// responseDirective processes the @response directive.
+func (c *Compiler) responseDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		return c.newError(errors.InvalidSymbolError)
 	}
@@ -214,8 +256,8 @@ func (c *Compiler) RestResponse() *errors.EgoError {
 	return nil
 }
 
-// Template implements the template compiler directive.
-func (c *Compiler) Template() *errors.EgoError {
+// templateDirective implements the template compiler directive.
+func (c *Compiler) templateDirective() *errors.EgoError {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
@@ -238,8 +280,8 @@ func (c *Compiler) Template() *errors.EgoError {
 	return nil
 }
 
-// Error implements the @error directive.
-func (c *Compiler) Error() *errors.EgoError {
+// errorDirective implements the @error directive.
+func (c *Compiler) errorDirective() *errors.EgoError {
 	if !c.atStatementEnd() {
 		code, err := c.Expression()
 		if errors.Nil(err) {
@@ -254,9 +296,9 @@ func (c *Compiler) Error() *errors.EgoError {
 	return nil
 }
 
-// TypeChecking implements the @type directive which must be followed by the
+// typeDirective implements the @type directive which must be followed by the
 // keyword "static" or "dynamic", indicating the type of type checking.
-func (c *Compiler) TypeChecking() *errors.EgoError {
+func (c *Compiler) typeDirective() *errors.EgoError {
 	var err error
 
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {

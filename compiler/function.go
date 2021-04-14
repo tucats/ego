@@ -292,7 +292,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// is the "zero value" for the declared type.
 			model, err := c.typeDeclaration()
 			if !errors.Nil(err) {
-				return nil, false, c.Error()
+				return nil, false, c.newError(err)
 			}
 
 			if hasVarArgs {
