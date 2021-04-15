@@ -275,6 +275,8 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	empty := true
+
 	if m, ok := v.(*datatypes.EgoMap); ok {
 		if !m.KeyType().IsType(datatypes.StringType) {
 			err = c.newError(errors.InvalidStructError)
@@ -282,12 +284,16 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 			keys := m.Keys()
 
 			for _, k := range keys {
+				empty = false
 				v, _, _ := m.Get(k)
 
 				err = c.symbolSetAlways(util.GetString(k), v)
 				if !errors.Nil(err) {
 					break
 				}
+			}
+			if errors.Nil(err) {
+				return c.stackPush(empty)
 			}
 		}
 	} else {

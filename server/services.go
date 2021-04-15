@@ -190,7 +190,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
-		//compilerInstance.SetInteractive(true)
 
 		// Add the standard non-package functions
 		compilerInstance.AddStandard(symbolTable)
@@ -306,7 +305,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Run the service code
 	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug).SetTokenizer(tokens)
-	//ctx.EnableConsoleOutput(false)
+	ctx.EnableConsoleOutput(true)
 	ctx.SetTracing(Tracing)
 
 	if debug {

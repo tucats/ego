@@ -33,6 +33,11 @@ func (r *Response) WriteJSON( i interface{}) {
 	r.Write(msg)
 }
 
+func BadURL(url string) {
+    @status 400
+    @response "Unrecognized URI path " + url
+}
+
 func NewResponse() Response {
 	r := Response{
 		Status:   200,
@@ -68,7 +73,9 @@ func NewRequest() Request {
         r.Authentication = "none"
     }
     return r
-}`
+}
+
+@line 1`
 
 // This code is appended after the service. At a minimum, it should contain
 // the @handler directive which runs the handler function by name.

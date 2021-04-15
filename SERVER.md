@@ -309,4 +309,72 @@ a service that updates a password probably would use all of the following functi
 &nbsp;     
 
 ## Sample Service <a name="sample"></a>
-This section describes the source for a simple service.
+This section describes the source for a simple service. This can also be found in
+the lib/services directory.
+
+    // Sample service. This illustrates using a collection-style URI
+    // path, of the form:
+    //
+    //    services/sample/users/{{name}}/{{field}}
+    //
+    //  If name and field are omitted, it lists the possible users.
+    //  If field is omitted, it lists all info about a specific user.
+    //  If field is given, it lists the specific field for the specific user.
+
+    func handler( req Request, resp Response) {
+
+        // Define the required URI syntax. This ends the request in an error
+        // if the syntax is not valid in the URL we received.
+        @url "/users/{{name}}/{{item}}"
+
+        // Construct some sample data.
+        type person struct {
+            age    int 
+            gender string 
+
+        }
+        names := map[string]person{
+                "tom": {age: 51, gender:"M"},
+                "mary": {age:47, gender:"F"},
+        }
+
+        // If the users collection name was not present, we can do nothing.
+        if !users {
+            resp.WriteStatus(400)
+            resp.Write("Incomplete URL")
+        }
+
+        // If the name wasn't part of the path, the Request
+        // is for all names.
+        if name == "" {
+            for k, _ := range names {
+                resp.Write(fmt.Sprintf("%s", k))
+            }
+            return
+        }
+
+        // If is for a specific name, so get that information. If it doesn't
+        // exist then complain.
+        info, found := names[name]
+        if !found {
+            resp.WriteStatus(404)
+            resp.Write("No such name as " + name)
+        } else {
+
+            // Based on the item name, return the desired info.
+            switch item {
+            case "":
+                resp.Write(fmt.Sprintf("%v", info))
+
+            case "age":
+                resp.Write(fmt.Sprintf("%v", info.age))
+
+            case "gender":
+                resp.Write(fmt.Sprintf("%v", info.gender))
+            
+            default:
+                resp.WriteStatus(400)
+                resp.Write("Invalid field selector " + item)
+            }
+        }
+    }

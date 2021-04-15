@@ -22,5 +22,15 @@ func (c *Compiler) urlDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Call, 2)
 	c.b.Emit(bytecode.Explode)
 
-	return nil
+	// This leaves a boolean on the stack indicating if the result
+	// was empty. If not empty, branch around the error report.
+	branch := c.b.Mark()
+	c.b.Emit(bytecode.BranchFalse, 0)
+
+	c.b.Emit(bytecode.Load, "BadURL")
+	c.b.Emit(bytecode.Load, "_path_suffix")
+	c.b.Emit(bytecode.Call, 1)
+	c.b.Emit(bytecode.Return)
+
+	return c.b.SetAddressHere(branch)
 }

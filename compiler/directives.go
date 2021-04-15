@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
@@ -42,6 +43,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 
 	case "json":
 		return c.jsonDirective()
+
+	case "line":
+		return c.lineDirective()
 
 	case "log":
 		return c.logDirective()
@@ -205,6 +209,17 @@ func (c *Compiler) textDirective() *errors.EgoError {
 	}
 
 	return c.b.SetAddressHere(branch)
+}
+
+func (c *Compiler) lineDirective() *errors.EgoError {
+	lineString := c.t.Next()
+
+	line, err := strconv.Atoi(lineString)
+	if err != nil {
+		return c.newError(err)
+	}
+
+	return c.t.SetLineNumber(line)
 }
 
 // logDirective parses the @log directive.

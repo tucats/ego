@@ -8,10 +8,13 @@ func handler( req Request, response Response) {
     }
 
     // If we got additional info in the path, we can't process it.
-    @url "/{{extra}}"
+    @url "/{{extra}}/"
     if extra != "" {
+        @log server "symbol dump follows"
+        fmt.Println(util.Symbols())
+
         response.WriteStatus(400)
-        response.Write("Unsupported URL suffix " + _path_suffix)
+        response.Write("Unsupported URL suffix " + extra)
         return 
     }
 
