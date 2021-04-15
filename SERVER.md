@@ -8,7 +8,8 @@
     2. [Credentials Management](#credentials)
     3. [Profile Settings](#profile)
 3. [Writing a Service](#services)
-    1. [Global Variables](#globals)
+    1. [Request Parameter](#request)
+    2. [Response Parameter](#response)
     2. [Server Directives](#directives)
     3. [Server Functions](#functions)
     4. [Sample Service](#sample)
@@ -51,93 +52,100 @@ number.
 &nbsp;
 &nbsp;
 
-The commands that start and stop a server only required native operating system permissions
-to start or stop a process. The commands that affect user credentials in the server can only 
-be executed when logged into the server with a process that has `root` privileges, as defined 
-by the credentials database in that server.
+The commands that start and stop a server only required native operating system 
+permissions to start or stop a process. The commands that affect user credentials 
+in the server can only  be executed when logged into the server with a process 
+that has `root` privileges, as defined  by the credentials database in that server.
 
-When a server is running, it generates a log file (in the current directory, by default) which 
-tracks the server startup and status of requests made to the server.
+When a server is running, it generates a log file (in the current directory, by 
+default) which  tracks the server startup and status of requests made to the server.
 
 ### Starting and Stopping the Server<a name="startstop"></a>
 
-The `ego server start` command accepts command line options to describe the port on which to 
-listen,  whether or not to use secure HTTPS, and options that control how authentication is 
-handled. The  `ego server stop` command stops a running server. The `ego server restart` stops 
-and restarts a server using the options it was used to start up originally.
+The `ego server start` command accepts command line options to describe the port
+on which to  listen,  whether or not to use secure HTTPS, and options that control 
+how authentication is handled. The  `ego server stop` command stops a running 
+server. The `ego server restart` stops  and restarts a server using the options 
+it was used to start up originally.
 
-You can also run the server from the CLI (instead of detaching it as a process) using the
-`ego server run` command option, which accepts the same options as `ego server start` and runs
-the code directly in the CLI, sending logging to stdout.
+You can also run the server from the CLI (instead of detaching it as a process) 
+using the `ego server run` command option, which accepts the same options as 
+`ego server start` and runs the code directly in the CLI, sending logging to stdout.
 
-When a server is started, a file is created (by default in /tmp) that describes the server
-status and command-line options. This information is re-read when issuing a `ego server status`
-command to display server information. It is also read by the `ego server restart` command to
-determine the command-line options to use with the restarted server.
+When a server is started, a file is created (by default in /tmp) that describes 
+the server status and command-line options. This information is re-read when 
+issuing a `ego server status` command to display server information. It is also
+read by the `ego server restart`  command to determine the command-line options
+to use with the restarted server.
 
-When a server is stopped via `ego server stop`, the server status file in /tmp is deleted.
+When a server is stopped via `ego server stop`, the server status file in /tmp 
+is deleted.
 
-Below is additional information about the options that can be used for the `start` and `run`
-commands.
+Below is additional information about the options that can be used for the `start` 
+and `run` commands.
 
 #### Caching
-You can specify a cache size, which controls how many service programs are held in memory and not
-recompiled. This can be a significant performance benefit. When an endpoint call is made, the
-server checks to see if the cache already contains the compiled code for that function along with
-it's package definitions. If so, it is reused to execute the current service. 
+You can specify a cache size, which controls how many service programs are held in 
+memory and not recompiled. This can be a significant performance benefit. When an 
+endpoint call is made, the server checks to see if the cache already contains the 
+compiled code for that function along with it's package definitions. If so, it is 
+reused to execute the current service. 
 
-If the service
-program was not in the cache, it will be added to the cache.  When the cache becomes full (has
-met the limit on the number of programs to cache) then the least-recently-used service program
-based on timestamp of the last REST call) is removed from the cache. 
+If the service program was not in the cache, it will be added to the cache.  When 
+the cache becomes full (has met the limit on the number of programs to cache) then
+the least-recently-used service program based on timestamp of the last REST call)
+is removed from the cache. 
 
-**NOTE: THIS FEATURE IS CURRENTLY NOT WORKING CORRECTLY. DO NOT SPECIFY A CACHE SIZE.** 
-The default cache size is currently set to zero, which disables caching entirely.
+The default cache size is currently set to 10.
 
 #### /code Endpoint
-By default, the server will only run services already stored in the services directory tree
-(more on that below). When you start the web service, you can optionally enable the `\code`
-endpoint. This accepts a text body and runs it as a program directly. This can be used for
-debugging purposes or diagnosing issues with a server. This should **NOT** be left enabled
-by default, as it exposes the server to security risks.
+By default, the server will only run services already stored in the services 
+directory tree (more on that below). When you start the web service, you can 
+optionally enable the `\code` endpoint. This accepts a text body and runs it 
+as a program directly. This can be used for debugging purposes or diagnosing 
+issues with a server. This should **NOT** be left enabled by default, as it 
+exposes the server to security risks.
 
 #### Logging
-By default, the server generates a lot file named "ego-server.log" in the current directory
-where the `server start` command is issued. This contains entries describing server operations
-(like records of endpoints called, and HTTP status returned). It also contains a periodic
-display of memory consumption by the server.
+By default, the server generates a lot file named "ego-server.log" in the 
+current directory where the `server start` command is issued. This contains 
+entries describing server operations (like records of endpoints called, and 
+HTTP status returned). It also contains a periodic display of memory 
+consumption by the server.
 
-You can override the location of the log file using the `--log` command line option, and
-specifying the location and file name where the log file is to be written. The log will
-continue to be written to as long as the server is running. Note that the first line of
-the log file contains the UUID of the server session, so you can correlate a log to a
-running instance of the server.
+You can override the location of the log file using the `--log` command line
+option, and specifying the location and file name where the log file is to 
+be written. The log will continue to be written to as long as the server is 
+running. Note that the first line of the log file contains the UUID of the 
+server session, so you can correlate a log to a running instance of the server.
 
 You can specify `--no-log` if you wish to suppress logging.
 
 #### Port and Security
-Specify the `--port` option to indicate the integer port number that _Ego_ should use to
-listen for REST requests. If not specified, the default is port 8080. You can have multiple
-_Ego_ servers running at one time, as long as they each use a different port number. The
-port number is also used in other commands like `server status` to report on the status of
-a particular instance of the server on the current computer.
+Specify the `--port` option to indicate the integer port number that _Ego_ 
+should use to listen for REST requests. If not specified, the default is port 
+8080. You can have multiple _Ego_ servers running at one time, as long as 
+they each use a different port number. The port number is also used in other 
+commands like `server status` to report on the status of a particular 
+instance of the server on the current computer.
 
-By default, _Ego_ servers assume HTTPS communication. This requires that you have specified
-a suitable trusted certificate store in the default location on your system that _Ego_ can
-use to verify server trust.
+By default, _Ego_ servers assume HTTPS communication. This requires that 
+you have specified a suitable trusted certificate store in the default 
+location on your system that _Ego_ can use to verify server trust.
 
-If you wish to run in insecure mode, you can use the "--not-secure" option direct the server 
-to listen for HTTP requests that are not encrypted. You must not use this mode in a 
-production environment, since it is possible for users to snoop for username/password 
-pairs and authentication tokens. It  is useful to debug issues where you are attempting 
-to isolate whether your are having an issue with trust certificates or not.
+If you wish to run in insecure mode, you can use the "--not-secure" option 
+direct the server  to listen for HTTP requests that are not encrypted. You 
+must not use this mode in a production environment, since it is possible 
+for users to snoop for username/password  pairs and authentication tokens. 
+It is useful to debug issues where you are attempting  to isolate whether 
+your are having an issue with trust certificates or not.
 
 #### Authentication
-An _Ego_ web server can serve endpoints that require authentication or not, and whether
-the authentication is done by username/password versus an authentication token. Server
-command options control where the authentication credentails are stored, the default 
-"super user" account, and the security "realm" used for password challenges to web
-clients.
+An _Ego_ web server can serve endpoints that require authentication or not, 
+and whether the authentication is done by username/password versus an 
+authentication token. Server command options control where the credentails 
+are stored, the default  "super user" account, and the security "realm" 
+used for password challenges to web clients.
 
 * Use the `--users` command line option to specify either the file system path and
   file name to use for local JSON data that contains the credentials information, or
@@ -188,11 +196,15 @@ which are set with the `ego profile set` command or via program operation using 
 
 # Writing a Service <a name="services"></a>
 
-This section covers details of writing a service. The service program is called automatically
+**** THIS IS OUT OF DATE ****
+
+This section covers details of writing a service. The service handler function is called automatically
 by the Ego web server when a request comes in with an endpoint URL that matches the service
-file location. The URL is available to the service, along with other variables indicating
-status of authentication, etc. The service program is then run, and it has responsibility
-for determining the HTTP status and response type of the result.
+file location. Information about the request is provided with information about the requst,
+the caller, headers, and parameters via a `Request` parameter. The service's `handler()`
+function is responsible for formulating a response using the handler's second argument, which
+must be a `Response` object. This object allows the handler to set the status, and write
+a response body payload (either as text or JSON).
 
 
 Server startup scans the `services/` directory below the Ego path to find the Ego programs
@@ -205,21 +217,36 @@ the endpoint. To help support this, a number of global variables are set up for 
 endpoint service program which describe  information about the rest call and the
 credentials (if any) of the caller.
 
-## Global Variables <a name="#globals"></a>
-Each time a REST call is made, the program associated with the endpoint is run. When it
-runs, it will have a number of global variables set already that the program can use
-to control its operation.
+## Request Parameter <a name="#request"></a>
+The first parameter of the service's `handler()` function must be of type `Request`, which
+describes all the information known about the request made by the caller. It is a `struct`
+data type, with the following fields:
 
-| Name        | Type    | Description                                         |
-|-------------|---------|-----------------------------------------------------|
-| _body       | string  | The text of the body of the request.                |
-| _headers    | struct  | A struct where the field is the header name, and the value is an array of string values for each value found  |
-| _parms      | struct  | A struct where the field name is the parameter, and the value si an array of string values for each value found |
-| _password   | string  | The Basic authentication password provided, or empty string if not used |
-| _superuser  | bool | The username or token identity has root privileges |
-| _token      | string  | The Token authentication value, or an empty string if not used |
-| _token_valid | bool | The Token authentication value is a valid token |
-| _user       | string  | The Basic authentication username provided, or identify of a valid Token |
+
+
+| Name           | Type    | Description                                              |
+|----------------|---------|----------------------------------------------------------|
+| Authentication | string  | The kind of authentication, "none", "basic", or "token"  |
+| Body           | string  | The request body if this was a POST operation            |
+| Endpoint       | string  | The endpoint for this request                            |
+| Headers        | map     | A map[string][]string containing all the headers         |
+| Media          | string  | "text" or "json" based on the Accept header value        |
+| Method         | string  | The request method, "GET", "POST", "DELETE", etc.        |
+| Parameters     | map     | A map[string][]string containing the parameters          |
+| Url            | string  | The full URL used to make the request.                   |
+| Username       | string  | If authenitcated, the username of the requestor          |
+
+## Response Parameter <a name="#response"></a>
+The second paraameter of teh service's `handler()` function must be of type `Response` and
+is used to send responses back to the caller. This item has no fields, but does have methods
+you can call.
+
+| Name        | Parameter  | Description |
+|-------------|------------|-------------|
+| WriteStatus | integer    | Set the HTTP response status code |
+| Write       | string     | Add the string to the response body |
+| WriteJSON   | any        | Add a JSON representation of the paraemter to the body |
+
 &nbsp; 
 &nbsp;     
 
@@ -227,33 +254,45 @@ to control its operation.
 There are a few compiler directives that can be used in service programs that are executed 
 by the server. These allow for more declarative code.
 
-`@authenticated type`
+### @authenticated type
 This requires that the caller of the service be authenticated, and specifies the type of the 
 authentication to be performed. This should be at the start of the service code; if the caller 
 is not authenticated then the rest of the services does not run.  Valid types are:
 
-| Type | Description |
-| --- | --- |
-| any | User can be authenticated by username or token |
-| token | User must be authenticated by token only |
-| user | User must be authenticated with username/password only |
-| admin | The user (regardless of authentication) must have root privileges |
+| Type       | Description |
+| ---------- | ----------- |
+| any        | User can be authenticated by username or token |
+| token      | User must be authenticated by token only |
+| user       | User must be authenticated with username/password only |
+| admin      | The user (regardless of authentication) must have root privileges |
 | tokenadmin | The user must authenticated by token and have root privilieges |
 
 &nbsp;
 &nbsp;
 
-`@status n`
-This sets the REST return status code to the given integer value. By default, the status value i
-s 200 for "success" but can be set to any valid integer HTTP status code. For example, 404 means 
-"not found" and 403 means "forbidden".
+### @json {}
+The body of the code in the `{}` are executed if the current request supports JSON as the
+result type. If the caller does not accept JSON, then the body is not executed.
 
-`@response v`
-This adds the contents of the expression value `v` to the result set returned to the caller. You
-can have multiple `@response` directives, they are accumulated in the order executed. A primary 
-value of this is also that it automatically detects if the media type is meant to specify JSON
-results; in this case the value is automatically converted to a JSON string before being added
-to the response.
+### @text {}
+The body of the code in the `{}` is executed if the current request supports TEXT as the
+result type. If the caller does not accept text, then the body is not executed.
+
+### @url "/pattern"
+The given pattern is applied to the current URL. The pattern can include literal values
+or symbols enclosed in `{{` and `}}` characters. The part of the URL represented by those
+symbols will be stored in a local variable of teh given name. For example,
+
+    @url "/catalog/{{item}}/names"
+
+If the request was called with a URL of "/catalog/1551/names" then the value of `item` is
+set to the string "1551". If the URL does not include the constant values of the pattern,
+then the handler ends and sends a 400 "Bad Request" response to the caller. 
+
+### @log server "string"
+This adds logging messages to the server log. The "string" value is any string expression;
+it is written to the server log if the server log is active (by default, this is always
+active when running in server mode).
 
 ## Functions <a name="functions"></a>
 There are additional functions made available to the Ego programs run as services. These are 
