@@ -2,7 +2,7 @@
 
 func handler( req Request, response Response) {
     if req.Authentication != "basic" {
-        response.WriteStatus(200)
+        response.WriteStatus(401)
         response.Write("401 Not authorized")
         return
     }
