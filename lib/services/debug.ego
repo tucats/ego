@@ -1,55 +1,57 @@
 /* Debugging service. This reports server status */
 
-@authenticated user
-@status 200
+func handler( req interface{}) {
+    @authenticated user
+    @status 200
 
-// If we got additional info in the path, we can't process it.
-@url "/{{extra}}"
-if extra != "" {
-    @status 400
-    @response "Unsupported URL suffix " + _path_suffix
-    return 
-}
-
-// This block runs if the caller asks for JSON data
-@json {
-    r := {}  // Needs to be an anonymous struct so we can arbitrarily
-             // add fields.
-    r.valid_user  = authenticated()
-    r.version     = _version
-    r.token_valid = _token_valid
-    r.session     = _session 
-    r.time        = time.Now().String()
-
-    m := util.Memory()
-    r.memory         = {}
-    r.memory.current = m.current
-    r.memory.gc      = m.gc
-    r.memory.system  = m.system
-    r.memory.total   = m.total
-
-    if _token_valid {
-        // If the token was valid, get some additional info about the user it represents
-        t := cipher.Token(_token)
-        r.user = t.name
-        r.data = t.data
-        r.superuser = getuser(t.name).superuser
+    // If we got additional info in the path, we can't process it.
+    @url "/{{extra}}"
+    if extra != "" {
+        @status 400
+        @response "Unsupported URL suffix " + _path_suffix
+        return 
     }
 
-    // If there was a body, this was a POST so return the body as
-    // a real value.
-    if _body != "" {
-        r.posted = json.UnMarshal(_body)
+    // This block runs if the caller asks for JSON data
+    @json {
+        r := {}  // Needs to be an anonymous struct so we can arbitrarily
+                // add fields.
+        r.valid_user  = authenticated()
+        r.version     = _version
+        r.token_valid = _token_valid
+        r.session     = _session 
+        r.time        = time.Now().String()
+
+        m := util.Memory()
+        r.memory         = {}
+        r.memory.current = m.current
+        r.memory.gc      = m.gc
+        r.memory.system  = m.system
+        r.memory.total   = m.total
+
+        if _token_valid {
+            // If the token was valid, get some additional info about the user it represents
+            t := cipher.Token(_token)
+            r.user = t.name
+            r.data = t.data
+            r.superuser = getuser(t.name).superuser
+        }
+
+        // If there was a body, this was a POST so return the body as
+        // a real value.
+        if _body != "" {
+            r.posted = json.UnMarshal(_body)
+        }
+        @response r
     }
-    @response r
-}
 
 // This block only runs when the caller asks for text.
-@text {
-r := `Healthy %s mode at %s
+    @text {
+        r := `Healthy %s mode at %s
     version %s,
     user    %s,
     session %s,
+    request %v,
 
 Memory usage:
     Current  %3.3fmb
@@ -57,8 +59,9 @@ Memory usage:
     System   %3.3fmb
     NumGC    %d    
 `
-    m := util.Memory()
+        m := util.Memory()
 
-    @response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
-                            m.current, m.total, m.system, m.gc)
+        @response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
+                            req, m.current, m.total, m.system, m.gc)
+    }
 }

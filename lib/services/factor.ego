@@ -13,29 +13,30 @@
 //           expression in the URL). The body of the response is the
 //           text of the error.
 
+func handler( req Request ) {
+    // Parse apart the URL, which should be a slash and the
+    // numeric value to process. This stores the portions of 
+    // the URL in a symbol of the given name.
+    @url "/{{value}}"
 
-// Parse apart the URL, which should be a slash and the
-// numeric value to process. This stores the portions of 
-// the URL in a symbol of the given name.
-@url "/{{value}}"
+    // If the value string is empty, it was not present. Complain.
+    if value == "" {
+        @status 400
+        @response "Missing integer to factor"
+        return
+    }
 
-// If the value string is empty, it was not present. Complain.
-if value == "" {
-    @status 400
-    @response "Missing integer to factor"
-    return
-}
+    // Convert the value to an integer and get the list of factors.
+    try {
+        r := math.Factor(int(value))
 
-// Convert the value to an integer and get the list of factors.
-try {
-    r := math.Factor(int(value))
+        // Return a success status and the factors
+        @status 200
+        @response r
+    } catch (e) {
 
-    // Return a success status and the factors
-    @status 200
-    @response r
-} catch (e) {
-
-    // Nope, there was an error so report that.
-    @status 400
-    @response fmt.Sprintf("invalid integer: %s", value)
+        // Nope, there was an error so report that.
+        @status 400
+        @response fmt.Sprintf("invalid integer: %s", value)
+    }
 }

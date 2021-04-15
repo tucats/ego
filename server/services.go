@@ -143,6 +143,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		pathSuffix = "/" + pathSuffix
 	}
 
+	_ = symbolTable.SetAlways("_url", r.URL.String())
 	_ = symbolTable.SetAlways("_path_endpoint", endpoint)
 	_ = symbolTable.SetAlways("_path", "/"+path)
 	_ = symbolTable.SetAlways("_path_suffix", pathSuffix)
@@ -181,8 +182,52 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Tokenize the input
-		text := string(bytes)
+		// Tokenize the input, adding a suffix to create a call to the handler function
+		// in this code.
+		var handlerProlog = `
+package http
+
+type Request struct {
+    Method         string
+    Url            string 
+    Endpoint       string
+    Media          string
+    Headers        map[string][]string 
+    Parameters     map[string][]string
+    Authentication string
+    Username       string
+    Body           string
+}
+
+func NewRequest() Request {
+    r := Request{
+        Url:             _url,
+        Endpoint:        _path_endpoint,
+        Headers:         _headers,
+        Parameters:      _parms,
+        Method:          _method,
+        Body:            _body,
+    }
+
+    if _json {
+        r.Media = "json"
+    } else {
+        r.Media = "text"
+    }
+
+    if _authenticated {
+        if _token == "" {
+            r.Authentication = "basic"
+            r.Username = _user
+        } else {
+            r.Authentication = "token"
+        }
+    } else {
+        r.Authentication = "none"
+    }
+    return r
+}`
+		text := handlerProlog + string(bytes) + "\n@handler handler"
 		tokens = tokenizer.New(text)
 
 		// Compile the token stream

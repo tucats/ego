@@ -37,6 +37,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "global":
 		return c.globalDirective()
 
+	case "handler":
+		return c.handlerDirective()
+
 	case "json":
 		return c.jsonDirective()
 
@@ -98,6 +101,31 @@ func (c *Compiler) mainDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
 	c.b.Emit(bytecode.Call, 0)
+
+	return nil
+}
+
+func (c *Compiler) handlerDirective() *errors.EgoError {
+	handlerName := c.t.Next()
+	if handlerName == tokenizer.EndOfTokens || handlerName == ";" {
+		handlerName = "handler"
+	}
+
+	if !tokenizer.IsSymbol(handlerName) {
+		return c.newError(errors.InvalidIdentifierError)
+	}
+
+	stackMarker := bytecode.StackMarker{Desc: "handler"}
+
+	c.b.Emit(bytecode.Push, stackMarker)
+
+	c.b.Emit(bytecode.Load, handlerName)
+	c.b.Emit(bytecode.Load, "NewRequest")
+	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Call, 1)
+
+	c.b.Emit(bytecode.DropToMarker, stackMarker)
+	c.b.Emit(bytecode.Stop)
 
 	return nil
 }

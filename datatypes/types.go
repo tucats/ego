@@ -154,6 +154,11 @@ func (t Type) IsPointer() bool {
 
 // Return true if this type is the same as the provided type.
 func (t Type) IsType(i Type) bool {
+	// If one of these is just a type wrapper, we can compare the underlying type.
+	if i.kind == TypeKind {
+		i = *i.valueType
+	}
+
 	if t.kind != i.kind {
 		return false
 	}

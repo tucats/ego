@@ -3,13 +3,14 @@
  * headers, and returns an encrypted token that can be used for subsequent
  * authorization operations.
  */
-import ( 
-    cipher 
-)
 
+func handler( req Request ) {
 // Can only proceed if authenticated with username
-@authenticated user
+
+    @authenticated user
 
 // Generate a token and return it as text to the caller
-@response cipher.Create(_user)
-@status 200
+    @response cipher.Create(_user)
+    @status 200
+    return
+}

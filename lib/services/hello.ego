@@ -1,31 +1,33 @@
 // Really simple page that just constructs some HTML, using templates.
 
-@template body `
-<body>
-    {{.Body}}
-</body>
-`
+func handler( req Requst ) {
+    @template body `
+    <body>
+        {{.Body}}
+    </body>
+    `
 
-@template head `
-<head>
-    {{.Heading}}
-    <hr/>
-    <p>
-</head>
-`
+    @template head `
+    <head>
+        {{.Heading}}
+        <hr/>
+        <p>
+    </head>
+    `
 
-@template html `
-    {{template "head" . }}
-    {{template "body" . }}
-`
+    @template html `
+        {{template "head" . }}
+        {{template "body" . }}
+    `
 
-page := { 
-    Heading : "Test Web Page",
-    Body : "Hello, world"
+    page := { 
+        Heading : "Test Web Page",
+        Body : "Hello, world"
+    }
+
+    // The text we print becomes the body of the reply, which in this
+    // case is HTML code.
+    @status 200
+    @response strings.Template(html, page)
+
 }
-
-// The text we print becomes the body of the reply, which in this
-// case is HTML code.
-@status 200
-@response strings.Template(html, page)
-

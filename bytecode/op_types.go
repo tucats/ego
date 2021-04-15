@@ -65,6 +65,10 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				}
 
 				actualType := datatypes.TypeOf(v)
+				if actualType.Kind() == datatypes.TypeKind {
+					actualType = *actualType.BaseType()
+				}
+
 				if !actualType.IsType(t) {
 					return c.newError(errors.ArgumentTypeError)
 				}
