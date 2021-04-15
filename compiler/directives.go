@@ -219,7 +219,11 @@ func (c *Compiler) lineDirective() *errors.EgoError {
 		return c.newError(err)
 	}
 
-	return c.t.SetLineNumber(line)
+	c.b.ClearLineNumbers()
+	_ = c.t.SetLineNumber(line)
+	c.b.Emit(bytecode.AtLine, line)
+
+	return nil
 }
 
 // logDirective parses the @log directive.

@@ -199,3 +199,16 @@ func (b *ByteCode) NewError(err error, args ...interface{}) *errors.EgoError {
 
 	return r
 }
+
+func (b *ByteCode) ClearLineNumbers() {
+	for n, i := range b.instructions {
+		if n == len(b.instructions)-1 {
+			break
+		}
+
+		if i.Operation == AtLine {
+			i.Operand = 0
+			b.instructions[n] = i
+		}
+	}
+}

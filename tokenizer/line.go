@@ -8,7 +8,7 @@ import "github.com/tucats/ego/errors"
 // @line specification rather than the actual literal line number.
 func (t *Tokenizer) SetLineNumber(line int) *errors.EgoError {
 	currentLine := t.Line[t.TokenP]
-	offset := line - currentLine
+	offset := line - currentLine - 1
 
 	for i, n := range t.Line {
 		newLine := n + offset
@@ -18,6 +18,8 @@ func (t *Tokenizer) SetLineNumber(line int) *errors.EgoError {
 
 		t.Line[i] = newLine
 	}
+
+	t.Source = t.Source[currentLine:]
 
 	return nil
 }
