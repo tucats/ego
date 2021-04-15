@@ -354,6 +354,9 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 			err = c.newError(err).In(functions.FindName(af))
 		}
 
+	case *errors.EgoError:
+		return c.newError(errors.UnusedErrorReturnError)
+
 	default:
 		return c.newError(errors.InvalidFunctionCallError).Context(af)
 	}

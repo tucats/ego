@@ -1,6 +1,6 @@
 // Really simple page that just constructs some HTML, using templates.
 
-func handler( req Requst ) {
+func handler( req Request, resp Response ) {
     @template body `
     <body>
         {{.Body}}
@@ -27,7 +27,9 @@ func handler( req Requst ) {
 
     // The text we print becomes the body of the reply, which in this
     // case is HTML code.
-    @status 200
-    @response strings.Template(html, page)
+
+    msg := strings.Template(html, page)
+    resp.WriteStatus(200)
+    resp.Write(msg)
 
 }

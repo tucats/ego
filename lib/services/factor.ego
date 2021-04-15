@@ -7,13 +7,13 @@
 // There is no authentication required for this request.
 //
 // Status codes:
-//    200    The body of the response is a string with the array
+//    200    The body of the resp is a string with the array
 //           of integers
 //    400    The request was invalid (usually due to a bad integer
-//           expression in the URL). The body of the response is the
+//           expression in the URL). The body of the resp is the
 //           text of the error.
 
-func handler( req Request ) {
+func handler( req Request, resp Response) {
     // Parse apart the URL, which should be a slash and the
     // numeric value to process. This stores the portions of 
     // the URL in a symbol of the given name.
@@ -21,8 +21,8 @@ func handler( req Request ) {
 
     // If the value string is empty, it was not present. Complain.
     if value == "" {
-        @status 400
-        @response "Missing integer to factor"
+        resp.WriteStatus(400)
+        resp.Write( "Missing integer to factor" )
         return
     }
 
@@ -30,13 +30,13 @@ func handler( req Request ) {
     try {
         r := math.Factor(int(value))
 
-        // Return a success status and the factors
-        @status 200
-        @response r
+        // Return a success status and the factors. We can write as
+        // JSON since the format is the same for TEXT and JSON.
+        resp.WriteStatus(200)
+        resp.WriteJSON(r)
     } catch (e) {
-
         // Nope, there was an error so report that.
-        @status 400
-        @response fmt.Sprintf("invalid integer: %s", value)
+        resp.WriteStatus(400)
+        resp.WriteString(fmt.Sprintf("invalid integer: %s", value))
     }
 }

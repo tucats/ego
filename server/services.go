@@ -182,58 +182,15 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Tokenize the input, adding a suffix to create a call to the handler function
-		// in this code.
-		var handlerProlog = `
-package http
-
-type Request struct {
-    Method         string
-    Url            string 
-    Endpoint       string
-    Media          string
-    Headers        map[string][]string 
-    Parameters     map[string][]string
-    Authentication string
-    Username       string
-    Body           string
-}
-
-func NewRequest() Request {
-    r := Request{
-        Url:             _url,
-        Endpoint:        _path_endpoint,
-        Headers:         _headers,
-        Parameters:      _parms,
-        Method:          _method,
-        Body:            _body,
-    }
-
-    if _json {
-        r.Media = "json"
-    } else {
-        r.Media = "text"
-    }
-
-    if _authenticated {
-        if _token == "" {
-            r.Authentication = "basic"
-            r.Username = _user
-        } else {
-            r.Authentication = "token"
-        }
-    } else {
-        r.Authentication = "none"
-    }
-    return r
-}`
-		text := handlerProlog + string(bytes) + "\n@handler handler"
+		// Tokenize the input, adding the prolog to support handler functions and
+		// a suffix to create a call to the handler function.
+		text := handlerProlog + string(bytes) + handlerEpilog
 		tokens = tokenizer.New(text)
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
-		compilerInstance.SetInteractive(true)
+		//compilerInstance.SetInteractive(true)
 
 		// Add the standard non-package functions
 		compilerInstance.AddStandard(symbolTable)
@@ -349,7 +306,7 @@ func NewRequest() Request {
 
 	// Run the service code
 	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug).SetTokenizer(tokens)
-	ctx.EnableConsoleOutput(false)
+	//ctx.EnableConsoleOutput(false)
 	ctx.SetTracing(Tracing)
 
 	if debug {
@@ -401,9 +358,21 @@ func NewRequest() Request {
 		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
 	} else {
 		// Otherwise, capture the print buffer.
-		_, _ = io.WriteString(w, ctx.GetOutput())
+		responseSymbol, _ := ctx.GetSymbols().Get("_response")
+		buffer := ""
+		if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+			bufferValue, _ := responseStruct.Get("Buffer")
+			buffer = util.GetString(bufferValue)
+		}
 
-		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
+		_, _ = io.WriteString(w, buffer)
+
+		buffer = strings.ReplaceAll(buffer, "\n", "\\n")
+		if len(buffer) > 50 {
+			buffer = buffer[:50] + "..."
+		}
+
+		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending TEXT response : %s", sessionID, status, buffer)
 	}
 }
 

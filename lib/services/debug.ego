@@ -1,16 +1,21 @@
 /* Debugging service. This reports server status */
 
-func handler( req interface{}) {
-    @authenticated user
-    @status 200
+func handler( req Request, response Response) {
+    if req.Authentication != "basic" {
+        response.WriteStatus(200)
+        response.Write("401 Not authorized")
+        return
+    }
 
     // If we got additional info in the path, we can't process it.
     @url "/{{extra}}"
     if extra != "" {
-        @status 400
-        @response "Unsupported URL suffix " + _path_suffix
+        response.WriteStatus(400)
+        response.Write("Unsupported URL suffix " + _path_suffix)
         return 
     }
+
+    @log server "This message goes to the server log"
 
     // This block runs if the caller asks for JSON data
     @json {
@@ -40,18 +45,31 @@ func handler( req interface{}) {
         // If there was a body, this was a POST so return the body as
         // a real value.
         if _body != "" {
-            r.posted = json.UnMarshal(_body)
+            r.posted = json.Unmarshal(_body)
         }
-        @response r
+
+        response.WriteJSON( r )
     }
 
 // This block only runs when the caller asks for text.
     @text {
-        r := `Healthy %s mode at %s
+        r := `
+Healthy %s mode at %s
     version %s,
     user    %s,
     session %s,
-    request %v,
+
+Request:
+    Authentication %s 
+    Body           %s 
+    Endpoint       %s 
+    Headers        %v 
+    Media          %s 
+    Method         %s 
+    Parameters     %v 
+    URL            %s 
+    Username       %s 
+
 
 Memory usage:
     Current  %3.3fmb
@@ -62,6 +80,15 @@ Memory usage:
         m := util.Memory()
 
         @response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
-                            req, m.current, m.total, m.system, m.gc)
+                            req.Authentication,
+                            req.Body,
+                            req.Endpoint,
+                            req.Headers,
+                            req.Media,
+                            req.Method,
+                            req.Parameters,
+                            req.Url,
+                            req.Username, 
+                            m.current, m.total, m.system, m.gc)
     }
 }

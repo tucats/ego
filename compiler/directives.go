@@ -117,13 +117,28 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	stackMarker := bytecode.StackMarker{Desc: "handler"}
 
+	// Plant a stack marker and load the handler function value
 	c.b.Emit(bytecode.Push, stackMarker)
-
 	c.b.Emit(bytecode.Load, handlerName)
+
+	// Generate a new request and put it on the stack
 	c.b.Emit(bytecode.Load, "NewRequest")
 	c.b.Emit(bytecode.Call, 0)
-	c.b.Emit(bytecode.Call, 1)
 
+	// Generate a new response and put it on the stack.
+	c.b.Emit(bytecode.Load, "NewResponse")
+	c.b.Emit(bytecode.Call, 0)
+
+	// Make a copy of the response and store as _response
+	c.b.Emit(bytecode.Dup)
+	c.b.Emit(bytecode.SymbolOptCreate, "_response")
+	c.b.Emit(bytecode.StoreAlways, "_response")
+
+	// Call the handler with the request and response
+	c.b.Emit(bytecode.Call, 2)
+
+	// Drop the marker and we're done. The _response variable
+	// should contain the product of the handler.
 	c.b.Emit(bytecode.DropToMarker, stackMarker)
 	c.b.Emit(bytecode.Stop)
 

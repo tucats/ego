@@ -4,13 +4,15 @@
  * authorization operations.
  */
 
-func handler( req Request ) {
+func handler( req Request, resp Response ) {
 // Can only proceed if authenticated with username
-
     @authenticated user
 
 // Generate a token and return it as text to the caller
-    @response cipher.Create(_user)
-    @status 200
+    token := cipher.Create(_user)
+    
+    resp.Write(token)
+    resp.WriteStatus(200)
+
     return
 }

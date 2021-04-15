@@ -249,6 +249,12 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 
 	case reflect.String:
 		valueType = StringType
+
+	case reflect.Map:
+		valueType = Map(InterfaceType, InterfaceType)
+
+	case reflect.Array:
+		valueType = Array(InterfaceType)
 	}
 
 	switch keyKind {

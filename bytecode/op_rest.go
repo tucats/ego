@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -46,12 +45,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
 		c.running = false
+
 		_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
-
-		if c.output != nil {
-			c.output.WriteString("403 Forbidden")
-		}
-
+		writeResponse(c, "403 Forbidden")
 		ui.Debug(ui.ServerLogger, "@authenticated token: no valid token")
 
 		return nil
@@ -59,12 +55,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if kind == "user" && user == "" && pass == "" {
 		c.running = false
+
 		_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
-
-		if c.output != nil {
-			c.output.WriteString("401 Not authorized")
-		}
-
+		writeResponse(c, "401 Not authorized")
 		ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
 
 		return nil
@@ -80,14 +73,10 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if !isAuth {
-			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
-
-			if c.output != nil {
-				c.output.WriteString("403 Forbidden")
-			}
-
 			c.running = false
 
+			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
+			writeResponse(c, "403 Forbidden")
 			ui.Debug(ui.ServerLogger, "@authenticated any: not authenticated")
 
 			return nil
@@ -102,14 +91,10 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if !isAuth {
-			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
-
-			if c.output != nil {
-				c.output.WriteString("403 Forbidden")
-			}
-
 			c.running = false
 
+			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
+			writeResponse(c, "403 Forbidden")
 			ui.Debug(ui.ServerLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
 		}
 	}
@@ -121,38 +106,23 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 // top of stack is formatted as JSON, otherwise it is formatted as text, and written to the
 // response.
 func responseByteCode(c *Context, i interface{}) *errors.EgoError {
-	// See if we have a media type specified.
-	isJSON := false
-
-	if v, found := c.symbolGet("_json"); found {
-		isJSON = util.GetBool(v)
-	}
-
-	var output string
-
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
 	}
 
-	if isJSON {
-		// Use Sanitize to normalize maps and array, and remove metadata
-		b, err := json.Marshal(datatypes.Sanitize(v))
-		if !errors.Nil(err) {
-			return errors.New(err)
-		}
+	output := util.FormatUnquoted(v)
 
-		output = string(b)
-	} else {
-		output = util.FormatUnquoted(v)
-	}
-
-	if c.output == nil {
-		fmt.Println(output)
-	} else {
-		c.output.WriteString(output)
-		c.output.WriteRune('\n')
-	}
+	writeResponse(c, output+"\n")
 
 	return nil
+}
+
+func writeResponse(c *Context, output string) {
+	responseSymbol, _ := c.symbolGet("_response")
+	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+		bufferValue, _ := responseStruct.Get("Buffer")
+
+		_ = responseStruct.SetAlways("Buffer", util.GetString(bufferValue)+output)
+	}
 }

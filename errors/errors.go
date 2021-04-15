@@ -70,7 +70,11 @@ func (e *EgoError) At(line int, column int) *EgoError {
 // example, in a keyword not recognized error, the context
 // is usually the offending keyword.
 func (e *EgoError) Context(context interface{}) *EgoError {
-	e.context = fmt.Sprintf("%v", context)
+	if context != nil {
+		e.context = fmt.Sprintf("%v", context)
+	} else {
+		e.context = "<nil>"
+	}
 
 	return e
 }
