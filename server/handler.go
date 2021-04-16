@@ -68,6 +68,7 @@ func NewRequest() Request {
             r.Username = _user
         } else {
             r.Authentication = "token"
+            r.Username = _user
         }
     } else {
         r.Authentication = "none"

@@ -31,9 +31,10 @@ func NewRequest() Request {
     if _authenticated {
         if _token == "" {
             r.Authentication = "basic"
-            r.Username = "_username"
+            r.Username = _user
         } else {
             r.Authentication = "token"
+            r.Username = _user
         }
     } else {
         r.Authentication = "none"

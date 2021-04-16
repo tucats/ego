@@ -23,10 +23,12 @@ var Grammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 	},
 	{
-		LongName:    "show",
-		Description: "Show the current profile",
-		Action:      ShowAction,
-		OptionType:  cli.Subcommand,
+		LongName:             "show",
+		Description:          "Show the current profile",
+		Action:               ShowAction,
+		ParameterDescription: "key",
+		ParametersExpected:   1,
+		OptionType:           cli.Subcommand,
 	},
 	{
 		LongName:             "set-output",
@@ -73,6 +75,18 @@ var Grammar = []cli.Option{
 
 // ShowAction Displays the current contents of the active profile.
 func ShowAction(c *cli.Context) *errors.EgoError {
+	// Is the user asking for a single value?
+	if len(c.FindGlobal().Parameters) > 0 {
+		key := c.FindGlobal().Parameters[0]
+		if !persistence.Exists(key) {
+			return errors.New(errors.NoSuchProfileKeyError).Context(key)
+		}
+
+		fmt.Println(persistence.Get(key))
+
+		return nil
+	}
+
 	t, _ := tables.New([]string{"Key", "Value"})
 
 	for k, v := range persistence.CurrentConfiguration.Items {
