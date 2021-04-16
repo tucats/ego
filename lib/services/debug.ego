@@ -71,8 +71,7 @@ Request:
     Method         %s 
     Parameters     %v 
     URL            %s 
-    Username       %s 
-
+    Userdata       %v
 
 Memory usage:
     Current  %3.3fmb
@@ -91,7 +90,7 @@ Memory usage:
                             req.Method,
                             req.Parameters,
                             req.Url,
-                            req.Username, 
+                            getuser(req.Username),
                             m.current, m.total, m.system, m.gc)
     }
 }

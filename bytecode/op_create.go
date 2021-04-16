@@ -230,7 +230,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		// No type, default it to a struct.
 		t := datatypes.Structure()
 		for _, name := range fields {
-			_ = t.DefineField(name, datatypes.TypeOf(m[name]))
+			t.DefineField(name, datatypes.TypeOf(m[name]))
 		}
 	}
 

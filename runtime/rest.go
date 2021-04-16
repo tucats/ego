@@ -83,13 +83,13 @@ const ()
 func initializeRestType() {
 	if restType == nil {
 		structType := datatypes.Structure()
-		_ = structType.DefineField(clientFieldName, datatypes.InterfaceType)
-		_ = structType.DefineField(baseURLFieldName, datatypes.StringType)
-		_ = structType.DefineField(mediaTypeFieldName, datatypes.StringType)
-		_ = structType.DefineField(responseFieldName, datatypes.StringType)
-		_ = structType.DefineField(statusFieldName, datatypes.IntType)
-		_ = structType.DefineField(verifyFieldName, datatypes.BoolType)
-		_ = structType.DefineField(headersFieldName, datatypes.Map(datatypes.StringType, datatypes.InterfaceType))
+		structType.DefineField(clientFieldName, datatypes.InterfaceType)
+		structType.DefineField(baseURLFieldName, datatypes.StringType)
+		structType.DefineField(mediaTypeFieldName, datatypes.StringType)
+		structType.DefineField(responseFieldName, datatypes.StringType)
+		structType.DefineField(statusFieldName, datatypes.IntType)
+		structType.DefineField(verifyFieldName, datatypes.BoolType)
+		structType.DefineField(headersFieldName, datatypes.Map(datatypes.StringType, datatypes.InterfaceType))
 
 		t := datatypes.TypeDefinition(restTypeDefinitionName, structType)
 

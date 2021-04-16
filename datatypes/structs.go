@@ -72,7 +72,7 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 		t = GetType(value)
 	} else {
 		for k, v := range m {
-			_ = t.DefineField(k, TypeOf(v))
+			t.DefineField(k, TypeOf(v))
 		}
 	}
 

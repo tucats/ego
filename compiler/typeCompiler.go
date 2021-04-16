@@ -88,7 +88,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 				return datatypes.UndefinedType, err
 			}
 
-			_ = t.DefineField(name, fieldType)
+			t.DefineField(name, fieldType)
 		}
 
 		return t, nil

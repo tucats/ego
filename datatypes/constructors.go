@@ -121,7 +121,7 @@ func Structure(fields ...Field) Type {
 	}
 
 	for _, field := range fields {
-		_ = t.DefineField(field.Name, field.Type)
+		t.DefineField(field.Name, field.Type)
 	}
 
 	return t

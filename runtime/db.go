@@ -21,11 +21,11 @@ var dbTypeDef *datatypes.Type
 func initDBTypeDef() {
 	if dbTypeDef == nil {
 		t := datatypes.Structure()
-		_ = t.DefineField(clientFieldName, datatypes.InterfaceType)
-		_ = t.DefineField(asStructFieldName, datatypes.BoolType)
-		_ = t.DefineField(rowCountFieldName, datatypes.IntType)
-		_ = t.DefineField(transactionFieldName, datatypes.InterfaceType)
-		_ = t.DefineField(constrFieldName, datatypes.StringType)
+		t.DefineField(clientFieldName, datatypes.InterfaceType)
+		t.DefineField(asStructFieldName, datatypes.BoolType)
+		t.DefineField(rowCountFieldName, datatypes.IntType)
+		t.DefineField(transactionFieldName, datatypes.InterfaceType)
+		t.DefineField(constrFieldName, datatypes.StringType)
 
 		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
 

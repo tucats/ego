@@ -16,9 +16,9 @@ var dbRowsTypeDef *datatypes.Type
 func initDBRowsTypeDef() {
 	if dbRowsTypeDef == nil {
 		t := datatypes.Structure()
-		_ = t.DefineField(clientFieldName, datatypes.InterfaceType)
-		_ = t.DefineField(rowsFieldName, datatypes.InterfaceType)
-		_ = t.DefineField(dbFieldName, datatypes.InterfaceType)
+		t.DefineField(clientFieldName, datatypes.InterfaceType)
+		t.DefineField(rowsFieldName, datatypes.InterfaceType)
+		t.DefineField(dbFieldName, datatypes.InterfaceType)
 
 		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
 

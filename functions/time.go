@@ -16,7 +16,7 @@ var timeType *datatypes.Type
 func initializeType() {
 	if timeType == nil {
 		structType := datatypes.Structure()
-		_ = structType.DefineField("time", datatypes.InterfaceType)
+		structType.DefineField("time", datatypes.InterfaceType)
 
 		t := datatypes.TypeDefinition("time.Time", structType)
 		t.DefineFunction("Add", TimeAdd)

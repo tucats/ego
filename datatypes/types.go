@@ -183,6 +183,46 @@ func (t Type) IsType(i Type) bool {
 		}
 	}
 
+	// If it's a structure, let's go one better and compare the
+	// structure fields to ensure they match in name, number,
+	// and types.
+	if t.kind == StructKind {
+		typeFields := t.FieldNames()
+		valueFields := i.FieldNames()
+
+		if len(typeFields) != len(valueFields) {
+			return false
+		}
+
+		for _, fieldName := range typeFields {
+			typeFieldType := t.fields[fieldName]
+			if valueFieldType, found := i.fields[fieldName]; found {
+				// If either one is a type, find the underlying type(s)
+				for typeFieldType.kind == TypeKind {
+					typeFieldType = *typeFieldType.valueType
+				}
+
+				for valueFieldType.kind == TypeKind {
+					valueFieldType = *valueFieldType.valueType
+				}
+
+				// Special case of letting float/int issues slide?
+				if (typeFieldType.kind == FloatType.kind &&
+					valueFieldType.kind == IntType.kind) ||
+					(typeFieldType.kind == IntType.kind &&
+						valueFieldType.kind == FloatType.kind) {
+					continue
+				}
+
+				if !typeFieldType.IsType(valueFieldType) {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+	}
+
 	return true
 }
 
@@ -210,22 +250,22 @@ func (t *Type) DefineFunction(name string, value interface{}) {
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.
-func (t *Type) DefineField(name string, ofType Type) *errors.EgoError {
+func (t *Type) DefineField(name string, ofType Type) *Type {
 	if t.kind != StructKind {
-		return errors.New(errors.InvalidStructError)
+		panic("attempt to define a field for a type that is not a struct")
 	}
 
 	if t.fields == nil {
 		t.fields = map[string]Type{}
 	} else {
 		if _, found := t.fields[name]; found {
-			return errors.New(errors.InvalidFieldError)
+			panic("attempt to define a duplicate field for a type")
 		}
 	}
 
 	t.fields[name] = ofType
 
-	return nil
+	return t
 }
 
 // Return a list of all the fieldnames for the type. The array is empty if

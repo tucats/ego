@@ -16,8 +16,8 @@ var tableTypeDef *datatypes.Type
 func initTableTypeDef() {
 	if tableTypeDef == nil {
 		t := datatypes.Structure()
-		_ = t.DefineField(tableFieldName, datatypes.InterfaceType)
-		_ = t.DefineField(headingsFieldName, datatypes.Array(datatypes.StringType))
+		t.DefineField(tableFieldName, datatypes.InterfaceType)
+		t.DefineField(headingsFieldName, datatypes.Array(datatypes.StringType))
 
 		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
 

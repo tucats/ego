@@ -365,8 +365,13 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return r, nil
 	}
 
+	permArray := datatypes.NewArray(datatypes.StringType, len(t.Permissions))
+	for i, perm := range t.Permissions {
+		permArray.SetAlways(i, perm)
+	}
+
 	_, _ = r.Set("name", name)
-	_, _ = r.Set("permissions", t.Permissions)
+	_, _ = r.Set("permissions", permArray)
 	_, _ = r.Set("superuser", getPermission(name, "root"))
 
 	return r, nil
