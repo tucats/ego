@@ -6,7 +6,7 @@ const AuthScheme = "bearer "
 
 // DefaultUserdataFileName is the default file system name of
 // the user database file, if not specified by the user.
-const DefaultUserdataFileName = "user-database.json"
+const DefaultUserdataFileName = "sqlite3://users.db"
 
 // This is the default media type (for Content and Accept headers)
 // for REST calls based on JSON.

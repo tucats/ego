@@ -99,11 +99,12 @@ func Start(c *cli.Context) *errors.EgoError {
 		args = append(args, "--session-uuid", logID.String())
 	}
 
-	// If there was a userdatabase, udpate it to be an absolute file path.
-	// If not specified, add it as a new option with the default name
+	// If there was a user database file (not database URL), update it to
+	// be an absolute file path.  If not specified, add it as a new option
+	// with the default name
 	if userDatabaseArg > 0 {
 		path := args[userDatabaseArg]
-		if !strings.HasPrefix(strings.ToLower(path), "postgres://") {
+		if !isDatabaseURL(path) {
 			path, _ = filepath.Abs(path)
 		}
 
@@ -114,7 +115,7 @@ func Start(c *cli.Context) *errors.EgoError {
 			udf = defs.DefaultUserdataFileName
 		}
 
-		if !strings.HasPrefix(strings.ToLower(udf), "postgres://") {
+		if !isDatabaseURL(udf) {
 			udf, _ = filepath.Abs(udf)
 		}
 
@@ -637,4 +638,19 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	}
 
 	return nil
+}
+
+// Utility function to determine if a given path is a database URL or
+// not.
+func isDatabaseURL(path string) bool {
+	path = strings.ToLower(path)
+	drivers := []string{"postgres://", "sqlite3://"}
+
+	for _, driver := range drivers {
+		if strings.HasPrefix(path, driver) {
+			return true
+		}
+	}
+
+	return false
 }

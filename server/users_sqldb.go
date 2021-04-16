@@ -12,27 +12,25 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-type PostgresService struct {
+type DatabaseService struct {
 	constr string
+	driver string
 	db     *sql.DB
 }
 
 const (
-	createSchemaQueryString = `
-	create schema if not exists ego`
-
 	probeTableExistsQueryString = `
-	select * from ego.credentials where 1=0`
+	select * from credentials where 1=0`
 
 	createTableQueryString = `
-	create table ego.credentials(
+	create table credentials(
 		name char varying(50) unique,
 		id char(36),
 		password char varying(128),
 		permissions char varying(1024)) `
 
 	insertQueryString = `
-		insert into ego.credentials(name, id, password, permissions) 
+		insert into credentials(name, id, password, permissions) 
         	values($1,$2,$3,$4) `
 
 	updateQueryString = `
@@ -43,20 +41,20 @@ const (
 
 	readUserQueryString = `
 		select name, id, password, permissions 
-    		from ego.credentials where name = $1
+    		from credentials where name = $1
 `
 
 	listUsersQueryString = `
 		select name, id, permissions 
-			from ego.credentials
+			from credentials
 `
 	deleteUserQueryString = `
-		delete from ego.credentials where name=$1
+		delete from credentials where name=$1
 `
 )
 
-func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOService, *errors.EgoError) {
-	svc := &PostgresService{}
+func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOService, *errors.EgoError) {
+	svc := &DatabaseService{}
 
 	// Is the URL formed correctly?
 	url, err := url.Parse(connStr)
@@ -64,8 +62,15 @@ func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOSer
 		return nil, errors.New(err)
 	}
 
+	// Get the driver from the URL. If it's SQLITE3 we have to strip
+	// off the scheme and leave just a filename path.
+	svc.driver = url.Scheme
+	if svc.driver == "sqlite3" {
+		connStr = strings.TrimPrefix(connStr, "sqlite3://")
+	}
+
 	// Create a database connection
-	svc.db, err = sql.Open("postgres", connStr)
+	svc.db, err = sql.Open(svc.driver, connStr)
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
@@ -78,14 +83,7 @@ func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	}
 
 	if dberr := svc.initializeDatabase(); !errors.Nil(dberr) {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
-
-		return nil, errors.New(dberr)
-	}
-	// Set the default database schema
-	_, dberr := svc.db.Exec("set schema 'ego'")
-	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 		return nil, errors.New(dberr)
 	}
@@ -110,13 +108,13 @@ func NewPostgresService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	if errors.Nil(e2) {
 		ui.Debug(ui.DBLogger, "Database credential store %s", svc.constr)
 	} else {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+		ui.Debug(ui.ServerLogger, "Database error: %v", e2)
 	}
 
 	return svc, e2
 }
 
-func (pg *PostgresService) ListUsers() map[string]defs.User {
+func (pg *DatabaseService) ListUsers() map[string]defs.User {
 	r := map[string]defs.User{}
 
 	rowSet, dberr := pg.db.Query(listUsersQueryString)
@@ -125,7 +123,7 @@ func (pg *PostgresService) ListUsers() map[string]defs.User {
 	}
 
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 		return r
 	}
@@ -135,7 +133,7 @@ func (pg *PostgresService) ListUsers() map[string]defs.User {
 
 		dberr = rowSet.Scan(&name, &id, &perms)
 		if dberr != nil {
-			ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+			ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 			return r
 		}
@@ -156,7 +154,7 @@ func (pg *PostgresService) ListUsers() map[string]defs.User {
 	return r
 }
 
-func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
+func (pg *DatabaseService) ReadUser(name string) (defs.User, *errors.EgoError) {
 	var err *errors.EgoError
 
 	var user defs.User
@@ -168,7 +166,7 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 	}
 
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 		return user, errors.New(dberr)
 	}
@@ -180,7 +178,7 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 
 		dberr = rowSet.Scan(&name, &id, &password, &perms)
 		if dberr != nil {
-			ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+			ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 			return user, errors.New(dberr)
 		}
@@ -205,7 +203,7 @@ func (pg *PostgresService) ReadUser(name string) (defs.User, *errors.EgoError) {
 	return user, err
 }
 
-func (pg *PostgresService) WriteUser(user defs.User) *errors.EgoError {
+func (pg *DatabaseService) WriteUser(user defs.User) *errors.EgoError {
 	var err *errors.EgoError
 
 	b, _ := json.Marshal(user.Permissions)
@@ -228,13 +226,11 @@ func (pg *PostgresService) WriteUser(user defs.User) *errors.EgoError {
 	} else {
 		action = "added to"
 		_, e3 := pg.db.Exec(insertQueryString, user.Name, user.ID, user.Password, permString)
-		if e3 != nil {
-			dberr = errors.New(e3)
-		}
+		dberr = errors.New(e3)
 	}
 
-	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+	if !errors.Nil(dberr) {
+		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 		err = errors.New(dberr)
 	} else {
@@ -244,12 +240,12 @@ func (pg *PostgresService) WriteUser(user defs.User) *errors.EgoError {
 	return err
 }
 
-func (pg *PostgresService) DeleteUser(name string) *errors.EgoError {
+func (pg *DatabaseService) DeleteUser(name string) *errors.EgoError {
 	var err *errors.EgoError
 
 	r, dberr := pg.db.Exec(deleteUserQueryString, name)
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Postgres error: %v", dberr)
+		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
 		err = errors.New(dberr)
 	} else {
@@ -263,26 +259,23 @@ func (pg *PostgresService) DeleteUser(name string) *errors.EgoError {
 	return err
 }
 
-// Required interface, but does no work for the Postgres service.
-func (pg *PostgresService) Flush() *errors.EgoError {
+// Required interface, but does no work for the Database service.
+func (pg *DatabaseService) Flush() *errors.EgoError {
 	var err *errors.EgoError
 
 	return err
 }
 
 // Verify that the database is initialized.
-func (pg *PostgresService) initializeDatabase() *errors.EgoError {
+func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
 	_, dberr := pg.db.Query(probeTableExistsQueryString)
 	if dberr != nil {
-		_, dberr = pg.db.Exec(createSchemaQueryString)
-		if dberr != nil {
-			return errors.New(dberr)
-		}
-
 		_, dberr = pg.db.Exec(createTableQueryString)
 
 		if dberr == nil {
 			ui.Debug(ui.ServerLogger, "Created empty credentials table")
+		} else {
+			ui.Debug(ui.ServerLogger, "error creating table: %v", dberr)
 		}
 	}
 

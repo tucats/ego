@@ -1,5 +1,6 @@
 ego
 ego.exe
+users.db
 .DS_Store
 *.code-workspace
 test.ego

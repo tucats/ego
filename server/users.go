@@ -80,8 +80,8 @@ func defineCredentialService(path, user, password string) (UserIOService, *error
 
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
 
-	if strings.HasPrefix(strings.ToLower(path), "postgres://") {
-		service, err = NewPostgresService(path, user, password)
+	if isDatabaseURL(path) {
+		service, err = NewDatabaseService(path, user, password)
 	} else {
 		service, err = NewFileService(path, user, password)
 	}
@@ -398,4 +398,19 @@ func tokenUser(t string) string {
 	}
 
 	return ""
+}
+
+// Utility function to determine if a given path is a database URL or
+// not.
+func isDatabaseURL(path string) bool {
+	path = strings.ToLower(path)
+	drivers := []string{"postgres://", "sqlite3://"}
+
+	for _, driver := range drivers {
+		if strings.HasPrefix(path, driver) {
+			return true
+		}
+	}
+
+	return false
 }
