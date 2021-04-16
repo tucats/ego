@@ -27,7 +27,7 @@ var Grammar = []cli.Option{
 		Description:          "Show the current profile",
 		Action:               ShowAction,
 		ParameterDescription: "key",
-		ParametersExpected:   1,
+		ParametersExpected:   -1,
 		OptionType:           cli.Subcommand,
 	},
 	{
