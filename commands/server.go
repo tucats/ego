@@ -103,22 +103,14 @@ func Start(c *cli.Context) *errors.EgoError {
 	// be an absolute file path.  If not specified, add it as a new option
 	// with the default name
 	if userDatabaseArg > 0 {
-		path := args[userDatabaseArg]
-		if !isDatabaseURL(path) {
-			path, _ = filepath.Abs(path)
-		}
-
-		args[userDatabaseArg] = path
+		args[userDatabaseArg] = normalizeDBName(args[userDatabaseArg])
 	} else {
 		udf := persistence.Get(defs.LogonUserdataSetting)
 		if udf == "" {
 			udf = defs.DefaultUserdataFileName
 		}
 
-		if !isDatabaseURL(udf) {
-			udf, _ = filepath.Abs(udf)
-		}
-
+		udf = normalizeDBName(udf)
 		args = append(args, "--users")
 		args = append(args, udf)
 	}
@@ -640,17 +632,30 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-// Utility function to determine if a given path is a database URL or
-// not.
-func isDatabaseURL(path string) bool {
-	path = strings.ToLower(path)
-	drivers := []string{"postgres://", "sqlite3://"}
-
-	for _, driver := range drivers {
-		if strings.HasPrefix(path, driver) {
-			return true
-		}
+// Normalize a database name. If it's postgres, we don't touch it. If it's
+// sqlite3 we get the absolute path of the database and reconstruct the URL.
+// Finally, we assume it's a file name and we just get the absolute path of
+// the name.
+func normalizeDBName(name string) string {
+	if strings.HasPrefix(strings.ToLower(name), "postgres://") {
+		return name
 	}
 
-	return false
+	if strings.HasPrefix(strings.ToLower(name), "sqlite3://") {
+		path := strings.TrimPrefix(name, "sqlite3://")
+
+		path, err := filepath.Abs(path)
+		if err == nil {
+			name = "sqlite3://" + path
+		}
+
+		return name
+	}
+
+	path, err := filepath.Abs(name)
+	if err == nil {
+		return path
+	}
+
+	return name
 }
