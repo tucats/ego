@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/northwesternmutual/grammes"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/io"
@@ -37,6 +38,8 @@ type GremlinColumn struct {
 	Type int
 }
 
+var gremlinType *datatypes.Type
+
 var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.Bool:          "bool",
 	reflect.Int:           "int",
@@ -64,6 +67,21 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.String:        "string",
 	reflect.Struct:        "struct",
 	reflect.UnsafePointer: "unsafe ptr",
+}
+
+func initializeGremlinType() {
+	if gremlinType == nil {
+		t, _ := compiler.CompileTypeSpec(gremlinTypeSpec)
+
+		t.DefineFunctions(map[string]interface{}{
+			"Query":    GremlinQuery,
+			"Map":      GremlinMap,
+			"QueryMap": GremlinQueryMap,
+			"AsJSON":   AsJSON,
+		})
+
+		gremlinType = &t
+	}
 }
 
 // GremlinOpen opens a gremlin connetion and stores it in the result value.
@@ -97,15 +115,14 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		client, err = grammes.DialWithWebSocket(url)
 	}
 
-	return map[string]interface{}{ // @tomcole should be a typed struct
-		"client":                client,
-		"Query":                 GremlinQuery,
-		"Map":                   GremlinMap,
-		"QueryMap":              GremlinQueryMap,
-		"AsJSON":                AsJSON,
-		datatypes.TypeMDKey:     "gremlin",
-		datatypes.ReadonlyMDKey: true,
-	}, errors.New(err)
+	initializeGremlinType()
+
+	r := datatypes.NewStruct(*gremlinType)
+
+	_ = r.Set(clientFieldName, client)
+	r.SetReadonly(true)
+
+	return r, errors.New(err)
 }
 
 // GremlinQuery executes a string query against an open client.

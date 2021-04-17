@@ -89,6 +89,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 			}
 
 			t.DefineField(name, fieldType)
+			c.t.IsNext(",")
 		}
 
 		return t, nil

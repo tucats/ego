@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -15,20 +16,13 @@ var dbRowsTypeDef *datatypes.Type
 
 func initDBRowsTypeDef() {
 	if dbRowsTypeDef == nil {
-		t := datatypes.Structure()
-		t.DefineField(clientFieldName, datatypes.InterfaceType)
-		t.DefineField(rowsFieldName, datatypes.InterfaceType)
-		t.DefineField(dbFieldName, datatypes.InterfaceType)
-
-		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
-
+		t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
 		t.DefineFunction("Next", rowsNext)
 		t.DefineFunction("Scan", rowsScan)
 		t.DefineFunction("Close", rowsClose)
 		t.DefineFunction("Headings", rowsHeadings)
 
-		typeDef := datatypes.TypeDefinition(databaseRowsTypeDefinitionName, t)
-		dbRowsTypeDef = &typeDef
+		dbRowsTypeDef = &t
 	}
 }
 

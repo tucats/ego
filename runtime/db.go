@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -20,14 +21,7 @@ var dbTypeDef *datatypes.Type
 
 func initDBTypeDef() {
 	if dbTypeDef == nil {
-		t := datatypes.Structure()
-		t.DefineField(clientFieldName, datatypes.InterfaceType)
-		t.DefineField(asStructFieldName, datatypes.BoolType)
-		t.DefineField(rowCountFieldName, datatypes.IntType)
-		t.DefineField(transactionFieldName, datatypes.InterfaceType)
-		t.DefineField(constrFieldName, datatypes.StringType)
-
-		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
+		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
 		t.DefineFunction("Begin", DBBegin)
 		t.DefineFunction("Commit", DBCommit)
@@ -38,8 +32,7 @@ func initDBTypeDef() {
 		t.DefineFunction("Close", DBClose)
 		t.DefineFunction("AsStruct", DataBaseAsStruct)
 
-		typeDef := datatypes.TypeDefinition(databaseTypeDefinitionName, t)
-		dbTypeDef = &typeDef
+		dbTypeDef = &t
 	}
 }
 

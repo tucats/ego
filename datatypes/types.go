@@ -247,6 +247,13 @@ func (t *Type) DefineFunction(name string, value interface{}) {
 	t.functions[name] = value
 }
 
+// Helper function that defines a set of functions in a single call.
+func (t *Type) DefineFunctions(functions map[string]interface{}) {
+	for k, v := range functions {
+		t.DefineFunction(k, v)
+	}
+}
+
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.

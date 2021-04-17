@@ -24,11 +24,13 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
 
+	/* Add only if you have enabled the gremlin build tag.
 	_ = s.SetAlways("gremlin", datatypes.EgoPackage{
 		"New":                   GremlinOpen,
 		datatypes.TypeMDKey:     datatypes.Package("gremlin"),
 		datatypes.ReadonlyMDKey: true,
 	})
+	*/
 
 	_ = s.SetAlways("rest", datatypes.EgoPackage{
 		"New":                   RestNew,

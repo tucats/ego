@@ -126,8 +126,10 @@ func TestFunctionSort(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "scalar args",
-			args:    args{[]interface{}{66, 55}},
+			name: "scalar args",
+			args: args{
+				[]interface{}{66, 55},
+			},
 			want:    []interface{}{55, 66},
 			wantErr: false,
 		},
@@ -139,17 +141,21 @@ func TestFunctionSort(t *testing.T) {
 		},
 		{
 			name: "integer sort",
-			args: args{[]interface{}{[]interface{}{55, 2, 18}}},
+			args: args{[]interface{}{
+				datatypes.NewFromArray(datatypes.IntType, []interface{}{55, 2, 18})},
+			},
 			want: []interface{}{2, 18, 55},
 		},
 		{
 			name: "float sort",
-			args: args{[]interface{}{[]interface{}{55.0, 2, "18.5"}}},
+			args: args{[]interface{}{
+				datatypes.NewFromArray(datatypes.FloatType, []interface{}{55.0, 2, 18.5})}},
 			want: []interface{}{2.0, 18.5, 55.0},
 		},
 		{
 			name: "string sort",
-			args: args{[]interface{}{[]interface{}{"pony", "cake", "unicorn", 5}}},
+			args: args{[]interface{}{
+				datatypes.NewFromArray(datatypes.StringType, []interface{}{"pony", "cake", "unicorn", 5})}},
 			want: []interface{}{"5", "cake", "pony", "unicorn"},
 		},
 		// TODO: Add test cases.
@@ -184,12 +190,16 @@ func TestFunctionMembers(t *testing.T) {
 	}{
 		{
 			name: "simple struct",
-			args: args{[]interface{}{map[string]interface{}{"name": "Tom", "age": 55}}},
+			args: args{[]interface{}{
+				datatypes.NewStructFromMap(
+					map[string]interface{}{"name": "Tom", "age": 55},
+				),
+			}},
 			want: datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
 		},
 		{
 			name: "empty struct",
-			args: args{[]interface{}{map[string]interface{}{}}},
+			args: args{[]interface{}{datatypes.NewStruct(datatypes.StructType)}},
 			want: datatypes.NewFromArray(datatypes.StringType, []interface{}{}),
 		},
 		{
@@ -230,16 +240,22 @@ func TestReflect(t *testing.T) {
 	}{
 		{
 			name: "simple struct",
-			args: args{s: nil, args: []interface{}{
-				map[string]interface{}{
-					"name": "Tom",
-					"age":  55,
+			args: args{
+				s: nil,
+				args: []interface{}{
+					datatypes.NewStructFromMap(map[string]interface{}{
+						"name": "Tom",
+						"age":  55,
+					}),
 				},
-			}},
+			},
 			want: datatypes.NewStructFromMap(map[string]interface{}{
-				"basetype": "map",
-				"type":     "struct",
-				"native":   false,
+				"basetype": "struct{age int, name string}",
+				"type":     "struct{age int, name string}",
+				"native":   true,
+				"readonly": false,
+				"replicas": 0,
+				"static":   true,
 				"members":  datatypes.NewFromArray(datatypes.StringType, []interface{}{"age", "name"}),
 			}),
 			wantErr: false,
@@ -339,17 +355,18 @@ func TestLength(t *testing.T) {
 		{
 			name: "simple array",
 			args: []interface{}{
-				[]interface{}{1, 2, 3, 4},
+				datatypes.NewFromArray(datatypes.IntType, []interface{}{1, 2, 3, 4}),
 			},
 			want: 4,
 		},
 		{
 			name: "simple map",
 			args: []interface{}{
-				map[string]interface{}{
-					"name": "Bob",
-					"age":  35,
-				},
+				datatypes.NewMapFromMap(
+					map[string]interface{}{
+						"name": "Bob",
+						"age":  35,
+					}),
 			},
 			want: 2,
 		},

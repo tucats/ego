@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -82,27 +83,20 @@ const ()
 
 func initializeRestType() {
 	if restType == nil {
-		structType := datatypes.Structure()
-		structType.DefineField(clientFieldName, datatypes.InterfaceType)
-		structType.DefineField(baseURLFieldName, datatypes.StringType)
-		structType.DefineField(mediaTypeFieldName, datatypes.StringType)
-		structType.DefineField(responseFieldName, datatypes.StringType)
-		structType.DefineField(statusFieldName, datatypes.IntType)
-		structType.DefineField(verifyFieldName, datatypes.BoolType)
-		structType.DefineField(headersFieldName, datatypes.Map(datatypes.StringType, datatypes.InterfaceType))
+		t, _ := compiler.CompileTypeSpec(restTypeSpec)
 
-		t := datatypes.TypeDefinition(restTypeDefinitionName, structType)
-
-		t.DefineFunction("Close", RestClose)
-		t.DefineFunction("Get", RestGet)
-		t.DefineFunction("Post", RestPost)
-		t.DefineFunction("Delete", RestDelete)
-		t.DefineFunction("Base", RestBase)
-		t.DefineFunction("Media", RestMedia)
-		t.DefineFunction("Token", RestToken)
-		t.DefineFunction("Auth", RestAuth)
-		t.DefineFunction(verifyFieldName, VerifyServer)
-		t.DefineFunction("StatusMessage", RestStatusMessage)
+		t.DefineFunctions(map[string]interface{}{
+			"Close":  RestClose,
+			"Get":    RestGet,
+			"Post":   RestPost,
+			"Delete": RestDelete,
+			"Base":   RestBase,
+			"Media":  RestMedia,
+			"Token":  RestToken,
+			"Auth":   RestAuth,
+			"Verify": VerifyServer,
+			"Status": RestStatusMessage,
+		})
 
 		restType = &t
 	}

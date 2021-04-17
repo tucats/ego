@@ -89,3 +89,39 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 
 	return datatypes.UndefinedType, nil
 }
+
+// Given a string expression of a type specification, compile it asn return the
+// type it represents, and an optional error if it was incorrectly formed. This
+// cannot reference user types as they are not visible to this function.
+//
+// If the string starts with the keyword `type` followed by a type name, then
+// the resulting value is a type definition of the given name.
+func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
+	typeCompiler := New("type compiler")
+	typeCompiler.t = tokenizer.New(source)
+	name := ""
+
+	// Does it have a type <name> prefix? And is that a package.name style name?
+	if typeCompiler.t.IsNext("type") {
+		name = typeCompiler.t.Next()
+		if !tokenizer.IsSymbol(name) {
+			return datatypes.Type{}, errors.New(errors.InvalidSymbolError).Context(name)
+		}
+
+		if typeCompiler.t.IsNext(".") {
+			name2 := typeCompiler.t.Next()
+			if !tokenizer.IsSymbol(name2) {
+				return datatypes.Type{}, errors.New(errors.InvalidSymbolError).Context(name2)
+			}
+
+			name = name + "." + name2
+		}
+	}
+
+	t, err := typeCompiler.parseType(true)
+	if errors.Nil(err) && name != "" {
+		t = datatypes.TypeDefinition(name, t)
+	}
+
+	return t, err
+}

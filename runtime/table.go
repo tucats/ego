@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -15,22 +16,19 @@ var tableTypeDef *datatypes.Type
 
 func initTableTypeDef() {
 	if tableTypeDef == nil {
-		t := datatypes.Structure()
-		t.DefineField(tableFieldName, datatypes.InterfaceType)
-		t.DefineField(headingsFieldName, datatypes.Array(datatypes.StringType))
+		t, _ := compiler.CompileTypeSpec(tableTypeSpec)
 
-		t.DefineFunction(asStructFieldName, DataBaseAsStruct)
+		t.DefineFunctions(map[string]interface{}{
+			"AddRow": TableAddRow,
+			"Close":  TableClose,
+			"Sort":   TableSort,
+			"Print":  TablePrint,
+			"Format": TableFormat,
+			"Align":  TableAlign,
+			"String": TableString,
+		})
 
-		t.DefineFunction("AddRow", TableAddRow)
-		t.DefineFunction("Close", TableClose)
-		t.DefineFunction("Sort", TableSort)
-		t.DefineFunction("Print", TablePrint)
-		t.DefineFunction("Format", TableFormat)
-		t.DefineFunction("Align", TableAlign)
-		t.DefineFunction("String", TableString)
-
-		typeDef := datatypes.TypeDefinition(tableTypeDefinitionName, t)
-		tableTypeDef = &typeDef
+		tableTypeDef = &t
 	}
 }
 

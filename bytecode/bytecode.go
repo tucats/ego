@@ -14,7 +14,7 @@ const GrowOpcodesBy = 50
 const InitialOpcodeSize = 20
 
 // InitialStackSize is the initial stack size.
-const InitialStackSize = 100
+const InitialStackSize = 50
 
 // BranchInstruction is the minimum value for a branch instruction, which has
 // special meaning during relocation and linking.
@@ -40,7 +40,6 @@ type ByteCode struct {
 	Name         string
 	instructions []Instruction
 	emitPos      int
-	//Symbols      *symbols.SymbolTable
 }
 
 // New generates and initializes a new bytecode.
