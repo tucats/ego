@@ -357,4 +357,10 @@ var RunGrammar = []cli.Option{
 		Description: "Print source lines as they are executed",
 		OptionType:  cli.BooleanType,
 	},
+	{
+		LongName:    "entry-point",
+		ShortName:   "e",
+		Description: "Name of entrypoint function (defaults to main)",
+		OptionType:  cli.StringType,
+	},
 }

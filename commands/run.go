@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -44,6 +45,11 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	wasCommandLine := true
 	fullScope := false
 
+	entryPoint, _ := c.GetString("entry-point")
+	if entryPoint == "" {
+		entryPoint = "main"
+	}
+
 	var comp *compiler.Compiler
 
 	if c.WasFound(defs.SymbolTableSizeOption) {
@@ -69,20 +75,13 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
-	exitOnBlankLine := false
-
-	v := persistence.Get(defs.ExitOnBlankSetting)
-	if v == "true" {
-		exitOnBlankLine = true
-	}
+	exitOnBlankLine := persistence.GetBool(defs.ExitOnBlankSetting)
+	interactive := false
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-
 	if c.WasFound(defs.StaticTypesOption) {
 		staticTypes = c.GetBool(defs.StaticTypesOption)
 	}
-
-	interactive := false
 
 	argc := c.GetParameterCount()
 	if argc > 0 {
@@ -108,7 +107,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			mainName = fileName
-			text = string(content) + "\n@main main"
+			text = string(content) + "\n@main " + entryPoint
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
@@ -303,7 +302,8 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
-	_ = symbolTable.SetAlways("__cli_args", programArgs)
+	args := datatypes.NewFromArray(datatypes.StringType, programArgs)
+	_ = symbolTable.SetAlways("__cli_args", args)
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	if interactive {

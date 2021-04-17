@@ -526,3 +526,16 @@ func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 
 	return errors.New(errors.WrongModeError).Context(mode)
 }
+
+func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
+	entryPointName := util.GetString(i)
+
+	entryPoint, found := c.symbolGet(entryPointName)
+	if !found {
+		return errors.New(errors.UndefinedEntrypointError).Context(entryPointName)
+	}
+
+	_ = c.stackPush(entryPoint)
+
+	return callByteCode(c, 0)
+}

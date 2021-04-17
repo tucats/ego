@@ -76,8 +76,8 @@ var Grammar = []cli.Option{
 // ShowAction Displays the current contents of the active profile.
 func ShowAction(c *cli.Context) *errors.EgoError {
 	// Is the user asking for a single value?
-	if len(c.FindGlobal().Parameters) > 0 {
-		key := c.FindGlobal().Parameters[0]
+	if c.GetParameterCount() > 0 {
+		key := c.GetParameter(0)
 		if !persistence.Exists(key) {
 			return errors.New(errors.NoSuchProfileKeyError).Context(key)
 		}

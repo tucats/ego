@@ -16,7 +16,6 @@ const (
 	baseURLFieldName     = "baseURL"
 	clientFieldName      = "client"
 	constrFieldName      = "constr"
-	databaseDriverName   = "postgres"
 	dbFieldName          = "db"
 	headersFieldName     = "headers"
 	headingsFieldName    = "headings"

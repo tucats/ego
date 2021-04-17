@@ -37,6 +37,7 @@ const (
 	Drop
 	DropToMarker
 	Dup
+	EntryPoint
 	Equal
 	Exp
 	Explode
@@ -136,6 +137,7 @@ var instructionNames = map[OpcodeID]string{
 	Drop:               "Drop",
 	DropToMarker:       "DropToMarker",
 	Dup:                "Dup",
+	EntryPoint:         "EntryPoint",
 	Equal:              "Equal",
 	Exp:                "Exp",
 	Explode:            "Explode",
@@ -224,6 +226,7 @@ func initializeDispatch() {
 			Drop:               dropByteCode,
 			DropToMarker:       dropToMarkerByteCode,
 			Dup:                dupByteCode,
+			EntryPoint:         entryPointByteCode,
 			Equal:              equalByteCode,
 			Exp:                exponentByteCode,
 			Explode:            explodeByteCode,

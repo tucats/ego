@@ -95,12 +95,7 @@ func (c *Compiler) mainDirective() *errors.EgoError {
 		return c.newError(errors.InvalidIdentifierError)
 	}
 
-	stackMarker := bytecode.StackMarker{Desc: "main"}
-
-	c.b.Emit(bytecode.Push, stackMarker)
-	c.b.Emit(bytecode.Load, mainName)
-	c.b.Emit(bytecode.Call, 0)
-	c.b.Emit(bytecode.DropToMarker, stackMarker)
+	c.b.Emit(bytecode.EntryPoint, mainName)
 	c.b.Emit(bytecode.Push, 0)
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
