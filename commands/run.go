@@ -70,8 +70,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	disassemble := c.GetBool(defs.DisassembleOption)
 	if disassemble {
-		ui.DebugMode = true
-
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
@@ -253,7 +251,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			ctx := bytecode.NewContext(symbolTable, b).SetDebug(debug)
 
 			if ctx.Tracing() {
-				ui.DebugMode = true
 				ui.SetLogger(ui.DebugLogger, true)
 			}
 

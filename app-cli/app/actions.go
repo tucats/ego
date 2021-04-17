@@ -35,13 +35,14 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.
 func DebugAction(c *cli.Context) *errors.EgoError {
-	loggers, mode := c.FindGlobal().GetStringList("debug")
-	ui.DebugMode = mode
+	loggers, specified := c.FindGlobal().GetStringList("debug")
 
-	for _, v := range loggers {
-		valid := ui.SetLogger(strings.ToUpper(v), true)
-		if !valid {
-			return errors.New(errors.InvalidLoggerName).Context(v)
+	if specified {
+		for _, v := range loggers {
+			valid := ui.SetLogger(strings.ToUpper(v), true)
+			if !valid {
+				return errors.New(errors.InvalidLoggerName).Context(v)
+			}
 		}
 	}
 

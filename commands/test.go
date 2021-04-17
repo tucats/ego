@@ -143,7 +143,6 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 			ctx.EnableConsoleOutput(false)
 			if c.GetBool("trace") {
-				ui.DebugMode = true
 				ui.SetLogger(ui.TraceLogger, true)
 			}
 

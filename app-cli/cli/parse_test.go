@@ -3,7 +3,6 @@ package cli
 import (
 	"testing"
 
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -386,7 +385,7 @@ func TestContext_ParseGrammar(t *testing.T) {
 				ExpectedParameterCount: tt.fields.ExpectedParameterCount,
 				ParameterDescription:   tt.fields.ParameterDescription,
 			}
-			ui.DebugMode = true
+
 			if err := c.parseGrammar(tt.args.args); (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("Context.parseGrammar() error = %v, wantErr %v", err, tt.wantErr)
 			}

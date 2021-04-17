@@ -35,9 +35,6 @@ const (
 // or explicit call from the user.
 var OutputFormat = "text"
 
-// DebugMode determines if "debug" style messages are output.
-var DebugMode = false
-
 // QuietMode determines if optional messaging is performed.
 var QuietMode = false
 
@@ -82,13 +79,6 @@ func SetLogger(logger string, mode bool) bool {
 	}
 
 	Loggers[logger] = mode
-	DebugMode = false
-
-	for _, v := range Loggers {
-		if v {
-			DebugMode = true
-		}
-	}
 
 	return true
 }
@@ -96,10 +86,6 @@ func SetLogger(logger string, mode bool) bool {
 // Determine if a given logger is active. This is particularly useful
 // when deciding if it's worth doing complex formatting operations.
 func ActiveLogger(logger string) bool {
-	if !DebugMode {
-		return false
-	}
-
 	if active, found := Loggers[logger]; active && found {
 		return true
 	}
@@ -109,10 +95,8 @@ func ActiveLogger(logger string) bool {
 
 // Debug displays a message if debugging mode is enabled.
 func Debug(logger string, format string, args ...interface{}) {
-	if DebugMode {
-		if active, found := Loggers[logger]; active && found {
-			Log(logger, format, args...)
-		}
+	if active, found := Loggers[logger]; active && found {
+		Log(logger, format, args...)
 	}
 }
 

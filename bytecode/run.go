@@ -172,11 +172,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
 	if fCode, ok := parentSymbols.Get(fName); ok {
 		if bc, ok := fCode.(*ByteCode); ok {
-			if true {
-				ui.DebugMode = true
-
-				bc.Disasm()
-			}
+			bc.Disasm()
 			// Create a new stream whose job is to invoke the function by name.
 			callCode := New("go " + fName)
 			callCode.Emit(Load, fName)

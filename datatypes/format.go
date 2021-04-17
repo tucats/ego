@@ -155,7 +155,7 @@ func Format(element interface{}) string {
 			if ts == "<*bytecode.ByteCode Value>" {
 				e := reflect.ValueOf(v).Elem()
 
-				if ui.DebugMode {
+				if ui.ActiveLogger(ui.DebugLogger) {
 					name := fmt.Sprintf("%v", e.Field(0).Interface())
 					if name == "" {
 						name = "<anon>"
@@ -196,7 +196,7 @@ func Format(element interface{}) string {
 			return valueString
 		}
 
-		if ui.DebugMode {
+		if ui.ActiveLogger(ui.DebugLogger) {
 			return fmt.Sprintf("kind %v %#v", vv.Kind(), v)
 		}
 
