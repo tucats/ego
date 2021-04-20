@@ -43,7 +43,6 @@ const (
 	Explode
 	Flatten
 	FromFile
-	GetRegister
 	GetThis
 	GetVarArgs
 	Go
@@ -77,7 +76,6 @@ const (
 	Response
 	Return
 	Say
-	SetRegister
 	SetThis
 	StackCheck
 	StaticTyping
@@ -143,7 +141,6 @@ var instructionNames = map[OpcodeID]string{
 	Explode:            "Explode",
 	Flatten:            "Flatten",
 	FromFile:           "FromFile",
-	GetRegister:        "GetRegister",
 	GetThis:            "GetThis",
 	GetVarArgs:         "GetVarArgs",
 	Go:                 "Go",
@@ -177,7 +174,6 @@ var instructionNames = map[OpcodeID]string{
 	Response:           "Response",
 	Return:             "Return",
 	Say:                "Say",
-	SetRegister:        "SetRegister",
 	SetThis:            "SetThis",
 	StackCheck:         "StackCheck",
 	StaticTyping:       "StaticTyping",
@@ -232,7 +228,6 @@ func initializeDispatch() {
 			Explode:            explodeByteCode,
 			Flatten:            flattenByteCode,
 			FromFile:           fromFileByteCode,
-			GetRegister:        getRegisterByteCode,
 			GetThis:            getThisByteCode,
 			GetVarArgs:         getVarArgsByteCode,
 			Go:                 goByteCode,
@@ -267,7 +262,6 @@ func initializeDispatch() {
 			Response:           responseByteCode,
 			Return:             returnByteCode,
 			Say:                sayByteCode,
-			SetRegister:        setRegisterByteCode,
 			SetThis:            setThisByteCode,
 			StackCheck:         stackCheckByteCode,
 			StaticTyping:       staticTypingByteCode,

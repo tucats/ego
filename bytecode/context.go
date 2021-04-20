@@ -16,8 +16,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const registerCount = 4
-
 type This struct {
 	name  string
 	value interface{}
@@ -44,7 +42,6 @@ type Context struct {
 	timerStack           []time.Time
 	thisStack            []This
 	packageStack         []packageDef
-	registers            []interface{}
 	output               *strings.Builder
 	lastStruct           interface{}
 	result               interface{}
@@ -105,7 +102,6 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		thisStack:            nil,
 		throwUncheckedErrors: persistence.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       persistence.GetBool(defs.FullStackTraceSetting),
-		registers:            make([]interface{}, registerCount),
 		packageStack:         make([]packageDef, 0),
 		tryStack:             make([]TryInfo, 0),
 		rangeStack:           make([]*Range, 0),
