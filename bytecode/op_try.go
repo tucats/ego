@@ -22,6 +22,7 @@ var catchSets = [][]*errors.EgoError{
 		errors.New(errors.InvalidTypeError),
 		errors.New(errors.NilPointerReferenceError),
 		errors.New(errors.DivisionByZeroError),
+		errors.New(errors.InvalidArrayIndexError),
 	},
 }
 

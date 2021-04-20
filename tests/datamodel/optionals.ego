@@ -1,0 +1,32 @@
+@test "datamodel: optionals"
+{
+    zero := 0
+
+    // Division by zero
+    a := ?(100/zero) : 99
+    @assert a == 99
+
+    a = ?(100/5) : 99
+    @assert a == 20
+
+    // Invalid structure member
+    b := {name:"Tom", age:35}
+    a = ?b.title: "anon"
+    @assert a == "anon"
+
+    a = ?b.name : "anon"
+    @assert a == "Tom"
+
+    // Invalid array index
+    c := []int{1,2,3}
+    a = ?c[0] : -1
+    @assert a == 1
+
+    a = ?c[100] : -1
+    @assert a == -1
+    
+    // Invalid type for operation
+    a = ?bool(b) : true
+    @assert a == true
+}
+@pass
