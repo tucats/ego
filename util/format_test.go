@@ -21,12 +21,12 @@ func TestFormat(t *testing.T) {
 		{
 			name: "Array of int",
 			arg:  []interface{}{3, 5, 55},
-			want: "[3, 5, 55]",
+			want: "[3 5 55]",
 		},
 		{
 			name: "Array with array",
 			arg:  []interface{}{3, []interface{}{"tom", true}, 55},
-			want: "[3, [\"tom\", true], 55]",
+			want: "[3 [tom true] 55]",
 		},
 		{
 			name: "simple structure",
@@ -34,7 +34,7 @@ func TestFormat(t *testing.T) {
 				"name": "Tom",
 				"age":  59,
 			},
-			want: "{ age: 59, name: \"Tom\" }",
+			want: "kind map map[age:59 name:Tom]",
 		},
 		// TODO: Add test cases.
 	}

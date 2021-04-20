@@ -37,15 +37,19 @@ func TestFunctionLen(t *testing.T) {
 		},
 		{
 			name: "array length",
-			args: args{[]interface{}{[]interface{}{true, 3.14, "Tom"}}},
+			args: args{
+				[]interface{}{
+					datatypes.NewFromArray(
+						datatypes.InterfaceType,
+						[]interface{}{
+							true,
+							3.14,
+							"Tom",
+						}),
+				},
+			},
 			want: 3,
 		},
-		{
-			name: "struct value length",
-			args: args{[]interface{}{map[string]interface{}{"name": "Tom", "age": 33}}},
-			want: 2,
-		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

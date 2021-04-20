@@ -263,17 +263,6 @@ func TestFunctionIndex(t *testing.T) {
 			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, false}},
 			want: -1,
 		},
-		{
-			name: "member found",
-			args: args{[]interface{}{map[string]interface{}{"name": "tom", "age": 55}, "age"}},
-			want: true,
-		},
-		{
-			name: "member found",
-			args: args{[]interface{}{map[string]interface{}{"name": "tom", "age": 55}, "gender"}},
-			want: false,
-		},
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {

@@ -31,7 +31,7 @@ func TestFormatStack(t *testing.T) {
 		{
 			name: "too long",
 			args: args{s: []interface{}{1.2345678, "stormtroopers", "the tunafish is in the piano", 55}},
-			want: "55, \"the tunafish is in the piano\", \"stormtroopers...",
+			want: "55, the tunafish is in the piano, stormtroopers, 1...",
 		},
 
 		// TODO: Add test cases.
