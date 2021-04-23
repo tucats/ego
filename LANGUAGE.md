@@ -321,7 +321,7 @@ parameter.
         return nil
     }
 
-    v = hasPositive(55)
+    v := hasPositive(55)
     if v == nil {
         fmt.Println("Not positive; no value returned")
     }
@@ -893,7 +893,7 @@ element. For example,
 
      ids := [ 101, 143, 202, 17]
      for i, j := range ids {
-        fmt.Println("Array member ", i, " is ", v)
+        fmt.Println("Array member ", i, " is ", j)
      }
 
 This example will print a line for each value in the array, in the
@@ -2902,20 +2902,21 @@ for developers write writing _Ego_ programs.
 
 ### util.Memory()
 
-The `Memory()` function generates a report on the current user memory consumption,
+The `Memory()` function returns a strutcure summarying current user memory consumption,
 total consumption for the life of the program, system memory on behalf of the _Ego_
 processes, and a count of the number of times the garbage collector that manages
 memory for Ego has been run.
 
     ego> fmt.Println(util.Memory())
-    Memory stats  2021-02-25 16:43:05.463362 -0500 EST m=+7.977478916
-        Alloc      =    1.420mb
-        TotalAlloc =    1.420mb
-        Sys        =   69.954mb
-        NumGC      =    0
+    { current: 0.9879989624023438, gc: 0, system: 68.58106994628906, time: "Thu Apr 22 2021 10:07:36 EDT", total: 0.9879989624023438 }
 
-The result of the function is always a string, formatted to be displayed to
-the user.
+
+The result of the function is always a structure. The `current` and `system` values are expressed in megabytes; so
+in the above example, the current memory consumption by the system on behalf of Ego is 68MB and the user memory
+consumed by Ego on behalf of the user is just under 1MB. The value of `total` is the total amount of memory
+ever allocated by Ego; this number will rise throughout the life of the program, but each time the memory
+reclaimation thread (garbage collector) runs, it will reclaim unused memory and reude the `current` value
+accordingly. You can use the `gc` field as a count of the number of times the garbage collector has run.
 
 ### util.Mode()
 
