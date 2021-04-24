@@ -25,6 +25,7 @@ var helpText = [][]string{
 	{"show source [start [:end]]", "Display source of current module"},
 	{"step [into]", "Execute the next line of the program"},
 	{"step over", "Step over a function call to the next line in this program"},
+	{"step return", "Execute until the next return operation"},
 }
 
 func Help() *errors.EgoError {
