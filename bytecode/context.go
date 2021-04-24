@@ -57,6 +57,7 @@ type Context struct {
 	Static               bool
 	debugging            bool
 	singleStep           bool
+	breakOnReturn        bool
 	stepOver             bool
 	throwUncheckedErrors bool
 	fullStackTrace       bool

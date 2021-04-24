@@ -397,6 +397,12 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 		c.running = false
 	}
 
+	if errors.Nil(err) && c.breakOnReturn {
+		c.breakOnReturn = false
+
+		return errors.New(errors.SignalDebugger)
+	}
+
 	return errors.New(err)
 }
 

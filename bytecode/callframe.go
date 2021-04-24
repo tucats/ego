@@ -20,16 +20,17 @@ import (
 // Note that this is exported (as are Module and Line within it) to support
 // formatting of trace data using reflection.
 type CallFrame struct {
-	Module     string
-	Line       int
-	symbols    *symbols.SymbolTable
-	bytecode   *ByteCode
-	tokenizer  *tokenizer.Tokenizer
-	thisStack  []This
-	singleStep bool
-	blockDepth int
-	pc         int
-	fp         int
+	Module        string
+	Line          int
+	symbols       *symbols.SymbolTable
+	bytecode      *ByteCode
+	tokenizer     *tokenizer.Tokenizer
+	thisStack     []This
+	singleStep    bool
+	breakOnReturn bool
+	blockDepth    int
+	pc            int
+	fp            int
 }
 
 // callframePush pushes a single object on the stack that represents the state of
@@ -119,6 +120,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 		c.programCounter = callFrame.pc
 		c.framePointer = callFrame.fp
 		c.blockDepth = callFrame.blockDepth
+		c.breakOnReturn = callFrame.breakOnReturn
 	} else {
 		return c.newError(errors.InvalidCallFrameError)
 	}
@@ -138,6 +140,18 @@ func (c *Context) callFramePop() *errors.EgoError {
 	}
 
 	return err
+}
+
+func (c *Context) SetBreakOnReturn() {
+	cx := c.stack[c.framePointer]
+	if callFrame, ok := cx.(CallFrame); ok {
+		ui.Debug(ui.SymbolLogger, "(%d) setting break-on-return", c.threadID)
+
+		callFrame.breakOnReturn = true
+		c.stack[c.framePointer] = callFrame
+	} else {
+		ui.Debug(ui.SymbolLogger, "(%d) failed setting break-on-return; call frame invalid", c.threadID)
+	}
 }
 
 // FormatFrames is called from the runtime debugger to print out the

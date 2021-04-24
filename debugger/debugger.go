@@ -102,18 +102,25 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				prompt = false
 
-				if tokens.Peek(2) == "over" {
+				switch tokens.Peek(2) {
+				case "over":
 					c.SetStepOver(true)
-				} else {
-					if tokens.Peek(2) == "into" {
-						c.SetStepOver(false)
-					} else {
-						if tokens.Peek(2) != tokenizer.EndOfTokens {
-							prompt = true
-							err = errors.New(errors.InvalidStepType).Context(tokens.Peek(2))
-							c.SetSingleStep(false)
-						}
-					}
+
+				case "into":
+					c.SetStepOver(false)
+
+				case "return":
+					c.SetBreakOnReturn()
+					c.SetSingleStep(false)
+
+				case tokenizer.EndOfTokens:
+					// No action, this is the default step case
+
+				default:
+					prompt = true
+					err = errors.New(errors.InvalidStepType).Context(tokens.Peek(2))
+
+					c.SetSingleStep(false)
 				}
 
 			case "show":
