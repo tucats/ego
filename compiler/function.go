@@ -159,7 +159,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 
-	err = cx.compileStatement()
+	err = cx.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}

@@ -37,3 +37,19 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 
 	return nil
 }
+
+// Require that the next item be a block, enclosed in {} characters.
+func (c *Compiler) compileRequiredBlock() *errors.EgoError {
+	// If an empty block, no work to do
+	if c.t.IsNext("{}") {
+		return nil
+	}
+
+	// Otherwise, needs to start with the open block
+	if !c.t.IsNext("{") {
+		return c.newError(errors.ErrMissingBlock)
+	}
+
+	// now compile and close the block.
+	return c.compileBlock()
+}

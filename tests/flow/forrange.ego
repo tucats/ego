@@ -45,9 +45,15 @@
     a[103] = "ghi"
     n := 0
     for k, v := range a {
-        if k == 101 @assert T.Equal(v, "abc", "range over map failed")
-        if k == 102 @assert T.Equal(v, "def", "range over map failed")
-        if k == 103 @assert T.Equal(v, "ghi", "range over map failed")
+        if k == 101 {
+            @assert T.Equal(v, "abc", "range over map failed")
+        }
+        if k == 102 {
+            @assert T.Equal(v, "def", "range over map failed")
+        }
+        if k == 103 {
+            @assert T.Equal(v, "ghi", "range over map failed")
+        }
         n = n + 1
     }
     @assert T.Equal(n, 3, "range over map failed")

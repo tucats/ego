@@ -106,7 +106,7 @@ func (c *Compiler) simpleFor() *errors.EgoError {
 	b1 := c.b.Mark()
 
 	// Compile loop body
-	err := c.compileStatement()
+	err := c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -173,7 +173,7 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 	opcount := c.b.Mark()
 	stmts := c.statementCount
 
-	err = c.compileStatement()
+	err = c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -186,7 +186,7 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 	// Uglier test, but also needs doing. If there was a statement, but
 	// it was a block that did not contain any statments, also empty body.
 	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
-	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount-1 {
+	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount {
 		return c.newError(errors.ErrLoopBody)
 	}
 	// Branch back to start of loop
@@ -236,7 +236,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 	c.b.Emit(bytecode.RangeNext, 0)
 
 	// Loop body
-	err = c.compileStatement()
+	err = c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -334,7 +334,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Loop body goes next
-	err = c.compileStatement()
+	err = c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}

@@ -735,16 +735,15 @@ condition is met.
 
 The general nature of a conditional `if` statement is
 
-     if <condition> 
-         <statement>
-     else 
-         <statement>
+     if <condition> {
+         <statements>
+     } else { 
+         <statements>
+     }
 
-The `else` clause is optional, as described below. In all cases where
-the syntax says &lt;statement&gt;, it can be a single statement or a
-basic block which is a set of statements enclosed in braces ("{" and
-"}"). By convention, even when there is only a single statement in
-the block, a basic block is used for readability.
+The `else` clause is optional, as described below. Even when there 
+is only a single statement in the block, a basic block is used for
+readability.
 
 Consider the following example code:
 
@@ -815,11 +814,11 @@ executes, the program resumes with the next statement after the
 
 The simplest form of iterative execution (also referred to as a
 "loop") is the `for` statement, followed by a condition, and a
-statement or basic block that is executed as long as the condition
-is true.
+basic block that is executed as long as the condition is true.
 
-     for <condition>
-        <statement>
+     for <condition> {
+        <statements>
+     }
 
 Here is an example
 
@@ -1001,7 +1000,8 @@ file before the body of the program.
 Use the `func` statement to declare a function. The function must
 have a name, optionally a list of parameter values that are passed
 to the function, and a return type that indicates what the function
-is expected to return. This is followed by the function body which
+is expected to return. This is followed by the function body described
+as a basic block. When the function is called, this block 
 is executed, with the function arguments all available as local
 variables.  For example,
 

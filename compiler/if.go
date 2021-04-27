@@ -23,7 +23,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Compile the statement to be executed if true
-	err = c.compileStatement()
+	err = c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -35,7 +35,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 		c.b.Emit(bytecode.Branch, 0)
 		_ = c.b.SetAddressHere(b1)
 
-		err = c.compileStatement()
+		err = c.compileRequiredBlock()
 		if !errors.Nil(err) {
 			return err
 		}
