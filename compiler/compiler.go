@@ -276,7 +276,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	}
 
 	if _, found := fd[name]; found {
-		return c.newError(errors.FunctionAlreadyExistsError)
+		return c.newError(errors.ErrFunctionAlreadyExists)
 	}
 
 	fd[name] = function
@@ -300,7 +300,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	}
 
 	if _, found := fd[name]; found {
-		return c.newError(errors.FunctionAlreadyExistsError)
+		return c.newError(errors.ErrFunctionAlreadyExists)
 	}
 
 	fd[name] = value

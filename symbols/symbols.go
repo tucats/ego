@@ -104,7 +104,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	// See if it's in the current constants table.
 	if symbolTable.IsConstant(name) {
-		return errors.New(errors.ReadOnlyValueError).Context(name)
+		return errors.New(errors.ErrReadOnlyValue).Context(name)
 	}
 
 	// IF this doesn't exist, allocate more space in the values array
@@ -144,16 +144,16 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	// to be sure it's writable.
 	if found {
 		if old != nil && name[0:1] == "_" {
-			return errors.New(errors.ReadOnlyValueError).Context(name)
+			return errors.New(errors.ErrReadOnlyValue).Context(name)
 		}
 		// Check to be sure this isn't a restricted (function code) type
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return errors.New(errors.ReadOnlyValueError).Context(name)
+			return errors.New(errors.ErrReadOnlyValue).Context(name)
 		}
 	} else {
 		// If there are no more tables, we have an error.
 		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).Context(name)
+			return errors.New(errors.ErrUnknownSymbol).Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
 		return s.Parent.Set(name, v)
@@ -181,17 +181,17 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 // variable ("_" as the first character).
 func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 	if len(name) == 0 {
-		return errors.New(errors.InvalidSymbolError)
+		return errors.New(errors.ErrInvalidSymbolName)
 	}
 
 	if !always && name[:1] == "_" {
-		return errors.New(errors.ReadOnlyValueError).Context(name)
+		return errors.New(errors.ErrReadOnlyValue).Context(name)
 	}
 
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
-			return errors.New(errors.UnknownSymbolError).Context(name)
+			return errors.New(errors.ErrUnknownSymbol).Context(name)
 		}
 
 		return s.Parent.Delete(name, always)
@@ -210,11 +210,11 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 // Create creates a symbol name in the table.
 func (s *SymbolTable) Create(name string) *errors.EgoError {
 	if len(name) == 0 {
-		return errors.New(errors.InvalidSymbolError)
+		return errors.New(errors.ErrInvalidSymbolName)
 	}
 
 	if _, found := s.Symbols[name]; found {
-		return errors.New(errors.SymbolExistsError).Context(name)
+		return errors.New(errors.ErrSymbolExists).Context(name)
 	}
 
 	s.Symbols[name] = s.ValueSize

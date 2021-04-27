@@ -85,7 +85,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		v, _ := a.Get(subscript)
@@ -95,14 +95,14 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		// Needed for varars processing
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		v := a[subscript]
 		err = c.stackPush(v)
 
 	default:
-		err = c.newError(errors.InvalidTypeError)
+		err = c.newError(errors.ErrInvalidType)
 	}
 
 	return err
@@ -140,19 +140,19 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript1 := util.GetInt(index1)
 		if subscript1 < 0 || subscript1 >= len(a) {
-			return c.newError(errors.InvalidSliceIndexError).Context(subscript1)
+			return c.newError(errors.ErrInvalidSliceIndex).Context(subscript1)
 		}
 
 		subscript2 := util.GetInt(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
-			return c.newError(errors.InvalidSliceIndexError).Context(subscript2)
+			return c.newError(errors.ErrInvalidSliceIndex).Context(subscript2)
 		}
 
 		v := a[subscript1 : subscript2+1]
 		_ = c.stackPush(v)
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return nil
@@ -202,13 +202,13 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoArray:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= a.Len() {
-			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		if c.Static {
 			vv, _ := a.Get(subscript)
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.newError(errors.InvalidVarTypeError)
+				return c.newError(errors.ErrInvalidVarType)
 			}
 		}
 
@@ -223,13 +223,13 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	case []interface{}:
 		subscript := util.GetInt(index)
 		if subscript < 0 || subscript >= len(a) {
-			return c.newError(errors.InvalidArrayIndexError).Context(subscript)
+			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
 
 		if c.Static {
 			vv := a[subscript]
 			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.newError(errors.InvalidVarTypeError)
+				return c.newError(errors.ErrInvalidVarType)
 			}
 		}
 
@@ -237,7 +237,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(a)
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return nil
@@ -271,7 +271,7 @@ func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return nil

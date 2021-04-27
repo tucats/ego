@@ -197,7 +197,7 @@ func (pg *DatabaseService) ReadUser(name string) (defs.User, *errors.EgoError) {
 
 	if !found {
 		ui.Debug(ui.ServerLogger, "No database record for %s", name)
-		err = errors.New(errors.NoSuchUserError).Context(name)
+		err = errors.New(errors.ErrNoSuchUser).Context(name)
 	}
 
 	return user, err

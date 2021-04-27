@@ -122,7 +122,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 		c.blockDepth = callFrame.blockDepth
 		c.breakOnReturn = callFrame.breakOnReturn
 	} else {
-		return c.newError(errors.InvalidCallFrameError)
+		return c.newError(errors.ErrInvalidCallFrame)
 	}
 
 	// Finally, if there _was_ stuff on the stack after the call,

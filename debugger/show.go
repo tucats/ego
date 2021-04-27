@@ -24,14 +24,14 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	case "symbols":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		fmt.Println(s.Format(true))
 
 	case "line":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		text := tx.GetLine(line)
@@ -44,7 +44,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tokens.Peek(4) != tokenizer.EndOfTokens {
-				return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(4))
+				return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(4))
 			}
 
 			if tx != "all" {
@@ -63,7 +63,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		depth := 0
 
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.UnexpectedTextAfterCommandError).Context(tokens.Peek(3))
+			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		fmt.Printf("Symbol table scope:\n")
@@ -111,7 +111,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = errors.New(errors.InvalidDebugCommandError).Context("show " + t)
+		err = errors.New(errors.ErrInvalidDebugCommand).Context("show " + t)
 	}
 
 	return err

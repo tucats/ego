@@ -73,7 +73,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := util.GetInt(i)
 	if c.stackPointer <= count {
-		return c.newError(errors.IncorrectReturnValueCount)
+		return c.newError(errors.ErrReturnValueCount)
 	}
 
 	// The marker is an instance of a StackMarker object.
@@ -82,7 +82,7 @@ func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	return c.newError(errors.IncorrectReturnValueCount)
+	return c.newError(errors.ErrReturnValueCount)
 }
 
 // pushByteCode instruction processor. This pushes the instruction operand
@@ -165,7 +165,7 @@ func copyByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
-	err := c.newError(errors.VarArgError)
+	err := c.newError(errors.ErrInvalidVariableArguments)
 	argPos := util.GetInt(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {
@@ -175,14 +175,14 @@ func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 				r := datatypes.NewArray(datatypes.InterfaceType, 0)
 
 				return c.stackPush(r)
-			} else {
-				value, err := args.GetSlice(argPos, args.Len())
-				if !errors.Nil(err) {
-					return err
-				}
-
-				return c.stackPush(datatypes.NewFromArray(datatypes.InterfaceType, value))
 			}
+
+			value, err := args.GetSlice(argPos, args.Len())
+			if !errors.Nil(err) {
+				return err
+			}
+
+			return c.stackPush(datatypes.NewFromArray(datatypes.InterfaceType, value))
 		}
 	}
 

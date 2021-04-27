@@ -104,7 +104,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	for i, v := range args[2:] {
 		if datatypes.TypeOfPointer(v).IsUndefined() {
-			return nil, errors.New(errors.NotAPointer)
+			return nil, errors.New(errors.ErrNotAPointer)
 		}
 
 		if content, ok := v.(*interface{}); ok {
@@ -149,7 +149,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 			// Must only be supported format string. TODO We do not allow width
 			// specifications yet.
 			if !util.InList(token, "s", "t", "f", "d", "v") {
-				return result, errors.New(errors.InvalidFormatVerbError)
+				return result, errors.New(errors.ErrInvalidFormatVerb)
 			}
 
 			// Add to the previous token

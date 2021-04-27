@@ -76,9 +76,9 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
-		} else {
-			return false, nil
 		}
+
+		return false, nil
 	}
 
 	// Decrypt the token into a json string
@@ -86,15 +86,15 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	j, err := util.Decrypt(string(b), key)
 	if errors.Nil(err) && len(j) == 0 {
-		err = errors.New(errors.InvalidTokenEncryption).In("validate()")
+		err = errors.New(errors.ErrInvalidTokenEncryption).In("validate()")
 	}
 
 	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
-		} else {
-			return false, nil
 		}
+
+		return false, nil
 	}
 
 	var t = Token{}
@@ -103,16 +103,16 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
-		} else {
-			return false, nil
 		}
+
+		return false, nil
 	}
 
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		if reportErr {
-			err = errors.New(errors.ExpiredTokenError).In("validate()")
+			err = errors.New(errors.ErrExpiredToken).In("validate()")
 		} else {
 			return false, nil
 		}
@@ -141,7 +141,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	if len(j) == 0 {
-		return nil, errors.New(errors.InvalidTokenEncryption).In("extract()")
+		return nil, errors.New(errors.ErrInvalidTokenEncryption).In("extract()")
 	}
 
 	var t = Token{}
@@ -154,7 +154,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		err = errors.New(errors.ExpiredTokenError).In("validate()")
+		err = errors.New(errors.ErrExpiredToken).In("validate()")
 	}
 
 	r := map[string]interface{}{}

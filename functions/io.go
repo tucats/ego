@@ -146,6 +146,6 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return arg.Close(), nil
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("CloseAny()")
+		return nil, errors.New(errors.ErrInvalidType).In("CloseAny()")
 	}
 }

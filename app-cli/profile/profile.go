@@ -79,7 +79,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	if c.GetParameterCount() > 0 {
 		key := c.GetParameter(0)
 		if !persistence.Exists(key) {
-			return errors.New(errors.NoSuchProfileKeyError).Context(key)
+			return errors.New(errors.ErrNoSuchProfileKey).Context(key)
 		}
 
 		fmt.Println(persistence.Get(key))
@@ -132,10 +132,10 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			return nil
 		}
 
-		return errors.New(errors.InvalidOutputFormatError).Context(outputType)
+		return errors.New(errors.ErrInvalidOutputFormat).Context(outputType)
 	}
 
-	return errors.New(errors.MissingOutputTypeError)
+	return errors.New(errors.ErrMissingOutputType)
 }
 
 // SetAction uses the first two parameters as a key and value.

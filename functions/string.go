@@ -234,7 +234,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			b.WriteRune(rune(a))
 
 		default:
-			return nil, errors.New(errors.ArgumentCountError).In("String()")
+			return nil, errors.New(errors.ErrArgumentCount).In("String()")
 		}
 	}
 
@@ -246,12 +246,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	var err error
 
 	if len(args) == 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("Template()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Template()")
 	}
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.New(errors.InvalidTypeError).In("Template()")
+		return nil, errors.New(errors.ErrInvalidType).In("Template()")
 	}
 
 	root := tree.Tree.Root
@@ -263,12 +263,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				return nil, errors.New(errors.InvalidTemplateName).In("Template()").Context(templateNode.Name)
+				return nil, errors.New(errors.ErrInvalidTemplateName).In("Template()").Context(templateNode.Name)
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.New(errors.InvalidTypeError).In("Template()")
+				return nil, errors.New(errors.ErrInvalidType).In("Template()")
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
@@ -518,7 +518,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	elemArray, ok := args[0].(*datatypes.EgoArray)
 	if !ok {
-		return nil, errors.New(errors.ArgumentTypeError).Context("Join()")
+		return nil, errors.New(errors.ErrArgumentType).Context("Join()")
 	}
 
 	separator := util.GetString(args[1])

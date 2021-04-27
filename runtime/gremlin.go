@@ -133,7 +133,7 @@ func GremlinQuery(symbols *symbols.SymbolTable, args []interface{}) (interface{}
 	}
 
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	query := util.GetString(args[0])
@@ -154,7 +154,7 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 	var err *errors.EgoError
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	if len(args) > 1 {
@@ -191,7 +191,7 @@ func GremlinQueryMap(symbols *symbols.SymbolTable, args []interface{}) (interfac
 // generating JSON instead of a formatted text output.
 func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	// Get a normalized result set from the query.
@@ -203,7 +203,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(resultSet)
 	if len(a) == 0 {
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	// Make a list of the sort key names
@@ -270,7 +270,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // Table generates a string describing a rectangular result map.
 func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	includeHeadings := true
@@ -282,7 +282,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	// Scan over the first data element to pick up the column names and types
 	a := util.GetArray(args[0])
 	if len(a) == 0 {
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	// Make a list of the sort key names
@@ -387,22 +387,22 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 func getGremlinClient(symbols *symbols.SymbolTable) (*grammes.Client, *errors.EgoError) {
 	g, ok := symbols.Get("__this")
 	if !ok {
-		return nil, errors.New(errors.NoFunctionReceiver)
+		return nil, errors.New(errors.ErrNoFunctionReceiver)
 	}
 
 	gc, ok := g.(map[string]interface{}) // @tomcole should be struct, when gremlin is updated to create type
 	if !ok {
-		return nil, errors.New(errors.InvalidGremlinClientError)
+		return nil, errors.New(errors.ErrInvalidGremlinClient)
 	}
 
 	client, ok := gc["client"]
 	if !ok {
-		return nil, errors.New(errors.InvalidGremlinClientError)
+		return nil, errors.New(errors.ErrInvalidGremlinClient)
 	}
 
 	cp, ok := client.(*grammes.Client)
 	if !ok {
-		return nil, errors.New(errors.InvalidGremlinClientError)
+		return nil, errors.New(errors.ErrInvalidGremlinClient)
 	}
 
 	return cp, nil
@@ -415,7 +415,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	var err *errors.EgoError
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	r := args[0]
@@ -434,7 +434,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	case []interface{}:
 		// do nothing
 	default:
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	columns := map[string]GremlinColumn{}
@@ -442,7 +442,7 @@ func GremlinMap(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	for _, row := range r.([]interface{}) {
 		rowMap, ok := row.(map[string]interface{})
 		if !ok {
-			return nil, errors.New(errors.InvalidRowSetError)
+			return nil, errors.New(errors.ErrInvalidRowSet)
 		}
 
 		for k, v := range rowMap {
@@ -570,21 +570,21 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 				return r, nil
 			}
 
-			return nil, errors.New(errors.UnexpectedValueError).Context(v)
+			return nil, errors.New(errors.ErrUnexpectedValue).Context(v)
 
 		default:
-			return nil, errors.New(errors.InvalidTypeNameError).Context(m["@type"])
+			return nil, errors.New(errors.ErrInvalidTypeName).Context(m["@type"])
 		}
 
 	default:
-		return nil, errors.New(errors.UnexpectedValueError).Context(m)
+		return nil, errors.New(errors.ErrUnexpectedValue).Context(m)
 	}
 }
 
 func gremlinResultArray(i interface{}) (interface{}, *errors.EgoError) {
 	a, ok := i.([]interface{})
 	if !ok {
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	r := []interface{}{}
@@ -606,7 +606,7 @@ func gremlinResultMapList(i interface{}) (interface{}, *errors.EgoError) {
 
 	a, ok := i.([]interface{})
 	if !ok {
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	for i := 0; i < len(a); i = i + 2 {
@@ -630,7 +630,7 @@ func gremlinResultMap(i interface{}) (interface{}, *errors.EgoError) {
 
 	a, ok := i.(map[string]interface{})
 	if !ok {
-		return nil, errors.New(errors.InvalidResultSetTypeError)
+		return nil, errors.New(errors.ErrInvalidResultSetType)
 	}
 
 	for k, v := range a {
@@ -647,12 +647,12 @@ func gremlinApplyMap(r interface{}, m interface{}) (interface{}, *errors.EgoErro
 	// Unwrap the parameters
 	rows := util.GetArray(r)
 	if rows == nil {
-		return nil, errors.New(errors.InvalidRowSetError)
+		return nil, errors.New(errors.ErrInvalidRowSet)
 	}
 
 	columnList := util.GetArray(m)
 	if columnList == nil {
-		return nil, errors.New(errors.InvalidStructError)
+		return nil, errors.New(errors.ErrInvalidStruct)
 	}
 
 	columns := map[string]string{}

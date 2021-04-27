@@ -167,7 +167,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	}
 
 	if exitValue > 0 {
-		return errors.New(errors.TerminatedWithErrors)
+		return errors.New(errors.ErrTerminatedWithErrors)
 	}
 
 	return nil

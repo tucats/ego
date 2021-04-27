@@ -19,13 +19,13 @@ import (
 func (c *Compiler) compilePackage() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidPackageName, name)
+		return c.newError(errors.ErrInvalidPackageName, name)
 	}
 
 	name = strings.ToLower(name)
 
 	if (c.PackageName != "") && (c.PackageName != name) {
-		return c.newError(errors.PackageRedefinitionError)
+		return c.newError(errors.ErrPackageRedefinition)
 	}
 
 	c.PackageName = name
@@ -40,11 +40,11 @@ func (c *Compiler) compileImport() *errors.EgoError {
 	var err *errors.EgoError
 
 	if c.blockDepth > 0 {
-		return c.newError(errors.InvalidImportError)
+		return c.newError(errors.ErrInvalidImport)
 	}
 
 	if c.loops != nil {
-		return c.newError(errors.InvalidImportError)
+		return c.newError(errors.ErrInvalidImport)
 	}
 
 	isList := false
@@ -81,7 +81,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			}
 
 			if c.loops != nil {
-				return c.newError(errors.InvalidImportError)
+				return c.newError(errors.ErrInvalidImport)
 			}
 
 			// Get the package name from the given string. If this is
@@ -159,7 +159,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			// If after the import we ended with mismatched block markers, complain
 			if importCompiler.blockDepth != 0 {
-				return c.newError(errors.MissingEndOfBlockError, packageName)
+				return c.newError(errors.ErrMissingEndOfBlock, packageName)
 			}
 
 			// The import will have generate code that must be run to actually register

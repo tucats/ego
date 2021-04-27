@@ -12,7 +12,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	}
 
 	if !c.t.AnyNext(":=", "=", "<-") {
-		return c.newError(errors.MissingAssignmentError)
+		return c.newError(errors.ErrMissingAssignment)
 	}
 
 	// If this is a construct like   x := <-ch   skip over the :=

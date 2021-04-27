@@ -84,7 +84,7 @@ func (e *EgoError) Context(context interface{}) *EgoError {
 // used to generate an error string.
 func NewMessage(m string) *EgoError {
 	return &EgoError{
-		err:     UserError,
+		err:     ErrUserDefined,
 		context: m,
 	}
 }
@@ -187,7 +187,7 @@ func (e *EgoError) Error() string {
 
 	// If we have an underlying error, report the string value for that
 	if e.err != nil {
-		if !e.Is(UserError) {
+		if !e.Is(ErrUserDefined) {
 			if predicate {
 				b.WriteString(", ")
 			}

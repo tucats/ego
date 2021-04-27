@@ -56,7 +56,7 @@ func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
-		return c.newError(errors.ReadOnlyError)
+		return c.newError(errors.ErrReadOnly)
 	}
 
 	err := c.symbolCreate(n)
@@ -71,7 +71,7 @@ func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
 func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 	n := util.GetString(i)
 	if c.symbolIsConstant(n) {
-		return c.newError(errors.ReadOnlyError)
+		return c.newError(errors.ErrReadOnly)
 	}
 
 	sp := c.symbols

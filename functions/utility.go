@@ -43,7 +43,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// doesn't exist yet, for example
 	if strings.HasPrefix(key, "ego.") {
 		if !persistence.Exists(key) {
-			return nil, errors.New(errors.ReservedProfileSetting).In("Set()").Context(key)
+			return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 		}
 	}
 	// If the value is an empty string, delete the key else
@@ -104,7 +104,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return len(arg.Keys()), nil
 
 	case datatypes.EgoPackage:
-		return nil, errors.New(errors.InvalidTypeError)
+		return nil, errors.New(errors.ErrInvalidType)
 
 	case nil:
 		return 0, nil
@@ -180,7 +180,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		return keys, err
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("members()")
+		return nil, errors.New(errors.ErrInvalidType).In("members()")
 	}
 }
 
@@ -191,12 +191,12 @@ func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 			err := array.Sort()
 
 			return array, err
-		} else {
-			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Strings()")
 		}
-	} else {
-		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Strings()")
+
+		return nil, errors.New(errors.ErrWrongArrayValueType).Context("sort.Strings()")
 	}
+
+	return nil, errors.New(errors.ErrArgumentType).Context("sort.Strings()")
 }
 
 // SortInts implements the sort.Ints function.
@@ -206,12 +206,12 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			err := array.Sort()
 
 			return array, err
-		} else {
-			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Ints()")
 		}
-	} else {
-		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Ints()")
+
+		return nil, errors.New(errors.ErrWrongArrayValueType).Context("sort.Ints()")
 	}
+
+	return nil, errors.New(errors.ErrArgumentType).Context("sort.Ints()")
 }
 
 // SortFloats implements the sort.Floats function.
@@ -221,12 +221,12 @@ func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 			err := array.Sort()
 
 			return array, err
-		} else {
-			return nil, errors.New(errors.WrongArrayValueType).Context("sort.Floats()")
 		}
-	} else {
-		return nil, errors.New(errors.ArgumentTypeError).Context("sort.Floats()")
+
+		return nil, errors.New(errors.ErrWrongArrayValueType).Context("sort.Floats()")
 	}
+
+	return nil, errors.New(errors.ErrArgumentType).Context("sort.Floats()")
 }
 
 // Sort implements the sort() function.
@@ -314,7 +314,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return resultArray, nil
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("sort()")
+		return nil, errors.New(errors.ErrInvalidType).In("sort()")
 	}
 }
 
@@ -418,7 +418,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 // Signal creates an error object based on the
 // parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	r := errors.New(errors.UserError)
+	r := errors.New(errors.ErrUserDefined)
 	if len(args) > 0 {
 		r = r.Context(args[0])
 	}
@@ -450,7 +450,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			result = append(result, array...)
 		} else {
 			if !kind.IsType(datatypes.InterfaceType) && !datatypes.TypeOf(j).IsType(kind) {
-				return nil, errors.New(errors.WrongArrayValueType).In("append()")
+				return nil, errors.New(errors.ErrWrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
 		}
@@ -466,11 +466,11 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if _, ok := args[0].(string); ok {
 		if len(args) != 1 {
-			return nil, errors.New(errors.ArgumentCountError).In("delete{}")
+			return nil, errors.New(errors.ErrArgumentCount).In("delete{}")
 		}
 	} else {
 		if len(args) != 2 {
-			return nil, errors.New(errors.ArgumentCountError).In("delete{}")
+			return nil, errors.New(errors.ErrArgumentCount).In("delete{}")
 		}
 	}
 
@@ -490,7 +490,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		return v, err
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("delete()")
+		return nil, errors.New(errors.ErrInvalidType).In("delete()")
 	}
 }
 
@@ -647,7 +647,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	if e, ok := args[0].(*errors.EgoError); ok {
 		wrappedError := e.Unwrap()
 
-		if e.Is(errors.UserError) {
+		if e.Is(errors.ErrUserDefined) {
 			text := datatypes.GetString(e.GetContext())
 
 			return datatypes.NewStructFromMap(map[string]interface{}{

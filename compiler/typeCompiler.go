@@ -19,7 +19,7 @@ func (c *Compiler) typeEmitter(name string) *errors.EgoError {
 
 func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) {
 	if _, found := c.Types[name]; found {
-		return datatypes.UndefinedType, c.newError(errors.DuplicateTypeNameError).Context(name)
+		return datatypes.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
 	}
 
 	baseType, err := c.parseType(false)
@@ -61,7 +61,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 		}
 
 		if !c.t.IsNext("]") {
-			return datatypes.UndefinedType, c.newError(errors.MissingBracketError)
+			return datatypes.UndefinedType, c.newError(errors.ErrMissingBracket)
 		}
 
 		valueType, err := c.parseType(false)
@@ -80,7 +80,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 		for !c.t.IsNext("}") {
 			name := c.t.Next()
 			if !tokenizer.IsSymbol(name) {
-				return datatypes.UndefinedType, c.newError(errors.InvalidSymbolError)
+				return datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 			}
 
 			fieldType, err := c.parseType(false)
@@ -134,5 +134,5 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 		return t, nil
 	}
 
-	return datatypes.UndefinedType, c.newError(errors.InvalidTypeError)
+	return datatypes.UndefinedType, c.newError(errors.ErrInvalidType)
 }

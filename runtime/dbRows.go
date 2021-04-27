@@ -100,7 +100,7 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThisStruct(s)
 	if this == nil {
-		return nil, errors.New(errors.NoFunctionReceiver)
+		return nil, errors.New(errors.ErrNoFunctionReceiver)
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
@@ -114,7 +114,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	this := getThisStruct(s)
 	if this == nil {
-		return nil, errors.New(errors.NoFunctionReceiver)
+		return nil, errors.New(errors.ErrNoFunctionReceiver)
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)

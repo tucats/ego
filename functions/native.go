@@ -22,11 +22,11 @@ type NativeFunctionDef struct {
 	F    NativeFunction
 }
 
-// For each combination of data type and function name, specify the native
-// function handler for that type. For example, a sync.WaitGroup has Add(),
-// Done(), and Wait() methods and are all shown here. This table is used by
-// the Member opcode to check to see if the member index is into a natively
-// implemented type...
+// NativeFunctionMap defines, for each combination of data type and function
+// name, specify the native function handler for that type. For example, a
+// sync.WaitGroup has Add(), Done(), and Wait() methods and are all shown
+// here. This table is used by the Member opcode to check to see if the member
+// index is into a natively implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
 		Kind: datatypes.WaitGroupType,

@@ -98,7 +98,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		}
 
 		if c.t.Next() != ")" {
-			return c.newError(errors.MissingParenthesisError)
+			return c.newError(errors.ErrMissingParenthesis)
 		}
 
 		return nil
@@ -198,7 +198,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Not something we know what to do with...
-	return c.newError(errors.UnexpectedTokenError, t)
+	return c.newError(errors.ErrUnexpectedToken, t)
 }
 
 func (c *Compiler) parseArray() *errors.EgoError {
@@ -218,7 +218,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 	if !kind.IsUndefined() {
 		if !kind.IsArray() {
-			return c.newError(errors.InvalidTypeNameError)
+			return c.newError(errors.ErrInvalidTypeName)
 		}
 
 		// It could be a cast operation. If so, remember where we are
@@ -247,7 +247,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext("{") {
-			return c.newError(errors.MissingBlockError)
+			return c.newError(errors.ErrMissingBlock)
 		}
 
 		listTerminator = "}"
@@ -305,7 +305,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 					c.b.Emit(bytecode.Array, count)
 
 					if !c.t.IsNext("]") {
-						return c.newError(errors.InvalidRangeError)
+						return c.newError(errors.ErrInvalidRange)
 					}
 
 					return nil
@@ -346,7 +346,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.newError(errors.InvalidListError)
+			return c.newError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -382,7 +382,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 			}
 		} else {
 			if !tokenizer.IsSymbol(name) {
-				return c.newError(errors.InvalidSymbolError, name)
+				return c.newError(errors.ErrInvalidSymbolName, name)
 			}
 		}
 
@@ -390,7 +390,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 
 		// Second element: colon
 		if c.t.Next() != ":" {
-			return c.newError(errors.MissingColonError)
+			return c.newError(errors.ErrMissingColon)
 		}
 
 		// Third element: value, which is emitted.
@@ -413,7 +413,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.newError(errors.InvalidListError)
+			return c.newError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -428,7 +428,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 	quote := s[0:1]
 	if s[len(s)-1:] != quote {
-		return s[1:], c.newError(errors.BlockQuoteError, quote)
+		return s[1:], c.newError(errors.ErrBlockQuote, quote)
 	}
 
 	return s[1 : len(s)-1], nil
@@ -443,7 +443,7 @@ func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
 // This is only supported when extensions are enabled.
 func (c *Compiler) optional() *errors.EgoError {
 	if !c.extensionsEnabled {
-		return c.newError(errors.UnexpectedTokenError).Context("?")
+		return c.newError(errors.ErrUnexpectedToken).Context("?")
 	}
 
 	catch := c.b.Mark()
@@ -462,7 +462,7 @@ func (c *Compiler) optional() *errors.EgoError {
 	_ = c.b.SetAddressHere(catch)
 
 	if !c.t.IsNext(":") {
-		return c.newError(errors.MissingCatchError)
+		return c.newError(errors.ErrMissingCatch)
 	}
 
 	err = c.unary()

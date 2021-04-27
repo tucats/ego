@@ -66,7 +66,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
-			return nil, errors.New(errors.InvalidFileModeError).Context(modeValue)
+			return nil, errors.New(errors.ErrInvalidFileMode).Context(modeValue)
 		}
 		// If we are opening for output mode, delete the file if it already
 		// exists
@@ -108,7 +108,7 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	f := getThis(s)
 	if f == nil {
-		return nil, errors.New(errors.NoFunctionReceiver).In("String()")
+		return nil, errors.New(errors.ErrNoFunctionReceiver).In("String()")
 	}
 
 	b.WriteString("<file")
@@ -169,13 +169,13 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.InvalidfileIdentifierError).In(fn)
+	return nil, errors.New(errors.ErrInvalidfileIdentifier).In(fn)
 }
 
 // Close closes a file.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("Close()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Close()")
 	}
 
 	f, err := getFile("Close", s)
@@ -199,7 +199,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 // ReadString reads the next line from the file as a string.
 func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("ReadString()")
+		return nil, errors.New(errors.ErrArgumentCount).In("ReadString()")
 	}
 
 	f, err := getFile("ReadString", s)
@@ -229,7 +229,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	var e2 error
 
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("WriteString()")
+		return nil, errors.New(errors.ErrArgumentCount).In("WriteString()")
 	}
 
 	length := 0
@@ -248,7 +248,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // Write writes an arbitrary binary object to a file.
 func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Write()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Write()")
 	}
 
 	var buf bytes.Buffer
@@ -276,7 +276,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	var buf bytes.Buffer
 
 	if len(args) != 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("WriteAt()")
+		return nil, errors.New(errors.ErrArgumentCount).In("WriteAt()")
 	}
 
 	offset := util.GetInt(args[1])

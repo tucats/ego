@@ -18,12 +18,12 @@ import (
 func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	array, ok := args[0].(*datatypes.EgoArray)
 	if !ok {
-		return nil, errors.New(errors.ArgumentTypeError)
+		return nil, errors.New(errors.ErrArgumentType)
 	}
 
 	fn, ok := args[1].(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.New(errors.ArgumentTypeError)
+		return nil, errors.New(errors.ErrArgumentType)
 	}
 
 	var funcError *errors.EgoError

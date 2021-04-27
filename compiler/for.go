@@ -60,7 +60,7 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	defer c.b.Emit(bytecode.DropToMarker)
 
 	if !c.t.IsNext(":=") {
-		return c.newError(errors.MissingLoopAssignmentError)
+		return c.newError(errors.ErrMissingLoopAssignment)
 	}
 
 	// Do we compile a range?
@@ -120,7 +120,7 @@ func (c *Compiler) simpleFor() *errors.EgoError {
 
 	// Update any break statements. If there are no breaks, this is an illegal loop construct
 	if len(c.loops.breaks) == 0 {
-		return c.newError(errors.LoopExitError)
+		return c.newError(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -137,7 +137,7 @@ func (c *Compiler) simpleFor() *errors.EgoError {
 func (c *Compiler) conditionalFor() *errors.EgoError {
 	bc, err := c.Expression()
 	if !errors.Nil(err) {
-		return c.newError(errors.MissingForLoopInitializerError)
+		return c.newError(errors.ErrMissingForLoopInitializer)
 	}
 
 	// Make a point of seeing if this is a constant value, which
@@ -180,14 +180,14 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 	// If we didn't emit anything other than
 	// the AtLine then this is an invalid loop
 	if c.b.Mark() <= opcount+1 {
-		return c.newError(errors.LoopBodyError)
+		return c.newError(errors.ErrLoopBody)
 	}
 
 	// Uglier test, but also needs doing. If there was a statement, but
 	// it was a block that did not contain any statments, also empty body.
 	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
 	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount-1 {
-		return c.newError(errors.LoopBodyError)
+		return c.newError(errors.ErrLoopBody)
 	}
 	// Branch back to start of loop
 	c.b.Emit(bytecode.Branch, b1)
@@ -200,7 +200,7 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 	_ = c.b.SetAddressHere(b2)
 
 	if isConstant && len(c.loops.breaks) == 0 {
-		return c.newError(errors.LoopExitError)
+		return c.newError(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -277,7 +277,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
 	if indexName == "" && valueName != "" {
-		return c.newError(errors.InvalidLoopIndexError)
+		return c.newError(errors.ErrInvalidLoopIndex)
 	}
 
 	c.loopStackPush(indexLoopType)
@@ -292,7 +292,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Append(indexStore)
 
 	if !c.t.IsNext(";") {
-		return c.newError(errors.MissingSemicolonError)
+		return c.newError(errors.ErrMissingSemicolon)
 	}
 
 	// Now get the condition clause that tells us if the loop
@@ -303,7 +303,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	if !c.t.IsNext(";") {
-		return c.newError(errors.MissingSemicolonError)
+		return c.newError(errors.ErrMissingSemicolon)
 	}
 
 	// Finally, get the clause that updates something
@@ -315,7 +315,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	if !c.t.IsNext("=") {
-		return c.newError(errors.MissingEqualError)
+		return c.newError(errors.ErrMissingEqual)
 	}
 
 	incrementCode, err := c.Expression()
@@ -366,7 +366,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 // in the compiler context.
 func (c *Compiler) compileBreak() *errors.EgoError {
 	if c.loops == nil {
-		return c.newError(errors.InvalidLoopControlError)
+		return c.newError(errors.ErrInvalidLoopControl)
 	}
 
 	fixAddr := c.b.Mark()
@@ -383,7 +383,7 @@ func (c *Compiler) compileBreak() *errors.EgoError {
 // in the compiler context.
 func (c *Compiler) compileContinue() *errors.EgoError {
 	if c.loops == nil {
-		return c.newError(errors.InvalidLoopControlError)
+		return c.newError(errors.ErrInvalidLoopControl)
 	}
 
 	c.loops.continues = append(c.loops.continues, c.b.Mark())

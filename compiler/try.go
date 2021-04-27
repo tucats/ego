@@ -26,7 +26,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 	_ = c.b.SetAddressHere(b1)
 
 	if !c.t.IsNext("catch") {
-		return c.newError(errors.MissingCatchError)
+		return c.newError(errors.ErrMissingCatch)
 	}
 
 	// Is there a named variable that will hold the error?
@@ -34,11 +34,11 @@ func (c *Compiler) compileTry() *errors.EgoError {
 	if c.t.IsNext("(") {
 		errName := c.t.Next()
 		if !tokenizer.IsSymbol(errName) {
-			return c.newError(errors.InvalidSymbolError)
+			return c.newError(errors.ErrInvalidSymbolName)
 		}
 
 		if !c.t.IsNext(")") {
-			return c.newError(errors.MissingParenthesisError)
+			return c.newError(errors.ErrMissingParenthesis)
 		}
 
 		c.b.Emit(bytecode.SymbolCreate, errName)

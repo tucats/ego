@@ -158,7 +158,7 @@ func applyBaseURL(url string, this *datatypes.EgoStruct) string {
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	code := util.GetInt(args[0])
@@ -246,7 +246,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	this := getThisStruct(s)
 
 	if len(args) != 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	user := util.GetString(args[0])
@@ -268,7 +268,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	this := getThisStruct(s)
 
 	if len(args) > 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	token := persistence.Get(defs.LogonTokenSetting)
@@ -313,7 +313,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	this := getThisStruct(s)
 
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	url := applyBaseURL(util.GetString(args[0]), this)
@@ -391,7 +391,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	var body interface{} = ""
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	client, err := getClient(s)
@@ -465,7 +465,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	var body interface{} = ""
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	client, err := getClient(s)
@@ -541,7 +541,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, *errors.EgoError) {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*resty.Client); ok {
 					if cp == nil {
-						return nil, errors.New(errors.RestClientClosedError)
+						return nil, errors.New(errors.ErrRestClientClosed)
 					}
 
 					return cp, nil
@@ -550,7 +550,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.NoFunctionReceiver)
+	return nil, errors.New(errors.ErrNoFunctionReceiver)
 }
 
 // getThis returns a map for the "this" object in the current

@@ -25,7 +25,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	// There is a model, so do some mapping if possible.
 	pointer, ok := args[1].(*interface{})
 	if !ok {
-		return nil, errors.New(errors.InvalidPointerTypeError)
+		return nil, errors.New(errors.ErrInvalidPointerType)
 	}
 
 	value := *pointer
@@ -40,7 +40,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 				}
 			}
 		} else {
-			return nil, errors.New(errors.InvalidTypeError)
+			return nil, errors.New(errors.ErrInvalidType)
 		}
 
 		return target, nil
@@ -56,7 +56,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 				}
 			}
 		} else {
-			return nil, errors.New(errors.InvalidTypeError)
+			return nil, errors.New(errors.ErrInvalidType)
 		}
 
 		return target, nil
@@ -81,14 +81,14 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 				}
 			}
 		} else {
-			return nil, errors.New(errors.InvalidTypeError)
+			return nil, errors.New(errors.ErrInvalidType)
 		}
 
 		return target, nil
 	}
 
 	if !datatypes.TypeOf(v).IsType(datatypes.TypeOf(value)) {
-		err = errors.New(errors.InvalidTypeError)
+		err = errors.New(errors.ErrInvalidType)
 		v = nil
 	}
 

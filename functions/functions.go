@@ -238,16 +238,16 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	if !found {
-		return nil, errors.New(errors.InvalidFunctionName).Context(name)
+		return nil, errors.New(errors.ErrInvalidFunctionName).Context(name)
 	}
 
 	if len(args) < fdef.Min || len(args) > fdef.Max {
-		return nil, errors.New(errors.Panic).Context("incorrect number of arguments")
+		return nil, errors.New(errors.ErrPanic).Context("incorrect number of arguments")
 	}
 
 	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError))
 	if !ok {
-		return nil, errors.New(errors.Panic).Context(fmt.Errorf("unable to convert %#v to function pointer", fdef.F))
+		return nil, errors.New(errors.ErrPanic).Context(fmt.Errorf("unable to convert %#v to function pointer", fdef.F))
 	}
 
 	return fn(s, args)
@@ -256,7 +256,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError {
 	// Make sure not a collision
 	if _, ok := FunctionDictionary[fd.Name]; ok {
-		return errors.New(errors.FunctionAlreadyExistsError)
+		return errors.New(errors.ErrFunctionAlreadyExists)
 	}
 
 	FunctionDictionary[fd.Name] = fd
@@ -272,5 +272,5 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError
 }
 
 func stubFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return nil, errors.New(errors.InvalidFunctionName)
+	return nil, errors.New(errors.ErrInvalidFunctionName)
 }

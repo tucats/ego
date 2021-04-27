@@ -30,14 +30,14 @@ func (t *Table) GetHeadings() []string {
 // to set the order in which columns of output are printed.
 func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
 	if len(order) == 0 {
-		return errors.New(errors.EmptyColumnListError)
+		return errors.New(errors.ErrEmptyColumnList)
 	}
 
 	newOrder := make([]int, len(order))
 
 	for n, v := range order {
 		if v < 1 || v > t.columnCount {
-			return errors.New(errors.InvalidColumnNumberError).Context(v)
+			return errors.New(errors.ErrInvalidColumnNumber).Context(v)
 		}
 
 		newOrder[n] = v - 1
@@ -52,7 +52,7 @@ func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
 // to set the order in which columns of output are printed.
 func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
 	if len(order) == 0 {
-		return errors.New(errors.EmptyColumnListError)
+		return errors.New(errors.ErrEmptyColumnList)
 	}
 
 	newOrder := make([]int, len(order))
@@ -60,7 +60,7 @@ func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
 	for n, name := range order {
 		v, found := t.FindColumn(name)
 		if !found {
-			return errors.New(errors.InvalidColumnNameError).Context(name)
+			return errors.New(errors.ErrInvalidColumnName).Context(name)
 		}
 
 		newOrder[n] = v

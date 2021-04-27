@@ -15,7 +15,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		if !tokenizer.IsSymbol(name) {
 			c.t.Advance(-1)
 
-			return c.newError(errors.InvalidSymbolError, name)
+			return c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
 		// See if it's a reserved word.
@@ -26,7 +26,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 				break
 			}
 
-			return c.newError(errors.InvalidSymbolError, name)
+			return c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = c.normalize(name)
@@ -61,7 +61,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		}
 
 		// Not a symbol name, so fail
-		return c.newError(errors.InvalidTypeSpecError)
+		return c.newError(errors.ErrInvalidTypeSpec)
 	}
 
 	// We got a defined type, so emit the model and store it

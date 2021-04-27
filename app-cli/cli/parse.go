@@ -121,7 +121,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return errors.New(errors.UnknownOptionError).Context(option)
+			return errors.New(errors.ErrUnknownOption).Context(option)
 		}
 
 		// It could be a parameter, or a subcommand.
@@ -185,7 +185,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
-						return errors.New(errors.MissingOptionValueError).Context(name)
+						return errors.New(errors.ErrMissingOptionValue).Context(name)
 					}
 
 					value = args[currentArg]
@@ -206,7 +206,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				}
 
 				if !found {
-					return errors.New(errors.InvalidKeywordError).Context(value)
+					return errors.New(errors.ErrInvalidKeyword).Context(value)
 				}
 
 			case BooleanType:
@@ -215,7 +215,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return errors.New(errors.InvalidBooleanValueError).Context(value)
+					return errors.New(errors.ErrInvalidBooleanValue).Context(value)
 				}
 
 				location.Value = b
@@ -237,7 +237,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			case IntType:
 				i, err := strconv.Atoi(value)
 				if !errors.Nil(err) {
-					return errors.New(errors.InvalidIntegerError).Context(value)
+					return errors.New(errors.ErrInvalidInteger).Context(value)
 				}
 
 				location.Value = i
@@ -260,7 +260,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.New(errors.RequiredNotFoundError).Context(entry.LongName)
+			err = errors.New(errors.ErrRequiredNotFound).Context(entry.LongName)
 
 			break
 		}
@@ -279,16 +279,16 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return errors.New(errors.UnexpectedParametersError)
+			return errors.New(errors.ErrUnexpectedParameters)
 		}
 
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return errors.New(errors.TooManyParametersError)
+				return errors.New(errors.ErrTooManyParameters)
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return errors.New(errors.WrongParameterCountError)
+				return errors.New(errors.ErrWrongParameterCount)
 			}
 		}
 

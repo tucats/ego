@@ -72,7 +72,7 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
 		return v, found, nil
 	}
 
-	return nil, false, errors.New(errors.WrongMapKeyType).Context(key)
+	return nil, false, errors.New(errors.ErrWrongMapKeyType).Context(key)
 }
 
 // Set sets a value in the map. The key value and type value must be compatible
@@ -81,15 +81,15 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
 // existing item or not.
 func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError) {
 	if m.immutable > 0 {
-		return false, errors.New(errors.ImmutableMapError)
+		return false, errors.New(errors.ErrImmutableMap)
 	}
 
 	if !IsBaseType(key, m.keyType) {
-		return false, errors.New(errors.WrongMapKeyType).Context(key)
+		return false, errors.New(errors.ErrWrongMapKeyType).Context(key)
 	}
 
 	if !IsBaseType(value, m.valueType) {
-		return false, errors.New(errors.WrongMapValueType).Context(value)
+		return false, errors.New(errors.ErrWrongMapValueType).Context(value)
 	}
 
 	_, found := m.data[key]
@@ -170,11 +170,11 @@ func (m *EgoMap) Keys() []interface{} {
 // was not found.
 func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
 	if m.immutable > 0 {
-		return false, errors.New(errors.ImmutableMapError)
+		return false, errors.New(errors.ErrImmutableMap)
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(errors.WrongMapKeyType).Context(key)
+		return false, errors.New(errors.ErrWrongMapKeyType).Context(key)
 	}
 
 	_, found, err := m.Get(key)

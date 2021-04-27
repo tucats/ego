@@ -78,7 +78,7 @@ func (c *Compiler) testDirective() *errors.EgoError {
 // TestAssert implements the T.assert() function.
 func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("assert")
+		return nil, errors.New(errors.ErrArgumentCount).In("assert")
 	}
 
 	// Figure out the test name. If not found, use "test"
@@ -101,17 +101,17 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 			fmt.Println()
 
-			return nil, errors.New(errors.AssertError).In(name).Context(msg)
-		} else {
-			return true, nil
+			return nil, errors.New(errors.ErrAssert).In(name).Context(msg)
 		}
+
+		return true, nil
 	}
 
 	// Just the boolean; the string is optionally in the second
 	// argument.
 	b := util.GetBool(args[0])
 	if !b {
-		msg := errors.New(errors.TestingAssertError)
+		msg := errors.New(errors.ErrTestingAssert)
 
 		if len(args) > 1 {
 			msg = msg.Context(args[1])
@@ -128,7 +128,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // TestIsType implements the T.type() function.
 func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ArgumentCountError).In("IsType()")
+		return nil, errors.New(errors.ErrArgumentCount).In("IsType()")
 	}
 
 	// Figure out the test name. If not found, use "test"
@@ -185,7 +185,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // TestNil implements the T.Nil() function.
 func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("Nil()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Nil()")
 	}
 
 	isNil := args[0] == nil
@@ -203,7 +203,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // TestNotNil implements the T.NotNil() function.
 func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("NotNil")
+		return nil, errors.New(errors.ErrArgumentCount).In("NotNil")
 	}
 
 	isNil := args[0] == nil
@@ -221,7 +221,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // TestTrue implements the T.True() function.
 func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("True()")
+		return nil, errors.New(errors.ErrArgumentCount).In("True()")
 	}
 
 	if len(args) == 2 {
@@ -234,7 +234,7 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // TestFalse implements the T.False() function.
 func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ArgumentCountError).In("False()")
+		return nil, errors.New(errors.ErrArgumentCount).In("False()")
 	}
 
 	if len(args) == 2 {
@@ -247,7 +247,7 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TestEqual implements the T.Equal() function.
 func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ArgumentCountError).In("Equal()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Equal()")
 	}
 
 	b := reflect.DeepEqual(args[0], args[1])
@@ -276,7 +276,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TestNotEqual implements the T.NotEqual() function.
 func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ArgumentCountError).In("NoEqual()")
+		return nil, errors.New(errors.ErrArgumentCount).In("NoEqual()")
 	}
 
 	b, err := TestEqual(s, args)

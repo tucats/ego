@@ -11,7 +11,7 @@ import (
 func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidSymbolError)
+		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	name = c.normalize(name)
@@ -105,13 +105,13 @@ func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
 	if typeCompiler.t.IsNext("type") {
 		name = typeCompiler.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return datatypes.Type{}, errors.New(errors.InvalidSymbolError).Context(name)
+			return datatypes.Type{}, errors.New(errors.ErrInvalidSymbolName).Context(name)
 		}
 
 		if typeCompiler.t.IsNext(".") {
 			name2 := typeCompiler.t.Next()
 			if !tokenizer.IsSymbol(name2) {
-				return datatypes.Type{}, errors.New(errors.InvalidSymbolError).Context(name2)
+				return datatypes.Type{}, errors.New(errors.ErrInvalidSymbolName).Context(name2)
 			}
 
 			name = name + "." + name2

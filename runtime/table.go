@@ -39,7 +39,7 @@ func initTableTypeDef() {
 // aligned. In either case the ":" is removed from the name.
 func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 0 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	// Fetch the arguments as column headings. If the value is passed by array,
@@ -135,14 +135,14 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 		if len(args) > 0 {
 			if m, ok := args[0].(*datatypes.EgoStruct); ok {
 				if len(args) > 1 {
-					err = errors.New(errors.ArgumentCountError)
+					err = errors.New(errors.ErrArgumentCount)
 				} else {
 					values := make([]string, len(m.FieldNames()))
 
 					for _, k := range m.FieldNames() {
 						v := m.GetAlways(k)
 						if v == nil {
-							return nil, errors.New(errors.InvalidFieldError)
+							return nil, errors.New(errors.ErrInvalidField)
 						}
 
 						p, ok := t.FindColumn(k)
@@ -156,7 +156,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 			} else {
 				if m, ok := args[0].([]interface{}); ok {
 					if len(args) > 1 {
-						err = errors.New(errors.ArgumentCountError)
+						err = errors.New(errors.ErrArgumentCount)
 
 						return err, err
 					}
@@ -192,7 +192,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 			pos, found := t.FindColumn(heading)
 			if !found {
-				err = errors.New(errors.InvalidColumnNameError).Context(heading)
+				err = errors.New(errors.ErrInvalidColumnName).Context(heading)
 			} else {
 				err = t.SortRows(pos, ascending)
 			}
@@ -208,7 +208,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // it controls whether an underline string is printed under the column names.
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 2 {
-		err := errors.New(errors.ArgumentCountError)
+		err := errors.New(errors.ErrArgumentCount)
 
 		return err, err
 	}
@@ -237,7 +237,7 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // TableAlign specifies alignment for a given column.
 func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) > 2 {
-		err := errors.New(errors.ArgumentCountError)
+		err := errors.New(errors.ErrArgumentCount)
 
 		return err, err
 	}
@@ -249,7 +249,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.FindColumn(columnName)
 			if !ok {
-				err = errors.New(errors.InvalidColumnNameError).Context(columnName)
+				err = errors.New(errors.ErrInvalidColumnName).Context(columnName)
 
 				return err, err
 			}
@@ -271,7 +271,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 				mode = tables.AlignmentCenter
 
 			default:
-				err = errors.New(errors.InvalidAlignmentError).Context(modeName)
+				err = errors.New(errors.ErrAlignment).Context(modeName)
 
 				return err, err
 			}
@@ -325,7 +325,7 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {
-						return nil, errors.New(errors.TableClosedError)
+						return nil, errors.New(errors.ErrTableClosed)
 					}
 
 					return tp, nil
@@ -334,5 +334,5 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.NoFunctionReceiver)
+	return nil, errors.New(errors.ErrNoFunctionReceiver)
 }

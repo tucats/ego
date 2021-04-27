@@ -9,16 +9,16 @@ const (
 	MissingOutputTypeError = "missing output type"
 )
 
-type ProfileErr struct {
+type Error struct {
 	err error
 }
 
-func NewProfileErr(msg string, args ...interface{}) ProfileErr {
-	return ProfileErr{
+func NewProfileErr(msg string, args ...interface{}) Error {
+	return Error{
 		err: fmt.Errorf(msg, args...),
 	}
 }
 
-func (e ProfileErr) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("%s, %s", ProfileErrPrefix, e.err.Error())
 }

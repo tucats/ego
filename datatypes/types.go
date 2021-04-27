@@ -296,16 +296,16 @@ func (t Type) FieldNames() []string {
 // be a structure type, and the field name must exist.
 func (t Type) Field(name string) (Type, *errors.EgoError) {
 	if t.kind != StructKind {
-		return UndefinedType, errors.New(errors.InvalidStructError)
+		return UndefinedType, errors.New(errors.ErrInvalidStruct)
 	}
 
 	if t.fields == nil {
-		return UndefinedType, errors.New(errors.InvalidFieldError)
+		return UndefinedType, errors.New(errors.ErrInvalidField)
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return UndefinedType, errors.New(errors.InvalidFieldError)
+		return UndefinedType, errors.New(errors.ErrInvalidField)
 	}
 
 	return ofType, nil

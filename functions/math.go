@@ -20,7 +20,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
-			return nil, errors.New(errors.InvalidTypeError).In("min()")
+			return nil, errors.New(errors.ErrInvalidType).In("min()")
 		}
 
 		switch r.(type) {
@@ -44,7 +44,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 				r = v
 			}
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("min()")
+			return nil, errors.New(errors.ErrInvalidType).In("min()")
 		}
 	}
 
@@ -62,7 +62,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	for _, v := range args[1:] {
 		v = util.Coerce(v, r)
 		if v == nil {
-			return nil, errors.New(errors.InvalidTypeError).In("max()")
+			return nil, errors.New(errors.ErrInvalidType).In("max()")
 		}
 
 		switch rr := r.(type) {
@@ -87,7 +87,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			}
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("max()")
+			return nil, errors.New(errors.ErrInvalidType).In("max()")
 		}
 	}
 
@@ -101,7 +101,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	for _, addend := range args[1:] {
 		addend = util.Coerce(addend, base)
 		if addend == nil {
-			return nil, errors.New(errors.InvalidTypeError).In("sum()")
+			return nil, errors.New(errors.ErrInvalidType).In("sum()")
 		}
 
 		switch addend.(type) {
@@ -118,7 +118,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			base = base.(bool) || addend.(bool)
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("sum()")
+			return nil, errors.New(errors.ErrInvalidType).In("sum()")
 		}
 	}
 
@@ -148,7 +148,7 @@ func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	max := util.GetInt(args[0])
 	if max <= 0 {
-		return nil, errors.New(errors.InvalidFunctionArgument).Context(max)
+		return nil, errors.New(errors.ErrInvalidFunctionArgument).Context(max)
 	}
 
 	return rand.Intn(max), nil

@@ -80,7 +80,7 @@ func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 	for i := 0; i < a.Len(); i++ {
 		v, _ := a.Get(i)
 		if !IsType(v, kind) {
-			return errors.New(errors.WrongArrayValueType)
+			return errors.New(errors.ErrWrongArrayValueType)
 		}
 	}
 
@@ -98,7 +98,7 @@ func (a *EgoArray) Immutable(b bool) {
 func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
-		return nil, errors.New(errors.ArrayBoundsError)
+		return nil, errors.New(errors.ErrArrayBounds)
 	}
 
 	return a.data[index], nil
@@ -115,7 +115,7 @@ func (a *EgoArray) SetType(i Type) *errors.EgoError {
 		return nil
 	}
 
-	return errors.New(errors.ImmutableArrayError)
+	return errors.New(errors.ErrImmutableArray)
 }
 
 // Force the size of the array. Existing values are retained if the
@@ -137,12 +137,12 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	v := value
 
 	if a.immutable > 0 {
-		return errors.New(errors.ImmutableArrayError)
+		return errors.New(errors.ErrImmutableArray)
 	}
 
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
-		return errors.New(errors.ArrayBoundsError)
+		return errors.New(errors.ErrArrayBounds)
 	}
 
 	// Address float/int issues before testing the type.
@@ -164,7 +164,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 
 	// Now, ensure it's of the right type for this array.
 	if !IsBaseType(v, a.valueType) {
-		return errors.New(errors.WrongArrayValueType)
+		return errors.New(errors.ErrWrongArrayValueType)
 	}
 
 	a.data[index] = v
@@ -233,7 +233,7 @@ func (a *EgoArray) String() string {
 
 func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 	if first < 0 || last > len(a.data) {
-		return nil, errors.New(errors.ArrayBoundsError)
+		return nil, errors.New(errors.ErrArrayBounds)
 	}
 
 	return a.data[first:last], nil
@@ -270,11 +270,11 @@ func getInt(i interface{}) int {
 // is marked as immutable.
 func (a *EgoArray) Delete(i int) *errors.EgoError {
 	if i >= len(a.data) || i < 0 {
-		return errors.New(errors.ArrayBoundsError)
+		return errors.New(errors.ErrArrayBounds)
 	}
 
 	if a.immutable != 0 {
-		return errors.New(errors.ImmutableArrayError)
+		return errors.New(errors.ErrImmutableArray)
 	}
 
 	a.data = append(a.data[:i], a.data[i+1:]...)
@@ -319,7 +319,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 			a.data[i] = v
 		}
 	} else {
-		err = errors.New(errors.InvalidArgTypeError)
+		err = errors.New(errors.ErrInvalidArgType)
 	}
 
 	return err

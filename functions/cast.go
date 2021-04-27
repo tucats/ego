@@ -19,20 +19,20 @@ const MaxDeepCopyDepth = 100
 
 // Int implements the int() function.
 func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], 1); v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("int()").Context(args[0])
-	} else {
+	if v := util.Coerce(args[0], 1); v != nil {
 		return v.(int), nil
 	}
+
+	return nil, errors.New(errors.ErrInvalidType).In("int()").Context(args[0])
 }
 
 // Float implements the float() function.
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], 1.0); v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("float()").Context(args[0])
-	} else {
+	if v := util.Coerce(args[0], 1.0); v != nil {
 		return v.(float64), nil
 	}
+
+	return nil, errors.New(errors.ErrInvalidType).In("float()").Context(args[0])
 }
 
 // String implements the string() function.
@@ -84,7 +84,7 @@ func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v := util.Coerce(args[0], true)
 	if v == nil {
-		return nil, errors.New(errors.InvalidTypeError).In("bool()").Context(args[0])
+		return nil, errors.New(errors.ErrInvalidType).In("bool()").Context(args[0])
 	}
 
 	return v.(bool), nil
@@ -121,7 +121,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("new()").Context(typeValue)
+			return nil, errors.New(errors.ErrInvalidType).In("new()").Context(typeValue)
 		}
 	}
 
@@ -149,7 +149,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.InvalidTypeError).In("new()").Context(typeValue)
+			return nil, errors.New(errors.ErrInvalidType).In("new()").Context(typeValue)
 		}
 	}
 
@@ -181,13 +181,13 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
-		return nil, errors.New(errors.InvalidValueError).In("new()").Context(nil)
+		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context(nil)
 
 	case symbols.SymbolTable:
-		return nil, errors.New(errors.InvalidValueError).In("new()").Context("symbol table")
+		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-		return nil, errors.New(errors.InvalidValueError).In("new()").Context("builtin function")
+		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context("builtin function")
 
 	case int:
 	case string:
@@ -227,7 +227,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError).In("new()").Context(v)
+		return nil, errors.New(errors.ErrInvalidType).In("new()").Context(v)
 	}
 
 	return r, nil
@@ -308,7 +308,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	kind := datatypes.GetType(args[1])
 	if !kind.IsArray() {
-		return nil, errors.New(errors.InvalidTypeError)
+		return nil, errors.New(errors.ErrInvalidType)
 	}
 
 	switch actual := args[0].(type) {
@@ -333,7 +333,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			} else if elementKind.IsType(datatypes.BoolType) {
 				_ = r.Set(i, util.GetBool(v))
 			} else {
-				return nil, errors.New(errors.InvalidTypeError)
+				return nil, errors.New(errors.ErrInvalidType)
 			}
 		}
 
@@ -341,7 +341,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	case string:
 		if !kind.IsType(datatypes.Array(datatypes.IntType)) {
-			return nil, errors.New(errors.InvalidTypeError)
+			return nil, errors.New(errors.ErrInvalidType)
 		}
 
 		r := datatypes.NewArray(datatypes.IntType, 0)
@@ -353,6 +353,6 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	default:
-		return nil, errors.New(errors.InvalidTypeError)
+		return nil, errors.New(errors.ErrInvalidType)
 	}
 }

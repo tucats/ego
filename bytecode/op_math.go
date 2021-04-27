@@ -38,7 +38,7 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	switch value := v.(type) {
@@ -77,7 +77,7 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(r)
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	switch value := v.(type) {
@@ -115,7 +115,7 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return nil
@@ -139,7 +139,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	switch vx := v1.(type) {
@@ -164,7 +164,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(v1.(bool) && v2.(bool))
 
 		default:
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 }
@@ -183,7 +183,7 @@ func andByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return c.stackPush(util.GetBool(v1) && util.GetBool(v2))
@@ -203,7 +203,7 @@ func orByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	return c.stackPush(util.GetBool(v1) || util.GetBool(v2))
@@ -226,7 +226,7 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
@@ -244,7 +244,7 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(s)
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 }
 
@@ -262,7 +262,7 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
@@ -278,7 +278,7 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(v1.(bool) || v2.(bool))
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 }
 
@@ -298,7 +298,7 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	switch v1.(type) {
@@ -323,14 +323,14 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 }
 
 // divideByteCode bytecode instruction processor.
 func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 	if c.stackPointer < 1 {
-		return c.newError(errors.StackUnderflowError)
+		return c.newError(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
@@ -345,7 +345,7 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	v1, v2 = util.Normalize(v1, v2)
@@ -353,19 +353,19 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch v1.(type) {
 	case int:
 		if v2.(int) == 0 {
-			return c.newError(errors.DivisionByZeroError)
+			return c.newError(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int) / v2.(int))
 
 	case float64:
 		if v2.(float64) == 0 {
-			return c.newError(errors.DivisionByZeroError)
+			return c.newError(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(float64) / v2.(float64))
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 }

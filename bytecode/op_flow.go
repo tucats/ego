@@ -41,7 +41,7 @@ func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	msg := util.GetString(strValue)
 
-	return c.newError(errors.Panic).Context(msg)
+	return c.newError(errors.ErrPanic).Context(msg)
 }
 
 // atLineByteCode instruction processor. This identifies the start of a new statement,
@@ -77,7 +77,7 @@ func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.newError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
 	if !util.GetBool(v) {
@@ -93,7 +93,7 @@ func branchByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.newError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
 	c.programCounter = address
@@ -114,7 +114,7 @@ func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
 	address := util.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
-		return c.newError(errors.InvalidBytecodeAddress).Context(address)
+		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
 	if util.GetBool(v) {
@@ -206,7 +206,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if funcPointer == nil {
-		return c.newError(errors.InvalidFunctionCallError).Context("<nil>")
+		return c.newError(errors.ErrInvalidFunctionCall).Context("<nil>")
 	}
 
 	// Depends on the type here as to what we call...
@@ -303,7 +303,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 			if len(args) < df.Min || len(args) > df.Max {
 				name := functions.FindName(af)
 
-				return errors.New(errors.ArgumentCountError).Context(name)
+				return errors.New(errors.ErrArgumentCount).Context(name)
 			}
 		}
 
@@ -355,10 +355,10 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	case *errors.EgoError:
-		return c.newError(errors.UnusedErrorReturnError)
+		return c.newError(errors.ErrUnusedErrorReturn)
 
 	default:
-		return c.newError(errors.InvalidFunctionCallError).Context(af)
+		return c.newError(errors.ErrInvalidFunctionCall).Context(af)
 	}
 
 	if !errors.Nil(err) {
@@ -419,7 +419,7 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch v := i.(type) {
 	case []interface{}:
 		if len(v) < 2 || len(v) > 3 {
-			return c.newError(errors.InvalidArgCheckError)
+			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
 		min = util.GetInt(v[0])
@@ -440,19 +440,19 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	case []int:
 		if len(v) != 2 {
-			return c.newError(errors.InvalidArgCheckError)
+			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
 		min = v[0]
 		max = v[1]
 
 	default:
-		return c.newError(errors.InvalidArgCheckError)
+		return c.newError(errors.ErrArgumentTypeCheck)
 	}
 
 	v, found := c.symbolGet("__args")
 	if !found {
-		return c.newError(errors.InvalidArgCheckError)
+		return c.newError(errors.ErrArgumentTypeCheck)
 	}
 
 	// Do the actual compare. Note that if we ended up with a negative
@@ -464,10 +464,10 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if va.Len() < min || va.Len() > max {
-			return errors.New(errors.ArgumentCountError).In(name)
+			return errors.New(errors.ErrArgumentCount).In(name)
 		}
 	} else {
-		return errors.New(errors.InvalidArgCheckError)
+		return errors.New(errors.ErrArgumentTypeCheck)
 	}
 
 	return nil
@@ -530,7 +530,7 @@ func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	return errors.New(errors.WrongModeError).Context(mode)
+	return errors.New(errors.ErrWrongMode).Context(mode)
 }
 
 func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
@@ -538,7 +538,7 @@ func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	entryPoint, found := c.symbolGet(entryPointName)
 	if !found {
-		return errors.New(errors.UndefinedEntrypointError).Context(entryPointName)
+		return errors.New(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 	}
 
 	_ = c.stackPush(entryPoint)

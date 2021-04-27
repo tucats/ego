@@ -183,21 +183,21 @@ func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
 
 func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 	if s.readonly {
-		return errors.New(errors.ReadOnlyError)
+		return errors.New(errors.ErrReadOnly)
 	}
 
 	// Is it a readonly symbol name and it already exists? If so, fail...
 	if name[0:1] == "_" {
 		_, ok := s.fields[name]
 		if ok {
-			return errors.New(errors.ReadOnlyError)
+			return errors.New(errors.ErrReadOnly)
 		}
 	}
 
 	if s.static {
 		_, ok := s.fields[name]
 		if !ok {
-			return errors.New(errors.InvalidFieldError)
+			return errors.New(errors.ErrInvalidField)
 		}
 	}
 
@@ -205,7 +205,7 @@ func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 		if t, ok := s.typeDef.fields[name]; ok {
 			// Does it have to match already?
 			if s.strongTyping && !IsType(value, t) {
-				return errors.New(errors.InvalidTypeError)
+				return errors.New(errors.ErrInvalidType)
 			}
 			// Make sure it is compatible with the field type.
 			value = t.Coerce(value)

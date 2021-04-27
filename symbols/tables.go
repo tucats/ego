@@ -7,9 +7,9 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// This is the number of symbols that can be added to a table at a
-// given scope. Exported because it can be set by a caller prior
-// to constructing a symbol table.
+// SymbolAllocationSize is the number of symbols that can be added
+// to a table at a given scope. Exported because it can be set by a
+// caller prior to constructing a symbol table.
 var SymbolAllocationSize = 64
 
 // No symbol table allocation extent will be smaller than this size.

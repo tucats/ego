@@ -131,7 +131,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 
 		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		return errors.New(errors.NoSuchUserError).Context(user)
+		return errors.New(errors.ErrNoSuchUser).Context(user)
 	}
 
 	return err
@@ -222,7 +222,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		}
 	} else {
 		if len(args) != 2 {
-			return false, errors.New(errors.ArgumentCountError)
+			return false, errors.New(errors.ErrArgumentCount)
 		}
 
 		user = util.GetString(args[0])
@@ -239,7 +239,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	var user, priv string
 
 	if len(args) != 2 {
-		return false, errors.New(errors.ArgumentCountError)
+		return false, errors.New(errors.ErrArgumentCount)
 	}
 
 	user = util.GetString(args[0])
@@ -263,13 +263,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	if !superUser {
-		return nil, errors.New(errors.NoPrivilegeForOperationError)
+		return nil, errors.New(errors.ErrNoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	if u, ok := args[0].(*datatypes.EgoMap); ok {
@@ -327,12 +327,12 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	if !superUser {
-		return nil, errors.New(errors.NoPrivilegeForOperationError)
+		return nil, errors.New(errors.ErrNoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is the username
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	name := strings.ToLower(util.GetString(args[0]))
@@ -354,7 +354,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)

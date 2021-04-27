@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 
+	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -41,7 +42,7 @@ func initDBTypeDef() {
 // for the functions available to a specific handle.
 func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	initDBTypeDef()
@@ -99,7 +100,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 				this.SetAlways(transactionFieldName, tx)
 			}
 		} else {
-			err = errors.New(errors.TransactionAlreadyActive)
+			err = errors.New(errors.ErrTransactionAlreadyActive)
 		}
 	}
 
@@ -117,7 +118,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		if tx != nil {
 			err = errors.New(tx.Rollback())
 		} else {
-			err = errors.New(errors.NoTransactionActiveError)
+			err = errors.New(errors.ErrNoTransactionActive)
 		}
 
 		this.SetAlways(transactionFieldName, nil)
@@ -137,7 +138,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		if tx != nil {
 			err = errors.New(tx.Commit())
 		} else {
-			err = errors.New(errors.NoTransactionActiveError)
+			err = errors.New(errors.ErrNoTransactionActive)
 		}
 
 		this.SetAlways(transactionFieldName, nil)
@@ -152,7 +153,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // column data in the order of the result set, but with no labels, etc.
 func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	_, _, err := getDBClient(s)
@@ -338,19 +339,19 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, *errors.EgoErr
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {
-						return nil, nil, errors.New(errors.DatabaseClientClosedError)
+						return nil, nil, errors.New(errors.ErrDatabaseClientClosed)
 					}
 
 					tx := gc.GetAlways(transactionFieldName)
 					if tx == nil {
 						return cp, nil, nil
-					} else {
-						return cp, tx.(*sql.Tx), nil
 					}
+
+					return cp, tx.(*sql.Tx), nil
 				}
 			}
 		}
 	}
 
-	return nil, nil, errors.New(errors.NoFunctionReceiver)
+	return nil, nil, errors.New(errors.ErrNoFunctionReceiver)
 }

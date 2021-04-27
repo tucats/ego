@@ -12,7 +12,7 @@ func (c *Compiler) compilePrint() *errors.EgoError {
 
 	for !c.isStatementEnd() {
 		if c.t.IsNext(",") {
-			return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
+			return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
 		}
 
 		bc, err := c.Expression()

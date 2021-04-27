@@ -48,14 +48,14 @@ const (
 )
 
 // Wrapper for CLI errors.
-type CLIError struct {
+type Error struct {
 	err error
 }
 
 // NewCLIError generates a new CLIError object using the message string and optional
 // values that are formatted using the message string.
-func NewCLIError(msg string, args ...interface{}) CLIError {
-	e := CLIError{
+func NewCLIError(msg string, args ...interface{}) Error {
+	e := Error{
 		err: fmt.Errorf(msg, args...),
 	}
 
@@ -63,6 +63,6 @@ func NewCLIError(msg string, args ...interface{}) CLIError {
 }
 
 // Error returns a string representation of the CLIError.
-func (ce CLIError) Error() string {
+func (ce Error) Error() string {
 	return fmt.Sprintf("%s, %s", CLIErrorPrefix, ce.err.Error())
 }

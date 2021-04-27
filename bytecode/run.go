@@ -98,7 +98,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 		imp, found := dispatch[i.Operation]
 		if !found {
-			return c.newError(errors.UnimplementedInstructionError).Context(i.Operation)
+			return c.newError(errors.ErrUnimplementedInstruction).Context(i.Operation)
 		}
 
 		err = imp(c, i.Operand)
@@ -164,7 +164,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	parentSymbols := parentCtx.symbols
-	err := parentCtx.newError(errors.InvalidFunctionCallError)
+	err := parentCtx.newError(errors.ErrInvalidFunctionCall)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)

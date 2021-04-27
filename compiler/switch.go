@@ -25,7 +25,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 	c.b.Emit(bytecode.Store, t)
 
 	if !c.t.IsNext("{") {
-		return c.newError(errors.MissingBlockError)
+		return c.newError(errors.ErrMissingBlock)
 	}
 
 	for !c.t.IsNext("}") {
@@ -36,7 +36,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 		// Could be a default statement:
 		if c.t.IsNext("default") {
 			if !c.t.IsNext(":") {
-				return c.newError(errors.MissingColonError)
+				return c.newError(errors.ErrMissingColon)
 			}
 
 			savedBC := c.b
@@ -54,7 +54,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 		} else {
 			// Must be a "case" statement:
 			if !c.t.IsNext("case") {
-				return c.newError(errors.MissingCaseError)
+				return c.newError(errors.ErrMissingCase)
 			}
 
 			cx, err := c.Expression()
@@ -71,7 +71,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			c.b.Emit(bytecode.BranchFalse, 0)
 
 			if !c.t.IsNext(":") {
-				return c.newError(errors.MissingColonError)
+				return c.newError(errors.ErrMissingColon)
 			}
 
 			for c.t.Peek(1) != "case" && c.t.Peek(1) != "default" && c.t.Peek(1) != "}" {

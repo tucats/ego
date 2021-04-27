@@ -34,7 +34,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 	}
 
 	if c.t.AtEnd() || c.t.Peek(1) != ":" {
-		return c.newError(errors.MissingColonError)
+		return c.newError(errors.ErrMissingColon)
 	}
 
 	m2 := c.b.Mark()

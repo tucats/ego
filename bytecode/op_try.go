@@ -18,11 +18,11 @@ const (
 var catchSets = [][]*errors.EgoError{
 	// OptionalCatchSet
 	{
-		errors.New(errors.UnknownMemberError),
-		errors.New(errors.InvalidTypeError),
-		errors.New(errors.NilPointerReferenceError),
-		errors.New(errors.DivisionByZeroError),
-		errors.New(errors.InvalidArrayIndexError),
+		errors.New(errors.ErrUnknownMember),
+		errors.New(errors.ErrInvalidType),
+		errors.New(errors.ErrNilPointerReference),
+		errors.New(errors.ErrDivisionByZero),
+		errors.New(errors.ErrArrayIndex),
 	},
 }
 
@@ -42,7 +42,7 @@ func tryByteCode(c *Context, i interface{}) *errors.EgoError {
 // are caught.
 func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 	if len(c.tryStack) == 0 {
-		return c.newError(errors.TryCatchMismatchError)
+		return c.newError(errors.ErrTryCatchMismatch)
 	}
 
 	try := c.tryStack[len(c.tryStack)-1]
@@ -53,7 +53,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch i := i.(type) {
 	case int:
 		if i > len(catchSets) {
-			return c.newError(errors.InternalCompilerError).Context("invalid catch set " + strconv.Itoa(i))
+			return c.newError(errors.ErrInternalCompiler).Context("invalid catch set " + strconv.Itoa(i))
 		}
 
 		// Zero has a special meaning of "catch everything"
@@ -73,7 +73,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 		try.catches = append(try.catches, errors.NewMessage(i))
 
 	default:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	c.tryStack[len(c.tryStack)-1] = try
@@ -84,7 +84,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 // tryPopByteCode instruction processor.
 func tryPopByteCode(c *Context, i interface{}) *errors.EgoError {
 	if len(c.tryStack) == 0 {
-		return c.newError(errors.TryCatchMismatchError)
+		return c.newError(errors.ErrTryCatchMismatch)
 	}
 
 	if len(c.tryStack) == 1 {

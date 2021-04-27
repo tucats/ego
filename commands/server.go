@@ -42,7 +42,7 @@ func Start(c *cli.Context) *errors.EgoError {
 			// if the pid is or was ever running...
 			err := p.Signal(syscall.Signal(0))
 			if errors.Nil(err) && !c.GetBool("force") {
-				return errors.New(errors.ServerAlreadyRunning).Context(status.PID)
+				return errors.New(errors.ErrServerAlreadyRunning).Context(status.PID)
 			}
 		}
 	}
@@ -434,7 +434,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		}
 
 		if !found {
-			return errors.New(errors.NoSuchDebugService).Context(debugPath)
+			return errors.New(errors.ErrNoSuchDebugService).Context(debugPath)
 		}
 	}
 
@@ -498,7 +498,7 @@ func bToMb(b uint64) float64 {
 // size. You must be an admin user with a valid token to perform this command.
 func SetCacheSize(c *cli.Context) *errors.EgoError {
 	if c.GetParameterCount() == 0 {
-		return errors.New(errors.CacheSizeNotSpecifiedError)
+		return errors.New(errors.ErrCacheSizeNotSpecified)
 	}
 
 	size, err := strconv.Atoi(c.GetParameter(0))
@@ -529,7 +529,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.NoPrivilegeForOperationError)
+				return errors.New(errors.ErrNoPrivilegeForOperation)
 			}
 
 			return errors.NewMessage(cacheStatus.Message)
@@ -568,7 +568,7 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.NoPrivilegeForOperationError)
+				return errors.New(errors.ErrNoPrivilegeForOperation)
 			}
 
 			return errors.NewMessage(cacheStatus.Message)
@@ -593,7 +593,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	}
 
 	if cacheStatus.Status != http.StatusOK {
-		return errors.New(errors.HTTPError).Context(cacheStatus.Status)
+		return errors.New(errors.ErrHTTP).Context(cacheStatus.Status)
 	}
 
 	switch ui.OutputFormat {
@@ -608,7 +608,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	case ui.TextFormat:
 		if cacheStatus.Status != http.StatusOK {
 			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.NoPrivilegeForOperationError)
+				return errors.New(errors.ErrNoPrivilegeForOperation)
 			}
 
 			return errors.NewMessage(cacheStatus.Message)

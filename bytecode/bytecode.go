@@ -98,7 +98,7 @@ func (b *ByteCode) SetAddressHere(mark int) *errors.EgoError {
 // instruction.
 func (b *ByteCode) SetAddress(mark int, address int) *errors.EgoError {
 	if mark > b.emitPos || mark < 0 {
-		return b.NewError(errors.InvalidBytecodeAddress)
+		return b.NewError(errors.ErrInvalidBytecodeAddress)
 	}
 
 	i := b.instructions[mark]
@@ -139,7 +139,7 @@ func (b *ByteCode) GetInstruction(pos int) *Instruction {
 func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) *errors.EgoError {
 	// First, make sure this isn't a duplicate
 	if _, found := dispatch[opcode]; found {
-		return errors.New(errors.OpcodeAlreadyDefinedError).Context(opcode)
+		return errors.New(errors.ErrOpcodeAlreadyDefined).Context(opcode)
 	}
 
 	instructionNames[opcode] = name

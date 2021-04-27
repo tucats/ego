@@ -65,7 +65,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	size := len(c.packageStack)
 	if size == 0 {
-		return c.newError(errors.MissingPackageStatement)
+		return c.newError(errors.ErrMissingPackageStatement)
 	}
 
 	// Pop the item off the package stack.
@@ -74,12 +74,12 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Verify that we're on the right package.
 	if pkgdef.name != util.GetString(i) {
-		return c.newError(errors.Panic).Context("package name mismatch: " + pkgdef.name)
+		return c.newError(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
 	}
 	// Retrieve the package variable
 	pkgValue, found := c.symbols.Get(pkgdef.name)
 	if !found {
-		return c.newError(errors.MissingPackageStatement)
+		return c.newError(errors.ErrMissingPackageStatement)
 	}
 
 	if _, ok := pkgValue.(*datatypes.EgoStruct); ok {

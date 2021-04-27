@@ -99,7 +99,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 				return c.Assert()
 			}
 
-			return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
+			return c.newError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 
 		case "break":
 			return c.compileBreak()
@@ -148,7 +148,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	}
 
 	// Unknown statement, return an error
-	return c.newError(errors.UnrecognizedStatementError, c.t.Peek(0))
+	return c.newError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 }
 
 // isFunctionCall indicates if the token stream points to a function call.

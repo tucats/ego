@@ -152,7 +152,7 @@ func timerByteCode(c *Context, i interface{}) *errors.EgoError {
 	case 1:
 		timerStack := len(c.timerStack)
 		if timerStack == 0 {
-			return c.newError(errors.InvalidTimerError)
+			return c.newError(errors.ErrInvalidTimer)
 		}
 
 		t := c.timerStack[timerStack-1]
@@ -177,7 +177,7 @@ func timerByteCode(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(msText)
 
 	default:
-		return c.newError(errors.InvalidTimerError)
+		return c.newError(errors.ErrInvalidTimer)
 	}
 
 	return nil

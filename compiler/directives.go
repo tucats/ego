@@ -17,7 +17,7 @@ import (
 func (c *Compiler) compileDirective() *errors.EgoError {
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidDirectiveError, name)
+		return c.newError(errors.ErrInvalidDirective, name)
 	}
 
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
@@ -81,7 +81,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 		return c.waitDirective()
 
 	default:
-		return c.newError(errors.InvalidDirectiveError, name)
+		return c.newError(errors.ErrInvalidDirective, name)
 	}
 }
 
@@ -92,7 +92,7 @@ func (c *Compiler) mainDirective() *errors.EgoError {
 	}
 
 	if !tokenizer.IsSymbol(mainName) {
-		return c.newError(errors.InvalidIdentifierError)
+		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
 	c.b.Emit(bytecode.EntryPoint, mainName)
@@ -111,7 +111,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 	}
 
 	if !tokenizer.IsSymbol(handlerName) {
-		return c.newError(errors.InvalidIdentifierError)
+		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
 	stackMarker := bytecode.StackMarker{Desc: "handler"}
@@ -148,12 +148,12 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 // value in the root symbol table, global to all execution.
 func (c *Compiler) globalDirective() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.newError(errors.InvalidSymbolError)
+		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	name := c.t.Next()
 	if strings.HasPrefix(name, "_") || !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidSymbolError, name)
+		return c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
 	name = c.normalize(name)
@@ -224,12 +224,12 @@ func (c *Compiler) lineDirective() *errors.EgoError {
 // logDirective parses the @log directive.
 func (c *Compiler) logDirective() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.newError(errors.InvalidSymbolError)
+		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	name := strings.ToUpper(c.t.Next())
 	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidSymbolError, name)
+		return c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
 	if c.t.AtEnd() {
@@ -252,7 +252,7 @@ func (c *Compiler) logDirective() *errors.EgoError {
 // value in the root symbol table with the REST call status value.
 func (c *Compiler) statusDirective() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.newError(errors.InvalidSymbolError)
+		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -286,7 +286,7 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 	}
 
 	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
-		return c.newError(errors.InvalidAuthenticationType, token)
+		return c.newError(errors.ErrInvalidAuthenticationType, token)
 	}
 
 	c.b.Emit(bytecode.Auth, token)
@@ -297,7 +297,7 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 // responseDirective processes the @response directive.
 func (c *Compiler) responseDirective() *errors.EgoError {
 	if c.t.AtEnd() {
-		return c.newError(errors.InvalidSymbolError)
+		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -318,7 +318,7 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 	// Get the template name
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.InvalidSymbolError, name)
+		return c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
 	name = c.normalize(name)
@@ -345,7 +345,7 @@ func (c *Compiler) errorDirective() *errors.EgoError {
 			c.b.Append(code)
 		}
 	} else {
-		c.b.Emit(bytecode.Push, errors.Panic)
+		c.b.Emit(bytecode.Push, errors.ErrPanic)
 	}
 
 	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
@@ -361,7 +361,7 @@ func (c *Compiler) typeDirective() *errors.EgoError {
 	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
-		err = c.newError(errors.InvalidTypeCheckError, t)
+		err = c.newError(errors.ErrInvalidTypeCheck, t)
 	}
 
 	c.b.Emit(bytecode.StaticTyping)

@@ -18,13 +18,13 @@ func (c *Compiler) compileConst() *errors.EgoError {
 	for terminator == "" || !c.t.IsNext(terminator) {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return c.newError(errors.InvalidSymbolError)
+			return c.newError(errors.ErrInvalidSymbolName)
 		}
 
 		name = c.normalize(name)
 
 		if !c.t.IsNext("=") {
-			return c.newError(errors.MissingEqualError)
+			return c.newError(errors.ErrMissingEqual)
 		}
 
 		vx, err := c.Expression()
@@ -37,7 +37,7 @@ func (c *Compiler) compileConst() *errors.EgoError {
 
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(util.GetString(i.Operand), c.constants...) {
-				return c.newError(errors.InvalidConstantError)
+				return c.newError(errors.ErrInvalidConstant)
 			}
 		}
 

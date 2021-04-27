@@ -214,7 +214,7 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -230,7 +230,7 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) > v2.(string)
 
 		default:
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 
@@ -273,7 +273,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -289,7 +289,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) >= v2.(string)
 
 		default:
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 
@@ -333,7 +333,7 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -349,7 +349,7 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) < v2.(string)
 
 		default:
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 
@@ -392,7 +392,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case *datatypes.EgoMap, *datatypes.EgoStruct, datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 
 	default:
 		v1, v2 = util.Normalize(v1, v2)
@@ -407,7 +407,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 			r = v1.(string) <= v2.(string)
 
 		default:
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 

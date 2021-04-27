@@ -24,7 +24,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 	var user, pass string
 
 	if _, ok := c.symbolGet("_authenticated"); !ok {
-		return c.newError(errors.NotAServiceError)
+		return c.newError(errors.ErrNotAService)
 	}
 
 	kind := util.GetString(i)
@@ -53,15 +53,17 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	if kind == "user" && user == "" && pass == "" {
-		c.running = false
+	if kind == "user" {
+		if user == "" && pass == "" {
+			c.running = false
 
-		_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
-		writeResponse(c, "401 Not authorized")
-		ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
+			_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
+			writeResponse(c, "401 Not authorized")
+			ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
 
-		return nil
-	} else {
+			return nil
+		}
+
 		kind = "any"
 	}
 

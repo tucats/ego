@@ -108,7 +108,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 				_ = array.SetType(datatypes.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.newError(errors.InvalidTypeError)
+					return c.newError(errors.ErrInvalidType)
 				}
 			}
 		}
@@ -198,7 +198,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			// are valid.
 			for k := range m {
 				if _, found := model.Get(k); !strings.HasPrefix(k, datatypes.MetadataPrefix) && !found {
-					return c.newError(errors.InvalidFieldError, k)
+					return c.newError(errors.ErrInvalidField, k)
 				}
 			}
 
@@ -224,7 +224,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 		default:
-			return c.newError(errors.UnknownTypeError).Context(typeInfo.String())
+			return c.newError(errors.ErrUnknownType).Context(typeInfo.String())
 		}
 	} else {
 		// No type, default it to a struct.

@@ -27,12 +27,12 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
-					err = c.newError(errors.InvalidArgTypeError)
+					err = c.newError(errors.ErrInvalidArgType)
 				}
 			} else {
 				if t, ok := i.(string); ok {
 					if t != reflect.TypeOf(v).String() {
-						err = c.newError(errors.InvalidArgTypeError)
+						err = c.newError(errors.ErrInvalidArgType)
 					}
 				} else {
 					if t, ok := i.(int); ok {
@@ -50,7 +50,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 						}
 
 						if !ok {
-							err = c.newError(errors.InvalidArgTypeError)
+							err = c.newError(errors.ErrInvalidArgType)
 						}
 					}
 				}
@@ -61,7 +61,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 			// If it's not interface type, check it out...
 			if !t.IsType(datatypes.InterfaceType) {
 				if t.IsType(datatypes.ErrorType) {
-					v = errors.New(errors.Panic).Context(v)
+					v = errors.New(errors.ErrPanic).Context(v)
 				}
 
 				actualType := datatypes.TypeOf(v)
@@ -70,7 +70,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				}
 
 				if !actualType.IsType(t) {
-					return c.newError(errors.ArgumentTypeError)
+					return c.newError(errors.ErrArgumentType)
 				}
 
 				if t.IsType(datatypes.IntType) {
@@ -110,7 +110,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		t.Kind() == datatypes.StructKind ||
 		t.Kind() == datatypes.ArrayKind {
 		if !t.IsType(datatypes.TypeOf(v)) {
-			return c.newError(errors.InvalidTypeError)
+			return c.newError(errors.ErrInvalidType)
 		}
 	}
 
@@ -198,7 +198,7 @@ func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.newError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.stackPush(addr)
@@ -209,29 +209,29 @@ func deRefByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.newError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	if datatypes.IsNil(addr) {
-		return c.newError(errors.NilPointerReferenceError)
+		return c.newError(errors.ErrNilPointerReference)
 	}
 
 	if content, ok := addr.(*interface{}); ok {
 		if datatypes.IsNil(content) {
-			return c.newError(errors.NilPointerReferenceError)
+			return c.newError(errors.ErrNilPointerReference)
 		}
 
 		c2 := *content
 		if c3, ok := c2.(*interface{}); ok {
 			if datatypes.IsNil(content) {
-				return c.newError(errors.NilPointerReferenceError)
+				return c.newError(errors.ErrNilPointerReference)
 			}
 
 			return c.stackPush(*c3)
-		} else {
-			return c.stackPush(c2)
 		}
+
+		return c.stackPush(c2)
 	}
 
-	return c.newError(errors.NotAPointer).Context(name)
+	return c.newError(errors.ErrNotAPointer).Context(name)
 }

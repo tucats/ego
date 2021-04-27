@@ -70,7 +70,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	if url == "" {
-		return errors.New(errors.NoLogonServerError)
+		return errors.New(errors.ErrNoLogonServer)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -109,16 +109,16 @@ func Logon(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = errors.New(errors.NoCredentialsError)
+			err = errors.New(errors.ErrNoCredentials)
 
 		case http.StatusForbidden:
-			err = errors.New(errors.InvalidCredentialsError)
+			err = errors.New(errors.ErrInvalidCredentials)
 
 		case http.StatusNotFound:
-			err = errors.New(errors.LogonEndpointError)
+			err = errors.New(errors.ErrLogonEndpoint)
 
 		default:
-			err = errors.New(errors.HTTPError).Context(r.StatusCode())
+			err = errors.New(errors.ErrHTTP).Context(r.StatusCode())
 		}
 	}
 

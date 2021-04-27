@@ -142,9 +142,9 @@ func Format(element interface{}) string {
 				}
 
 				return name + "()"
-			} else {
-				return "<builtin>"
 			}
+
+			return "<builtin>"
 		}
 
 		// If it's a bytecode.Bytecode pointer, use reflection to get the
@@ -162,9 +162,9 @@ func Format(element interface{}) string {
 					}
 
 					return name + "()"
-				} else {
-					return "<func>"
 				}
+
+				return "<func>"
 			}
 
 			return fmt.Sprintf("ptr %s", ts)

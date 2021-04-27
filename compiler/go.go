@@ -10,7 +10,7 @@ import (
 func (c *Compiler) compileGo() *errors.EgoError {
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
-		return c.newError(errors.InvalidSymbolError, fName)
+		return c.newError(errors.ErrInvalidSymbolName, fName)
 	}
 
 	// Is it a function constant?
@@ -29,7 +29,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 	c.b.Emit(bc.Push, fName)
 
 	if !c.t.IsNext("(") {
-		return c.newError(errors.MissingParenthesisError)
+		return c.newError(errors.ErrMissingParenthesis)
 	}
 
 	argc := 0
@@ -58,7 +58,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 		}
 
 		if c.t.Peek(1) != "," {
-			return c.newError(errors.InvalidListError)
+			return c.newError(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -66,7 +66,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != ")" {
-		return c.newError(errors.MissingParenthesisError)
+		return c.newError(errors.ErrMissingParenthesis)
 	}
 
 	c.t.Advance(1)

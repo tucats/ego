@@ -27,7 +27,7 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 		_ = c.t.IsNext(";")
 
 		if c.t.AtEnd() {
-			return c.newError(errors.MissingEndOfBlockError)
+			return c.newError(errors.ErrMissingEndOfBlock)
 		}
 	}
 

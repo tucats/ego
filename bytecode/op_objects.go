@@ -49,7 +49,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if v == nil {
-			return c.newError(errors.UnknownMemberError).Context(name)
+			return c.newError(errors.ErrUnknownMember).Context(name)
 		}
 
 	case datatypes.EgoPackage:
@@ -60,7 +60,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			// Okay, could it be a function based on the type of this object?
 			fv := tt.Function(name)
 			if fv == nil {
-				return c.newError(errors.UnknownPackageMemberError).Context(name)
+				return c.newError(errors.ErrUnknownPackageMember).Context(name)
 			}
 
 			v = fv
@@ -81,7 +81,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		// Nothing we can do something with, so bail
-		return c.newError(errors.InvalidTypeError)
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	_ = c.stackPush(v)
@@ -107,7 +107,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
 			bc.Name = util.GetString(i)
 			err = c.symbols.SetAlways(bc.Name, bc)
 		} else {
-			err = errors.New(errors.InvalidTypeError)
+			err = errors.New(errors.ErrInvalidType)
 		}
 	}
 

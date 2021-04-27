@@ -29,7 +29,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			// Pairs of name:value
 			name := c.t.Next()
 			if !tokenizer.IsSymbol(name) {
-				return c.newError(errors.InvalidSymbolError)
+				return c.newError(errors.ErrInvalidSymbolName)
 			}
 
 			name = c.normalize(name)
@@ -40,7 +40,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			}
 
 			if !c.t.IsNext(":") {
-				return c.newError(errors.MissingColonError)
+				return c.newError(errors.ErrMissingColon)
 			}
 
 			err = c.compileInitializer(ft)
@@ -58,7 +58,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			}
 
 			if !c.t.IsNext(",") {
-				return c.newError(errors.InvalidListError)
+				return c.newError(errors.ErrInvalidList)
 			}
 		}
 
@@ -81,7 +81,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			c.b.Emit(bytecode.Coerce, base.KeyType())
 
 			if !c.t.IsNext(":") {
-				return c.newError(errors.MissingColonError)
+				return c.newError(errors.ErrMissingColon)
 			}
 
 			// Note we compile the value using ourselves, to allow for nested
@@ -98,7 +98,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			}
 
 			if !c.t.IsNext(",") {
-				return c.newError(errors.InvalidListError)
+				return c.newError(errors.ErrInvalidList)
 			}
 		}
 
@@ -125,7 +125,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 			}
 
 			if !c.t.IsNext(",") {
-				return c.newError(errors.InvalidListError)
+				return c.newError(errors.ErrInvalidList)
 			}
 		}
 

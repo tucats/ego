@@ -70,7 +70,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			}
 
 		default:
-			err = errors.New(errors.InvalidBreakClauseError)
+			err = errors.New(errors.ErrInvalidBreakClause)
 		}
 
 		if !errors.Nil(err) {

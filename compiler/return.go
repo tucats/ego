@@ -26,7 +26,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.newError(errors.TooManyReturnValues)
+			return c.newError(errors.ErrTooManyReturnValues)
 		}
 
 		bc.Append(c.coercions[returnCount])
@@ -43,7 +43,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 	}
 
 	if returnCount < len(c.coercions) {
-		return c.newError(errors.MissingReturnValues)
+		return c.newError(errors.ErrMissingReturnValues)
 	}
 
 	// If there was a return value, the return values must be

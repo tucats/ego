@@ -12,7 +12,7 @@ import (
 func (c *Compiler) compileFunctionCall() *errors.EgoError {
 	// Let's peek ahead to see if this is a legit function call
 	if !tokenizer.IsSymbol(c.t.Peek(1)) || (c.t.Peek(2) != "->" && c.t.Peek(2) != "(" && c.t.Peek(2) != ".") {
-		return c.newError(errors.InvalidFunctionCall)
+		return c.newError(errors.ErrInvalidFunctionCall)
 	}
 
 	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "call"})

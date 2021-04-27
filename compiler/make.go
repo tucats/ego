@@ -8,11 +8,11 @@ import (
 
 func (c *Compiler) makeInvocation() *errors.EgoError {
 	if !c.t.IsNext("make") {
-		return c.newError(errors.UnexpectedTokenError, c.t.Peek(1))
+		return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
 	}
 
 	if !c.t.IsNext("(") {
-		return c.newError(errors.MissingParenthesisError)
+		return c.newError(errors.ErrMissingParenthesis)
 	}
 
 	c.b.Emit(bytecode.Load, "make")
@@ -40,12 +40,12 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 		}
 
 		if !found {
-			return c.newError(errors.InvalidTypeSpecError)
+			return c.newError(errors.ErrInvalidTypeSpec)
 		}
 	}
 
 	if !c.t.IsNext(",") {
-		return c.newError(errors.InvalidListError)
+		return c.newError(errors.ErrInvalidList)
 	}
 
 	bc, err := c.Expression()
@@ -54,7 +54,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 	c.b.Emit(bytecode.Call, 2)
 
 	if errors.Nil(err) && !c.t.IsNext(")") {
-		err = c.newError(errors.MissingParenthesisError)
+		err = c.newError(errors.ErrMissingParenthesis)
 	}
 
 	return err

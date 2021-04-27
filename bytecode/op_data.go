@@ -86,7 +86,7 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 		if sourceChan {
 			err = c.symbolCreate(varname)
 		} else {
-			err = c.newError(errors.UnknownIdentifierError).Context(x)
+			err = c.newError(errors.ErrUnknownIdentifier).Context(x)
 		}
 
 		if !errors.Nil(err) {
@@ -100,7 +100,7 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if !sourceChan && !destChan {
-		return c.newError(errors.InvalidChannelError)
+		return c.newError(errors.ErrInvalidChannel)
 	}
 
 	var datum interface{}
@@ -159,11 +159,11 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	dest, ok := c.symbolGet(name)
 	if !ok {
-		return c.newError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	if datatypes.IsNil(dest) {
-		return c.newError(errors.NilPointerReferenceError).Context(name)
+		return c.newError(errors.ErrNilPointerReference).Context(name)
 	}
 
 	src, err := c.Pop()
@@ -194,22 +194,22 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 	case **datatypes.EgoArray:
 		*actual, ok = src.(*datatypes.EgoArray)
 		if !ok {
-			return c.newError(errors.NotAPointer).Context(name)
+			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
 	case **datatypes.EgoMap:
 		*actual, ok = src.(*datatypes.EgoMap)
 		if !ok {
-			return c.newError(errors.NotAPointer).Context(name)
+			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
 
 	case **datatypes.Channel:
 		*actual, ok = src.(*datatypes.Channel)
 		if !ok {
-			return c.newError(errors.NotAPointer).Context(name)
+			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
 
 	default:
-		return c.newError(errors.NotAPointer).Context(name)
+		return c.newError(errors.ErrNotAPointer).Context(name)
 	}
 
 	return nil
@@ -249,12 +249,12 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 func loadByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := util.GetString(i)
 	if len(name) == 0 {
-		return c.newError(errors.InvalidIdentifierError).Context(name)
+		return c.newError(errors.ErrInvalidIdentifier).Context(name)
 	}
 
 	v, found := c.symbolGet(name)
 	if !found {
-		return c.newError(errors.UnknownIdentifierError).Context(name)
+		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	_ = c.stackPush(v)
@@ -279,7 +279,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if m, ok := v.(*datatypes.EgoMap); ok {
 		if !m.KeyType().IsType(datatypes.StringType) {
-			err = c.newError(errors.InvalidStructError)
+			err = c.newError(errors.ErrInvalidStruct)
 		} else {
 			keys := m.Keys()
 
@@ -297,7 +297,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 	} else {
-		err = c.newError(errors.InvalidStructError)
+		err = c.newError(errors.ErrInvalidStruct)
 	}
 
 	return err

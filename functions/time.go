@@ -55,7 +55,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TimeAdd implements time.duration().
 func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Add()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Add()")
 	}
 
 	t, err := getTime(s)
@@ -74,7 +74,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // TimeSub implements time.duration().
 func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Sub()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Sub()")
 	}
 
 	t, err := getTime(s)
@@ -93,7 +93,7 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // TimeFormat implements time.Format().
 func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Format()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Format()")
 	}
 
 	t, err := getTime(s)
@@ -109,7 +109,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // TimeSleep implements time.SleepUntil().
 func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("Sleep()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Sleep()")
 	}
 
 	t, err := getTime(s)
@@ -126,7 +126,7 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TimeFormat implements time.Format().
 func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 0 {
-		return nil, errors.New(errors.ArgumentCountError).In("String()")
+		return nil, errors.New(errors.ErrArgumentCount).In("String()")
 	}
 
 	t, err := getTime(s)
@@ -141,7 +141,7 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError).In("Since()")
+		return nil, errors.New(errors.ErrArgumentCount).In("Since()")
 	}
 
 	// Get the time value stored in the argument
@@ -163,7 +163,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, *errors.EgoError) {
 		return getTimeV(t)
 	}
 
-	return nil, errors.New(errors.NoFunctionReceiver).In("time function")
+	return nil, errors.New(errors.ErrNoFunctionReceiver).In("time function")
 }
 
 // getTimeV extracts a time.Time value from an Ego time
@@ -177,7 +177,7 @@ func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.NoFunctionReceiver).In("time function")
+	return nil, errors.New(errors.ErrNoFunctionReceiver).In("time function")
 }
 
 // Make a time object with the given time value.

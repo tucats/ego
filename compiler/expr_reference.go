@@ -61,7 +61,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 			lastName = c.t.Next()
 			if !tokenizer.IsSymbol(lastName) {
-				return c.newError(errors.InvalidIdentifierError)
+				return c.newError(errors.ErrInvalidIdentifier)
 			}
 
 			lastName = c.normalize(lastName)
@@ -116,12 +116,12 @@ func (c *Compiler) reference() *errors.EgoError {
 				c.b.Emit(bc.LoadSlice)
 
 				if c.t.Next() != "]" {
-					return c.newError(errors.MissingBracketError)
+					return c.newError(errors.ErrMissingBracket)
 				}
 			} else {
 				// Nope, singular index
 				if c.t.Next() != "]" {
-					return c.newError(errors.MissingBracketError)
+					return c.newError(errors.ErrMissingBracket)
 				}
 
 				c.b.Emit(bc.LoadIndex)

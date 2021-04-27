@@ -94,7 +94,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // string expressions of structs or arrays.
 func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ArgumentCountError)
+		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
 	return expressions.Evaluate(util.GetString(args[0]), symbols)
