@@ -41,7 +41,6 @@ func (c *Compiler) compileTry() *errors.EgoError {
 			return c.newError(errors.ErrMissingParenthesis)
 		}
 
-		c.b.Emit(bytecode.SymbolCreate, errName)
 		c.b.Emit(bytecode.Load, bytecode.ErrorVariableName)
 		c.b.Emit(bytecode.StoreAlways, errName)
 	}

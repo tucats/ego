@@ -41,27 +41,6 @@ func TestCompile(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "Simple if else",
-			arg:  "if false print 1 else print 2",
-			want: []bytecode.Instruction{
-				{Operation: bytecode.AtLine, Operand: 1},
-				{Operation: bytecode.Load, Operand: "bool"},
-				{Operation: bytecode.Push, Operand: false},
-				{Operation: bytecode.Call, Operand: 1},
-				{Operation: bytecode.BranchFalse, Operand: 10},
-				{Operation: bytecode.AtLine, Operand: 1},
-				{Operation: bytecode.Push, Operand: 1},
-				{Operation: bytecode.Print, Operand: nil},
-				{Operation: bytecode.Newline, Operand: nil},
-				{Operation: bytecode.Branch, Operand: 14},
-				{Operation: bytecode.AtLine, Operand: 1},
-				{Operation: bytecode.Push, Operand: 2},
-				{Operation: bytecode.Print, Operand: nil},
-				{Operation: bytecode.Newline, Operand: nil},
-			},
-		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

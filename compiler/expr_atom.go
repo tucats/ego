@@ -87,8 +87,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 			tempName := datatypes.GenerateName()
 
-			c.b.Emit(bytecode.SymbolCreate, tempName)
-			c.b.Emit(bytecode.Store, tempName)
+			c.b.Emit(bytecode.StoreAlways, tempName)
 			c.b.Emit(bytecode.AddressOf, tempName)
 		}
 
@@ -112,8 +111,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 			tempName := datatypes.GenerateName()
 
-			c.b.Emit(bytecode.SymbolCreate, tempName)
-			c.b.Emit(bytecode.Store, tempName)
+			c.b.Emit(bytecode.StoreAlways, tempName)
 			c.b.Emit(bytecode.DeRef, tempName)
 		}
 
