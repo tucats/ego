@@ -8,6 +8,10 @@ import (
 )
 
 func (c *Compiler) compileGo() *errors.EgoError {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingFunction)
+	}
+
 	fName := c.t.Next()
 	if !tokenizer.IsSymbol(fName) {
 		return c.newError(errors.ErrInvalidSymbolName, fName)

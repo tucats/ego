@@ -4,11 +4,16 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // compileSwitch compiles a switch statement.
 func (c *Compiler) compileSwitch() *errors.EgoError {
 	var defaultBlock *bytecode.ByteCode
+
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingExpression)
+	}
 
 	next := 0
 	fixups := make([]int, 0)

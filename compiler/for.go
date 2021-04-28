@@ -26,7 +26,16 @@ import (
 //    statement inside the loop, which algorithmically stops
 //    the loop
 func (c *Compiler) compileFor() *errors.EgoError {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingExpression)
+	}
+
+	if c.t.IsNext("{}") {
+		return c.newError(errors.ErrLoopExit)
+	}
+
 	c.b.Emit(bytecode.PushScope)
+
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1) == "{" {
 		return c.simpleFor()

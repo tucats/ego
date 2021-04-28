@@ -3,11 +3,16 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // compileIf compiles conditional statments. The verb is already
 // removed from the token stream.
 func (c *Compiler) compileIf() *errors.EgoError {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingExpression)
+	}
+
 	// Compile the conditional expression
 	bc, err := c.Expression()
 	if !errors.Nil(err) {

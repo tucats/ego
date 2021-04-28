@@ -12,6 +12,14 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	for {
 		name := c.t.Next()
+		if name == tokenizer.EndOfTokens {
+			if len(names) > 0 {
+				break
+			}
+
+			return c.newError(errors.ErrMissingSymbol)
+		}
+
 		if !tokenizer.IsSymbol(name) {
 			c.t.Advance(-1)
 

@@ -15,7 +15,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 	c.b.Emit(bytecode.Try, 0)
 
 	// Statement to try
-	err := c.compileStatement()
+	err := c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -46,7 +46,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 		c.b.Emit(bytecode.StoreAlways, errName)
 	}
 
-	err = c.compileStatement()
+	err = c.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
 	}
