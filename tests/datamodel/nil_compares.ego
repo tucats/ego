@@ -1,7 +1,8 @@
 @test "datamodel: nil value comparisons"
 
 {
-    var x, y *int
+    x := nil
+    y := nil
 
     @assert T.True( x == y )
     @assert T.False(x != y)
@@ -11,9 +12,6 @@
 
     @assert T.True( nil == nil )
     @assert T.False( nil != nil )
-
-    x = nil
-    @assert T.False( x != nil )
 
 }
 @pass

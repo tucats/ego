@@ -82,5 +82,11 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 		return result
 	}
 
+	if t.kind == PointerKind {
+		result := t.valueType.InstanceOf(nil)
+
+		return &result
+	}
+
 	return InstanceOfType(t)
 }

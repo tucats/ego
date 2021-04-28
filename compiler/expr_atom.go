@@ -71,19 +71,51 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this address-of?
-	if t == "&" && tokenizer.IsSymbol(c.t.Peek(2)) {
-		name := c.normalize(c.t.Peek(2))
-		c.b.Emit(bytecode.AddressOf, name)
-		c.t.Advance(2)
+	if t == "&" {
+		c.t.Advance(1)
+
+		// If it's address of a symbol, short-circuit that
+		if tokenizer.IsSymbol(c.t.Peek(1)) {
+			name := c.t.Next()
+			c.b.Emit(bytecode.AddressOf, name)
+		} else {
+			// Address of an expression requires creating a temp symbol
+			err := c.expressionAtom()
+			if !errors.Nil(err) {
+				return err
+			}
+
+			tempName := datatypes.GenerateName()
+
+			c.b.Emit(bytecode.SymbolCreate, tempName)
+			c.b.Emit(bytecode.Store, tempName)
+			c.b.Emit(bytecode.AddressOf, tempName)
+		}
 
 		return nil
 	}
 
 	// Is this dereference?
-	if t == "*" && tokenizer.IsSymbol(c.t.Peek(2)) {
-		name := c.normalize(c.t.Peek(2))
-		c.b.Emit(bytecode.DeRef, name)
-		c.t.Advance(2)
+	if t == "*" {
+		c.t.Advance(1)
+
+		// If it's dereference of a symbol, short-circuit that
+		if tokenizer.IsSymbol(c.t.Peek(1)) {
+			name := c.t.Next()
+			c.b.Emit(bytecode.DeRef, name)
+		} else {
+			// Dereference of an expression requires creating a temp symbol
+			err := c.expressionAtom()
+			if !errors.Nil(err) {
+				return err
+			}
+
+			tempName := datatypes.GenerateName()
+
+			c.b.Emit(bytecode.SymbolCreate, tempName)
+			c.b.Emit(bytecode.Store, tempName)
+			c.b.Emit(bytecode.DeRef, tempName)
+		}
 
 		return nil
 	}

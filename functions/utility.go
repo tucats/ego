@@ -389,7 +389,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case *interface{}:
 		tt := datatypes.TypeOfPointer(v)
 
-		return tt.String(), nil
+		return "*" + tt.String(), nil
 
 	default:
 		tt := datatypes.TypeOf(v)
