@@ -17,6 +17,10 @@ import (
 
 // compilePackage compiles a package statement.
 func (c *Compiler) compilePackage() *errors.EgoError {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingPackageName)
+	}
+
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.newError(errors.ErrInvalidPackageName, name)

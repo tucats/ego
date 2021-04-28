@@ -11,7 +11,7 @@ import (
 func (c *Compiler) compileStatement() *errors.EgoError {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
-	if c.t.IsNext(";") {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
 		return nil
 	}
 
@@ -21,10 +21,6 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 			c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
 		}
 
-		return nil
-	}
-
-	if c.t.IsNext(tokenizer.EndOfTokens) {
 		return nil
 	}
 

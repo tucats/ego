@@ -9,12 +9,20 @@ import (
 // compileTypeDefinition compiles a type statement which creates
 // a user-defined type specification.
 func (c *Compiler) compileTypeDefinition() *errors.EgoError {
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingType)
+	}
+
 	name := c.t.Next()
 	if !tokenizer.IsSymbol(name) {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
 	name = c.normalize(name)
+
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return c.newError(errors.ErrMissingType)
+	}
 
 	return c.typeEmitter(name)
 }

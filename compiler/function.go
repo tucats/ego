@@ -36,6 +36,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
+		if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+			return c.newError(errors.ErrMissingFunctionName)
+		}
+
 		functionName, thisName, receiverType, byValue, err = c.parseFunctionName()
 		if !errors.Nil(err) {
 			return err
