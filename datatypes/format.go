@@ -120,7 +120,7 @@ func Format(element interface{}) string {
 				return "&rest.Client{}"
 
 			default:
-				return fmt.Sprintf("&%#v", vv)
+				return fmt.Sprintf("&%s", Format(vv))
 			}
 		} else {
 			return "nil<*interface{}>"

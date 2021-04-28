@@ -230,7 +230,7 @@ func deRefByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(*c3)
 		}
 
-		return c.stackPush(c2)
+		return c.newError(errors.ErrNotAPointer).Context(datatypes.Format(c2))
 	}
 
 	return c.newError(errors.ErrNotAPointer).Context(name)
