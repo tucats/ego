@@ -610,10 +610,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 
 	switch status {
 	case http.StatusForbidden:
-		err = errors.NewMessage(defs.NoPrivilegeForOperation)
+		err = errors.New(errors.ErrNoPrivilegeForOperation)
 
 	case http.StatusNotFound:
-		err = errors.NewMessage(defs.NotFound)
+		err = errors.New(errors.ErrNotFound)
 	}
 
 	if errors.Nil(err) && response != nil {

@@ -14,6 +14,32 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+var testType *datatypes.Type
+
+// If it hasn't already been defined, define the type of the testing object.
+func initTestType() {
+	if testType == nil {
+		t := datatypes.TypeDefinition("Testing",
+			datatypes.Structure(datatypes.Field{
+				Name: "description",
+				Type: datatypes.StringType,
+			}))
+
+		// Define the type receiver functions
+		t.DefineFunction("assert", TestAssert)
+		t.DefineFunction("fail", TestFail)
+		t.DefineFunction("isType", TestIsType)
+		t.DefineFunction("Nil", TestNil)
+		t.DefineFunction("NotNil", TestNotNil)
+		t.DefineFunction("True", TestTrue)
+		t.DefineFunction("False", TestFalse)
+		t.DefineFunction("Equal", TestEqual)
+		t.DefineFunction("NotEqual", TestNotEqual)
+
+		testType = &t
+	}
+}
+
 // testDirective compiles the @test directive.
 func (c *Compiler) testDirective() *errors.EgoError {
 	_ = c.modeCheck("test", true)
@@ -23,32 +49,11 @@ func (c *Compiler) testDirective() *errors.EgoError {
 		testDescription = testDescription[1 : len(testDescription)-1]
 	}
 
-	// Define the type of the "test" object.
-	testType := datatypes.TypeDefinition("Testing",
-		datatypes.Structure(datatypes.Field{
-			Name: "description",
-			Type: datatypes.StringType,
-		}))
-
-	// Define the type receiver functions
-	testType.DefineFunction("assert", TestAssert)
-	testType.DefineFunction("fail", TestFail)
-	testType.DefineFunction("isType", TestIsType)
-	testType.DefineFunction("Nil", TestNil)
-	testType.DefineFunction("NotNil", TestNotNil)
-	testType.DefineFunction("True", TestTrue)
-	testType.DefineFunction("False", TestFalse)
-	testType.DefineFunction("Equal", TestEqual)
-	testType.DefineFunction("NotEqual", TestNotEqual)
-
-	// Let's define the type so it's visible to the code (if needed)
-	c.b.Emit(bytecode.Push, testType)
-	c.b.Emit(bytecode.SymbolOptCreate, "Testing")
-	c.b.Emit(bytecode.StoreAlways, "Testing")
-
 	// Create an instance of the object, and assign the value to
 	// the data field.
-	test := datatypes.NewStruct(testType)
+	initTestType()
+
+	test := datatypes.NewStruct(*testType)
 	test.SetAlways("description", testDescription)
 
 	padSize := 50 - len(testDescription)
@@ -75,12 +80,8 @@ func (c *Compiler) testDirective() *errors.EgoError {
 	return nil
 }
 
-// TestAssert implements the T.assert() function.
-func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("assert")
-	}
-
+// Helper function to get the test name.
+func getTestName(s *symbols.SymbolTable) string {
 	// Figure out the test name. If not found, use "test"
 	name := "test"
 
@@ -92,6 +93,15 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		}
 	}
 
+	return name
+}
+
+// TestAssert implements the T.assert() function.
+func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.New(errors.ErrArgumentCount).In("assert")
+	}
+
 	// The argument could be an array with the boolean value and the
 	// messaging string, or it might just be the boolean.
 	if array, ok := args[0].([]interface{}); ok && len(array) == 2 {
@@ -101,7 +111,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 			fmt.Println()
 
-			return nil, errors.New(errors.ErrAssert).In(name).Context(msg)
+			return nil, errors.New(errors.ErrAssert).In(getTestName(s)).Context(msg)
 		}
 
 		return true, nil
@@ -115,6 +125,8 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		if len(args) > 1 {
 			msg = msg.Context(args[1])
+		} else {
+			msg = msg.Context(getTestName(s))
 		}
 
 		fmt.Println()
@@ -131,17 +143,6 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, errors.New(errors.ErrArgumentCount).In("IsType()")
 	}
 
-	// Figure out the test name. If not found, use "test"
-	name := "test"
-
-	if m, ok := s.Get("T"); ok {
-		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
-			if nameString, ok := testStruct.Get("name"); ok {
-				name = util.GetString(nameString)
-			}
-		}
-	}
-
 	// Use the Type() function to get a string representation of the type
 	got, _ := functions.Type(s, args[0:1])
 	expected := util.GetString(args[1])
@@ -153,7 +154,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 			msg = util.GetString(args[2])
 		}
 
-		return nil, errors.NewMessage(msg).Context(name)
+		return nil, errors.NewMessage(msg).In(getTestName(s))
 	}
 
 	return true, nil
@@ -168,24 +169,13 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		msg = util.GetString(args[0])
 	}
 
-	// Figure out the test name. If not found, use "test"
-	name := "test"
-
-	if m, ok := s.Get("T"); ok {
-		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
-			if nameString, ok := testStruct.Get("description"); ok {
-				name = util.GetString(nameString)
-			}
-		}
-	}
-
-	return nil, errors.NewMessage(msg).Context(name)
+	return nil, errors.NewMessage(msg).In(getTestName(s))
 }
 
 // TestNil implements the T.Nil() function.
 func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Nil()")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	isNil := args[0] == nil
@@ -203,7 +193,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // TestNotNil implements the T.NotNil() function.
 func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("NotNil")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	isNil := args[0] == nil
@@ -221,7 +211,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // TestTrue implements the T.True() function.
 func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("True()")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	if len(args) == 2 {
@@ -234,7 +224,7 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // TestFalse implements the T.False() function.
 func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("False()")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	if len(args) == 2 {
@@ -247,7 +237,7 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TestEqual implements the T.Equal() function.
 func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Equal()")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	b := reflect.DeepEqual(args[0], args[1])
@@ -276,7 +266,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // TestNotEqual implements the T.NotEqual() function.
 func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ErrArgumentCount).In("NoEqual()")
+		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	b, err := TestEqual(s, args)

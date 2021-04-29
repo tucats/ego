@@ -26,6 +26,10 @@ func TestCompileTypeSpec(t *testing.T) {
 			want: datatypes.StringType,
 		},
 		{
+			name: "*int",
+			want: datatypes.Pointer(datatypes.IntType),
+		},
+		{
 			name: "[]string",
 			want: datatypes.Array(datatypes.StringType),
 		},

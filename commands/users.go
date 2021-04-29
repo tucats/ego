@@ -113,12 +113,12 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 
 	response, err = r.Get(url)
 	if response.StatusCode() == http.StatusNotFound && len(response.Body()) == 0 {
-		err = errors.NewMessage(defs.NotFound)
+		err = errors.New(errors.ErrNotFound)
 	}
 
 	status := response.StatusCode()
 	if status == http.StatusForbidden {
-		err = errors.NewMessage(defs.NoPrivilegeForOperation)
+		err = errors.New(errors.ErrNoPrivilegeForOperation)
 	}
 
 	if errors.Nil(err) && status == http.StatusOK {
