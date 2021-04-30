@@ -22,7 +22,6 @@ type Response struct {
 }
 
 func (r *Response) WriteStatus(status int) {
-    r.Status = status
 	@status status
 }
 func (r *Response) Write(msg string) {
