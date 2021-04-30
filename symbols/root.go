@@ -9,13 +9,11 @@ import (
 // symbol table. These must match the values in rootValues below.
 // The slot numbers must be sequential starting at zero.
 var rootNames = map[string]int{
-	"_author":    0,
-	"_copyright": 1,
-	"_session":   2,
+	"_copyright": 0,
+	"_session":   1,
 }
 
 var rootBaseValues = []interface{}{
-	"Tom Cole",
 	"(c) Copyright 2020, 2021",
 	uuid.NewString(),
 }

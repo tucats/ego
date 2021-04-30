@@ -132,19 +132,15 @@ func Format(element interface{}) string {
 		// IF it's an internal function, show it's name. If it is a standard builtin from the
 		// function library, show the short form of the name.
 		if vv.Kind() == reflect.Func {
-			if true /* ui.DebugMode */ {
-				name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
-				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
+			name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
+			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
-				if name == "" {
-					name = "<anon>"
-				}
-
-				return name + "()"
+			if name == "" {
+				name = "<anon>"
 			}
 
-			return "<builtin>"
+			return name + "()"
 		}
 
 		// If it's a bytecode.Bytecode pointer, use reflection to get the
@@ -155,16 +151,12 @@ func Format(element interface{}) string {
 			if ts == "<*bytecode.ByteCode Value>" {
 				e := reflect.ValueOf(v).Elem()
 
-				if ui.ActiveLogger(ui.DebugLogger) {
-					name := fmt.Sprintf("%v", e.Field(0).Interface())
-					if name == "" {
-						name = "<anon>"
-					}
-
-					return name + "()"
+				name := fmt.Sprintf("%v", e.Field(0).Interface())
+				if name == "" {
+					name = "<anon>"
 				}
 
-				return "<func>"
+				return name + "()"
 			}
 
 			return fmt.Sprintf("ptr %s", ts)

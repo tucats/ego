@@ -32,13 +32,13 @@ func NewChannel(size int) *Channel {
 	}
 
 	c := &Channel{
-		isOpen: true,
-		size:   size,
-		mutex:  sync.Mutex{},
-		count:  0,
-		id:     uuid.New().String(),
+		isOpen:  true,
+		size:    size,
+		mutex:   sync.Mutex{},
+		count:   0,
+		id:      uuid.New().String(),
+		channel: make(chan interface{}, size),
 	}
-	c.channel = make(chan interface{}, size)
 
 	ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
 
@@ -94,10 +94,6 @@ func (c *Channel) IsEmpty() bool {
 	return !c.isOpen && c.count == 0
 }
 
-func (c *Channel) GetSize() int {
-	return c.size
-}
-
 // Close the channel so no more sends are permitted to the channel, and
 // the receiver can test for channel completion.
 func (c *Channel) Close() bool {
@@ -106,11 +102,9 @@ func (c *Channel) Close() bool {
 	defer c.mutex.Unlock()
 
 	ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
-
-	wasActive := c.isOpen
-
 	close(c.channel)
 
+	wasActive := c.isOpen
 	c.isOpen = false
 
 	return wasActive

@@ -339,13 +339,6 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return nil, nil
 }
 
-// FormatSymbols implements the util.symbols() function. We skip over the current
-// symbol table, which was created just for this function call and will always be
-// empty.
-func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return s.Parent.Format(false), nil
-}
-
 // Type implements the type() function.
 func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch v := args[0].(type) {
@@ -390,6 +383,9 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		tt := datatypes.TypeOfPointer(v)
 
 		return "*" + tt.String(), nil
+
+	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError):
+		return "<builtin>", nil
 
 	default:
 		tt := datatypes.TypeOf(v)

@@ -77,8 +77,7 @@ func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 		return nil
 	}
 
-	for i := 0; i < a.Len(); i++ {
-		v, _ := a.Get(i)
+	for _, v := range a.data {
 		if !IsType(v, kind) {
 			return errors.New(errors.ErrWrongArrayValueType)
 		}
@@ -125,12 +124,13 @@ func (a *EgoArray) SetSize(size int) {
 		size = 0
 	}
 
-	d := make([]interface{}, size)
-	for i, v := range a.data {
-		d[i] = v
+	// If we are making it smaller, just convert the array to a slice of itself.
+	// If we hae to expand it, append empty items to the array
+	if size < len(a.data) {
+		a.data = a.data[:size]
+	} else {
+		a.data = append(a.data, make([]interface{}, size-len(a.data))...)
 	}
-
-	a.data = d
 }
 
 func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
@@ -172,9 +172,10 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	return nil
 }
 
+// Simplified Set() that does no type checking. Used internally to
+// load values into an array that is known to be of the correct
+// kind.
 func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
-	v := value
-
 	if a.immutable > 0 {
 		return
 	}
@@ -184,35 +185,15 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
 		return
 	}
 
-	// Address float/int issues before testing the type.
-	if a.valueType.kind == IntKind {
-		if x, ok := v.(float64); ok {
-			v = int(x)
-		}
-	}
-
-	if a.valueType.kind == FloatKind {
-		if x, ok := v.(int); ok {
-			v = float64(x)
-		} else if x, ok := v.(int32); ok {
-			v = float64(x)
-		} else if x, ok := v.(int64); ok {
-			v = float64(x)
-		}
-	}
-
-	// Now, ensure it's of the right type for this array.
-	if !IsBaseType(v, a.valueType) {
-		return
-	}
-
-	a.data[index] = v
+	a.data[index] = value
 }
 
+// Generate a type string for this array.
 func (a *EgoArray) TypeString() string {
 	return fmt.Sprintf("[]%s", a.valueType.String())
 }
 
+// Make a string representation of the array suitable for human reading.
 func (a *EgoArray) String() string {
 	var b strings.Builder
 
@@ -231,6 +212,9 @@ func (a *EgoArray) String() string {
 	return b.String()
 }
 
+// Fetach a slide of the underlying array and return it as an array of interfaces.
+// This can't be used directly as a new array, but can be used to create a new
+// array.
 func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 	if first < 0 || last > len(a.data) {
 		return nil, errors.New(errors.ErrArrayBounds)
@@ -239,10 +223,12 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 	return a.data[first:last], nil
 }
 
+// Append an item to the array. If the item being appended is an array itself,
+// we append the elements of the array.
 func (a *EgoArray) Append(i interface{}) {
 	switch v := i.(type) {
 	case *EgoArray:
-		a.data = append(a.data, v.data)
+		a.data = append(a.data, v.data...)
 
 	default:
 		a.data = append(a.data, v)

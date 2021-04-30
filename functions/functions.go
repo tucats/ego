@@ -138,7 +138,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"time.Sleep":           {Min: 1, Max: 1, F: Sleep},
 	"util.Memory":          {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":            {Min: 0, Max: 0, F: GetMode, FullScope: true},
-	"util.Symbols":         {Min: 0, Max: 1, F: FormatSymbols, FullScope: true},
 	"util.SymbolTable":     {Min: 0, Max: 1, F: CurrentSymbolTable, FullScope: true},
 	"uuid.New":             {Min: 0, Max: 0, F: UUIDNew},
 	"uuid.Nil":             {Min: 0, Max: 0, F: UUIDNil},

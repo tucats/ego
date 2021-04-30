@@ -28,7 +28,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	var funcError *errors.EgoError
 
-	// Create a symbol table to use for the slice comparator callbackk function.
+	// Create a symbol table to use for the slice comparator callback function.
 	sliceSymbols := symbols.NewChildSymbolTable("sort slice", s)
 
 	// Coerce the name of the bytecode to represent that it is the

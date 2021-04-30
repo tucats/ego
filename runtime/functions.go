@@ -61,6 +61,15 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		FullScope: true,
 		F:         sortSlice,
 	})
+
+	_ = functions.AddFunction(s, functions.FunctionDefinition{
+		Name:      "Symbols",
+		Pkg:       "util",
+		Min:       0,
+		Max:       2,
+		FullScope: true,
+		F:         FormatSymbols,
+	})
 }
 
 // Prompt implements the prompt() function, which uses the console
