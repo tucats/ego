@@ -27,14 +27,25 @@ func handler( req Request, resp Response) {
     // If the users collection name was not present, we can do nothing.
     if !users {
         resp.WriteStatus(400)
-        resp.Write("Incomplete URL")
+        resp.WriteMessage("incomplete URL")
+        return
     }
 
     // If the name wasn't part of the path, the Request
     // is for all names.
     if name == "" {
-        for k, _ := range names {
-            resp.Write(fmt.Sprintf("%s", k))
+        @text {
+            for k, _ := range names {
+                resp.Write(fmt.Sprintf("%s", k))
+            }
+        }
+        @json {
+            list := make([]string, 0)
+            for k, _ := range names {
+                list = append(list, k)
+            }
+            b, _ := json.MarshalIndented(list)
+            resp.Write(b)
         }
         return
     }
@@ -44,23 +55,25 @@ func handler( req Request, resp Response) {
     info, found := names[name]
     if !found {
         resp.WriteStatus(404)
-        resp.Write("No such name as " + name)
+        resp.WriteMessage("No such name as " + name)
     } else {
 
         // Based on the item name, return the desired info.
         switch item {
         case "":
-            resp.Write(fmt.Sprintf("%v", info))
+            @text  resp.Write(fmt.Sprintf("%v", info))
+            @json  resp.WriteJSON(info)
 
         case "age":
-            resp.Write(fmt.Sprintf("%v", info.age))
+            resp.Write(string(info.age))
 
         case "gender":
-            resp.Write(fmt.Sprintf("%v", info.gender))
-        
+            @text resp.Write(info.gender)
+            @json resp.WriteJSON(info.gender)
+
         default:
             resp.WriteStatus(400)
-            resp.Write("Invalid field selector " + item)
+            resp.WriteMessage("Invalid field selector " + item)
         }
     }
 }

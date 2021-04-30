@@ -22,10 +22,22 @@ type Response struct {
 }
 
 func (r *Response) WriteStatus(status int) {
+    r.Status = status
 	@status status
 }
 func (r *Response) Write(msg string) {
 	@response msg
+}
+
+func (r *Response) WriteMessage(msg string) {
+    @text {
+        @response msg
+    }
+    @json {
+        m := {message: msg}
+        b, _ := json.Marshal(m)
+        @response b
+    }
 }
 
 func (r *Response) WriteJSON( i interface{}) {
