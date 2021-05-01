@@ -454,7 +454,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		persistence.SetDefault(defs.StaticTypesSetting, "dynamic")
 	}
 
-	addr := "localhost:" + strconv.Itoa(port)
+	addr := ":" + strconv.Itoa(port)
 
 	go serverHeartbeat()
 
