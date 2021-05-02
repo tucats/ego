@@ -36,6 +36,6 @@ func handler( req Request, resp Response) {
     } catch (e) {
         // Nope, there was an error so report that.
         resp.WriteStatus(400)
-        resp.WriteString(fmt.Sprintf("invalid integer: %s", value))
+        resp.WriteMessage(fmt.Sprintf("invalid integer: %s", value))
     }
 }

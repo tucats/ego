@@ -25,10 +25,10 @@ func handler( req Request, resp Response ) {
         Body : "Hello, world"
     }
 
-    // The text we print becomes the body of the reply, which in this
+    // The text we generate becomes the body of the reply, which in this
     // case is HTML code.
-
     msg := strings.Template(html, page)
+    
     resp.WriteStatus(200)
     resp.Write(msg)
 
