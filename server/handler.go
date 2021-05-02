@@ -24,8 +24,8 @@ type Response struct {
 func (r *Response) WriteStatus(status int) {
 	@status status
 }
-func (r *Response) Write(msg string) {
-	@response msg
+func (r *Response) Write(item interface{}) {
+	@response item
 }
 
 func (r *Response) WriteMessage(msg string) {
@@ -34,8 +34,7 @@ func (r *Response) WriteMessage(msg string) {
     }
     @json {
         m := {message: msg}
-        b, _ := json.Marshal(m)
-        @response b
+        @response m
     }
 }
 

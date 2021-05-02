@@ -22,7 +22,7 @@ func handler( req Request, resp Response) {
     // If the value string is empty, it was not present. Complain.
     if value == "" {
         resp.WriteStatus(400)
-        resp.Write( "Missing integer to factor" )
+        resp.WriteMessage( "Missing integer to factor" )
         return
     }
 
@@ -30,10 +30,9 @@ func handler( req Request, resp Response) {
     try {
         r := math.Factor(int(value))
 
-        // Return a success status and the factors. We can write as
-        // JSON since the format is the same for TEXT and JSON.
+        // Return a success status and the factors.
         resp.WriteStatus(200)
-        resp.WriteJSON(r)
+        resp.Write(r)
     } catch (e) {
         // Nope, there was an error so report that.
         resp.WriteStatus(400)

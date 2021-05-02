@@ -345,13 +345,15 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if isJSON {
+		w.Header()["Content-Type"] = []string{"application/json"}
+	}
+
 	w.WriteHeader(status)
 
-	responseObject, authenticatedCredentials := symbolTable.Get("_rest_response")
-
-	if authenticatedCredentials && responseObject != nil {
+	responseObject, found := symbolTable.Get("_rest_response")
+	if found && responseObject != nil {
 		byteBuffer, _ := json.Marshal(responseObject)
-
 		_, _ = io.WriteString(w, string(byteBuffer))
 
 		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)

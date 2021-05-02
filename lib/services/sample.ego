@@ -32,7 +32,10 @@ func handler( req Request, resp Response) {
     }
 
     // If the name wasn't part of the path, the Request
-    // is for all names.
+    // is for all names. Here, we have content-type-specific
+    // blocks for text vs json, as the text is formatted as
+    // a list of names separated by newline, and the JSON is 
+    // an array formed from the list of key names.
     if name == "" {
         @text {
             for k, _ := range names {
@@ -44,8 +47,8 @@ func handler( req Request, resp Response) {
             for k, _ := range names {
                 list = append(list, k)
             }
-            b, _ := json.MarshalIndented(list)
-            resp.Write(b)
+
+            resp.Write(list)
         }
         return
     }
@@ -58,18 +61,18 @@ func handler( req Request, resp Response) {
         resp.WriteMessage("No such name as " + name)
     } else {
 
-        // Based on the item name, return the desired info.
+        // Based on the item name, return the desired info. Here we don't need
+        // a media-specific writer, we can just send the value to Write() and 
+        // it will be either a json object or formatted text.
         switch item {
         case "":
-            @text  resp.Write(fmt.Sprintf("%v", info))
-            @json  resp.WriteJSON(info)
+            resp.Write(info)
 
         case "age":
             resp.Write(string(info.age))
 
         case "gender":
-            @text resp.Write(info.gender)
-            @json resp.WriteJSON(info.gender)
+            resp.Write(info.gender)
 
         default:
             resp.WriteStatus(400)

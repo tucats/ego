@@ -51,7 +51,7 @@ func handler( req Request, response Response) {
             r.posted = json.Unmarshal(_body)
         }
 
-        response.WriteJSON( r )
+        response.Write( r )
     }
 
 // This block only runs when the caller asks for text.
