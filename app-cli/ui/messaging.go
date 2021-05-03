@@ -72,8 +72,14 @@ var Loggers = map[string]bool{
 	DBLogger:       false,
 }
 
+// We have to serialize access to the logger status map.
+var loggerMutext sync.Mutex
+
 // SetLogger enables or disables a logger.
 func SetLogger(logger string, mode bool) bool {
+	loggerMutext.Lock()
+	defer loggerMutext.Unlock()
+
 	if _, ok := Loggers[logger]; !ok {
 		return false
 	}
@@ -86,6 +92,9 @@ func SetLogger(logger string, mode bool) bool {
 // Determine if a given logger is active. This is particularly useful
 // when deciding if it's worth doing complex formatting operations.
 func ActiveLogger(logger string) bool {
+	loggerMutext.Lock()
+	defer loggerMutext.Unlock()
+
 	if active, found := Loggers[logger]; active && found {
 		return true
 	}
@@ -95,6 +104,9 @@ func ActiveLogger(logger string) bool {
 
 // Debug displays a message if debugging mode is enabled.
 func Debug(logger string, format string, args ...interface{}) {
+	loggerMutext.Lock()
+	defer loggerMutext.Unlock()
+
 	if active, found := Loggers[logger]; active && found {
 		Log(logger, format, args...)
 	}

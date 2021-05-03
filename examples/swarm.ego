@@ -14,7 +14,7 @@ func client(ch chan, count int ) {
 
 func main() int {
 
-   clients := 5
+   clients := 500
    ch := make(chan, clients)
 
    for i := 0; i < clients; i = i + 1 {
@@ -36,4 +36,3 @@ func main() int {
    fmt.Printf("Read %d status values\n", count)
    return 0
 }
-
