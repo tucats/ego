@@ -243,7 +243,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			exitValue = 1
 		} else {
-			if ui.ActiveLogger(ui.ByteCodeLogger) {
+			if ui.LoggerIsActive(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 

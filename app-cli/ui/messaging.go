@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,82 +45,109 @@ var QuietMode = false
 var sequence = 0
 var sequenceMux sync.Mutex
 
-// Names of loggers go here.
+// Classes of loggers go here. These are sequential integer values, and should match
+// the order of the items in the loggers array below.
 const (
-	AppLogger      = "APP"
-	ByteCodeLogger = "BYTECODE"
-	CLILogger      = "CLI"
-	CompilerLogger = "COMPILER"
-	DBLogger       = "DB"
-	DebugLogger    = "DEBUG"
-	ServerLogger   = "SERVER"
-	SymbolLogger   = "SYMBOLS"
-	TraceLogger    = "TRACE"
-	UserLogger     = "USER"
+	AppLogger = iota
+	ByteCodeLogger
+	CLILogger
+	CompilerLogger
+	DBLogger
+	DebugLogger
+	ServerLogger
+	SymbolLogger
+	TraceLogger
+	UserLogger
 )
 
-// Loggers is a map of the names of logging modes that are enabled.
-var Loggers = map[string]bool{
-	DebugLogger:    false,
-	CLILogger:      false,
-	CompilerLogger: false,
-	SymbolLogger:   false,
-	ServerLogger:   false,
-	AppLogger:      false,
-	ByteCodeLogger: false,
-	TraceLogger:    false,
-	UserLogger:     false,
-	DBLogger:       false,
+type logger struct {
+	name   string
+	active bool
 }
 
-// We have to serialize access to the logger status map.
-var loggerMutext sync.Mutex
+// The order of these items must match the numeric values of the logger classses above.
+var loggers []logger = []logger{
+	{"APP", false},
+	{"BYTECODE", false},
+	{"CLI", false},
+	{"COMPILER", false},
+	{"DB", false},
+	{"DEBUG", false},
+	{"SERVER", false},
+	{"SYMBOLS", false},
+	{"TRACE", false},
+	{"USER", false},
+}
 
-// SetLogger enables or disables a logger.
-func SetLogger(logger string, mode bool) bool {
-	loggerMutext.Lock()
-	defer loggerMutext.Unlock()
-
-	if _, ok := Loggers[logger]; !ok {
-		return false
+// Get the name of a given logger class.
+func LoggerName(class int) string {
+	if class < 0 || class >= len(loggers) {
+		return ""
 	}
 
-	Loggers[logger] = mode
+	return loggers[class].name
+}
+
+// For a given logger name, find the class ID.
+func Logger(loggerName string) int {
+	for id, logger := range loggers {
+		if strings.EqualFold(logger.name, loggerName) {
+			return id
+		}
+	}
+
+	return -1
+}
+
+// SetLogger enables or disables a logger.
+func SetLogger(class int, mode bool) bool {
+	if class < 0 || class >= len(loggers) {
+		panic("invalid logger: " + strconv.Itoa(class))
+	}
+
+	loggers[class].active = mode
 
 	return true
 }
 
 // Determine if a given logger is active. This is particularly useful
 // when deciding if it's worth doing complex formatting operations.
-func ActiveLogger(logger string) bool {
-	loggerMutext.Lock()
-	defer loggerMutext.Unlock()
-
-	if active, found := Loggers[logger]; active && found {
-		return true
+func LoggerIsActive(class int) bool {
+	if class < 0 || class >= len(loggers) {
+		panic("invalid logger: " + strconv.Itoa(class))
 	}
 
-	return false
+	return loggers[class].active
 }
 
 // Debug displays a message if debugging mode is enabled.
-func Debug(logger string, format string, args ...interface{}) {
-	loggerMutext.Lock()
-	defer loggerMutext.Unlock()
+func Debug(class int, format string, args ...interface{}) {
+	if class < 0 || class >= len(loggers) {
+		panic("invalid logger: " + strconv.Itoa(class))
+	}
 
-	if active, found := Loggers[logger]; active && found {
-		Log(logger, format, args...)
+	if loggers[class].active {
+		Log(class, format, args...)
 	}
 }
 
 // Log displays a message to stdout.
-func Log(class string, format string, args ...interface{}) {
+func Log(class int, format string, args ...interface{}) {
+	if class < 0 || class >= len(loggers) {
+		panic("invalid logger: " + strconv.Itoa(class))
+	}
+
 	s := LogMessage(class, format, args...)
 	fmt.Println(s)
 }
 
 // LogMessage displays a message to stdout.
-func LogMessage(class string, format string, args ...interface{}) string {
+func LogMessage(class int, format string, args ...interface{}) string {
+	if class < 0 || class >= len(loggers) {
+		panic("invalid logger: " + strconv.Itoa(class))
+	}
+
+	className := loggers[class].name
 	s := fmt.Sprintf(format, args...)
 
 	sequenceMux.Lock()
@@ -128,7 +156,7 @@ func LogMessage(class string, format string, args ...interface{}) string {
 	sequence = sequence + 1
 	sequenceString := fmt.Sprintf("%d", sequence)
 	tf := "20060102150405"
-	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(tf), sequenceString, strings.ToUpper(class), s)
+	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(tf), sequenceString, className, s)
 
 	return s
 }

@@ -134,7 +134,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				builtinsAdded = true
 			}
 
-			if ui.ActiveLogger(ui.ByteCodeLogger) {
+			if ui.LoggerIsActive(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 
@@ -224,7 +224,7 @@ func ReadFile(name string) (string, *errors.EgoError) {
 		return s, nil
 	}
 
-	ui.Debug("+++ Reading test file %s", name)
+	ui.Debug(ui.TraceLogger, "+++ Reading test file %s", name)
 
 	// Not a directory, try to read the file
 	content, e2 := ioutil.ReadFile(name)

@@ -28,7 +28,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		return s.Parent.Get(name)
 	}
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		status := "<not found>"
 		if found {
 			status = datatypes.Format(v)
@@ -62,7 +62,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		return s.Parent.GetAddress(name)
 	}
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
 			s.Name, s.ID, name)
 	}
@@ -79,7 +79,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 
 	s.Constants[name] = v
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
 			s.Name, s.ID, name, datatypes.Format(v))
 	}
@@ -117,7 +117,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	symbolTable.SetValue(slot, v)
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -161,7 +161,7 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 
 	s.SetValue(slot, v)
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -199,7 +199,7 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 
 	delete(s.Symbols, name)
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
 			s.Name, s.ID, name)
 	}
@@ -221,7 +221,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 
-	if ui.ActiveLogger(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
 			s.Name, s.ID, name, s.ValueSize-1)
 	}

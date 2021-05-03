@@ -136,7 +136,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
 				t2 := tokenizer.New(text)
 
-				traceMode := ui.ActiveLogger(ui.TraceLogger)
+				traceMode := ui.LoggerIsActive(ui.TraceLogger)
 				ui.SetLogger(ui.TraceLogger, false)
 
 				err = compiler.Run("debugger", s, t2)
@@ -177,7 +177,7 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text)
 
-	traceMode := ui.ActiveLogger(ui.TraceLogger)
+	traceMode := ui.LoggerIsActive(ui.TraceLogger)
 
 	defer ui.SetLogger(ui.TraceLogger, traceMode)
 	ui.SetLogger(ui.TraceLogger, allowTrace)

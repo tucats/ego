@@ -146,7 +146,7 @@ func getPermission(user, privilege string) bool {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
 
-		if ui.ActiveLogger(ui.ServerLogger) {
+		if ui.LoggerIsActive(ui.ServerLogger) {
 			state := "has"
 			if !v {
 				state = "does not have"

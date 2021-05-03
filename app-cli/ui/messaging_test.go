@@ -20,27 +20,28 @@ func TestLogMessage(t *testing.T) {
 		{
 			name: "simple message",
 			args: args{
-				class:  "TEST",
+				class:  "USER",
 				format: "string text",
 				args:   []interface{}{},
 			},
-			want: "TEST   : string text",
+			want: "USER   : string text",
 		},
 		{
 			name: "parameterized message",
 			args: args{
-				class:  "TEST",
+				class:  "USER",
 				format: "digits %d",
 				args:   []interface{}{42},
 			},
-			want: "TEST   : digits 42",
+			want: "USER   : digits 42",
 		},
 		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := LogMessage(tt.args.class, tt.args.format, tt.args.args...)
+			logger := Logger(tt.args.class)
+			got := LogMessage(logger, tt.args.format, tt.args.args...)
 			// Mask out the parts that are variable and un-testable, which
 			// includes the current date/time and a sequence number
 			got = got[23:]

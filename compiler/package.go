@@ -157,7 +157,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
 			// If we are disassembling, do it now for the imported definitions.
-			if ui.ActiveLogger(ui.ByteCodeLogger) {
+			if ui.LoggerIsActive(ui.ByteCodeLogger) {
 				importCompiler.b.Disasm()
 			}
 

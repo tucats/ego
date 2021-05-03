@@ -189,7 +189,7 @@ func (t *Table) FormatText() []string {
 	if t.where != "" {
 		e = expressions.New().WithText(t.where)
 
-		if ui.ActiveLogger(ui.ByteCodeLogger) {
+		if ui.LoggerIsActive(ui.ByteCodeLogger) {
 			e.Disasm()
 		}
 	}

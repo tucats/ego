@@ -10,7 +10,7 @@ import (
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm() {
-	if ui.ActiveLogger(ui.ByteCodeLogger) {
+	if ui.LoggerIsActive(ui.ByteCodeLogger) {
 		ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 
 		for n := 0; n < b.emitPos; n++ {

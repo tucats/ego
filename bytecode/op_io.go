@@ -51,13 +51,24 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // logByteCode implements the Log directive, which outputs the top stack
-// item to the logger named in the operand.
+// item to the logger named in the operand. The operand can either by a logger
+// by name or by class id.
 func logByteCode(c *Context, i interface{}) *errors.EgoError {
-	logger := util.GetString(i)
+	var class int
+
+	if id, ok := i.(int); ok {
+		class = id
+	} else {
+		class = ui.Logger(util.GetString(i))
+	}
+
+	if class < 0 {
+		return c.newError(errors.ErrInvalidLoggerName).Context(i)
+	}
 
 	msg, err := c.Pop()
 	if errors.Nil(err) {
-		ui.Debug(logger, "%v", msg)
+		ui.Debug(class, "%v", msg)
 	}
 
 	return err
