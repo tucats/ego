@@ -44,6 +44,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	text := ""
 	wasCommandLine := true
 	fullScope := false
+	lineNumber := 1
 
 	entryPoint, _ := c.GetString("entry-point")
 	if entryPoint == "" {
@@ -173,6 +174,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			// Convert []byte to string
 			text = string(content)
 		}
+
+		text = fmt.Sprintf("@line %d;\n%s", lineNumber, text)
+		lineNumber = lineNumber + strings.Count(text, "\n") - 1
+
 		// Tokenize the input
 		t := tokenizer.New(text)
 
