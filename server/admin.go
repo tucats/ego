@@ -27,7 +27,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	var u = defs.User{Permissions: []string{}}
 
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-	w.Header().Add("Content_Type", defs.JSONMediaType)
+	w.Header().Add("Content-Type", defs.JSONMediaType)
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
@@ -253,7 +253,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
 func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "%s %s", r.Method, r.URL.Path)
-	w.Header().Add("Content_Type", defs.JSONMediaType)
+	w.Header().Add("Content-Type", defs.JSONMediaType)
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
