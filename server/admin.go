@@ -299,7 +299,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, fmt.Sprintf("%d %s", result.Status, result.Message))
+		ui.Debug(ui.ServerLogger, fmt.Sprintf("STATUS %d, sending JSON response: %s", result.Status, result.Message))
 
 		return
 
@@ -320,7 +320,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, "200 Success")
+		ui.Debug(ui.ServerLogger, "STATUS 200, sending JSON response")
 
 		return
 
@@ -341,7 +341,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, "200 Success")
+		ui.Debug(ui.ServerLogger, "STATUS 200, sending JSON response")
 
 		return
 
@@ -351,6 +351,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
+
+		ui.Debug(ui.ServerLogger, "STATUS 418, sending JSON response: unsupported method "+r.Method)
 
 		return
 	}
