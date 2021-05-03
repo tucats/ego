@@ -175,8 +175,12 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			text = string(content)
 		}
 
-		text = fmt.Sprintf("@line %d;\n%s", lineNumber, text)
-		lineNumber = lineNumber + strings.Count(text, "\n") - 1
+		// If we're interactive and not in debug mode, help out
+		// by updating the line number in REPL mode.
+		if interactive && !debug {
+			text = fmt.Sprintf("@line %d;\n%s", lineNumber, text)
+			lineNumber = lineNumber + strings.Count(text, "\n") - 1
+		}
 
 		// Tokenize the input
 		t := tokenizer.New(text)
@@ -189,6 +193,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
+				lineNumber++
 
 				continue
 			}
@@ -214,12 +219,14 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			if count > 0 {
 				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
+				lineNumber++
 
 				continue
 			} else {
 				break
 			}
 		}
+
 		// If this is the exit command, turn off the debugger to prevent and endless loop
 		if t != nil && len(t.Tokens) > 0 && t.Tokens[0] == "exit" {
 			debug = false
