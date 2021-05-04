@@ -1,0 +1,6 @@
+// Simple heartbest service
+
+func handler( req Request, resp Response) {
+    resp.WriteStatus(200)
+    resp.Write("UP")
+}
