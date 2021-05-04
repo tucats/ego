@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -108,7 +109,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	// Make sure the location of the server program is a full absolute path
 	var e2 error
 
-	args[0], e2 = filepath.Abs(args[0])
+	args[0], e2 = exec.LookPath(args[0])
 	if e2 != nil {
 		return errors.New(e2)
 	}

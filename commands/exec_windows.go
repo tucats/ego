@@ -13,5 +13,6 @@ func runExec(cmd string, args []string, logf *os.File) (int, error) {
 	cmdargs = append(cmdargs, args...)
 
 	executor := exec.Command("cmd.exe", cmdargs...)
+
 	return 0, executor.Run()
 }

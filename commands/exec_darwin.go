@@ -18,7 +18,5 @@ func runExec(cmd string, args []string, logf *os.File) (int, error) {
 		},
 	}
 
-	pid, err := syscall.ForkExec(args[0], args, &attr)
-
-	return pid, err
+	return syscall.ForkExec(args[0], args, &attr)
 }
