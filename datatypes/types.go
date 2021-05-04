@@ -39,6 +39,7 @@ const (
 
 type Type struct {
 	name      string
+	pkg       string
 	kind      int
 	fields    map[string]Type
 	functions map[string]interface{}
@@ -85,7 +86,12 @@ func (t Type) FunctionNameList() string {
 
 func (t Type) TypeString() string {
 	if t.IsTypeDefinition() {
-		return t.name
+		name := t.name
+		if t.pkg != "" {
+			name = t.pkg + "." + name
+		}
+
+		return name
 	}
 
 	return t.String()
@@ -95,7 +101,12 @@ func (t Type) TypeString() string {
 func (t Type) String() string {
 	switch t.kind {
 	case TypeKind:
-		return t.name + " " + t.valueType.String()
+		name := t.name
+		if t.pkg != "" {
+			name = t.pkg + "." + name
+		}
+
+		return name + " " + t.valueType.String()
 
 	case MapKind:
 		return "map[" + t.keyType.String() + "]" + t.valueType.String()
@@ -568,4 +579,14 @@ func (t Type) Reflect() *EgoStruct {
 	}
 
 	return NewStructFromMap(r)
+}
+
+func UserType(packageName, typeName string) Type {
+	t := Type{
+		kind: TypeKind,
+		name: typeName,
+		pkg:  packageName,
+	}
+
+	return t
 }

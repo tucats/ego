@@ -134,5 +134,16 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 		return t, nil
 	}
 
+	if tokenizer.IsSymbol(typeName) && c.t.Peek(2) == "." && tokenizer.IsSymbol(c.t.Peek(3)) {
+		packageName := typeName
+		typeName = c.t.Peek(3)
+
+		if t, found := c.GetPackageType(packageName, typeName); found {
+			c.t.Advance(3)
+
+			return *t, nil
+		}
+	}
+
 	return datatypes.UndefinedType, c.newError(errors.ErrInvalidType)
 }

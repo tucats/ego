@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -132,4 +133,34 @@ func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
 	}
 
 	return t, err
+}
+
+// For a given package and type name, get the underlying type.
+func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type, bool) {
+	if p, found := c.packages.Package[packageName]; found {
+		if t, found := p[typeName]; found {
+			if theType, ok := t.(*datatypes.Type); ok {
+				return theType, true
+			}
+		}
+
+		// It was a package, but without a package body. Already moved to global storage?
+		if pkg, found := symbols.RootSymbolTable.Get(packageName); found {
+			if m, ok := pkg.(datatypes.EgoPackage); ok {
+				if t, found := m[typeName]; found {
+					if theType, ok := t.(datatypes.Type); ok {
+						return &theType, true
+					}
+				}
+
+				if t, found := m["__type"]; found {
+					if theType, ok := t.(datatypes.Type); ok {
+						return theType.BaseType(), true
+					}
+				}
+			}
+		}
+	}
+
+	return nil, false
 }

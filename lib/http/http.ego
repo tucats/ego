@@ -1,3 +1,4 @@
+
 package http
 
 type Request struct {
@@ -10,6 +11,46 @@ type Request struct {
     Authentication string
     Username       string
     Body           string
+}
+
+type Response struct {
+	Status         int
+	Buffer         string
+}
+
+func (r *Response) WriteStatus(status int) {
+	@status status
+}
+func (r *Response) Write(item interface{}) {
+	@response item
+}
+
+func (r *Response) WriteMessage(msg string) {
+    @text {
+        @response msg
+    }
+    @json {
+        m := {message: msg}
+        @response m
+    }
+}
+
+func (r *Response) WriteJSON( i interface{}) {
+	msg := json.Marshal(i)
+	r.Write(msg)
+}
+
+func BadURL(url string) {
+    @status 400
+    @response "Unrecognized URI path " + url
+}
+
+func NewResponse() Response {
+	r := Response{
+		Status:   200,
+	}
+
+	return r
 }
 
 func NewRequest() Request {
