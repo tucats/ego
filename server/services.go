@@ -183,9 +183,18 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Tokenize the input, adding the prolog to support handler functions and
-		// a suffix to create a call to the handler function.
-		text := handlerProlog + string(bytes) + handlerEpilog
-		tokens = tokenizer.New(text)
+		// a suffix to create a call to the handler function. If the service starts
+		// with an import of http, we don't add the prolog
+		tokens = tokenizer.New(string(bytes) + handlerEpilog)
+		realHTTP := true
+		if tokens.Peek(1) != "import" || !util.InList(tokens.Peek(2), "http", "\"http\"") {
+			text := handlerProlog + string(bytes) + handlerEpilog
+			tokens = tokenizer.New(text)
+			realHTTP = false
+			ui.Debug(ui.ServerLogger, "[%d] Service will use supplemental http", sessionID)
+		} else {
+			ui.Debug(ui.ServerLogger, "[%d] Service already imports http", sessionID)
+		}
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
@@ -196,7 +205,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
-			fmt.Printf("Unable to auto-import packages: " + err.Error())
+			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
 		}
 
 		compilerInstance.AddPackageToSymbols(symbolTable)
@@ -211,8 +220,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// If it compiled successfully and we are caching, then put
-		// it in the cache
-		if errors.Nil(err) && MaxCachedEntries > 0 {
+		// it in the cache.
+		// @TOMCOLE we currently don't allow services that use "real" http
+		// in the cache because the package symbols are not being properly
+		// preserved.
+		if errors.Nil(err) && MaxCachedEntries > 0 && !realHTTP {
 			serviceCache[endpoint] = cachedCompilationUnit{
 				age:   time.Now(),
 				c:     compilerInstance,

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -114,6 +115,14 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
+	// Determine if we are in "real" http mode
+	httpMode := false
+	if c.t.Tokens[0] == "import" || util.InList(c.t.Tokens[1], "http", "\"http\"") {
+		httpMode = true
+	}
+
+	ui.Debug(ui.ByteCodeLogger, "@handler invocation uses real http mode: %v", httpMode)
+
 	stackMarker := bytecode.StackMarker{Desc: "handler"}
 
 	// Plant a stack marker and load the handler function value
@@ -121,11 +130,25 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Load, handlerName)
 
 	// Generate a new request and put it on the stack
-	c.b.Emit(bytecode.Load, "NewRequest")
+	if httpMode {
+		c.b.Emit(bytecode.Load, "http")
+		c.b.Emit(bytecode.SetThis)
+		c.b.Emit(bytecode.Member, "NewRequest")
+	} else {
+		c.b.Emit(bytecode.Load, "NewRequest")
+	}
+
 	c.b.Emit(bytecode.Call, 0)
 
 	// Generate a new response and put it on the stack.
-	c.b.Emit(bytecode.Load, "NewResponse")
+	if httpMode {
+		c.b.Emit(bytecode.Load, "http")
+		c.b.Emit(bytecode.SetThis)
+		c.b.Emit(bytecode.Member, "NewResponse")
+	} else {
+		c.b.Emit(bytecode.Load, "NewResponse")
+	}
+
 	c.b.Emit(bytecode.Call, 0)
 
 	// Make a copy of the response and store as _response

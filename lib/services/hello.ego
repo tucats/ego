@@ -1,6 +1,8 @@
 // Really simple page that just constructs some HTML, using templates.
 
-func handler( req Request, resp Response ) {
+import "http"
+
+func handler( req http.Request, resp http.Response ) {
     @template body `
     <body>
         {{.Body}}

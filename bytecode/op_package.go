@@ -91,13 +91,20 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 		pkg = datatypes.EgoPackage{}
 	}
 
+	first := true
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
 		if util.HasCapitalizedName(k) {
 			v, _ := c.symbols.Get(k)
 			pkg[k] = v
 
-			ui.Debug(ui.ByteCodeLogger, "Copy symbol %s to package", k)
+			if first {
+				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
+
+				first = false
+			}
+
+			ui.Debug(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
 		}
 	}
 
@@ -106,7 +113,13 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 		if util.HasCapitalizedName(k) {
 			pkg[k] = v
 
-			ui.Debug(ui.ByteCodeLogger, "Copy constant %s to package", k)
+			if first {
+				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
+
+				first = false
+			}
+
+			ui.Debug(ui.ByteCodeLogger, "(%d)   constant %s", c.threadID, k)
 		}
 	}
 
@@ -123,5 +136,9 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.popSymbolTable()
 
 	// Store the package definition in the root symbol table.
+	rootTable := c.symbols.Root()
+
+	ui.Debug(ui.TraceLogger, "(%d) Store package %s in root table %s", c.threadID, pkgdef.name, rootTable.Name)
+
 	return c.symbols.Root().SetAlways(pkgdef.name, pkg)
 }

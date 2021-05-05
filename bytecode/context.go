@@ -385,6 +385,12 @@ func (c *Context) Result() interface{} {
 }
 
 func (c *Context) popSymbolTable() {
+	if c.symbols.Parent == nil {
+		ui.Debug(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
+
+		return
+	}
+
 	name := c.symbols.Name
 	c.symbols = c.symbols.Parent
 

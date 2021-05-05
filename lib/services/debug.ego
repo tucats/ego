@@ -1,6 +1,8 @@
 /* Debugging service. This reports server status */
+import "http"
 
-func handler( req Request, response Response) {
+
+func handler(req http.Request, response http.Response) {
     if req.Authentication == "none" {
         response.WriteStatus(401)
         response.Write("401 Not authorized")
@@ -82,7 +84,7 @@ Memory usage:
 `
         m := util.Memory()
 
-        @response fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
+        response.Write( fmt.Sprintf(r, util.Mode(), time.Now().String(), _version, _user, _session,
                             req.Authentication,
                             req.Body,
                             req.Endpoint,
@@ -93,6 +95,6 @@ Memory usage:
                             req.Url,
                             req.Username,
                             getuser(req.Username),
-                            m.current, m.total, m.system, m.gc)
+                            m.current, m.total, m.system, m.gc))
     }
 }
