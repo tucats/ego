@@ -1,6 +1,9 @@
 package symbols
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/tucats/ego/datatypes"
+)
 
 // Make a copy of the symbol table, retaining the same values
 // as before (in fact, the values are shared between the tables).
@@ -34,4 +37,22 @@ func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 	}
 
 	return &t
+}
+
+// For a given source table, find all the packages in the table and put them
+// in the current table.
+func (s *SymbolTable) GetPackages(source *SymbolTable) (count int) {
+	if source == nil {
+		return
+	}
+
+	for k, index := range source.Symbols {
+		v := source.GetValue(index)
+		if p, ok := v.(datatypes.EgoPackage); ok {
+			_ = s.SetAlways(k, p)
+			count++
+		}
+	}
+
+	return count
 }

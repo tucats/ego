@@ -137,7 +137,6 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 // Format formats a symbol table into a string for printing/display.
 func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
-
 	rows := make([][]string, 0)
 
 	// Iterate over the members to get a list of the keys. Discard invisible
@@ -205,7 +204,6 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			reflectedData := fmt.Sprintf("%#v", actual)
 			if strings.HasPrefix(reflectedData, "&bytecode.ByteCode") {
 				typeString = "func"
-
 			}
 		}
 
@@ -221,6 +219,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		if k == "_password" || k == "_token" {
 			v = "\"******\""
 		}
+
 		row[2] = util.Format(v)
 		rows = append(rows, row)
 	}

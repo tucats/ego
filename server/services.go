@@ -35,6 +35,7 @@ type cachedCompilationUnit struct {
 	c     *compiler.Compiler
 	b     *bytecode.ByteCode
 	t     *tokenizer.Tokenizer
+	s     *symbols.SymbolTable
 	count int
 }
 
@@ -58,7 +59,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 
-	ui.Debug(ui.ServerLogger, "[%d] %s %s", sessionID, r.Method, r.URL.Path)
+	requestor := r.Host
+	ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+
+	for headerName, headerValues := range r.Header {
+		ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
+	}
 
 	_ = symbolTable.SetAlways("_session", Session)
 	_ = symbolTable.SetAlways("_method", r.Method)
@@ -162,16 +168,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Is this endpoint already in the cache of compiled services?
 	cacheMutex.Lock()
 	if cachedItem, ok := serviceCache[endpoint]; ok {
-		serviceCode = cachedItem.b
+		symbolTable.GetPackages(cachedItem.s)
 		compilerInstance = cachedItem.c.Clone(true)
 		compilerInstance.AddPackageToSymbols(symbolTable)
 
+		serviceCode = cachedItem.b
 		tokens = cachedItem.t
 		cachedItem.age = time.Now()
 		cachedItem.count++
 		serviceCache[endpoint] = cachedItem
 
-		ui.Debug(ui.ServerLogger, "[%d] Using cached compilation unit", sessionID)
+		ui.Debug(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
 		cacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+".ego"))
@@ -186,14 +193,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// a suffix to create a call to the handler function. If the service starts
 		// with an import of http, we don't add the prolog
 		tokens = tokenizer.New(string(bytes) + handlerEpilog)
-		realHTTP := true
 		if tokens.Peek(1) != "import" || !util.InList(tokens.Peek(2), "http", "\"http\"") {
 			text := handlerProlog + string(bytes) + handlerEpilog
 			tokens = tokenizer.New(text)
-			realHTTP = false
-			ui.Debug(ui.ServerLogger, "[%d] Service will use supplemental http", sessionID)
+			ui.Debug(ui.InfoLogger, "[%d] Service will use supplemental http definitions", sessionID)
 		} else {
-			ui.Debug(ui.ServerLogger, "[%d] Service already imports http", sessionID)
+			ui.Debug(ui.InfoLogger, "[%d] Service uses native Ego http import", sessionID)
 		}
 
 		// Compile the token stream
@@ -221,17 +226,18 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If it compiled successfully and we are caching, then put
 		// it in the cache.
-		// @TOMCOLE we currently don't allow services that use "real" http
-		// in the cache because the package symbols are not being properly
-		// preserved.
-		if errors.Nil(err) && MaxCachedEntries > 0 && !realHTTP {
+		if errors.Nil(err) && MaxCachedEntries > 0 {
+			ui.Debug(ui.InfoLogger, "[%d] Caching compilation unit for %s", sessionID, endpoint)
+
 			serviceCache[endpoint] = cachedCompilationUnit{
 				age:   time.Now(),
 				c:     compilerInstance,
 				b:     serviceCode,
 				t:     tokens,
+				s:     nil, // Will be filled in at the end of successful execution.
 				count: 0,
 			}
+
 			// Is the cache too large? If so, throw out the oldest
 			// item from the cache.
 			for len(serviceCache) > MaxCachedEntries {
@@ -247,7 +253,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				delete(serviceCache, key)
-				ui.Debug(ui.ServerLogger, "[%d] Endpoint %s aged out of cache", sessionID, key)
+				ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", sessionID, key)
 			}
 		}
 
@@ -273,7 +279,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if auth == "" {
 		authenticatedCredentials = false
 
-		ui.Debug(ui.ServerLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Debug(ui.InfoLogger, "[%d] No authentication credentials given", sessionID)
 	} else {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
@@ -282,11 +288,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
 
-			ui.Debug(ui.ServerLogger, "[%d] Auth using token %s...", sessionID, token[:20])
+			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s...", sessionID, token[:20])
 		} else {
 			user, pass, authenticatedCredentials = r.BasicAuth()
 			if !authenticatedCredentials {
-				ui.Debug(ui.ServerLogger, "[%d] BasicAuth invalid", sessionID)
+				ui.Debug(ui.InfoLogger, "[%d] BasicAuth invalid", sessionID)
 			} else {
 				authenticatedCredentials = validatePassword(user, pass)
 			}
@@ -294,7 +300,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = symbolTable.SetAlways("_token", "")
 			_ = symbolTable.SetAlways("_token_valid", false)
 
-			ui.Debug(ui.ServerLogger, "[%d] Auth using user \"%s\", auth: %v", sessionID,
+			ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\", auth: %v", sessionID,
 				user, authenticatedCredentials)
 		}
 	}
@@ -336,6 +342,15 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		err = nil
 	}
 
+	// Runtime error? If so, delete us from the cache if present. This may let the administrator
+	// fix errors in the code and just re-run without having to flush the cache or restart the
+	// server.
+	if !errors.Nil(err) {
+		cacheMutex.Lock()
+		delete(serviceCache, endpoint)
+		cacheMutex.Unlock()
+	}
+
 	// Determine the status of the REST call by looking for the
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
@@ -352,7 +367,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
-		ui.Debug(ui.ServerLogger, "[%d] STATUS %d", sessionID, status)
+		if ui.LoggerIsActive(ui.InfoLogger) {
+			ui.Debug(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
+		} else {
+			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.Host, status)
+		}
 
 		return
 	}
@@ -368,7 +387,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))
 
-		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
+		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
 	} else {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get("_response")
@@ -380,12 +399,29 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = io.WriteString(w, buffer)
 
-		buffer = strings.ReplaceAll(buffer, "\n", "\\n")
-		if len(buffer) > 50 {
-			buffer = buffer[:50] + "..."
+		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
+	}
+
+	if !ui.LoggerIsActive(ui.InfoLogger) {
+		kind := "text"
+		if isJSON {
+			kind = "json"
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] STATUS %d, sending TEXT response : %s", sessionID, status, buffer)
+		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content-type %s", sessionID, r.Method, r.URL, requestor, status, kind)
+	}
+
+	// Last thing, if this service is cached but doesn't have a package symbol table in
+	// the cache, give our current set to the cached item.
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	if cachedItem, ok := serviceCache[endpoint]; ok && cachedItem.s == nil {
+		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
+		count := cachedItem.s.GetPackages(symbolTable)
+		serviceCache[endpoint] = cachedItem
+
+		ui.Debug(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
 }
 
@@ -398,8 +434,7 @@ func findPath(sessionID int32, urlPath string) string {
 
 			for _, path := range pathList {
 				if strings.HasPrefix(urlPath, path) {
-					ui.Debug(ui.ServerLogger, "[%d] Path %s resolves to endpoint %s",
-						sessionID, urlPath, path)
+					ui.Debug(ui.InfoLogger, "[%d] Path %s resolves to endpoint %s", sessionID, urlPath, path)
 
 					return path
 				}

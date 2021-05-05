@@ -237,8 +237,8 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		if comp == nil {
 			comp = compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
-			// Add the builtin functions
-			comp.AddStandard(&symbols.RootSymbolTable)
+			// link to the global table so we pick up special builtins.
+			comp.SetRoot(&symbols.RootSymbolTable)
 
 			err := comp.AutoImport(autoImport)
 			if !errors.Nil(err) {
