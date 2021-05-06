@@ -144,19 +144,8 @@ func getPermission(user, privilege string) bool {
 
 	if u, ok := service.ReadUser(user); errors.Nil(ok) {
 		pn := findPermission(u, privname)
-		v := (pn >= 0)
 
-		if ui.LoggerIsActive(ui.InfoLogger) {
-			state := "has"
-			if !v {
-				state = "does not have"
-			}
-
-			ui.Debug(ui.InfoLogger, "User %s %s %s privilege",
-				user, state, privilege)
-		}
-
-		return v
+		return (pn >= 0)
 	}
 
 	ui.Debug(ui.InfoLogger, "User %s does not have %s privilege", user, privilege)

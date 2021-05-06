@@ -62,6 +62,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 
 	for headerName, headerValues := range r.Header {
+		if strings.EqualFold(headerName, "Authorization") {
+			continue
+		}
+
 		ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 	}
 
@@ -275,13 +279,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] No authentication credentials given", sessionID)
 	} else {
 		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
-			token := strings.TrimSpace(strings.TrimPrefix(auth, defs.AuthScheme))
+			token := strings.TrimSpace(auth[len(defs.AuthScheme):])
 			authenticatedCredentials = validateToken(token)
 			_ = symbolTable.SetAlways("_token", token)
 			_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
 			user = tokenUser(token)
 
-			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s...", sessionID, token[:20])
+			tokenstr := token
+			if len(tokenstr) > 10 {
+				tokenstr = tokenstr[:10] + "..."
+			}
+			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s", sessionID, tokenstr)
 		} else {
 			user, pass, authenticatedCredentials = r.BasicAuth()
 			if !authenticatedCredentials {
@@ -293,8 +301,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_ = symbolTable.SetAlways("_token", "")
 			_ = symbolTable.SetAlways("_token_valid", false)
 
-			ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\", auth: %v", sessionID,
-				user, authenticatedCredentials)
+			valid := ", invalid credential"
+			if authenticatedCredentials {
+				if getPermission(user, "root") {
+					valid = ", root privilege user"
+				} else {
+					valid = ", normal user"
+				}
+			}
+
+			ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+				user, valid)
 		}
 	}
 
