@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
@@ -43,10 +44,10 @@ func Status(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
 			running = true
-			msg = fmt.Sprintf("Local server is running (pid %d, session %s) since %v",
+			msg = fmt.Sprintf("UP (pid %d, session %s) since %s, LOCAL",
 				status.PID,
 				status.LogID,
-				status.Started)
+				status.Started.Format(time.UnixDate))
 		} else {
 			_ = server.RemovePidFile(c)
 		}

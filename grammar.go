@@ -161,7 +161,7 @@ var ServerGrammar = []cli.Option{
 		OptionType:           cli.Subcommand,
 		Action:               commands.Status,
 		ParametersExpected:   -1,
-		ParameterDescription: "Remote server address:port",
+		ParameterDescription: "address[:port]",
 		Value:                ServerStateGrammar,
 	},
 	{
