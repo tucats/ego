@@ -81,6 +81,11 @@ var loggers []logger = []logger{
 	{"USER", false},
 }
 
+// This will contain the format string used to produce log messages, using the Go
+// standard format string. You can override the default by creating a profile item
+// called "ego.log.format".
+var LogTimeStampFormat string
+
 // Get the name of a given logger class.
 func LoggerName(class int) string {
 	if class < 0 || class >= len(loggers) {
@@ -157,8 +162,12 @@ func LogMessage(class int, format string, args ...interface{}) string {
 
 	sequence = sequence + 1
 	sequenceString := fmt.Sprintf("%d", sequence)
-	tf := "20060102150405"
-	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(tf), sequenceString, className, s)
+
+	if LogTimeStampFormat == "" {
+		LogTimeStampFormat = "2006-01-02 15:04:05"
+	}
+
+	s = fmt.Sprintf("[%s] %-5s %-7s: %s", time.Now().Format(LogTimeStampFormat), sequenceString, className, s)
 
 	return s
 }

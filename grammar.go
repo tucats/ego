@@ -156,11 +156,13 @@ var ServerGrammar = []cli.Option{
 		Value:       ServerStateGrammar,
 	},
 	{
-		LongName:    "status",
-		Description: "Display server status",
-		OptionType:  cli.Subcommand,
-		Action:      commands.Status,
-		Value:       ServerStateGrammar,
+		LongName:             "status",
+		Description:          "Display server status",
+		OptionType:           cli.Subcommand,
+		Action:               commands.Status,
+		ParametersExpected:   -1,
+		ParameterDescription: "Remote server address:port",
+		Value:                ServerStateGrammar,
 	},
 	{
 		LongName:    "start",

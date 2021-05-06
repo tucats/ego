@@ -32,6 +32,9 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
 		return err
 	}
+
+	server.StartTime = time.Now().Format(time.UnixDate)
+
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)

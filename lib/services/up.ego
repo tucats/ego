@@ -4,5 +4,13 @@ import "http"
 
 func handler( req http.Request, resp http.Response) {
     resp.WriteStatus(200)
-    resp.Write("UP")
+    @text {
+        msg := fmt.Sprintf("UP (pid %d, session %s) since %s", _pid, _session, _start_time)
+        resp.Write(msg)
+    }
+
+    @json {
+        msg := {pid:_pid, session:_session, since: _start_time}
+        resp.Write(msg)
+    }
 }

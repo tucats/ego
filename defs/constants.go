@@ -104,6 +104,10 @@ const (
 	// If true, the TRACE operation will print the full stack instead of
 	// a shorter single-line version.
 	FullStackTraceSetting = "ego.runtime.stack.trace"
+
+	// If specified, has the Go-style format string to be used for log
+	// messages showing the time of the event.
+	LogTimestampFormat = "ego.log.timestamp"
 )
 
 // This section contains the names of the command-line options. These often

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -30,6 +31,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.ExitOnBlankSetting:          "false",
 		defs.ThrowUncheckedErrorsSetting: "true",
 		defs.FullStackTraceSetting:       "false",
+		defs.LogTimestampFormat:          "2006-01-02 15:04:05",
 	}
 
 	// See if there is a value for each on of these. If no
@@ -46,6 +48,11 @@ func InitProfileDefaults() *errors.EgoError {
 
 	if dirty {
 		err = persistence.Save()
+	}
+
+	// Patch up some things now that we have a stable profile
+	if fmtstring := persistence.Get(defs.LogTimestampFormat); fmtstring != "" {
+		ui.LogTimeStampFormat = fmtstring
 	}
 
 	return err

@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -40,12 +41,10 @@ type cachedCompilationUnit struct {
 }
 
 var Session string
-
+var StartTime string
 var Version string
-
 var serviceCache = map[string]cachedCompilationUnit{}
 var cacheMutex sync.Mutex
-
 var nextSessionID int32
 
 // MaxCachedEntries is the maximum number of items allowed in the service
@@ -66,10 +65,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 	}
 
+	_ = symbolTable.SetAlways("_pid", os.Getpid())
 	_ = symbolTable.SetAlways("_session", Session)
 	_ = symbolTable.SetAlways("_method", r.Method)
 	_ = symbolTable.SetAlways("__exec_mode", "server")
 	_ = symbolTable.SetAlways("_version", Version)
+	_ = symbolTable.SetAlways("_start_time", StartTime)
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)

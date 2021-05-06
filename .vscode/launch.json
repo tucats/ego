@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
     {
         "name": "profile show token",
         "type": "go",
@@ -116,6 +117,14 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "args": ["--output-format", "json", "server", "cache", "list"]
+        }
+        {
+            "name": "Display Remote server status",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["server", "status", "localhost:8080"]
         }
     ]
 }
