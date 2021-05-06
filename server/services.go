@@ -58,7 +58,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 
-	requestor := r.Host
+	requestor := r.RemoteAddr
+
+	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
+		addrs := strings.Split(forward, ",")
+		requestor = addrs[0]
+	}
+
 	ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 
 	for headerName, headerValues := range r.Header {
