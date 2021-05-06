@@ -65,14 +65,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+	if ui.LoggerIsActive(ui.InfoLogger) {
+		ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 
-	for headerName, headerValues := range r.Header {
-		if strings.EqualFold(headerName, "Authorization") {
-			continue
+		for headerName, headerValues := range r.Header {
+			if strings.EqualFold(headerName, "Authorization") {
+				continue
+			}
+
+			ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 		}
-
-		ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 	}
 
 	_ = symbolTable.SetAlways("_pid", os.Getpid())
@@ -81,6 +83,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("__exec_mode", "server")
 	_ = symbolTable.SetAlways("_version", Version)
 	_ = symbolTable.SetAlways("_start_time", StartTime)
+	_ = symbolTable.SetAlways("_requestor", requestor)
 
 	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
