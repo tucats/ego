@@ -7,7 +7,9 @@
 //  If field is omitted, it lists all info about a specific user.
 //  If field is given, it lists the specific field for the specific user.
 
-func handler( req Request, resp Response) {
+import "http"
+
+func handler( req http.Request, resp http.Response) {
 
     // Define the required URI syntax. This ends the request in an error
     // if the syntax is not valid in the URL we received.

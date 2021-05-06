@@ -129,7 +129,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 			return err
 		}
 
-		ui.Debug(ui.ServerLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
+		ui.Debug(ui.InfoLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
 		return errors.New(errors.ErrNoSuchUser).Context(user)
 	}
@@ -146,20 +146,20 @@ func getPermission(user, privilege string) bool {
 		pn := findPermission(u, privname)
 		v := (pn >= 0)
 
-		if ui.LoggerIsActive(ui.ServerLogger) {
+		if ui.LoggerIsActive(ui.InfoLogger) {
 			state := "has"
 			if !v {
 				state = "does not have"
 			}
 
-			ui.Debug(ui.ServerLogger, "User %s %s %s privilege",
+			ui.Debug(ui.InfoLogger, "User %s %s %s privilege",
 				user, state, privilege)
 		}
 
 		return v
 	}
 
-	ui.Debug(ui.ServerLogger, "User %s does not have %s privilege", user, privilege)
+	ui.Debug(ui.InfoLogger, "User %s does not have %s privilege", user, privilege)
 
 	return false
 }
@@ -391,7 +391,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func validateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
 	if !errors.Nil(err) {
-		ui.Debug(ui.ServerLogger, "Token validation error: "+err.Error())
+		ui.Debug(ui.InfoLogger, "Token validation error: "+err.Error())
 	}
 
 	return v.(bool)

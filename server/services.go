@@ -189,17 +189,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Tokenize the input, adding the prolog to support handler functions and
-		// a suffix to create a call to the handler function. If the service starts
-		// with an import of http, we don't add the prolog
-		tokens = tokenizer.New(string(bytes) + handlerEpilog)
-		if tokens.Peek(1) != "import" || !util.InList(tokens.Peek(2), "http", "\"http\"") {
-			text := handlerProlog + string(bytes) + handlerEpilog
-			tokens = tokenizer.New(text)
-			ui.Debug(ui.InfoLogger, "[%d] Service will use supplemental http definitions", sessionID)
-		} else {
-			ui.Debug(ui.InfoLogger, "[%d] Service uses native Ego http import", sessionID)
-		}
+		// Tokenize the input, adding an epilogue that creates a call to the
+		// handler function.
+		tokens = tokenizer.New(string(bytes) + "\n@handler handler")
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")

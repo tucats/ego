@@ -12,15 +12,10 @@ func handler(req http.Request, response http.Response) {
     // If we got additional info in the path, we can't process it.
     @url "/{{extra}}/"
     if extra != "" {
-        @log server "symbol dump follows"
-        fmt.Println(util.Symbols())
-
         response.WriteStatus(400)
         response.Write("Unsupported URL suffix " + extra)
         return 
     }
-
-    @log server "This message goes to the server log"
 
     // This block runs if the caller asks for JSON data
     @json {

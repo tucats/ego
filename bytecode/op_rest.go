@@ -48,7 +48,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
-		ui.Debug(ui.ServerLogger, "@authenticated token: no valid token")
+		ui.Debug(ui.InfoLogger, "@authenticated token: no valid token")
 
 		return nil
 	}
@@ -59,7 +59,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 			_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
 			writeResponse(c, "401 Not authorized")
-			ui.Debug(ui.ServerLogger, "@authenticated user: no credentials")
+			ui.Debug(ui.InfoLogger, "@authenticated user: no credentials")
 
 			return nil
 		}
@@ -79,7 +79,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
-			ui.Debug(ui.ServerLogger, "@authenticated any: not authenticated")
+			ui.Debug(ui.InfoLogger, "@authenticated any: not authenticated")
 
 			return nil
 		}
@@ -97,7 +97,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
-			ui.Debug(ui.ServerLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
+			ui.Debug(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
 		}
 	}
 

@@ -13,7 +13,9 @@
 //           expression in the URL). The body of the resp is the
 //           text of the error.
 
-func handler( req Request, resp Response) {
+import "http"
+
+func handler( req http.Request, resp http.Response) {
     // Parse apart the URL, which should be a slash and the
     // numeric value to process. This stores the portions of 
     // the URL in a symbol of the given name.

@@ -1,6 +1,8 @@
 // Simple heartbest service
+ 
+import "http"
 
-func handler( req Request, resp Response) {
+func handler( req http.Request, resp http.Response) {
     resp.WriteStatus(200)
     resp.Write("UP")
 }
