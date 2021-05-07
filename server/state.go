@@ -141,7 +141,7 @@ func getPidFileName(c *cli.Context) string {
 	pidPath := "/tmp/"
 
 	if strings.HasPrefix(runtime.GOOS, "windows") {
-		pidPath = "\\tmp\\"
+		pidPath = "\\temp\\"
 	}
 
 	return filepath.Join(pidPath, "ego-server"+portString+".pid")

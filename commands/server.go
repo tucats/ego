@@ -78,6 +78,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Establish the admin endpoints
 	http.HandleFunc("/admin/users/", server.UserHandler)
 	http.HandleFunc("/admin/caches", server.CachesHandler)
+	http.HandleFunc("/admin/loggers/", server.LoggingHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
 	// Set up tracing for the server, and enable the logger if

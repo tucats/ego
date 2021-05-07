@@ -616,6 +616,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 		err = errors.New(errors.ErrNotFound)
 	}
 
+	if errors.Nil(err) && status != 200 && response == nil {
+		return errors.New(errors.ErrHTTP).Context(status)
+	}
+
 	if errors.Nil(err) && response != nil {
 		body := string(resp.Body())
 		if !util.InList(body[0:1], "{", "[", "\"") {

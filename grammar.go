@@ -119,8 +119,32 @@ var CachesGrammar = []cli.Option{
 	},
 }
 
+// LoggingGrammar is the ego server logging grammar.
+var LoggingGrammar = []cli.Option{
+	{
+		LongName:    "enable",
+		Aliases:     []string{"set"},
+		Description: "List of loggers to enable",
+		OptionType:  cli.StringListType,
+	},
+	{
+		LongName:    "disable",
+		Aliases:     []string{"clear"},
+		Description: "List of loggers to disable",
+		OptionType:  cli.StringListType,
+	},
+}
+
 // ServerGrammar contains the grammar of SERVER subcommands.
 var ServerGrammar = []cli.Option{
+	{
+		LongName:    "logging",
+		Aliases:     []string{"logger", "log", "logs"},
+		Description: "Enable or disable logging",
+		OptionType:  cli.Subcommand,
+		Value:       LoggingGrammar,
+		Action:      commands.Logging,
+	},
 	{
 		LongName:    "users",
 		Aliases:     []string{"user"},

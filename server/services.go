@@ -77,6 +77,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Define information we know about our running session and the caller, independent of
+	// the service being invoked.
 	_ = symbolTable.SetAlways("_pid", os.Getpid())
 	_ = symbolTable.SetAlways("_session", Session)
 	_ = symbolTable.SetAlways("_method", r.Method)
@@ -103,7 +105,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	_ = symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(parameterStruct))
 
-	// Other setup for REST service execution
+	// Setup additional builtins and supporting values needed for REST service execution
 	_ = symbolTable.SetAlways("eval", runtime.Eval)
 	_ = symbolTable.SetAlways("authenticated", Authenticated)
 	_ = symbolTable.SetAlways("permission", Permission)
@@ -142,16 +144,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		path = path[1:]
 	}
 
-	var serviceCode *bytecode.ByteCode
-
-	var compilerInstance *compiler.Compiler
-
-	var err *errors.EgoError
-
-	var tokens *tokenizer.Tokenizer
-
-	var debug bool
-
 	// The endpoint might have trailing path stuff; if so we need to find
 	// the part of the path that is the actual endpoint, so we can locate
 	// the service program. Also, store the full path, the endpoint,
@@ -163,13 +155,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		pathSuffix = "/" + pathSuffix
 	}
 
+	// Create symbols describing the URL we were given for this service call.
 	_ = symbolTable.SetAlways("_url", r.URL.String())
 	_ = symbolTable.SetAlways("_path_endpoint", endpoint)
 	_ = symbolTable.SetAlways("_path", "/"+path)
 	_ = symbolTable.SetAlways("_path_suffix", pathSuffix)
 
 	// Now that we know the actual endpoint, see if this is the endpoint
-	// we are debugging.
+	// we are debugging?
+	var debug bool
+
 	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
 		debugPath := util.GetString(b)
 		if debugPath == "/" {
@@ -178,6 +173,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			debug = strings.EqualFold(util.GetString(b), endpoint)
 		}
 	}
+
+	// Time to either compile a service, or re-use one from the cache. The
+	// following items will be set to describe the service we run.
+	var serviceCode *bytecode.ByteCode
+
+	var compilerInstance *compiler.Compiler
+
+	var err *errors.EgoError
+
+	var tokens *tokenizer.Tokenizer
 
 	// Is this endpoint already in the cache of compiled services?
 	cacheMutex.Lock()
@@ -233,34 +238,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// If it compiled successfully and we are caching, then put
 		// it in the cache.
 		if errors.Nil(err) && MaxCachedEntries > 0 {
-			ui.Debug(ui.InfoLogger, "[%d] Caching compilation unit for %s", sessionID, endpoint)
-
-			serviceCache[endpoint] = cachedCompilationUnit{
-				age:   time.Now(),
-				c:     compilerInstance,
-				b:     serviceCode,
-				t:     tokens,
-				s:     nil, // Will be filled in at the end of successful execution.
-				count: 0,
-			}
-
-			// Is the cache too large? If so, throw out the oldest
-			// item from the cache.
-			for len(serviceCache) > MaxCachedEntries {
-				key := ""
-				oldestAge := 0.0
-
-				for k, v := range serviceCache {
-					thisAge := time.Since(v.age).Seconds()
-					if thisAge > oldestAge {
-						key = k
-						oldestAge = thisAge
-					}
-				}
-
-				delete(serviceCache, key)
-				ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", sessionID, key)
-			}
+			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)
 		}
 
 		cacheMutex.Unlock()
@@ -273,7 +251,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Do we need to authenticate?
+	// Handle authentication. This can be either Basic authentiation or using a Bearer
+	// token in the header. If found, validate the username:password or the token string,
+	// and set up state variables accordingly.
 	var authenticatedCredentials bool
 
 	user := ""
@@ -282,33 +262,28 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_token_valid", false)
 
 	auth := r.Header.Get("Authorization")
+
 	if auth == "" {
+		// No authentication credentials provided
 		authenticatedCredentials = false
 
 		ui.Debug(ui.InfoLogger, "[%d] No authentication credentials given", sessionID)
-	} else {
-		if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
-			token := strings.TrimSpace(auth[len(defs.AuthScheme):])
-			authenticatedCredentials = validateToken(token)
-			_ = symbolTable.SetAlways("_token", token)
-			_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
-			user = tokenUser(token)
+	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
+		// Bearer token provided. Extract the token part of the header info, and
+		// attempt to validate it.
+		token := strings.TrimSpace(auth[len(defs.AuthScheme):])
+		authenticatedCredentials = validateToken(token)
+		_ = symbolTable.SetAlways("_token", token)
+		_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
+		user = tokenUser(token)
 
+		// If doing INFO logging, make a neutered version of the token showing
+		// only the first few bytes of the token string.
+		if ui.LoggerIsActive(ui.InfoLogger) {
 			tokenstr := token
 			if len(tokenstr) > 10 {
 				tokenstr = tokenstr[:10] + "..."
 			}
-			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s", sessionID, tokenstr)
-		} else {
-			user, pass, authenticatedCredentials = r.BasicAuth()
-			if !authenticatedCredentials {
-				ui.Debug(ui.InfoLogger, "[%d] BasicAuth invalid", sessionID)
-			} else {
-				authenticatedCredentials = validatePassword(user, pass)
-			}
-
-			_ = symbolTable.SetAlways("_token", "")
-			_ = symbolTable.SetAlways("_token_valid", false)
 
 			valid := ", invalid credential"
 			if authenticatedCredentials {
@@ -319,9 +294,35 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\"%s", sessionID,
-				user, valid)
+			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
 		}
+	} else {
+		// Must have a valid username:password. This must be syntactically valid, and
+		// if so, is also checked to see if the credentials are valid for our user
+		// database.
+		var ok bool
+
+		user, pass, ok = r.BasicAuth()
+		if !ok {
+			ui.Debug(ui.InfoLogger, "[%d] BasicAuth invalid", sessionID)
+		} else {
+			authenticatedCredentials = validatePassword(user, pass)
+		}
+
+		_ = symbolTable.SetAlways("_token", "")
+		_ = symbolTable.SetAlways("_token_valid", false)
+
+		valid := ", invalid credential"
+		if authenticatedCredentials {
+			if getPermission(user, "root") {
+				valid = ", root privilege user"
+			} else {
+				valid = ", normal user"
+			}
+		}
+
+		ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+			user, valid)
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
@@ -462,4 +463,38 @@ func findPath(sessionID int32, urlPath string) string {
 	}
 
 	return urlPath
+}
+
+// Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
+// age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
+// cache size.
+func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+	ui.Debug(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
+
+	serviceCache[endpoint] = cachedCompilationUnit{
+		age:   time.Now(),
+		c:     comp,
+		b:     code,
+		t:     tokens,
+		s:     nil, // Will be filled in at the end of successful execution.
+		count: 0,
+	}
+
+	// Is the cache too large? If so, throw out the oldest
+	// item from the cache.
+	for len(serviceCache) > MaxCachedEntries {
+		key := ""
+		oldestAge := 0.0
+
+		for k, v := range serviceCache {
+			thisAge := time.Since(v.age).Seconds()
+			if thisAge > oldestAge {
+				key = k
+				oldestAge = thisAge
+			}
+		}
+
+		delete(serviceCache, key)
+		ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
+	}
 }
