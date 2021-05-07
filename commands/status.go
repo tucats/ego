@@ -75,11 +75,11 @@ func remoteStatus(addr string) *errors.EgoError {
 		return errors.New(err)
 	}
 
-	persistence.Set(defs.ApplicationServerSetting, "https://"+addr)
+	persistence.SetDefault(defs.ApplicationServerSetting, "https://"+addr)
 
 	err := runtime.Exchange("/services/up/", "GET", nil, &resp)
 	if !errors.Nil(err) {
-		persistence.Set(defs.ApplicationServerSetting, "http://"+addr)
+		persistence.SetDefault(defs.ApplicationServerSetting, "http://"+addr)
 
 		err := runtime.Exchange("/services/up/", "GET", nil, &resp)
 		if !errors.Nil(err) {

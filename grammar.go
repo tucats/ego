@@ -133,17 +133,25 @@ var LoggingGrammar = []cli.Option{
 		Description: "List of loggers to disable",
 		OptionType:  cli.StringListType,
 	},
+	{
+		LongName:    "port",
+		ShortName:   "p",
+		OptionType:  cli.IntType,
+		Description: "Specify port number of server",
+	},
 }
 
 // ServerGrammar contains the grammar of SERVER subcommands.
 var ServerGrammar = []cli.Option{
 	{
-		LongName:    "logging",
-		Aliases:     []string{"logger", "log", "logs"},
-		Description: "Enable or disable logging",
-		OptionType:  cli.Subcommand,
-		Value:       LoggingGrammar,
-		Action:      commands.Logging,
+		LongName:             "logging",
+		Aliases:              []string{"logger", "log", "logs"},
+		Description:          "Enable or disable logging",
+		OptionType:           cli.Subcommand,
+		Value:                LoggingGrammar,
+		ParametersExpected:   -1,
+		ParameterDescription: "address:port",
+		Action:               commands.Logging,
 	},
 	{
 		LongName:    "users",
