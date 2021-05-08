@@ -245,13 +245,18 @@ func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 // This is run as a thread that periodically logs how many heartbeat requetsts have
 // been processed.
 func HeartbeatMonitor() {
-	sleep, _ := time.ParseDuration("5m")
+	intervalString := "60s"
+	monitorSleepInterval, _ := time.ParseDuration(intervalString)
+
+	ui.Debug(ui.ServerLogger, "Starting heartbeat monitor")
 
 	for {
-		time.Sleep(sleep)
+		time.Sleep(monitorSleepInterval)
 
 		if heartBeats > 0 {
-			ui.Debug(ui.ServerLogger, "Heartbeat requests served in the last 5 minutes: %d", heartBeats)
+			ui.Debug(ui.ServerLogger, "Heartbeat requests served in the last %s: %d",
+				intervalString, heartBeats)
+
 			atomic.StoreInt32(&heartBeats, 0)
 		}
 	}

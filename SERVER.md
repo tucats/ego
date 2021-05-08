@@ -42,6 +42,7 @@ number.
 | stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
 | restart | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
 | status | Report on the status of the server. |
+| logging | Enable or disable logging on the server |
 | users set | Create or update a user in the server database |
 | users delete | Remove a user from the server database |
 | users list | List users in the server database |
