@@ -472,76 +472,75 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	w.Header().Add("Content-Type", defs.JSONMediaType)
 
+	loggers := defs.LoggingItem{}
+	response := defs.LoggingResponse{}
+
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
 		ui.Debug(ui.InfoLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
-		msg := `{ "status" : 403, "msg" : "Not authorized" }`
+		response.Status = http.StatusForbidden
+		response.Message = "Not authorized"
 
-		_, _ = io.WriteString(w, msg)
+		b, _ := json.Marshal(response)
+		_, _ = w.Write(b)
 
-		return 403
+		return http.StatusForbidden
 	}
 
-	if r.Method != "POST" {
+	switch r.Method {
+	case "POST":
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+
+		err := json.Unmarshal(buf.Bytes(), &loggers)
+		if err != nil {
+			response.Status = 400
+			response.Message = err.Error()
+			ui.Debug(ui.InfoLogger, "[%d] Bad payload: %v", sessionID, err)
+
+			return 400
+		}
+
+		for loggerName, mode := range loggers.Loggers {
+			logger := ui.Logger(loggerName)
+			if logger < 0 || (logger == ui.ServerLogger && !mode) {
+				response.Status = 400
+				response.Message = err.Error()
+
+				ui.Debug(ui.InfoLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
+
+				return 400
+			}
+
+			ui.SetLogger(logger, mode)
+		}
+
+		fallthrough
+
+	case "GET":
+		response.Loggers = map[string]bool{}
+		for _, k := range ui.LoggerNames() {
+			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
+		}
+
+		response.Status = http.StatusOK
+		b, _ := json.Marshal(response)
+		_, _ = w.Write(b)
+
+		return http.StatusOK
+
+	default:
 		ui.Debug(ui.InfoLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
-		msg := `{ "status" : 405, "msg" : "Method not allowed" }`
-		_, _ = io.WriteString(w, msg)
+		response.Status = http.StatusMethodNotAllowed
+		response.Message = "Method not allowd"
+
+		b, _ := json.Marshal(response)
+		_, _ = w.Write(b)
 
 		return http.StatusMethodNotAllowed
 	}
-
-	name := strings.ToUpper(strings.TrimPrefix(r.URL.Path, "/admin/loggers/"))
-	if name == "" {
-		ui.Debug(ui.InfoLogger, "[%d] 400 Missing logger name", sessionID)
-		w.WriteHeader(http.StatusBadRequest)
-
-		msg := `{ "status" : 400, "msg" : "Missing logger name" }`
-		_, _ = io.WriteString(w, msg)
-
-		return http.StatusBadRequest
-	}
-
-	logger := ui.Logger(name)
-	if logger < 0 || logger == ui.ServerLogger {
-		ui.Debug(ui.InfoLogger, "[%d] 400 Invalid logger name %s", sessionID, name)
-		w.WriteHeader(http.StatusBadRequest)
-
-		msg := `{ "status" : 400, "msg" : "Invalid logger name" }`
-		_, _ = io.WriteString(w, msg)
-
-		return http.StatusBadRequest
-	}
-
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(r.Body)
-
-	mode := strings.ToLower(buf.String())
-
-	switch mode {
-	case "true", "on", "enable", "1", "yes":
-		ui.Debug(ui.ServerLogger, "[%d] Enable logger \"%s\" (%d)", sessionID, name, logger)
-		ui.SetLogger(logger, true)
-
-	case "false", "off", "disable", "0", "no":
-		ui.Debug(ui.ServerLogger, "[%d] Disable logger \"%s\" (%d)", sessionID, name, logger)
-		ui.SetLogger(logger, false)
-
-	default:
-		ui.Debug(ui.InfoLogger, "[%d] 400 Invalid logger state %s", sessionID, mode)
-		w.WriteHeader(http.StatusBadRequest)
-
-		msg := fmt.Sprintf(`{ "status" : 400, "msg" : "Invalid logger state %s}`, mode)
-		_, _ = io.WriteString(w, msg)
-
-		return http.StatusBadRequest
-	}
-
-	ui.Debug(ui.InfoLogger, "[%d] 200 OK", sessionID)
-	w.WriteHeader(http.StatusOK)
-
-	return http.StatusOK
 }

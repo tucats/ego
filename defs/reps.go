@@ -13,6 +13,15 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+type LoggingItem struct {
+	Loggers map[string]bool `json:"loggers,omitempty"`
+}
+
+type LoggingResponse struct {
+	LoggingItem
+	RestResponse
+}
+
 type CachedItem struct {
 	Name     string    `json:"name"`
 	LastUsed time.Time `json:"last"`

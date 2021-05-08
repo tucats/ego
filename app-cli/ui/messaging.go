@@ -86,6 +86,16 @@ var loggers []logger = []logger{
 // called "ego.log.format".
 var LogTimeStampFormat string
 
+func LoggerNames() []string {
+	result := make([]string, len(loggers))
+
+	for idx, logger := range loggers {
+		result[idx] = logger.name
+	}
+
+	return result
+}
+
 // Get the name of a given logger class.
 func LoggerName(class int) string {
 	if class < 0 || class >= len(loggers) {
