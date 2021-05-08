@@ -346,13 +346,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
-		fmt.Printf("\nDebugging started for service %s %s\n",
-			r.Method, r.URL.Path)
+		ui.Debug(ui.ServerLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
 
 		err = debugger.Run(ctx)
 
-		fmt.Printf("Debugging ended for service %s %s\n\n",
-			r.Method, r.URL.Path)
+		ui.Debug(ui.ServerLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
 	} else {
 		err = ctx.Run()
 	}

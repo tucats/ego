@@ -2,14 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
@@ -20,18 +17,6 @@ func Status(c *cli.Context) *errors.EgoError {
 	// If there is a parameter, it's the server address to query.
 	if c.GetParameterCount() > 0 {
 		addr := c.GetParameter(0)
-		// If it's valid but has no port number, and --port was not
-		// given on the command line, assume the default port 8080
-		if u, err := url.Parse("https://" + addr); err == nil {
-			if u.Port() == "" && !c.WasFound("port") {
-				addr = addr + ":8080"
-			}
-		}
-
-		if c.WasFound("port") {
-			port, _ := c.GetInteger("port")
-			addr = fmt.Sprintf("%s:%d", addr, port)
-		}
 
 		return remoteStatus(addr)
 	}
@@ -71,21 +56,14 @@ func remoteStatus(addr string) *errors.EgoError {
 		Since   string `json:"since"`
 	}{}
 
-	if _, err := url.Parse("https://" + addr); err != nil {
-		return errors.New(err)
+	if err := ResolveServerName(addr); !errors.Nil(err) {
+		return err
 	}
-
-	persistence.SetDefault(defs.ApplicationServerSetting, "https://"+addr)
 
 	err := runtime.Exchange("/services/up/", "GET", nil, &resp)
 	if !errors.Nil(err) {
-		persistence.SetDefault(defs.ApplicationServerSetting, "http://"+addr)
-
-		err := runtime.Exchange("/services/up/", "GET", nil, &resp)
-		if !errors.Nil(err) {
-			fmt.Println("DOWN")
-			os.Exit(3)
-		}
+		fmt.Println("DOWN")
+		os.Exit(3)
 	}
 
 	ui.Say("UP (pid %d, session %s) since %s", resp.Pid, resp.Session, resp.Since)

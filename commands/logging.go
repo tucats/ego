@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -24,9 +23,6 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	addr = strings.TrimPrefix(addr, "https://")
-	addr = strings.TrimPrefix(addr, "http://")
-
 	if c.GetParameterCount() > 0 {
 		addr = c.GetParameter(0)
 		// If it's valid but has no port number, and --port was not
@@ -36,14 +32,9 @@ func Logging(c *cli.Context) *errors.EgoError {
 				addr = addr + ":8080"
 			}
 		}
-
-		if c.WasFound("port") {
-			port, _ := c.GetInteger("port")
-			addr = fmt.Sprintf("%s:%d", addr, port)
-		}
 	}
 
-	_, err := getProtocol(addr)
+	err := ResolveServerName(addr)
 	if !errors.Nil(err) {
 		return err
 	}
@@ -126,36 +117,4 @@ func Logging(c *cli.Context) *errors.EgoError {
 	}
 
 	return nil
-}
-
-func getProtocol(addr string) (string, *errors.EgoError) {
-	protocol := ""
-
-	resp := struct {
-		Pid     int    `json:"pid"`
-		Session string `json:"session"`
-		Since   string `json:"since"`
-	}{}
-
-	if _, err := url.Parse("https://" + addr); err != nil {
-		return protocol, errors.New(err)
-	}
-
-	protocol = "https"
-
-	persistence.SetDefault(defs.ApplicationServerSetting, "https://"+addr)
-
-	err := runtime.Exchange("/services/up/", "GET", nil, &resp)
-	if !errors.Nil(err) {
-		protocol = "http"
-
-		persistence.SetDefault(defs.ApplicationServerSetting, "http://"+addr)
-
-		err := runtime.Exchange("/services/up/", "GET", nil, &resp)
-		if !errors.Nil(err) {
-			return "", nil
-		}
-	}
-
-	return protocol, nil
 }

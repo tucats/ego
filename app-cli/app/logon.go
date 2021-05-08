@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -9,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/runtime"
 )
 
 const (
@@ -66,6 +68,14 @@ func Logon(c *cli.Context) *errors.EgoError {
 	url := persistence.Get(LogonServerSetting)
 	if c.WasFound("logon-server") {
 		url, _ = c.GetString("logon-server")
+
+		var e2 *errors.EgoError
+
+		url, e2 = resolveServerName(url)
+		if !errors.Nil(e2) {
+			return e2
+		}
+
 		persistence.Set(LogonServerSetting, url)
 	}
 
@@ -123,4 +133,60 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	return errors.New(err)
+}
+
+// Resolve a name that may not be fully qualified, and make it the default
+// application host name. This is used by commands that allow a host name
+// specification as part of the command (login, or server logging, etc.).
+func resolveServerName(name string) (string, *errors.EgoError) {
+	hasScheme := true
+
+	normalizedName := strings.ToLower(name)
+	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {
+		normalizedName = "https://" + name
+		hasScheme = false
+	}
+
+	// Now make sure it's well-formed.
+	url, err := url.Parse(normalizedName)
+	if err != nil {
+		return "", errors.New(err)
+	}
+
+	port := url.Port()
+	if port == "" {
+		port = ":8080"
+	} else {
+		port = ""
+	}
+
+	// Start by trying to connect with what we have, if it had a scheme. In this
+	// case, the string is expected to be complete.
+	if hasScheme {
+		persistence.SetDefault("ego.application.server", name)
+
+		err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+		if errors.Nil(err) {
+			return name, nil
+		}
+	}
+
+	// No scheme, so let's try https. If no port supplied, assume the default port.
+	normalizedName = "https://" + name + port
+
+	persistence.SetDefault("ego.application.server", normalizedName)
+
+	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+	if errors.Nil(err) {
+		return normalizedName, nil
+	}
+
+	// Nope. Same deal with http scheme.
+	normalizedName = "http://" + name + port
+
+	persistence.SetDefault("ego.application.server", normalizedName)
+
+	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+
+	return normalizedName, errors.New(err)
 }

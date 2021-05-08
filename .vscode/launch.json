@@ -71,6 +71,14 @@
             "args": ["-d", "trace", "test", "test.ego"]
         },
         {
+            "name": "Logon to local server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": [ "logon", "-l", "localhost", "-u", "admin", "-p", "password"]
+        },
+        {
             "name": "Local ego server",
             "type": "go",
             "request": "launch",
@@ -117,14 +125,14 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "args": ["--output-format", "json", "server", "cache", "list"]
-        }
+        },
         {
             "name": "Display Remote server status",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["server", "status", "localhost:8080"]
+            "args": ["server", "status", "http://localhost:8080"]
         }
     ]
 }

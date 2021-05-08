@@ -2,12 +2,14 @@ package commands
 
 import (
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	xruntime "runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -79,7 +81,10 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	http.HandleFunc("/admin/users/", server.UserHandler)
 	http.HandleFunc("/admin/caches", server.CachesHandler)
 	http.HandleFunc("/admin/loggers/", server.LoggingHandler)
+	http.HandleFunc("/admin/heartbeat/", HeartbeatHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
+
+	go HeartbeatMonitor()
 
 	// Set up tracing for the server, and enable the logger if
 	// needed.
@@ -222,4 +227,83 @@ func normalizeDBName(name string) string {
 	}
 
 	return name
+}
+
+// Count of number of heartbeat calls. This is used by the HeartBeat monitor
+// to report when there have been heartbeat requests within a given interval
+// (5 minutes). This is used to detect when too many heartbeat requests are
+// happening, indicating a possible problem of some kind.
+var heartBeats int32
+
+// HeartbeatHandler receives the /admin/heartbeat calls. This does nothing
+// but respond with success. The event is not logged.
+func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	atomic.AddInt32(&heartBeats, 1)
+}
+
+// This is run as a thread that periodically logs how many heartbeat requetsts have
+// been processed.
+func HeartbeatMonitor() {
+	sleep, _ := time.ParseDuration("5m")
+
+	for {
+		time.Sleep(sleep)
+
+		if heartBeats > 0 {
+			ui.Debug(ui.ServerLogger, "Heartbeat requests served in the last 5 minutes: %d", heartBeats)
+			atomic.StoreInt32(&heartBeats, 0)
+		}
+	}
+}
+
+// Resolve a name that may not be fully qualified, and make it the default
+// application host name. This is used by commands that allow a host name
+// specification as part of the command (login, or server logging, etc.).
+func ResolveServerName(name string) *errors.EgoError {
+	hasScheme := true
+
+	normalizedName := strings.ToLower(name)
+	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {
+		normalizedName = "https://" + name
+		hasScheme = false
+	}
+
+	// Now make sure it's well-formed.
+	url, err := url.Parse(normalizedName)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	port := url.Port()
+	if port == "" {
+		port = ":8080"
+	} else {
+		port = ""
+	}
+
+	// Start by trying to connect with what we have, if it had a scheme. In this
+	// case, the string is expected to be complete.
+	if hasScheme {
+		persistence.SetDefault("ego.application.server", name)
+
+		return runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+	}
+
+	// No scheme, so let's try https. If no port supplied, assume the default port.
+	normalizedName = "https://" + name + port
+
+	persistence.SetDefault("ego.application.server", normalizedName)
+
+	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+	if errors.Nil(err) {
+		return nil
+	}
+
+	// Nope. Same deal with http scheme.
+	normalizedName = "http://" + name + port
+
+	persistence.SetDefault("ego.application.server", normalizedName)
+
+	return runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
 }
