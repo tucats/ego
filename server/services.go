@@ -344,7 +344,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Run the service code
 	ctx := bytecode.NewContext(symbolTable, serviceCode).SetDebug(debug).SetTokenizer(tokens)
 	ctx.EnableConsoleOutput(true)
-	ctx.SetTracing(Tracing)
 
 	if debug {
 		fmt.Printf("\nDebugging started for service %s %s\n",

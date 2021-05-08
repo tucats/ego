@@ -21,7 +21,6 @@ import (
 )
 
 var PathRoot string
-var Tracing bool
 var Realm string
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans

@@ -514,6 +514,12 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 				return 400
 			}
 
+			modeString := "enable"
+			if !mode {
+				modeString = "disable"
+			}
+
+			ui.Debug(ui.ServerLogger, "[%d] %s %s(%d) logger", sessionID, modeString, loggerName, logger)
 			ui.SetLogger(logger, mode)
 		}
 

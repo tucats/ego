@@ -101,6 +101,10 @@ func Logging(c *cli.Context) *errors.EgoError {
 
 	// Formulate the output.
 
+	if ui.QuietMode {
+		return nil
+	}
+
 	switch ui.OutputFormat {
 	case "text":
 		t, _ := tables.New([]string{"Logger", "Active"})
