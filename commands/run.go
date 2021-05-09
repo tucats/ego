@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
@@ -329,7 +330,9 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	_ = symbolTable.SetAlways("eval", runtime.Eval)
 	_ = symbolTable.SetAlways("prompt", runtime.Prompt)
 
+	// Add the runtime builtins and the function library builtins
 	runtime.AddBuiltinPackages(symbolTable)
+	functions.AddBuiltins(symbolTable)
 
 	return symbolTable
 }
