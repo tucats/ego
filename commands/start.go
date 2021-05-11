@@ -1,12 +1,10 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
@@ -147,18 +145,11 @@ func Start(c *cli.Context) *errors.EgoError {
 		args = append(args, logFileName)
 	}
 
-	// Create the log file and write the header to it. This open file will
-	// be passed to the forked process to use as its stdout and stderr.
-	logf, e2 := os.Create(logFileName)
-	if e2 == nil {
-		_, e2 = logf.WriteString(fmt.Sprintf(logHeader, time.Now().Format(time.UnixDate)))
-	}
-
 	if e2 != nil {
 		return errors.New(e2)
 	}
 
-	pid, e2 := runExec(args[0], args, logf)
+	pid, e2 := runExec(args[0], args)
 
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.

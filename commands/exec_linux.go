@@ -7,14 +7,14 @@ import (
 
 // runExec forks a detached process with the given file handle as
 // the stdout and stderr files.
-func runExec(cmd string, args []string, logf *os.File) (int, error) {
+func runExec(cmd string, args []string) (int, error) {
 	var attr = syscall.ProcAttr{
 		Dir: ".",
 		Env: os.Environ(),
 		Files: []uintptr{
 			os.Stdin.Fd(),
-			logf.Fd(),
-			logf.Fd(),
+			os.Stdout.Fd(),
+			os.Stderr.Fd(),
 		},
 	}
 

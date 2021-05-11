@@ -4,7 +4,7 @@ users.db
 .DS_Store
 *.code-workspace
 test.ego
-ego-server.log
+ego-server*.log
 ego-server.pid
 user-database.json
 https-server.crt

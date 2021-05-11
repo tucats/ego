@@ -5,10 +5,14 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/tucats/ego/errors"
 )
 
 // Formatted output types for data more complex than individual messages, such
@@ -79,6 +83,91 @@ var loggers []logger = []logger{
 	{"SYMBOLS", false},
 	{"TRACE", false},
 	{"USER", false},
+}
+
+var logFile *os.File
+var logFileName string
+
+func OpenLogFile(path string) *errors.EgoError {
+	err := openLogFile(path)
+	if !errors.Nil(err) {
+		return errors.New(err)
+	}
+
+	go rollOverTask()
+
+	return nil
+}
+
+// Internal routine that actually opens a log file.
+func openLogFile(path string) *errors.EgoError {
+	var err error
+
+	_ = SaveLastLog()
+	path = timeStampLogFileName(path)
+
+	logFile, err = os.Create(path)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	logFileName, _ = filepath.Abs(path)
+
+	Log(InfoLogger, "New log file opened: %s", logFileName)
+
+	return nil
+}
+
+// Schedule roll-over operations for the log. We calculate when the next start-of-date + 24 hours
+// is, and sleep until then. We then roll over the log file and sleep again.
+func rollOverTask() {
+	for {
+		year, month, day := time.Now().Date()
+		beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+		wakeTime := beginningOfDay.Add(24*time.Hour + time.Second)
+		sleepUntil := time.Until(wakeTime)
+		Log(InfoLogger, "Log rollover scheduled for %s", wakeTime.String())
+		time.Sleep(sleepUntil)
+		RollOverLog()
+	}
+}
+
+// Roll over the open log. Close the current log, and rename it to include a timestamp of when
+// it was created. Then create a new log file.
+func RollOverLog() {
+	err1 := SaveLastLog()
+	if err1 != nil {
+		panic("Unable to roll over log file; " + err1.Error())
+	}
+
+	err := openLogFile(logFileName)
+	if err != nil {
+		panic("Unable to open new log file; " + err.Error())
+	}
+}
+
+func timeStampLogFileName(path string) string {
+	logStarted := time.Now()
+	dateStamp := logStarted.Format("_2006-01-02-150405")
+	newName, _ := filepath.Abs(strings.TrimSuffix(path, ".log") + dateStamp + ".log")
+
+	return newName
+}
+
+// Save the current (last) log file to the archive name with the timestamp of when the log
+// was initialized.
+func SaveLastLog() error {
+	if logFile != nil {
+		Log(InfoLogger, "Log file being rolled over")
+
+		sequenceMux.Lock()
+		defer sequenceMux.Unlock()
+		logFile.Close()
+
+		logFile = nil
+	}
+
+	return nil
 }
 
 // This will contain the format string used to produce log messages, using the Go
@@ -155,7 +244,15 @@ func Log(class int, format string, args ...interface{}) {
 	}
 
 	s := LogMessage(class, format, args...)
-	fmt.Println(s)
+
+	if logFile != nil {
+		_, err := logFile.Write([]byte(s + "\n"))
+		if err != nil {
+			panic("Unable to write to log file; " + err.Error())
+		}
+	} else {
+		fmt.Println(s)
+	}
 }
 
 // LogMessage displays a message to stdout.

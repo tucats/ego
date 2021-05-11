@@ -23,9 +23,6 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// String written at the start of each new log file.
-const logHeader = "*** Log file initialized %s ***\n"
-
 var PathList []string
 
 // RunServer initializes and runs the REST server, which starts listenting for
@@ -40,6 +37,12 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
+		if fn, ok := c.GetString("log"); ok {
+			err := ui.OpenLogFile(fn)
+			if !errors.Nil(err) {
+				return err
+			}
+		}
 	}
 
 	if c.WasFound(defs.SymbolTableSizeOption) {

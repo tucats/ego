@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
@@ -40,23 +37,6 @@ func Restart(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		args := status.Args
 
-		// Find the log file from the command-line args. If it's not
-		// found, use the default just so we can keep going.
-		logFileName := "ego-server.log"
-
-		for i, v := range args {
-			if v == "--log" {
-				logFileName = args[i+1]
-			}
-		}
-
-		logFileName, _ = filepath.Abs(logFileName)
-
-		logf, err := os.Create(logFileName)
-		if !errors.Nil(err) {
-			return errors.New(err)
-		}
-
 		// Set up the new ID. If there was one already (because this might be
 		// a restart operation) then update the UUID value. If not, add the uuid
 		// command line option.
@@ -76,13 +56,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 			args = append(args, "--session-uuid", logID.String())
 		}
 
-		if _, err = logf.WriteString(fmt.Sprintf("*** Log file re-initialized %s ***\n",
-			time.Now().Format(time.UnixDate)),
-		); !errors.Nil(err) {
-			return errors.New(err)
-		}
-
-		pid, err := runExec(args[0], args, logf)
+		pid, err := runExec(args[0], args)
 		if errors.Nil(err) {
 			status.PID = pid
 			status.LogID = logID
