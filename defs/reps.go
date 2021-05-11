@@ -14,7 +14,8 @@ type RestResponse struct {
 }
 
 type LoggingItem struct {
-	Loggers map[string]bool `json:"loggers,omitempty"`
+	Filename string          `json:"file,omitempty"`
+	Loggers  map[string]bool `json:"loggers,omitempty"`
 }
 
 type LoggingResponse struct {

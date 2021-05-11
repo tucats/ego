@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -107,12 +108,16 @@ func Logging(c *cli.Context) *errors.EgoError {
 		_ = t.SortRows(0, true)
 		t.Print(ui.OutputFormat)
 
+		if response.Filename != "" {
+			fmt.Printf("\nServer log file is %s\n", response.Filename)
+		}
+
 	case "json":
-		b, _ := json.Marshal(response.Loggers)
+		b, _ := json.Marshal(response)
 		ui.Say(string(b))
 
 	case "indented":
-		b, _ := json.MarshalIndent(response.Loggers, "", "   ")
+		b, _ := json.MarshalIndent(response, "", "   ")
 		ui.Say(string(b))
 	}
 

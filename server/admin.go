@@ -526,7 +526,9 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		fallthrough
 
 	case "GET":
+		response.Filename = ui.CurrentLogFile()
 		response.Loggers = map[string]bool{}
+
 		for _, k := range ui.LoggerNames() {
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
 		}
