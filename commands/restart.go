@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
@@ -56,6 +57,11 @@ func Restart(c *cli.Context) *errors.EgoError {
 			args = append(args, "--session-uuid", logID.String())
 		}
 
+		// Sleep for one second. This guarantees that the log file stamp of the new log
+		// will not be the same as the old log stamp.
+		time.Sleep(1 * time.Second)
+
+		// Launch the new process
 		pid, err := runExec(args[0], args)
 		if errors.Nil(err) {
 			status.PID = pid
