@@ -86,10 +86,11 @@ var loggers []logger = []logger{
 }
 
 var logFile *os.File
-var logFileName string
+var baseLogFileName string
+var currentLogFileName string
 
-func OpenLogFile(path string) *errors.EgoError {
-	err := openLogFile(path)
+func OpenLogFile(userLogFileName string) *errors.EgoError {
+	err := openLogFile(userLogFileName)
 	if !errors.Nil(err) {
 		return errors.New(err)
 	}
@@ -99,21 +100,34 @@ func OpenLogFile(path string) *errors.EgoError {
 	return nil
 }
 
+// Return the path of the current log file being written to.
+func CurrentLogFile() string {
+	if logFile == nil {
+		return ""
+	}
+
+	return currentLogFileName
+}
+
 // Internal routine that actually opens a log file.
 func openLogFile(path string) *errors.EgoError {
 	var err error
 
 	_ = SaveLastLog()
-	path = timeStampLogFileName(path)
 
-	logFile, err = os.Create(path)
+	fileName := timeStampLogFileName(path)
+
+	logFile, err = os.Create(fileName)
 	if err != nil {
+		logFile = nil
+
 		return errors.New(err)
 	}
 
-	logFileName, _ = filepath.Abs(path)
+	baseLogFileName, _ = filepath.Abs(path)
+	currentLogFileName, _ = filepath.Abs(fileName)
 
-	Log(InfoLogger, "New log file opened: %s", logFileName)
+	Log(InfoLogger, "New log file opened: %s", currentLogFileName)
 
 	return nil
 }
@@ -140,7 +154,7 @@ func RollOverLog() {
 		panic("Unable to roll over log file; " + err1.Error())
 	}
 
-	err := openLogFile(logFileName)
+	err := openLogFile(baseLogFileName)
 	if err != nil {
 		panic("Unable to open new log file; " + err.Error())
 	}
