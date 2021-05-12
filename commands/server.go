@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	xruntime "runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -167,7 +166,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	addr := ":" + strconv.Itoa(port)
 
-	go logMemoryStatistics()
+	go server.LogMemoryStatistics()
 	go server.LogRequestCounts()
 
 	var e2 error
@@ -183,24 +182,6 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	return errors.New(e2)
-}
-
-func logMemoryStatistics() {
-	var m xruntime.MemStats
-
-	for {
-		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-		xruntime.ReadMemStats(&m)
-		ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
-			bToMb(m.Alloc), bToMb(m.TotalAlloc), bToMb(m.Sys), m.NumGC)
-
-		// Generate this report in the log every ten minutes.
-		time.Sleep(10 * time.Minute)
-	}
-}
-
-func bToMb(b uint64) float64 {
-	return float64(b) / 1024.0 / 1024.0
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's
@@ -230,12 +211,6 @@ func normalizeDBName(name string) string {
 
 	return name
 }
-
-// Count of number of heartbeat calls. This is used by the HeartBeat monitor
-// to report when there have been heartbeat requests within a given interval
-// (5 minutes). This is used to detect when too many heartbeat requests are
-// happening, indicating a possible problem of some kind.
-var heartBeats int32
 
 // HeartbeatHandler receives the /admin/heartbeat calls. This does nothing
 // but respond with success. The event is not logged.

@@ -1,6 +1,7 @@
 package server
 
 import (
+	xruntime "runtime"
 	"sync/atomic"
 	"time"
 
@@ -37,6 +38,11 @@ func CountRequest(kind int) {
 	}
 }
 
+// LogRequestCounts is a go-routine launched when a server is started. It generates logging output
+// every 60 seconds _if_ there have been requests to any of the endpoint groups: admin, code,
+// heartbeat, or service. If there have been no request in the last 60 seconds, no log record is
+// generated. Once the log is evaluated and printed if needed, the routine sleeps for another 60
+// seconds and repeats the operation.
 func LogRequestCounts() {
 	duration := logRequestCounterDuration
 
@@ -55,4 +61,27 @@ func LogRequestCounts() {
 
 		ui.Debug(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  code(%d)  heartbeat(%d)", duration, admin, service, code, heartbeats)
 	}
+}
+
+// LogMemoryStatitics is a go-routine launched when a server is started. It generates a logging
+// entry every ten minutes indicating the current memory allocation, the total memory ever
+// allocated, the system memory, and the number of times the garbage-collector has run.
+func LogMemoryStatistics() {
+	var m xruntime.MemStats
+
+	for {
+		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+		xruntime.ReadMemStats(&m)
+		ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
+			bToMb(m.Alloc), bToMb(m.TotalAlloc), bToMb(m.Sys), m.NumGC)
+
+		// Generate this report in the log every ten minutes.
+		time.Sleep(10 * time.Minute)
+	}
+}
+
+// bToMb is a helper function that converts a total number of bytes to a fractional
+// number of megabytes. This is used for formatting the memory statistics log entries.
+func bToMb(b uint64) float64 {
+	return float64(b) / 1024.0 / 1024.0
 }
