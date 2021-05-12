@@ -97,28 +97,42 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
+	fileOnly := c.GetBool("file")
+
 	switch ui.OutputFormat {
 	case "text":
-		t, _ := tables.New([]string{"Logger", "Active"})
+		if fileOnly {
+			ui.Say("%s", response.Filename)
+		} else {
+			t, _ := tables.New([]string{"Logger", "Active"})
 
-		for k, v := range response.Loggers {
-			_ = t.AddRowItems(k, v)
-		}
+			for k, v := range response.Loggers {
+				_ = t.AddRowItems(k, v)
+			}
 
-		_ = t.SortRows(0, true)
-		t.Print(ui.OutputFormat)
+			_ = t.SortRows(0, true)
+			t.Print(ui.OutputFormat)
 
-		if response.Filename != "" {
-			fmt.Printf("\nServer log file is %s\n", response.Filename)
+			if response.Filename != "" {
+				fmt.Printf("\nServer log file is %s\n", response.Filename)
+			}
 		}
 
 	case "json":
-		b, _ := json.Marshal(response)
-		ui.Say(string(b))
+		if fileOnly {
+			ui.Say("\"%s\"", response.Filename)
+		} else {
+			b, _ := json.Marshal(response)
+			ui.Say(string(b))
+		}
 
 	case "indented":
-		b, _ := json.MarshalIndent(response, "", "   ")
-		ui.Say(string(b))
+		if fileOnly {
+			ui.Say("\"%s\"", response.Filename)
+		} else {
+			b, _ := json.MarshalIndent(response, "", "   ")
+			ui.Say(string(b))
+		}
 	}
 
 	return nil

@@ -23,6 +23,8 @@ import (
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
 
+	CountRequest(CodeRequestCounter)
+
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	_ = symbolTable.SetAlways("__exec_mode", "server")

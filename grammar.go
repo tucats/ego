@@ -134,6 +134,12 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.StringListType,
 	},
 	{
+		LongName:    "file",
+		ShortName:   "f",
+		Description: "Show only the active log file name",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    "port",
 		ShortName:   "p",
 		OptionType:  cli.IntType,

@@ -9,7 +9,6 @@ import (
 	xruntime "runtime"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -37,6 +36,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
+
 		if fn, ok := c.GetString("log"); ok {
 			err := ui.OpenLogFile(fn)
 			if !errors.Nil(err) {
@@ -86,8 +86,6 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	http.HandleFunc("/admin/loggers/", server.LoggingHandler)
 	http.HandleFunc("/admin/heartbeat/", HeartbeatHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
-
-	go HeartbeatMonitor()
 
 	// Set up tracing for the server, and enable the logger if
 	// needed.
@@ -169,7 +167,8 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	addr := ":" + strconv.Itoa(port)
 
-	go serverHeartbeat()
+	go logMemoryStatistics()
+	go server.LogRequestCounts()
 
 	var e2 error
 
@@ -186,7 +185,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	return errors.New(e2)
 }
 
-func serverHeartbeat() {
+func logMemoryStatistics() {
 	var m xruntime.MemStats
 
 	for {
@@ -242,27 +241,7 @@ var heartBeats int32
 // but respond with success. The event is not logged.
 func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
-	atomic.AddInt32(&heartBeats, 1)
-}
-
-// This is run as a thread that periodically logs how many heartbeat requetsts have
-// been processed.
-func HeartbeatMonitor() {
-	intervalString := "60s"
-	monitorSleepInterval, _ := time.ParseDuration(intervalString)
-
-	ui.Debug(ui.ServerLogger, "Starting heartbeat monitor")
-
-	for {
-		time.Sleep(monitorSleepInterval)
-
-		if heartBeats > 0 {
-			ui.Debug(ui.ServerLogger, "Heartbeat requests served in the last %s: %d",
-				intervalString, heartBeats)
-
-			atomic.StoreInt32(&heartBeats, 0)
-		}
-	}
+	server.CountRequest(server.HeartbeatRequestCounter)
 }
 
 // Resolve a name that may not be fully qualified, and make it the default

@@ -24,6 +24,8 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
 
+	CountRequest(AdminRequestCounter)
+
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
@@ -45,6 +47,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
 
+	CountRequest(AdminRequestCounter)
+
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
@@ -61,6 +65,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
+
+	CountRequest(AdminRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")

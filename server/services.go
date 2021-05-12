@@ -57,8 +57,9 @@ var MaxCachedEntries = 10
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
-
 	requestor := r.RemoteAddr
+
+	CountRequest(ServiceRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")
