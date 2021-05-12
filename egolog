@@ -1,7 +1,36 @@
 #!/bin/bash
 #
-# Display the most recent log in the current directory
+# Display the contents of the most recent log in the current directory.
+#
+#  Options:
+#
+#    -f       If specified, "follow" the file contents and display
+#             new lines as they are added to the log until interrupted.
+#
+#    -p       Purge all log files except the most recent log file.
+#
 
-cat `ls -lrt1 ego-server*.log | tail -n 1`
+if [ "$1" == "-p" ] ; then
+
+    LOGS=`ls ego-server*.log | wc -l`
+    COUNT=$(expr $LOGS - 1)
+    
+    if [ $COUNT -lt 1 ]; then 
+        echo "No old log files to purge"
+        exit 0
+    fi
+
+    echo "Purging $COUNT log file(s)"
+    rm -v `ls -lrt1 ego-server*.log | head -n $COUNT`
+    exit 0
+fi
+
+LOG=`ls -lrt1 ego-server*.log | tail -n 1`
+
+if [ "$1" == "-f" ]; then
+    tail -f $LOG
+else
+    cat $LOG
+fi
 
 
