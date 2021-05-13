@@ -184,7 +184,6 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			line := c.GetLine()
 			module := c.GetModuleName()
 
-			// fmt.Printf("Evaluating %s:%d = %s\n", module, line, text)
 			if module == b.module && line == b.line {
 				prompt = true
 				text := c.GetTokenizer().GetLine(line)

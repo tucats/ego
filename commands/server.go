@@ -37,7 +37,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		ui.SetLogger(ui.ServerLogger, true)
 
 		if fn, ok := c.GetString("log"); ok {
-			err := ui.OpenLogFile(fn)
+			err := ui.OpenLogFile(fn, true)
 			if !errors.Nil(err) {
 				return err
 			}

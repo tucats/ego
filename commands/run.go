@@ -34,6 +34,13 @@ const QuitCommand = "%quit"
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) *errors.EgoError {
+	if logFile, found := c.GetString("log"); found {
+		err := ui.OpenLogFile(logFile, false)
+		if !errors.Nil(err) {
+			return err
+		}
+	}
+
 	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
 		return err
 	}
@@ -243,7 +250,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			err := comp.AutoImport(autoImport)
 			if !errors.Nil(err) {
-				fmt.Printf("Unable to auto-import packages: " + err.Error())
+				panic(fmt.Sprintf("Unable to auto-import packages: " + err.Error()))
 			}
 
 			comp.AddPackageToSymbols(&symbols.RootSymbolTable)

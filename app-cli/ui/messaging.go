@@ -89,13 +89,15 @@ var logFile *os.File
 var baseLogFileName string
 var currentLogFileName string
 
-func OpenLogFile(userLogFileName string) *errors.EgoError {
-	err := openLogFile(userLogFileName)
+func OpenLogFile(userLogFileName string, withTimeStamp bool) *errors.EgoError {
+	err := openLogFile(userLogFileName, withTimeStamp)
 	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
-	go rollOverTask()
+	if withTimeStamp {
+		go rollOverTask()
+	}
 
 	return nil
 }
@@ -110,12 +112,21 @@ func CurrentLogFile() string {
 }
 
 // Internal routine that actually opens a log file.
-func openLogFile(path string) *errors.EgoError {
+func openLogFile(path string, withTimeStamp bool) *errors.EgoError {
 	var err error
 
 	_ = SaveLastLog()
 
-	fileName := timeStampLogFileName(path)
+	var fileName string
+
+	if withTimeStamp {
+		fileName = timeStampLogFileName(path)
+	} else {
+		fileName, err = filepath.Abs(path)
+		if err != nil {
+			return errors.New(err)
+		}
+	}
 
 	logFile, err = os.Create(fileName)
 	if err != nil {
@@ -154,7 +165,7 @@ func RollOverLog() {
 		panic("Unable to roll over log file; " + err1.Error())
 	}
 
-	err := openLogFile(baseLogFileName)
+	err := openLogFile(baseLogFileName, true)
 	if err != nil {
 		panic("Unable to open new log file; " + err.Error())
 	}

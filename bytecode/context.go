@@ -49,6 +49,7 @@ type Context struct {
 	stackPointer         int
 	framePointer         int
 	line                 int
+	lastLine             int
 	blockDepth           int
 	argCountDelta        int
 	threadID             int32
@@ -61,6 +62,7 @@ type Context struct {
 	stepOver             bool
 	throwUncheckedErrors bool
 	fullStackTrace       bool
+	tracing              bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -107,6 +109,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		tryStack:             make([]TryInfo, 0),
 		rangeStack:           make([]*Range, 0),
 		timerStack:           make([]time.Time, 0),
+		tracing:              false,
 	}
 	contextPointer := &ctx
 	contextPointer.SetByteCode(b)
@@ -186,7 +189,8 @@ func (c *Context) GetOutput() string {
 // instruction and the top few items on the stack are printed to
 // the console.
 func (c *Context) SetTracing(b bool) {
-	ui.SetLogger(ui.TraceLogger, b)
+	c.tracing = true
+	ui.SetLogger(ui.TraceLogger, true)
 }
 
 func (c *Context) Tracing() bool {

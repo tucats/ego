@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -68,7 +67,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
-			fmt.Printf("Unable to auto-import packages: " + err.Error())
+			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: %v", err)
 		}
 
 		comp.AddPackageToSymbols(symbolTable)

@@ -546,9 +546,6 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		for i := range array {
 			array[i] = 0.0
 		}
-
-	default:
-		fmt.Printf("DEBUG: v = %#v\n", kind)
 	}
 
 	return array, nil

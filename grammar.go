@@ -350,6 +350,11 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_DISASM",
 	},
 	{
+		LongName:    "log",
+		Description: "Direct log output to this file instead of stdout",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:            "trace",
 		ShortName:           "t",
 		Description:         "Display trace of bytecode execution",
@@ -390,12 +395,6 @@ var RunGrammar = []cli.Option{
 		Description:         "Override auto-import profile setting",
 		OptionType:          cli.BooleanValueType,
 		EnvironmentVariable: "EGO_AUTOIMPORT",
-	},
-	{
-		LongName:    "source-tracing",
-		ShortName:   "x",
-		Description: "Print source lines as they are executed",
-		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:    "entry-point",

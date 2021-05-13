@@ -110,8 +110,6 @@ func GetString(v interface{}) string {
 
 	coercedValue := Coerce(v, "")
 	if coercedValue == nil {
-		fmt.Printf("DEBUG: failed coerce of %#v\n", v)
-
 		return ""
 	}
 

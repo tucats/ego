@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -57,9 +56,14 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 		return errors.New(errors.SignalDebugger)
 	}
 	// If we are tracing, put that out now.
-	if c.Tracing() && c.tokenizer != nil {
-		fmt.Printf("%d:  %s\n", c.line, c.tokenizer.GetLine(c.line))
+	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
+		text := c.tokenizer.GetLine(c.line)
+		if len(strings.TrimSpace(text)) > 0 {
+			ui.Debug(ui.TraceLogger, "(%d) Source line  >>>>  %3d: %s", c.threadID, c.line, text)
+		}
 	}
+
+	c.lastLine = c.line
 
 	return nil
 }

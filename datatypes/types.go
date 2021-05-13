@@ -1,7 +1,6 @@
 package datatypes
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -405,8 +404,6 @@ func TypeOf(i interface{}) Type {
 				return t
 			}
 		}
-
-		fmt.Printf("DEBUG: Getting type of a package with no type: %#v\n", v)
 
 		return UndefinedType
 

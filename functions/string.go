@@ -257,7 +257,6 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	root := tree.Tree.Root
 
 	for _, n := range root.Nodes {
-		//fmt.Printf("Node[%2d]: %#v\n", i, n)
 		if n.Type() == tparse.NodeTemplate {
 			templateNode := n.(*tparse.TemplateNode)
 			// Get the named template and add it's tree here

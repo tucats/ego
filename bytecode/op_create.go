@@ -182,7 +182,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 				model = t.InstanceOf(&t)
 				typeName = t.Name()
 			} else {
-				fmt.Printf("DEBUG: Unexpected type value: %v\n", value)
+				panic(fmt.Sprintf("DEBUG: Unexpected type value: %v\n", value))
 			}
 		} else {
 			m[name] = value

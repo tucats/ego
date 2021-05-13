@@ -94,7 +94,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 
 		if pkg, ok := c.symbols.Root().Get(packageName); ok {
 			if _, ok := pkg.(*datatypes.EgoStruct); ok {
-				fmt.Printf("DEBUG: map/struct confusion: callFramePop()")
+				panic("DEBUG: map/struct confusion: callFramePop()")
 			}
 
 			if m, ok := pkg.(datatypes.EgoPackage); ok {
