@@ -441,6 +441,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		ui.Debug(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
+
+	if status == 503 {
+		go func() {
+			time.Sleep(1 * time.Second)
+			ui.Debug(ui.ServerLogger, "Server shutdown by admin function")
+			os.Exit(0)
+		}()
+	}
 }
 
 func findPath(sessionID int32, urlPath string) string {

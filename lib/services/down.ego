@@ -1,0 +1,15 @@
+/*
+ * Terminate the server
+ */
+
+import "http"
+
+func handler(req http.Request, resp http.Response ) {
+// Can only proceed if authenticated with as administrator
+    @authenticated admin
+
+    resp.Write("Server stopped")
+    resp.WriteStatus(503)
+
+    return
+}
