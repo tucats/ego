@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -57,6 +58,11 @@ func remoteStatus(addr string) *errors.EgoError {
 	}{}
 
 	if err := ResolveServerName(addr); !errors.Nil(err) {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			fmt.Println("DOWN")
+			os.Exit(3)
+		}
+
 		return err
 	}
 
@@ -66,7 +72,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		os.Exit(3)
 	}
 
-	ui.Say("UP (pid %d, session %s) since %s", resp.Pid, resp.Session, resp.Since)
+	ui.Say("UP (pid %d, session %s) since %s, %s", resp.Pid, resp.Session, resp.Since, addr)
 
 	return nil
 }
