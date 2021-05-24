@@ -3,12 +3,8 @@ import "http"
 
 
 func handler(req http.Request, response http.Response) {
-    if req.Authentication == "none" {
-        response.WriteStatus(401)
-        response.Write("401 Not authorized")
-        return
-    }
-
+    @authenticated any 
+    
     // If we got additional info in the path, we can't process it.
     @url "/{{extra}}/"
     if extra != "" {

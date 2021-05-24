@@ -330,7 +330,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_user", user)
 	_ = symbolTable.SetAlways("_password", pass)
 	_ = symbolTable.SetAlways("_authenticated", authenticatedCredentials)
-	_ = symbolTable.Root().SetAlways("_rest_status", http.StatusOK)
+	_ = symbolTable.SetAlways("_rest_status", http.StatusOK)
 	_ = symbolTable.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
 
 	// Get the body of the request as a string

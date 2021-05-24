@@ -34,7 +34,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if v, ok := c.symbolGet("_password"); ok {
-		user = util.GetString(v)
+		pass = util.GetString(v)
 	}
 
 	tokenValid := false
@@ -46,8 +46,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
 		c.running = false
 
-		_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
+		_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
+		writeStatus(c, 403)
 		ui.Debug(ui.InfoLogger, "@authenticated token: no valid token")
 
 		return nil
@@ -57,8 +58,10 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		if user == "" && pass == "" {
 			c.running = false
 
-			_ = c.symbolSetAlways("_rest_status", http.StatusUnauthorized)
+			_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
 			writeResponse(c, "401 Not authorized")
+			writeStatus(c, http.StatusUnauthorized)
+
 			ui.Debug(ui.InfoLogger, "@authenticated user: no credentials")
 
 			return nil
@@ -77,8 +80,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !isAuth {
 			c.running = false
 
-			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
+			_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
+			writeStatus(c, http.StatusForbidden)
 			ui.Debug(ui.InfoLogger, "@authenticated any: not authenticated")
 
 			return nil
@@ -95,8 +99,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !isAuth {
 			c.running = false
 
-			_ = c.symbolSetAlways("_rest_status", http.StatusForbidden)
+			_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
+			writeStatus(c, http.StatusForbidden)
 			ui.Debug(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
 		}
 	}
@@ -127,6 +132,13 @@ func responseByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	return nil
+}
+
+func writeStatus(c *Context, status int) {
+	responseSymbol, _ := c.symbolGet("_response")
+	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+		_ = responseStruct.SetAlways("Status", status)
+	}
 }
 
 func writeResponse(c *Context, output string) {
