@@ -83,21 +83,38 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 				return datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 			}
 
+			// Is it a compound name? Could be a package reference to an embedded type.
+			if c.t.Peek(1) == "." && tokenizer.IsSymbol(c.t.Peek(2)) {
+				packageName := name
+				name := c.t.Peek(2)
+
+				// Is it a package name? If so, convert it to an actual package type and
+				// look to see if this is a known type. If so, copy the embedded fields to
+				// the newly created type we're working on.
+				if pkgData, found := c.Symbols().Get(packageName); found {
+					if pkg, ok := pkgData.(datatypes.EgoPackage); ok {
+						if typeInterface, ok := pkg[name]; ok {
+							if typeData, ok := typeInterface.(datatypes.Type); ok {
+								embedType(&t, typeData)
+
+								// Skip past the tokens and any optional trailing comma
+								c.t.Advance(2)
+								c.t.IsNext(",")
+
+								continue
+							}
+						}
+					}
+				}
+			}
+
 			// Is the name actually a type that we embed? If so, get the base type and iterate
 			// over its fields, copying them into our current structure definition.
 			if typeData, found := c.Types[name]; found {
-				baseType := typeData.BaseType()
-				if baseType.Kind() == datatypes.StructKind {
-					fieldNames := baseType.FieldNames()
-					for _, fieldName := range fieldNames {
-						fieldType, _ := baseType.Field(fieldName)
-						t.DefineField(fieldName, fieldType)
-					}
+				embedType(&t, typeData)
+				c.t.IsNext(",")
 
-					c.t.IsNext(",")
-
-					continue
-				}
+				continue
 			}
 
 			// Nope, parse a type.
@@ -165,4 +182,16 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 	}
 
 	return datatypes.UndefinedType, c.newError(errors.ErrInvalidType)
+}
+
+// Embed a given user-defined type's fields in the current type we are compiling.
+func embedType(newType *datatypes.Type, embeddedType datatypes.Type) {
+	baseType := embeddedType.BaseType()
+	if baseType.Kind() == datatypes.StructKind {
+		fieldNames := baseType.FieldNames()
+		for _, fieldName := range fieldNames {
+			fieldType, _ := baseType.Field(fieldName)
+			newType.DefineField(fieldName, fieldType)
+		}
+	}
 }
