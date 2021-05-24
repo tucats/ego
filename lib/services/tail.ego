@@ -1,0 +1,39 @@
+/*
+ * Return last n lines of the log
+ */
+
+import "http"
+
+func handler(req http.Request, resp http.Response ) {
+// Can only proceed if authenticated with as administrator
+    @authenticated admin
+
+    @url "/{{count}}"
+
+    if count == "" {
+        count = "50"
+    } 
+
+    try {
+        count = int(count)
+    } catch {
+        resp.WriteStatus(400)
+        resp.WriteMessage("Bad line count: " + count)
+        return
+    }
+
+    lines := util.Log(count)
+    resp.WriteStatus(200)
+
+    @text {
+        for _, line := range lines {
+            resp.Write(line)
+        }
+    }
+
+    @json {
+        resp.Write(lines)
+    }
+
+    return
+}

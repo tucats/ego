@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -707,4 +708,20 @@ func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}
 	}
 
 	return result.String(), nil
+}
+
+func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	count := util.GetInt(args[0])
+	lines := ui.Tail(count)
+
+	if lines == nil {
+		return []interface{}{}, nil
+	}
+
+	xLines := make([]interface{}, len(lines))
+	for i, j := range lines {
+		xLines[i] = j
+	}
+
+	return datatypes.NewFromArray(datatypes.StringType, xLines), nil
 }
