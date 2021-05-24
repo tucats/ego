@@ -83,12 +83,31 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 				return datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 			}
 
+			// Is the name actually a type that we embed? If so, get the base type and iterate
+			// over its fields, copying them into our current structure definition.
+			if typeData, found := c.Types[name]; found {
+				baseType := typeData.BaseType()
+				if baseType.Kind() == datatypes.StructKind {
+					fieldNames := baseType.FieldNames()
+					for _, fieldName := range fieldNames {
+						fieldType, _ := baseType.Field(fieldName)
+						t.DefineField(fieldName, fieldType)
+					}
+
+					c.t.IsNext(",")
+
+					continue
+				}
+			}
+
+			// Nope, parse a type.
 			fieldType, err := c.parseType(false)
 			if err != nil {
 				return datatypes.UndefinedType, err
 			}
 
 			t.DefineField(name, fieldType)
+
 			c.t.IsNext(",")
 		}
 

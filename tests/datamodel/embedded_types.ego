@@ -1,0 +1,29 @@
+
+@test "datamodel: embedded types"
+{
+    type foo struct { 
+        name string
+        id int
+    }
+
+    type bar struct {
+        foo
+        age int
+    }
+    
+    x := bar{
+        name: "Tom",
+        age: 61,
+    }
+
+    // Members will be in alphabetical order
+    m := reflect(x).members
+    @assert m == ["age", "id", "name"]
+
+    @assert x.name == "Tom"
+    @assert x.age == 61
+    @assert x.id == 0
+
+}
+
+@pass

@@ -1,4 +1,4 @@
-@test "datamodel: sort package"
+@test "packages: sort"
 {
 
     // Sort an array of integers
