@@ -83,6 +83,37 @@ func Logging(c *cli.Context) *errors.EgoError {
 		if !errors.Nil(err) {
 			return err
 		}
+	} else if c.WasFound("tail") {
+		// Was it a --tail request?
+		count, _ := c.GetInteger("tail")
+		if count < 1 {
+			count = 50
+		}
+
+		url := fmt.Sprintf("/services/admin/tail/%d", count)
+		lines := []string{}
+
+		err := runtime.Exchange(url, "GET", nil, &lines)
+		if !errors.Nil(err) {
+			return err
+		}
+
+		switch ui.OutputFormat {
+		case "text":
+			for _, line := range lines {
+				fmt.Println(line)
+			}
+
+		case "json":
+			b, _ := json.Marshal(lines)
+			fmt.Println(string(b))
+
+		case "indented":
+			b, _ := json.MarshalIndent(lines, "", "  ")
+			fmt.Println(string(b))
+		}
+
+		return nil
 	} else {
 		// No changes, just ask for status
 		err := runtime.Exchange("/admin/loggers/", "GET", nil, &response)

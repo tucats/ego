@@ -140,6 +140,12 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "tail",
+		ShortName:   "t",
+		Description: "Display lines from the log",
+		OptionType:  cli.IntType,
+	},
+	{
 		LongName:    "port",
 		ShortName:   "p",
 		OptionType:  cli.IntType,
