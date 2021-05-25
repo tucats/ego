@@ -21,7 +21,7 @@ import (
 // The operand determines what kind of authentication is required; i.e. via token
 // or username or either, and whether the user must be an admin (root) user.
 func authByteCode(c *Context, i interface{}) *errors.EgoError {
-	var user, pass string
+	var user, pass, token string
 
 	if _, ok := c.symbolGet("_authenticated"); !ok {
 		return c.newError(errors.ErrNotAService)
@@ -37,12 +37,29 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		pass = util.GetString(v)
 	}
 
-	tokenValid := false
+	if v, ok := c.symbolGet("_token"); ok {
+		token = util.GetString(v)
+	}
 
+	tokenValid := false
 	if v, ok := c.symbolGet("_token_valid"); ok {
 		tokenValid = util.GetBool(v)
 	}
 
+	// Before we do anything else, if we don't have a username/password
+	// and we don't have credentials, this is a 401 in all cases.
+	if user == "" && pass == "" && token == "" {
+		c.running = false
+		_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusUnauthorized)
+		writeResponse(c, "401 Not authorized")
+		writeStatus(c, http.StatusUnauthorized)
+
+		ui.Debug(ui.InfoLogger, "@authenticated request provides no credentials")
+
+		return nil
+	}
+
+	// See if the authentication required is for a token or admin token.
 	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
 		c.running = false
 
@@ -58,7 +75,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		if user == "" && pass == "" {
 			c.running = false
 
-			_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
+			_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusUnauthorized)
 			writeResponse(c, "401 Not authorized")
 			writeStatus(c, http.StatusUnauthorized)
 

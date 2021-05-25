@@ -3,7 +3,7 @@ import "http"
 
 
 func handler(req http.Request, response http.Response) {
-    @authenticated any 
+    @authenticated user 
     
     // If we got additional info in the path, we can't process it.
     @url "/{{extra}}/"

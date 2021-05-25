@@ -1,5 +1,5 @@
 /*
- * Return last n lines of the log
+ * Return last n lines of the log, expressed as ?count=n in the URL
  */
 
 import "http"
@@ -8,7 +8,12 @@ func handler(req http.Request, resp http.Response ) {
 // Can only proceed if authenticated with as administrator
     @authenticated admin
 
-    @url "/{{count}}"
+    count, found := req.Parameters["tail"]
+    if found {
+        count = count[0]
+    } else {
+        @url "/{{count}}"
+    }
 
     if count == "" {
         count = "50"
@@ -22,6 +27,10 @@ func handler(req http.Request, resp http.Response ) {
         return
     }
 
+    if count < 1 {
+        count = 50
+    }
+    
     lines := util.Log(count)
     resp.WriteStatus(200)
 

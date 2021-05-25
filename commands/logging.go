@@ -90,7 +90,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 			count = 50
 		}
 
-		url := fmt.Sprintf("/services/admin/tail/%d", count)
+		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
 		lines := []string{}
 
 		err := runtime.Exchange(url, "GET", nil, &lines)

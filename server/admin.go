@@ -95,11 +95,11 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		ui.Debug(ui.InfoLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
-		msg := `{ "status" : 403, "msg" : "Not authorized" }`
+		msg := `{ "status" : http.403, "msg" : "Forbidden" }`
 
 		_, _ = io.WriteString(w, msg)
 
-		return 403
+		return http.StatusForbidden
 	}
 
 	if !util.InList(r.Method, "POST", "DELETE", "GET") {
@@ -326,7 +326,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		_, _ = io.WriteString(w, msg)
 
-		return 403
+		return http.StatusForbidden
 	}
 
 	switch r.Method {
