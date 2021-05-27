@@ -16,8 +16,18 @@
 </head>
 
 <body>
-    <h1>Memory statistics</h1>
-    {{.Date}}
+    <table style="border: 5px solid white;width: 800px;border-collapse:collapse">
+        <tr>
+            <td>
+                <!-- The asset must have a root path of /assets to be located properly -->
+                <img src="/assets/logo.png" alt="Ego logo" style="width:400px;height:200px;">
+            </td>
+            <td>
+                <h1>&nbsp;&nbsp; Memory statistics</h1>
+            </td>
+        </tr>
+    </table>
+    <br> <br>{{.Date}}
     <p>
         <table>
             <tr>
@@ -38,7 +48,7 @@
             </tr>
         </table>
         <br> Server instance {{.ID}}
-
+        <br>
 </body>
 
 </html>

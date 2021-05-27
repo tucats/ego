@@ -80,6 +80,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	// Establish the admin endpoints
+	http.HandleFunc("/assets/", server.AssetsHandler)
 	http.HandleFunc("/admin/users/", server.UserHandler)
 	http.HandleFunc("/admin/caches", server.CachesHandler)
 	http.HandleFunc("/admin/loggers/", server.LoggingHandler)

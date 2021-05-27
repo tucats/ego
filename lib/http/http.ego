@@ -40,6 +40,23 @@ func (r *Response) WriteJSON( i interface{}) {
 	r.Write(msg)
 }
 
+func (r *Response) WriteTemplate( fn string, i interface{}) {
+
+    try {
+        // Load the page file as a template
+        fn := filepath.Join(profile.Get("ego.path"), fn)
+        @template mempage io.ReadFile(fn)
+
+        // Render the page using the dynamic data, and return it as the response
+        page := strings.Template(mempage, pageData)
+        resp.Write(page)
+    } catch(e) {
+        resp.Status(500)
+        resp.WriteMessage(e)
+    }
+}
+
+
 func BadURL(url string) {
     @status 400
     @response "Unrecognized URI path " + url

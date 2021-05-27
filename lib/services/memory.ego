@@ -18,12 +18,8 @@ func handler( req http.Request, resp http.Response ) {
         Date: time.Now().String(),
     }
 
-    // Load the page file as a template
-    fn := filepath.Join(profile.Get("ego.path"), "lib/services", "memory.html")
-    @template mempage io.ReadFile(fn)
-
-    // Render the page using the dynamic data, and return it as the response
-    page := strings.Template(mempage, pageData)
-    resp.Write(page)
+    // Given a path to the template asset, write the page using the
+    // dynamically generated data
+    resp.WriteTemplate("lib/services/templates/memory.html", pageData)
 
 }
