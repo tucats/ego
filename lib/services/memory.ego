@@ -1,0 +1,29 @@
+
+import "http"
+
+func mb(f float) string {
+    return fmt.Sprintf("%3.2fmb", f)
+}
+
+func handler( req http.Request, resp http.Response ) {
+
+    // Prepare the data to be used by the page.
+    m := util.Memory()
+    pageData := { 
+        Allocated: mb(m.current),
+        Total: mb(m.total),
+        System: mb(m.system),
+        GC: m.gc,
+        ID: _session,
+        Date: time.Now().String(),
+    }
+
+    // Load the page file as a template
+    fn := filepath.Join(profile.Get("ego.path"), "lib/services", "memory.html")
+    @template mempage io.ReadFile(fn)
+
+    // Render the page using the dynamic data, and return it as the response
+    page := strings.Template(mempage, pageData)
+    resp.Write(page)
+
+}

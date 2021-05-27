@@ -11,10 +11,11 @@ func Tail(count int) []string {
 	}
 
 	file, err := os.OpenFile(logFile.Name(), os.O_RDWR, 0700)
-
 	if err != nil {
 		return nil
 	}
+
+	defer file.Close()
 
 	text := []string{}
 	scanner := bufio.NewScanner(file)
@@ -24,10 +25,6 @@ func Tail(count int) []string {
 	for scanner.Scan() {
 		text = append(text, scanner.Text())
 	}
-
-	// The method os.File.Close() is called
-	// on the os.File object to close the file
-	file.Close()
 
 	position := len(text) - count
 	if position < 0 {

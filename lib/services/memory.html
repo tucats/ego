@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Demo web page dynamically rendered by a service. -->
+<html>
+
+<head>
+    <title>Server Memory Statistics</title>
+    <style>
+        table,
+        td,
+        th {
+            border: 1px solid black;
+            width: 400px;
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Memory statistics</h1>
+    {{.Date}}
+    <p>
+        <table>
+            <tr>
+                <td>Currently allocated</td>
+                <td style="text-align: right">{{.Allocated}}</td>
+            </tr>
+            <tr>
+                <td>Total allocated</td>
+                <td style="text-align: right">{{.Total}}</td>
+            </tr>
+            <tr>
+                <td>System memory</td>
+                <td style="text-align: right">{{.System}}</td>
+            </tr>
+            <tr>
+                <td>Garbage collections</td>
+                <td style="text-align: right">{{.GC}}</td>
+            </tr>
+        </table>
+        <br> Server instance {{.ID}}
+
+</body>
+
+</html>
