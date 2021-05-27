@@ -36,6 +36,9 @@ func DefineLibHandlers(root, subpath string) *errors.EgoError {
 
 	for _, f := range fids {
 		fullname := f.Name()
+		if path.Ext(fullname) != ".ego" {
+			continue
+		}
 
 		slash := strings.LastIndex(fullname, "/")
 		if slash > 0 {
