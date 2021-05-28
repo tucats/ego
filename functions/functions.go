@@ -97,6 +97,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"os.Args":              {Min: 0, Max: 0, F: GetArgs, FullScope: true},
 	"os.Exit":              {Min: 0, Max: 1, F: Exit},
 	"os.Getenv":            {Min: 1, Max: 1, F: GetEnv},
+	"os.Hostname":          {Min: 0, Max: 0, F: Hostname},
 	"os.Remove":            {Min: 1, Max: 1, F: DeleteFile, ErrReturn: true},
 	"profile.Delete":       {Min: 1, Max: 1, F: ProfileDelete},
 	"profile.Get":          {Min: 1, Max: 1, F: ProfileGet},

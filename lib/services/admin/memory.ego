@@ -16,6 +16,7 @@ func handler( req http.Request, resp http.Response ) {
         GC: m.gc,
         ID: _session,
         Date: time.Now().String(),
+        Host: os.Hostname(),
     }
 
     // Given a path to the template asset, write the page using the

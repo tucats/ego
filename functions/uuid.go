@@ -32,3 +32,7 @@ func UUIDParse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 
 	return u.String(), nil
 }
+
+func Hostname(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	return util.Hostname(), nil
+}
