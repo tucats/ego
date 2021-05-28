@@ -148,7 +148,19 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
 			}
 
+			_ = t.SortRows(0, true)
 			t.Print("text")
+		}
+
+		switch cacheStatus.AssetCount {
+		case 0:
+			fmt.Printf("\nThere are no HTML assets cached.\n")
+
+		case 1:
+			fmt.Printf("\nThere is 1 HTML asset in cache, for a total size of %d bytes\n", cacheStatus.AssetSize)
+
+		default:
+			fmt.Printf("\nThere are %d HTML assets in cache, for a total size of %d bytes\n", cacheStatus.AssetCount, cacheStatus.AssetSize)
 		}
 	}
 

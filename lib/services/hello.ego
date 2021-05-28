@@ -18,8 +18,10 @@ func handler( req http.Request, resp http.Response ) {
     `
 
     @template html `
+        <html>
         {{template "head" . }}
         {{template "body" . }}
+        </html>
     `
 
     page := { 

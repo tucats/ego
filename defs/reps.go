@@ -32,9 +32,11 @@ type CachedItem struct {
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint.
 type CacheResponse struct {
-	Count int          `json:"count"`
-	Limit int          `json:"limit"`
-	Items []CachedItem `json:"items"`
+	Count      int          `json:"count"`
+	Limit      int          `json:"limit"`
+	Items      []CachedItem `json:"items"`
+	AssetCount int          `json:"assets"`
+	AssetSize  int          `json:"assetSize"`
 	RestResponse
 }
 

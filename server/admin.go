@@ -368,15 +368,21 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	// Get the list of cached items.
 	case "GET":
 		result := defs.CacheResponse{
-			Count: len(serviceCache),
-			Limit: MaxCachedEntries,
-			Items: []defs.CachedItem{},
+			Count:      len(serviceCache),
+			Limit:      MaxCachedEntries,
+			Items:      []defs.CachedItem{},
+			AssetSize:  GetAssetCacheSize(),
+			AssetCount: GetAssetCacheCount(),
 		}
 		result.Status = http.StatusOK
 		result.Message = "Success"
 
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age, Count: v.count})
+		}
+
+		for k, v := range assetCache {
+			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.lastUsed, Count: v.count})
 		}
 
 		b, _ := json.Marshal(result)
@@ -390,12 +396,15 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	// are unaffected.
 	case "DELETE":
 		w.WriteHeader(http.StatusOK)
+		FlushAssetCache()
 
 		serviceCache = map[string]cachedCompilationUnit{}
 		result := defs.CacheResponse{
-			Count: 0,
-			Limit: MaxCachedEntries,
-			Items: []defs.CachedItem{},
+			Count:      0,
+			Limit:      MaxCachedEntries,
+			Items:      []defs.CachedItem{},
+			AssetSize:  GetAssetCacheSize(),
+			AssetCount: GetAssetCacheCount(),
 		}
 		result.Status = http.StatusOK
 		result.Message = "Success"

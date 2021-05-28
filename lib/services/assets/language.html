@@ -1,0 +1,2429 @@
+<body>
+
+    <img src="/assets/logo.png" />
+
+    <h1 id="table-of-contents">Table of Contents</h1>
+    <ol>
+        <li>
+            <p><a href="#intro">Introduction</a></p>
+        </li>
+        <li>
+            <p><a href="#datatypes">Data Types</a></p>
+            <ol>
+                <li><a href="#basetypes">Base Types</a></li>
+                <li><a href="#arrays">Arrays</a></li>
+                <li><a href="#structures">Structures</a></li>
+                <li><a href="#maps">Maps</a></li>
+                <li><a href="#pointers">Pointers</a></li>
+                <li><a href="#usertypes">User Types</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#symbolsexpressions">Symbols and Expressions</a></p>
+            <ol>
+                <li><a href="#symbolsscope">Symbols and Scope</a></li>
+                <li><a href="#const">Constants</a></li>
+                <li><a href="#operators">Operators</a></li>
+                <li><a href="#typeconversion">Type Conversion</a></li>
+                <li><a href="#builtinfunctions">Builtin Functions</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#flow-control">Conditional and Iterative Execution</a></p>
+            <ol>
+                <li><a href="#if">If/Else Conditional</a></li>
+                <li><a href="#for-conditional">For &lt;condition&gt;</a></li>
+                <li><a href="#for-index">For &lt;index&gt;</a></li>
+                <li><a href="#for-range">For &lt;range&gt;</a></li>
+                <li><a href="#break-continue">Break and Continue</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#user-functions">User Functions</a></p>
+            <ol>
+                <li><a href="#function-statement">The <code>func</code> Statement</a></li>
+                <li><a href="#return-statement">The <code>return</code> Statement</a></li>
+                <li><a href="#defer-statement">The <code>defer</code> Statement</a></li>
+                <li><a href="#function-variables">Function Variables</a></li>
+                <li><a href="#function-receivers">Function Receivers</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#errors">Error Handling</a></p>
+            <ol>
+                <li><a href="#try-catch">Try and Catch</a></li>
+                <li><a href="#signalling">Signalling Errors</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#threads">Threads</a></p>
+            <ol>
+                <li><a href="#goroutine">Go Routines</a></li>
+                <li><a href="#channels">Channels</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#packages">Packages</a></p>
+            <ol>
+                <li><a href="#import">The <code>import</code> statement</a></li>
+                <li><a href="#cipher"><code>cipher</code> package</a></li>
+                <li><a href="#db"><code>db</code> package</a></li>
+                <li><a href="#fmt"><code>fmt</code> package</a></li>
+                <li><a href="#io"><code>io</code> package</a></li>
+                <li><a href="#json"><code>json</code> package</a></li>
+                <li><a href="#math"><code>math</code> package</a></li>
+                <li><a href="#os"><code>os</code> package</a></li>
+                <li><a href="#rest"><code>rest</code> package</a></li>
+                <li><a href="#sort"><code>sort</code> package</a></li>
+                <li><a href="#strings"><code>strings</code> package</a></li>
+                <li><a href="#strings"><code>sync</code> package</a></li>
+                <li><a href="#tables"><code>tables</code> package</a></li>
+                <li><a href="#util"><code>util</code> package</a></li>
+                <li><a href="#uuid"><code>uuid</code> package</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#packages">User Packages</a></p>
+            <ol>
+                <li><a href="#package">The <code>package</code> statement</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#directives">Directives</a></p>
+            <ol>
+                <li><a href="#at-error">@error</a></li>
+                <li><a href="#at-global">@global</a></li>
+                <li><a href="#at-template">@template</a></li>
+                <li><a href="#at-type">@type</a></li>
+            </ol>
+        </li>
+        <li>
+            <p><a href="#testing">Testing</a></p>
+            <ol>
+                <li><a href="#at-test">The <code>test</code> command</a></li>
+                <li><a href="#at-test">The <code>@test</code> directive</a></li>
+                <li><a href="#at-assert">The <code>@assert</code> directive</a></li>
+                <li><a href="#at-fail">The <code>@fail</code> directive</a></li>
+                <li><a href="#at-pass">The <code>@pass</code> directive</a></li>
+            </ol>
+        </li>
+    </ol>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="introduction-to-_ego_-language-a-name-intro-a-">Introduction to <em>Ego</em> Language
+        <a name="intro"></a>
+    </h1>
+    <p>Version 1.1</p>
+    <p>This document describes the language <em>Ego</em>, which is a scripting language and tool set patterned off of the <em>Go</em> programming language. The <em>Ego</em> language name is a portmanteaux for <em>Emulated Go</em>. The data types and language
+        statements are very similar to <em>Go</em> with a few notable exceptions:</p>
+    <ul>
+        <li>The <em>Ego</em> type system is simpler than Go, and does not yet offer the idea of typed interfaces.</li>
+        <li>If enabled by settings, <em>Ego</em> offers language extensions such as a try/catch model for intercepting runtime errors and &quot;optional&quot; values similar to Swift.</li>
+        <li>The language can be run with either dynamic or static typing. The default is dynamic, so variable type binding occurs at the moment of use as opposed to part of the compilation process.</li>
+        <li>The available set of packages that support runtime functionality is significantly limited.</li>
+    </ul>
+    <p>The <em>Ego</em> language is run using the <code>ego</code> command-line interface. This provides the ability to run a program from an external text file, to interactively enter <em>Ego</em> programming statements, or to run <em>Ego</em> programs
+        as web services. This functionality is documented elsewhere; this guide focusses on writing <em>Ego</em> programs regardless of the runtime environment.
+    </p>
+    <p>The <em>Ego</em> language is Copyright 2020, 2021 by Tom Cole, and is freely available for any use, public or private, including commercial software. The only requirement is that any software that incorporates or makes use of <em>Ego</em> or the packages
+        written by Tom Cole to support must include a statement attributing authorship to <em>Ego</em> and it&#39;s runtime environment to Tom Cole.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="data-types-a-name-datatypes-a-">Data Types
+        <a name="datatypes"></a>
+    </h1>
+    <p>The <em>Ego</em> language supports a number of base types which express a single value of some type (string, integer, boolean, etc.). These base types can be members of complex types consisting of arrays (ordered lists), maps (dynamic types key/value
+        pairs) and structs (field-name/value pairs). Additionally, the user can create types based on the base or complex types, such as a type describing a structure that records information about an employee; this type can be used to create instances
+        of the structure, etc.</p>
+    <h2 id="base-types-a-name-basetypes-a-">Base Types
+        <a name="basetypes"></a>
+    </h2>
+    <p>A value can be a base type; when it is a base type is contains only one value at a time, and that value has a specific type. These are listed here.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Example</th>
+                <th>Range</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>nil</code></td>
+                <td>nil</td>
+                <td>nil</td>
+                <td>The <code>nil</code> value indicates no value or type specified</td>
+            </tr>
+            <tr>
+                <td><code>bool</code></td>
+                <td>true</td>
+                <td>true, false</td>
+                <td>A Boolean value that is either true or false</td>
+            </tr>
+            <tr>
+                <td><code>int</code></td>
+                <td>1573</td>
+                <td>-2^63 to 2^63 -1</td>
+                <td>A 64-bit integer value</td>
+            </tr>
+            <tr>
+                <td><code>float</code></td>
+                <td>-153.35</td>
+                <td>-1.79e+308 to 1.79e+308</td>
+                <td>A 64-bit floating point value</td>
+            </tr>
+            <tr>
+                <td><code>string</code></td>
+                <td>&quot;Andrew&quot;</td>
+                <td>any</td>
+                <td>A string value, consisting of a varying number of Unicode characters</td>
+            </tr>
+            <tr>
+                <td><code>chan</code></td>
+                <td>chan</td>
+                <td>any</td>
+                <td>A channel, used to communicate values between threads</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><em>Note that the numeric range values shown are approximate.</em> Also,
+        <em>Ego</em> supports a single <code>float</code> type which is always 64-bits in size, compared to <em>Go</em> which has different floating point sizes available. Similarly, the only integer type supported in <em>Ego</em> is <code>int</code>        which is a 64-bit integer.</p>
+    <p>&nbsp;</p>
+    <p>A value expressed in an <em>Ego</em> program has an implied type. The language processor will attempt to determine the type of the value. For Boolean values, the value can only be <code>true</code> or <code>false</code>. For numeric types, the language
+        differentiates between integer and float value. The value <code>1573</code> will be interpreted as an int value because i t has no exponent or factional part, but <code>-153.35</code> will be interpreted as a float value because it has a decimal
+        point and a fractional value. A string value enclosed in double quotes (&quot;) cannot span multiple lines of text. A string value enclosed in back-quotes (`) are allowed to span multiple lines of text if needed.</p>
+    <p>A <code>chan</code> value has no constant expression; it is a type that can be used to create a variable used to communicate between threads. See the section below on threads for more information.</p>
+    <h2 id="arrays-a-name-arrays-a-">Arrays
+        <a name="arrays"></a>
+    </h2>
+    <p>An array is an ordered list of values. That is, it is a set where each value has a numerical position referred to as it&#39;s index. The first value in an array has an index value of 0; the second value in the array has an index of 1, and so on. An
+        array has a fixed size; once it is created, you cannot add to the array directly.</p>
+    <p>Array constants can be expressed using square brackets, which contain a list of values separated by commas. The values may be any valid value (base, complex, or user types). The values do not have to be of the same type. For example,</p>
+    <pre><code>[ <span class="hljs-number">101</span>, <span class="hljs-number">335</span>, <span class="hljs-number">153</span>, <span class="hljs-number">19</span>, <span class="hljs-number">-55</span>, <span class="hljs-number">0</span> ]
+[ <span class="hljs-number">123</span>, <span class="hljs-string">"Fred"</span>, <span class="hljs-literal">true</span>, <span class="hljs-number">55.738</span>]
+</code></pre>
+    <p>The first example is an array of integers. The value at position 0 is
+        <code>101</code>. The value at position 1 is <code>335</code>, and so on. The second example is a heterogenous array, where each value is of varying types. For example, the value at position 0 is the integer <code>123</code> and the value at position
+        1 is the string <code>&quot;Fred&quot;</code>.</p>
+    <p>These kinds of arrays are <em>anonymous</em> arrays, in that they have no specific type for the values. You can also specify a type for the array using a typed array constant. For example,</p>
+    <pre><code>a := []<span class="hljs-keyword">int</span>{<span class="hljs-number">101</span>, <span class="hljs-number">102</span>, <span class="hljs-number">103</span>}
+</code></pre>
+    <p>In this example, an array is created that can only contain <code>int</code> values. If you specify a value in the array initialization list that is not an
+        <code>int</code>, it is converted to an <code>int</code> before in is stored. You an then only store <code>int</code> values in the array going forward,</p>
+    <pre><code>a[<span class="hljs-number">1</span>] = <span class="hljs-number">1325</span>    <span class="hljs-comment">// Succeeds</span>
+a[<span class="hljs-number">1</span>] = <span class="hljs-number">1325.0</span>  <span class="hljs-comment">// Failed, must be of type int</span>
+</code></pre>
+    <h2 id="structures-a-name-structures-a-">Structures
+        <a name="structures"></a>
+    </h2>
+    <p>A structure (called <code>struct</code> in the <em>Ego</em> language) is a set of key/value pairs. The key is an <em>Ego</em> symbol, and the value is any supported value type. Each key must be unique. The values can be read or written in the struct
+        based on the key name. Once a struct is created, it cannot have new keys added to it directly. A struct constant is indicated by braces, as in:</p>
+    <pre><code>{  <span class="hljs-attribute">Name</span>: <span class="hljs-string">"Tom"</span>, Age: <span class="hljs-number">53</span> }
+</code></pre>
+    <p>This struct has two members, <code>Name</code> and <code>Age</code>. Note that the member names (the keys of the key/value pair) are case-sensitive. The struct member <code>Name</code> is a string value, and the struct member
+        <code>Age</code> is an int value.</p>
+    <p>This type of struct is known as an <em>anonymous</em> struct in that it does not have a specific type, and in fact the fields are all declared as type interface{} so they can hold any arbitrary values unless static type checking is enabled.</p>
+    <p>You cannot add new fields to this struct if you create a struct constant with fields already. That is, you cannot</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := { Name: <span class="hljs-string">"Bob"</span> }
+<span class="hljs-selector-tag">a</span><span class="hljs-selector-class">.Age</span> = <span class="hljs-number">43</span>
+</code></pre>
+    <p>The second line will generate an error because Age is not a member of the structure. There is one special case of an <em>anonymous</em> struct that can have fields added (or removed) dynamically. This is an empty <em>anonymous</em> struct,</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := {}
+<span class="hljs-selector-tag">a</span><span class="hljs-selector-class">.Name</span> = <span class="hljs-string">"Fred"</span>
+<span class="hljs-selector-tag">a</span><span class="hljs-selector-class">.Gender</span> = <span class="hljs-string">"M"</span>
+</code></pre>
+    <p>The empty anonymous structure can have fields added to it just by naming them, and they are created as needed.</p>
+    <h2 id="maps-a-name-maps-a-">Maps
+        <a name="maps"></a>
+    </h2>
+    <p>A <code>map</code> in the <em>Ego</em> language functions the same as it does in Go. A map is declared as having a key type and a value type, and a hashmap is constructed based on that information. You can set a value in the map and you can fetch
+        a value from the map.</p>
+    <p>Current, it is a limitation that the only way to create a map is by setting a value to an empty map constant. Map initialization syntax is not yet supported. For example,</p>
+    <pre><code>staff := <span class="hljs-keyword">map</span>[<span class="hljs-keyword">int</span>]<span class="hljs-keyword">string</span>{}
+</code></pre>
+    <p>This creates a map (stored in <code>staff</code>) that has an integer value as the key, and stores a string value for each unique key. A map can contain only one key of a given value; setting the key value a second time just replaces the value of
+        the map for that key.</p>
+    <pre><code><span class="hljs-attr">staff[101]</span> = <span class="hljs-string">"Jeff"</span>
+<span class="hljs-attr">staff[102]</span> = <span class="hljs-string">"Susan"</span>
+</code></pre>
+    <p>This adds members to the map. Note that the key <em>must</em> be an integer value, and the value <em>must</em> be a string value because that&#39;s how the map was declared. Unlike a variable, a map has a static definition once it is created and cannot
+        contain values of a different type. Attempting to store a boolean in the map results in a runtime error, for example.</p>
+    <pre><code><span class="hljs-built_in">id</span> := <span class="hljs-number">102</span>
+<span class="hljs-built_in">name</span> := staff[<span class="hljs-built_in">id</span>]
+</code></pre>
+    <p>This uses an integer variable to retrieve a value from the map. In this case, the value of <code>name</code> will be set to &quot;Susan&quot;. If there is nothing in the map with the given key, the value of the expression is <code>nil</code>.</p>
+    <h2 id="pointers-a-name-pointers-a-">Pointers
+        <a name="pointers"></a>
+    </h2>
+    <p>The <em>Ego</em> language adopts the Go standards for pointers. Pointers exist solely to identify the address of another object. This address can be passed across function boundaries to allow the function to modify the value of a parameter.</p>
+    <p>No pointer arithmetic is permitted; a pointer can only be set as the address of another variable.</p>
+    <pre><code><span class="hljs-keyword">var</span> x *<span class="hljs-keyword">int</span>                      (<span class="hljs-number">1</span>)
+
+y := <span class="hljs-number">42</span>
+x := &amp;y                         (<span class="hljs-number">2</span>)
+
+fmt.Println(*x)                 (<span class="hljs-number">3</span>)
+</code></pre>
+    <p>In this example,</p>
+    <ol>
+        <li>
+            <p>A variable <code>x</code> is created as a pointer to an integer value. At the time of this statement, the value of x is <code>nil</code> and it cannot be dereferenced without an error.</p>
+        </li>
+        <li>
+            <p>The value of <code>x</code> is now set to a non-nil value; it becomes the address of the variable <code>y</code>. From this point forward (until the value of <code>x</code> is changed again) you can reference the value of <code>y</code> using
+                either the symbol <code>y</code> or by dereferencing the pointer to <code>y</code> stored in <code>x</code>.</p>
+        </li>
+        <li>
+            <p>This shows dereferencing the pointer value to access the underlying value of <code>42</code> as the output of the print operation. If you had printed the value <code>x</code> rather than <code>*x</code>, it would print the string <code>&amp;42</code>                to show that the value points to <code>42</code>.</p>
+        </li>
+    </ol>
+    <p>The above examples illustrate basic functions of a pointer, but the most common case is as a return value from a function or as a function parameter.
+    </p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">hasPositive</span><span class="hljs-params">( x <span class="hljs-keyword">int</span> )</span> *<span class="hljs-title">int</span></span> {
+    <span class="hljs-keyword">if</span> x &gt;= <span class="hljs-number">0</span> {
+        <span class="hljs-keyword">return</span> &amp;x
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+
+v := hasPositive(<span class="hljs-number">55</span>)
+<span class="hljs-keyword">if</span> v == <span class="hljs-literal">nil</span> {
+    fmt.Println(<span class="hljs-string">"Not positive; no value returned"</span>)
+}
+</code></pre>
+    <p>In this somewhat contrived example, the function <code>hasPositive</code> does not return an integer, it returns a pointer to an integer. The logic of the function is such that if a positive value was given, it is returned, else a nil value is returned
+        as the pointer value indicating <em>no value</em> returned from the function.</p>
+    <p>As a final example, you can use pointers to allow a function to modify a value.</p>
+    <pre><code>func setter( <span class="hljs-name">destination</span> *int, source int) {
+    *destination = source
+}
+
+x <span class="hljs-symbol">:=</span> <span class="hljs-number">55</span>
+setter(<span class="hljs-name">&amp;x</span>, <span class="hljs-number">42</span>)
+fmt.Println(<span class="hljs-name">x</span>)
+</code></pre>
+    <p>In this example, the function <code>setter</code> is given the address of an integer and a value to store in that integer. Because the value is passed by pointer, the value of <code>destination</code> is the address of the value <code>55</code>. The
+        <code>setter</code> function overwrites that with the parameter passed (in this case, the value <code>42</code>). The result is that the value of x has now been changed by the function, and the value printed will be &quot;42&quot;.</p>
+    <p>This is the only way a function can change a parameter value. By default, a value (such as <code>source</code> in the example above) gets a copy made and that copy is what is passed to the function. If the <code>setter</code> function had modified
+        the value of <code>source</code>, then the value would be different in the copy local to the function, but the global value (<code>42</code>, in this case) would not have changed.</p>
+    <h2 id="user-types-a-name-usertypes-a-">User Types
+        <a name="usertypes"></a>
+    </h2>
+    <p>The <em>Ego</em> language includes the ability to create use-defined types. These are limited to <code>struct</code> definitions. They allow the program to define a short-hand for a specific type, and then reference that type when creating a new variable
+        of that type. The <code>type</code> statement is used to define the type. Here is an example:</p>
+    <pre><code><span class="hljs-keyword">type</span> <span class="hljs-type">Employee</span> struct {
+   <span class="hljs-type">Name</span>    string
+   <span class="hljs-type">Age</span>     int
+}
+</code></pre>
+    <p>This creates a new type called <code>Employee</code> which is a struct with two members, <code>Name</code> and <code>Age</code>. A variable created with this type will always be a struct, and will always contain these two members. You can then create
+        a variable of this type using</p>
+    <p> e := Employee{}</p>
+    <p>The <code>{}</code> indicates this is a type, and a new structure (of type
+        <code>Employee</code>) is created and stored in the variable <code>e</code>. You can initialize fields in the struct when you create it if you wish,</p>
+    <p> a := Employee{ Name: &quot;Robin&quot; }</p>
+    <p>In this example, a new Employee is created and the <code>Name</code> field is initialized to the string &quot;Robin&quot;. The value <code>a</code> also contains a field <code>Age</code> because that was declared in the type, but at this point it
+        contains the zero-value for it&#39;s type (in this case, an integer zero). You can only initialize fields in a type that were declared in the original type.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="variables-and-expressions-a-name-symbolsexpressions-a-">Variables and Expressions
+        <a name="symbolsexpressions"></a>
+    </h1>
+    <p>This section covers variables (named storage for values) and expressions (sequences of variables, values, and operators that result in a computed value).</p>
+    <h2 id="symbols-and-scope-a-name-symbolsscope-a-">Symbols and Scope
+        <a name="symbolsscope"></a>
+    </h2>
+    <p>A variable is a named storage location, identified by a <em>symbol</em>. The <em>Ego</em> language is, by default, a case-sensitive language, such that the variables <code>Age</code> and <code>age</code> are two different values. A symbol names can
+        consist of letters, numbers, or the underscore (&quot;&lowbar;&quot;) character. The first character must be either an underscore or a alphabetic character. Here are some examples of valid and invalid names:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>a123</td>
+                <td>Valid name</td>
+            </tr>
+            <tr>
+                <td>user_name</td>
+                <td>Valid name</td>
+            </tr>
+            <tr>
+                <td>A123</td>
+                <td>Valid name, different than <code>a123</code></td>
+            </tr>
+            <tr>
+                <td>_egg</td>
+                <td>Valid name, but is a read-only variable</td>
+            </tr>
+            <tr>
+                <td>15States</td>
+                <td>Invalid name, does not start with an alphabetic character</td>
+            </tr>
+            <tr>
+                <td>$name</td>
+                <td>Invalid name, <code>$</code> is not a valid symbol character</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>There is a reserved name that is just an underscore, &quot;&lowbar;&quot;. This name means <em>value we will ignore.</em> So anytime you need to reference a variable to conform to the syntax of the language, but you do not want or need the value for
+        your particular program, you can specify &quot;&lowbar;&quot; which is a short-hand value for &quot;discard this value&quot;.</p>
+    <p>A symbol name that starts with an underscore character is a read-only variable. That is, it&#39;s value can be set once when it is created, but can not be changed once it has its initial value. For example, when an
+        <em>Ego</em> program runs, there is always a read-only variable called
+        <code>_version</code> that can be read to determine the version of the <code>ego</code> command line tool, but the value cannot be set by a user program.</p>
+    <p>The term <em>scope</em> refers to the mechanism by which a symbol name is resolved to a variable. When an <em>Ego</em> program runs, each individual function, and in fact each basic block (code enclosed within <code>{...}</code> braces) has its own
+        scope. A variable that is created at one scope is
+        <em>visible</em> to any scopes that are contained within that scope. For example, a variable created at the first line of a function is visible to all the code within the function. A variable created within a basic-block is only visible within
+        the code inside that basic block. When a scope ends, any variables created in that scope are deleted and they no longer have a value.</p>
+    <p>This will become clearer below when we talk about functions and basic blocks. In general, just know that you can reference (read or write) a value to any symbol in your same scope or an outer scope, but you can only create variables at the current
+        scope, and once that scope is completed, the created variables no longer exist. A symbol can be assigned a value using an <em>assignment</em> statement. This consists of the variable name that is to receive the value, and either <code>=</code>        or <code>:=</code>, followed by the value to store in that variable. The difference between the two assignment operators is that <code>:=</code> will create a new value in the current scope, while <code>=</code> will locate a value that already
+        exists, and write a new value to it.</p>
+    <pre><code>  <span class="hljs-built_in">name</span> := <span class="hljs-string">"Bob"</span>
+  <span class="hljs-built_in">name</span> = <span class="hljs-string">"Mary"</span>
+</code></pre>
+    <p>In this example, the first statement uses the <code>:=</code> operator, which causes the symbol <code>name</code> to be created, and then the string value &quot;Bob&quot; is stored in the variable. If the variable already exists, this is an error
+        and you should use the <code>=</code> instead to update an existing value. The <code>=</code> operator looks for the named value in the current scope, and if it finds it, the value &quot;Mary&quot; is assigned to it. If the variable does not exist
+        at this scope, but does in an outer scope level, then the variable at the outer scope is updated.</p>
+    <p>You can also create a variable using the <code>var</code> statement, which is followed by a comma-separated list of names and finally a type value. The variables are all created and set to the given type, with an appropriate &quot;zero value&quot;
+        for that type.</p>
+    <pre><code>  <span class="hljs-built_in">var</span> <span class="hljs-built_in">first</span>, <span class="hljs-built_in">last</span> <span class="hljs-built_in">string</span>
+  <span class="hljs-built_in">var</span> e1 Employee{}
+</code></pre>
+    <p>The second example creates a variable based on a user-defined type
+        <code>Employee</code>. The {} characters causes an instance of that type to be created and stored in the named variable <code>e1</code> in this example. The {} characters can contain field initializations for the type, such as</p>
+    <pre><code>  <span class="hljs-selector-tag">var</span> <span class="hljs-selector-tag">e2</span> <span class="hljs-selector-tag">Employee</span>{ <span class="hljs-attribute">Name</span>: <span class="hljs-string">"Bob"</span>, Age: <span class="hljs-number">55</span>}
+</code></pre>
+    <p>The type of <code>e2</code> is <code>Employee</code> and it contains initialized values for the permitted fields for the type. If the initializer does not specify a value for all fields, the fields not explicitly named are set to zero values for their
+        types.
+    </p>
+    <h2 id="constants-a-name-const-a-">Constants
+        <a name="const"></a>
+    </h2>
+    <p>The <code>const</code> statement can define constant values in the current scope. These values are always readonly values and you cannot use a constant name as a variable name. You can specify a single constant or a group of them; to specify more
+        than one in a single statement enclose the list in parenthesis:</p>
+    <pre><code>const <span class="hljs-attr">answer</span> = <span class="hljs-number">42</span>
+
+const (
+    <span class="hljs-attr">first</span> = <span class="hljs-string">"a"</span>
+    <span class="hljs-attr">last</span> = <span class="hljs-string">"z"</span>
+)
+</code></pre>
+    <p>This defines three constant values. Note that the value is set using an
+        <code>=</code> character since a symbols is not actually being created.</p>
+    <h2 id="operators-a-name-operators-a-">Operators
+        <a name="operators"></a>
+    </h2>
+    <p>Operators is the term for language elements that allow you to perform mathematical or other other operations using constant values as well as variable values, to produce a new computed value. Some operators can operate on a wide range of different
+        value types, and some operators have more limited functionality.</p>
+    <p>There are <em>dereference</em> operators that are used to access members of a struct, values of a type, or index into an array.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Operator</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>.</td>
+                <td>emp.age</td>
+                <td>Find the member named <code>age</code> in the struct named <code>emp</code></td>
+            </tr>
+            <tr>
+                <td>[]</td>
+                <td>items[5]</td>
+                <td>Find the value at index 5 of the array named <code>items</code></td>
+            </tr>
+            <tr>
+                <td>{}</td>
+                <td>emp{}</td>
+                <td>Create an instance of a struct of the type <code>emp</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>The <code>[]</code> operator can also be used to access a map, by supplying the key value in the brackets. This key value must be of the same type as the map&#39;s declared key type. So if the map is declared as <code>map[string]int</code> then the
+        key must be of type <code>string</code>.</p>
+    <p>&nbsp;</p>
+    <p>There are <em>monadic</em> operators which precede an expression and operate on the single value given.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Operator</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>-</td>
+                <td>-temp</td>
+                <td>Calculate the negative of the value in <code>temp</code></td>
+            </tr>
+            <tr>
+                <td>!</td>
+                <td>!active</td>
+                <td>Calculate the boolean NOT of the value in <code>active</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>There are <em>diadic</em> operators that work on two values, one of which precedes the operator and one of which follows the operator.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Operator</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>+</td>
+                <td>a+b</td>
+                <td>Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings</td>
+            </tr>
+            <tr>
+                <td>-</td>
+                <td>a-b</td>
+                <td>Calculate the difference of the integer or float values</td>
+            </tr>
+            <tr>
+                <td>*</td>
+                <td>a*b</td>
+                <td>Calculate the product of the numeric value, or the OR of two boolean values</td>
+            </tr>
+            <tr>
+                <td>/</td>
+                <td>a/b</td>
+                <td>Calculate the division of the numeric values</td>
+            </tr>
+            <tr>
+                <td>^</td>
+                <td>2^n</td>
+                <td>Calculate <code>2</code> to the power <code>n</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>For division, integer values will result in the integer value of the division, so <code>10/3</code> will result in <code>3</code> as the expression value. A floating point value retains the fractional value of the conversion, so <code>10.0/3.0</code>        results in <code>3.333333333</code> as the result.</p>
+    <p>Expressions can be combined together, and follow normal mathematical order of precedence (multiplication and division are done before subtraction and addition). So the expression <code>a+b*c</code> will first multiply <code>b</code> and <code>c</code>,
+        and then add the product to the value of <code>a</code>. You can use parenthesis to control the order of evaluation, so
+        <code>(a+b)*c</code> will calculate the sum of <code>a+b</code> and then multiply that result by the value in <code>c</code>. &nbsp; &nbsp;
+    </p>
+    <p>There are <em>relational</em> operators that work on two values, one of which precedes the operator and one of which follows the operator. The result of the operator is always a boolean (<code>true</code> or <code>false</code>) value describing the
+        relationship between the two values.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Operator</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>==</td>
+                <td>a == b</td>
+                <td>True if <code>a</code> is equal to <code>b</code></td>
+            </tr>
+            <tr>
+                <td>!=</td>
+                <td>a != b</td>
+                <td>True if <code>a</code> is not equal to <code>b</code></td>
+            </tr>
+            <tr>
+                <td>&gt;</td>
+                <td>a &gt; b</td>
+                <td>True if <code>a</code> is less than <code>b</code></td>
+            </tr>
+            <tr>
+                <td>&gt;=</td>
+                <td>a &gt;= b</td>
+                <td>True if <code>a</code> is less than or equal to <code>b</code></td>
+            </tr>
+            <tr>
+                <td>&lt;</td>
+                <td>a &lt; b</td>
+                <td>True if <code>a</code> is greater than <code>b</code></td>
+            </tr>
+            <tr>
+                <td>&lt;=</td>
+                <td>a &lt;= b</td>
+                <td>True if <code>a</code> is greater than or equal to <code>b</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <h2 id="type-conversions-a-name-typeconversion-a-">Type Conversions
+        <a name="typeconversion"></a>
+    </h2>
+    <p>When an operation is done on two values (either a variable or a constant value) of the same type, no additional conversion is performed or required. If the operation is performed on two values of different types,
+        <em>Ego</em> will convert the values to the same type if possible before performing the operation. For example, the expression <code>10.0/3</code> divides an integer value into a floating point value; the <em>Ego</em> language converts the integer
+        to a floating point value before performing the division. In general, <em>Ego</em> will convert the values to the value that will result in minimal or no loss of precision.</p>
+    <p>These conversions happen automatically, though you can use type casting functions like <code>int()</code> or <code>string()</code> discussed later to force a specific type of conversion operation. For example, if a boolean value is used in an expression
+        that requires a float value, then the boolean is converted such that <code>false</code> is converted to <code>0.0</code> and <code>true</code> is converted to
+        <code>1.0</code>. Similarly, if a numeric or boolean value is needed as a string, the string value is the formatted version of the original value. So a value of <code>123.5</code> as a float becomes the string <code>&quot;123.5&quot;</code>.</p>
+    <h2 id="builtin-functions-a-name-builtinfunctions-a-">Builtin Functions
+        <a name="builtinfunctions"></a>
+    </h2>
+    <p>The <em>Ego</em> language includes a library of built-in functions which can also be used as elements of an expression, including having the function value be assigned to a variable. A function consists of a name, followed by a list of zero or more
+        values in parenthesis, separated by commas. If there are no values, you still must specify the parenthesis. The function may accept a fixed or variable number of arguments, and typically returns a single value.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>append()</td>
+                <td>append(list, 5, 6, 7)</td>
+                <td>Append the items together into an array.</td>
+            </tr>
+            <tr>
+                <td>close()</td>
+                <td>close(sender)</td>
+                <td>Close a channel. See the information on <a href="#threads">Threads</a> for more info.</td>
+            </tr>
+            <tr>
+                <td>delete()</td>
+                <td>delete(emp, &quot;Name&quot;)</td>
+                <td>Remove the named field from a map, or a struct member</td>
+            </tr>
+            <tr>
+                <td>error()</td>
+                <td>error(&quot;panic&quot;)</td>
+                <td>Generate a runtime error named &quot;panic&quot;.</td>
+            </tr>
+            <tr>
+                <td>eval()</td>
+                <td>eval(&quot;3 + 5&quot;)</td>
+                <td>Evaluate the expression in the string value, and return the result, <code>8</code></td>
+            </tr>
+            <tr>
+                <td>index()</td>
+                <td>index(items, 55)</td>
+                <td>Return the array index of <code>items</code> that contains the value <code>55</code></td>
+            </tr>
+            <tr>
+                <td>len()</td>
+                <td>len(items)</td>
+                <td>If the argument is a string, return its length in characters. If it is an array, return the number of items in the array</td>
+            </tr>
+            <tr>
+                <td>make()</td>
+                <td>make([]int, 5)</td>
+                <td>Create an array of int values with <code>5</code> elements in the array</td>
+            </tr>
+            <tr>
+                <td>members()</td>
+                <td>members(emp)</td>
+                <td>Return an array of strings containing the struct member names of the argument</td>
+            </tr>
+            <tr>
+                <td>type()</td>
+                <td>type(emp)</td>
+                <td>Return a string with the type of the argument. If emp is a struct, the result will be <code>&quot;struct&quot;</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h2 id="casting">Casting</h2>
+    <p>This refers to functions used to explicitly change the type of a value, or convert it to a comparable value where possible. This can be done for base type values (int, bool, string) as well as for arrays.</p>
+    <p>For base types, the following are available:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>bool()</td>
+                <td>bool(55)</td>
+                <td>Convert the value to a boolean, where zero values are false and non-zero values are true</td>
+            </tr>
+            <tr>
+                <td>float()</td>
+                <td>float(33)</td>
+                <td>Convert the value to a float, in this case <code>33.0</code></td>
+            </tr>
+            <tr>
+                <td>int()</td>
+                <td>int(78.3)</td>
+                <td>Convert the value to an integer, in this case <code>78</code></td>
+            </tr>
+            <tr>
+                <td>string()</td>
+                <td>string(true)</td>
+                <td>Convert the argument to a string value, in this case <code>true</code></td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>A special note about <code>string()</code>; it has a feature where if the value passed in is an array of integer value, each one is treated as a Unicode rune value and the resulting string is the return value. Any other type is just converted to its
+        default formatted value.</p>
+    <p>You can also perform conversions on arrays, to a limited degree. This is done with the function:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>[]bool()</td>
+                <td>[]bool([1, 5, 0])</td>
+                <td>Convert the array to a []bool array.</td>
+            </tr>
+            <tr>
+                <td>[]int()</td>
+                <td>[]int([1, 5.5, 0])</td>
+                <td>Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string.</td>
+            </tr>
+            <tr>
+                <td>[]interface{}()</td>
+                <td>[]interface{}([true, 5, &quot;string&quot;])</td>
+                <td>Convert the array to a []interface{} array where there are no static types for the array.</td>
+            </tr>
+            <tr>
+                <td>[]float()</td>
+                <td>[]float([1, 5, 0])</td>
+                <td>Convert the array to a []float array.</td>
+            </tr>
+            <tr>
+                <td>[]string()</td>
+                <td>[]string([1, 5, 0])</td>
+                <td>Convert the array to a []string array.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>In all cases, the result is a typed array of the given cast type. Each element of the array is converted to the target type and stored in the array. So []bool() on an array of integers results in an array of bool values, where zeros become false and
+        any other value becomes true. The special type name interface{} means <em>no specified type</em> and is used for arrays with heterogenous values.</p>
+    <p>Note the special case of []int(&quot;string&quot;). If the parameter is not an array, but instead is a string value, the resulting []int array contains each rune from the original string.</p>
+    <h3 id="make">make</h3>
+    <p>The <code>make</code> pseudo-function is used to allocate an array, or a channel with the capacity to hold multiple messages. This is called a pseudo-function because part of the parameter processing is handled by the compiler to identify the type
+        of the array or channel to create.</p>
+    <p>The first argument must be a data type specification, and the second argument is the size of the item (array elements or channel messages)</p>
+    <pre><code>a := <span class="hljs-built_in">make</span>([]<span class="hljs-keyword">int</span>, <span class="hljs-number">5</span>)
+b := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span>, <span class="hljs-number">10</span>)
+</code></pre>
+    <p>The first example creates an array of 5 elements, each of which is of type <code>int</code>, and initialized to the <em>zero value</em> for the given type. This could have been done by using <code>a := [0,0,0,0,0]</code> as a statement, but by using
+        the make() function you can specify the number of elements dynamically at runtime.</p>
+    <p>The second example creates a channel object capable of holding up to 10 messages. Creating a channel like this is required if the channel is shared among many threads. If a channel variable is declare by default, it holds a single message. This means
+        that before a thread can send a value, another thread must read the value; if there are multiple threads waiting to send they are effectively run one-at-a-time. By creating a channel that can hold multiple messages, up to 10 (in the above example)
+        threads could send a message to the channel before the first message was read.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="conditional-and-iterative-execution-a-name-flow-control-a-">Conditional and Iterative Execution
+        <a name="flow-control"></a>
+    </h1>
+    <p>We have discussed how variables are created, and how expressions are used to calculate values based on variables, constant values, and functions. However, most interesting programs require some decision making to control the flow of execution based
+        on the values of variables. This section will describe how to make <em>either/or</em> decisions in the code, and how to execute a block of code repeatedly until a condition is met.</p>
+    <h2 id="if-else-a-name-if-a-">If-Else
+        <a name="if"></a>
+    </h2>
+    <p>The general nature of a conditional <code>if</code> statement is</p>
+    <pre><code> <span class="hljs-keyword">if</span> <span class="hljs-symbol">&lt;condition&gt;</span> {
+     <span class="hljs-symbol">&lt;statements&gt;</span>
+ } <span class="hljs-keyword">else</span> { 
+     <span class="hljs-symbol">&lt;statements&gt;</span>
+ }
+</code></pre>
+    <p>The <code>else</code> clause is optional, as described below. Even when there is only a single statement in the block, a basic block is used for readability.
+    </p>
+    <p>Consider the following example code:</p>
+    <pre><code>salary := hours * wage                  (1)
+<span class="hljs-keyword">if</span> salary &lt; 100.0 {                     (2)
+    fmt.Println(<span class="hljs-string">"Not paid enough!"</span>)     (3)
+}                                       (4)
+<span class="hljs-keyword">total</span> = <span class="hljs-keyword">total</span> + salary                  (5)
+</code></pre>
+    <p>This introduces a number of new elements to a program, so let&#39;s go over them line-by-line. The numbers is parenthesis are not part of the program, but are used to identify each line of the code.</p>
+    <ol>
+        <li>
+            <p>This first line calculates a new value by multiplying the <code>hours</code> times the <code>salary</code>, and store it in a new value called <code>salary</code>. This uses an assignment statement; the <code>:=</code> indicates the variable
+                does not already exist and will be created by this operation. We assume the values of <code>hours</code> and <code>wage</code> were calculated already in the program.</p>
+        </li>
+        <li>
+            <p>This statement performs a conditional evaluation. After the <code>if</code> statement, there is a relational expression that can be converted to a boolean value. In this case, if <code>salary</code> has a value less than
+                <code>100.0</code> then the code will execute some additional statement(s). After the expression, the <code>{</code> character defines the start of a
+                <em>basic block</em> which is a group of statements that are all executed together.
+            </p>
+        </li>
+        <li>
+            <p>If salary is less than 100.0, then the fmt.Println() operation is performed. Don&#39;t worry that we haven&#39;t talked about this yet; its covered below in the section on the <code>fmt</code> package, but it is enough to know that this produces
+                a line of output with the string
+                <code>Not paid enough!</code>. If, however, the value of <code>salary</code> is not less than 100.0, then the basic block is not executed, and the program continues with the statement after the block.</p>
+        </li>
+        <li>
+            <p>The <code>}</code> character defines the end of the basic block. If the <code>if</code> statement condition is not met, execution continues after this end-of-block indicator.</p>
+        </li>
+        <li>
+            <p>This statement will be executed next, regardless of whether
+                <code>salary</code> was less than 100.0 or not. This statement updates the value of <code>total</code> to be the sum of <code>total</code> and the <code>salary</code>.</p>
+        </li>
+    </ol>
+    <p>Instead of having the <code>if</code> statement advance to the next statement if the condition is not true, a second <em>basic block</em> can be defined that has the statements to execute if teh condition is false. That is, the result of the expression
+        will result in one or the other of two basic blocks being executed.</p>
+    <pre><code>salary := hours * wage
+<span class="hljs-keyword">if</span> salary &lt; <span class="hljs-number">100</span> {
+    <span class="hljs-built_in">scale</span> = <span class="hljs-string">"small"</span>
+} <span class="hljs-keyword">else</span> {
+    <span class="hljs-built_in">scale</span> = <span class="hljs-string">"large"</span>
+}
+</code></pre>
+    <p>In this example, after calculating a value for <code>salary</code>, it is compared to see if it is less than 100. If so, then the value
+        <code>scale</code> is set to the value <code>&quot;small&quot;</code>. But if the value of <code>salary</code> is not less than 100, the value of <code>scale</code> is set to <code>&quot;large&quot;</code>. Regardless of which basic block was
+        executed, after the block executes, the program resumes with the next statement after the
+        <code>if</code> statements.</p>
+    <h2 id="for-_condition_-a-name-for-conditional-a-">For <em>condition</em>
+        <a name="for-conditional"></a>
+    </h2>
+    <p>The simplest form of iterative execution (also referred to as a &quot;loop&quot;) is the <code>for</code> statement, followed by a condition, and a basic block that is executed as long as the condition is true.</p>
+    <pre><code> <span class="hljs-keyword">for</span> <span class="hljs-variable">&lt;condition&gt;</span> {
+    <span class="hljs-variable">&lt;statements&gt;</span>
+ }
+</code></pre>
+    <p>Here is an example</p>
+    <pre><code><span class="hljs-keyword">value</span> := <span class="hljs-number">0</span>                  (<span class="hljs-number">1</span>)
+<span class="hljs-keyword">for</span> <span class="hljs-keyword">value</span> &lt; <span class="hljs-number">5</span> {             (<span class="hljs-number">2</span>)
+    fmt.Println(<span class="hljs-keyword">value</span>)      (<span class="hljs-number">3</span>)
+    <span class="hljs-keyword">value</span> = <span class="hljs-keyword">value</span> + <span class="hljs-number">1</span>       (<span class="hljs-number">4</span>)
+}                           (<span class="hljs-number">5</span>)
+</code></pre>
+    <ol>
+        <li>This line initializes variable <code>value</code> to an integer zero.</li>
+        <li>The <code>for</code> statement specifies that as long as the <code>value</code> variable contains a number less than <code>5</code> the following basic block will be executed over and over.</li>
+        <li>This line of the basic block prints the current <code>value</code></li>
+        <li>This line increments the variable by adding one to itself. This causes <code>value</code> to increase each time the loop runs.</li>
+        <li>This is the end of the basic block describing the body of the loop that will execute until the condition is no longer true.</li>
+    </ol>
+    <p>This program results in the numbers <code>0</code> through <code>4</code> being printed to the output. When <code>value</code> is incremented to be the value <code>5</code>, the condition on line #2 is no longer true, and the loop stops executing,
+        and the program will continue with whatever follows line 5.</p>
+    <p>Note that in this example, without line number 4 the program would run forever, because the variable <code>value</code> would be initialized to zero but then never change, so the condition will always be true.</p>
+    <h2 id="for-_index_-a-name-for-index-a-">For <em>index</em>
+        <a name="for-index"></a>
+    </h2>
+    <p>You can create a <code>for</code> loop that explicitly specifies an expression that defines the starting value, ending condition, and how the value changes with each iteration of a loop. For example,</p>
+    <pre><code> <span class="hljs-keyword">for</span> <span class="hljs-built_in">i</span> := <span class="hljs-number">0</span>; <span class="hljs-built_in">i</span> &amp;lt; <span class="hljs-number">10</span>; <span class="hljs-built_in">i</span> = <span class="hljs-built_in">i</span> + <span class="hljs-number">1</span> {
+     fmt.Println(i)
+ }
+</code></pre>
+    <p>This loop will print the values <code>0</code> through <code>9</code> to the standard console. The index variable <code>i</code> is first initialized with the value
+        <code>0</code> from the first <code>for</code> statement clause. The second statement clause describes the condition that must be true for the loop body to be executed. This is evaluated before the loop body is run each time. The third clause
+        is the statement that modifies the index value <em>after</em> the body of the loop is run but <em>before</em> the next evaluation of the clause that determines if the loop continues.</p>
+    <p>The variable <code>i</code> in the above example is scoped to the <code>for</code> statement and it&#39;s loop body. That is, after this loop runs, the variable <code>i</code> will no longer exist because it was created (using the <code>:=</code>        operator) in the scope of the loop. You can use a simple assignment (<code>=</code>) of an existing variable if you want the updated index value available after the loop body ends.</p>
+    <pre><code>var i <span class="hljs-keyword">int</span>
+<span class="hljs-keyword">for</span> i = <span class="hljs-number">0</span>; i &amp;lt; <span class="hljs-number">10</span>; i = i + <span class="hljs-number">1</span> {
+    fmt.<span class="hljs-keyword">Println</span>(i)
+}
+fmt.<span class="hljs-keyword">Println</span>(<span class="hljs-string">"The final value of i is "</span>, i)
+</code></pre>
+    <p>This example uses a variable that already exists outside the scope of the <code>for</code> loop, so the value continues to exist after the loop runs. This allows the final statement to print the value of the index variable that terminated the loop.</p>
+    <h2 id="for-_range_-a-name-for-range-a-">For <em>range</em>
+        <a name="for-range"></a>
+    </h2>
+    <p>You can create a loop that indexes over all the values in an array, in sequential order. The index value is the value of the array element. For example,</p>
+    <pre><code> ids := [ <span class="hljs-number">101</span>, <span class="hljs-number">143</span>, <span class="hljs-number">202</span>, <span class="hljs-number">17</span>]
+ <span class="hljs-keyword">for</span> <span class="hljs-selector-tag">i</span>, j := range ids {
+    fmt.Println(<span class="hljs-string">"Array member "</span>, <span class="hljs-selector-tag">i</span>, <span class="hljs-string">" is "</span>, j)
+ }
+</code></pre>
+    <p>This example will print a line for each value in the array, in the order they appear in the array. During each iteration of the loop, the variable <code>i</code> will contain the numerical array index and the variable <code>v</code> will contain the
+        actual values from the array for each iteration of the loop body. During execution of the loop body, the value of <code>i</code> (the <em>index</em> variable)` contains the next value of the array for each iteration of the loop. You can also specify
+        a second value, in which case the loop defines an index number as well as index value, as in:</p>
+    <pre><code><span class="hljs-keyword">for</span> _, v := <span class="hljs-keyword">range</span> ids {
+    fmt.Println(v)
+}
+</code></pre>
+    <p>In this example, for each iteration of the loop, the variable <code>v</code> will contain the actual values from the array for each iteration of the loop body. By using the reserved name <code>_</code> for the index variable, the index value for each
+        loop is not available. Similarly, you can use the range to get all the index values of an array:</p>
+    <pre><code><span class="hljs-keyword">for</span> i := <span class="hljs-keyword">range</span> ids {
+    fmt.Println(v)
+}
+</code></pre>
+    <p>In this case, if the array <code>ids</code> has 5 values, then this will print the numbers 1 through 5. The value of the array can be accessed inside the body of the loop as <code>ids[i]</code>.</p>
+    <p>Similarly, you can use the <code>range</code> construct to step through the values of a map data type. For example,</p>
+    <pre><code>inventory := <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">int</span>{}
+inventory[<span class="hljs-string">"wrenches"</span>] = <span class="hljs-number">5</span>
+inventory[<span class="hljs-string">"pliers"</span>] = <span class="hljs-number">12</span>
+inventory[<span class="hljs-string">"hammers"</span>] = <span class="hljs-number">2</span>
+
+<span class="hljs-keyword">for</span> product, count := <span class="hljs-keyword">range</span> inventory {
+    fmt.Println(<span class="hljs-string">"There are "</span>, count, <span class="hljs-string">" "</span>, product, <span class="hljs-string">" in stock."</span>)
+}
+</code></pre>
+    <p>When the loop runs, the value of <code>product</code> is set to each key in the map, and <code>count</code> is set to the value associated with that key. These variables exist only within the body of the loop. Note that if you omit either one and
+        use the <code>_</code> variable instead, that item (key or value) is not read from the map. You can use this to generate a list of the keys, for example:</p>
+    <pre><code>names := []<span class="hljs-keyword">string</span>{}
+<span class="hljs-keyword">for</span> name := <span class="hljs-keyword">range</span> inventory {
+    names = names + name
+}
+fmt.Println(<span class="hljs-string">"The products are all named"</span>, names)
+</code></pre>
+    <p>This creates an array of string values, and stores the name of each key in the list by appending them.</p>
+    <h2 id="-break-and-continue-a-name-break-continue-a-"><code>break</code> and <code>continue</code>
+        <a name="break-continue"></a>
+    </h2>
+    <p>Sometimes when running an loop, you may wish to change the flow of execution in the loop based on conditions unrelated to the index variable. For example, consider:</p>
+    <pre><code><span class="hljs-keyword">for</span> i := <span class="hljs-number">1</span>; i &amp;lt; <span class="hljs-number">10</span>; i = i + <span class="hljs-number">1</span> {
+    <span class="hljs-keyword">if</span> i == <span class="hljs-number">5</span> {                      (<span class="hljs-number">1</span>)
+        <span class="hljs-keyword">continue</span>                     (<span class="hljs-number">2</span>)
+    }
+    <span class="hljs-keyword">if</span> i == <span class="hljs-number">7</span> {                      (<span class="hljs-number">3</span>)
+        <span class="hljs-keyword">break</span>                        (<span class="hljs-number">4</span>)
+    }
+    fmt.Println(<span class="hljs-string">"The value is "</span>, i)  (<span class="hljs-number">5</span>)
+}
+</code></pre>
+    <p>This loop will print the values 1, 2, 3, 4, and 6. Here&#39;s what each statement is doing:</p>
+    <ol>
+        <li>During each execution of the loop body, the index value is compared to 5. If it is equal to 5 (using the <code>==</code> operator), the conditional statement is executed.</li>
+        <li>The <code>continue</code> statement causes control to branch back to the top of the loop. The index value is incremented, and then tested again to see if the loop should run again. The <code>continue</code> statement means &quot;stop executing
+            the rest of this loop body, but continue looping&quot;.
+        </li>
+        <li>Similarly, the index is compared to 7, and if it equal to 7 then the conditional statement is executed.</li>
+        <li>The <code>break</code> statement exits the loop entirely. It means &quot;without changing any of the values, behave as if the loop condition had been met and resume execution after the loop body.</li>
+    </ol>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="user-function-definitions-a-name-user-functions-a-">User Function Definitions
+        <a name="user-functions"></a>
+    </h1>
+    <p>In addition to the <a href="#builtinfunctions">Builtin Functions</a> listed previously, the user program can create functions that can be executed from the <em>Ego</em> program. Just like variables, functions have scope, and can only be accessed from
+        within the program in which they are declared. Most functions are defined in the program file before the body of the program.</p>
+    <h2 id="the-func-statement-a-name-function-statement-a-">The <code>func</code> Statement
+        <a name="function-statement"></a>
+    </h2>
+    <p>Use the <code>func</code> statement to declare a function. The function must have a name, optionally a list of parameter values that are passed to the function, and a return type that indicates what the function is expected to return. This is followed
+        by the function body described as a basic block. When the function is called, this block is executed, with the function arguments all available as local variables. For example,</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">addValues</span><span class="hljs-params">( v1 float, v2 float)</span> <span class="hljs-title">float</span></span> {
+    x := v1 + v2
+    <span class="hljs-keyword">return</span> x
+}
+
+<span class="hljs-comment">// Calculate what a variable value (10.5) added to 3.8 is</span>
+a := <span class="hljs-number">10.5</span>
+x := addValues(a, <span class="hljs-number">3.8</span>)
+fmt.Println(<span class="hljs-string">"The sum is "</span>, x)
+</code></pre>
+    <p>In this example, the function <code>addValues</code> is created. It accepts two parameters; each is of type float in this example. The parameter values actually passed in by the caller will be stored in local variables v1 and v2. The function definition
+        also indicates that the result of the function will also be a float value.</p>
+    <p>Parameter types and return type cause type <em>coercion</em> to occur, where values are converted to the required type if they are not already the right value type. For example,</p>
+    <pre><code>y := addValues(<span class="hljs-string">"15"</span>, 2)
+</code></pre>
+    <p>Would result in <code>y</code> containing the floating point value 17.0. This is because the string value &quot;15&quot; would be converted to a float value, and the integer value 2 would be converted to a float value before the body of the function
+        is invoked. So
+        <code>type(v1)</code> in the function will return &quot;float&quot; as the result, regardless of the type of the value passed in when the function was called. </p>
+    <p>The <code>func</code> statement allows for a special data type <code>interface{}</code> which really means &quot;any type is allowed&quot; and no conversion occurs. If the function body needs to know the actual type of the value passed, the <code>type()</code>        function would be used.</p>
+    <p>A function that does not return a value at all should omit the return type declaration.</p>
+    <h2 id="the-return-statement-a-name-return-statement-a-">The <code>return</code> Statement
+        <a name="return-statement"></a>
+    </h2>
+    <p>When a function is ready to return a value the <code>return</code> statement is used. This identifies an expression that defines what is to be returned. The <code>return</code> statement results in this expression being
+        <em>coerced</em> to the data type named in the <code>func</code> statement as the return value. If the example above had a <code>string</code> result type,</p>
+    <pre><code><span class="hljs-symbol">func</span> <span class="hljs-keyword">addValues( </span><span class="hljs-built_in">v1</span> float, <span class="hljs-built_in">v2</span> float) <span class="hljs-keyword">string </span>{
+    x := <span class="hljs-built_in">v1</span> + <span class="hljs-built_in">v2</span>
+    return x
+}
+
+y := <span class="hljs-keyword">addValues(true, </span><span class="hljs-number">5</span>)
+</code></pre>
+    <p>The resulting value for <code>y</code> would be the string &quot;6&quot;. This is because not only will the boolean <code>true</code> value and the integer 5 be converted to floating point values, bue the result will be converted to a string value
+        when the function exits.</p>
+    <p>Note that if the <code>func</code> statement does not specify a type for the result, the function is assumed not to return a result at all. In this case, the <code>return</code> statement cannot specify a function result, and if the <code>return</code>        statement is the last statement then it is optional. For example,</p>
+    <pre><code>func <span class="hljs-keyword">show</span>( <span class="hljs-keyword">first</span> <span class="hljs-keyword">string</span>, <span class="hljs-keyword">last</span> <span class="hljs-keyword">string</span>) {
+    <span class="hljs-keyword">name</span> := <span class="hljs-keyword">first</span> + <span class="hljs-string">" "</span> + <span class="hljs-keyword">last</span>
+    fmt.Println(<span class="hljs-string">"The name is "</span>, <span class="hljs-keyword">name</span>)
+}
+
+<span class="hljs-keyword">show</span>(<span class="hljs-string">"Bob"</span>, <span class="hljs-string">"Smith"</span>)
+</code></pre>
+    <p>This example will run the function <code>show</code> with the two string values, and print the formatted message &quot;The name is Bob Smith&quot;. However, the function doesn&#39;t return a value (none specified after the parameter list before the
+        function body) so there is no <code>return</code> statement needed in this case.</p>
+    <p>Also note that the invocation of the <code>show</code> function does not specify a variable in which to store the result, because there is none. In this way you can see that a function can be called with a value that can be used in an assignment statement
+        or an expression, or just called and the result value ignored. Even if the <code>show</code> function returned a value, the invocation ignores the result and it is discarded.</p>
+    <h2 id="the-defer-statement-a-name-defer-statement-a-">The <code>defer</code> Statement
+        <a name="defer-statement"></a>
+    </h2>
+    <p>Sometimes a function may have multiple places where it returns from, but always wants to execute the same block of code to clean up a function (for example, closing a file that had been opened). For example,</p>
+    <pre><code><span class="hljs-selector-tag">func</span> <span class="hljs-selector-tag">getName</span>() <span class="hljs-selector-tag">bool</span> {
+    <span class="hljs-attribute">f </span>:= io.<span class="hljs-built_in">Open</span>(<span class="hljs-string">"name"</span>)
+    defer io.<span class="hljs-built_in">Close</span>(f)
+
+    s := io.<span class="hljs-built_in">ReadLine</span>(f)
+    if s == <span class="hljs-string">""</span> {
+        return false
+    }
+    <span class="hljs-selector-tag">return</span> <span class="hljs-selector-tag">true</span>
+}
+</code></pre>
+    <p>In this example, the function opens a file (the <code>io</code> package is discussed later). Because we have opened a file, we want to be sure to close it when we&#39;re done. This function has two <code>return</code> statements. We could code it
+        such that before each one, we also call the io.Close() function each time. But the <code>defer</code> statement allows the function to specify a statement that will be executed
+        <em>whenever the function actually returns</em> regardless of which branch(es) through the conditional code are executed.</p>
+    <p>Each <code>defer</code> statement identifies a statement or a <em>basic block</em> of statements (enclosed in &quot;{&quot; and &quot;}&quot;) to be executed. If there are multiple <code>defer</code> statements, they are all executed in the reverse
+        order that they were defined. So the first <code>defer</code> statement is always the last one executed before the function returns.
+    </p>
+    <p>Note that <code>defer</code> statements are executed when the function comes to the end of the function body even if there is no <code>return</code> statement, as in the case of a function that does not return a value.
+    </p>
+    <h2 id="function-variable-values-a-name-function-variables-a-">Function Variable Values
+        <a name="function-variables"></a>
+    </h2>
+    <p>Functions can be values themselves. For example, consider:</p>
+    <pre><code><span class="hljs-selector-tag">p</span> := fmt.Println
+</code></pre>
+    <p>This statement gets the value of the function <code>fmt.Println</code> and stores it in the variable p. From this point on, if you wanted to call the package function that prints items to the console, instead o fusing <code>fmt.Println</code> you
+        can use the variable <code>p</code> to invoke the function:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-title">p</span><span class="hljs-params">(<span class="hljs-string">"The answer is"</span>, x)</span></span>
+</code></pre>
+    <p>This means that you can pass a function as a parameter to another function. Consider,</p>
+    <pre><code>func show( fn interface{}, name string) {
+    fn(<span class="hljs-string">"The name is "</span>, name)
+}
+<span class="hljs-selector-tag">p</span> := fmt<span class="hljs-selector-class">.Println</span>
+<span class="hljs-function"><span class="hljs-title">show</span><span class="hljs-params">(p, <span class="hljs-string">"tom"</span>)</span></span>
+</code></pre>
+    <p>In this example, the <code>show</code> function has a first parameter that is a function, and a second parameter that is a string. In the body of the function, the variable <code>fn</code> is used to call the
+        <code>fmt.Println</code> function. You might use this if you wanted to send output to either the console (using <code>fmt.Println</code>) or a file (using <code>io.WriteString</code>). The calling code could make the choice of which function is
+        appropriate, and pass that directly into the <code>show</code> function which makes the call.</p>
+    <p>You can even create a function literal value, which defines the body of the function, and either store it in a variable or pass it as a parameter. For example,</p>
+    <pre><code>p := func(<span class="hljs-keyword">first</span> <span class="hljs-built_in">string</span>, <span class="hljs-keyword">last</span> <span class="hljs-built_in">string</span>) <span class="hljs-built_in">string</span> {
+<span class="hljs-built_in">         return</span> <span class="hljs-keyword">first</span> + <span class="hljs-string">" "</span> + <span class="hljs-keyword">last</span>
+     }
+
+<span class="hljs-built_in">name</span> := p(<span class="hljs-string">"Bob"</span>, <span class="hljs-string">"Smith"</span>)
+</code></pre>
+    <p>Note that when defined as a function literal, the <code>func</code> keyword is not followed by a function name, but instead contains the parameter list, return value type, and function body directly.<br>There is no meaningful difference between the
+        above and declaring
+        <code>func p(first string...</code> except that the variable <code>p</code> has scope that might be limited to the current <em>basic block</em> of code.<br> You can even define a function as a parameter to another function directly, as in:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">compare</span><span class="hljs-params">( fn <span class="hljs-keyword">interface</span>{}, v1 <span class="hljs-keyword">interface</span>{}, v2 <span class="hljs-keyword">interface</span>)</span> <span class="hljs-title">bool</span></span> {
+    <span class="hljs-keyword">return</span> fn(v1, v2)
+}
+
+x := compare( <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(a1 <span class="hljs-keyword">bool</span>, a2 <span class="hljs-keyword">bool</span>)</span> <span class="hljs-title">bool</span></span> { <span class="hljs-keyword">return</span> a1 == a2 }, <span class="hljs-literal">true</span>, <span class="hljs-literal">false</span>)
+</code></pre>
+    <p>This somewhat artificial example shows a function named <code>compare</code> that has a first parameter that will be a function name, and two additional parameters of unknown type. The invocation of <code>compare</code> passes a function literal as
+        the first parameter, which is a function that compares boolean values. Finally, the actual two boolean values are passed as the second and third parameters in the <code>compare</code> function call. The <code>compare</code> function will immediately
+        invoke the function literal (stored in <code>fn</code>) to compare two boolean value, and return the result.</p>
+    <p>A more complex example might be a function whose job is to sort a list of values. Sorting a list of scalar values is available as built-in function to the sort package, but sorting a list of complex types can&#39;t be done this way. You could write
+        a sort function, that accepts as a parameter the comparison operation, and that function knows how to decide between two values as to which one sorts first. This lets the sort function you create be generic without regard for the data types.</p>
+    <h2 id="function-receivers-a-name-function-receivers-a-">Function Receivers
+        <a name="function-receivers"></a>
+    </h2>
+    <p>A function can be written such that it can only be used when referenced via a variable of a specific type. This type is created by the user, and then the functions that are written to operate on that type use any variable of the type as a <em>receiver</em>,
+        which means that variable in the function gets the value of the item in the function invocation without it being an explicit parameter. This also allows multiple functions of the same name to exist which just reference different types. For example,</p>
+    <pre><code><span class="hljs-built_in">type</span> Employee struct {                        (<span class="hljs-number">1</span>)
+    <span class="hljs-keyword">first</span> <span class="hljs-built_in">string</span>
+    <span class="hljs-keyword">last</span>  <span class="hljs-built_in">string</span>
+    age   <span class="hljs-keyword">int</span>
+}
+
+func (<span class="hljs-keyword">e</span> Employee) Name() <span class="hljs-built_in">string</span> {             (<span class="hljs-number">2</span>)
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">e</span>.<span class="hljs-keyword">first</span> + <span class="hljs-string">" "</span> <span class="hljs-keyword">e</span>.<span class="hljs-keyword">last</span>
+}
+
+var foo Employee{                             (<span class="hljs-number">3</span>)
+    firs<span class="hljs-variable">t:</span> <span class="hljs-string">"Bob"</span>, 
+    las<span class="hljs-variable">t:</span> <span class="hljs-string">"Smith"</span>}
+
+fmt.Println(<span class="hljs-string">"The name is "</span>, foo.Name())       (<span class="hljs-number">4</span>)
+</code></pre>
+    <p>Let&#39;s take a look more closely at this example to see what&#39;s going on.
+    </p>
+    <ol>
+        <li>This defines the type, called <code>Employee</code> which has a number of fields associated with it.</li>
+        <li>
+            <p>This declares a function that has a variable <code>e</code> of type
+                <code>Employee</code> as it&#39;s receiver. The job of this function is to form a string of the employee name. Note that the name of the variable is not a parameter, but is considered the receiver.</p>
+        </li>
+        <li>
+            <p>This creates an <em>instance</em> of the type <code>Employee</code> and stores it in a variable <code>foo</code>.</p>
+        </li>
+        <li>This prints out a label and the value of the <code>Name</code> function when called using <code>foo</code> as the variable instance. The function <code>Name</code> cannot be called directly, it is an unknown symbol unless called with a receiver
+            of type <code>Employee</code> in its invocation.</li>
+    </ol>
+    <p>In the declaration line line (2) above, you could use an asterisk (&quot;*&quot;) character before the receiver&#39;s type of <code>Employee</code>, as in:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(e *Employee)</span> <span class="hljs-title">SetName</span><span class="hljs-params">(f <span class="hljs-keyword">string</span>, l <span class="hljs-keyword">string</span>)</span></span>  { 
+    e.first = f
+    e.last = l
+}
+</code></pre>
+    <p>This function can be used to set the names in the receiver variable. If the function was declared without the &quot;*&quot; marker, the receiver would actually only be a copy of the instance. So the function <code>Name()</code> above can read any
+        of the values from the receiver, if it sets them it is changing a copy of the instance that only exists while the function is executing, and the values in the <code>foo</code> instance are not changed.</p>
+    <p>By using the &quot;<em>&quot; as in the <code>SetName</code> example, the receiver <code>e</code>
+isn&#39;t a copy of the instance, it is the actual instance. So
+changes made to the receiver <code>e</code> will actually be made in the
+instance variable <code>foo</code>. An easy way to remember this is that,
+without the &quot;</em>&quot;, the receiver does not change the instance that makes the call, but with the &quot;*&quot; then changes will affect the instance that makes the call.</p>
+    <p>Because specifying a receiver variable and type means the name of the function is scoped to the type itself, you can have multiple functions with the same name that each has a different receiver. An example would be to have each type define a <code>String()</code>        method whose job is to format the information in the value to be read by a human. The program can then be written such that it doesn&#39;t matter was the type of an instance variable. By calling the <code>String()</code> function from any instance,
+        it will execute the <em>appropriate</em> <code>String()</code> function based on the type.</p>
+    <p>Note that types can be nested. Consider this example:</p>
+    <pre><code><span class="hljs-keyword">type</span> <span class="hljs-type">EmpInfo</span> struct {
+    <span class="hljs-type">First</span> string
+    <span class="hljs-type">Last</span> string
+    <span class="hljs-type">Age</span> int
+}
+
+<span class="hljs-keyword">type</span> <span class="hljs-type">Employee</span> struct {
+    <span class="hljs-type">Info</span>  <span class="hljs-type">EmpInfo</span>
+    <span class="hljs-type">Manager</span> bool
+}
+
+<span class="hljs-title">e</span> := <span class="hljs-type">Employee</span>{
+    <span class="hljs-type">Info</span>: <span class="hljs-type">EmpInfo</span>{
+        <span class="hljs-type">First</span>: <span class="hljs-string">"Bob"</span>,
+        <span class="hljs-type">Last</span>:  <span class="hljs-string">"Smith"</span>,
+        <span class="hljs-type">Age</span>:   <span class="hljs-number">35</span>,
+    },
+    <span class="hljs-type">Manager</span>: false
+}
+</code></pre>
+    <p>The type <code>Employee</code> contains within it an item <code>Info</code> which is of another type, <code>EmpInfo</code>. Note that when initializing the fields of the newly-created instance variable <code>e</code>, you must identify the type name
+        for the <code>Info</code> field explicitly, since it acts as an instance generator itself for an instance of
+        <code>EmpInfo</code> which is then stored in the field <code>Info</code> in the structure.
+    </p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="error-handling-a-name-errors-a-">Error Handling
+        <a name="errors"></a>
+    </h1>
+    <p>There are two kinds of errors that can be managed in an
+        <em>Ego</em> program.</p>
+    <p>The first are user- or runtime-generated errors, which are actually values of a data type called <code>error</code>. You can create a new error variable using the <code>error()</code> function, as in:</p>
+    <pre><code><span class="hljs-keyword">if</span> v == <span class="hljs-number">0</span> {
+<span class="hljs-built_in">    return</span> <span class="hljs-keyword">error</span>(<span class="hljs-string">"invalid zero value"</span>)
+}
+</code></pre>
+    <p>This code, executed in a function, would return a value of type <code>error</code> that, when printed, indicates the text string given. An <code>error</code> can also have value <code>nil</code> which means no error is stored in the value. Some runtime
+        functions will return an error value, and your code can check to see if the result is nil versus being an actual error.
+    </p>
+    <p>The second kind are panic error, which are errors generated by <em>Ego</em> itself while running your program. For example, an attempt to divide by zero generates a panic error. By default, this causes the program to stop running and an error message
+        to be printed out.</p>
+    <h2 id="-try-and-catch-a-name-try-catch-a-"><code>try</code> and <code>catch</code>
+        <a name="try-catch"></a>
+    </h2>
+    <p>You can use the <code>try</code> statement to run a block of code (in the same scope as the enclosing statement) and catch any panic errors that occur during the execution of that block. The error causes the code to execute the code in the <code>catch</code>        block of the statement. If there are no errors, execution continues after the catch block. For example:</p>
+    <pre><code>x := <span class="hljs-number">0</span>
+<span class="hljs-built_in">try</span> {
+    x = pay / hours
+} <span class="hljs-built_in">catch</span> {
+    <span class="hljs-built_in">print</span> <span class="hljs-string">"Hours were zero!"</span>
+}
+<span class="hljs-built_in">print</span> <span class="hljs-string">"The result is "</span>, x
+</code></pre>
+    <p>If the value of <code>hours</code> is non-zero, the assignment statement will assign the dividend to <code>x</code>. However, if hours is zero it will trigger a panic divide-by-zero error. When this happens, the remainder of the statements (if any)
+        in the <code>try</code> block are skipped, and the <code>catch</code> block is executed.</p>
+    <p>You can optionally specify the name of a variable that will be created within the catch block that contains the actual error encountered. Do this by adding the name in parenthesis before the catch block. This can be used in the <code>catch</code>        block if it needs handle more than one possible error. For example:
+    </p>
+    <pre><code>x := <span class="hljs-number">0</span>
+<span class="hljs-keyword">try</span> {
+    x = <span class="hljs-number">125</span> / x
+} <span class="hljs-keyword">catch</span> (e) {
+    fmt.Println(<span class="hljs-string">"unexpected error, "</span>, e)
+}
+</code></pre>
+    <p>This can be used in the <code>catch</code> block if it needs handle more than one possible error, for example.</p>
+    <h2 id="conditional-expression-error-handling">Conditional expression error handling</h2>
+    <p>If you need to catch a possible error in an expression, you can use a short-form of the <code>try</code> and <code>catch</code> that works within an expression. Consider the following example:</p>
+    <pre><code><span class="hljs-string">emp :</span>= { <span class="hljs-string">name:</span> <span class="hljs-string">"Donna"</span>, <span class="hljs-string">age:</span> <span class="hljs-number">32</span> }
+
+<span class="hljs-string">hours :</span>= <span class="hljs-number">40</span>
+<span class="hljs-string">pay :</span>= emp.wage * hours
+</code></pre>
+    <p>This code will generate an error on the statement that attempts to reference the structure member <code>wage</code>, which does not exist. If you think the field might not exist, or you are doing an operation that might result in an error (division
+        by zero, perhaps) that you have a useful default for, use the conditional expression syntax:
+    </p>
+    <pre><code><span class="hljs-string">emp :</span>= { <span class="hljs-string">name:</span> <span class="hljs-string">"Donna"</span>, <span class="hljs-string">age:</span> <span class="hljs-number">32</span> }
+
+<span class="hljs-string">hours :</span>= <span class="hljs-number">40</span>
+<span class="hljs-string">pay :</span>= ?emp.wage:<span class="hljs-number">25.0</span> * hours
+</code></pre>
+    <p>The &quot;?&quot; indicates that the following expression component (up to the &quot;:&quot;) is wrapped in a try/catch block. If no error occurs, the expression is used as specified. But if there is an error (&quot;no such structure field&quot;,
+        for example) then the expression after the &quot;:&quot; is used instead. So in the above example, because there isn&#39;t a <code>wage</code> field in this employee&#39;s record, the program assumes a wage of $25/hour in the calculation of the
+        pay.</p>
+    <h2 id="signalling-errors-a-name-signalling-a-">Signalling Errors
+        <a name="signalling"></a>
+    </h2>
+    <p>You can cause a panic error to be signalled from within your code, which would optionally be caught by a try/catch block, using the @error directive:</p>
+    <pre><code><span class="hljs-keyword">if</span> x == <span class="hljs-number">0</span> {
+    @<span class="hljs-keyword">error</span> <span class="hljs-string">"Invalid value for x"</span>
+}
+</code></pre>
+    <p>When this code runs, if the value of <code>x</code> is zero, then a panic error is signalled with an error message of &quot;Invalid value for x&quot;. This error is indistinguishable from a panic error generated by <em>Ego</em> itself. If there is
+        a <code>catch{}</code> block, the value of the <code>_error_</code> variable will be the string &quot;Invalid value for x&quot;.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="threads-a-name-threads-a-">Threads
+        <a name="threads"></a>
+    </h1>
+    <p>Like it&#39;s inspiration, <em>Ego</em> supports the idea of &quot;go routines&quot; which are threads that can be started by an <em>Ego</em> program, and which run asynchronously. A go routine is always a function invocation, or a function constant
+        value. That function is started on a parallel thread, and will execute independently of the main program.</p>
+    <p>You can use <em>channels</em> as a communication mechanism to communicate between the go routines and the main program.</p>
+    <h2 id="go">Go</h2>
+    <p>Use the <code>go</code> statement to start a thread. Here is a very simple example:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">beepLater</span><span class="hljs-params">(duration <span class="hljs-keyword">string</span>)</span></span> {
+    time.Sleep(duration)
+    fmt.Println(<span class="hljs-string">"BEEP!"</span>)
+}
+
+<span class="hljs-keyword">go</span> beepLater(<span class="hljs-string">"1s"</span>)
+</code></pre>
+    <p>This example defines a function <code>beepLater</code> which is given a duration string expression. The function waits for that duration, and then prints the message to the console.</p>
+    <p>The <code>go</code> statement starts this thread, passing it the parameters from the current scope, which are copied to the thread and stored in the
+        <code>duration</code> variable on that thread.</p>
+    <p>Note that this isn&#39;t a very interesting example, but worse; it shows an issue with running go routines. If the program above is the only code being executed in the program, it will produce no output. This is because the main program ends (completes
+        all statements) and that terminates the <em>Ego</em> session, even if a thread is still running. The thread is not guaranteed to be allowed to run to completion if the program that starts it finishes.</p>
+    <h2 id="synchronization">Synchronization</h2>
+    <p>Ego provides several data types used to synchronize execution of competing threads, and to assist in managing access to resources in a predictable way if needed.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Datatype</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>sync.Mutex</td>
+                <td>A simple mutual exclusion lock for serializing access to a resource</td>
+            </tr>
+            <tr>
+                <td>sync.WaitGroup</td>
+                <td>A way to launch a varying number of go routines and wait for them to complete</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>See the detailed descriptions in the later sections on the <code>sync</code> package for more information.</p>
+    <h2 id="channels">Channels</h2>
+    <p>We address this synchronization issue (and also allow data to be passed <em>back</em> from the go routine) using channels. Here&#39;s a modified version of the program:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">beepLater</span><span class="hljs-params">(duration <span class="hljs-keyword">string</span>, c <span class="hljs-keyword">chan</span>)</span></span> {
+    time.Sleep(duration)
+    c &lt;- <span class="hljs-string">"BEEP"</span>
+}
+
+<span class="hljs-keyword">var</span> xc <span class="hljs-keyword">chan</span>
+<span class="hljs-keyword">go</span> beepLater(<span class="hljs-string">"1s"</span>, xc)
+
+m := &lt;- xc
+fmt.Println(m)
+</code></pre>
+    <p>In this example program, the main program defines a variable <code>cx</code> which is a <em>channel</em> variable, of type <code>chan</code>. The duration and the channel variable are passed to the go routine. Importantly, the program then receives
+        data from the channel, using the <code>&lt;-</code> notation. This causes the main program to wait until a message is put into the channel, and that message is stored in the variable m</p>
+    <p>Meanwhile, the go routine starts running, and performs the wait as before. Once the wait is completed, it puts a message (really, any value) in the channel, again using a variant of the <code>&lt;-</code> syntax to show writing a value into a channel.
+        When this write occurs, the main program&#39;s receive operation completes and the message is printed.
+    </p>
+    <p>In this way, the go function performs its work, and then sends the result back through the channel. The main program will wait for data to be stored in the channel before proceeding. The go routine can send more than one data item into the channel,
+        simply by issuing more channel write operations. The receiver can either know how many times to read the channel, or can use a <code>for...range</code> operation on the channel to simply keep receiving data until done.</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">beepLater</span><span class="hljs-params">(count <span class="hljs-keyword">int</span>, c <span class="hljs-keyword">chan</span>)</span></span> {
+    <span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &amp;lt; <span class="hljs-keyword">int</span>; i = i + <span class="hljs-number">1</span> {
+        c &lt;- <span class="hljs-string">"Item "</span> + <span class="hljs-keyword">string</span>(i)
+    }
+}
+<span class="hljs-keyword">var</span> xc <span class="hljs-keyword">chan</span>
+<span class="hljs-keyword">go</span> beepLater(<span class="hljs-number">5</span>, xc)
+
+<span class="hljs-keyword">for</span> msg := <span class="hljs-keyword">range</span> xc {
+    fmt.Println(<span class="hljs-string">"Received "</span>, msg)
+}
+</code></pre>
+    <p>In this case, the caller of the goroutine includes a count of the number of messages to send, and that function sends that many messages. The main program uses the <code>range</code> operation on the channel, which means &quot;<em>as many as you receive</em>&quot;
+        where each message is stored in <code>msg</code>. The loop will terminate when the goroutine stops executing. The goroutine can also explicitly tell the main program that it is done by using the <code>close()</code> function on the channel. When
+        this happens, the range loop exits. Note that both the main program and the goroutine will continue executing to the end even after the channel is closed.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="packages-a-name-packages-a-">Packages
+        <a name="packages"></a>
+    </h1>
+    <p>Packages are a mechanism for grouping related functions together. These functions are accessed using <em>dot notation</em> to reference the package name and then locate the function within that package to call.</p>
+    <p>Packages may be available to your program automatically if the <code>ego.compiler.auto-import</code> preference is set to true. If not, you must import each package before you can use it. Additionally, packages can be created by the user to extend
+        the runtime support for
+        <em>Ego</em>; this is covered later.</p>
+    <h2 id="import-a-name-import-a-">import
+        <a name="import"></a>
+    </h2>
+    <p>Use the <code>import</code> statement to include other files in the compilation of this program. The <code>import</code> statement cannot appear within any other block or function definition. Logically, the statement stops the current compilation,
+        compiles the named object (adding any function and constant definitions to the named package) and then resuming the in-progress compilation.</p>
+    <pre><code><span class="hljs-keyword">import</span> factor
+<span class="hljs-keyword">import</span> <span class="hljs-string">"factor"</span>
+<span class="hljs-keyword">import</span> <span class="hljs-string">"factor.ego"</span>
+</code></pre>
+    <p>All three of these have the same effect. The first assumes a file named &quot;factor.ego&quot; is found in the current directory. The second and third examples assume the quoted string contains a file path. If the suffix &quot;.ego&quot; is not included
+        it is assumed.</p>
+    <p>If the import name cannot be found in the current directory, then the compiler uses the environment variables EGO_PATH to form a directory path, and adds the &quot;lib&quot; directory to that path to locate the import. So the above statement could
+        resolve to <code>/Users/cole/ego/lib/factor.ego</code> if the EGO_PATH was set to &quot;~/ego&quot;.</p>
+    <p>Finally, the <code>import</code> statement can read an entire directory of source files that all contribute to the same package. If the target of the import is a directory in the $EGO_PATH/lib location, then all the source files within that directory
+        area read and processed as part of one package.</p>
+    <p>The following sections will describe the <em>built-in</em> packages that are provided automatically as part of Ego. You can extend the packages by writing your own, as described later in the section on User Packages.</p>
+    <h2 id="db-a-name-db-a-">db
+        <a name="db"></a>
+    </h2>
+    <p>The <code>db</code> package provides support for accessing a database. Currently, this must be a Postgres database or a database that uses the Postgres wire protocol for communicating. The package has a <code>New</code> function which creates a new
+        database client object.</p>
+    <p>With this object, you can execute a SQL query and get back either a fully-formed array of struct types (for small result sets) or a row scanning object that is used to step through a result set of arbitrary size.
+    </p>
+    <h3 id="db-new-connection-string-url-">db.New(&quot;connection-string-url&quot;)</h3>
+    <p>There is a simplified interface to SQL databases available. By default, the only provider supported is Postgres at this time.</p>
+    <p>The result of the <code>db.New()</code> call is a database handle, which can be used to execute statements or return results from queries.</p>
+    <pre><code> d := db.New(<span class="hljs-string">"postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable"</span>)
+ r, e := d.QueryResult(<span class="hljs-string">"select * from foo"</span>)
+ d.Close()
+</code></pre>
+    <p>This example will open a database connection with the specified URL, and perform a query that returns a result set. The result set is an Ego array of arrays, containing the values from the result set. The
+        <code>QueryResult()</code> function call always returns all results, so this could be quite large with a query that has no filtering. You can specify parameters to the query as additional argument, which are then substituted into the query, as
+        in:</p>
+    <pre><code> age := <span class="hljs-number">21</span>
+ r, e := d.QueryResult(<span class="hljs-string">"select member where age &gt;= $1"</span>, age)
+</code></pre>
+    <p>The parameter value of <code>age</code> is injected into the query where the $1 string is found.</p>
+    <p>Once a database handle is created, here are the functions you can call using the handle:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>d.Begin()</td>
+                <td>Start a transaction on the remote serve for this connection. There can only be one active transaction at a time</td>
+            </tr>
+            <tr>
+                <td>d.Commit()</td>
+                <td>Commit the active transaction</td>
+            </tr>
+            <tr>
+                <td>d.Rollback()</td>
+                <td>Roll back the active transaction</td>
+            </tr>
+            <tr>
+                <td>d.QueryResult(q [, args...])</td>
+                <td>Execute a query string with optional arguments. The result is the entire query result set.</td>
+            </tr>
+            <tr>
+                <td>d.Query(q, [, args...])</td>
+                <td>Execute a query and return a row set object</td>
+            </tr>
+            <tr>
+                <td>d.Execute(q [, args...])</td>
+                <td>Execute a statement with optional arguments. The result is the number of rows affected.</td>
+            </tr>
+            <tr>
+                <td>d.Close()</td>
+                <td>Terminate the connection to the database and free up resources.</td>
+            </tr>
+            <tr>
+                <td>d.AsStruct(b)</td>
+                <td>If true, results are returned as array of struct instead of array of array.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>When you use the Query() call it returns a rowset object. This object can be used to step through the result set a row at a time. This allows the underlying driver to manage buffers and large result sets without filling up memory with the entire result
+        set at once.</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>r.Next()</td>
+                <td>Prepare the next row for reading. Returns false if there are no more rows</td>
+            </tr>
+            <tr>
+                <td>r.Scan()</td>
+                <td>Read the next row and create either a struct or an array of the row data</td>
+            </tr>
+            <tr>
+                <td>r.Close()</td>
+                <td>End reading rows and release any resources consumed by the rowset read.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h2 id="fmt-a-name-fmt-a-">fmt
+        <a name="fmt"></a>
+    </h2>
+    <p>The <code>fmt</code> package contains a function library for formatting and printing output to the stdout console. These are generally analogous to the Go functions of the same name. Some functions return two values (a result or length, and an error).
+        If the caller does not specify that the result is assigned to two variables, then the error is ignored.</p>
+    <p>Note that only a subset of the equivalent Go functions are supported in <em>Ego</em>.</p>
+    <h3 id="fmt-printf-">fmt.Printf()</h3>
+    <p>The <code>Printf</code> function formats one or more values using a format string, and sends the resulting string to the standard out. It returns the length in characters of the string written to the output, and an error which will be nil if no error
+        occurred during format processing.</p>
+    <pre><code>answer := <span class="hljs-number">42</span>
+kind := <span class="hljs-string">"correct"</span>
+count, err := fmt.Printf(<span class="hljs-string">"The %s answer is %d\n"</span>, kind, answer)
+</code></pre>
+    <p>In this example, the format string is processed, and the substitution format operators read parameters (in the order encountered) from the call. So the first operator <code>%s</code> looks for a string value in the variable <code>kind</code> and inserts
+        it into the message. It uses the second operator <code>%d</code> to indicate that it is looking for an integer value which is inserted in the string using the value of <code>answer</code>.</p>
+    <p>See the <a href="https://golang.org/pkg/fmt/#hdr-Printing">official Go documentation</a> for detailed information on the format operators supported by the fmt package.</p>
+    <h3 id="fmt-println-">fmt.Println()</h3>
+    <p>The <code>Println</code> function prints one or more items using the default format for their data type to the standard out, with a single space placed between them. The output is followed by a newline character. There are no formatting operations
+        available.</p>
+    <pre><code>answer := 42
+fmt.Println(<span class="hljs-string">"The answer is"</span>, answer)
+</code></pre>
+    <p>This results in the string <code>&quot;The answer is 42&quot;</code> followed by a newline character being send to the output console.</p>
+    <h3 id="fmt-sscanf-">fmt.Sscanf()</h3>
+    <p>The <code>Sscanf()</code> function accepts a string of data, a format specification, and one or more pointers to base-type values. The data string is processed using the format specification, and the resulting values are written to the parameter variables.
+        The function returns the number of items processed, and any error (such as invalid value for a given format).</p>
+    <pre><code><span class="hljs-selector-tag">var</span> age int
+<span class="hljs-selector-tag">var</span> temp <span class="hljs-attribute">float</span>
+
+data := <span class="hljs-string">"35 101.2"</span>
+fmt.Sscanf(data, <span class="hljs-string">"%d%f"</span>, &amp;age, &amp;temp)
+</code></pre>
+    <p>The <code>%d</code> format specification causes an integer value to be parsed from the string. This is followed by a floating pointer number. These are stored in <code>age</code> and <code>temp</code> respectively.
+    </p>
+    <p>Any non-format characters in the format string must be present in the input string exactly as shown. For example,</p>
+    <pre><code>data := <span class="hljs-string">"age 35 temp 101.2"</span>
+fmt.Sscanf(data, <span class="hljs-string">"age %d temp %f"</span>, <span class="hljs-variable">&amp;age</span>, <span class="hljs-variable">&amp;temp</span>)
+</code></pre>
+    <p>Note that in both the data string and the format string, multiple white-space characters (&quot; &quot;, etc) are ignored. The supported format values are:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="text-align:center">Format</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align:center">%t</td>
+                <td>Boolean &quot;true&quot; or &quot;false&quot; value</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">%f</td>
+                <td>Floating point value</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">%d</td>
+                <td>Integer value</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">%s</td>
+                <td>String values</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>Note that this is a subset of the format operations supported by Go&#39;s runtime. Also note that <em>Ego</em> does not support a width specification in the format.</p>
+    <h3 id="fmt-sprintf-">fmt.Sprintf()</h3>
+    <p>The <code>Sprintf()</code> function works exactly the same as the <code>Printf{}</code> function, but returns the formatted string as it&#39;s result value, instead of printing it anywhere. This lets you use the formatting operations to construct
+        a string value that includes other values in the string.</p>
+    <pre><code>v := <span class="hljs-string">"foobar"</span>
+msg := fmt.Sprintf(<span class="hljs-string">"Unrecognized value %s"</span>)
+</code></pre>
+    <p>This creates a string named <code>msg</code> which contains &quot;Unrecognized value foobar&quot; as it&#39;s contents. The value is not printed to the console as part of this operation.</p>
+    <h2 id="io-a-name-io-a-">io
+        <a name="io"></a>
+    </h2>
+    <p>The io package supports input/output operations using native files in the file system of the computer running <em>Ego</em>.</p>
+    <h3 id="io-dirlist-path-">io.DirList(path)</h3>
+    <p>The <code>DirList</code> function produces a string containing a human-formatted directory listing, similar to the Unix &quot;ls&quot; command. The result string is already formatted with line breaks, etc.</p>
+    <h3 id="io-expand-path-">io.Expand(path)</h3>
+    <p>The <code>Expand()</code> function produces an array of strings containing the absolute path names of all files found within the given path.</p>
+    <p> a := &quot;/tmp&quot; fns := io.Expand(a)</p>
+    <p>The value of <code>fns</code> is a []string and contains the names of each file found in the directory &quot;/tmp&quot;.</p>
+    <h3 id="io-open-filename-mode-">io.Open(filename [, mode])</h3>
+    <p>The <code>Open()</code> function opens a file, and returns a file handle that can be used to perform specific operations on the file.</p>
+    <pre><code>fn := <span class="hljs-string">"mydata.txt"</span>
+mode := <span class="hljs-string">"create"</span>
+f := io.Open(fn, mode)
+</code></pre>
+    <p>This program opens a file named &quot;mydata.txt&quot; for output, and creates the file if it does not already exist. The mode variable can be one of the following values</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="text-align:center">Mode</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align:center">append</td>
+                <td>The file must exist, and is opened for writing. All new data is written to the end of the file.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">create</td>
+                <td>The file is created (any previous contents are lost) and available for writing.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">read</td>
+                <td>The file must already exist, and is opened for reading only</td>
+            </tr>
+            <tr>
+                <td style="text-align:center">write</td>
+                <td>The file must already exist, and is opened for writing only</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>Once a file handle is created, you can use the file handle to perform additional operations on the file, until you use the <code>Close()</code> method of the handle which closes the file so it completes all operations and then the handle cannot be
+        used again until another <code>io.Open()</code> operation. The file handle functions are:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Close()</td>
+                <td>Close the file, after which the file object can no longer be used.</td>
+            </tr>
+            <tr>
+                <td>ReadString()</td>
+                <td>Read a line of text from the file and return it as a string</td>
+            </tr>
+            <tr>
+                <td>WriteString(string)</td>
+                <td>Write a string to the output file and add a newline</td>
+            </tr>
+            <tr>
+                <td>Write(value)</td>
+                <td>Write an arbitrary value to the output file</td>
+            </tr>
+            <tr>
+                <td>WriteAt(value, int)</td>
+                <td>Write an arbitrary value at specific position in the file</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <h3 id="io-readdir-path-">io.ReadDir(path)</h3>
+    <p>The <code>ReadDir()</code> function profiles a list of all the files in a given directory path location. This is the form of an array of structures which describe each file.
+    </p>
+    <pre><code><span class="hljs-selector-tag">a</span> := io.ReadDir(<span class="hljs-string">"/tmp"</span>)
+</code></pre>
+    <p>This will produce an array <code>a</code> containing information on each file in the &quot;/tmp&quot; directory. An empty array is returned if there are no files. Each array structure has the following members:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>directory</td>
+                <td>bool</td>
+                <td>true if the entry is a subdirectory, else false if it is a file</td>
+            </tr>
+            <tr>
+                <td>mode</td>
+                <td>string</td>
+                <td>Unix-style mode string for permissions for the file</td>
+            </tr>
+            <tr>
+                <td>modified</td>
+                <td>string</td>
+                <td>Timestamp of the last time the file was modified</td>
+            </tr>
+            <tr>
+                <td>name</td>
+                <td>string</td>
+                <td>The name of the file</td>
+            </tr>
+            <tr>
+                <td>size</td>
+                <td>int</td>
+                <td>The size of the file contents in bytes</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <h3 id="io-readfile-filename-">io.ReadFile(filename)</h3>
+    <p>The <code>ReadFile</code> function reads input from a file. If the filename is a &quot;.&quot; then the function reads a single line of text from stdin (the console or a pipe). Otherwise, the filename must be the absolute or relative path to a file
+        in the file system, and its&#39; entire contents are returned as a single string value.</p>
+    <pre><code><span class="hljs-keyword">fn</span> <span class="hljs-symbol">:</span>= <span class="hljs-string">"mydata.txt"</span>
+s <span class="hljs-symbol">:</span>= io.ReadFile(<span class="hljs-keyword">fn</span>)
+</code></pre>
+    <p>The variable <code>s</code> will contain a string containing the entire contents of the input file, including with line breaks. You can use <code>strings.Split()</code> to convert this into an array of strings based on the line breaks if you wish.</p>
+    <h3 id="io-writefile-filename-string-">io.WriteFile(filename, string)</h3>
+    <p>The <code>WriteFile()</code> function write a string value to a file. If the file does not exist, it is created. If the file previously existed, the contents are over-written by the new file.</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">fn</span> := "<span class="hljs-title">mydata</span>.<span class="hljs-title">txt</span>"
+<span class="hljs-title">s</span> := <span class="hljs-title">io</span>.<span class="hljs-title">ReadFile</span></span>(<span class="hljs-function"><span class="hljs-keyword">fn</span>)
+<span class="hljs-title">io</span>.<span class="hljs-title">WriteFile</span></span>(<span class="hljs-string">"newdata.txt"</span>, s)
+</code></pre>
+    <p>This reads the contents of the &quot;mydata.txt&quot; file, and then writes it to the &quot;newdata.txt&quot; file, in its entirety.</p>
+    <h2 id="json-a-name-json-a-">json
+        <a name="json"></a>
+    </h2>
+    <p>The <code>json</code> package is used to convert an <em>Ego</em> data value into equivalent JSON expressed as a string value, or convert a JSON string to a comparable <em>ego</em> data value.</p>
+    <h3 id="json-marshal-v-">json.Marshal(v)</h3>
+    <p>The <code>Marshal</code> function converts a value into a JSON string expression, which is the function result. Note that unlike its <em>Go</em> counterpart, the <code>json</code> package automatically converts the value expression to a string as
+        the result.
+    </p>
+    <pre><code><span class="hljs-string">a :</span>= { <span class="hljs-string">name:</span> <span class="hljs-string">"Tom"</span>, <span class="hljs-string">age:</span> <span class="hljs-number">44</span> }
+<span class="hljs-string">s :</span>= json.Marshal(a)
+</code></pre>
+    <p>This results in <code>s</code> containing the value &quot;{ \&quot;name\&quot;:\&quot;Tom\&quot;, \&quot;age\&quot;: 44}&quot;. This value can be passed as the body of a rest request, for example, to send an instance of this structure to the REST
+        service.</p>
+    <h3 id="json-marshalindented-v-">json.MarshalIndented(v)</h3>
+    <p>The <code>MarshalIndented</code> function converts a value into a JSON string expression, which is the function result. Note that unlike its <em>Go</em> counterpart, the <code>json</code> package automatically converts the value expression to a string
+        as the result. The <code>MarshalIndent</code> function differs from the standard <code>Marshal</code> function in that it provides indentation automatically to make the JSON string more readable.</p>
+    <pre><code><span class="hljs-string">a :</span>= { <span class="hljs-string">name:</span> <span class="hljs-string">"Tom"</span>, <span class="hljs-string">age:</span> <span class="hljs-number">44</span> }
+<span class="hljs-string">s :</span>= json.Marshal(a)
+</code></pre>
+    <p>This results in <code>s</code> containing the value</p>
+    <pre><code>{
+    <span class="hljs-attr">"name"</span> : <span class="hljs-string">"Tom"</span>,
+    <span class="hljs-attr">"age"</span> : <span class="hljs-number">44</span>
+}
+</code></pre>
+    <h3 id="json-unmarshal-string-">json.UnMarshal(string)</h3>
+    <p>Given a JSON string expression, this creates the equivalent JSON object value. This may be a scalar type (int, string, float) or it may be an array or structure, or a combination of them. You do not have to provide a model of the data type; the <code>UnMarshal</code>        function creates one dynamically. This means you are not guaranteed that the resulting structure has all the fields you might be expecting.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := json.UnMarshal(s) 
+</code></pre>
+    <p>If <code>s</code> contains the JSON expressions from the <code>Marshal</code> example above, the result is a structure { age: 44, name:&quot;Tom&quot;} in the variable <code>a</code>. You can use the <code>members()</code> function to examine if a
+        structure contains a field you expected.</p>
+    <h2 id="math-a-name-math-a-">math
+        <a name="math"></a>
+    </h2>
+    <p>The <code>math</code> package provides basic and extended math operations on common <em>Ego</em> numeric data types (usually <code>int</code> and <code>float</code> values). This is not a complete set of the math function that are offered in the comparable
+        <em>Go</em> package, but will be expanded as needed.</p>
+    <h3 id="math-abs-n-">math.Abs(n)</h3>
+    <p>For a given numeric value, return the absolute value of the number.</p>
+    <pre><code>posInt := math.<span class="hljs-keyword">Abs</span>(signedInt)
+</code></pre>
+    <p>In this example, <code>posInt</code> will always be a positive or zero value.</p>
+    <h3 id="math-factor-i-">math.Factor(i)</h3>
+    <p>For a given positive integer <code>i</code>, return an array of all the unique factors for that value. The array is always an array of integers. For a prime number, this will always return an array with two elements, one and the prime number. For
+        all other numbers, it returns an array that contains one, the number, and all factors of the number.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Factor(<span class="hljs-number">11</span>)
+<span class="hljs-selector-tag">b</span> := math.Factor(<span class="hljs-number">12</span>)
+</code></pre>
+    <p>For the first example, <code>a</code> contains [1, 11] because 11 is a prime number. The value of
+        <code>b</code> contains [1, 2, 3, 4, 6, 12].</p>
+    <h3 id="math-log-f-">math.Log(f)</h3>
+    <p>For a given floating point value <code>f</code>, return the natural logarithm of the value.</p>
+    <p> f := math.Log(2.1)</p>
+    <p>The value of <code>f</code> is 0.7419373447293773.</p>
+    <h3 id="math-max-">math.Max(...)</h3>
+    <p>For an arbitrary list of numeric values, return the largest value in the list. The list can be sent as individual items, or as an array of items.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Max(n, <span class="hljs-number">100</span>)
+
+<span class="hljs-selector-tag">b</span> := [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">6</span>, <span class="hljs-number">3</span>, <span class="hljs-number">0</span>]
+c := math.Max(<span class="hljs-selector-tag">b</span>...)
+</code></pre>
+    <p>The value of <code>a</code> is the larger of the value of <code>n</code> and the value 100. This is comparable to <em>use the value of <code>n</code> but it must be at least 100</em>. The value of <code>c</code> will be 6. The ellipsis &quot;...&quot;
+        notation indicate that the array b is to be treated as individual parameters to the function, and the largest value in the array <code>b</code> is 6.</p>
+    <h3 id="math-min-">math.Min(...)</h3>
+    <p>For an arbitrary list of numeric values, return the smallest value in the list. The list can be sent as individual items, or as an array of items.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Min(n, <span class="hljs-number">10</span>)
+
+<span class="hljs-selector-tag">b</span> := [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">6</span>, <span class="hljs-number">3</span>, <span class="hljs-number">0</span>]
+c := math.Min(<span class="hljs-selector-tag">b</span>...)
+</code></pre>
+    <p>The value of <code>a</code> is the smaller of the value of <code>n</code> and the value 1. This is comparable to <em>use the value of <code>n</code> but it must be at no larger than 10</em>. The value of <code>c</code> will be 0. The ellipsis &quot;...&quot;
+        notation indicate that the array b is to be treated as individual parameters to the function, and the smallest value in the array <code>b</code> is 0.</p>
+    <h3 id="math-primes-i-">math.Primes(i)</h3>
+    <p>The <code>Primes</code> function accepts a positive integer value and returns an array of all the prime numbers less than that value. Note that this can take a very long time to compute for larger values.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Primes(<span class="hljs-number">10</span>)
+</code></pre>
+    <p>The array <code>a</code> will contain the integers [3, 5, 7]. The values &#39;1&#39; and &#39;2&#39; are not considered to be prime numbers.</p>
+    <h3 id="math-sqrt-f-">math.Sqrt(f)</h3>
+    <p>Calculate the square root of the numeric value given.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Sqrt(<span class="hljs-number">2</span>)
+</code></pre>
+    <p>The value of <code>a</code> will be approximately 1.4142135623730951.</p>
+    <h3 id="math-sum-">math.Sum(...)</h3>
+    <p>The <code>Sum</code> function returns the arithmetic sum of all the numeric values. These can be passed as individual values or as an array.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := math.Sum(n, <span class="hljs-number">10</span>)
+
+<span class="hljs-selector-tag">b</span> := [<span class="hljs-number">5</span>, <span class="hljs-number">15</span>, <span class="hljs-number">25</span>, <span class="hljs-number">35</span>]
+c := math.Sum(<span class="hljs-selector-tag">b</span>...)
+</code></pre>
+    <p>The value of <code>a</code> is the sum of <code>n</code> and 100, and is identical to the expression <code>a := n + 10</code>. The value of <code>c</code> is 80, which is the sum of all the values in the array. Note that the ellipsis &quot;...&quot;
+        notation indicates that the array should be converted to a list of parameters.</p>
+    <h2 id="os-a-name-os-a-">os
+        <a name="os"></a>
+    </h2>
+    <p>The <code>os</code> package provides a number of functions that access operating system features for whatever operating system (macOS, Windows, Linux, etc.) you are running on. The results and the behavior of the routines can be specific to that operating
+        system. The examples shown here are for macOS (the &quot;darwin&quot; Go build).</p>
+    <h3 id="os-args-">os.Args()</h3>
+    <p>The <code>Args{}</code> function returns an array of the string command line arguments when an <em>Ego</em> program is run from the shell/command line. Consider the following simple program:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> <span class="hljs-title">int</span> {</span>
+    fmt.Println(os.Args())
+}
+</code></pre>
+    <p>This has a <code>main</code> function (the function that is always invoked with the <code>ego run</code> command). This gets the list of arguments via <code>os.Args()</code> and prints it to the standard output. If this is placed in a file -- for
+        example, &quot;args.ego&quot; -- then it can be run with a command line similar to:</p>
+    <pre><code>tom$ ego <span class="hljs-keyword">run</span><span class="bash"> args.ego stuff I want</span>
+</code></pre>
+    <p>The &quot;tom$&quot; is the shell prompt; the remainder of the command is the command line entered. Note that after the name of the program file there are additional command line tokens. The main function in &quot;args.ego&quot; will retrieve these
+        and print them, and the output will look like:</p>
+    <pre><code>[ <span class="hljs-string">"stuff"</span>, <span class="hljs-string">"I"</span>, <span class="hljs-string">"want"</span>]
+</code></pre>
+    <p>The result is an array where each element of the array is the next token from the original command line.</p>
+    <h3 id="os-exit-i-">os.Exit(i)</h3>
+    <p>The <code>Exit()</code> operation stops the execution of the <em>Ego</em> program and it&#39;s runtime environment, and returns control to the shell/command line where it was invoked. If an optional parameter is given, it is an integer that becomes
+        the system return code from the <code>ego run</code> command line.
+    </p>
+    <pre><code>main() <span class="hljs-built_in">int</span> {
+    <span class="hljs-keyword">if</span> <span class="hljs-literal">true</span> {
+        os.<span class="hljs-keyword">Exit</span>(<span class="hljs-number">55</span>)
+    }
+
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+}
+</code></pre>
+    <p>In this example, the condition is always true so the <code>os.Exit(55)</code> call is made. When the ego command completes, the shell return code (&quot;$?&quot; in most Linux/Unix shells, for example) will be the value &quot;55&quot;.</p>
+    <p>If the main program returns a non-zero return code, this has the same effect as calling
+        <code>os.Exit()</code> with that value. If no <code>os.Exit()</code> call is made and the main program simply terminates, then the return code value is assumed to be 0, which indicates successful completion of the code.</p>
+    <h3 id="os-getenv-name-">os.Getenv(name)</h3>
+    <p>The <code>Getenv()</code> function retrieves an environment variable from the shell that invoked the <em>Ego</em> processor. This can be an environment variable from a Linux shell, or a DOS-style environment variable from the CMD.EXE Windows shell.
+        The argument must be the name of the variable (case-sensitive) and the result is the value of the environment variable. If the variable does not exist, the function always returns an empty string.</p>
+    <pre><code><span class="hljs-selector-tag">func</span> <span class="hljs-selector-tag">main</span>() <span class="hljs-selector-tag">int</span> {
+
+    <span class="hljs-attribute">shell </span>:= os.<span class="hljs-built_in">Getenv</span>(<span class="hljs-string">"SHELL"</span>)
+    fmt.<span class="hljs-built_in">Println</span>(<span class="hljs-string">"You are running the "</span>, shell, <span class="hljs-string">" shell program"</span>)
+
+    return <span class="hljs-number">0</span>
+}
+</code></pre>
+    <p>Invoking this on a macOS or Linux system while running the &quot;bash&quot; shell will result in output similar to:</p>
+    <pre><code>You are running the  /bin/bash  shell <span class="hljs-function"><span class="hljs-keyword">program</span></span>
+</code></pre>
+    <h3 id="os-remove-filename-">os.Remove(filename)</h3>
+    <p>The <code>Remove()</code> function deletes a file from the file system.</p>
+    <pre><code><span class="hljs-keyword">fn</span> <span class="hljs-symbol">:</span>= <span class="hljs-string">"newdata.txt"</span>
+os.Remove(<span class="hljs-keyword">fn</span>)
+</code></pre>
+    <p>When this program runs, the physical file &quot;newdata.txt&quot; will have been deleted from the file system, assuming the current user has permission to delete the file.
+    </p>
+    <h2 id="profile-a-name-profile-a-">profile
+        <a name="profile"></a>
+    </h2>
+    <p>The <code>profile</code> package help manage persistent profile settings. These are the same settings that can be accessed from the command line using the <code>ego profile</code> command. They apply to settings found in the current active profile.</p>
+    <p>Profile settings all have a name, which is a string value to identify the key. The prefix &quot;ego.&quot; is reserved for settings related to the <em>Ego</em> compiler, runtime, and server settings. You can use any other prefix to store settings
+        related to your particular <em>Ego</em> application usage.
+    </p>
+    <p>The profile values are stored in the .org.fernwood/ego.json file located in your default home directory. This file must be readable to access profile settings, and the file is rewritten when a setting value is changed and <em>Ego</em> exits. Note
+        that this file contains all the profiles, not just the default profile (or profile specified with the --profile command-line option).</p>
+    <h3 id="profile-delete-key-">profile.Delete(key)</h3>
+    <p>The <code>Delete()</code> function deletes a setting from the active profile by name. If the profile value does not exist, there is no error.</p>
+    <h3 id="profile-get-key-">profile.Get(key)</h3>
+    <p>The <code>Get()</code> function retrieves the current value of a given setting by name. For example,</p>
+    <p> path := profile.Get(&quot;ego.path&quot;)</p>
+    <p>In this case, the variable <code>path</code> is a string containing the file system location for the
+        <em>Ego</em> main path, where service functions, import libraries, and test programs are found. If you request a profile value for a setting that does not exist, an empty string is returned.
+    </p>
+    <h3 id="profile-keys-">profile.Keys()</h3>
+    <p>The <code>Keys()</code> call returns a string array containing the names of all the profile values that are currently set (i.e. have non-empty values). This can be used to determine if a profile setting exists or not before getting its value.</p>
+    <h3 id="profile-set-key-value-">profile.Set(key, value)</h3>
+    <p>The <code>Set()</code> function creates or updates a profile setting by name, with the given value. The value is converted to a string representation and stored in the profile data under the named key. The key does not need to exist yet; you can create
+        a new key simply by naming it.</p>
+    <h2 id="rest-a-name-rest-a-">rest
+        <a name="rest"></a>
+    </h2>
+    <p>The <code>rest</code> package provides a generalized HTTP/HTTPS client that can be used to communicate with a server, authenticate to it (either using username/password or an authentication token), and perform GET, POST, and DELETE operations against
+        URL endpoints.</p>
+    <p>The package supports sending and receiving arbitrary Ego data structures which are expressed as JSON data to the server, or sending and receiving text payloads.</p>
+    <p>If the server being communicated with is an <em>Ego</em> server, then you can use the
+        <code>ego logon</code> command to create a local token used to authenticate to the server.</p>
+    <h3 id="rest-new-user-password-">rest.New(
+        <user, password>)</h3>
+    <p>This returns a rest connection handle (an opaque Go object represented by an Ego symbol value). If the optional username and password are specified, then the request will use Basic authentication with that username and password. Otherwise, if the
+        logon-token preference item is available, it is used as a Bearer token string for authentication.</p>
+    <p>The resulting item can be used to make calls using the connection just created. For example, if the value of <code>rest.New()</code> was stored in the variable <code>r</code>, the following functions would become available:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>r.Base(url)</td>
+                <td>Specify a &quot;base URL&quot; that is put in front of the url used in get() or post()</td>
+            </tr>
+            <tr>
+                <td>r.Get(url)</td>
+                <td>GET from the named url. The body of the response (typically json or HTML) is returned as a string result value</td>
+            </tr>
+            <tr>
+                <td>r.Post(url [, body])</td>
+                <td>POST to the named url. If the second parameter is given, it is a value representing the body of the POST request</td>
+            </tr>
+            <tr>
+                <td>r.Delete(url)</td>
+                <td>DELETE to the named URL</td>
+            </tr>
+            <tr>
+                <td>r.Media(&quot;type&quot;)</td>
+                <td>Specify the media/content type of the exchange</td>
+            </tr>
+            <tr>
+                <td>r.Verify(b)</td>
+                <td>Enable or disable TLS server certificate validation</td>
+            </tr>
+            <tr>
+                <td>r.Auth(u,p)</td>
+                <td>Establish BasicAuth with the given username and password strings</td>
+            </tr>
+            <tr>
+                <td>r.Token(t)</td>
+                <td>Establish Bearer token auth with the given token value</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>Additionally, the values <code>r.status</code>, <code>r.headers</code>, <code>r.cookies</code>, and <code>r.response</code> can be used to examine the HTTP status code of the last request, the headers returned, and the value of the response body of
+        the last request. The response body may be a string (if the media type was not json) or an actual object if the media type was json.</p>
+    <p>Here&#39;s a simple example:</p>
+    <pre><code>server := rest.New().Base(<span class="hljs-string">"http://localhost:8080"</span>)
+server.Get(<span class="hljs-string">"/services/debug"</span>)
+
+<span class="hljs-keyword">if</span> server<span class="hljs-selector-class">.status</span> == http<span class="hljs-selector-class">.StatusOK</span> {
+    print <span class="hljs-string">"Server session ID is "</span>, server<span class="hljs-selector-class">.response</span><span class="hljs-selector-class">.session</span>
+}
+</code></pre>
+    <h2 id="sort-a-name-sort-a-">sort
+        <a name="sort"></a>
+    </h2>
+    <p>The <code>sort</code> package contains functions that can sort an array containing only homogeneous base types (int, string, float). If the array contains interface or struct types, it cannot be sorted. The sort occurs &quot;in place&quot; in the
+        array.</p>
+    <h3 id="sort-ints-array-">sort.Ints(array)</h3>
+    <p>The <code>Ints</code> function sorts an array of integers. Negative numbers sort before positive numbers.
+    </p>
+    <pre><code>a := []<span class="hljs-keyword">int</span>{<span class="hljs-number">5</span>, <span class="hljs-number">3</span>, <span class="hljs-number">8</span>, <span class="hljs-number">0</span>, <span class="hljs-number">-1</span>}
+sort.Ints(a)
+</code></pre>
+    <p>After this code executes, the value of the array is [-1, 0, 3, 5, 8].</p>
+    <h3 id="sort-floats-array-">sort.Floats(array)</h3>
+    <p>The <code>Floats</code> function sorts an array of floating point numbers. Negative numbers sort before positive numbers.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := []<span class="hljs-attribute">float</span>{<span class="hljs-number">5.3</span>, <span class="hljs-number">3</span>, <span class="hljs-number">8.001</span>, <span class="hljs-number">0</span>, -<span class="hljs-number">1.5</span>}
+sort.Floats(a)
+</code></pre>
+    <p>After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].</p>
+    <h3 id="sort-slice-array-func-">sort.Slice(array, func)</h3>
+    <p>The <code>Slice</code> function allows you to sort an array of non-base type. For example, you could create an array of struct types; the builtin <code>sort</code> functions don&#39;t know how to sort that structure. You can sort it using the <code>Slice</code>        function by supplying a function constant that is able to decide which of two items in the array is <em>less than</em> the other. Even though the examples could be more complex, here&#39;s an example using integer values:</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := []int{ <span class="hljs-number">101</span>, <span class="hljs-number">5</span>, <span class="hljs-number">33</span>, -<span class="hljs-number">55</span>, <span class="hljs-number">239</span>, <span class="hljs-number">3</span>, <span class="hljs-number">66</span>}
+
+sort.Slice(<span class="hljs-selector-tag">a</span>, func(<span class="hljs-selector-tag">i</span> int, j int) bool {
+    return <span class="hljs-selector-tag">a</span>[i] &lt; <span class="hljs-selector-tag">a</span>[j]
+})
+</code></pre>
+    <p>When this runs, the array <code>a</code> will be in sorted order. The function constant (the <em>comparison function</em>) is called by the <code>sort</code> package algorithm as many times as needed to compare two values in the array. The function
+        <em>must</em> accept two integer values as arguments, and return a bool value. The function result is determining if the <code>i</code> element of the array is less than the <code>j</code> element of the array. The <code>Slice</code> function
+        manages the sort algorithm, and calls back to your supplied function as needed.</p>
+    <p>Note that the comparison function has to be defined as an anonymous function constant in the string, so it has access to values outside the function (specifically, the array value)</p>
+    <h3 id="sort-strings-array-">sort.Strings(array)</h3>
+    <p>The <code>Strings</code> function sorts an array of strings. An empty string sorts to the start of the list.</p>
+    <pre><code>a := []<span class="hljs-keyword">string</span>{<span class="hljs-string">"apple"</span>, <span class="hljs-string">"pear"</span>, <span class="hljs-string">""</span>, <span class="hljs-string">"cherry"</span>}
+sort.Strings(a)
+</code></pre>
+    <p>After this code executes, the value of the array is [&quot;&quot;, &quot;apple&quot;, &quot;cherry&quot;, &quot;pear&quot;].</p>
+    <h2 id="strings-a-name-strings-a-">strings
+        <a name="strings"></a>
+    </h2>
+    <p>The <code>strings</code> package contains a library of functions to support manipulation of string data. Unless otherwise noted, strings are interpreted as a set of characters, so some unicode characters can take more than one byte of storage.</p>
+    <h3 id="strings-chars-s-">strings.Chars(s)</h3>
+    <p>The <code>Chars</code> function returns an array of string values. Each value represents a single character for that position in the string.</p>
+    <pre><code>runes := strings.Char(<span class="hljs-string">"test"</span>)
+</code></pre>
+    <p>The value of <code>runes</code> is an string array with values [&quot;t&quot;, &quot;e&quot;, &quot;s&quot;, &quot;t&quot;]. If the string is an empty string, it results in an array of zero elements.</p>
+    <h3 id="strings-compare-a-b-">strings.Compare(a, b)</h3>
+    <p>The <code>Compare</code> function compares two string values, and returns an integer containing -1 if the first string is less than the second, 0 if they are equal, or 1 if the second value is less than the first value.</p>
+    <pre><code>fmt.<span class="hljs-keyword">Println</span>(strings.Compare(<span class="hljs-string">"peach"</span>, <span class="hljs-string">"apple"</span>))
+</code></pre>
+    <p>This will print the value 1 as the second value sorts higher in order than the first value.</p>
+    <h3 id="strings-contains-str-substr-">strings.Contains(str, substr)</h3>
+    <p>The <code>Contains</code> function scans a string for a substring and returns a boolean value indicating if the substring exists in the string</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := strings.Contains(<span class="hljs-string">"This is a test"</span>, <span class="hljs-string">"is a"</span>)
+<span class="hljs-selector-tag">b</span> := strings.Contains(<span class="hljs-string">"This is a test"</span>, <span class="hljs-string">"isa"</span>)
+</code></pre>
+    <p>In this example, <code>a</code> contains the value <code>true</code>, and <code>b</code> contains the value <code>false</code>. Note that the substring must match exactly, including whitespace, to be considered a match.</p>
+    <h3 id="strings-containsany-str-chars-">strings.ContainsAny(str, chars)</h3>
+    <p>The <code>ContainsAny</code> function scans a string to see if instances of any of the characters from a substring appear in the string.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := strings.ContainsAny(<span class="hljs-string">"this is a test"</span>, <span class="hljs-string">"satx"</span>)
+<span class="hljs-selector-tag">b</span> := strings.ContainsAny(<span class="hljs-string">"this is a test"</span>, <span class="hljs-string">"xyz"</span>)
+</code></pre>
+    <p>In this example, <code>a</code> is true because the string contains at least one of the characters in the substring (there are instances of &quot;s&quot;, &quot;a&quot;, and &quot;t&quot;). The value of <code>b</code> is false because the string does
+        not contain any instances of (&quot;x&quot;, &quot;y&quot;, or &quot;z&quot;)</p>
+    <h3 id="strings-equalfold-a-b-">strings.EqualFold(a, b)</h3>
+    <p>The <code>EqualFold</code> function compares two strings for equality, ignoring differences in case.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := strings.EqualFold(<span class="hljs-string">"symphony b"</span>, <span class="hljs-string">"Symphony B"</span>)
+<span class="hljs-selector-tag">b</span> := strings.EqualFold(<span class="hljs-string">"åto"</span>, <span class="hljs-string">"Åto"</span>)
+</code></pre>
+    <p>In both these examples, the result is <code>true</code>.</p>
+    <h3 id="strings-fields">strings.Fields</h3>
+    <p>The <code>Fields</code> function breaks a string down into individual strings based on whitespace characters.</p>
+    <pre><code>s := <span class="hljs-string">"this is    a test"</span>
+b := strings.Fields(s)
+</code></pre>
+    <p>The result is that <code>b</code> will contain the array [&quot;this&quot;, &quot;is&quot;, &quot;a&quot;, &quot;test&quot;]</p>
+    <h3 id="strings-join">strings.Join</h3>
+    <p>The <code>Join</code> function joins together an array of strings with a separator string. The separator is placed between items, but not at the start or end of the resulting string.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := []string{ <span class="hljs-string">"usr"</span>, <span class="hljs-string">"local"</span>, <span class="hljs-string">"bin"</span>}
+<span class="hljs-selector-tag">b</span> := strings.Join(<span class="hljs-selector-tag">a</span>, <span class="hljs-string">"/"</span>)
+</code></pre>
+    <p>The result is that <code>b</code> contains a string &quot;usr/local/bin&quot;. This function is most commonly used to create lists (with a &quot;,&quot; for separator) or path names (using a host-specific path separator like &quot;/&quot; or &quot;\&quot;).</p>
+    <h3 id="strings-format-v-">strings.Format(v)</h3>
+    <p>The <code>Format()</code> function returns a string that contains the formatted value of the variable passed in. This is the same formatting operation that is done by the <code>io.Println()</code> function, but the resulting string is returned as
+        the function value instead of printed to the console.</p>
+    <h3 id="strings-index-string-test-">strings.Index(string, test)</h3>
+    <p>The <code>Index</code> function searches a string for the first occurrence of the test string. If it is found, it returns the character position of the first character in <code>string</code> that contains the value of <code>test</code>. If no instance
+        of the test string is found, the function returns 0.</p>
+    <h3 id="strings-ints-string-">strings.Ints(string)</h3>
+    <p>The <code>Ints</code> function returns an array of integer values. Each value represents the Unicode character for that position in the string, expressed as an integer value.
+    </p>
+    <pre><code>runes := strings.Ints(<span class="hljs-string">"test"</span>)
+</code></pre>
+    <p>The value of <code>runes</code> is an integer array with values [116, 101, 115, 116] which are the Unicode character values for the letters &quot;t&quot;, &quot;e&quot;, &quot;s&quot;, and &quot;t&quot;. If the string passed is is am empty string,
+        the
+        <code>Ints</code> function returns an empty array.
+    </p>
+    <h3 id="strings-left-string-count-">strings.Left(string, count)</h3>
+    <p>The <code>Left()</code> function returns the left-most characters of the given string. If the value of the count parameter is less than 1, an empty string is returned. If the count value is larger than the string length, then the entire string is
+        returned.</p>
+    <pre><code><span class="hljs-built_in">name</span> := <span class="hljs-string">"Bob Smith"</span>
+<span class="hljs-keyword">first</span> := strings.Left(<span class="hljs-built_in">name</span>, <span class="hljs-number">3</span>)
+</code></pre>
+    <p>In this example, the value of <code>first</code> will be &quot;Bob&quot;.</p>
+    <h3 id="strings-length-string-">strings.Length(string)</h3>
+    <p>The <code>Length()</code> function returns the length of a string <em>in characters</em>. This is different than the builtin <code>len()</code> function which returns the length of a string in bytes. This difference is because a character can take
+        up more than one byte. For example,</p>
+    <pre><code> str := <span class="hljs-string">"\u2813foo\u2813"</span>
+ a := <span class="hljs-built_in">len</span>(str)
+ b := strings.Length(str)
+</code></pre>
+    <p>In this example, the value of <code>a</code> will be 9, which is the number of bytes stored in the string. But because the first and last characters are unicode characters that take multiple bytes, the value of <code>b</code> will be 5, indicating
+        that there are five characters in the string.</p>
+    <h3 id="strings-right-string-count-">strings.Right(string, count)</h3>
+    <p>The <code>Right()</code> function returns the right-most characters of the given string. If the value of the count parameter is less than 1, an empty string is returned. If the count value is larger than the string length, then the entire string is
+        returned.</p>
+    <pre><code><span class="hljs-built_in">name</span> := <span class="hljs-string">"Bob Smith"</span>
+<span class="hljs-keyword">last</span> := strings.Right(<span class="hljs-built_in">name</span>, <span class="hljs-number">5</span>)
+</code></pre>
+    <p>In this example, the value of <code>last</code> will be &quot;Smith&quot;.</p>
+    <h3 id="strings-split-string-delimiter-">strings.Split(string [, delimiter])</h3>
+    <p>The <code>Split()</code> function will split a string into an array of strings, based on a provided delimiter character. If the character is not present, then a newline is assumed as the delimiter character.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := <span class="hljs-string">"This is\na test\nstring"</span>
+<span class="hljs-selector-tag">b</span> := strings.Split(a)
+</code></pre>
+    <p>In this example, <code>b</code> will be an array of strings with three members, one for each line of the string: [&quot;This is&quot;, &quot;a test&quot;, &quot;string&quot;]. If the string given was an empty string, the result is an empty array.</p>
+    <p>If you wish to use your own delimiter, you can supply that as the second parameter. For example,</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := <span class="hljs-string">"101, 553, 223, 59"</span>
+<span class="hljs-selector-tag">b</span> := strings.Split(<span class="hljs-selector-tag">a</span>, <span class="hljs-string">", "</span>)
+</code></pre>
+    <p>This uses the string &quot;, &quot; as the delimiter. Note that this must exactly match, so the space is significant. The value of b will be &quot;101&quot;, &quot;553&quot;, &quot;223&quot;, &quot;59&quot;].</p>
+    <h3 id="strings-string-n1-n2-">strings.String(n1, n2...)</h3>
+    <p>The <code>String()</code> function will construct a string from an array of numeric values or string values.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := strings.String(<span class="hljs-number">115</span>, <span class="hljs-number">101</span>, <span class="hljs-number">116</span>, <span class="hljs-number">115</span>)
+</code></pre>
+    <p>This results in <code>a</code> containing the value &quot;sets&quot;, where each integer value was used as a Unicode character specification to construct the string.</p>
+    <pre><code><span class="hljs-selector-tag">b</span> := strings.String(<span class="hljs-string">"this"</span>, <span class="hljs-string">"and"</span>, <span class="hljs-string">"that"</span>)
+</code></pre>
+    <p>You can also specify arguments that are string values (including individual characters) and they are concatenated together to make a string. In the above example, <code>b</code> contains the string &quot;thisandthat&quot;.</p>
+    <h3 id="strings-substring-string-start-count-">strings.Substring(string, start, count)</h3>
+    <p>The <code>Substring()</code> function extracts a portion of the string provided. The start position is the first character position to include (1-based), and the count is the number of characters to include in the result. For example,</p>
+    <pre><code><span class="hljs-built_in">name</span> := <span class="hljs-string">"Abe Lincoln"</span>
+part := strings.Substring(<span class="hljs-built_in">name</span>, <span class="hljs-number">5</span>, <span class="hljs-number">4</span>)
+</code></pre>
+    <p>This would result in <code>part</code> containing the string &quot;Linc&quot;, representing the starting with the fifth character, and being four characters long.</p>
+    <h3 id="strings-template-name-struct-">strings.Template(name [, struct])</h3>
+    <p>The <code>Template()</code> function executes a template operation, using the supplied data structures. See the <code>@template</code> directive for more details on creating a template name. The struct contains values that can be substituted into
+        the template as it is processed. The structure&#39;s fields are used as substitution names in the template, and the field values is used in it&#39;s place in the string.
+    </p>
+    <pre><code>@template myNameIs `Hello, my name is {{.First}} {{.Last}}`
+
+person := { First: <span class="hljs-string">"Tom"</span>, Last: <span class="hljs-string">"Smith"</span>}
+label , err := strings.Template( myNameIs, person )
+
+<span class="hljs-keyword">if</span> err != nil {
+    fmt.Println(err)
+} <span class="hljs-keyword">else</span> {
+    fmt.Println(label)
+}
+</code></pre>
+    <p>This program will print the string &quot;Hello, my name is Tom Smith&quot;. The template substitutions <code>{{.First}}</code> and <code>{{.Last}}</code> extract the specified field names from the structure. Note that, unlike Go templates, you can
+        reference a template in another template without taking any special additional actions. So the template can use the <code>{{template &quot;name&quot;}}</code> syntax, and as long as you have executed an @template operation for the <em>name</em>        template, then it is automatically included in the template before executing the query.</p>
+    <p>Note that @template creates a symbol with the given template, but that value can only be used in the call to strings.Template() to identify the specific template to use.</p>
+    <h3 id="strings-tolower-string-">strings.ToLower(string)</h3>
+    <p>The <code>ToLower()</code> function converts the characters of a string to the lowercase version of that character, if there is one. If there is no lowercase for a given character, the character is not affected in the result.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := <span class="hljs-string">"Mazda626"</span>
+<span class="hljs-selector-tag">b</span> := strings.ToLower(a)
+</code></pre>
+    <p>In this example, the value of <code>b</code> will be &quot;mazda626&quot;.</p>
+    <h3 id="strings-toupper-string-">strings.ToUpper(string)</h3>
+    <p>The <code>ToUpper()</code> function converts the characters of a string to the uppercase version of that character, if there is one. If there is no uppercase value for a given character, the character is not affected in the result.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := <span class="hljs-string">"Bang+Olafsen"</span>
+<span class="hljs-selector-tag">b</span> := strings.ToUpper(a)
+</code></pre>
+    <p>In this example, the value of <code>b</code> will be &quot;BANG+OLAFSEN&quot;.</p>
+    <h3 id="strings-tokenize-string-">strings.Tokenize(string)</h3>
+    <p>The <code>Tokenize()</code> function uses the built-in tokenizer to break a string into its tokens based on the <em>Ego</em> language rules. The result is passed back as an array.</p>
+    <pre><code>s := <span class="hljs-string">"x{} &lt;- f(3, 4)"</span>
+t := strings.Tokenize(s)
+</code></pre>
+    <p>This results in <code>t</code> being a []string array, with contents [&quot;x&quot;, &quot;{}&quot;, &quot;&lt;-&quot;, &quot;f&quot;, &quot;(&quot;, &quot;3&quot;, &quot;,&quot;, &quot;4&quot;, &quot;)&quot;]. Note that {} is considered a single
+        token in the language, as is &lt;- so they each occupy a single location in the resulting string array.</p>
+    <h3 id="strings-truncate-string-len-">strings.Truncate(string, len)</h3>
+    <p>The <code>Truncate()</code> function will truncate a string that is too long, and add the ellipsis (&quot;...&quot;) character at the end to show that there is more information that was not included.</p>
+    <pre><code><span class="hljs-selector-tag">a</span> := <span class="hljs-string">"highway bridge out of order"</span>
+msg := strings.Truncate(<span class="hljs-selector-tag">a</span>, <span class="hljs-number">10</span>)
+</code></pre>
+    <p>In this example, the value of <code>msg</code> is &quot;highway...&quot;. This is to ensure that the resulting string is only ten characters long (the length specified as the second parameter). If the string is not longer than the given count, the
+        entire string is returned.
+    </p>
+    <h3 id="strings-urlpattern-">strings.URLPattern()</h3>
+    <p>The <code>URLPattern()</code> function can be used in a web service to determine what parts of a URL are present. This is particularly useful when using collection-style URL names, where each part of the path could define a collection type, followed
+        optionally by an instance identifier of a specific member of tht collection, etc. Consider the following example:</p>
+    <pre><code>p := <span class="hljs-string">"/services/proc/{{pid}}/memory"</span>
+u := <span class="hljs-string">"/services/proc/1553/memory"</span>
+
+m := strings.URLPattern(u,p)
+</code></pre>
+    <p>The <code>p</code> variable holds a pattern. It contains a number of segments of the URL, and for one of them, specifies the indicator for a substitution value. That is, in this part of the URL, any value is accepted and will be named &quot;pid&quot;.
+        The resulting map generated by the call looks like this:</p>
+    <pre><code>{
+    <span class="hljs-attr">"services"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"proc"</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"pid"</span>: <span class="hljs-string">"1553"</span>,
+    <span class="hljs-attr">"memory"</span>: <span class="hljs-literal">true</span>,
+}
+</code></pre>
+    <p>For items that are constant segments of the URL, the map contains a boolean value indicating if it was found in the pattern. For the substitution operator(s) in the pattern, the map key is the name from the pattern, and the value is the value from
+        the URL. Note that this can be used to determine partial paths:</p>
+    <pre><code>p := <span class="hljs-string">"/services/proc/{{pid}}/memory"</span>
+u := <span class="hljs-string">"/services/proc/"</span>
+
+m := strings.URLPattern(u,p)
+</code></pre>
+    <p>In this case, the resulting map will have a &quot;pid&quot; member that is an empty string, and a &quot;memory&quot; value that is false, which indicates neither the substitution value or the named field in the URL are present.</p>
+    <p>You an specify a pattern that covers an entire hierarchy, and the return will indicate how much of the hierarchy was returned.</p>
+    <pre><code><span class="xml">p := "/services/location/state/</span><span class="hljs-template-variable">{{stateName}}</span><span class="xml">/city/</span><span class="hljs-template-variable">{{cityName}}</span><span class="xml"></span>
+</code></pre>
+    <p>If the supplied URL was <code>/services/location/state/nc/city/cary</code> then the map would be:
+    </p>
+    <pre><code>{
+    <span class="hljs-attr">"services"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"location"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"state"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"stateName"</span> : <span class="hljs-string">"nc"</span>,
+    <span class="hljs-attr">"city"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"cityName"</span> : <span class="hljs-string">"cary"</span>,
+}
+</code></pre>
+    <p>But, if the url provided only had <code>services/location/state/nc</code> then resulting map would be:</p>
+    <pre><code>{
+    <span class="hljs-attr">"services"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"location"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"state"</span> : <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"stateName"</span> : <span class="hljs-string">"nc"</span>,
+    <span class="hljs-attr">"city"</span> : <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"cityName"</span> : <span class="hljs-string">""</span>,
+}
+</code></pre>
+    <p>If the url did not include the state name field, that would be blank, which could tell the service that a GET on this URL was meant to return a list of the state values stored, as opposed to information about a specific state.</p>
+    <h2 id="sync-a-name-sync-a-">sync
+        <a name="sync"></a>
+    </h2>
+    <p>The <code>sync</code> package provides access to low-level primitive operations used to synchronize operations between different go routine threads that might be running concurrently.</p>
+    <h3 id="sync-mutex">sync.Mutex</h3>
+    <p>This is a type provided by the <code>sync</code> package, used to perform simple mutual exclusion operations to control access to resources. The mutex can be locked by a user, in which case any other thread&#39;s attempt to lock the item will result
+        in that thread waiting until the mutex is unlocked by the first owner. Consider the following code:</p>
+    <pre><code><span class="hljs-keyword">var</span> counter <span class="hljs-keyword">int</span>
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">worker</span><span class="hljs-params">(id <span class="hljs-keyword">int</span>)</span></span> {
+    counter = counter + <span class="hljs-number">1</span>
+    myCount := counter
+    fmt.Printf(<span class="hljs-string">"thread %d, counter %d\n"</span>, id, myCount)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> <span class="hljs-title">int</span></span> {
+   workers := <span class="hljs-number">5</span>
+    <span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span> ; i &lt; workers; i = i + <span class="hljs-number">1</span> {
+        <span class="hljs-keyword">go</span> worker(i)
+    }
+
+    time.Sleep(<span class="hljs-string">"1s"</span>)
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+}
+</code></pre>
+    <p>As written above, the code will launch five go routines that will all do the same simple operation -- increment the counter and then print it&#39;s value at the time the go routine ran. We know that go routines run in unpredictable order, but even
+        if we saw the numbers printed out of order, we would still see the counter values increment as 1, 2, 3, 4, and 5. </p>
+    <p>But, because the go routines are running simultaneously, between the time one routine gets the value of counter, adds one to it, and puts it back, another routine could have performed the same operation. This means we would over-write the value from
+        the other thread. In this case, the output of the count value might be more like this:</p>
+    <pre><code>thread <span class="hljs-number">0</span>, counter <span class="hljs-number">1</span>
+thread <span class="hljs-number">4</span>, counter <span class="hljs-number">1</span>
+thread <span class="hljs-number">2</span>, counter <span class="hljs-number">2</span>
+thread <span class="hljs-number">3</span>, counter <span class="hljs-number">2</span>
+thread <span class="hljs-number">1</span>, counter <span class="hljs-number">3</span>
+</code></pre>
+    <p>To fix this, we use a mutex value to block access to the counter for each thread, so they are forced to take turns incrementing the counter.</p>
+    <pre><code><span class="hljs-keyword">var</span> counter <span class="hljs-keyword">int</span>
+<span class="hljs-keyword">var</span> mutex sync.Mutex
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">worker</span><span class="hljs-params">(id <span class="hljs-keyword">int</span>)</span></span> {
+    mutex.Lock()
+    counter = counter + <span class="hljs-number">1</span>
+    myCount := counter
+    mutex.Unlock()
+    fmt.Printf(<span class="hljs-string">"thread %d, counter %d\n"</span>, id, myCount)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> <span class="hljs-title">int</span></span> {
+   workers := <span class="hljs-number">5</span>
+    <span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span> ; i &lt; workers; i = i + <span class="hljs-number">1</span> {
+        <span class="hljs-keyword">go</span> worker(i)
+    }
+
+    time.Sleep(<span class="hljs-string">"1s"</span>)
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+}
+</code></pre>
+    <p>Now that there is a mutex protecting access to the counter, no matter what order the go routines run, the increment of the count value will always be sequential, resulting in output that might look like this:</p>
+    <pre><code>thread <span class="hljs-number">4</span>, counter <span class="hljs-number">1</span>
+thread <span class="hljs-number">0</span>, counter <span class="hljs-number">2</span>
+thread <span class="hljs-number">2</span>, counter <span class="hljs-number">3</span>
+thread <span class="hljs-number">3</span>, counter <span class="hljs-number">4</span>
+thread <span class="hljs-number">1</span>, counter <span class="hljs-number">5</span>
+</code></pre>
+    <h3 id="sync-waitgroup">sync.WaitGroup</h3>
+    <p>This is a type provided by the <code>sync</code> package. You can declare a variable of this type and a WaitGroup is created, and can be stored in a variable. This value is used as a <em>counting semaphore</em> and usually supports arbitrary numbers
+        of go routine starts and completions.</p>
+    <p>Consider this example code:</p>
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">thread</span><span class="hljs-params">(id <span class="hljs-keyword">int</span>, wg *sync.WaitGroup)</span></span> {               [<span class="hljs-number">1</span>]
+    fmt.Printf(<span class="hljs-string">"Thread %d\n"</span>, id)
+    wg.Done()                                           [<span class="hljs-number">2</span>]
+}
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> <span class="hljs-title">int</span></span> {
+    <span class="hljs-keyword">var</span> wg sync.WaitGroup                               [<span class="hljs-number">3</span>]
+
+    count := <span class="hljs-number">5</span>
+    <span class="hljs-keyword">for</span> i := <span class="hljs-number">1</span>; i &lt;= count; i = i + <span class="hljs-number">1</span> {
+        wg.Add(<span class="hljs-number">1</span>)                                       [<span class="hljs-number">4</span>]
+        <span class="hljs-keyword">go</span> thread(i, &amp;wg)                               [<span class="hljs-number">5</span>]
+    }
+
+    wg.Wait()                                           [<span class="hljs-number">6</span>]
+
+    fmt.Println(<span class="hljs-string">"all done"</span>)
+}
+</code></pre>
+    <p>This program launches five instances of a go routine thread, and waits for them to complete. This simplified example does not return a value from the threads, so channels are not used. However, the caller must know when all the go routines have completed
+        to know it is safe to exit this function. Note that if the code did not include the <code>wg.Wait()</code> call then the <code>main</code> function would exit before most of the go routines had a chance to complete.</p>
+    <p>Here&#39;s a breakdown of important steps in this example:</p>
+    <ol>
+        <li>
+            <p>In this declaration of the function used as the go routine, a parameter is passed that is a <strong>pointer</strong> to the WaitGroup variable. This is important because operations on the <code>WaitGroup</code> variable must be done on the
+                same instance of that variable.</p>
+        </li>
+        <li>
+            <p>The <code>Done()</code> call is made by the go routine when it has completed all it&#39;s operations. This could also be implemented as</p>
+            <pre><code><span class="hljs-selector-tag">defer</span> <span class="hljs-selector-tag">wg</span><span class="hljs-selector-class">.Done</span>()
+</code></pre>
+            <p> to ensure that it is always executed whenever the function exits.</p>
+        </li>
+        <li>
+            <p>This declares the instance of the <code>WaitGroup</code> variable that will be used for this example. There is no initialization needed; the variable instance starts as a <em>zero state</em> value.</p>
+        </li>
+        <li>
+            <p>Before launching a go routine, add 1 to the <code>WaitGroup</code> value (this can actually be a number other than 1, but must correlate exactly to the number of <code>Done()</code> calls that will be made to indicate completion of the task).
+                It is essential that this call be made <em>before</em> the <code>go</code> statement to ensure that the go routine does not complete before the <code>Add()</code> call can be made.</p>
+        </li>
+        <li>
+            <p>Note that the <code>WaitGroup</code> variable must be passed by address. By default, <em>Ego</em> passes all parameters by value (that is, a copy of the value is passed to the function). But because the functions must operate on the exact
+                same instance of a <code>WaitGroup</code> variable, we must pass the address of the value allocated. Note that it is important that this value not go out of scope before the
+                <code>Wait()</code> call can be made.</p>
+        </li>
+        <li>
+            <p>The <code>Wait()</code> call essentially waits until as many <code>Done()</code> calls are made as were indicated by the matching <code>Add()</code> calls. Until then, the current program will simply wait, and then resume execution after the
+                last
+                <code>Done()</code> is called.</p>
+        </li>
+    </ol>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h2 id="tables-a-name-tables-a-">tables
+        <a name="tables"></a>
+    </h2>
+    <p>The tables package provides functions to help programs produce text tables of data for output. The package allows you to create a table object with a given set of column names. You can add rows to the table, sort the table, specify formatting options
+        for the table, and then generate a text or json version of the table data.</p>
+    <h3 id="tables-new-colname-colname-">tables.New(&quot;colname&quot; [, &quot;colname&quot;...])</h3>
+    <p>This gives access to the table formatting and printing subsystem for Ego programs. The arguments must be the names of the columns in the resulting table. These can be passed as discrete arguments, or as an array of strings. The result is a TableHandle
+        object that can be used to insert data into the table structure, sort it, and format it for output.
+    </p>
+    <pre><code><span class="hljs-string">t :</span>= tables.New(<span class="hljs-string">":Identity"</span>, <span class="hljs-string">"Age:"</span>, <span class="hljs-string">"Address"</span>)
+
+t.AddRow( {<span class="hljs-string">Identity:</span> <span class="hljs-string">"Tony"</span>, <span class="hljs-string">Age:</span> <span class="hljs-number">61</span>, <span class="hljs-string">Address:</span> <span class="hljs-string">"Main St"</span>} )
+t.AddRow( {<span class="hljs-string">Identity:</span> <span class="hljs-string">"Mary"</span>, <span class="hljs-string">Age:</span> <span class="hljs-number">60</span>, <span class="hljs-string">Address:</span> <span class="hljs-string">"Elm St"</span>} )
+t.AddRow( {<span class="hljs-string">Identity:</span> <span class="hljs-string">"Andy"</span>, <span class="hljs-string">Age:</span> <span class="hljs-number">61</span>, <span class="hljs-string">Address:</span> <span class="hljs-string">"Elm St"</span>} )
+
+t.Sort( <span class="hljs-string">"Age"</span>, <span class="hljs-string">"Identity"</span> )
+
+t.Format(<span class="hljs-literal">true</span>,<span class="hljs-literal">false</span>)
+t.Print()
+t.Close()
+</code></pre>
+    <p>This sample program creates a table with three column headings. The use of the &quot;:&quot; character controls alignment for the column. If the colon is at the left or right side of the heading, that is how the heading is aligned. If no colon is
+        used, then the default is left-aligned.</p>
+    <p>The data is added for three rows. Note that data can be added as either a struct, where the column names must match the structure field names. Alternatively, the values can be added as separate arguments to the function, in which case they are added
+        in the order of the column headings.</p>
+    <p>The format of the table is further set by sorting the data by Age and then Identity, and indicating that headings are to be printed, but underlines under those headings are not. The table is then printed to the default output and the memory structures
+        are released.</p>
+    <h2 id="time">time</h2>
+    <p>The <code>time</code> package assist with functions that access or calculate time/date values. This is similar to the &quot;time&quot; package in Go, but has significant differences and is not as complete as the <em>Go</em> version. The <code>time.Now()</code>        and <code>time.Parse()</code> functions each create a new <code>time.time</code> variable type, which has a set of functions that can be performed on it.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Example</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Add</td>
+                <td>n := t.Add(nt)</td>
+                <td>Add one time value to another.</td>
+            </tr>
+            <tr>
+                <td>Format</td>
+                <td>f := t.Format(&quot;Mon Jan 2&quot;)</td>
+                <td>Format the time value according to the reference time.</td>
+            </tr>
+            <tr>
+                <td>SleepUntil</td>
+                <td>t.SleepUntil()</td>
+                <td>Pause execution until the time arrives.</td>
+            </tr>
+            <tr>
+                <td>String</td>
+                <td>f := t.String()</td>
+                <td>Convert the time value to a standard string representation.</td>
+            </tr>
+            <tr>
+                <td>Sub</td>
+                <td>n := t.Sub(start) Subtract a a time value from another.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>A note about the <code>Format()</code> operator. The format string must be comprised of elements from the reference time, which is a specific date value &quot;Mon Jan 2 15:04:05 -0700 MST 2006&quot;. This value is also available as <code>time.reference</code>        if you need to refer to it. Each part of the date has a unique value, so the <code>Format()</code> call in the table above will print the day of the week, the month, and the day since those are the values used from the reference string in the
+        format specification.
+    </p>
+    <h3 id="time-now-">time.Now()</h3>
+    <p>The <code>Now()</code> function gets the current time at the moment of the call, and sets it as the time value in the result.
+    </p>
+    <pre><code><span class="hljs-built_in">now</span> := <span class="hljs-built_in">time</span>.<span class="hljs-built_in">Now</span>()
+...
+elapsed := <span class="hljs-built_in">time</span>.<span class="hljs-built_in">Now</span>().<span class="hljs-keyword">Sub</span>(<span class="hljs-built_in">now</span>)
+</code></pre>
+    <p>In this case, the code first captures the current time and stores it in the variable <code>now</code>. It then does some other work for the program, and when done we want to find out the elapsed time. The value of <code>elapsed</code> is a duration
+        string that indicates how much time passed between the <code>now</code> value and the current time. For example, this could be a value such as &quot;5s&quot; for five seconds of time passing.</p>
+    <h3 id="time-parse-string-model-">time.Parse(string, model)</h3>
+    <p>This converts a text representation of a time into a time value. The first parameter is the text to convert, and the second parameter is the &quot;model&quot; which describes the format in which the value is parsed. This uses the same specific date
+        values from thee <code>time.reference</code> time.</p>
+    <pre><code>s := <span class="hljs-string">"12/7/1960 15:30"</span>
+m := <span class="hljs-string">"1/2/2006 15:04"</span>
+t := time.Parse(s, m)
+</code></pre>
+    <p>The time value stored in <code>t</code> is the time value &quot;Wed Dec 7 15:30:00 UTC 1960&quot;. Note that the model showed a month of 1 (for January) but was still using the specific values from the reference time. The slashes are not part of the
+        reference time, so they must exist in the same locations in the string to be converted and will be skipped.</p>
+    <p>IF there is an error in parsing, the value of <code>t</code> will be <code>nil</code>. You can find out what the exact error is by allowing the <code>time.Parse()</code> function to return two values:</p>
+    <pre><code>t, e := <span class="hljs-built_in">time</span>.<span class="hljs-built_in">Parse</span>(s, m)
+</code></pre>
+    <p>If the value of <code>t</code> is <code>nil</code> then the value of <code>e</code> will be the error code that reflects the parsing error. If the call is made with only one return value specified, then the error is discarded.</p>
+    <h3 id="time-sleep-duration-">time.Sleep(duration)</h3>
+    <p>The <code>Duration()</code> function of thee <code>time</code> package will sleep for the specified amount of time. The duration is expressed as a string. For example,</p>
+    <pre><code><span class="hljs-built_in">time</span>.<span class="hljs-built_in">Sleep</span>(<span class="hljs-string">"10s"</span>)
+</code></pre>
+    <p>This will sleep for ten seconds. The suffix can be &quot;h&quot;, &quot;m&quot;, or &quot;s&quot; and can include fractional values. While the system is sleeping, go routines will continue to run but the current program (or go routine) will stop executing
+        for the given duration.</p>
+    <h2 id="util-a-name-util-a-">util
+        <a name="util"></a>
+    </h2>
+    <p>The <code>util</code> package contains miscellaneous utility functions that may be convenient for developers write writing <em>Ego</em> programs.</p>
+    <h3 id="util-memory-">util.Memory()</h3>
+    <p>The <code>Memory()</code> function returns a strutcure summarying current user memory consumption, total consumption for the life of the program, system memory on behalf of the <em>Ego</em> processes, and a count of the number of times the garbage
+        collector that manages memory for Ego has been run.</p>
+    <pre><code><span class="hljs-selector-tag">ego</span>&gt; <span class="hljs-selector-tag">fmt</span><span class="hljs-selector-class">.Println</span>(<span class="hljs-selector-tag">util</span><span class="hljs-selector-class">.Memory</span>())
+{ <span class="hljs-attribute">current</span>: <span class="hljs-number">0.9879989624023438</span>, gc: <span class="hljs-number">0</span>, system: <span class="hljs-number">68.58106994628906</span>, time: <span class="hljs-string">"Thu Apr 22 2021 10:07:36 EDT"</span>, total: <span class="hljs-number">0.9879989624023438</span> }
+</code></pre>
+    <p>The result of the function is always a structure. The <code>current</code> and <code>system</code> values are expressed in megabytes; so in the above example, the current memory consumption by the system on behalf of Ego is 68MB and the user memory
+        consumed by Ego on behalf of the user is just under 1MB. The value of <code>total</code> is the total amount of memory ever allocated by Ego; this number will rise throughout the life of the program, but each time the memory reclaimation thread
+        (garbage collector) runs, it will reclaim unused memory and reude the <code>current</code> value accordingly. You can use the <code>gc</code> field as a count of the number of times the garbage collector has run.</p>
+    <h3 id="util-mode-">util.Mode()</h3>
+    <p>The <code>Mode()</code> function reports the mode the current program is running under. The list of values are:</p>
+    <p>&nbsp;</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Mode</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>interactive</td>
+                <td>The <code>ego</code> program was run with no program name, accepting console input</td>
+            </tr>
+            <tr>
+                <td>server</td>
+                <td>The program is running under control of an <em>Ego</em> rest server as a service</td>
+            </tr>
+            <tr>
+                <td>test</td>
+                <td>The program is running using the <code>ego test</code> integration test command</td>
+            </tr>
+            <tr>
+                <td>run</td>
+                <td>The program is running using <code>ego run</code> with an input file or pipe</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h3 id="util-symbols-">util.Symbols()</h3>
+    <p>The <code>Symbols()</code> function generates a report on the current state of the active symbol table structure. This prints the symbols defined in each scope (including statement blocks, functions, programs, and the root symbol table). For each
+        one, the report includes the number of symbol table slots used out of the maximum allowed, and then a line for each symbol, showing it&#39;s name, type, and value.
+    </p>
+    <pre><code><span class="hljs-selector-tag">fmt</span><span class="hljs-selector-class">.Println</span>(<span class="hljs-selector-tag">util</span><span class="hljs-selector-class">.Symbols</span>())
+</code></pre>
+    <p>Note that symbols that are internal to the running of the program are not displayed; only symbols created by the user or for defined packages are displayed.</p>
+    <h2 id="uuid-a-name-uuid-a-">uuid
+        <a name="uuid"></a>
+    </h2>
+    <p>The <code>uuid</code> package provides support for universal unique identifiers. This is an industry-standard way of creating an identifier that is (for all practical purposes) guaranteed to be unique, even among different instances of <code>ego</code>        running on different computers. A <code>uuid</code> value is a string, consisting of groups of hexadecimal values, where each group is separated by a hyphen. For example, &quot;af315ffd-6c57-46b9-af62-4aac8ba5a212&quot;.</p>
+    <h3 id="uuid-new-">uuid.New()</h3>
+    <p>The <code>New()</code> function generates a new unique identifier value, and returns the result as a string.</p>
+    <pre><code><span class="hljs-attribute">id :</span><span class="hljs-string">= uuid.New</span>()
+</code></pre>
+    <h3 id="uuid-nil-">uuid.Nil()</h3>
+    <p>The <code>Nil</code> function generates the <em>zero value</em> for a UUID, which is a UUID that consists entirely of zeroes. This value will never be generated by the <code>New()</code> function and will never match another UUID value.</p>
+    <pre><code><span class="hljs-keyword">if</span> <span class="hljs-built_in">id</span> == uuid.Nil() {
+    fmt.Println(<span class="hljs-string">"id value was not set"</span>)
+}
+</code></pre>
+    <h3 id="uuid-parse-string-">uuid.Parse(string)</h3>
+    <p>The <code>Parse()</code> function is used to parse and validate a UUID string value. This is useful for string values received via REST API calls, etc. The <code>Parse()</code> function returns two value; the result of the parse and an error to indicate
+        if the parse was successful.
+    </p>
+    <pre><code>id, <span class="hljs-keyword">err</span> := uuid.<span class="hljs-keyword">Parse</span>(uuidString)
+</code></pre>
+    <p>If the string variable <code>uuidString</code> contains a valid UUID specification, then it is stored in <code>id</code> (case normalized) and the <code>err</code> variable is nil. But if there was an error, the <code>id</code> will be nil, and the
+        <code>err</code> will describe the error.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="user-packages">User Packages</h1>
+    <p>You can create your own packages which contain type definitions and functions that are used via the package prefix you specify. Consider the following example files.</p>
+    <p>The first file is &quot;employee.ego&quot; and describes a package. It starts with a <code>package</code> statement as the first statement item, and then defines a type and a function that accepts a value of that type as the function receiver.</p>
+    <pre><code><span class="hljs-keyword">package</span> employee
+
+<span class="hljs-keyword">type</span> Employee <span class="hljs-keyword">struct</span> {
+    id <span class="hljs-keyword">int</span>
+    name <span class="hljs-keyword">string</span>
+}
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(e *Employee)</span> <span class="hljs-title">SetName</span><span class="hljs-params">( s <span class="hljs-keyword">string</span> )</span></span> {
+    e.name = s
+}
+</code></pre>
+    <p>The second file is &quot;test.ego&quot; and is the program that will use this package. It starts with an <code>import</code> statement, which causes the compilation to include the package definition within the named file &quot;employee&quot;. You
+        can specify the file extension of &quot;.ego&quot; but it is not necessary.</p>
+    <pre><code><span class="hljs-keyword">import</span> <span class="hljs-string">"employee"</span>
+
+e := employee.Employee{id:55}
+
+e.SetName(<span class="hljs-string">"Frodo"</span>)
+
+fmt.Println(<span class="hljs-string">"Value is "</span>, e)
+</code></pre>
+    <p>This program uses the package definitions. It creates an instance of an
+        <code>Employee</code> from the <code>employee</code> package, and initializes one of the fields of the type. It then uses the object to invoke a function for that type, the <code>SetName</code> package. Note that when this is called, you do not
+        specify the package name; instead you specify the object that was created using the package&#39;s definition. In this example, it should print the structure contents showing the <code>id</code> of 55 and the <code>name</code> of &quot;Frodo.&quot;</p>
+    <h2 id="package">package</h2>
+    <p>Use the <code>package</code> statement to define a set of related functions in a package in the current source file. A give source file can only contain one package statement and it must be the first statement.</p>
+    <pre><code><span class="hljs-keyword">package</span> <span class="hljs-title">factor</span>
+</code></pre>
+    <p>This defines that all the functions and constants in this module will be defined in the <code>factor</code> package, and must be referenced with the
+        <code>factor</code> prefix, as in</p>
+    <pre><code>y := factor.intfact(55)
+</code></pre>
+    <p>This calls the function <code>intfact()</code> defined in the <code>factor</code> package.</p>
+    <p>&nbsp; &nbsp;
+    </p>
+    <h1 id="directives-a-name-directives-a-">Directives
+        <a name="directives"></a>
+    </h1>
+    <p>Directives are special <em>Ego</em> statements that perform special functions outside the normal language syntax, often to influence the runtime environment of the program or give instructions to the compiler itself.</p>
+    <h2 id="-error-a-name-at-error-a-">@error
+        <a name="at-error"></a>
+    </h2>
+    <p>You can generate a runtime error by adding in a <code>@error</code> directive, which is followed by a string expression that is used to formulate the error message text.</p>
+    <pre><code><span class="hljs-attribute">v</span> = <span class="hljs-string">"unknown"</span>
+<span class="hljs-variable">@error</span> <span class="hljs-string">"unrecognized value: "</span> + v
+</code></pre>
+    <p>This will result in a runtime error being generated with the error text &quot;unrecognized value: unknown&quot;. This error can be intercepted in a try/catch block if desired.</p>
+    <h2 id="-global">@global</h2>
+    <p>You can store a value in the Root symbol table (the table that is the ultimate parent of all other symbols). You cannot modify an existing readonly value, but you can create new readonly values, or values that can be changed by the user.</p>
+    <pre><code>@<span class="hljs-keyword">global</span> <span class="hljs-keyword">base</span> <span class="hljs-string">"http://localhost:8080"</span>
+</code></pre>
+    <p>This creates a variable named <code>base</code> that is in the root symbol table, with the value of the given expression. If you do not specify an expression, the variable is created as an empty-string.</p>
+    <h2 id="-template-a-name-at-template-a-">@template
+        <a name="at-template"></a>
+    </h2>
+    <p>You can store away a named Go template as inline code. The template can reference any other templates defined.</p>
+    <pre><code>@<span class="hljs-keyword">template</span> hello <span class="hljs-string">"Greetings, {{.Name}}"</span>
+</code></pre>
+    <p>The resulting templates are available to the template() function, whose first parameter is the template name and the second optional parameter is a record containing all the named values that might be substituted into the template. For example,</p>
+    <pre><code> <span class="hljs-selector-tag">print</span> <span class="hljs-selector-tag">strings</span><span class="hljs-selector-class">.template</span>(<span class="hljs-selector-tag">hello</span>, { <span class="hljs-attribute">Name</span>: <span class="hljs-string">"Tom"</span>})
+</code></pre>
+    <p>This results in the string &quot;Greetings, Tom&quot; being printed on the stdout console. Note that <code>hello</code> becomes a global variable in the program, and is a pointer to the template that was previously compiled. This global value can
+        only be used with template functions.</p>
+    <h2 id="-type-static-dynamic-a-name-at-type-a-">@type static|dynamic
+        <a name="at-type"></a>
+    </h2>
+    <p>You can temporarily change the language settings to allow static typing of data only. When in static mode,</p>
+    <ul>
+        <li>All values in an array constant must be of the same type</li>
+        <li>You cannot store a value in a variable of a different type</li>
+        <li>You cannot create or delete structure members</li>
+    </ul>
+    <p>This mode is effective only within the current statement block (demarcated by &quot;{&quot; and &quot;}&quot; characters). When the block finishes, type enforcement returns to the state of the previous block. This value is controlled by the static-types
+        preferences item or command-line option.</p>
+
+</body>
