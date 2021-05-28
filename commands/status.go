@@ -30,8 +30,9 @@ func Status(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
 			running = true
-			msg = fmt.Sprintf("UP (pid %d, session %s) since %s, LOCAL",
+			msg = fmt.Sprintf("UP (pid %d, host %s, session %s) since %s, LOCAL",
 				status.PID,
+				status.Hostname,
 				status.LogID,
 				status.Started.Format(time.UnixDate))
 		} else {
@@ -52,9 +53,10 @@ func Status(c *cli.Context) *errors.EgoError {
 // Ping a remote server's "up" service to see its status.
 func remoteStatus(addr string) *errors.EgoError {
 	resp := struct {
-		Pid     int    `json:"pid"`
-		Session string `json:"session"`
-		Since   string `json:"since"`
+		Pid      int    `json:"pid"`
+		Session  string `json:"session"`
+		Since    string `json:"since"`
+		Hostname string `json:"host"`
 	}{}
 
 	if err := ResolveServerName(addr); !errors.Nil(err) {
@@ -72,7 +74,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		os.Exit(3)
 	}
 
-	ui.Say("UP (pid %d, session %s) since %s, %s", resp.Pid, resp.Session, resp.Since, addr)
+	ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.Session, resp.Since, addr)
 
 	return nil
 }

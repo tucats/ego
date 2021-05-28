@@ -277,6 +277,8 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				Items: []defs.User{},
 			}
 			result.Status = http.StatusOK
+			result.Hostname = util.Hostname()
+			result.ID = Session
 
 			userDatabase := service.ListUsers()
 			for k, u := range userDatabase {
@@ -374,6 +376,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			AssetSize:  GetAssetCacheSize(),
 			AssetCount: GetAssetCacheCount(),
 		}
+		result.Hostname = util.Hostname()
+		result.ID = Session
 		result.Status = http.StatusOK
 		result.Message = "Success"
 
@@ -406,6 +410,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			AssetSize:  GetAssetCacheSize(),
 			AssetCount: GetAssetCacheCount(),
 		}
+		result.Hostname = util.Hostname()
+		result.ID = Session
 		result.Status = http.StatusOK
 		result.Message = "Success"
 
@@ -548,7 +554,10 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
 		}
 
+		response.Hostname = util.Hostname()
+		response.ID = Session
 		response.Status = http.StatusOK
+
 		b, _ := json.Marshal(response)
 		_, _ = w.Write(b)
 

@@ -1,6 +1,9 @@
 package util
 
-import "unicode"
+import (
+	"os"
+	"unicode"
+)
 
 func HasCapitalizedName(name string) bool {
 	var firstRune rune
@@ -12,4 +15,22 @@ func HasCapitalizedName(name string) bool {
 	}
 
 	return unicode.IsUpper(firstRune)
+}
+
+func Hostname() string {
+	if hostName, err := os.Hostname(); err == nil {
+		result := ""
+
+		for _, ch := range hostName {
+			if ch == '.' {
+				break
+			}
+
+			result = result + string(ch)
+		}
+
+		return result
+	} else {
+		return "<unknown hostname>"
+	}
 }

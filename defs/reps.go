@@ -13,12 +13,18 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+type ServerInfo struct {
+	Hostname string `json:"host"`
+	ID       string `json:"id"`
+}
+
 type LoggingItem struct {
 	Filename string          `json:"file,omitempty"`
 	Loggers  map[string]bool `json:"loggers,omitempty"`
 }
 
 type LoggingResponse struct {
+	ServerInfo
 	LoggingItem
 	RestResponse
 }
@@ -32,6 +38,7 @@ type CachedItem struct {
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint.
 type CacheResponse struct {
+	ServerInfo
 	Count      int          `json:"count"`
 	Limit      int          `json:"limit"`
 	Items      []CachedItem `json:"items"`
@@ -52,6 +59,7 @@ type User struct {
 // BaseCollection is a component of any collection type returned
 // as a response.
 type BaseCollection struct {
+	ServerInfo
 	Count int `json:"count"`
 	Start int `json:"start"`
 }
@@ -74,6 +82,7 @@ type UserResponse struct {
 // ServerStatus describes the state of a running server. A json version
 // of this information is the contents of the pid file.
 type ServerStatus struct {
+	ServerInfo
 	PID     int       `json:"pid"`
 	Started time.Time `json:"started"`
 	LogID   uuid.UUID `json:"logID"`

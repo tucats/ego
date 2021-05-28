@@ -137,30 +137,43 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 			return errors.NewMessage(cacheStatus.Message)
 		}
 
-		fmt.Printf("Server cache status (%d/%d) items\n", cacheStatus.Count, cacheStatus.Limit)
+		fmt.Printf("Server Cache, hostname %s, ID %s\n", cacheStatus.Hostname, cacheStatus.ID)
 
 		if cacheStatus.Count > 0 {
 			fmt.Printf("\n")
 
-			t, _ := tables.New([]string{"Endpoint", "Count", "Last Used"})
+			t, _ := tables.New([]string{"URL Path", "Count", "Last Used"})
 
 			for _, v := range cacheStatus.Items {
 				_ = t.AddRowItems(v.Name, v.Count, v.LastUsed)
 			}
 
 			_ = t.SortRows(0, true)
+			_ = t.SetIndent(2)
 			t.Print("text")
+			fmt.Printf("\n")
 		}
 
 		switch cacheStatus.AssetCount {
 		case 0:
-			fmt.Printf("\nThere are no HTML assets cached.\n")
+			fmt.Printf("  There are no HTML assets cached.\n")
 
 		case 1:
-			fmt.Printf("\nThere is 1 HTML asset in cache, for a total size of %d bytes\n", cacheStatus.AssetSize)
+			fmt.Printf("  There is 1 HTML asset in cache, for a total size of %d bytes\n", cacheStatus.AssetSize)
 
 		default:
-			fmt.Printf("\nThere are %d HTML assets in cache, for a total size of %d bytes\n", cacheStatus.AssetCount, cacheStatus.AssetSize)
+			fmt.Printf("  There are %d HTML assets in cache, for a total size of %d bytes\n", cacheStatus.AssetCount, cacheStatus.AssetSize)
+		}
+
+		switch cacheStatus.Count {
+		case 0:
+			fmt.Printf("  There are no service items in cache. The maximum cache size is %d items\n", cacheStatus.Limit)
+
+		case 1:
+			fmt.Printf("  There is 1 service item in cache. The maximum cache size is %d items\n", cacheStatus.Limit)
+
+		default:
+			fmt.Printf("  There are %d service items in cache. The maximum cache size is %d items\n", cacheStatus.Count, cacheStatus.Limit)
 		}
 	}
 

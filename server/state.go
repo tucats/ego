@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 var PathRoot string
@@ -104,6 +105,9 @@ func RemovePidFile(c *cli.Context) *errors.EgoError {
 // it's contents converted to a ServerStatus object.
 func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	var status = defs.ServerStatus{}
+
+	status.Hostname = util.Hostname()
+	status.ID = Session
 
 	b, err := ioutil.ReadFile(getPidFileName(c))
 	if errors.Nil(err) {

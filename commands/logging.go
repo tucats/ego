@@ -135,6 +135,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		if fileOnly {
 			ui.Say("%s", response.Filename)
 		} else {
+			fmt.Printf("Logging Status, hostname %s, ID %s\n\n", response.Hostname, response.ID)
 			t, _ := tables.New([]string{"Logger", "Active"})
 
 			for k, v := range response.Loggers {
@@ -142,6 +143,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 			}
 
 			_ = t.SortRows(0, true)
+			_ = t.SetIndent(2)
 			t.Print(ui.OutputFormat)
 
 			if response.Filename != "" {
