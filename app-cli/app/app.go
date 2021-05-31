@@ -6,9 +6,11 @@ package app
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -79,6 +81,34 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 		Args:        args,
 		Action:      app.Action,
 	}
+
+	// Create the platform definition symbols
+	platformType := datatypes.Structure(
+		datatypes.Field{
+			Name: "os",
+			Type: datatypes.StringType,
+		},
+		datatypes.Field{
+			Name: "arch",
+			Type: datatypes.StringType,
+		},
+		datatypes.Field{
+			Name: "go",
+			Type: datatypes.StringType,
+		},
+		datatypes.Field{
+			Name: "cpus",
+			Type: datatypes.IntType,
+		},
+	)
+
+	platform := datatypes.NewStruct(platformType)
+	_ = platform.Set("go", runtime.Version())
+	_ = platform.Set("os", runtime.GOOS)
+	_ = platform.Set("arch", runtime.GOARCH)
+	_ = platform.Set("cpus", runtime.NumCPU())
+	platform.SetReadonly(true)
+	_ = symbols.RootSymbolTable.SetAlways("_platform", platform)
 
 	return runFromContext(app.Context)
 }

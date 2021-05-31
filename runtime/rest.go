@@ -657,9 +657,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 }
 
 func AddAgent(r *resty.Request, agentType string) {
-	version, _ := symbols.RootSymbolTable.Get("_version")
-	platform := runtime.Version() + " " + runtime.GOOS + " " + runtime.GOARCH
+	var version string
 
-	agent := "Ego " + util.GetString(version) + " (" + platform + ") " + agentType
+	if x, found := symbols.RootSymbolTable.Get("_version"); found {
+		version = util.GetString(x)
+	}
+
+	platform := runtime.Version() + ", " + runtime.GOOS + ", " + runtime.GOARCH
+	agent := "Ego " + version + " (" + platform + ") " + agentType
+
 	r.Header.Add("User-Agent", agent)
 }
