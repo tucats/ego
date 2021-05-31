@@ -324,8 +324,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		ms := util.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
-		r.Header.Add("Content_Type", ms)
+		r.Header.Add("Content-Type", ms)
 	}
+
+	r.Header.Add("User-Agent", "ego REST client")
 
 	response, e2 := r.Get(url)
 	if e2 != nil {
@@ -430,8 +432,10 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
 
 		r.Header.Add("Accept", ms)
-		r.Header.Add("Content_Type", ms)
+		r.Header.Add("Content-Type", ms)
 	}
+
+	r.Header.Add("User-Agent", "ego REST client")
 
 	response, e2 := r.Post(url)
 	if e2 != nil {
@@ -502,8 +506,10 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 
 		r.Header.Add("Accept", ms)
-		r.Header.Add("Content_Type", ms)
+		r.Header.Add("Content-Type", ms)
 	}
+
+	r.Header.Add("User-Agent", "ego REST client")
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
@@ -594,7 +600,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 	r := client.NewRequest()
 
 	r.Header.Add("Accept", defs.JSONMediaType)
-	r.Header.Add("Content_Type", defs.JSONMediaType)
+	r.Header.Add("Content-Type", defs.JSONMediaType)
+	r.Header.Add("User-Agent", "ego admin client")
 
 	if body != nil {
 		b, err := json.Marshal(body)

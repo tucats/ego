@@ -112,6 +112,8 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		return 418
 	}
 
+	logHeaders(r, sessionID)
+
 	if r.Method == "POST" {
 		// Get the payload which must be a user spec in JSON
 		buf := new(bytes.Buffer)
@@ -331,6 +333,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		return http.StatusForbidden
 	}
 
+	logHeaders(r, sessionID)
+
 	switch r.Method {
 	case "POST":
 		var result defs.CacheResponse
@@ -510,6 +514,8 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		return http.StatusForbidden
 	}
 
+	logHeaders(r, sessionID)
+
 	switch r.Method {
 	case "POST":
 		buf := new(bytes.Buffer)
@@ -574,5 +580,17 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		_, _ = w.Write(b)
 
 		return http.StatusMethodNotAllowed
+	}
+}
+
+func logHeaders(r *http.Request, sessionID int32) {
+	if ui.LoggerIsActive(ui.InfoLogger) {
+		for headerName, headerValues := range r.Header {
+			if strings.EqualFold(headerName, "Authorization") {
+				continue
+			}
+
+			ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
+		}
 	}
 }
