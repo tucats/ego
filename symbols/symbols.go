@@ -117,7 +117,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	symbolTable.SetValue(slot, v)
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."

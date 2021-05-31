@@ -24,7 +24,7 @@ func TestLogMessage(t *testing.T) {
 				format: "string text",
 				args:   []interface{}{},
 			},
-			want: "USER   : string text",
+			want: "     USER   : string text",
 		},
 		{
 			name: "parameterized message",
@@ -33,7 +33,7 @@ func TestLogMessage(t *testing.T) {
 				format: "digits %d",
 				args:   []interface{}{42},
 			},
-			want: "USER   : digits 42",
+			want: "     USER   : digits 42",
 		},
 		// TODO: Add test cases.
 	}
@@ -46,7 +46,7 @@ func TestLogMessage(t *testing.T) {
 			// includes the current date/time and a sequence number
 			got = got[23:]
 			if got != tt.want {
-				t.Errorf("LogMessage() = %v, want %v", got, tt.want)
+				t.Errorf("LogMessage() got\n %v\nwant\n %v", got, tt.want)
 			}
 		})
 	}
