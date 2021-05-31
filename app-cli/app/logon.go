@@ -99,8 +99,14 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Turn logon server address and endpoint into full URL.
 	url = strings.TrimSuffix(url, "/") + LogonEndpoint
 
-	// Call the endpoint
-	r, err := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass).NewRequest().Get(url)
+	// Create a new client, set it's attribute for basic authentication, and
+	// generate a request. The request is made using the logon agent info.
+	// Finall, call the endpoint.
+	restClient := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass)
+	req := restClient.NewRequest()
+	runtime.AddAgent(req, defs.LogonAgent)
+
+	r, err := req.Get(url)
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.

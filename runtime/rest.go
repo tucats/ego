@@ -328,7 +328,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		r.Header.Add("Content-Type", ms)
 	}
 
-	addAgent(r, defs.ClientAgent)
+	AddAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Get(url)
 	if e2 != nil {
@@ -446,7 +446,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		r.Header.Add("Content-Type", ms)
 	}
 
-	addAgent(r, defs.ClientAgent)
+	AddAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Post(url)
 	if e2 != nil {
@@ -520,7 +520,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		r.Header.Add("Content-Type", ms)
 	}
 
-	addAgent(r, defs.ClientAgent)
+	AddAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
@@ -613,7 +613,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	r.Header.Add("Accept", defs.JSONMediaType)
 	r.Header.Add("Content-Type", defs.JSONMediaType)
 
-	addAgent(r, agentType)
+	AddAgent(r, agentType)
 
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -656,10 +656,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	return errors.New(err)
 }
 
-func addAgent(r *resty.Request, agentType string) {
+func AddAgent(r *resty.Request, agentType string) {
 	version, _ := symbols.RootSymbolTable.Get("_version")
 	platform := runtime.Version() + " " + runtime.GOOS + " " + runtime.GOARCH
 
-	agent := "Ego " + util.GetString(version) + " " + agentType + " (" + platform + ")"
+	agent := "Ego " + util.GetString(version) + " (" + platform + ") " + agentType
 	r.Header.Add("User-Agent", agent)
 }
