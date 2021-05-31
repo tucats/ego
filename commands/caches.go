@@ -33,7 +33,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		Limit: size,
 	}
 
-	err = runtime.Exchange("/admin/caches", "POST", &cacheStatus, &cacheStatus)
+	err = runtime.Exchange("/admin/caches", "POST", &cacheStatus, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return errors.New(err)
 	}
@@ -72,7 +72,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus)
+	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return err
 	}
@@ -110,7 +110,7 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 func ListServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus)
+	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return err
 	}

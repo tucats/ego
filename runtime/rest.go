@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -327,7 +328,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		r.Header.Add("Content-Type", ms)
 	}
 
-	r.Header.Add("User-Agent", "ego REST client")
+	addAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Get(url)
 	if e2 != nil {
@@ -346,6 +347,16 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		var jsonResponse interface{}
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
+
+		// For well-known complex types, make them Ego-native versions.
+		switch actual := jsonResponse.(type) {
+		case map[string]interface{}:
+			jsonResponse = datatypes.NewMapFromMap(actual)
+
+		case []interface{}:
+			jsonResponse = datatypes.NewFromArray(datatypes.InterfaceType, actual)
+		}
+
 		this.SetAlways(responseFieldName, jsonResponse)
 
 		return jsonResponse, errors.New(err)
@@ -435,7 +446,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		r.Header.Add("Content-Type", ms)
 	}
 
-	r.Header.Add("User-Agent", "ego REST client")
+	addAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Post(url)
 	if e2 != nil {
@@ -509,7 +520,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		r.Header.Add("Content-Type", ms)
 	}
 
-	r.Header.Add("User-Agent", "ego REST client")
+	addAgent(r, defs.ClientAgent)
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
@@ -576,7 +587,7 @@ func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
 }
 
 // Exchange is a helper wrapper around a rest call.
-func Exchange(endpoint, method string, body interface{}, response interface{}) *errors.EgoError {
+func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string) *errors.EgoError {
 	var resp *resty.Response
 
 	var err error
@@ -601,7 +612,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 
 	r.Header.Add("Accept", defs.JSONMediaType)
 	r.Header.Add("Content-Type", defs.JSONMediaType)
-	r.Header.Add("User-Agent", "ego admin client")
+
+	addAgent(r, agentType)
 
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -642,4 +654,12 @@ func Exchange(endpoint, method string, body interface{}, response interface{}) *
 	}
 
 	return errors.New(err)
+}
+
+func addAgent(r *resty.Request, agentType string) {
+	version, _ := symbols.RootSymbolTable.Get("_version")
+	platform := runtime.Version() + " " + runtime.GOOS + " " + runtime.GOARCH
+
+	agent := "Ego " + util.GetString(version) + " " + agentType + " (" + platform + ")"
+	r.Header.Add("User-Agent", agent)
 }

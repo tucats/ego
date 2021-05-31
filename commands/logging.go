@@ -79,7 +79,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		// Send the update, get a reply
-		err := runtime.Exchange("/admin/loggers/", "POST", &loggers, &response)
+		err := runtime.Exchange("/admin/loggers/", "POST", &loggers, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -93,7 +93,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
 		lines := []string{}
 
-		err := runtime.Exchange(url, "GET", nil, &lines)
+		err := runtime.Exchange(url, "GET", nil, &lines, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -116,7 +116,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	} else {
 		// No changes, just ask for status
-		err := runtime.Exchange("/admin/loggers/", "GET", nil, &response)
+		err := runtime.Exchange("/admin/loggers/", "GET", nil, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}

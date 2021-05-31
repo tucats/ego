@@ -40,7 +40,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 	}
 	resp := defs.UserResponse{}
 
-	err = runtime.Exchange("/admin/users/", "POST", payload, &resp)
+	err = runtime.Exchange("/admin/users/", "POST", payload, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)
@@ -70,7 +70,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 
 	resp := defs.UserResponse{}
 
-	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp)
+	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == "text" {
 			ui.Say(resp.Message)

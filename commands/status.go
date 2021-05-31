@@ -8,6 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
@@ -68,7 +69,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		return err
 	}
 
-	err := runtime.Exchange("/services/up/", "GET", nil, &resp)
+	err := runtime.Exchange("/services/up/", "GET", nil, &resp, defs.AdminAgent)
 	if !errors.Nil(err) {
 		fmt.Println("DOWN")
 		os.Exit(3)

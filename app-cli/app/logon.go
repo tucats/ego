@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 )
@@ -165,7 +166,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	if hasScheme {
 		persistence.SetDefault("ego.application.server", name)
 
-		err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+		err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
 		if errors.Nil(err) {
 			return name, nil
 		}
@@ -176,7 +177,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
 	if errors.Nil(err) {
 		return normalizedName, nil
 	}
@@ -186,7 +187,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil)
+	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
 
 	return normalizedName, errors.New(err)
 }

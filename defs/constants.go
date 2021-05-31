@@ -121,3 +121,10 @@ const (
 	StaticTypesOption     = "static-types"
 	SymbolTableSizeOption = "symbol-table-size"
 )
+
+// Agent identifiers for REST calls, which indicate the role of the client.
+const (
+	AdminAgent  = "admin"
+	ClientAgent = "rest client"
+	LogonAgent  = "logon"
+)
