@@ -34,6 +34,16 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			text: "result := 0x10",
 			want: 16,
 		},
+		{
+			name: "optional error catch",
+			text: "result := ?(5/0):-1",
+			want: -1,
+		},
+		{
+			name: "Conditional expression",
+			text: `result := true?"yes":"no"`,
+			want: "yes",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
