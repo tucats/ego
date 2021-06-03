@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -69,6 +70,24 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 			break
 		}
 
+		if c.t.IsNext("&&") {
+			// Handle short-circuit from boolean
+			c.b.Emit(bytecode.Dup)
+
+			mark := c.b.Mark()
+			c.b.Emit(bytecode.BranchFalse, 0)
+
+			err := c.multDivide()
+			if !errors.Nil(err) {
+				return err
+			}
+
+			c.b.Emit(bytecode.And)
+			_ = c.b.SetAddressHere(mark)
+
+			continue
+		}
+
 		op := c.t.Peek(1)
 		if util.InList(op, "+", "-", "&") {
 			c.t.Advance(1)
@@ -119,6 +138,24 @@ func (c *Compiler) multDivide() *errors.EgoError {
 		// but rather a pointer dereference assignment statement boundary.
 		if c.t.Peek(1) == "*" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == "=" {
 			parsing = false
+
+			continue
+		}
+
+		if c.t.IsNext("||") {
+			// Handle short-circuit from boolean
+			c.b.Emit(bytecode.Dup)
+
+			mark := c.b.Mark()
+			c.b.Emit(bytecode.BranchTrue, 0)
+
+			err := c.multDivide()
+			if !errors.Nil(err) {
+				return err
+			}
+
+			c.b.Emit(bytecode.Or)
+			_ = c.b.SetAddressHere(mark)
 
 			continue
 		}

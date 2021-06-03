@@ -1,0 +1,26 @@
+
+@test "datamodel: short-circuited booleans"
+{
+
+    // Use of || means if the first element is true, the second
+    // is not even evaluated. 
+    t := true
+    try {
+        x := t || notfound
+        @assert x
+    } catch {
+        @fail "Failed to short-circuit ||"
+    }
+
+    // Use of && means if the first element is false, the second
+    // is not even evaluated.
+    try {
+        t = false
+        x := t && notfound
+        @assert !x
+    } catch {
+        @fail "Failed to short-circuit &&"
+    }
+}
+
+@pass
