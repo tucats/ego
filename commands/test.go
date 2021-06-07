@@ -115,9 +115,10 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 		b, err := comp.Compile(name, t)
 		if !errors.Nil(err) {
-			fmt.Printf("Error: %s\n", err.Error())
-
 			exitValue = 1
+			msg := fmt.Sprintf("Error: %v\n", err.Error())
+
+			os.Stderr.Write([]byte(msg))
 		} else {
 			if !builtinsAdded {
 				// Add the builtin functions
@@ -126,7 +127,9 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				// Always autoimport
 				err := comp.AutoImport(true)
 				if !errors.Nil(err) {
-					fmt.Printf("Unable to auto-import packages: " + err.Error())
+					msg := fmt.Sprintf("Error: unable to auto-import: %v\n", err.Error())
+
+					os.Stderr.Write([]byte(msg))
 				}
 
 				comp.AddPackageToSymbols(symbolTable)
@@ -159,9 +162,10 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			}
 
 			if !errors.Nil(err) {
-				fmt.Printf("Error: %s\n", err.Error())
-
 				exitValue = 2
+				msg := fmt.Sprintf("Error: %v\n", err.Error())
+
+				os.Stderr.Write([]byte(msg))
 			}
 		}
 	}

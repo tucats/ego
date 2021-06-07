@@ -259,9 +259,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
-			fmt.Printf("Error: %s\n", err.Error())
-
 			exitValue = 1
+			msg := fmt.Sprintf("Error: %s\n", err.Error())
+
+			os.Stderr.Write([]byte(msg))
 		} else {
 			if ui.LoggerIsActive(ui.ByteCodeLogger) {
 				b.Disasm()
@@ -289,9 +290,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			if !errors.Nil(err) {
-				fmt.Printf("Error: %s\n", err.Error())
-
 				exitValue = 2
+				msg := fmt.Sprintf("Error: %s\n", err.Error())
+
+				os.Stderr.Write([]byte(msg))
 			} else {
 				exitValue = 0
 			}

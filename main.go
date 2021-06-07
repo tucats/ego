@@ -35,7 +35,8 @@ func main() {
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
 	if !errors.Nil(err) {
-		fmt.Printf("Error: %v\n", err.Error())
+		msg := fmt.Sprintf("Error: %v\n", err.Error())
+		os.Stderr.Write([]byte(msg))
 
 		if value := err.GetContext(); value != nil {
 			errorCode := 1
