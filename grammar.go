@@ -286,6 +286,11 @@ var ServerRunGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 	},
 	{
+		LongName:    "sandbox-path",
+		Description: "File path of sandboxed area for file I/O",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "no-log",
 		Description: "Suppress server log",
 		OptionType:  cli.BooleanType,

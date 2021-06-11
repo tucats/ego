@@ -30,8 +30,10 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	// Set extensions to be enabled for this run.
+	// Set extensions to be enabled for this run. Also, sandboxing file system
+	// operations will break tests, so disable that.
 	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
+	persistence.SetDefault(defs.SandboxPathSetting, "")
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests")

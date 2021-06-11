@@ -165,6 +165,18 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		persistence.SetDefault(defs.StaticTypesSetting, "dynamic")
 	}
 
+	if c.WasFound("sandbox-path") {
+		sandboxPath, _ := c.GetString("sandbox-path")
+
+		sandboxPath, e2 := filepath.Abs(sandboxPath)
+		if e2 != nil {
+			return errors.New(errors.ErrInvalidSandboxPath).Context(sandboxPath)
+		}
+
+		persistence.SetDefault(defs.SandboxPathSetting, sandboxPath)
+		ui.Debug(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
+	}
+
 	addr := ":" + strconv.Itoa(port)
 
 	go server.LogMemoryStatistics()

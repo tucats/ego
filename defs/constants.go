@@ -108,6 +108,12 @@ const (
 	// If specified, has the Go-style format string to be used for log
 	// messages showing the time of the event.
 	LogTimestampFormat = "ego.log.timestamp"
+
+	// If specified, all filename references in ego programs (such as the
+	// ReadFile() function) must start with this path, or it will be prefixed
+	// with this path. This lets you limit where/how the files can be managed
+	// by an ego program. This is especially important in server mode.
+	SandboxPathSetting = "ego.sandbox.path"
 )
 
 // This section contains the names of the command-line options. These often

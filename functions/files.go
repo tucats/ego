@@ -54,7 +54,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	mode := os.O_RDONLY
 
-	fname, err := filepath.Abs(util.GetString(args[0]))
+	fname, err := filepath.Abs(sandboxName(util.GetString(args[0])))
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}

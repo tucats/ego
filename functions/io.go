@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -19,6 +21,8 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	if name == "." {
 		return ui.Prompt(""), nil
 	}
+
+	name = sandboxName(name)
 
 	content, err := ioutil.ReadFile(name)
 	if !errors.Nil(err) {
@@ -33,6 +37,8 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	fileName := util.GetString(args[0])
 	text := util.GetString(args[1])
+
+	fileName = sandboxName(fileName)
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 
 	return len(text), errors.New(err)
@@ -41,6 +47,8 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // DeleteFile deletes a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	fileName := util.GetString(args[0])
+	fileName = sandboxName(fileName)
+
 	err := os.Remove(fileName)
 
 	return errors.Nil(err), errors.New(err)
@@ -55,6 +63,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		ext = util.GetString(args[1])
 	}
 
+	path = sandboxName(path)
 	list, err := ExpandPath(path, ext)
 
 	// Rewrap as an Ego array
@@ -72,6 +81,8 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // symbol.
 func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 	names := []string{}
+
+	path = sandboxName(path)
 
 	// Can we read this as a directory?
 	fi, err := ioutil.ReadDir(path)
@@ -118,6 +129,8 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	path := util.GetString(args[0])
 	result := datatypes.NewArray(datatypes.InterfaceType, 0)
 
+	path = sandboxName(path)
+
 	files, err := ioutil.ReadDir(path)
 	if !errors.Nil(err) {
 		return result, errors.New(err).In("ReadDir()")
@@ -148,4 +161,16 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	default:
 		return nil, errors.New(errors.ErrInvalidType).In("CloseAny()")
 	}
+}
+
+func sandboxName(path string) string {
+	if sandboxPrefix := persistence.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
+		if strings.HasPrefix(path, sandboxPrefix) {
+			return path
+		}
+
+		return filepath.Join(sandboxPrefix, path)
+	}
+
+	return path
 }
