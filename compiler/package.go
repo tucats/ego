@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/persistence"
@@ -177,11 +178,37 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			}
 
 			c.packages.Mutex.Lock()
-			_, ok := c.packages.Package[fileName]
+			pkgData, ok := c.packages.Package[fileName]
+			//fmt.Println(pkgData)
 			c.packages.Mutex.Unlock()
 
-			if ok {
+			if !ok {
 				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
+			} else {
+				// Rewrite the package now that we've added stuff to it.
+				if ui.LoggerIsActive(ui.CompilerLogger) {
+					ui.Debug(ui.CompilerLogger, "+++ updating package in global dictionary: %s", fileName)
+
+					keys := []string{}
+					for k := range pkgData {
+						keys = append(keys, k)
+					}
+
+					sort.Strings(keys)
+
+					keyString := ""
+					for idx, k := range keys {
+						if idx > 0 {
+							keyString = keyString + ","
+						}
+
+						keyString = keyString + k
+					}
+
+					ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
+				}
+
+				_ = symbols.RootSymbolTable.SetGlobal(fileName, pkgData)
 			}
 		}
 

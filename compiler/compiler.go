@@ -331,9 +331,14 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 		}
 
 		// Do we already have a package of this name defined?
-		_, found := s.Get(packageName)
-		if found {
-			continue
+		// @tomcole I think this is bogus; we may have to redefine
+		// packages that were auto-imported in the local table if
+		// they extend existing packages... Eliding for now.
+		if false {
+			_, found := s.Get(packageName)
+			if found {
+				continue
+			}
 		}
 
 		m := datatypes.EgoPackage{}

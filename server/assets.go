@@ -58,7 +58,7 @@ func findAsset(sessionID int32, path string) []byte {
 	if assetCache == nil {
 		assetCache = map[string]asset{}
 
-		ui.Debug(ui.ServerLogger, "[%d] Initialized asset cache for %d items", sessionID, maxAssetCacheSize)
+		ui.Debug(ui.ServerLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
 	}
 
 	if a, ok := assetCache[path]; ok {
@@ -146,6 +146,19 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
 
+	// We dont permit index requests
+	if path == "" || strings.HasSuffix(path, "/") {
+		w.WriteHeader(403)
+
+		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
+		_, _ = w.Write([]byte(msg))
+
+		ui.Debug(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", sessionID, path)
+		ui.Debug(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", sessionID)
+
+		return
+	}
+
 	data := findAsset(sessionID, path)
 	if data == nil {
 		for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
@@ -159,7 +172,9 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
-			msg := fmt.Sprintf(`{"err": "%s"}`, err.Error())
+			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "lib/services"), "")
+
+			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
 			ui.Debug(ui.InfoLogger, "[%d] Server asset load error: %s", sessionID, err.Error())
 			w.WriteHeader(400)
