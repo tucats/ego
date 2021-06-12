@@ -1,0 +1,37 @@
+@test "datamodel: operator precedence"
+{
+    x := 5
+    @assert 10 + -x == 5
+
+    @assert 1+2*3 == 7
+    @assert 1*2+3 == 5
+
+    @assert 2*(2+3) == 10
+    @assert (5-1)/2 == 2
+
+    @assert 10-2*3 == 4
+    @assert 10*2-3 == 17
+
+    @assert 3 & 2 * 2 == 4
+    @assert (3&2) * 2 == 4
+    @assert 3 & (2*2) == 0
+    @assert 3 | (2*2) == 7
+
+
+    @assert 5 | 7 + 3 == 10
+    @assert 5 + 3 | 7 == 15
+
+    @assert 4-3 << 4 == 16
+    @assert 2*6 >> 2 == 3
+
+    @assert (true && false) == false
+    @assert (false && true) == false
+    @assert (true || false) == true
+    @assert (false || true) == true
+
+    @assert (true || true && false) == true
+    @assert (true && false || false) == false
+
+    @assert !(false || true == false)
+}
+@pass
