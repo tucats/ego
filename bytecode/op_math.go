@@ -369,3 +369,66 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 }
+
+func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
+	v1, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	v2, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	result := util.GetInt(v1) & util.GetInt(v2)
+	_ = c.stackPush(result)
+
+	return nil
+}
+
+func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
+	v1, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	v2, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	result := util.GetInt(v1) | util.GetInt(v2)
+	_ = c.stackPush(result)
+
+	return nil
+}
+
+func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
+	v1, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	v2, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	shift := util.GetInt(v1)
+	value := util.GetInt(v2)
+
+	if shift < -31 || shift > 31 {
+		return c.newError(errors.ErrInvalidBitShift).Context(shift)
+	}
+
+	if shift < 0 {
+		value = value << -shift
+	} else {
+		value = value >> shift
+	}
+
+	_ = c.stackPush(value)
+
+	return nil
+}

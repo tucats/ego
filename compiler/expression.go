@@ -11,6 +11,16 @@ import (
 //
 // The function grammar considers a conditional to be the top of the
 // parse tree, so we start evaluating there.
+//
+// From the golang doc, operator precedence is:
+//
+//  Precedence    Operator
+//	5             *  /  %  <<  >>  &  &^
+//	4             +  -  |  ^
+//	3             ==  !=  <  <=  >  >=
+//	2             &&
+//	1             ||
+
 func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
 	cx := New("expression eval")
 	cx.t = c.t

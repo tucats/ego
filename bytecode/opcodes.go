@@ -28,6 +28,9 @@ const (
 	ArgCheck
 	Array
 	Auth
+	BitAnd
+	BitOr
+	BitShift
 	Call
 	Coerce
 	Constant
@@ -123,6 +126,9 @@ var instructionNames = map[OpcodeID]string{
 	Array:              "Array",
 	AtLine:             "AtLine",
 	Auth:               "Auth",
+	BitAnd:             "BitAnd",
+	BitOr:              "BitOr",
+	BitShift:           "BitShift",
 	Branch:             "Branch",
 	BranchFalse:        "BranchFalse",
 	BranchTrue:         "BranchTrue",
@@ -210,6 +216,9 @@ func initializeDispatch() {
 			Array:              arrayByteCode,
 			AtLine:             atLineByteCode,
 			Auth:               authByteCode,
+			BitAnd:             bitAndByteCode,
+			BitOr:              bitOrByteCode,
+			BitShift:           bitShiftByteCode,
 			Branch:             branchByteCode,
 			BranchFalse:        branchFalseByteCode,
 			BranchTrue:         branchTrueByteCode,

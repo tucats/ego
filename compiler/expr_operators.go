@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -70,26 +69,8 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 			break
 		}
 
-		if c.t.IsNext("&&") {
-			// Handle short-circuit from boolean
-			c.b.Emit(bytecode.Dup)
-
-			mark := c.b.Mark()
-			c.b.Emit(bytecode.BranchFalse, 0)
-
-			err := c.multDivide()
-			if !errors.Nil(err) {
-				return err
-			}
-
-			c.b.Emit(bytecode.And)
-			_ = c.b.SetAddressHere(mark)
-
-			continue
-		}
-
 		op := c.t.Peek(1)
-		if util.InList(op, "+", "-", "&") {
+		if util.InList(op, "+", "-", "|", "<<", ">>") {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
@@ -108,8 +89,15 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 			case "-":
 				c.b.Emit(bc.Sub)
 
-			case "&":
-				c.b.Emit(bc.And)
+			case "|":
+				c.b.Emit(bc.BitOr)
+
+			case "<<":
+				c.b.Emit(bc.Negate)
+				c.b.Emit(bc.BitShift)
+
+			case ">>":
+				c.b.Emit(bc.BitShift)
 			}
 		} else {
 			parsing = false
@@ -142,25 +130,7 @@ func (c *Compiler) multDivide() *errors.EgoError {
 			continue
 		}
 
-		if c.t.IsNext("||") {
-			// Handle short-circuit from boolean
-			c.b.Emit(bytecode.Dup)
-
-			mark := c.b.Mark()
-			c.b.Emit(bytecode.BranchTrue, 0)
-
-			err := c.multDivide()
-			if !errors.Nil(err) {
-				return err
-			}
-
-			c.b.Emit(bytecode.Or)
-			_ = c.b.SetAddressHere(mark)
-
-			continue
-		}
-
-		if c.t.AnyNext("^", "*", "/", "|") {
+		if c.t.AnyNext("^", "*", "/", "&") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.newError(errors.ErrMissingTerm)
 			}
@@ -180,8 +150,8 @@ func (c *Compiler) multDivide() *errors.EgoError {
 			case "/":
 				c.b.Emit(bc.Div)
 
-			case "|":
-				c.b.Emit(bc.Or)
+			case "&":
+				c.b.Emit(bc.BitAnd)
 			}
 		} else {
 			parsing = false

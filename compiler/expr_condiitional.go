@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/bytecode"
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 )
@@ -10,7 +11,7 @@ import (
 // the third term. All terms must be present.
 func (c *Compiler) conditional() *errors.EgoError {
 	// Parse the conditional
-	err := c.relations()
+	err := c.logicalOr()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -28,7 +29,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 	// Parse both parts of the alternate values
 	c.t.Advance(1)
 
-	err = c.relations()
+	err = c.logicalOr()
 	if !errors.Nil(err) {
 		return err
 	}
@@ -43,13 +44,63 @@ func (c *Compiler) conditional() *errors.EgoError {
 	_ = c.b.SetAddressHere(m1)
 	c.t.Advance(1)
 
-	err = c.relations()
+	err = c.logicalOr()
 	if !errors.Nil(err) {
 		return err
 	}
 
 	// Patch up the forward references.
 	_ = c.b.SetAddressHere(m2)
+
+	return nil
+}
+
+func (c *Compiler) logicalAnd() *errors.EgoError {
+	err := c.relations()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	for c.t.IsNext("&&") {
+		// Handle short-circuit from boolean
+		c.b.Emit(bytecode.Dup)
+
+		mark := c.b.Mark()
+		c.b.Emit(bytecode.BranchFalse, 0)
+
+		err := c.relations()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Emit(bytecode.And)
+		_ = c.b.SetAddressHere(mark)
+	}
+
+	return nil
+}
+
+func (c *Compiler) logicalOr() *errors.EgoError {
+	err := c.logicalAnd()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	for c.t.IsNext("||") {
+		// Handle short-circuit from boolean
+		c.b.Emit(bytecode.Dup)
+
+		mark := c.b.Mark()
+		c.b.Emit(bytecode.BranchTrue, 0)
+
+		err := c.logicalAnd()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Emit(bytecode.Or)
+		_ = c.b.SetAddressHere(mark)
+	}
 
 	return nil
 }

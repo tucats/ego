@@ -85,6 +85,14 @@ var crushedTokens = []crushedToken{
 		source: []string{"|", "|"},
 		result: "||",
 	},
+	{
+		source: []string{"<", "<"},
+		result: "<<",
+	},
+	{
+		source: []string{">", ">"},
+		result: ">>",
+	},
 }
 
 // New creates a tokenizer instance and breaks the string
