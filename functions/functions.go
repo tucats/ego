@@ -78,6 +78,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"fmt.Sprintf":          {Min: 1, Max: any, F: Sprintf},
 	"fmt.Sscanf":           {Min: 3, Max: any, F: Sscanf, ErrReturn: true},
 	"http.__empty":         {F: stubFunction},
+	"i18n.Language":        {F: i18nLanguage},
+	"i18n.T":               {Min: 1, Max: 3, F: i18nT},
 	"io.Expand":            {Min: 1, Max: 2, F: Expand, ErrReturn: true},
 	"io.Open":              {Min: 1, Max: 2, F: OpenFile, ErrReturn: true},
 	"io.ReadDir":           {Min: 1, Max: 1, F: ReadDir, ErrReturn: true},

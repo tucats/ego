@@ -63,6 +63,7 @@
 1. [Directives](#directives)
    1. [@error](#at-error)
    2. [@global](#at-global)
+   3. [@localization](#at-localization)
    3. [@template](#at-template)
    4. [@type](#at-type)
 
@@ -3084,6 +3085,52 @@ can be changed by the user.
 This creates a variable named `base` that is in the root symbol table,
 with the value of the given expression. If you do not specify an expression,
 the variable is created as an empty-string.
+
+## @localization <a name="at-localization"></a>
+The `@localization` directive defines localized string properties for any
+supported language in the current Ego program. The directive stores data in
+the localization properties dictionary, which can be accessed using the
+i18n.T() function. The localization is defined using structure notation,
+with a field for each language. Within each language is are fields for
+each message property. The property name is the field name (which can be
+in double quotes if it is not a valid identifier) and the value is the
+loacalized string.
+
+
+    @localization {
+        "en": {
+            "hello.msg": "hello, {{.Name}}",
+            "goodby.msg": "goodbye"
+        },
+        "fr": {
+            "hello.msg": "bonjour, {{.Name}}",
+            "goodbye.msg": "au revoir"
+        },
+        "es": {
+            "hello.msg": "hola, {{.Name}}",
+            "goodbye.msg":"adios"
+        }
+    }
+
+    func main{
+        m := i18n.T("hello.msg", {Name: "Tom"})
+        fmt.Println(m)
+    }
+
+There can be only on `@localization` specification in a given program.
+It can appear before or after the functions in the program (it is 
+processed during compilation).
+
+Use the `i18n.T()` function to get the localized string value. In the
+above example, the optional second argument is used, which contains a
+parameter map for each item called out in the message text. Note that the
+message text is compiled and executed as a template, so you can reference
+the named values but also generate loops, etc. as needed.
+
+An optional third argument indicates the language code ("en", "fr", "es",
+etc.) to use. If omitted, the current session's language is used. In the
+case of a web service, the sevice may wish to ascertain the caller's language
+to provde language-specific web results.
 
 ## @template <a name="at-template"></a>
 

@@ -48,6 +48,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "line":
 		return c.lineDirective()
 
+	case "localization":
+		return c.localizationDirective()
+
 	case "log":
 		return c.logDirective()
 
@@ -412,6 +415,17 @@ func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
 // go routines to finish.
 func (c *Compiler) waitDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Wait)
+
+	return nil
+}
+
+func (c *Compiler) localizationDirective() *errors.EgoError {
+	err := c.parseStruct()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	c.b.Emit(bytecode.StoreGlobal, "__localization")
 
 	return nil
 }

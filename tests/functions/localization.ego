@@ -1,0 +1,37 @@
+
+@test "functions: localization"
+
+{
+    @localization {
+        "en": {
+            "hello.msg": "hello, {{.Name}}",
+            "goodbye.msg":"goodbye"
+        },
+        "fr": {
+            "goodbye.msg":"au revoir",
+            "hello.msg": "bonjour, {{.Name}}"
+        },
+        "es": {
+            "hello.msg": "hola, {{.Name}}",
+            "goodbye.msg":"adios"
+        }
+    }
+
+    // Try it in French
+    m := i18n.T("hello.msg", {Name: "Tom"}, "fr")
+    @assert m == "bonjour, Tom"
+
+    // And in English
+    m = i18n.T("hello.msg", {Name: "Tom"}, "en")
+    @assert m == "hello, Tom"
+
+    // And without the parameter, which fills in something.
+    m = i18n.T("hello.msg", nil, "en")
+    @assert m == "hello, <no value>"
+
+    m = i18n.T("goodbye.msg",nil,"es")
+    @assert m == "adios"
+}
+
+@pass
+
