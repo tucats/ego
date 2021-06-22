@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/app"
@@ -28,6 +30,17 @@ func main() {
 	args := os.Args
 	if len(args) == 1 {
 		args = append(args, "run")
+	}
+
+	if fn := os.Getenv("EGO_PROFILE"); fn != "" {
+		f, err := os.Create(fn)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_ = pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
 	}
 
 	err := app.Run(EgoGrammar, args)

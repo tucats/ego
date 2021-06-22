@@ -1,8 +1,10 @@
 package app
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -103,6 +105,10 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// generate a request. The request is made using the logon agent info.
 	// Finall, call the endpoint.
 	restClient := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass)
+	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+		restClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	}
+
 	req := restClient.NewRequest()
 	runtime.AddAgent(req, defs.LogonAgent)
 

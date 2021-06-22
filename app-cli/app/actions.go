@@ -11,8 +11,15 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	rest_runtime "github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/util"
 )
+
+func InsecureAction(c *cli.Context) *errors.EgoError {
+	rest_runtime.AllowInsecure(true)
+
+	return nil
+}
 
 // OutputFormatAction sets the default output format to use. This must be one of
 // the supported types ("text", "json", or "indented").

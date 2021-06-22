@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 
@@ -20,6 +21,9 @@ import (
 
 // Max number of times we will chase a redirect before failing.
 const MaxRedirectCount = 10
+
+// Do we allow outbound REST calls with invalid/insecure certificates?
+var allowInsecure = false
 
 // This maps HTTP status codes to a message string.
 var httpStatusCodeMessages = map[int]string{
@@ -80,7 +84,11 @@ var httpStatusCodeMessages = map[int]string{
 
 var restType *datatypes.Type
 
-const ()
+func AllowInsecure(flag bool) {
+	allowInsecure = flag
+
+	os.Setenv("EGO_INSECURE_CLIENT", "true")
+}
 
 func initializeRestType() {
 	if restType == nil {
@@ -606,6 +614,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
+	}
+
+	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
 	r := client.NewRequest()

@@ -18,6 +18,14 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 	// to the caller's grammar definition.
 	grammar := []cli.Option{
 		{
+			LongName:            "insecure",
+			ShortName:           "k",
+			OptionType:          cli.BooleanType,
+			Description:         "Do not require X509 server certificate verification",
+			Action:              InsecureAction,
+			EnvironmentVariable: "EGO_INSECURE_CLIENT",
+		},
+		{
 			LongName:    "profile",
 			Aliases:     []string{"prof"},
 			OptionType:  cli.Subcommand,

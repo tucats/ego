@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -96,6 +98,9 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(runtime.MaxRedirectCount))
+	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	}
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
