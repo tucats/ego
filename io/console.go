@@ -63,7 +63,8 @@ func ReadConsoleText(prompt string) string {
 	if consoleReader == nil {
 		historyFile := persistence.Get("ego.console.history")
 		if historyFile == "" {
-			historyFile = filepath.Join(os.TempDir(), "ego-commands.txt")
+			homeDir, _ := os.UserHomeDir()
+			historyFile = filepath.Join(homeDir, persistence.ProfileDirectory, "ego-commands.txt")
 		}
 
 		consoleReader, _ = readline.NewEx(&readline.Config{
