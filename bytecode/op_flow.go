@@ -538,7 +538,14 @@ func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 }
 
 func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
-	entryPointName := util.GetString(i)
+	var entryPointName string
+
+	if i != nil {
+		entryPointName = util.GetString(i)
+	} else {
+		v, _ := c.Pop()
+		entryPointName = util.GetString(v)
+	}
 
 	entryPoint, found := c.symbolGet(entryPointName)
 	if !found {

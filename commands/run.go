@@ -114,7 +114,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			mainName = fileName
-			text = string(content) + "\n@main " + entryPoint
+			text = "@main " + entryPoint + string(content) + "\n@main ."
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {
@@ -156,6 +156,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	// Set up the symbol table.
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
+	symbolTable.Root().SetAlways("__main", "main")
 
 	exitValue := 0
 

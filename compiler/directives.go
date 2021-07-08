@@ -95,15 +95,23 @@ func (c *Compiler) mainDirective() *errors.EgoError {
 		mainName = "main"
 	}
 
+	if mainName == "." {
+		c.b.Emit(bytecode.Load, "__main")
+		c.b.Emit(bytecode.EntryPoint)
+		c.b.Emit(bytecode.Push, 0)
+		c.b.Emit(bytecode.Load, "os")
+		c.b.Emit(bytecode.Member, "Exit")
+		c.b.Emit(bytecode.Call, 0)
+
+		return nil
+	}
+
 	if !tokenizer.IsSymbol(mainName) {
 		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
-	c.b.Emit(bytecode.EntryPoint, mainName)
-	c.b.Emit(bytecode.Push, 0)
-	c.b.Emit(bytecode.Load, "os")
-	c.b.Emit(bytecode.Member, "Exit")
-	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Push, mainName)
+	c.b.Emit(bytecode.StoreGlobal, "__main")
 
 	return nil
 }
