@@ -60,6 +60,8 @@ func ReadConsoleText(prompt string) string {
 	// Nope, let's use readline. IF we have never initialized
 	// the reader, let's do so now (in a threadsafe fashion)
 	consoleLock.Lock()
+	defer consoleLock.Unlock()
+
 	if consoleReader == nil {
 		historyFile := persistence.Get("ego.console.history")
 		if historyFile == "" {
@@ -74,7 +76,6 @@ func ReadConsoleText(prompt string) string {
 			HistoryLimit:      maxHistorySize,
 		})
 	}
-	consoleLock.Unlock()
 
 	if len(prompt) > 1 && prompt[:1] == "~" {
 		b, _ := consoleReader.ReadPassword(prompt[1:])
