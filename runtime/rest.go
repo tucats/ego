@@ -129,6 +129,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	initializeRestType()
+	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: allowInsecure})
 
 	r := datatypes.NewStruct(*restType)
 
@@ -151,9 +152,7 @@ func applyBaseURL(url string, this *datatypes.EgoStruct) string {
 			return url
 		}
 
-		if strings.HasSuffix(base, "/") {
-			base = base[:len(base)-1]
-		}
+		base = strings.TrimSuffix(base, "/")
 
 		if !strings.HasPrefix(url, "/") {
 			url = "/" + url
@@ -206,7 +205,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	this := getThisStruct(s)
-	verify := true
+	verify := allowInsecure
 
 	if len(args) == 1 {
 		verify = util.GetBool(args[0])

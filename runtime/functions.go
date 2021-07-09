@@ -90,9 +90,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	if text == "\n" {
 		text = ""
 	} else {
-		if strings.HasSuffix(text, "\n") {
-			text = text[:len(text)-1]
-		}
+		text = strings.TrimSuffix(text, "\n")
 	}
 
 	return text, nil
