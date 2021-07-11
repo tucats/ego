@@ -87,11 +87,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		text = io.ReadConsoleText(prompt)
 	}
 
-	if text == "\n" {
-		text = ""
-	} else {
-		text = strings.TrimSuffix(text, "\n")
-	}
+	text = strings.TrimSuffix(text, "\n")
 
 	return text, nil
 }
