@@ -73,6 +73,11 @@ fi
 echo Build $BUILDVER on $GOOS $GOARCH
 GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS"
 
+if [ "$1" == "-bin" ]; then
+   echo "Updating ~/bin copy"
+   cp ego ~/bin/
+fi 
+
 if [ "$1" == "-i" ]; then
    git commit -a -m "increment build version"
 fi
