@@ -1,0 +1,30 @@
+  func thread(id int, wg *sync.WaitGroup) { 
+        fmt.Printf("Thread %d starting\n", id)
+        count := 50
+        for i := 0; i < count; i = i + 1 {
+            f := math.Factor(1234567)
+        }
+        
+        fmt.Printf("Thread %d ending\n", id)
+        wg.Done()                                          
+    }
+    
+    func main() int {
+        var wg sync.WaitGroup                              
+        
+        start := time.Now()
+        threadCount := 20
+        for i := 1; i <= threadCount; i = i + 1 {
+            wg.Add(1)                                     
+            go thread(i, &wg)                           
+        }
+        
+        time.Sleep("1s")
+        fmt.Printf("\nAll threads launched.\n\n")
+        
+        wg.Wait()                                       
+        
+        elapsed := time.Since(start)
+        
+        fmt.Println("\n All done, real time ", elapsed)
+    }
