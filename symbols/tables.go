@@ -28,7 +28,7 @@ type SymbolTable struct {
 	ValueSize     int
 	ScopeBoundary bool
 	isRoot        bool
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 }
 
 func NewRootSymbolTable(name string) *SymbolTable {

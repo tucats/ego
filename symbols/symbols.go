@@ -13,8 +13,8 @@ import (
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	var v interface{}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	slot, found := s.Symbols[name]
 	if found {
@@ -50,8 +50,8 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	var v interface{}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	slot, found := s.Symbols[name]
 	if found {
@@ -74,7 +74,6 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	s.mutex.Lock()
-
 	defer s.mutex.Unlock()
 
 	s.Constants[name] = v
@@ -107,6 +106,9 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 		return errors.New(errors.ErrReadOnlyValue).Context(name)
 	}
 
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	// IF this doesn't exist, allocate more space in the values array
 	slot, ok := symbolTable.Symbols[name]
 	if !ok {
@@ -134,6 +136,9 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 // Set stores a symbol value in the table where it was found.
 func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	var old interface{}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	slot, found := s.Symbols[name]
 	if found {
@@ -188,6 +193,9 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 		return errors.New(errors.ErrReadOnlyValue).Context(name)
 	}
 
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	_, f := s.Symbols[name]
 	if !f {
 		if s.Parent == nil {
@@ -213,6 +221,9 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.ErrInvalidSymbolName)
 	}
 
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if _, found := s.Symbols[name]; found {
 		return errors.New(errors.ErrSymbolExists).Context(name)
 	}
@@ -231,9 +242,8 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 
 // IsConstant determines if a name is a constant value.
 func (s *SymbolTable) IsConstant(name string) bool {
-	s.mutex.Lock()
-
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	if _, found := s.Constants[name]; found {
 		return true

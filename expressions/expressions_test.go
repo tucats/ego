@@ -21,6 +21,14 @@ func TestNew(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "Bitwise AND",
+			expr: "7 & 1",
+			want: 1,
+		}, {
+			name: "Bitwise OR",
+			expr: "8|3",
+			want: 11,
+		}, {
 			name: "Index into array",
 			expr: "a[1]",
 			want: "tom",
@@ -112,12 +120,12 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "Multiple paren terms",
-			expr: "(i==42) & (name==\"Tom\")",
+			expr: "(i==42) && (name==\"Tom\")",
 			want: true,
 		},
 		{
 			name: "Invalid multiple paren terms",
-			expr: "(i==42) & (name==\"Tom\"",
+			expr: "(i==42) && (name==\"Tom\"",
 			want: nil,
 		},
 		{
@@ -162,17 +170,22 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "Type coercion int to bool",
-			expr: "i & true",
+			expr: "i && true",
 			want: true,
 		},
 		{
+			name: "Type coercion bool to string",
+			expr: "\"true\" || false",
+			want: "true",
+		},
+		{
 			name: "Type coercion string to bool",
-			expr: "\"true\" | false",
+			expr: "bool(\"true\") && true",
 			want: true,
 		},
 		{
 			name: "Invalid type coercion string to bool",
-			expr: "\"bob\" | false",
+			expr: "\"bob\" || false",
 			want: false,
 		},
 		{
