@@ -17,6 +17,9 @@ import (
 // script.
 var BuildVersion = "0"
 
+// BuildTime is a timestamp for this build
+var BuildTime string
+
 // Copyright is the copyright string for this application.
 var Copyright = "(C) Copyright Tom Cole 2020, 2021"
 
@@ -25,6 +28,10 @@ func main() {
 	app := app.New("ego: execute code in the Ego language").
 		SetVersion(1, 1, buildVer).
 		SetCopyright(Copyright)
+
+	if BuildTime > "" {
+		app.SetBuildTime(BuildTime)
+	}
 
 	// If there aren't any arguments, default to "run".
 	args := os.Args

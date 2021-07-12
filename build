@@ -1,3 +1,5 @@
+#!/bin/bash 
+
 # Build script for Ego that injects version number, and optionally
 # increments it. By default, the build is for the current OS and
 # architecture, but you can use command line options to choose
@@ -12,6 +14,8 @@
 #
 
 BUILDVER=$(cat buildver.txt)
+BUILDTIME=$(date +"%Y%m%d%H%M%S")
+FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 GO="go"
 GOARCH=`go env GOARCH`
@@ -24,16 +28,16 @@ if [ "$1" == "-all" ]; then
    mkdir -p builds/windows
 
    echo Linux x86...
-   GOARCH=amd64 GOOS=linux $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/linux/ego
+   GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/ego
 
    echo Mac x86...
-   GOARCH=amd64 GOOS=darwin $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/macos/intel/ego
+   GOARCH=amd64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/intel/ego
 
    echo Mac Apple Silicon
-   GOARCH=arm64 GOOS=darwin $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/macos/applesilicon/ego
+   GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego
 
    echo Windows x86
-   GOARCH=amd64 GOOS=windows $GO build -ldflags "-X main.BuildVersion=$BUILDVER" -o builds/windows/ego.exe
+   GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/ego.exe
 
    exit 0
 fi
@@ -67,7 +71,7 @@ if [ "$1" == "-i" ]; then
 fi
 
 echo Build $BUILDVER on $GOOS $GOARCH
-GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "-X main.BuildVersion=$BUILDVER"
+GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS"
 
 if [ "$1" == "-i" ]; then
    git commit -a -m "increment build version"

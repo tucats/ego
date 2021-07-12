@@ -23,6 +23,7 @@ type App struct {
 	Description string
 	Copyright   string
 	Version     string
+	BuildTime   string
 	Context     *cli.Context
 	Action      func(c *cli.Context) *errors.EgoError
 }
@@ -55,6 +56,13 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
 	_ = symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
+
+	return app
+}
+
+func (app *App) SetBuildTime(s string) *App {
+	app.BuildTime = s
+	_ = symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
 
 	return app
 }
