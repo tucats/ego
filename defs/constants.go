@@ -114,6 +114,10 @@ const (
 	// with this path. This lets you limit where/how the files can be managed
 	// by an ego program. This is especially important in server mode.
 	SandboxPathSetting = "ego.sandbox.path"
+
+	// PidDirectorySettings has the path used to store and find PID files for
+	// server invocations and management.
+	PidDirectorySetting = "ego.server.piddir"
 )
 
 // This section contains the names of the command-line options. These often

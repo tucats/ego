@@ -32,6 +32,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.ThrowUncheckedErrorsSetting: "true",
 		defs.FullStackTraceSetting:       "false",
 		defs.LogTimestampFormat:          "2006-01-02 15:04:05",
+		defs.PidDirectorySetting:         "/var/run/ego/",
 	}
 
 	// See if there is a value for each on of these. If no

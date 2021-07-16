@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -144,11 +145,16 @@ func getPidFileName(c *cli.Context) string {
 	}
 
 	// Figure out the operating-system-approprite pid file name
-	pidPath := "/tmp/"
+	pidPath := persistence.Get(defs.PidDirectorySetting)
+	if pidPath == "" {
+		pidPath = "/tmp/"
+	}
 
 	if strings.HasPrefix(runtime.GOOS, "windows") {
 		pidPath = "\\temp\\"
 	}
 
-	return filepath.Join(pidPath, "ego-server"+portString+".pid")
+	result := filepath.Join(pidPath, "ego-server"+portString+".pid")
+
+	return result
 }
