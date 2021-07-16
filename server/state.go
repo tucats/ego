@@ -148,10 +148,10 @@ func getPidFileName(c *cli.Context) string {
 	pidPath := persistence.Get(defs.PidDirectorySetting)
 	if pidPath == "" {
 		pidPath = "/tmp/"
-	}
 
-	if strings.HasPrefix(runtime.GOOS, "windows") {
-		pidPath = "\\temp\\"
+		if strings.HasPrefix(runtime.GOOS, "windows") {
+			pidPath = "\\temp\\"
+		}
 	}
 
 	result := filepath.Join(pidPath, "ego-server"+portString+".pid")

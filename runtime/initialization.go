@@ -3,6 +3,7 @@ package runtime
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -16,6 +17,12 @@ func InitProfileDefaults() *errors.EgoError {
 	var err *errors.EgoError
 
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+
+	// The initialzier for the pid directory is platform-specific.
+	piddir := "/var/run/ego/"
+	if strings.EqualFold(runtime.GOOS, "windows") {
+		piddir = "\\temp\\"
+	}
 
 	// The default values we check for.
 	settings := map[string]string{
@@ -32,7 +39,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.ThrowUncheckedErrorsSetting: "true",
 		defs.FullStackTraceSetting:       "false",
 		defs.LogTimestampFormat:          "2006-01-02 15:04:05",
-		defs.PidDirectorySetting:         "/var/run/ego/",
+		defs.PidDirectorySetting:         piddir,
 	}
 
 	// See if there is a value for each on of these. If no
