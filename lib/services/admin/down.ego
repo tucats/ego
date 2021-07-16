@@ -9,7 +9,7 @@ func handler(req http.Request, resp http.Response ) {
     @authenticated admin
 
     resp.Write("Server stopped")
-    resp.WriteStatus(503)
+    resp.WriteStatus(http.StatusServiceUnavailable)
 
     return
 }

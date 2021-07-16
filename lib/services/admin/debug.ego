@@ -8,7 +8,7 @@ func handler(req http.Request, response http.Response) {
     // If we got additional info in the path, we can't process it.
     @url "/{{extra}}/"
     if extra != "" {
-        response.WriteStatus(400)
+        response.WriteStatus(http.StatusBadRequest)
         response.Write("Unsupported URL suffix " + extra)
         return 
     }

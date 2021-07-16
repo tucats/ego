@@ -14,7 +14,7 @@ func handler(req http.Request, resp http.Response ) {
     token := cipher.Create(_user)
     
     resp.Write(token)
-    resp.WriteStatus(200)
+    resp.WriteStatus(http.StatusOK)
 
     return
 }
