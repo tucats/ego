@@ -66,8 +66,13 @@ if [ "$1" == "-i" ]; then
       exit 1
    fi
 
-   let "BUILDVER = $BUILDVER + 1"
-   echo $BUILDVER >buildver.txt
+BASE=$(echo $BUILDVER | cut -f1 -d- )
+BUILD=$(echo $BUILDVER | cut -f2 -d- )
+BUILD=$(expr $BUILD + 1 )
+
+BUILDVER=$BASE-$BUILD
+echo $BUILDVER >buildver.txt
+
 fi
 
 echo Build $BUILDVER on $GOOS $GOARCH
