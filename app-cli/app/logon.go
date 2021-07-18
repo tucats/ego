@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
@@ -110,6 +111,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	req := restClient.NewRequest()
+	req.Header.Set("Accept", "application/json")
 	runtime.AddAgent(req, defs.LogonAgent)
 
 	r, err := req.Get(url)
@@ -117,12 +119,18 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
 	if errors.Nil(err) && r.StatusCode() == http.StatusOK {
-		token := strings.TrimSuffix(string(r.Body()), "\n")
+		payload := defs.LogonResponse{}
+		err := json.Unmarshal(r.Body(), &payload)
+		if err != nil {
+			return errors.New(err).Context("logon")
+		}
+
+		token := payload.Token
 		persistence.Set(LogonTokenSetting, token)
 
 		err = persistence.Save()
 		if errors.Nil(err) {
-			ui.Say("Successfully logged in as \"%s\"", user)
+			ui.Say("Successfully logged in as \"%s\", valid until %s", user, payload.Expiration)
 		}
 
 		return errors.New(err)

@@ -88,3 +88,11 @@ type ServerStatus struct {
 	LogID   uuid.UUID `json:"logID"`
 	Args    []string  `json:"args"`
 }
+
+// LogonResponse is the info returned from a logon request.
+type LogonResponse struct {
+	Expiration string `json:"expires"`
+	Issuer     string `json:"issuer"`
+	Token      string `json:"token"`
+	Identity   string `json:"identity"`
+}

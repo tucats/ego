@@ -12,8 +12,22 @@ func handler(req http.Request, resp http.Response ) {
 
 // Generate a token and return it as text to the caller
     token := cipher.Create(_user)
+
+    payload := {
+        "issuer":_session,
+        "token":token, 
+        "expires": time.Now().Add(profile.Get("ego.token.expiration")).String(),
+        "identity": _user,
+        }
+
+    @json {
+        resp.Write(payload)
+    }
+
+    @text {
+        resp.Write(token)
+    }
     
-    resp.Write(token)
     resp.WriteStatus(http.StatusOK)
 
     return
