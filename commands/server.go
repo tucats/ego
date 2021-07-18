@@ -183,8 +183,16 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	go server.LogRequestCounts()
 
 	var e2 error
+	secure := true
+	if persistence.GetBool(defs.InsecureServerSetting) {
+		secure = false
+	}
 
 	if c.GetBool("not-secure") {
+		secure = false
+	}
+
+	if !secure {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
 		e2 = http.ListenAndServe(addr, nil)

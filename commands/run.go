@@ -156,7 +156,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	// Set up the symbol table.
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
-	symbolTable.Root().SetAlways("__main", "main")
+	_ = symbolTable.Root().SetAlways("__main", "main")
 
 	exitValue := 0
 

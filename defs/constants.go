@@ -118,6 +118,10 @@ const (
 	// PidDirectorySettings has the path used to store and find PID files for
 	// server invocations and management.
 	PidDirectorySetting = "ego.server.piddir"
+
+	// If true, the default state for staring an Ego is to not require HTTPS/SSL
+	// but rather run in "insecure" mode.
+	InsecureServerSetting = "ego.server.insecure"
 )
 
 // This section contains the names of the command-line options. These often

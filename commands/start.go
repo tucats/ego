@@ -36,9 +36,14 @@ func Start(c *cli.Context) *errors.EgoError {
 	// Construct the command line again, but replace the START verb with a RUN
 	// verb. Also, add the flag that says the process is running detached.
 	args := []string{}
+	isInsecure := false
 
 	for _, v := range os.Args {
 		detached := false
+
+		if v == "-k" || v == "--not-secure" {
+			isInsecure = true
+		}
 
 		if v == "start" {
 			v = "run"
@@ -49,6 +54,13 @@ func Start(c *cli.Context) *errors.EgoError {
 		if detached {
 			args = append(args, "--is-detached")
 		}
+	}
+
+	// Are we defaulting to insecure? If so, make it explicit in the
+	// arguments to the server, so restarts will still work in the
+	// future if the default changes.
+	if !isInsecure && persistence.GetBool(defs.InsecureServerSetting) {
+		args = append(args, "-k")
 	}
 
 	// What do we know from the arguments that we might need to use?

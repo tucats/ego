@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -25,13 +26,15 @@ func PathAction(c *cli.Context) *errors.EgoError {
 	// it from the location of the program that launched us.
 	if p == "" {
 		p, _ = filepath.Abs(c.FindGlobal().Args[0])
-		if strings.HasSuffix(p, ".exe") {
-			p = p[:len(p)-4]
+		// If on windows, strip the exe
+		if strings.EqualFold(runtime.GOOS, "windows") {
+			p = strings.TrimSuffix(p, ".exe")
 		}
 
-		if strings.HasSuffix(p, "ego") {
-			p = p[:len(p)-3]
-		}
+		// Now strip off the actual name of the executable, leaving
+		// only the path.
+		p = strings.TrimSuffix(p, "ego")
+
 	}
 
 	fmt.Println(p)
