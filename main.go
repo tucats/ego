@@ -5,17 +5,15 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"strconv"
 
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
-// BuildVersion is the incremental build version that is
-// injected into the version number string by the build
-// script.
-var BuildVersion = "0"
+// BuildVersion is the incremental build version. This is normally
+// injected during a build by the build script.
+var BuildVersion = "0.0-0"
 
 // BuildTime is a timestamp for this build
 var BuildTime string
@@ -24,9 +22,8 @@ var BuildTime string
 var Copyright = "(C) Copyright Tom Cole 2020, 2021"
 
 func main() {
-	buildVer, _ := strconv.Atoi(BuildVersion)
 	app := app.New("ego: execute code in the Ego language").
-		SetVersion(1, 1, buildVer).
+		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright)
 
 	if BuildTime > "" {
@@ -74,4 +71,14 @@ func main() {
 
 		os.Exit(1)
 	}
+}
+
+func parseVersion(version string) (major int, minor int, build int) {
+	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
+	if count != 3 || err != nil {
+		fmt.Printf("Unable to process version number %s; count=%d, err=%v\n", version, count, err)
+		os.Exit(1)
+	}
+
+	return
 }
