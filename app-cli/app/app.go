@@ -45,7 +45,12 @@ func New(appName string) *App {
 
 // SetVersion sets the version number for the application.
 func (app *App) SetVersion(major, minor, delta int) *App {
-	app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
+	if major == 0 && minor == 0 && delta == 0 {
+		app.Version = `"developer build"`
+	} else {
+		app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
+	}
+
 	_ = symbols.RootSymbolTable.SetAlways("_version", app.Version)
 
 	return app
