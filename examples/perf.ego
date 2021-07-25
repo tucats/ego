@@ -1,16 +1,16 @@
 
 func main() int {
-start := time.Now()
-count := 10
+   start := time.Now()
+   count := 10
 
-for i := 0; i < count; i = i + 1 {
-   x := math.Factor(1234567890)
+   for i := 0; i < count; i = i + 1 {
+      x := math.Factor(1234567890)
 }
 
-finish := time.Now()
-fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
+   finish := time.Now()
+   fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
 
-return 0
+   return 0
  
 }
 

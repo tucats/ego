@@ -14,11 +14,11 @@ func client(ch chan, count int ) {
 
 func main() int {
 
-   clients := 500
+   clients := 300
    ch := make(chan, clients)
 
    for i := 0; i < clients; i = i + 1 {
-      go client(ch, 100)
+      go client(ch, 10)
    }
 
    count := 0

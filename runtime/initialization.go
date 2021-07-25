@@ -2,8 +2,8 @@ package runtime
 
 import (
 	"os"
+	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -19,10 +19,8 @@ func InitProfileDefaults() *errors.EgoError {
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
 	// The initialzier for the pid directory is platform-specific.
-	piddir := "/var/run/ego/"
-	if strings.EqualFold(runtime.GOOS, "windows") {
-		piddir = "\\temp\\"
-	}
+	homedir, _ := os.UserHomeDir()
+	piddir := path.Join(homedir, ".org.fernwood")
 
 	// The default values we check for.
 	settings := map[string]string{
