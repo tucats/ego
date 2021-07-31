@@ -247,9 +247,6 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		structure.SetStatic(true)
 	}
 
-	// Mark this as replica 0, which means this could be used
-	// as a type.
-
 	return c.stackPush(structure)
 }
 
