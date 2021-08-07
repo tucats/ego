@@ -151,10 +151,11 @@ func (s *EgoStruct) GetAlways(name string) interface{} {
 
 	return value
 }
+
 func (s *EgoStruct) Get(name string) (interface{}, bool) {
 	value, ok := s.fields[name]
 
-	// If its not a field, it might be locatable via the typedef's
+	// If it's not a field, it might be locatable via the typedef's
 	// declared receiver functions.
 	if !ok {
 		value, ok = s.typeDef.functions[name]
@@ -347,7 +348,5 @@ func (s EgoStruct) MarshalJSON() ([]byte, error) {
 
 	b.WriteString("}")
 
-	buff := b.String()
-
-	return []byte(buff), nil
+	return []byte(b.String()), nil
 }

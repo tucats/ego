@@ -33,7 +33,6 @@ func Test_panicByteCode(t *testing.T) {
 
 	if e.GetContext() != "test" {
 		t.Errorf("panicByteCode wrong context %v", e)
-
 	}
 }
 

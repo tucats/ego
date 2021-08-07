@@ -19,6 +19,14 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	// If there is no model, assume a generic return value is okay
 	if len(args) < 2 {
+		// Hang on, if the result is a map, then Ego won't be able to use it,
+		// so convert that to an EgoMap. Same for an array.
+		if m, ok := v.(map[string]interface{}); ok {
+			v = datatypes.NewMapFromMap(m)
+		} else if a, ok := v.([]interface{}); ok {
+			v = datatypes.NewFromArray(datatypes.InterfaceType, a)
+		}
+
 		return v, errors.New(err)
 	}
 
