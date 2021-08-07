@@ -20,7 +20,7 @@
 
 # Ego Web Server <a name="intro"></a>
 
-This documents using the _Ego_ web server capability. You can start Ego as a REST server,
+This documents using the _Ego_ web server capability. You can start Ego as a REST server
 with a specified port on which to listen for input (the default is 8080). Web service
 requests are handled by the server for administrative functions like logging in or 
 managing user credentials, and by _Ego_ programs for other service functions that
@@ -30,36 +30,36 @@ represent the actual web services features.
 
 ## Server subcommands <a nanme="commands"></a>
 The `ego server` command has subcommands that describe the operations you can perform. The
-commands that start or stop a rest server or evaluate it's status must be run on the same
+commands that start or stop a rest server or evaluate its status are run on the same
 computer that the server itself is running on. For each of the commands below, you can 
 specify the option `--port n` to indicate that you want to control the server listening 
 on the given port number, where `n` is an integer value for a publically available port 
 number.
 
-| Subcommand | Description |
-|------------| ------------|
-| start | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
-| stop | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
-| restart | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
-| status | Report on the status of the server. |
-| logging | Enable or disable logging on the server |
-| users set | Create or update a user in the server database |
-| users delete | Remove a user from the server database |
-| users list | List users in the server database |
-| caches list | List the endpoints currently in the service cache |
-| caches flush | Flush the service cache on the server |
+| Subcommand      | Description |
+|-----------------| ------------|
+| start           | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
+| stop            | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
+| restart         | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
+| status          | Report on the status of the server. |
+| logging         | Enable or disable logging on the server |
+| users set       | Create or update a user in the server database |
+| users delete    | Remove a user from the server database |
+| users list      | List users in the server database |
+| caches list     | List the endpoints currently in the service cache |
+| caches flush    | Flush the service cache on the server |
 | caches set-size | Set the number of service endpoints the cache can hold |
 
 &nbsp;
 &nbsp;
 
-The commands that start and stop a server only required native operating system 
+The commands that start and stop a server only require native operating system 
 permissions to start or stop a process. The commands that affect user credentials 
-in the server can only  be executed when logged into the server with a process 
-that has `root` privileges, as defined  by the credentials database in that server.
+in the server can only be executed when logged into the server with a credential
+that has `root` privileges, as defined by the credentials database in that server.
 
 When a server is running, it generates a log file (in the current directory, by 
-default) which  tracks the server startup and status of requests made to the server.
+default) which tracks the server startup and status of requests made to the server.
 
 ### Starting and Stopping the Server<a name="startstop"></a>
 
@@ -69,50 +69,53 @@ how authentication is handled. The  `ego server stop` command stops a running
 server. The `ego server restart` stops  and restarts a server using the options 
 it was used to start up originally.
 
-You can also run the server from the CLI (instead of detaching it as a process) 
-using the `ego server run` command option, which accepts the same options as 
-`ego server start` and runs the code directly in the CLI, sending logging to stdout.
+You can also run the server from the shell in the current process (instead of 
+detaching it as a separate process) using the `ego server run` command option.
+This accepts the same options as `ego server start` and runs the code directly 
+in the current shell, sending logging to stdout.
 
-When a server is started, a file is created (by default in /tmp) that describes 
-the server status and command-line options. This information is re-read when 
-issuing a `ego server status` command to display server information. It is also
+When a server is started, a file is created (by default in ~/.org.fernwood) that 
+describes the server status and command-line options. This information is re-read 
+when issuing a `ego server status` command to display server information. It is also
 read by the `ego server restart`  command to determine the command-line options
 to use with the restarted server.
 
-When a server is stopped via `ego server stop`, the server status file in /tmp 
-is deleted.
+When a server is stopped via `ego server stop`, the server status file is deleted.
 
 Below is additional information about the options that can be used for the `start` 
 and `run` commands.
 
 #### Caching
 You can specify a cache size, which controls how many service programs are held in 
-memory and not recompiled. This can be a significant performance benefit. When an 
-endpoint call is made, the server checks to see if the cache already contains the 
-compiled code for that function along with it's package definitions. If so, it is 
-reused to execute the current service. 
+memory and not recompiled each time they are invoked by a REST API call. This can 
+be a significant performance benefit. When an  endpoint call is made, the server 
+checks to see if the cache already contains the compiled code for that function 
+along with it's package definitions. If so, it is reused to execute the current 
+service request.
 
 If the service program was not in the cache, it will be added to the cache.  When 
 the cache becomes full (has met the limit on the number of programs to cache) then
 the least-recently-used service program based on timestamp of the last REST call)
 is removed from the cache. 
 
-The default cache size is currently set to 10.
+The default cache size is 10 items.
 
 #### /code Endpoint
 By default, the server will only run services already stored in the services 
 directory tree (more on that below). When you start the web service, you can 
-optionally enable the `\code` endpoint. This accepts a text body and runs it 
+optionally enable the `/code` endpoint. This accepts a text body and runs it 
 as a program directly. This can be used for debugging purposes or diagnosing 
 issues with a server. This should **NOT** be left enabled by default, as it 
 exposes the server to security risks.
 
 #### Logging
-By default, the server generates a lot file named "ego-server.log" in the 
-current directory where the `server start` command is issued. This contains 
-entries describing server operations (like records of endpoints called, and 
-HTTP status returned). It also contains a periodic display of memory 
-consumption by the server.
+By default, the server generates a log file (named "ego-server-_timestamp_.log" 
+in the  current directory where the `server start` command is issued. This 
+contains entries describing server operations (like records of endpoints called, 
+and HTTP status returned). It also contains a periodic display of memory 
+consumption by the server. By default, the log file is closed and a new one 
+opened (with a new timestamp) every night at midnight. This means that, in 
+general, there is a single log file representing each day's activity.
 
 You can override the location of the log file using the `--log` command line
 option, and specifying the location and file name where the log file is to 
@@ -150,12 +153,15 @@ used for password challenges to web clients.
 
 * Use the `--users` command line option to specify either the file system path and
   file name to use for local JSON data that contains the credentials information, or
-  a "postgres://" URL expression that indicates the Postgres database used to store
-  the credentials (in a schema named "ego-server" that is created if needed).
+  a database URL expression (with scheme "postgres://" or "sqlite://") that 
+  indicates the Postgres or sqlite database used to store the credentials (in 
+  a schema named "ego-server" that is created if needed).
 * Use the `--superuser` option to specify a "username:password" string indicating 
   the default superuser. This is only needed when the credentials store is first
   initialized; it creates a user with the given username and password and gives that
   user the "ROOT" privilege which makes them able to perform all secured operations.
+  **IMPORTANT:** After the server is configured, this option should not be used as 
+  it can be visible in process listings such as generated by the "ps" or "top" commands.
 * Use the "--realm" option to specify a string that is sent back to web clients when
   a username/password is required but was not provided. For web clients that are
   browsers, this string is typically displayed in the username/password prompt from
@@ -189,15 +195,13 @@ which are set with the `ego profile set` command or via program operation using 
 | item | description |
 |------| ------------|
 | ego.logon.defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
-| ego.logon.userdata | the path to the JSON file containing the user data |
-| ego.token.expiration | the default duration a token is considered value. The default is "15m" for 15 minutes |
+| ego.logon.userdata | the path to the JSON file or database containing the user data |
+| ego.token.expiration | the default duration a token is considered valid. The default is "15m" for 15 minutes |
 | ego.token.key | A string used to encrypt tokens. This can be any string value |
 &nbsp; 
 &nbsp;
 
 # Writing a Service <a name="services"></a>
-
-**** THIS IS OUT OF DATE ****
 
 This section covers details of writing a service. The service handler function is called automatically
 by the Ego web server when a request comes in with an endpoint URL that matches the service
@@ -206,7 +210,6 @@ the caller, headers, and parameters via a `Request` parameter. The service's `ha
 function is responsible for formulating a response using the handler's second argument, which
 must be a `Response` object. This object allows the handler to set the status, and write
 a response body payload (either as text or JSON).
-
 
 Server startup scans the `services/` directory below the Ego path to find the Ego programs
 that offer endpoint support. This directory structure will map to the endpoints that the

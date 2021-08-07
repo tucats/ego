@@ -854,7 +854,7 @@ You can create a `for` loop that explicitly specifies an expression
 that defines the starting value, ending condition, and how the value
 changes with each iteration of a loop. For example,
 
-     for i := 0; i &lt; 10; i = i + 1 {
+     for i := 0; i < 10; i = i + 1 {
          fmt.Println(i)
      }
 
@@ -875,7 +875,7 @@ the `:=` operator) in the scope of the loop. You can use a simple
  index value available after the loop body ends.
 
     var i int
-    for i = 0; i &lt; 10; i = i + 1 {
+    for i = 0; i < 10; i = i + 1 {
         fmt.Println(i)
     }
     fmt.Println("The final value of i is ", i)
@@ -958,7 +958,7 @@ Sometimes when running an loop, you may wish to change the flow of
 execution in the loop based on conditions unrelated to the index
 variable. For example, consider:
 
-    for i := 1; i &lt; 10; i = i + 1 {
+    for i := 1; i < 10; i = i + 1 {
         if i == 5 {                      (1)
             continue                     (2)
         }
