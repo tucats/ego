@@ -100,6 +100,7 @@ func initializeRestType() {
 			"Post":   RestPost,
 			"Delete": RestDelete,
 			"Base":   RestBase,
+			"Debug":  RestDebug,
 			"Media":  RestMedia,
 			"Token":  RestToken,
 			"Auth":   RestAuth,
@@ -238,6 +239,22 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	this.SetAlways(baseURLFieldName, base)
+
+	return this, nil
+}
+
+// RestDebug implements the Debug() rest function. This specifies a boolean value that
+// enables or disables debug logging for the client.
+func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	r, err := getClient(s)
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	this := getThisStruct(s)
+
+	flag := util.GetBool((args[0]))
+	r.SetDebug(flag)
 
 	return this, nil
 }
