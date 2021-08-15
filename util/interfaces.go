@@ -161,6 +161,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		case int64:
 			return value
 
+		case float32:
+			return int64(value)
+
 		case float64:
 			return int64(value)
 
@@ -195,6 +198,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		case int:
 			return value
 
+		case float32:
+			return int(value)
+
 		case float64:
 			return int(value)
 
@@ -209,6 +215,36 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			}
 
 			return st
+		}
+
+	case float32:
+		switch value := v.(type) {
+		case nil:
+			return float32(0.0)
+
+		case bool:
+			if value {
+				return float32(1.0)
+			}
+
+			return float32(0.0)
+
+		case int:
+			return float32(value)
+
+		case int64:
+			return float32(value)
+
+		case float32:
+			return value
+
+		case float64:
+			return float32(value)
+
+		case string:
+			st, _ := strconv.ParseFloat(value, 32)
+
+			return float32(st)
 		}
 
 	case float64:
@@ -227,6 +263,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return float64(value)
 
 		case int64:
+			return float64(value)
+
+		case float32:
 			return float64(value)
 
 		case float64:
@@ -253,6 +292,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		case int64:
 			return fmt.Sprintf("%v", value)
 
+		case float32:
+			return fmt.Sprintf("%v", value)
+
 		case float64:
 			return fmt.Sprintf("%v", value)
 
@@ -276,6 +318,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case int64:
 			return vv != int64(0)
+
+		case float32:
+			return vv != 0.0
 
 		case float64:
 			return vv != 0.0
@@ -328,11 +373,36 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 		case int:
 			return v1, strconv.Itoa(vv)
 
+		case float32:
+			return v1, fmt.Sprintf("%v", vv)
+
 		case float64:
 			return v1, fmt.Sprintf("%v", vv)
 
 		case bool:
 			return v1, vv
+		}
+
+	case float32:
+		switch vv := v2.(type) {
+		case string:
+			return fmt.Sprintf("%v", v1.(float32)), v2
+
+		case int:
+			return v1, float32(vv)
+
+		case float32:
+			return v1, v2
+
+		case float64:
+			return v1, float32(vv)
+
+		case bool:
+			if vv {
+				return v1, float32(1.0)
+			}
+
+			return v1, float32(0.0)
 		}
 
 	case float64:
@@ -342,6 +412,9 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 
 		case int:
 			return v1, float64(vv)
+
+		case float32:
+			return v1, v2
 
 		case float64:
 			return v1, v2
@@ -361,6 +434,9 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 
 		case int:
 			return v1, v2
+
+		case float32:
+			return float32(v1.(int)), v2
 
 		case float64:
 			return float64(v1.(int)), v2
@@ -383,6 +459,9 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 
 		case int64:
 			return v1, v2
+
+		case float32:
+			return float32(v1.(int64)), v2
 
 		case float64:
 			return float64(v1.(int64)), v2
@@ -411,13 +490,19 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 
 			return 0, v2.(int)
 
+		case float32:
+			if v1.(bool) {
+				return 1.0, v2.(float32)
+			}
+
+			return 0.0, v2.(float32)
+
 		case float64:
 			if v1.(bool) {
 				return 1.0, v2.(float64)
 			}
 
 			return 0.0, v2.(float64)
-
 		case bool:
 			return v1, v2
 		}

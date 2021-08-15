@@ -50,6 +50,13 @@ var FloatType = Type{
 	valueType: nil,
 }
 
+var Float32Type = Type{
+	name:      "float32",
+	kind:      Float32Kind,
+	keyType:   nil,
+	valueType: nil,
+}
+
 var StringType = Type{
 	name:      "string",
 	kind:      StringKind,

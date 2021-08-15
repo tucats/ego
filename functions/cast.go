@@ -26,6 +26,15 @@ func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return nil, errors.New(errors.ErrInvalidType).In("int()").Context(args[0])
 }
 
+// Float32 implements the float32() function.
+func Float32(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if v := util.Coerce(args[0], float32(1.0)); v != nil {
+		return v.(float32), nil
+	}
+
+	return nil, errors.New(errors.ErrInvalidType).In("float32()").Context(args[0])
+}
+
 // Float implements the float() function.
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1.0); v != nil {

@@ -1,0 +1,32 @@
+@test "datamodel: float32 values"
+
+{
+    v := float32(1.1)
+    @assert reflect(v).basetype == "float32"
+
+    v1 := v + 1
+    @assert v1 == 2.1
+    @assert reflect(v1).basetype == "float32"
+
+    v2 := v - 0.1
+    @assert v2 == 1
+    @assert reflect(v1).basetype == "float32"
+
+    v3 := v * 2.0
+    @assert v3 == 2.2
+    @assert reflect(v3).basetype == "float32"
+    
+    v4 := v / float32(2)
+    @assert v4 == 0.55
+    @assert reflect(v1).basetype == "float32"
+    
+    @assert !v == false
+    @assert v > float32(1.09)
+    @assert v >= float32(1.1)
+    @assert v < float32(1.2)
+    @assert v <= float32(1.1)
+    @assert v != float32(1.09999)
+    @assert v == float32(1.09999999)  // Rounding up for precision
+}
+
+@pass

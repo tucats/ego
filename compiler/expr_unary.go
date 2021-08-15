@@ -30,6 +30,10 @@ func (c *Compiler) unary() *errors.EgoError {
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i
 
+			case float32:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
 			case float64:
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i

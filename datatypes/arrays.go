@@ -153,12 +153,26 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	}
 
 	if a.valueType.kind == FloatKind {
-		if x, ok := v.(int); ok {
+		if x, ok := v.(float32); ok {
+			v = float64(x)
+		} else if x, ok := v.(int); ok {
 			v = float64(x)
 		} else if x, ok := v.(int32); ok {
 			v = float64(x)
 		} else if x, ok := v.(int64); ok {
 			v = float64(x)
+		}
+	}
+
+	if a.valueType.kind == Float32Kind {
+		if x, ok := v.(float64); ok {
+			v = float32(x)
+		} else if x, ok := v.(int); ok {
+			v = float32(x)
+		} else if x, ok := v.(int32); ok {
+			v = float32(x)
+		} else if x, ok := v.(int64); ok {
+			v = float32(x)
 		}
 	}
 

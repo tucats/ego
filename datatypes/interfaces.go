@@ -85,6 +85,37 @@ func GetFloat(v interface{}) float64 {
 	}
 }
 
+func GetFloat32(v interface{}) float32 {
+	switch actual := v.(type) {
+	case int32:
+		return float32(actual)
+
+	case int:
+		return float32(actual)
+
+	case int64:
+		return float32(actual)
+
+	case float64:
+		return float32(actual)
+
+	case float32:
+		return actual
+
+	case bool:
+		if actual {
+			return 1.0
+		}
+
+		return 0.0
+
+	default:
+		f, _ := strconv.ParseFloat(fmt.Sprintf("%v", actual), 32)
+
+		return float32(f)
+	}
+}
+
 func GetBool(v interface{}) bool {
 	switch actual := v.(type) {
 	case int:

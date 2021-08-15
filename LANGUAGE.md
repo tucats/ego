@@ -1527,7 +1527,7 @@ many times to read the channel, or can use a `for...range` operation
 on the channel to simply keep receiving data until done.
 
     func beepLater(count int, c chan) {
-        for i := 0; i &lt; int; i = i + 1 {
+        for i := 0; i < int; i = i + 1 {
             c <- "Item " + string(i)
         }
     }

@@ -88,6 +88,9 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 			case float64:
 				r = v1.(float64) == v2.(float64)
 
+			case float32:
+				r = v1.(float32) == v2.(float32)
+
 			case string:
 				r = v1.(string) == v2.(string)
 
@@ -165,6 +168,9 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		case int:
 			r = v1.(int) != v2.(int)
 
+		case float32:
+			r = v1.(float32) != v2.(float32)
+
 		case float64:
 			r = v1.(float64) != v2.(float64)
 
@@ -222,6 +228,9 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 		switch v1.(type) {
 		case int:
 			r = v1.(int) > v2.(int)
+
+		case float32:
+			r = v1.(float32) > v2.(float32)
 
 		case float64:
 			r = v1.(float64) > v2.(float64)
@@ -281,6 +290,9 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		switch v1.(type) {
 		case int:
 			r = v1.(int) >= v2.(int)
+
+		case float32:
+			r = v1.(float32) >= v2.(float32)
 
 		case float64:
 			r = v1.(float64) >= v2.(float64)
@@ -342,6 +354,9 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 		case int:
 			r = v1.(int) < v2.(int)
 
+		case float32:
+			r = v1.(float32) < v2.(float32)
+
 		case float64:
 			r = v1.(float64) < v2.(float64)
 
@@ -399,6 +414,9 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		switch v1.(type) {
 		case int:
 			r = v1.(int) <= v2.(int)
+
+		case float32:
+			r = v1.(float32) <= v2.(float32)
 
 		case float64:
 			r = v1.(float64) <= v2.(float64)

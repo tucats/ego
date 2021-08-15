@@ -155,9 +155,27 @@ func (m *EgoMap) Keys() []interface{} {
 		}
 
 		return result
+	} else if m.keyType.IsType(Float32Type) {
+		idx := 0
+		array := make([]float64, len(m.data))
+
+		for k := range m.data {
+			array[idx] = GetFloat(k)
+			idx++
+		}
+
+		sort.Float64s(array)
+
+		result := make([]interface{}, len(array))
+
+		for i, v := range array {
+			result[i] = float32(v)
+		}
+
+		return result
 	} else {
 		r := []interface{}{}
-		for k := range m.data {
+		for _, k := range m.data {
 			r = append(r, k)
 		}
 
@@ -241,8 +259,11 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 	case reflect.Int, reflect.Int32, reflect.Int64:
 		valueType = IntType
 
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float64:
 		valueType = FloatType
+
+	case reflect.Float32:
+		valueType = Float32Type
 
 	case reflect.Bool:
 		valueType = BoolType
@@ -261,7 +282,10 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 	case reflect.Int, reflect.Int32, reflect.Int64:
 		keyType = IntType
 
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float32:
+		keyType = Float32Type
+
+	case reflect.Float64:
 		keyType = FloatType
 
 	case reflect.Bool:

@@ -16,6 +16,7 @@ const (
 	UndefinedKind = iota
 	IntKind
 	FloatKind
+	Float32Kind
 	StringKind
 	BoolKind
 	StructKind
@@ -389,7 +390,10 @@ func TypeOf(i interface{}) Type {
 	case int:
 		return IntType
 
-	case float32, float64:
+	case float32:
+		return Float32Type
+
+	case float64:
 		return FloatType
 
 	case string:

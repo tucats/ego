@@ -48,6 +48,9 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 	case int:
 		_ = c.stackPush(-value)
 
+	case float32:
+		_ = c.stackPush(float32(0.0) - value)
+
 	case float64:
 		_ = c.stackPush(0.0 - value)
 
@@ -107,6 +110,13 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 			_ = c.stackPush(true)
 		}
 
+	case float32:
+		if value != 0.0 {
+			_ = c.stackPush(false)
+		} else {
+			_ = c.stackPush(true)
+		}
+
 	case float64:
 		if value != 0.0 {
 			_ = c.stackPush(false)
@@ -153,6 +163,9 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 		switch v1.(type) {
 		case int:
 			return c.stackPush(v1.(int) + v2.(int))
+
+		case float32:
+			return c.stackPush(v1.(float32) + v2.(float32))
 
 		case float64:
 			return c.stackPush(v1.(float64) + v2.(float64))
@@ -235,6 +248,9 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 	case int:
 		return c.stackPush(v1.(int) - v2.(int))
 
+	case float32:
+		return c.stackPush(v1.(float32) - v2.(float32))
+
 	case float64:
 		return c.stackPush(v1.(float64) - v2.(float64))
 
@@ -270,6 +286,9 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch v1.(type) {
 	case int:
 		return c.stackPush(v1.(int) * v2.(int))
+
+	case float32:
+		return c.stackPush(v1.(float32) * v2.(float32))
 
 	case float64:
 		return c.stackPush(v1.(float64) * v2.(float64))
@@ -319,6 +338,9 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		return c.stackPush(prod)
 
+	case float32:
+		return c.stackPush(float32(math.Pow(float64(v1.(float32)), float64(v2.(float32)))))
+
 	case float64:
 		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
@@ -357,6 +379,13 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		return c.stackPush(v1.(int) / v2.(int))
+
+	case float32:
+		if v2.(float32) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(float32) / v2.(float32))
 
 	case float64:
 		if v2.(float64) == 0 {

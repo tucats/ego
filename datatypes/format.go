@@ -58,6 +58,9 @@ func Format(element interface{}) string {
 
 		return "false"
 
+	case float32:
+		return fmt.Sprintf("%v", v)
+
 	case float64:
 		return fmt.Sprintf("%v", v)
 

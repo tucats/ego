@@ -49,6 +49,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"double":               {Min: 1, Max: 1, F: Float},
 	"error":                {Min: 1, Max: 1, F: Signal},
 	"float":                {Min: 1, Max: 1, F: Float},
+	"float32":              {Min: 1, Max: 1, F: Float32},
 	"index":                {Min: 2, Max: 2, F: Index},
 	"int":                  {Min: 1, Max: 1, F: Int},
 	"len":                  {Min: 1, Max: 1, F: Length},

@@ -43,6 +43,8 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 							_, ok = v.(bool)
 						} else if dataType.IsType(datatypes.StringType) {
 							_, ok = v.(string)
+						} else if dataType.IsType(datatypes.Float32Type) {
+							_, ok = v.(float32)
 						} else if dataType.IsType(datatypes.FloatType) {
 							_, ok = v.(float64)
 						} else {

@@ -11,7 +11,8 @@ type TypeDeclaration struct {
 // This is the "zero instance" value for various types.
 var interfaceModel interface{}
 var intModel = 0
-var floatModel = 0.0
+var floatModel float64 = 0.0
+var float32Model float32 = 0.0
 var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
@@ -19,6 +20,7 @@ var chanModel = NewChannel(1)
 var intInterface interface{} = 0
 var boolInterface interface{} = false
 var floatInterface interface{} = 0.0
+var float32Interface interface{} = float32(0.0)
 var stringInterface interface{} = ""
 
 // TypeDeclarations is a dictionary of all the type declaration token sequences.
@@ -68,6 +70,11 @@ var TypeDeclarations = []TypeDeclaration{
 		Array(FloatType),
 	},
 	{
+		[]string{"[", "]", "float32"},
+		NewArray(Float32Type, 0),
+		Array(Float32Type),
+	},
+	{
 		[]string{"[", "]", "string"},
 		NewArray(StringType, 0),
 		Array(StringType),
@@ -93,6 +100,11 @@ var TypeDeclarations = []TypeDeclaration{
 		FloatType,
 	},
 	{
+		[]string{"float32"},
+		float32Model,
+		Float32Type,
+	},
+	{
 		[]string{"string"},
 		stringModel,
 		StringType,
@@ -116,6 +128,11 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"*", "float"},
 		&floatInterface,
 		Pointer(FloatType),
+	},
+	{
+		[]string{"*", "float32"},
+		&float32Interface,
+		Pointer(Float32Type),
 	},
 	{
 		[]string{"*", "string"},
