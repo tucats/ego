@@ -162,6 +162,89 @@ func Coerce(v interface{}, model interface{}) interface{} {
 	}
 
 	switch model.(type) {
+	case byte:
+		switch value := v.(type) {
+		case nil:
+			return byte(0)
+
+		case bool:
+			if value {
+				return byte(1)
+			}
+
+			return byte(0)
+
+		case int:
+			return byte(value)
+
+		case int32:
+			return byte(value)
+
+		case int64:
+			return byte(value)
+
+		case float32:
+			return byte(value)
+
+		case float64:
+			return byte(value)
+
+		case string:
+			if value == "" {
+				return 0
+			}
+
+			st, err := strconv.Atoi(value)
+			if !errors.Nil(err) {
+				return nil
+			}
+
+			return byte(st)
+		}
+
+	case int32:
+		switch value := v.(type) {
+		case nil:
+			return int32(0)
+
+		case bool:
+			if value {
+				return int32(1)
+			}
+
+			return int32(0)
+
+		case int:
+			return int32(value)
+
+		case int64:
+			return int32(value)
+
+		case int32:
+			return value
+
+		case byte:
+			return int32(value)
+
+		case float32:
+			return int32(value)
+
+		case float64:
+			return int32(value)
+
+		case string:
+			if value == "" {
+				return 0
+			}
+
+			st, err := strconv.Atoi(value)
+			if !errors.Nil(err) {
+				return nil
+			}
+
+			return int32(st)
+		}
+
 	case int64:
 		switch value := v.(type) {
 		case nil:
@@ -444,6 +527,56 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 			}
 
 			return v1, 0.0
+		}
+
+	case byte:
+		switch vv := v2.(type) {
+		case string:
+			return strconv.Itoa(int(v1.(byte))), v2
+
+		case byte:
+			return v1.(byte), vv
+
+		case int:
+			return int(v1.(byte)), vv
+
+		case int32:
+			return int32(v1.(byte)), vv
+
+		case float32:
+			return float32(v1.(int)), vv
+
+		case float64:
+			return float64(v1.(int)), vv
+
+		case bool:
+			if vv {
+				return v1, 1
+			}
+
+			return v1, 0
+		}
+
+	case int32:
+		switch vv := v2.(type) {
+		case string:
+			return strconv.Itoa(int(v1.(int32))), v2
+
+		case int:
+			return v1.(int32), vv
+
+		case float32:
+			return float32(v1.(int32)), vv
+
+		case float64:
+			return float64(v1.(int32)), vv
+
+		case bool:
+			if vv {
+				return v1, 1
+			}
+
+			return v1, 0
 		}
 
 	case int:

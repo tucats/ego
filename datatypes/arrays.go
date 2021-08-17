@@ -152,7 +152,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 		}
 	}
 
-	if a.valueType.kind == FloatKind {
+	if a.valueType.kind == Float64Kind {
 		if x, ok := v.(float32); ok {
 			v = float64(x)
 		} else if x, ok := v.(int); ok {
@@ -251,9 +251,13 @@ func (a *EgoArray) Append(i interface{}) {
 
 func getInt(i interface{}) int {
 	switch v := i.(type) {
+	case byte:
+		return int(v)
+	case int32:
+		return int(v)
 	case int:
 		return v
-	case int32:
+	case int64:
 		return int(v)
 	case float32:
 		return int(v)

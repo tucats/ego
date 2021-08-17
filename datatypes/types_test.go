@@ -27,7 +27,7 @@ func TestPointerTo(t *testing.T) {
 		{
 			name:  "float64",
 			value: 1.23,
-			want:  FloatKind,
+			want:  Float64Kind,
 		},
 		{
 			name:  "string",

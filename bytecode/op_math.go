@@ -45,6 +45,12 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 	case bool:
 		_ = c.stackPush(!value)
 
+	case byte:
+		_ = c.stackPush(-value)
+
+	case int32:
+		_ = c.stackPush(-value)
+
 	case int:
 		_ = c.stackPush(-value)
 
@@ -103,8 +109,8 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 	case bool:
 		_ = c.stackPush(!value)
 
-	case int:
-		if value != 0 {
+	case byte, int32, int, int64:
+		if util.GetInt64(v) != 0 {
 			_ = c.stackPush(false)
 		} else {
 			_ = c.stackPush(true)
@@ -161,6 +167,12 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 		v1, v2 = util.Normalize(v1, v2)
 
 		switch v1.(type) {
+		case byte:
+			return c.stackPush(v1.(byte) + v2.(byte))
+
+		case int32:
+			return c.stackPush(v1.(int32) + v2.(int32))
+
 		case int:
 			return c.stackPush(v1.(int) + v2.(int))
 
@@ -245,6 +257,12 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, v2 = util.Normalize(v1, v2)
 
 	switch v1.(type) {
+	case byte:
+		return c.stackPush(v1.(byte) - v2.(byte))
+
+	case int32:
+		return c.stackPush(v1.(int32) - v2.(int32))
+
 	case int:
 		return c.stackPush(v1.(int) - v2.(int))
 
@@ -284,6 +302,12 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, v2 = util.Normalize(v1, v2)
 
 	switch v1.(type) {
+	case byte:
+		return c.stackPush(v1.(byte) * v2.(byte))
+
+	case int32:
+		return c.stackPush(v1.(int32) * v2.(int32))
+
 	case int:
 		return c.stackPush(v1.(int) * v2.(int))
 
@@ -321,19 +345,22 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch v1.(type) {
-	case int:
-		if v2.(int) == 0 {
+	case byte, int32, int, int64:
+		vv1 := util.GetInt(v1)
+		vv2 := util.GetInt(v2)
+
+		if vv2 == 0 {
 			return c.stackPush(0)
 		}
 
-		if v2.(int) == 1 {
+		if vv2 == 1 {
 			return c.stackPush(v1)
 		}
 
-		prod := v1.(int)
+		prod := vv1
 
-		for n := 2; n <= v2.(int); n = n + 1 {
-			prod = prod * v1.(int)
+		for n := 2; n <= vv2; n = n + 1 {
+			prod = prod * vv1
 		}
 
 		return c.stackPush(prod)
@@ -373,6 +400,20 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, v2 = util.Normalize(v1, v2)
 
 	switch v1.(type) {
+	case byte:
+		if v2.(byte) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(byte) / v2.(byte))
+
+	case int32:
+		if v2.(int32) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(int32) / v2.(int32))
+
 	case int:
 		if v2.(int) == 0 {
 			return c.newError(errors.ErrDivisionByZero)

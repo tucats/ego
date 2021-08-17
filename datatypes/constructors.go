@@ -36,6 +36,20 @@ var BoolType = Type{
 	valueType: nil,
 }
 
+var ByteType = Type{
+	name:      "byte",
+	kind:      ByteKind,
+	keyType:   nil,
+	valueType: nil,
+}
+
+var Int32Type = Type{
+	name:      "int32",
+	kind:      Int32Kind,
+	keyType:   nil,
+	valueType: nil,
+}
+
 var IntType = Type{
 	name:      "int",
 	kind:      IntKind,
@@ -45,7 +59,7 @@ var IntType = Type{
 
 var Float64Type = Type{
 	name:      "float64",
-	kind:      FloatKind,
+	kind:      Float64Kind,
 	keyType:   nil,
 	valueType: nil,
 }

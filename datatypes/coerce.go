@@ -5,7 +5,7 @@ func (t Type) Coerce(v interface{}) interface{} {
 	case IntKind:
 		return GetInt(v)
 
-	case FloatKind:
+	case Float64Kind:
 		return GetFloat(v)
 
 	case StringKind:

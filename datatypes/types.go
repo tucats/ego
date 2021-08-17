@@ -14,8 +14,10 @@ import (
 // type.
 const (
 	UndefinedKind = iota
+	ByteKind
+	Int32Kind
 	IntKind
-	FloatKind
+	Float64Kind
 	Float32Kind
 	StringKind
 	BoolKind
@@ -387,6 +389,12 @@ func TypeOf(i interface{}) Type {
 	case **sync.Mutex:
 		return Pointer(MutexType)
 
+	case byte:
+		return ByteType
+
+	case int32:
+		return Int32Type
+
 	case int:
 		return IntType
 
@@ -516,7 +524,7 @@ func IsNil(v interface{}) bool {
 		return true
 	} else if addr == &stringInterface {
 		return true
-	} else if addr == &floatInterface {
+	} else if addr == &float64Interface {
 		return true
 	} else if addr == &interfaceModel {
 		return true

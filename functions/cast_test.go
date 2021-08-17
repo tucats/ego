@@ -97,7 +97,7 @@ func TestFunctionFloat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Float(nil, tt.args.args)
+			got, err := Float64(nil, tt.args.args)
 			if (!errors.Nil(err)) != tt.wantErr {
 				t.Errorf("FunctionFloat() error = %v, wantErr %v", err, tt.wantErr)
 

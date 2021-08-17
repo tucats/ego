@@ -10,16 +10,20 @@ type TypeDeclaration struct {
 
 // This is the "zero instance" value for various types.
 var interfaceModel interface{}
+var byteModel byte = 0
+var int32Model int32 = 0
 var intModel = 0
-var floatModel float64 = 0.0
+var float64Model float64 = 0.0
 var float32Model float32 = 0.0
 var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
 
+var byteInterface interface{} = byte(0)
+var int32Interface interface{} = int32(0)
 var intInterface interface{} = 0
 var boolInterface interface{} = false
-var floatInterface interface{} = 0.0
+var float64Interface interface{} = 0.0
 var float32Interface interface{} = float32(0.0)
 var stringInterface interface{} = ""
 
@@ -53,6 +57,16 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"chan"},
 		chanModel,
 		ChanType,
+	},
+	{
+		[]string{"[", "]", "byte"},
+		NewArray(ByteType, 0),
+		Array(ByteType),
+	},
+	{
+		[]string{"[", "]", "int32"},
+		NewArray(Int32Type, 0),
+		Array(Int32Type),
 	},
 	{
 		[]string{"[", "]", "int"},
@@ -90,13 +104,23 @@ var TypeDeclarations = []TypeDeclaration{
 		BoolType,
 	},
 	{
+		[]string{"byte"},
+		byteModel,
+		ByteType,
+	},
+	{
+		[]string{"int32"},
+		int32Model,
+		Int32Type,
+	},
+	{
 		[]string{"int"},
 		intModel,
 		IntType,
 	},
 	{
 		[]string{"float64"},
-		floatModel,
+		float64Model,
 		Float64Type,
 	},
 	{
@@ -120,13 +144,23 @@ var TypeDeclarations = []TypeDeclaration{
 		Pointer(BoolType),
 	},
 	{
+		[]string{"*", "int32"},
+		&int32Interface,
+		Pointer(Int32Type),
+	},
+	{
+		[]string{"*", "byte"},
+		&byteInterface,
+		Pointer(ByteType),
+	},
+	{
 		[]string{"*", "int"},
 		&intInterface,
 		Pointer(IntType),
 	},
 	{
 		[]string{"*", "float64"},
-		&floatInterface,
+		&float64Interface,
 		Pointer(Float64Type),
 	},
 	{
