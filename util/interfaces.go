@@ -116,9 +116,28 @@ func GetString(v interface{}) string {
 	return coercedValue.(string)
 }
 
-// GetFloat takes a generic interface and returns the float64 value, using
+// GetFloat32 takes a generic interface and returns the float32 value, using
 // type coercion if needed.
-func GetFloat(v interface{}) float64 {
+func GetFloat32(v interface{}) float32 {
+	switch v.(type) {
+	case error:
+		return 0.0
+
+	case nil:
+		return 0.0
+	}
+
+	value := Coerce(v, float32(0))
+	if value == nil {
+		return 0.0
+	}
+
+	return value.(float32)
+}
+
+// GetFloat64 takes a generic interface and returns the float64 value, using
+// type coercion if needed.
+func GetFloat64(v interface{}) float64 {
 	switch v.(type) {
 	case error:
 		return 0.0

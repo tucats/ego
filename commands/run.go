@@ -114,7 +114,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			mainName = fileName
-			text = "@main " + entryPoint + string(content) + "\n@main ."
+			text = "@main " + entryPoint + " " + string(content) + "\n@main ."
 		}
 		// Remaining command line arguments are stored
 		if argc > 1 {

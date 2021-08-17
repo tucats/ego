@@ -1,7 +1,7 @@
 
 import "http"
 
-func mb(f float) string {
+func mb(f float64) string {
     return fmt.Sprintf("%3.2fmb", f)
 }
 

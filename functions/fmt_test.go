@@ -51,7 +51,7 @@ func Test_scanner(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "Single float",
+			name:   "Single float64",
 			data:   "3.14",
 			format: "%f",
 			want:   []interface{}{3.14},

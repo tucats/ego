@@ -6,7 +6,7 @@
 
 @test "flow: divide by zero error trap"
 
-func half(x int) float {
+func half(x int) float64 {
    try {
       return x / 0 
    } catch (e){

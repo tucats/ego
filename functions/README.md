@@ -13,7 +13,7 @@ coerced to a function-specific type.
 
 ### int(any)
 Return the argument coerced to an int data type. For a boolean, this
-will result in 0 or 1. For a float, it returns the integer component.
+will result in 0 or 1. For a float64, it returns the integer component.
 A string must contain a valid representation of an integer to convert
 without error.
 
@@ -30,14 +30,14 @@ contain the strings "true" or "false" to be converted without error.
 
 This returns the value true.
 
-### float(any)
+### float64(any)
 Return the argument coerced to an float64 data type. For a boolean, this
 will result in 0.0 or 1.0 values. For an, it returns the floating point
 equivalent of the integer value.
 A string must contain a valid representation of an floating point value to convert
 without error.
     
-    float("3.1415")
+    float64("3.1415")
 
 Thsi returns the float64 value 3.1415.
 
@@ -141,7 +141,7 @@ or array item.
 ### len(string)
 Return the length of the argument. The meaning of length depends on the 
 type of the argument. For a string, this returns the number of characters
-in the string. For an int, float, or bool value, it returns the number of
+in the string. For an int, float64, or bool value, it returns the number of
 characters when the value is formatted for output.
 
 Some examples:
@@ -159,19 +159,19 @@ Some examples:
 This gets the minimum (smallest numeric or alphabetic) value from the list.
 If the first item is a string, then all values are converted to a string for
 comparison and the result will be the lexigraphically first element. IF the
-values are int or float values, then a numeric comparison is done and the
+values are int or float64 values, then a numeric comparison is done and the
 result is the numerically smallest value.
     
     min(33.5, 22.76, 9, 55)
     
-This returns the float value 9.0
+This returns the float64 value 9.0
 
 
 ### max(v1, v2...)
 This gets the maximum (largest numeric or alphabetic) value from the list.
 If the first item is a string, then all values are converted to a string for
 comparison and the result will be the lexigraphically lsat element. IF the
-values are int or float values, then a numeric comparison is done and the
+values are int or float64 values, then a numeric comparison is done and the
 result is the numerically largest value.
     
     max("shoe", "mouse", "cake", "whistle")
@@ -182,7 +182,7 @@ This returns the string value "whistle".
 This function returns the sum of the arguments. The meaning of sum depends
 on the arguments. The values must not be arrays or structures.
 
-For a numeric value (int or float), the function returns the mathematical
+For a numeric value (int or float64), the function returns the mathematical
 sum of all the numeric values.
 
     x := sum(3.5, 15, .5)
@@ -372,7 +372,7 @@ newline and indentation spaces to make the string more human-readable.
 ### json.UnMarhsal()
 This accepts a string that must contain a syntactically valid JSON expression,
 which is then converted to the matching `Ego` data types. Supported types
-are int, float, bool, string, array, and struct elements.
+are int, float64, bool, string, array, and struct elements.
 
 ## Profile
 This collection allows an Ego program to interact with the persistent settings

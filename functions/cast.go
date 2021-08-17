@@ -35,13 +35,13 @@ func Float32(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	return nil, errors.New(errors.ErrInvalidType).In("float32()").Context(args[0])
 }
 
-// Float implements the float() function.
+// Float implements the float64() function.
 func Float(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if v := util.Coerce(args[0], 1.0); v != nil {
 		return v.(float64), nil
 	}
 
-	return nil, errors.New(errors.ErrInvalidType).In("float()").Context(args[0])
+	return nil, errors.New(errors.ErrInvalidType).In("float64()").Context(args[0])
 }
 
 // String implements the string() function.
@@ -154,7 +154,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		case "float32":
 			return float32(0), nil
 
-		case "float", "float64":
+		case "float64":
 			return float64(0), nil
 
 		default:
@@ -200,6 +200,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 	case int:
 	case string:
+	case float32:
 	case float64:
 	case datatypes.EgoPackage:
 		// Create the replica count if needed, and update it.
@@ -256,6 +257,9 @@ func DeepCopy(source interface{}, depth int) interface{} {
 		return v
 
 	case string:
+		return v
+
+	case float32:
 		return v
 
 	case float64:
@@ -315,12 +319,18 @@ func DeepCopy(source interface{}, depth int) interface{} {
 // convert numeric arrays to a different kind of array, to convert a string
 // to an array of integer (rune) values, etc.
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	kind := datatypes.GetType(args[1])
+	// Target kind is the last parameter
+	kind := datatypes.GetType(args[len(args)-1])
 	if !kind.IsArray() {
 		return nil, errors.New(errors.ErrInvalidType)
 	}
 
-	switch actual := args[0].(type) {
+	source := args[0]
+	if len(args) > 2 {
+		source = datatypes.NewArrayFromArray(datatypes.InterfaceType, args[:len(args)-1])
+	}
+
+	switch actual := source.(type) {
 	// Conversion of one array type to another
 	case *datatypes.EgoArray:
 		if kind.IsType(actual.ValueType()) {
@@ -336,7 +346,9 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, util.GetInt(v))
 			} else if elementKind.IsType(datatypes.FloatType) {
-				_ = r.Set(i, util.GetFloat(v))
+				_ = r.Set(i, util.GetFloat64(v))
+			} else if elementKind.IsType(datatypes.Float32Type) {
+				_ = r.Set(i, util.GetFloat32(v))
 			} else if elementKind.IsType(datatypes.StringType) {
 				_ = r.Set(i, util.GetString(v))
 			} else if elementKind.IsType(datatypes.BoolType) {

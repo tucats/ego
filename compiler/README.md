@@ -54,7 +54,7 @@ Finally, the context is run, which executes the bytecode instructions.
 If the instructions are meant to return a value, that value is left on
 the stack for the context, and you can use `ctx.Pop()` to remove items
 from the stack. The return values are opaque `interface{}` objects, and
-you can use the util.Get*() functions to extract the integer, float,
+you can use the util.Get*() functions to extract the integer, float64,
 string, or bool object.
 
 ## Data types
@@ -64,7 +64,7 @@ as values.
 | type | description |
 |:-:|:-|
 |int| 64-bit integer value |
-|float| 64-bit floating point value |
+|float64| 64-bit floating point value |
 |string| Unicode string |
 |bool| Boolean value of true or false |
 | [...] | Array of values |
@@ -212,13 +212,13 @@ which is a valid symbol, followed by an argument list.
 
 The argument list is a list of names which become local variables in the running
 function, set to the value of the arguments from the caller. After each argument
-name in the `func` statement, you can specify a type of `int`, `string`, `float`, 
+name in the `func` statement, you can specify a type of `int`, `string`, `float64`, 
 `bool`, `struct`, or `array`, in which case the value is
 coerced to that type regardless of the value passed into the function.
 
 After the  (possibly empty)  argument list you must specify the type of the
 function's return value. This can be one of the base
-types (`int`, `float`, `string`, or `bool`). It can also be `[]` which
+types (`int`, `float64`, `string`, or `bool`). It can also be `[]` which
 denotes a return of an array type, or `{}` which denotes the return
 of a `struct` type. Finally, the type can be `any` which means any
 type can be returned, or `void` which means no value is returned from
@@ -228,13 +228,13 @@ The type declaration is then followed by
 a statement or block defining the code to execute when the function
 is used in an expression or in a `call` statement. For example,
 
-    func double(x) float {
+    func double(x) float64 {
         return x * 2
     }
 
 This accepts a single value, named `x` when the function is running.
 The function returns that value multiplied by 2. The type of the result
-is coerced to be a float value. Note that the braces are not required
+is coerced to be a float64 value. Note that the braces are not required
 in the above example since the function consists of a single `return`
 statement, but by convention braces are always used to indicate the
 body fo the function. The function just created can
@@ -244,7 +244,7 @@ then be used in an expression, such as:
     moreFun := double(fun)
 
 After this code executes, `moreFun` will contain the value 4.0 as a
-float value.
+float64 value.
 
 ## return
 The `return` statement contains an expression that is identified as

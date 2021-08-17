@@ -245,7 +245,7 @@ func (m EgoMap) Type() Type {
 	}
 }
 
-// Given a map whose keys and values are simple types (string, int, float, bool),
+// Given a map whose keys and values are simple types (string, int, float64, bool),
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
 func NewMapFromMap(sourceMap interface{}) *EgoMap {

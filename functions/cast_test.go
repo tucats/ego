@@ -73,22 +73,22 @@ func TestFunctionFloat(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "float(int)",
+			name: "float64(int)",
 			args: args{[]interface{}{33}},
 			want: 33.0,
 		},
 		{
-			name: "float(float64)",
+			name: "float64(float64)",
 			args: args{[]interface{}{15.2}},
 			want: 15.2,
 		},
 		{
-			name: "float(string)",
+			name: "float64(string)",
 			args: args{[]interface{}{"3.14"}},
 			want: 3.14,
 		},
 		{
-			name: "float(bool)",
+			name: "float64(bool)",
 			args: args{[]interface{}{true}},
 			want: 1.0,
 		},

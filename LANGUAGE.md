@@ -139,25 +139,23 @@ listed here.
 | `nil`    | nil      | nil | The `nil` value indicates no value or type specified |
 | `bool`   | true     | true, false      | A Boolean value that is either true or false |
 | `int`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
-| `float`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
+| `float32`  | -3.14  | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
+| `float64`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
 | `chan`   |  chan    | any              | A channel, used to communicate values between threads |
 
 _Note that the numeric range values shown are approximate._ Also,
-_Ego_ supports a single `float` type which is always 64-bits in
-size, compared to _Go_ which has different floating point sizes
-available. Similarly, the only integer type supported in _Ego_
-is `int` which is a 64-bit integer.
+_Ego_ supports a single integer type of `int` which is a 64-bit integer.
 
 &nbsp;
 
 A value expressed in an _Ego_ program has an implied type. The
 language processor will attempt to determine the type of the value.
 For Boolean values, the value can only be `true` or `false`. For
-numeric types, the language differentiates between integer and float
-value. The value `1573` will be interpreted as an int value because i
-t has no exponent or factional part, but `-153.35` will be
-interpreted as a float value because it has a decimal point and a
+numeric types, the language differentiates between integer and floating
+point values. The value `1573` will be interpreted as an int value because 
+it has no exponent or factional part, but `-153.35` will be
+interpreted as a float64 value because it has a decimal point and a
 fractional value. A string value enclosed in double quotes (") cannot
 span multiple lines of text. A string value enclosed in back-quotes
 (`) are allowed to span multiple lines of text if needed.
@@ -555,7 +553,7 @@ precedes the operator and one of which follows the operator.
 | Operator | Example | Description |
 | -------- | ------- | ----------- |
 |  +       | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
-| -        | a-b     | Calculate the difference of the integer or float values |
+| -        | a-b     | Calculate the difference of the integer or floating-point values |
 | *        | a*b     | Calculate the product of the numeric value, or the OR of two boolean values |
 | /        | a/b     | Calculate the division of the numeric values |
 | ^        | 2^n     | Calculate `2` to the power `n` |
@@ -610,11 +608,11 @@ minimal or no loss of precision.
 These conversions happen automatically, though you can use type casting
 functions like `int()` or `string()` discussed later to force a specific
 type of conversion operation. For example, if a boolean value is used in
-an expression that requires a float value, then the boolean is converted
+an expression that requires a float64 value, then the boolean is converted
 such that `false` is converted to `0.0` and `true` is converted to
  `1.0`. Similarly, if a numeric or boolean value is needed as a string,
 the string value is the formatted version of the original value. So a
-value of `123.5` as a float becomes the string `"123.5"`.
+value of `123.5` as a float64 becomes the string `"123.5"`.
 
 ## Builtin Functions<a name="builtinfunctions"></a>
 
@@ -656,7 +654,8 @@ For base types, the following are available:
 | Function | Example               | Description |
 | -------- | --------------------- | ----------- |
 | bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
-| float()  | float(33)      | Convert the value to a float, in this case `33.0` |
+| float32()  | float32(33)      | Convert the value to a float32, in this case `33.0` |
+| float64()  | float64(33)      | Convert the value to a float64, in this case `33.0` |
 | int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
 | string() | string(true)   | Convert the argument to a string value, in this case `true` |
 
@@ -676,7 +675,8 @@ the function:
 | []bool() | []bool([1, 5, 0])| Convert the array to a []bool array. |
 | []int()  | []int([1, 5.5, 0])| Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
 | []interface{}() | []interface{}([true, 5, "string"])| Convert the array to a []interface{} array where there are no static types for the array. |
-| []float() | []float([1, 5, 0])| Convert the array to a []float array. |
+| []float64() | []float64([1, 5, 0])| Convert the array to a []float64 array. |
+| []float32() | []float32([1, 5, 0])| Convert the array to a []float32 array. |
 | []string() | []string([1, 5, 0])| Convert the array to a []string array. |
 
 &nbsp;
@@ -1006,7 +1006,7 @@ as a basic block. When the function is called, this block
 is executed, with the function arguments all available as local
 variables.  For example,
 
-    func addValues( v1 float, v2 float) float {
+    func addValues( v1 float64, v2 float64) float64 {
         x := v1 + v2
         return x
     }
@@ -1017,10 +1017,10 @@ variables.  For example,
     fmt.Println("The sum is ", x)
 
 In this example, the function `addValues` is created. It accepts two
-parameters; each is of type float in this example. The parameter
+parameters; each is of type float64 in this example. The parameter
 values actually passed in by the caller will be stored in local
 variables v1 and v2. The function definition also indicates that
-the result of the function will also be a float value.
+the result of the function will also be a float64 value.
 
 Parameter types and return type cause type _coercion_ to occur,
 where values are converted to the required type if they are not
@@ -1030,9 +1030,9 @@ already the right value type. For example,
 
 Would result in `y` containing the floating point value 17.0.
 This is because the string value "15" would be converted to a
-float value, and the integer value 2 would be converted to a
-float value before the body of the function is invoked. So
-`type(v1)` in the function will return "float" as the result,
+float64 value, and the integer value 2 would be converted to a
+float64 value before the body of the function is invoked. So
+`type(v1)` in the function will return "float64" as the result,
 regardless of the type of the value passed in when the function
 was called.  
 
@@ -1052,7 +1052,7 @@ returned. The `return` statement results in this expression being
 _coerced_ to the data type named in the `func` statement as the
 return value.  If the example above had a `string` result type,
 
-    func addValues( v1 float, v2 float) string {
+    func addValues( v1 float64, v2 float64) string {
         x := v1 + v2
         return x
     }
@@ -1716,7 +1716,7 @@ The function returns the number of items processed, and any error (such as inval
 value for a given format).
 
     var age int
-    var temp float
+    var temp float64
 
     data := "35 101.2"
     fmt.Sscanf(data, "%d%f", &age, &temp)
@@ -1913,10 +1913,11 @@ This results in `s` containing the value
 
 ### json.UnMarshal(string)
 
-Given a JSON string expression, this creates the equivalent JSON object value. This may be
-a scalar type (int, string, float) or it may be an array or structure, or a combination of
-them. You do not have to provide a model of the data type; the `UnMarshal` function creates
-one dynamically. This means you are not guaranteed that the resulting structure has all the
+Given a JSON string expression, this creates the equivalent JSON object value. 
+This may be a scalar type (such as int, string, or float64) or it may be an 
+array or structure, or a combination of them. You do not have to provide a 
+model of the data type; the `UnMarshal` function creates one dynamically. 
+This means you are not guaranteed that the resulting structure has all the
 fields you might be expecting.
 
     a := json.UnMarshal(s) 
@@ -1928,7 +1929,7 @@ to examine if a structure contains a field you expected.
 ## math <a name="math"></a>
 
 The `math` package provides basic and extended math operations on common _Ego_ numeric
-data types (usually `int` and `float` values). This is not a complete set of the math
+data types (usually `int` and `float64` values). This is not a complete set of the math
 function that are offered in the comparable _Go_ package, but will be expanded as needed.
 
 ### math.Abs(n)
@@ -2212,7 +2213,7 @@ Here's a simple example:
 ## sort <a name="sort"></a>
 
 The `sort` package contains functions that can sort an array containing only
-homogeneous base types (int, string, float). If the array contains interface
+homogeneous base types (int, string, float64). If the array contains interface
 or struct types, it cannot be sorted. The sort occurs "in place" in the array.
 
 ### sort.Ints(array)
@@ -2230,7 +2231,7 @@ After this code executes, the value of the array is [-1, 0, 3, 5, 8].
 The `Floats` function sorts an array of floating point numbers. Negative
 numbers sort before positive numbers.
 
-    a := []float{5.3, 3, 8.001, 0, -1.5}
+    a := []float64{5.3, 3, 8.001, 0, -1.5}
     sort.Floats(a)
 
 After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].

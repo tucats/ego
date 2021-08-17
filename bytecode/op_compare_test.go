@@ -67,12 +67,12 @@ func TestComparisons(t *testing.T) {
 			f: equalByteCode, i: nil, err: false,
 		},
 		{
-			name: "float equality",
+			name: "float64 equality",
 			v1:   42.5, v2: 42.5, r: true,
 			f: equalByteCode, i: nil, err: false,
 		},
 		{
-			name: "float inequality",
+			name: "float64 inequality",
 			v1:   42.5, v2: 42.5001, r: false,
 			f: equalByteCode, i: nil, err: false,
 		},

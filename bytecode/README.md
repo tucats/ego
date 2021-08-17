@@ -56,7 +56,7 @@ This table enumerates the bytecode values in the `bytecode` package, and what th
 |:--------------------|:------------|
 | Stop                | Stop execution of the current bytecode stream |
 | AtLine &lt;int&gt;        | Record the current line number from the source file. This is used for forming error messages and debugging. |
-| Push &lt;any&gt;          | Push a scalar (int, float, string, or bool) value directly onto the stack. |
+| Push &lt;any&gt;          | Push a scalar (int, float64, string, or bool) value directly onto the stack. |
 | Drop &lt;int&gt;          | Remove the specified number of items from the top of the stack and discard them. |
 | Add                 | Remove the top two items from the stack and add s[0] to s[1] together and push the result back on the stack. |
 | Sub                 | Remove the top two items from the stack and subtract s[0] from s[1] and push the result back on the stack |

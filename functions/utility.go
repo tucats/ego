@@ -284,7 +284,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		floatArray := make([]float64, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, util.GetFloat(i))
+			floatArray = append(floatArray, util.GetFloat64(i))
 		}
 
 		sort.Float64s(floatArray)

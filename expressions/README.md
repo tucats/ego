@@ -49,7 +49,7 @@ You can specify any base constant type, array, or struct directly:
 |Type|Example|Description|
 |:----:|-------|-----------|
 |int | 42 | Signed integer value |
-|float | 3.14 | Signed floating point value, requires the "." |
+|float64 | 3.14 | Signed floating point value, requires the "." |
 |bool| false | The boolean values `true` or `false` |
 |string | "hello" | Characters enclosed in quotes. Supports escapes like `\n` |
 |array | ["Tom", 55] | Comma-separated list of values in `[]` |

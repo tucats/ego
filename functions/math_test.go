@@ -24,7 +24,7 @@ func TestFunctionMin(t *testing.T) {
 			want: 2,
 		},
 		{
-			name: "float list",
+			name: "float64 list",
 			args: args{[]interface{}{5.5, 5.1, "9.0"}},
 			want: 5.1,
 		},
@@ -85,7 +85,7 @@ func TestFunctionMax(t *testing.T) {
 			want: 7,
 		},
 		{
-			name: "float list",
+			name: "float64 list",
 			args: args{[]interface{}{5.5, 5.1, "9.0"}},
 			want: 9.0,
 		},
@@ -146,7 +146,7 @@ func TestFunctionSum(t *testing.T) {
 			want: 14,
 		},
 		{
-			name: "float list",
+			name: "float64 list",
 			args: args{[]interface{}{5.5, 5.1, "9.0"}},
 			want: 19.6,
 		},

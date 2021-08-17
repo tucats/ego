@@ -18,7 +18,7 @@ func TestCompileTypeSpec(t *testing.T) {
 			want: datatypes.IntType,
 		},
 		{
-			name: "float",
+			name: "float64",
 			want: datatypes.FloatType,
 		},
 		{

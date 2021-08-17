@@ -169,7 +169,7 @@
                 <td>A 64-bit integer value</td>
             </tr>
             <tr>
-                <td><code>float</code></td>
+                <td><code>float64</code></td>
                 <td>-153.35</td>
                 <td>-1.79e+308 to 1.79e+308</td>
                 <td>A 64-bit floating point value</td>
@@ -189,10 +189,10 @@
         </tbody>
     </table>
     <p><em>Note that the numeric range values shown are approximate.</em> Also,
-        <em>Ego</em> supports a single <code>float</code> type which is always 64-bits in size, compared to <em>Go</em> which has different floating point sizes available. Similarly, the only integer type supported in <em>Ego</em> is <code>int</code>        which is a 64-bit integer.</p>
+        <em>Ego</em> supports a single <code>float64</code> type which is always 64-bits in size, compared to <em>Go</em> which has different floating point sizes available. Similarly, the only integer type supported in <em>Ego</em> is <code>int</code>        which is a 64-bit integer.</p>
     <p>&nbsp;</p>
     <p>A value expressed in an <em>Ego</em> program has an implied type. The language processor will attempt to determine the type of the value. For Boolean values, the value can only be <code>true</code> or <code>false</code>. For numeric types, the language
-        differentiates between integer and float value. The value <code>1573</code> will be interpreted as an int value because i t has no exponent or factional part, but <code>-153.35</code> will be interpreted as a float value because it has a decimal
+        differentiates between integer and float64 value. The value <code>1573</code> will be interpreted as an int value because i t has no exponent or factional part, but <code>-153.35</code> will be interpreted as a float64 value because it has a decimal
         point and a fractional value. A string value enclosed in double quotes (&quot;) cannot span multiple lines of text. A string value enclosed in back-quotes (`) are allowed to span multiple lines of text if needed.</p>
     <p>A <code>chan</code> value has no constant expression; it is a type that can be used to create a variable used to communicate between threads. See the section below on threads for more information.</p>
     <h2 id="arrays-a-name-arrays-a-">Arrays
@@ -496,7 +496,7 @@ const (
             <tr>
                 <td>-</td>
                 <td>a-b</td>
-                <td>Calculate the difference of the integer or float values</td>
+                <td>Calculate the difference of the integer or float64 values</td>
             </tr>
             <tr>
                 <td>*</td>
@@ -573,8 +573,8 @@ const (
         <em>Ego</em> will convert the values to the same type if possible before performing the operation. For example, the expression <code>10.0/3</code> divides an integer value into a floating point value; the <em>Ego</em> language converts the integer
         to a floating point value before performing the division. In general, <em>Ego</em> will convert the values to the value that will result in minimal or no loss of precision.</p>
     <p>These conversions happen automatically, though you can use type casting functions like <code>int()</code> or <code>string()</code> discussed later to force a specific type of conversion operation. For example, if a boolean value is used in an expression
-        that requires a float value, then the boolean is converted such that <code>false</code> is converted to <code>0.0</code> and <code>true</code> is converted to
-        <code>1.0</code>. Similarly, if a numeric or boolean value is needed as a string, the string value is the formatted version of the original value. So a value of <code>123.5</code> as a float becomes the string <code>&quot;123.5&quot;</code>.</p>
+        that requires a float64 value, then the boolean is converted such that <code>false</code> is converted to <code>0.0</code> and <code>true</code> is converted to
+        <code>1.0</code>. Similarly, if a numeric or boolean value is needed as a string, the string value is the formatted version of the original value. So a value of <code>123.5</code> as a float64 becomes the string <code>&quot;123.5&quot;</code>.</p>
     <h2 id="builtin-functions-a-name-builtinfunctions-a-">Builtin Functions
         <a name="builtinfunctions"></a>
     </h2>
@@ -663,9 +663,9 @@ const (
                 <td>Convert the value to a boolean, where zero values are false and non-zero values are true</td>
             </tr>
             <tr>
-                <td>float()</td>
-                <td>float(33)</td>
-                <td>Convert the value to a float, in this case <code>33.0</code></td>
+                <td>float64()</td>
+                <td>float64(33)</td>
+                <td>Convert the value to a float64, in this case <code>33.0</code></td>
             </tr>
             <tr>
                 <td>int()</td>
@@ -709,9 +709,9 @@ const (
                 <td>Convert the array to a []interface{} array where there are no static types for the array.</td>
             </tr>
             <tr>
-                <td>[]float()</td>
-                <td>[]float([1, 5, 0])</td>
-                <td>Convert the array to a []float array.</td>
+                <td>[]float64()</td>
+                <td>[]float64([1, 5, 0])</td>
+                <td>Convert the array to a []float64 array.</td>
             </tr>
             <tr>
                 <td>[]string()</td>
@@ -921,7 +921,7 @@ fmt.Println(<span class="hljs-string">"The products are all named"</span>, names
     </h2>
     <p>Use the <code>func</code> statement to declare a function. The function must have a name, optionally a list of parameter values that are passed to the function, and a return type that indicates what the function is expected to return. This is followed
         by the function body described as a basic block. When the function is called, this block is executed, with the function arguments all available as local variables. For example,</p>
-    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">addValues</span><span class="hljs-params">( v1 float, v2 float)</span> <span class="hljs-title">float</span></span> {
+    <pre><code><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">addValues</span><span class="hljs-params">( v1 float64, v2 float64)</span> <span class="hljs-title">float64</span></span> {
     x := v1 + v2
     <span class="hljs-keyword">return</span> x
 }
@@ -931,14 +931,14 @@ a := <span class="hljs-number">10.5</span>
 x := addValues(a, <span class="hljs-number">3.8</span>)
 fmt.Println(<span class="hljs-string">"The sum is "</span>, x)
 </code></pre>
-    <p>In this example, the function <code>addValues</code> is created. It accepts two parameters; each is of type float in this example. The parameter values actually passed in by the caller will be stored in local variables v1 and v2. The function definition
-        also indicates that the result of the function will also be a float value.</p>
+    <p>In this example, the function <code>addValues</code> is created. It accepts two parameters; each is of type float64 in this example. The parameter values actually passed in by the caller will be stored in local variables v1 and v2. The function definition
+        also indicates that the result of the function will also be a float64 value.</p>
     <p>Parameter types and return type cause type <em>coercion</em> to occur, where values are converted to the required type if they are not already the right value type. For example,</p>
     <pre><code>y := addValues(<span class="hljs-string">"15"</span>, 2)
 </code></pre>
-    <p>Would result in <code>y</code> containing the floating point value 17.0. This is because the string value &quot;15&quot; would be converted to a float value, and the integer value 2 would be converted to a float value before the body of the function
+    <p>Would result in <code>y</code> containing the floating point value 17.0. This is because the string value &quot;15&quot; would be converted to a float64 value, and the integer value 2 would be converted to a float64 value before the body of the function
         is invoked. So
-        <code>type(v1)</code> in the function will return &quot;float&quot; as the result, regardless of the type of the value passed in when the function was called. </p>
+        <code>type(v1)</code> in the function will return &quot;float64&quot; as the result, regardless of the type of the value passed in when the function was called. </p>
     <p>The <code>func</code> statement allows for a special data type <code>interface{}</code> which really means &quot;any type is allowed&quot; and no conversion occurs. If the function body needs to know the actual type of the value passed, the <code>type()</code>        function would be used.</p>
     <p>A function that does not return a value at all should omit the return type declaration.</p>
     <h2 id="the-return-statement-a-name-return-statement-a-">The <code>return</code> Statement
@@ -946,7 +946,7 @@ fmt.Println(<span class="hljs-string">"The sum is "</span>, x)
     </h2>
     <p>When a function is ready to return a value the <code>return</code> statement is used. This identifies an expression that defines what is to be returned. The <code>return</code> statement results in this expression being
         <em>coerced</em> to the data type named in the <code>func</code> statement as the return value. If the example above had a <code>string</code> result type,</p>
-    <pre><code><span class="hljs-symbol">func</span> <span class="hljs-keyword">addValues( </span><span class="hljs-built_in">v1</span> float, <span class="hljs-built_in">v2</span> float) <span class="hljs-keyword">string </span>{
+    <pre><code><span class="hljs-symbol">func</span> <span class="hljs-keyword">addValues( </span><span class="hljs-built_in">v1</span> float64, <span class="hljs-built_in">v2</span> float64) <span class="hljs-keyword">string </span>{
     x := <span class="hljs-built_in">v1</span> + <span class="hljs-built_in">v2</span>
     return x
 }
@@ -1398,7 +1398,7 @@ fmt.Println(<span class="hljs-string">"The answer is"</span>, answer)
     <p>The <code>Sscanf()</code> function accepts a string of data, a format specification, and one or more pointers to base-type values. The data string is processed using the format specification, and the resulting values are written to the parameter variables.
         The function returns the number of items processed, and any error (such as invalid value for a given format).</p>
     <pre><code><span class="hljs-selector-tag">var</span> age int
-<span class="hljs-selector-tag">var</span> temp <span class="hljs-attribute">float</span>
+<span class="hljs-selector-tag">var</span> temp <span class="hljs-attribute">float64</span>
 
 data := <span class="hljs-string">"35 101.2"</span>
 fmt.Sscanf(data, <span class="hljs-string">"%d%f"</span>, &amp;age, &amp;temp)
@@ -1609,7 +1609,7 @@ s <span class="hljs-symbol">:</span>= io.ReadFile(<span class="hljs-keyword">fn<
 }
 </code></pre>
     <h3 id="json-unmarshal-string-">json.UnMarshal(string)</h3>
-    <p>Given a JSON string expression, this creates the equivalent JSON object value. This may be a scalar type (int, string, float) or it may be an array or structure, or a combination of them. You do not have to provide a model of the data type; the <code>UnMarshal</code>        function creates one dynamically. This means you are not guaranteed that the resulting structure has all the fields you might be expecting.</p>
+    <p>Given a JSON string expression, this creates the equivalent JSON object value. This may be a scalar type (int, string, float64) or it may be an array or structure, or a combination of them. You do not have to provide a model of the data type; the <code>UnMarshal</code>        function creates one dynamically. This means you are not guaranteed that the resulting structure has all the fields you might be expecting.</p>
     <pre><code><span class="hljs-selector-tag">a</span> := json.UnMarshal(s) 
 </code></pre>
     <p>If <code>s</code> contains the JSON expressions from the <code>Marshal</code> example above, the result is a structure { age: 44, name:&quot;Tom&quot;} in the variable <code>a</code>. You can use the <code>members()</code> function to examine if a
@@ -1617,7 +1617,7 @@ s <span class="hljs-symbol">:</span>= io.ReadFile(<span class="hljs-keyword">fn<
     <h2 id="math-a-name-math-a-">math
         <a name="math"></a>
     </h2>
-    <p>The <code>math</code> package provides basic and extended math operations on common <em>Ego</em> numeric data types (usually <code>int</code> and <code>float</code> values). This is not a complete set of the math function that are offered in the comparable
+    <p>The <code>math</code> package provides basic and extended math operations on common <em>Ego</em> numeric data types (usually <code>int</code> and <code>float64</code> values). This is not a complete set of the math function that are offered in the comparable
         <em>Go</em> package, but will be expanded as needed.</p>
     <h3 id="math-abs-n-">math.Abs(n)</h3>
     <p>For a given numeric value, return the absolute value of the number.</p>
@@ -1821,7 +1821,7 @@ server.Get(<span class="hljs-string">"/services/debug"</span>)
     <h2 id="sort-a-name-sort-a-">sort
         <a name="sort"></a>
     </h2>
-    <p>The <code>sort</code> package contains functions that can sort an array containing only homogeneous base types (int, string, float). If the array contains interface or struct types, it cannot be sorted. The sort occurs &quot;in place&quot; in the
+    <p>The <code>sort</code> package contains functions that can sort an array containing only homogeneous base types (int, string, float64). If the array contains interface or struct types, it cannot be sorted. The sort occurs &quot;in place&quot; in the
         array.</p>
     <h3 id="sort-ints-array-">sort.Ints(array)</h3>
     <p>The <code>Ints</code> function sorts an array of integers. Negative numbers sort before positive numbers.
@@ -1832,7 +1832,7 @@ sort.Ints(a)
     <p>After this code executes, the value of the array is [-1, 0, 3, 5, 8].</p>
     <h3 id="sort-floats-array-">sort.Floats(array)</h3>
     <p>The <code>Floats</code> function sorts an array of floating point numbers. Negative numbers sort before positive numbers.</p>
-    <pre><code><span class="hljs-selector-tag">a</span> := []<span class="hljs-attribute">float</span>{<span class="hljs-number">5.3</span>, <span class="hljs-number">3</span>, <span class="hljs-number">8.001</span>, <span class="hljs-number">0</span>, -<span class="hljs-number">1.5</span>}
+    <pre><code><span class="hljs-selector-tag">a</span> := []<span class="hljs-attribute">float64</span>{<span class="hljs-number">5.3</span>, <span class="hljs-number">3</span>, <span class="hljs-number">8.001</span>, <span class="hljs-number">0</span>, -<span class="hljs-number">1.5</span>}
 sort.Floats(a)
 </code></pre>
     <p>After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].</p>

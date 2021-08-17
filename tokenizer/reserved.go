@@ -11,7 +11,7 @@ var ReservedWords []string = []string{
 	"continue",
 	"defer",
 	"else",
-	"float",
+	"float64",
 	"for",
 	"func",
 	"go",

@@ -127,21 +127,21 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 // Sqrt implements the sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	f := util.GetFloat(args[0])
+	f := util.GetFloat64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	f := util.GetFloat(args[0])
+	f := util.GetFloat64(args[0])
 
 	return math.Abs(f), nil
 }
 
 // Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return math.Log(util.GetFloat(args[0])), nil
+	return math.Log(util.GetFloat64(args[0])), nil
 }
 
 // Random implmeents the math.Random function.

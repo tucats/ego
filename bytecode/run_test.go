@@ -55,7 +55,7 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "push float",
+			name: "push float64",
 			fields: fields{
 				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.14},
@@ -77,7 +77,7 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "add float to int",
+			name: "add float64 to int",
 			fields: fields{
 				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.14},
@@ -101,7 +101,7 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "div float by int",
+			name: "div float64 by int",
 			fields: fields{
 				opcodes: []Instruction{
 					{Operation: Push, Operand: 10.0},
@@ -113,7 +113,7 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "mul float by float",
+			name: "mul float64 by float64",
 			fields: fields{
 				opcodes: []Instruction{
 					{Operation: Push, Operand: 3.0},
@@ -185,7 +185,7 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "not equal float test",
+			name: "not equal float64 test",
 			fields: fields{
 				opcodes: []Instruction{
 					{Operation: Push, Operand: 5.00000},

@@ -19,7 +19,7 @@ func (c *Compiler) unary() *errors.EgoError {
 		}
 
 		// Optimization for numeric constant values; if it is an integer
-		// or a float, then just update the instruction with the negative
+		// or a float64, then just update the instruction with the negative
 		// of it's value. Otherwise, we'll emit an explicit Negate.
 		addr := c.b.Mark() - 1
 		i := c.b.GetInstruction(c.b.Mark() - 1)

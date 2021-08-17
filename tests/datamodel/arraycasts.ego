@@ -7,9 +7,9 @@
     @assert i == []int{65, 66, 67}
 
     // Convert an array of integers to an array of floats
-    f := []float(i)
-    @assert type(f) == "[]float"
-    @assert f == []float{65.0, 66.0, 67.0}
+    f := []float64(i)
+    @assert type(f) == "[]float64"
+    @assert f == []float64{65.0, 66.0, 67.0}
 
     // Convert numbers to booleans
     a := []int{1,5,0,3,0}

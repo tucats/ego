@@ -65,7 +65,7 @@ var TypeDeclarations = []TypeDeclaration{
 		Array(BoolType),
 	},
 	{
-		[]string{"[", "]", "float"},
+		[]string{"[", "]", "float64"},
 		NewArray(FloatType, 0),
 		Array(FloatType),
 	},
@@ -95,7 +95,7 @@ var TypeDeclarations = []TypeDeclaration{
 		IntType,
 	},
 	{
-		[]string{"float"},
+		[]string{"float64"},
 		floatModel,
 		FloatType,
 	},
@@ -125,7 +125,7 @@ var TypeDeclarations = []TypeDeclaration{
 		Pointer(IntType),
 	},
 	{
-		[]string{"*", "float"},
+		[]string{"*", "float64"},
 		&floatInterface,
 		Pointer(FloatType),
 	},

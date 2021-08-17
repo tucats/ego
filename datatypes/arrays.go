@@ -145,7 +145,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 		return errors.New(errors.ErrArrayBounds)
 	}
 
-	// Address float/int issues before testing the type.
+	// Address float64/int issues before testing the type.
 	if a.valueType.kind == IntKind {
 		if x, ok := v.(float64); ok {
 			v = int(x)

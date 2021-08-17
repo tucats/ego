@@ -159,7 +159,7 @@ func TestNew(t *testing.T) {
 			want: "5Tom",
 		},
 		{
-			name: "Type promotion int to float",
+			name: "Type promotion int to float64",
 			expr: "pi + 5",
 			want: 8.14,
 		},
@@ -195,12 +195,12 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "Cast value to float64",
-			expr: "float(55)",
+			expr: "float64(55)",
 			want: 55.,
 		},
 		{
 			name: "Cast bool to float64",
-			expr: "float(b)",
+			expr: "float64(b)",
 			want: 1.,
 		},
 		{
@@ -209,7 +209,7 @@ func TestNew(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Cast float to string",
+			name: "Cast float64 to string",
 			expr: "string(003.14)",
 			want: "3.14",
 		},
@@ -330,7 +330,7 @@ func TestNew(t *testing.T) {
 			want: 6,
 		},
 		{
-			name: "min float args function",
+			name: "min float64 args function",
 			expr: "math.Min(3.0, 1.0, 2.0)",
 			want: 1.0,
 		},

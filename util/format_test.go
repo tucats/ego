@@ -14,7 +14,7 @@ func TestFormat(t *testing.T) {
 			want: "33",
 		},
 		{
-			name: "Float",
+			name: "float64",
 			arg:  10.5,
 			want: "10.5",
 		},

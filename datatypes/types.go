@@ -217,7 +217,7 @@ func (t Type) IsType(i Type) bool {
 					valueFieldType = *valueFieldType.valueType
 				}
 
-				// Special case of letting float/int issues slide?
+				// Special case of letting float64/int issues slide?
 				if (typeFieldType.kind == FloatType.kind &&
 					valueFieldType.kind == IntType.kind) ||
 					(typeFieldType.kind == IntType.kind &&

@@ -44,7 +44,7 @@ var IntType = Type{
 }
 
 var FloatType = Type{
-	name:      "float",
+	name:      "float64",
 	kind:      FloatKind,
 	keyType:   nil,
 	valueType: nil,
