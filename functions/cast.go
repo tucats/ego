@@ -345,7 +345,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 			if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, util.GetInt(v))
-			} else if elementKind.IsType(datatypes.FloatType) {
+			} else if elementKind.IsType(datatypes.Float64Type) {
 				_ = r.Set(i, util.GetFloat64(v))
 			} else if elementKind.IsType(datatypes.Float32Type) {
 				_ = r.Set(i, util.GetFloat32(v))

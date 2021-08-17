@@ -218,10 +218,10 @@ func (t Type) IsType(i Type) bool {
 				}
 
 				// Special case of letting float64/int issues slide?
-				if (typeFieldType.kind == FloatType.kind &&
+				if (typeFieldType.kind == Float64Type.kind &&
 					valueFieldType.kind == IntType.kind) ||
 					(typeFieldType.kind == IntType.kind &&
-						valueFieldType.kind == FloatType.kind) {
+						valueFieldType.kind == Float64Type.kind) {
 					continue
 				}
 
@@ -394,7 +394,7 @@ func TypeOf(i interface{}) Type {
 		return Float32Type
 
 	case float64:
-		return FloatType
+		return Float64Type
 
 	case string:
 		return StringType
@@ -415,7 +415,7 @@ func TypeOf(i interface{}) Type {
 		return Pointer(IntType)
 
 	case *float32, *float64:
-		return Pointer(FloatType)
+		return Pointer(Float64Type)
 
 	case *string:
 		return Pointer(StringType)

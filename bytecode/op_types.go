@@ -45,7 +45,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 							_, ok = v.(string)
 						} else if dataType.IsType(datatypes.Float32Type) {
 							_, ok = v.(float32)
-						} else if dataType.IsType(datatypes.FloatType) {
+						} else if dataType.IsType(datatypes.Float64Type) {
 							_, ok = v.(float64)
 						} else {
 							ok = true
@@ -77,7 +77,9 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 				if t.IsType(datatypes.IntType) {
 					v = util.GetInt(v)
-				} else if t.IsType(datatypes.FloatType) {
+				} else if t.IsType(datatypes.Float32Type) {
+					v = util.GetFloat32(v)
+				} else if t.IsType(datatypes.Float64Type) {
 					v = util.GetFloat64(v)
 				} else if t.IsType(datatypes.StringType) {
 					v = util.GetString(v)
@@ -143,8 +145,10 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	} else if t.IsType(datatypes.IntType) {
 		v = util.GetInt(v)
-	} else if t.IsType(datatypes.FloatType) {
+	} else if t.IsType(datatypes.Float64Type) {
 		v = util.GetFloat64(v)
+	} else if t.IsType(datatypes.Float32Type) {
+		v = util.GetFloat32(v)
 	} else if t.IsType(datatypes.BoolType) {
 		v = util.GetBool(v)
 	} else if t.IsType(datatypes.StringType) {

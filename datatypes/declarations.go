@@ -66,8 +66,8 @@ var TypeDeclarations = []TypeDeclaration{
 	},
 	{
 		[]string{"[", "]", "float64"},
-		NewArray(FloatType, 0),
-		Array(FloatType),
+		NewArray(Float64Type, 0),
+		Array(Float64Type),
 	},
 	{
 		[]string{"[", "]", "float32"},
@@ -97,7 +97,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"float64"},
 		floatModel,
-		FloatType,
+		Float64Type,
 	},
 	{
 		[]string{"float32"},
@@ -127,7 +127,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", "float64"},
 		&floatInterface,
-		Pointer(FloatType),
+		Pointer(Float64Type),
 	},
 	{
 		[]string{"*", "float32"},

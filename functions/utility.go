@@ -218,7 +218,7 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // SortFloats implements the sort.Floats function.
 func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.FloatType) {
+		if array.ValueType().IsType(datatypes.Float64Type) {
 			err := array.Sort()
 
 			return array, err
@@ -289,7 +289,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Float64s(floatArray)
 
-		resultArray := datatypes.NewArray(datatypes.FloatType, len(array))
+		resultArray := datatypes.NewArray(datatypes.Float64Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)

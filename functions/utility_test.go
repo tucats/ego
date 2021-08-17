@@ -153,7 +153,7 @@ func TestFunctionSort(t *testing.T) {
 		{
 			name: "float64 sort",
 			args: args{[]interface{}{
-				datatypes.NewArrayFromArray(datatypes.FloatType, []interface{}{55.0, 2, 18.5})}},
+				datatypes.NewArrayFromArray(datatypes.Float64Type, []interface{}{55.0, 2, 18.5})}},
 			want: []interface{}{2.0, 18.5, 55.0},
 		},
 		{

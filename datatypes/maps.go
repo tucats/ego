@@ -137,7 +137,7 @@ func (m *EgoMap) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(FloatType) {
+	} else if m.keyType.IsType(Float64Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -260,7 +260,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		valueType = IntType
 
 	case reflect.Float64:
-		valueType = FloatType
+		valueType = Float64Type
 
 	case reflect.Float32:
 		valueType = Float32Type
@@ -286,7 +286,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		keyType = Float32Type
 
 	case reflect.Float64:
-		keyType = FloatType
+		keyType = Float64Type
 
 	case reflect.Bool:
 		keyType = BoolType

@@ -106,7 +106,7 @@ func TestComparisons(t *testing.T) {
 		{
 			name: "array inequality due to type",
 			v1:   datatypes.NewArrayFromArray(datatypes.IntType, []interface{}{5, 2, 6}),
-			v2:   datatypes.NewArrayFromArray(datatypes.FloatType, []interface{}{5, 2, 6}),
+			v2:   datatypes.NewArrayFromArray(datatypes.Float64Type, []interface{}{5, 2, 6}),
 			r:    false,
 			f:    equalByteCode, i: nil, err: false,
 		},

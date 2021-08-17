@@ -307,7 +307,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		for i, v := range values {
 			a.data[i] = v
 		}
-	} else if a.valueType.IsType(FloatType) {
+	} else if a.valueType.IsType(Float64Type) {
 		values := make([]float64, a.Len())
 		for i, v := range a.data {
 			values[i] = GetFloat(v)
