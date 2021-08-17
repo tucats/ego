@@ -453,7 +453,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		}
 	}
 
-	return datatypes.NewFromArray(kind, result), nil
+	return datatypes.NewArrayFromArray(kind, result), nil
 }
 
 // Delete can be used three ways. To delete a member from a structure, to delete
@@ -610,7 +610,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		// Sort the member list and forge it into an Ego array
-		members := datatypes.NewFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
+		members := datatypes.NewArrayFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
 
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members
@@ -723,5 +723,5 @@ func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		xLines[i] = j
 	}
 
-	return datatypes.NewFromArray(datatypes.StringType, xLines), nil
+	return datatypes.NewArrayFromArray(datatypes.StringType, xLines), nil
 }

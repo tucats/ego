@@ -260,7 +260,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		// Recode the argument list as a native array
-		_ = c.symbolSetAlways("__args", datatypes.NewFromArray(datatypes.InterfaceType, args))
+		_ = c.symbolSetAlways("__args", datatypes.NewArrayFromArray(datatypes.InterfaceType, args))
 
 	case functions.NativeFunction:
 		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()

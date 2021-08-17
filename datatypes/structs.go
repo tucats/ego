@@ -251,7 +251,7 @@ func (s EgoStruct) FieldNamesArray() *EgoArray {
 		keyValues[i] = v
 	}
 
-	return NewFromArray(StringType, keyValues)
+	return NewArrayFromArray(StringType, keyValues)
 }
 
 func (s EgoStruct) TypeString() string {

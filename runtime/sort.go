@@ -46,7 +46,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	// the two native arguments
 	sort.Slice(array.BaseArray(), func(i, j int) bool {
 		// Set the i,j variables as the current function arguments
-		_ = sliceSymbols.SetAlways("__args", datatypes.NewFromArray(datatypes.IntType, []interface{}{i, j}))
+		_ = sliceSymbols.SetAlways("__args", datatypes.NewArrayFromArray(datatypes.IntType, []interface{}{i, j}))
 
 		// Run the comparator function
 		err := ctx.RunFromAddress(0)

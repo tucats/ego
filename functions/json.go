@@ -24,7 +24,7 @@ func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		if m, ok := v.(map[string]interface{}); ok {
 			v = datatypes.NewMapFromMap(m)
 		} else if a, ok := v.([]interface{}); ok {
-			v = datatypes.NewFromArray(datatypes.InterfaceType, a)
+			v = datatypes.NewArrayFromArray(datatypes.InterfaceType, a)
 		}
 
 		return v, errors.New(err)

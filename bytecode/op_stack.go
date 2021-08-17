@@ -182,7 +182,7 @@ func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 				return err
 			}
 
-			return c.stackPush(datatypes.NewFromArray(datatypes.InterfaceType, value))
+			return c.stackPush(datatypes.NewArrayFromArray(datatypes.InterfaceType, value))
 		}
 	}
 

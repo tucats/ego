@@ -378,7 +378,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			jsonResponse = datatypes.NewMapFromMap(actual)
 
 		case []interface{}:
-			jsonResponse = datatypes.NewFromArray(datatypes.InterfaceType, actual)
+			jsonResponse = datatypes.NewArrayFromArray(datatypes.InterfaceType, actual)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)

@@ -144,5 +144,5 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return functions.MultiValueReturn{Value: []interface{}{datatypes.NewMapFromMap(rowMap), nil}}, nil
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewFromArray(datatypes.InterfaceType, rowValues), nil}}, nil
+	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewArrayFromArray(datatypes.InterfaceType, rowValues), nil}}, nil
 }

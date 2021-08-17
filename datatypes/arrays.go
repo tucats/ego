@@ -26,9 +26,9 @@ func NewArray(valueType Type, size int) *EgoArray {
 	return m
 }
 
-// NewFromArray accepts a type and an array of interfaces, and constructs
+// NewArrayFromArray accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array.
-func NewFromArray(valueType Type, source []interface{}) *EgoArray {
+func NewArrayFromArray(valueType Type, source []interface{}) *EgoArray {
 	m := &EgoArray{
 		data:      source,
 		valueType: valueType,

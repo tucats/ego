@@ -22,7 +22,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{3, 5, datatypes.IntType},
 				i:     2,
 			},
-			want: datatypes.NewFromArray(datatypes.IntType, []interface{}{3, 5}),
+			want: datatypes.NewArrayFromArray(datatypes.IntType, []interface{}{3, 5}),
 		},
 		{
 			name: "[]string{\"Tom\", \"Cole\"}",
@@ -30,7 +30,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{"Cole", "Tom", datatypes.StringType},
 				i:     2,
 			},
-			want: datatypes.NewFromArray(datatypes.IntType, []interface{}{3, 5}),
+			want: datatypes.NewArrayFromArray(datatypes.IntType, []interface{}{3, 5}),
 		},
 	}
 	for _, tt := range tests {
