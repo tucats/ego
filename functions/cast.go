@@ -132,7 +132,13 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {
-		case reflect.Int:
+		case reflect.Uint8, reflect.Int8:
+			return byte(0), nil
+
+		case reflect.Int32:
+			return int32(0), nil
+
+		case reflect.Int, reflect.Int64:
 			return 0, nil
 
 		case reflect.String:
@@ -160,6 +166,13 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// Is the type an string? If so it's a type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
+
+		case "byte":
+			return byte(0), nil
+
+		case "int32":
+			return int32(0), nil
+
 		case "int":
 			return 0, nil
 
@@ -216,10 +229,9 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
 		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context("builtin function")
 
-	case int:
-	case string:
-	case float32:
-	case float64:
+	// No action for this group
+	case byte, int32, int, int64, string, float32, float64:
+
 	case datatypes.EgoPackage:
 		// Create the replica count if needed, and update it.
 		replica := 0
@@ -271,6 +283,12 @@ func DeepCopy(source interface{}, depth int) interface{} {
 	}
 
 	switch v := source.(type) {
+	case byte:
+		return v
+
+	case int32:
+		return v
+
 	case int:
 		return v
 
@@ -361,7 +379,11 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
-			if elementKind.IsType(datatypes.IntType) {
+			if elementKind.IsType(datatypes.ByteType) {
+				_ = r.Set(i, byte(util.GetInt(v)))
+			} else if elementKind.IsType(datatypes.Int32Type) {
+				_ = r.Set(i, int32(util.GetInt(v)))
+			} else if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, util.GetInt(v))
 			} else if elementKind.IsType(datatypes.Float64Type) {
 				_ = r.Set(i, util.GetFloat64(v))

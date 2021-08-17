@@ -24,13 +24,13 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		}
 
 		switch r.(type) {
-		case int:
-			if v.(int) < r.(int) {
+		case byte, int32, int, int64:
+			if util.GetInt(v) < util.GetInt(r) {
 				r = v
 			}
 
-		case float64:
-			if v.(float64) < r.(float64) {
+		case float32, float64:
+			if util.GetFloat64(v) < util.GetFloat64(r) {
 				r = v
 			}
 
@@ -66,13 +66,13 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		}
 
 		switch rr := r.(type) {
-		case int:
-			if v.(int) > rr {
+		case byte, int32, int, int64:
+			if util.GetInt(v) > util.GetInt(r) {
 				r = v
 			}
 
-		case float64:
-			if v.(float64) > rr {
+		case float32, float64:
+			if util.GetFloat64(v) > util.GetFloat64(r) {
 				r = v
 			}
 
@@ -105,8 +105,17 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		}
 
 		switch addend.(type) {
+		case byte:
+			base = base.(byte) + addend.(byte)
+
+		case int32:
+			base = base.(int32) + addend.(int32)
+
 		case int:
 			base = base.(int) + addend.(int)
+
+		case float32:
+			base = base.(float32) + addend.(float32)
 
 		case float64:
 			base = base.(float64) + addend.(float64)

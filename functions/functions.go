@@ -53,6 +53,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"byte":                 {Min: 1, Max: 1, F: Byte},
 	"int32":                {Min: 1, Max: 1, F: Int32},
 	"int":                  {Min: 1, Max: 1, F: Int},
+	"int64":                {Min: 1, Max: 1, F: Int},
 	"len":                  {Min: 1, Max: 1, F: Length},
 	"make":                 {Min: 2, Max: 2, F: Make},
 	"members":              {Min: 1, Max: 1, F: Members},

@@ -174,6 +174,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return byte(0)
 
+		case byte:
+			return value
+
 		case int:
 			return byte(value)
 
@@ -294,6 +297,12 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return 0
 
+		case byte:
+			return int(value)
+
+		case int32:
+			return int(value)
+
 		case int64:
 			return int(value)
 
@@ -331,6 +340,12 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return float32(0.0)
 
+		case byte:
+			return float32(value)
+
+		case int32:
+			return float32(value)
+
 		case int:
 			return float32(value)
 
@@ -361,6 +376,12 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return float64(0.0)
 
+		case byte:
+			return float64(value)
+
+		case int32:
+			return float64(value)
+
 		case int:
 			return float64(value)
 
@@ -388,11 +409,8 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return "false"
 
-		case int:
-			return strconv.Itoa(value)
-
-		case int64:
-			return fmt.Sprintf("%v", value)
+		case byte, int, int32, int64:
+			return fmt.Sprintf("%v", GetInt(v))
 
 		case float32:
 			return fmt.Sprintf("%v", value)
@@ -415,17 +433,11 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		case bool:
 			return vv
 
-		case int:
-			return (vv != 0)
+		case byte, int32, int, int64:
+			return (GetInt(v) != 0)
 
-		case int64:
-			return vv != int64(0)
-
-		case float32:
-			return vv != 0.0
-
-		case float64:
-			return vv != 0.0
+		case float32, float64:
+			return GetFloat64(v) != 0.0
 
 		case string:
 			switch vv {
