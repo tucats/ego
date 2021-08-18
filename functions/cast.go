@@ -357,9 +357,9 @@ func DeepCopy(source interface{}, depth int) interface{} {
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	// Target kind is the last parameter
 	kind := datatypes.GetType(args[len(args)-1])
-	if !kind.IsArray() {
-		return nil, errors.New(errors.ErrInvalidType)
-	}
+	//	if !kind.IsArray() {
+	//		return nil, errors.New(errors.ErrInvalidType)
+	//	}
 
 	source := args[0]
 	if len(args) > 2 {
@@ -414,6 +414,13 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType)
+		if kind.IsArray() {
+			r := datatypes.NewArray(*kind.BaseType(), 1)
+			value := util.Coerce(source, datatypes.InstanceOfType(*kind.BaseType()))
+			_ = r.Set(0, value)
+			return r, nil
+		}
+
+		return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
 	}
 }
