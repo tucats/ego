@@ -165,6 +165,16 @@ func (t Type) IsPointer() bool {
 	return t.kind == PointerKind
 }
 
+func (t Type) IsIntegerType() bool {
+	if t.IsType(ByteType) ||
+		t.IsType(Int32Type) ||
+		t.IsType(IntType) {
+		return true
+	}
+
+	return false
+}
+
 // Return true if this type is the same as the provided type.
 func (t Type) IsType(i Type) bool {
 	// If one of these is just a type wrapper, we can compare the underlying type.

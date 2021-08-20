@@ -17,106 +17,6 @@ import (
 // and memory could be swallowed whole.
 const MaxDeepCopyDepth = 100
 
-// Byte implements the byte() function.
-func Byte(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], byte(0)); v != nil {
-		return v.(byte), nil
-	}
-
-	return nil, errors.New(errors.ErrInvalidType).In("int()").Context(args[0])
-}
-
-// Int32 implements the int32() function.
-func Int32(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], int32(32)); v != nil {
-		return v.(int32), nil
-	}
-
-	return nil, errors.New(errors.ErrInvalidType).In("int()").Context(args[0])
-}
-
-// Int implements the int() function.
-func Int(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], 1); v != nil {
-		return v.(int), nil
-	}
-
-	return nil, errors.New(errors.ErrInvalidType).In("int()").Context(args[0])
-}
-
-// Float32 implements the float32() function.
-func Float32(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], float32(1.0)); v != nil {
-		return v.(float32), nil
-	}
-
-	return nil, errors.New(errors.ErrInvalidType).In("float32()").Context(args[0])
-}
-
-// Float64 implements the float64() function.
-func Float64(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if v := util.Coerce(args[0], 1.0); v != nil {
-		return v.(float64), nil
-	}
-
-	return nil, errors.New(errors.ErrInvalidType).In("float64()").Context(args[0])
-}
-
-// String implements the string() function.
-func String(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	// Special case. Is the argument an array of strings? If so, restructure as a single
-	// string with line breaks.
-	if array, ok := args[0].([]interface{}); ok {
-		isString := true
-
-		for _, v := range array {
-			if _, ok := v.(string); !ok {
-				isString = false
-
-				break
-			}
-		}
-
-		if isString {
-			var b strings.Builder
-
-			for i, v := range array {
-				if i > 0 {
-					b.WriteString("\n")
-				}
-
-				b.WriteString(v.(string))
-			}
-
-			return b.String(), nil
-		}
-	}
-
-	// Is it an integer Ego array?
-	if array, ok := args[0].(*datatypes.EgoArray); ok && array.ValueType().IsType(datatypes.IntType) {
-		var b strings.Builder
-
-		for i := 0; i < array.Len(); i++ {
-			rune, _ := array.Get(i)
-			b.WriteRune(int32(util.GetInt(rune)))
-		}
-
-		return b.String(), nil
-	}
-
-	return util.GetString(args[0]), nil
-}
-
-// Bool implements the bool() function.
-func Bool(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	v := util.Coerce(args[0], true)
-	if v == nil {
-		return nil, errors.New(errors.ErrInvalidType).In("bool()").Context(args[0])
-	}
-
-	return v.(bool), nil
-}
-
 // Normalize coerces a value to match the type of a model value.
 func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v1, v2 := util.Normalize(args[0], args[1])
@@ -366,11 +266,38 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		source = datatypes.NewArrayFromArray(datatypes.InterfaceType, args[:len(args)-1])
 	}
 
+	if kind.IsType(datatypes.StringType) {
+		r := strings.Builder{}
+
+		// If the source is an array of integers, treat them as runes to re-assemble.
+		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsType(datatypes.IntType) {
+			for i := 0; i < actual.Len(); i++ {
+				ch, _ := actual.Get(i)
+				r.WriteRune(int32(util.GetInt(ch)))
+			}
+		} else {
+			str := util.FormatUnquoted(source)
+			r.WriteString(str)
+		}
+
+		return r.String(), nil
+	}
+
 	switch actual := source.(type) {
 	// Conversion of one array type to another
 	case *datatypes.EgoArray:
 		if kind.IsType(actual.ValueType()) {
 			return actual, nil
+		}
+
+		if kind.IsType(datatypes.StringType) &&
+			(actual.ValueType().IsIntegerType() || actual.ValueType().IsType(datatypes.InterfaceType)) {
+			r := strings.Builder{}
+			for i := 0; i < actual.Len(); i++ {
+				ch, _ := actual.Get(i)
+				r.WriteRune(rune(util.GetInt(ch)))
+			}
+			return r.String(), nil
 		}
 
 		elementKind := *kind.BaseType()
@@ -401,17 +328,18 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	case string:
-		if !kind.IsType(datatypes.Array(datatypes.IntType)) {
-			return nil, errors.New(errors.ErrInvalidType)
+		if kind.IsType(datatypes.Array(datatypes.IntType)) {
+
+			r := datatypes.NewArray(datatypes.IntType, 0)
+
+			for _, rune := range actual {
+				r.Append(int(rune))
+			}
+
+			return r, nil
 		}
 
-		r := datatypes.NewArray(datatypes.IntType, 0)
-
-		for _, rune := range actual {
-			r.Append(int(rune))
-		}
-
-		return r, nil
+		return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
 
 	default:
 		if kind.IsArray() {
@@ -421,6 +349,10 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return r, nil
 		}
 
-		return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
+		v := util.Coerce(source, datatypes.InstanceOfType(kind))
+		if v != nil {
+			return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
+		}
+		return nil, errors.New(errors.ErrInvalidType)
 	}
 }

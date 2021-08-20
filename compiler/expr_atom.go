@@ -193,6 +193,39 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return err
 	}
 
+	// Is it a type cast?
+	if true {
+		if c.t.Peek(2) == "(" {
+			mark := c.t.Mark()
+			if typeSpec, err := c.parseType(true); err == nil {
+				if c.t.IsNext("(") { // Skip the parentheses
+					b, err := c.Expression()
+					if err == nil {
+						for c.t.IsNext(",") {
+							b2, e2 := c.Expression()
+							if e2 == nil {
+								b.Append(b2)
+							} else {
+								err = e2
+
+								break
+							}
+						}
+					}
+
+					if err == nil && c.t.Peek(1) == ")" {
+						c.t.Next()
+						c.b.Emit(bytecode.Push, typeSpec)
+						c.b.Append(b)
+						c.b.Emit(bytecode.Call, 1)
+						return err
+					}
+				}
+			}
+			c.t.Set(mark)
+		}
+	}
+
 	// Watch out for function calls here...
 	if c.t.Peek(2) != "(" {
 		marker := c.t.Mark()

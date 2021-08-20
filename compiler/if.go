@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -19,7 +20,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 		return err
 	}
 
-	c.b.Emit(bytecode.Load, "bool")
+	c.b.Emit(bytecode.Push, datatypes.BoolType)
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Call, 1)
 
