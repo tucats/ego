@@ -570,6 +570,8 @@ func PackageForKind(kind int) string {
 func (t Type) Reflect() *EgoStruct {
 	r := map[string]interface{}{}
 
+	r["istype"] = true
+
 	r["type"] = t.TypeString()
 	if t.IsTypeDefinition() {
 		r["basetype"] = t.valueType.TypeString()

@@ -315,6 +315,7 @@ func (s EgoStruct) Reflect() *EgoStruct {
 		m["basetype"] = s.typeDef.String()
 	}
 
+	m["istype"] = false
 	m["native"] = true
 	m["members"] = s.FieldNamesArray()
 	m["replicas"] = s.replica
