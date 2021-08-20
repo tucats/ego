@@ -270,7 +270,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		r := strings.Builder{}
 
 		// If the source is an array of integers, treat them as runes to re-assemble.
-		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsType(datatypes.IntType) {
+		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(int32(util.GetInt(ch)))
