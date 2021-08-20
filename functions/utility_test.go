@@ -260,6 +260,7 @@ func TestReflect(t *testing.T) {
 				"readonly": false,
 				"replicas": 0,
 				"static":   true,
+				"istype":   false,
 				"members":  datatypes.NewArrayFromArray(datatypes.StringType, []interface{}{"age", "name"}),
 			}),
 			wantErr: false,
@@ -270,6 +271,7 @@ func TestReflect(t *testing.T) {
 			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"basetype": "int",
 				"type":     "int",
+				"istype":   false,
 			}),
 			wantErr: false,
 		},
@@ -279,6 +281,7 @@ func TestReflect(t *testing.T) {
 			want: datatypes.NewStructFromMap(map[string]interface{}{
 				"basetype": "string",
 				"type":     "string",
+				"istype":   false,
 			}),
 			wantErr: false,
 		},
