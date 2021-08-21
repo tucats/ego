@@ -7,8 +7,8 @@ import (
 	"runtime/pprof"
 
 	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // BuildVersion is the incremental build version. This is normally
@@ -59,7 +59,7 @@ func main() {
 			errorCode := 1
 
 			if _, ok := value.(string); !ok {
-				errorCode = util.GetInt(value)
+				errorCode = datatypes.GetInt(value)
 			}
 
 			if errorCode == 0 {

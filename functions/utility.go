@@ -266,7 +266,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		intArray := make([]int, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, util.GetInt(i))
+			intArray = append(intArray, datatypes.GetInt(i))
 		}
 
 		sort.Ints(intArray)
@@ -408,7 +408,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		return v, err
 
 	case *datatypes.EgoArray:
-		i := util.GetInt(args[1])
+		i := datatypes.GetInt(args[1])
 		err := v.Delete(i)
 
 		return v, err
@@ -433,7 +433,7 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // array type (using the Go native version), and the second argument is the size.
 func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	kind := args[0]
-	size := util.GetInt(args[1])
+	size := datatypes.GetInt(args[1])
 
 	if egoArray, ok := kind.(*datatypes.EgoArray); ok {
 		return egoArray.Make(size), nil
@@ -517,7 +517,7 @@ func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}
 }
 
 func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	count := util.GetInt(args[0])
+	count := datatypes.GetInt(args[0])
 	lines := ui.Tail(count)
 
 	if lines == nil {

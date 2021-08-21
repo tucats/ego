@@ -554,7 +554,7 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 			return gremlinResultMap(v)
 
 		case "g:Int32":
-			return util.GetInt(v), nil
+			return datatypes.GetInt(v), nil
 
 		case "g:Int64":
 			i := util.GetInt64(v)

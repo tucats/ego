@@ -137,7 +137,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		replica := 0
 
 		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
-			replica = util.GetInt(replicaX) + 1
+			replica = datatypes.GetInt(replicaX) + 1
 		}
 
 		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
@@ -273,7 +273,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(int32(util.GetInt(ch)))
+				r.WriteRune(int32(datatypes.GetInt(ch)))
 			}
 		} else {
 			str := util.FormatUnquoted(source)
@@ -295,7 +295,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			r := strings.Builder{}
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(rune(util.GetInt(ch)))
+				r.WriteRune(rune(datatypes.GetInt(ch)))
 			}
 			return r.String(), nil
 		}
@@ -307,11 +307,11 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			v, _ := actual.Get(i)
 
 			if elementKind.IsType(datatypes.ByteType) {
-				_ = r.Set(i, byte(util.GetInt(v)))
+				_ = r.Set(i, byte(datatypes.GetInt(v)))
 			} else if elementKind.IsType(datatypes.Int32Type) {
-				_ = r.Set(i, int32(util.GetInt(v)))
+				_ = r.Set(i, int32(datatypes.GetInt(v)))
 			} else if elementKind.IsType(datatypes.IntType) {
-				_ = r.Set(i, util.GetInt(v))
+				_ = r.Set(i, datatypes.GetInt(v))
 			} else if elementKind.IsType(datatypes.Float64Type) {
 				_ = r.Set(i, util.GetFloat64(v))
 			} else if elementKind.IsType(datatypes.Float32Type) {

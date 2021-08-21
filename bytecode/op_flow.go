@@ -47,7 +47,7 @@ func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
 func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
-	c.line = util.GetInt(i)
+	c.line = datatypes.GetInt(i)
 	c.stepOver = false
 	_ = c.symbols.SetAlways("__line", c.line)
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
@@ -79,7 +79,7 @@ func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Get destination
-	address := util.GetInt(i)
+	address := datatypes.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
@@ -95,7 +95,7 @@ func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 // the operand.
 func branchByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get destination
-	address := util.GetInt(i)
+	address := datatypes.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
@@ -116,7 +116,7 @@ func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Get destination
-	address := util.GetInt(i)
+	address := datatypes.GetInt(i)
 	if address < 0 || address > c.bc.emitPos {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
@@ -137,7 +137,7 @@ func localCallByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
-	c.callframePush("defer", c.bc, util.GetInt(i), false)
+	c.callframePush("defer", c.bc, datatypes.GetInt(i), false)
 
 	return nil
 }
@@ -426,8 +426,8 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
-		min = util.GetInt(v[0])
-		max = util.GetInt(v[1])
+		min = datatypes.GetInt(v[0])
+		max = datatypes.GetInt(v[1])
 
 		if len(v) == 3 {
 			name = util.GetString(v[2])

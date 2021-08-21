@@ -12,15 +12,19 @@ import (
 // types for all other types. For example, a pointer to an integer
 // in constructed from a PointerKind type that references an IntKind
 // type.
+//
+// IMPORTANT: the order of these must be from less-precise to most-precise
+// for numeric values, as this ordering is used to normalize two values of
+// different types before performing math on them.
 const (
 	UndefinedKind = iota
+	BoolKind
 	ByteKind
 	Int32Kind
 	IntKind
-	Float64Kind
 	Float32Kind
+	Float64Kind
 	StringKind
-	BoolKind
 	StructKind
 	ErrorKind
 	ChanKind

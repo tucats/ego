@@ -83,7 +83,7 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 				r = false
 
 			case byte, int32, int, int64:
-				r = util.GetInt(v1) == util.GetInt(v2)
+				r = datatypes.GetInt(v1) == datatypes.GetInt(v2)
 
 			case float64:
 				r = v1.(float64) == v2.(float64)
@@ -166,7 +166,7 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 			r = false
 
 		case byte, int32, int, int64:
-			r = util.GetInt(v1) != util.GetInt(v2)
+			r = datatypes.GetInt(v1) != datatypes.GetInt(v2)
 
 		case float32:
 			r = v1.(float32) != v2.(float32)
@@ -227,7 +227,7 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = util.GetInt(v1) > util.GetInt(v2)
+			r = datatypes.GetInt(v1) > datatypes.GetInt(v2)
 
 		case float32:
 			r = v1.(float32) > v2.(float32)
@@ -289,7 +289,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = util.GetInt(v1) >= util.GetInt(v2)
+			r = datatypes.GetInt(v1) >= datatypes.GetInt(v2)
 
 		case float32:
 			r = v1.(float32) >= v2.(float32)
@@ -352,7 +352,7 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = util.GetInt(v1) < util.GetInt(v2)
+			r = datatypes.GetInt(v1) < datatypes.GetInt(v2)
 
 		case float32:
 			r = v1.(float32) < v2.(float32)
@@ -413,7 +413,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		v1, v2 = util.Normalize(v1, v2)
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = util.GetInt(v1) <= util.GetInt(v2)
+			r = datatypes.GetInt(v1) <= datatypes.GetInt(v2)
 
 		case float32:
 			r = v1.(float32) <= v2.(float32)

@@ -3,8 +3,8 @@ package bytecode
 import (
 	"strconv"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 const (
@@ -29,7 +29,7 @@ var catchSets = [][]*errors.EgoError{
 // tryByteCode instruction processor.
 func tryByteCode(c *Context, i interface{}) *errors.EgoError {
 	try := TryInfo{
-		addr:    util.GetInt(i),
+		addr:    datatypes.GetInt(i),
 		catches: make([]*errors.EgoError, 0),
 	}
 	c.tryStack = append(c.tryStack, try)

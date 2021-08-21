@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -42,29 +43,6 @@ func GetInt64(v interface{}) int64 {
 	}
 
 	return Coerce(v, int64(1)).(int64)
-}
-
-// GetInt takes a generic interface and returns the integer value, using
-// type coercion if needed.
-func GetInt(v interface{}) int {
-	if v == nil {
-		return 0
-	}
-
-	switch v.(type) {
-	case error:
-		return 0
-
-	case nil:
-		return 0
-	}
-
-	value := Coerce(v, 1)
-	if value == nil {
-		return 0
-	}
-
-	return value.(int)
 }
 
 // GetBool takes a generic interface and returns the boolean value, using
@@ -410,7 +388,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return "false"
 
 		case byte, int, int32, int64:
-			return fmt.Sprintf("%v", GetInt(v))
+			return fmt.Sprintf("%v", datatypes.GetInt(v))
 
 		case float32:
 			return fmt.Sprintf("%v", value)
@@ -434,13 +412,13 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return vv
 
 		case byte, int32, int, int64:
-			return (GetInt(v) != 0)
+			return (datatypes.GetInt(v) != 0)
 
 		case float32, float64:
 			return GetFloat64(v) != 0.0
 
 		case string:
-			switch vv {
+			switch strings.TrimSpace(strings.ToLower(vv)) {
 			case "true":
 				return true
 			case "false":
@@ -457,219 +435,17 @@ func Coerce(v interface{}, model interface{}) interface{} {
 // Normalize accepts two different values and promotes them to
 // the most compatable format.
 func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
-	switch v1.(type) {
-	case nil:
-		switch v2.(type) {
-		case string:
-			return "", v2
+	t1 := datatypes.TypeOf(v1).Kind()
+	t2 := datatypes.TypeOf(v2).Kind()
 
-		case bool:
-			return false, v2
+	if t1 == t2 {
+		return v1, v2
+	}
 
-		case int:
-			return 0, v2
-
-		case int64:
-			return int64(0), v2
-
-		case float32:
-			return float32(0), v2
-
-		case float64:
-			return float64(0), v2
-		}
-
-	case string:
-		switch vv := v2.(type) {
-		case string:
-			return v1, v2
-
-		case int:
-			return v1, strconv.Itoa(vv)
-
-		case float32:
-			return v1, fmt.Sprintf("%v", vv)
-
-		case float64:
-			return v1, fmt.Sprintf("%v", vv)
-
-		case bool:
-			return v1, vv
-		}
-
-	case float32:
-		switch vv := v2.(type) {
-		case string:
-			return fmt.Sprintf("%v", v1.(float32)), v2
-
-		case int:
-			return v1, float32(vv)
-
-		case float32:
-			return v1, v2
-
-		case float64:
-			return v1, float32(vv)
-
-		case bool:
-			if vv {
-				return v1, float32(1.0)
-			}
-
-			return v1, float32(0.0)
-		}
-
-	case float64:
-		switch vv := v2.(type) {
-		case string:
-			return fmt.Sprintf("%v", v1.(float64)), v2
-
-		case int:
-			return v1, float64(vv)
-
-		case float32:
-			return v1, v2
-
-		case float64:
-			return v1, v2
-
-		case bool:
-			if vv {
-				return v1, 1.0
-			}
-
-			return v1, 0.0
-		}
-
-	case byte:
-		switch vv := v2.(type) {
-		case string:
-			return strconv.Itoa(int(v1.(byte))), v2
-
-		case byte:
-			return v1.(byte), vv
-
-		case int:
-			return int(v1.(byte)), vv
-
-		case int32:
-			return int32(v1.(byte)), vv
-
-		case float32:
-			return float32(v1.(int)), vv
-
-		case float64:
-			return float64(v1.(int)), vv
-
-		case bool:
-			if vv {
-				return v1, 1
-			}
-
-			return v1, 0
-		}
-
-	case int32:
-		switch vv := v2.(type) {
-		case string:
-			return strconv.Itoa(int(v1.(int32))), v2
-
-		case int:
-			return v1.(int32), vv
-
-		case float32:
-			return float32(v1.(int32)), vv
-
-		case float64:
-			return float64(v1.(int32)), vv
-
-		case bool:
-			if vv {
-				return v1, 1
-			}
-
-			return v1, 0
-		}
-
-	case int:
-		switch vv := v2.(type) {
-		case string:
-			return strconv.Itoa(v1.(int)), v2
-
-		case int:
-			return v1, v2
-
-		case float32:
-			return float32(v1.(int)), v2
-
-		case float64:
-			return float64(v1.(int)), v2
-
-		case bool:
-			if vv {
-				return v1, 1
-			}
-
-			return v1, 0
-		}
-
-	case int64:
-		switch vv := v2.(type) {
-		case string:
-			return fmt.Sprintf("%v", v1.(int64)), v2
-
-		case int:
-			return v1.(int64), int64(vv)
-
-		case int64:
-			return v1, v2
-
-		case float32:
-			return float32(v1.(int64)), v2
-
-		case float64:
-			return float64(v1.(int64)), v2
-
-		case bool:
-			if vv {
-				return v1, 1
-			}
-
-			return v1, 0
-		}
-
-	case bool:
-		switch v2.(type) {
-		case string:
-			if v1.(bool) {
-				return "true", v2.(string)
-			}
-
-			return "false", v2.(string)
-
-		case int:
-			if v1.(bool) {
-				return 1, v2.(int)
-			}
-
-			return 0, v2.(int)
-
-		case float32:
-			if v1.(bool) {
-				return 1.0, v2.(float32)
-			}
-
-			return 0.0, v2.(float32)
-
-		case float64:
-			if v1.(bool) {
-				return 1.0, v2.(float64)
-			}
-
-			return 0.0, v2.(float64)
-		case bool:
-			return v1, v2
-		}
+	if t1 < t2 {
+		v1 = Coerce(v1, v2)
+	} else {
+		v2 = Coerce(v2, v1)
 	}
 
 	return v1, v2

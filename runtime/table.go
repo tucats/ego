@@ -254,7 +254,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 				return err, err
 			}
 		} else {
-			column = util.GetInt(args[0])
+			column = datatypes.GetInt(args[0])
 		}
 
 		mode := tables.AlignmentLeft

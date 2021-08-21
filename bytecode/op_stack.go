@@ -6,7 +6,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 type StackMarker struct {
@@ -71,7 +70,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 // used to verify that multiple return-values on the stack
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
-	count := util.GetInt(i)
+	count := datatypes.GetInt(i)
 	if c.stackPointer <= count {
 		return c.newError(errors.ErrReturnValueCount)
 	}
@@ -97,7 +96,7 @@ func pushByteCode(c *Context, i interface{}) *errors.EgoError {
 func dropByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := 1
 	if i != nil {
-		count = util.GetInt(i)
+		count = datatypes.GetInt(i)
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -166,7 +165,7 @@ func copyByteCode(c *Context, i interface{}) *errors.EgoError {
 
 func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 	err := c.newError(errors.ErrInvalidVariableArguments)
-	argPos := util.GetInt(i)
+	argPos := datatypes.GetInt(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {
 		if args, ok := arrayV.(*datatypes.EgoArray); ok {

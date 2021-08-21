@@ -23,6 +23,16 @@ func GetString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
+func GetByte(v interface{}) byte {
+	i := GetInt(v)
+	return byte(i)
+}
+
+func GetInt32(v interface{}) int32 {
+	i := GetInt(v)
+	return int32(i)
+}
+
 func GetInt(v interface{}) int {
 	switch actual := v.(type) {
 	case int32:
@@ -86,34 +96,9 @@ func GetFloat(v interface{}) float64 {
 }
 
 func GetFloat32(v interface{}) float32 {
-	switch actual := v.(type) {
-	case int32:
-		return float32(actual)
+	f := GetFloat(v)
 
-	case int:
-		return float32(actual)
-
-	case int64:
-		return float32(actual)
-
-	case float64:
-		return float32(actual)
-
-	case float32:
-		return actual
-
-	case bool:
-		if actual {
-			return 1.0
-		}
-
-		return 0.0
-
-	default:
-		f, _ := strconv.ParseFloat(fmt.Sprintf("%v", actual), 32)
-
-		return float32(f)
-	}
+	return float32(f)
 }
 
 func GetBool(v interface{}) bool {
@@ -144,11 +129,17 @@ func DeepCopy(v interface{}) interface{} {
 	}
 
 	switch actual := v.(type) {
+	case byte:
+		return actual
+	case int32:
+		return actual
 	case int:
 		return actual
 	case string:
 		return actual
 	case bool:
+		return actual
+	case float32:
 		return actual
 	case float64:
 		return actual

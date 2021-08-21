@@ -83,7 +83,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	if len(args) > 2 {
-		mask = os.FileMode(util.GetInt(args[2]))
+		mask = os.FileMode(datatypes.GetInt(args[2]))
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)
@@ -279,7 +279,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ErrArgumentCount).In("WriteAt()")
 	}
 
-	offset := util.GetInt(args[1])
+	offset := datatypes.GetInt(args[1])
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])

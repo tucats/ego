@@ -35,7 +35,7 @@ import (
 func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 	var baseType datatypes.Type
 
-	count := util.GetInt(i)
+	count := datatypes.GetInt(i)
 
 	if v, err := c.Pop(); err == nil {
 		baseType = datatypes.GetType(v)
@@ -86,10 +86,10 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 	var kind datatypes.Type
 
 	if args, ok := i.([]interface{}); ok {
-		count = util.GetInt(args[0])
+		count = datatypes.GetInt(args[0])
 		kind = datatypes.GetType(args[1])
 	} else {
-		count = util.GetInt(i)
+		count = datatypes.GetInt(i)
 		kind = datatypes.Array(datatypes.InterfaceType)
 	}
 
@@ -151,7 +151,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	var model interface{}
 
-	count := util.GetInt(i)
+	count := datatypes.GetInt(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
 	typeInfo := datatypes.StructType
@@ -253,7 +253,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 // Create a new map. The argument is the number of key/value pairs on the
 // stack, preceded by the key and value types.
 func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
-	count := util.GetInt(i)
+	count := datatypes.GetInt(i)
 
 	v, err := c.Pop()
 	if err != nil {

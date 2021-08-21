@@ -346,8 +346,8 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case byte, int32, int, int64:
-		vv1 := util.GetInt(v1)
-		vv2 := util.GetInt(v2)
+		vv1 := datatypes.GetInt(v1)
+		vv2 := datatypes.GetInt(v2)
 
 		if vv2 == 0 {
 			return c.stackPush(0)
@@ -451,7 +451,7 @@ func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	result := util.GetInt(v1) & util.GetInt(v2)
+	result := datatypes.GetInt(v1) & datatypes.GetInt(v2)
 	_ = c.stackPush(result)
 
 	return nil
@@ -468,7 +468,7 @@ func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	result := util.GetInt(v1) | util.GetInt(v2)
+	result := datatypes.GetInt(v1) | datatypes.GetInt(v2)
 	_ = c.stackPush(result)
 
 	return nil
@@ -485,8 +485,8 @@ func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	shift := util.GetInt(v1)
-	value := util.GetInt(v2)
+	shift := datatypes.GetInt(v1)
+	value := datatypes.GetInt(v2)
 
 	if shift < -31 || shift > 31 {
 		return c.newError(errors.ErrInvalidBitShift).Context(shift)

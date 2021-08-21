@@ -375,7 +375,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// info to support the browser's attempt to prompt the user.
 	status := http.StatusOK
 	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
-		status = util.GetInt(statusValue)
+		status = datatypes.GetInt(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+Realm+`", charset="UTF-8"`)
 		}

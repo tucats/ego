@@ -240,7 +240,7 @@ func getTokenKey() string {
 func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	n := 32
 	if len(args) > 0 {
-		n = util.GetInt(args[0])
+		n = datatypes.GetInt(args[0])
 	}
 
 	b := make([]byte, n)

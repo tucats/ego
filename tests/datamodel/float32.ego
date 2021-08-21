@@ -5,19 +5,19 @@
     @assert reflect(v).basetype == "float32"
 
     v1 := v + 1
-    @assert v1 == 2.1
+    @assert v1 == float32(2.1)
     @assert reflect(v1).basetype == "float32"
 
-    v2 := v - 0.1
-    @assert v2 == 1
+    v2 := v - float32(0.1)
+    @assert v2 == float32(1)
     @assert reflect(v1).basetype == "float32"
 
-    v3 := v * 2.0
-    @assert v3 == 2.2
+    v3 := v * float32(2.0)
+    @assert v3 == float32(2.2)
     @assert reflect(v3).basetype == "float32"
     
     v4 := v / float32(2)
-    @assert v4 == 0.55
+    @assert v4 == float32(0.55)
     @assert reflect(v1).basetype == "float32"
     
     @assert !v == false

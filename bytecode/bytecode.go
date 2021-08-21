@@ -1,9 +1,9 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // GrowOpcodesBy indicates the number of elements to add to the
@@ -119,7 +119,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 	for _, i := range a.instructions[:a.emitPos] {
 		if i.Operation > BranchInstructions {
-			i.Operand = util.GetInt(i.Operand) + base
+			i.Operand = datatypes.GetInt(i.Operand) + base
 		}
 
 		b.Emit(i.Operation, i.Operand)

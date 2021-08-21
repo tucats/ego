@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -23,7 +24,7 @@ import (
 func printByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := 1
 	if i != nil {
-		count = util.GetInt(i)
+		count = datatypes.GetInt(i)
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -154,7 +155,7 @@ func fromFileByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 func timerByteCode(c *Context, i interface{}) *errors.EgoError {
-	mode := util.GetInt(i)
+	mode := datatypes.GetInt(i)
 	switch mode {
 	case 0:
 		t := time.Now()

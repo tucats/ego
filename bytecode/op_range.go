@@ -124,7 +124,7 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
-	destination := util.GetInt(i)
+	destination := datatypes.GetInt(i)
 
 	stackSize := len(c.rangeStack)
 	if stackSize == 0 {

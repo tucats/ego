@@ -3,9 +3,9 @@ package functions
 import (
 	"sync"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Mutex functions.
@@ -52,7 +52,7 @@ func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	this := getNativeThis(s)
 	if wg, ok := this.(*sync.WaitGroup); ok {
-		count := util.GetInt(args[0])
+		count := datatypes.GetInt(args[0])
 		wg.Add(count)
 
 		return nil, nil

@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -25,7 +26,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 		switch r.(type) {
 		case byte, int32, int, int64:
-			if util.GetInt(v) < util.GetInt(r) {
+			if datatypes.GetInt(v) < datatypes.GetInt(r) {
 				r = v
 			}
 
@@ -67,7 +68,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 		switch rr := r.(type) {
 		case byte, int32, int, int64:
-			if util.GetInt(v) > util.GetInt(r) {
+			if datatypes.GetInt(v) > datatypes.GetInt(r) {
 				r = v
 			}
 
@@ -155,7 +156,7 @@ func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 // Random implmeents the math.Random function.
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	max := util.GetInt(args[0])
+	max := datatypes.GetInt(args[0])
 	if max <= 0 {
 		return nil, errors.New(errors.ErrInvalidFunctionArgument).Context(max)
 	}

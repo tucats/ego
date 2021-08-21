@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // reference parses a structure or array reference.
@@ -39,7 +38,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 				i := c.b.Opcodes()
 				ix := i[len(i)-1]
-				ix.Operand = util.GetInt(ix.Operand) + 1 // __type
+				ix.Operand = datatypes.GetInt(ix.Operand) + 1 // __type
 				i[len(i)-1] = ix
 			} else {
 				parsing = false
@@ -90,7 +89,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 					i := c.b.Opcodes()
 					ix := i[len(i)-1]
-					ix.Operand = util.GetInt(ix.Operand) + 1 // __type and
+					ix.Operand = datatypes.GetInt(ix.Operand) + 1 // __type and
 					i[len(i)-1] = ix
 
 					return nil

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -22,7 +23,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 
 	if len(args) > 1 {
-		selectedScope = util.GetInt(args[1])
+		selectedScope = datatypes.GetInt(args[1])
 	}
 
 	scopeLevel := 0

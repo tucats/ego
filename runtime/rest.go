@@ -170,7 +170,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	code := util.GetInt(args[0])
+	code := datatypes.GetInt(args[0])
 	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil
 	}

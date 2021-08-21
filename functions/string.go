@@ -32,7 +32,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	count := 0
 	v := util.GetString(args[0])
 
-	p := util.GetInt(args[1])
+	p := datatypes.GetInt(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -58,7 +58,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	v := util.GetString(args[0])
 
-	p := util.GetInt(args[1])
+	p := datatypes.GetInt(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -118,12 +118,12 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	v := util.GetString(args[0])
 
-	p1 := util.GetInt(args[1]) // Starting character position
+	p1 := datatypes.GetInt(args[1]) // Starting character position
 	if p1 < 1 {
 		p1 = 1
 	}
 
-	p2 := util.GetInt(args[2]) // Number of characters
+	p2 := datatypes.GetInt(args[2]) // Number of characters
 	if p2 == 0 {
 		return "", nil
 	}
@@ -294,7 +294,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	name := util.GetString(args[0])
-	maxWidth := util.GetInt(args[1])
+	maxWidth := datatypes.GetInt(args[1])
 
 	if len(name) <= maxWidth {
 		return name, nil
