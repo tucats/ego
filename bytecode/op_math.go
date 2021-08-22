@@ -53,6 +53,9 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 	case int:
 		_ = c.stackPush(-value)
 
+	case int64:
+		_ = c.stackPush(-value)
+
 	case float32:
 		_ = c.stackPush(float32(0.0) - value)
 
@@ -109,7 +112,7 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(!value)
 
 	case byte, int32, int, int64:
-		if datatypes.GetInt(v) != 0 {
+		if datatypes.GetInt64(v) != 0 {
 			_ = c.stackPush(false)
 		} else {
 			_ = c.stackPush(true)
@@ -174,6 +177,9 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		case int:
 			return c.stackPush(v1.(int) + v2.(int))
+
+		case int64:
+			return c.stackPush(v1.(int64) + v2.(int64))
 
 		case float32:
 			return c.stackPush(v1.(float32) + v2.(float32))
@@ -265,6 +271,9 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 	case int:
 		return c.stackPush(v1.(int) - v2.(int))
 
+	case int64:
+		return c.stackPush(v1.(int64) - v2.(int64))
+
 	case float32:
 		return c.stackPush(v1.(float32) - v2.(float32))
 
@@ -310,6 +319,9 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	case int:
 		return c.stackPush(v1.(int) * v2.(int))
 
+	case int64:
+		return c.stackPush(v1.(int64) * v2.(int64))
+
 	case float32:
 		return c.stackPush(v1.(float32) * v2.(float32))
 
@@ -345,8 +357,8 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch v1.(type) {
 	case byte, int32, int, int64:
-		vv1 := datatypes.GetInt(v1)
-		vv2 := datatypes.GetInt(v2)
+		vv1 := datatypes.GetInt64(v1)
+		vv2 := datatypes.GetInt64(v2)
 
 		if vv2 == 0 {
 			return c.stackPush(0)
@@ -358,7 +370,7 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		prod := vv1
 
-		for n := 2; n <= vv2; n = n + 1 {
+		for n := int64(2); n <= vv2; n = n + 1 {
 			prod = prod * vv1
 		}
 
@@ -419,6 +431,13 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		return c.stackPush(v1.(int) / v2.(int))
+
+	case int64:
+		if v2.(int64) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(int64) / v2.(int64))
 
 	case float32:
 		if v2.(float32) == 0 {

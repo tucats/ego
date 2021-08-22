@@ -12,7 +12,8 @@ type TypeDeclaration struct {
 var interfaceModel interface{}
 var byteModel byte = 0
 var int32Model int32 = 0
-var intModel = 0
+var intModel = int(0)
+var int64Model = int64(0)
 var float64Model float64 = 0.0
 var float32Model float32 = 0.0
 var boolModel = false
@@ -21,7 +22,8 @@ var chanModel = NewChannel(1)
 
 var byteInterface interface{} = byte(0)
 var int32Interface interface{} = int32(0)
-var intInterface interface{} = 0
+var intInterface interface{} = int(0)
+var int64Interface interface{} = int64(0)
 var boolInterface interface{} = false
 var float64Interface interface{} = 0.0
 var float32Interface interface{} = float32(0.0)
@@ -74,6 +76,11 @@ var TypeDeclarations = []TypeDeclaration{
 		Array(IntType),
 	},
 	{
+		[]string{"[", "]", "int64"},
+		NewArray(Int64Type, 0),
+		Array(Int64Type),
+	},
+	{
 		[]string{"[", "]", "bool"},
 		NewArray(BoolType, 0),
 		Array(BoolType),
@@ -119,6 +126,11 @@ var TypeDeclarations = []TypeDeclaration{
 		IntType,
 	},
 	{
+		[]string{"int64"},
+		int64Model,
+		Int64Type,
+	},
+	{
 		[]string{"float64"},
 		float64Model,
 		Float64Type,
@@ -157,6 +169,11 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"*", "int"},
 		&intInterface,
 		Pointer(IntType),
+	},
+	{
+		[]string{"*", "int64"},
+		&int64Interface,
+		Pointer(Int64Type),
 	},
 	{
 		[]string{"*", "float64"},

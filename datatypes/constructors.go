@@ -57,6 +57,13 @@ var IntType = Type{
 	valueType: nil,
 }
 
+var Int64Type = Type{
+	name:      "int64",
+	kind:      Int64Kind,
+	keyType:   nil,
+	valueType: nil,
+}
+
 var Float64Type = Type{
 	name:      "float64",
 	kind:      Float64Kind,

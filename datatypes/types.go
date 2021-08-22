@@ -22,6 +22,7 @@ const (
 	ByteKind
 	Int32Kind
 	IntKind
+	Int64Kind
 	Float32Kind
 	Float64Kind
 	StringKind
@@ -172,7 +173,8 @@ func (t Type) IsPointer() bool {
 func (t Type) IsIntegerType() bool {
 	if t.IsType(ByteType) ||
 		t.IsType(Int32Type) ||
-		t.IsType(IntType) {
+		t.IsType(IntType) ||
+		t.IsType(Int64Type) {
 		return true
 	}
 

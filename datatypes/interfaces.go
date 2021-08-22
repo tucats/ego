@@ -68,6 +68,40 @@ func GetInt(v interface{}) int {
 	return result
 }
 
+func GetInt64(v interface{}) int64 {
+	var result int64
+
+	switch actual := v.(type) {
+	case byte:
+		result = int64(actual)
+
+	case int32:
+		result = int64(actual)
+
+	case int:
+		result = int64(actual)
+
+	case int64:
+		result = actual
+
+	case float32:
+		result = int64(actual)
+
+	case float64:
+		result = int64(actual)
+
+	case bool:
+		if actual {
+			result = int64(1)
+		}
+
+	case string:
+		fmt.Scanf("%d", &result)
+	}
+
+	return result
+}
+
 func GetFloat64(v interface{}) float64 {
 	var result float64
 

@@ -264,7 +264,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return "false"
 
 		case byte, int, int32, int64:
-			return fmt.Sprintf("%v", GetInt(v))
+			return fmt.Sprintf("%v", GetInt64(v))
 
 		case float32:
 			return fmt.Sprintf("%v", value)
@@ -288,7 +288,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return vv
 
 		case byte, int32, int, int64:
-			return (GetInt(v) != 0)
+			return (GetInt64(v) != 0)
 
 		case float32, float64:
 			return GetFloat64(v) != 0.0
@@ -332,6 +332,12 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 // CoerceType will coerce an interface to a given type by name.
 func CoerceType(v interface{}, typeName string) interface{} {
 	switch typeName {
+	case "byte":
+		return Coerce(v, byte(0))
+
+	case "int32":
+		return Coerce(v, int32(0))
+
 	case "int":
 		return Coerce(v, int(0))
 
@@ -357,8 +363,17 @@ func CoerceType(v interface{}, typeName string) interface{} {
 
 func (t Type) Coerce(v interface{}) interface{} {
 	switch t.kind {
+	case ByteKind:
+		return GetByte(v)
+
+	case Int32Kind:
+		return GetInt32(v)
+
 	case IntKind:
 		return GetInt(v)
+
+	case Int64Kind:
+		return GetInt64(v)
 
 	case Float64Kind:
 		return GetFloat64(v)
