@@ -3,9 +3,9 @@ package functions
 import (
 	"path/filepath"
 
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Given a list of path components, connect them together in the syntax
@@ -14,39 +14,39 @@ import (
 func PathJoin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	parts := make([]string, len(args))
 	for i, v := range args {
-		parts[i] = util.GetString(v)
+		parts[i] = datatypes.GetString(v)
 	}
 
 	return filepath.Join(parts...), nil
 }
 
 func PathBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 
 	return filepath.Base(path), nil
 }
 
 func PathAbs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 	absPath, err := filepath.Abs(path)
 
 	return absPath, errors.New(err)
 }
 
 func PathExt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 
 	return filepath.Ext(path), nil
 }
 
 func PathDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 
 	return filepath.Dir(path), nil
 }
 
 func PathClean(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 
 	return filepath.Clean(path), nil
 }

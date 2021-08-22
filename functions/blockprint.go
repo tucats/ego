@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 var fontSet []string
@@ -16,11 +15,11 @@ var fontSet []string
 func blockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	initFonts()
 
-	msg := util.GetString(args[0])
+	msg := datatypes.GetString(args[0])
 
 	fontName := "standard"
 	if len(args) > 1 {
-		fontName = util.GetString(args[1])
+		fontName = datatypes.GetString(args[1])
 	}
 
 	if !isFont(fontName) {

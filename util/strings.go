@@ -2,6 +2,7 @@ package util
 
 import (
 	"os"
+	"sort"
 	"unicode"
 )
 
@@ -33,4 +34,29 @@ func Hostname() string {
 	} else {
 		return "<unknown hostname>"
 	}
+}
+
+// InList is a support function that checks to see if a string matches
+// any of a list of other strings.
+func InList(s string, test ...string) bool {
+	for _, t := range test {
+		if s == t {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Given a list of strings, convert them to a sorted list in
+// Ego array format.
+func MakeSortedArray(array []string) []interface{} {
+	sort.Strings(array)
+	result := make([]interface{}, len(array))
+
+	for i, v := range array {
+		result[i] = v
+	}
+
+	return result
 }

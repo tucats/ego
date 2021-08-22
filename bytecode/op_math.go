@@ -6,7 +6,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 /******************************************\
@@ -26,7 +25,7 @@ import (
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) *errors.EgoError {
-	kind := util.GetBool(i)
+	kind := datatypes.GetBool(i)
 	if kind {
 		return NotImpl(c, i)
 	}
@@ -110,7 +109,7 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(!value)
 
 	case byte, int32, int, int64:
-		if util.GetInt64(v) != 0 {
+		if datatypes.GetInt(v) != 0 {
 			_ = c.stackPush(false)
 		} else {
 			_ = c.stackPush(true)
@@ -160,11 +159,11 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch vx := v1.(type) {
 	case error:
-		return c.stackPush(vx.Error() + util.GetString(v2))
+		return c.stackPush(vx.Error() + datatypes.GetString(v2))
 
 		// All other types are scalar math.
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte:
@@ -211,7 +210,7 @@ func andByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
-	return c.stackPush(util.GetBool(v1) && util.GetBool(v2))
+	return c.stackPush(datatypes.GetBool(v1) && datatypes.GetBool(v2))
 }
 
 // orByteCode bytecode instruction processor.
@@ -231,7 +230,7 @@ func orByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
-	return c.stackPush(util.GetBool(v1) || util.GetBool(v2))
+	return c.stackPush(datatypes.GetBool(v1) || datatypes.GetBool(v2))
 }
 
 // subtractByteCode instruction processor removes two items from the
@@ -254,7 +253,7 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
-	v1, v2 = util.Normalize(v1, v2)
+	v1, v2 = datatypes.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:
@@ -299,7 +298,7 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
-	v1, v2 = util.Normalize(v1, v2)
+	v1, v2 = datatypes.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:
@@ -337,7 +336,7 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	v1, v2 = util.Normalize(v1, v2)
+	v1, v2 = datatypes.Normalize(v1, v2)
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
@@ -397,7 +396,7 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
-	v1, v2 = util.Normalize(v1, v2)
+	v1, v2 = datatypes.Normalize(v1, v2)
 
 	switch v1.(type) {
 	case byte:

@@ -35,13 +35,13 @@ type Token struct {
 // as a 32-character string containing the hexadecimal hash value. Hashes
 // are irreversible.
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return util.Hash(util.GetString(args[0])), nil
+	return util.Hash(datatypes.GetString(args[0])), nil
 }
 
 // Encrypt implements the cipher.Encrypt() function. This takes a string value and
 // a string key, and encrypts the string using the key.
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	b, err := util.Encrypt(util.GetString(args[0]), util.GetString(args[1]))
+	b, err := util.Encrypt(datatypes.GetString(args[0]), datatypes.GetString(args[1]))
 	if !errors.Nil(err) {
 		return b, err
 	}
@@ -54,12 +54,12 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // using the given key, an empty string is returned. It is an error if the string does
 // not contain a valid hexadecimal character string.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	b, err := hex.DecodeString(util.GetString(args[0]))
+	b, err := hex.DecodeString(datatypes.GetString(args[0]))
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
 
-	return util.Decrypt(string(b), util.GetString(args[1]))
+	return util.Decrypt(string(b), datatypes.GetString(args[1]))
 }
 
 // Validate determines if a token is valid and returns true/false.
@@ -68,11 +68,11 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	reportErr := false
 	if len(args) > 1 {
-		reportErr = util.GetBool(args[1])
+		reportErr = datatypes.GetBool(args[1])
 	}
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(util.GetString(args[0]))
+	b, err := hex.DecodeString(datatypes.GetString(args[0]))
 	if !errors.Nil(err) {
 		if reportErr {
 			return false, errors.New(err)
@@ -126,7 +126,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	var err error
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(util.GetString(args[0]))
+	b, err := hex.DecodeString(datatypes.GetString(args[0]))
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
@@ -174,19 +174,19 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
 	t := Token{
-		Name:    util.GetString(args[0]),
+		Name:    datatypes.GetString(args[0]),
 		TokenID: uuid.New(),
 	}
 
 	if len(args) == 2 {
-		t.Data = util.GetString(args[1])
+		t.Data = datatypes.GetString(args[1])
 	}
 
 	// Get the session ID of the current Ego program and add it to
 	// the token. A token can only be validated on the same system
 	// that created it.
 	if session, ok := s.Get("_session"); ok {
-		t.AuthID, err = uuid.Parse(util.GetString(session))
+		t.AuthID, err = uuid.Parse(datatypes.GetString(session))
 		if !errors.Nil(err) {
 			return nil, errors.New(err)
 		}

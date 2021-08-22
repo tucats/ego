@@ -12,12 +12,11 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // ReadFile reads a file contents into a string value.
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	name := util.GetString(args[0])
+	name := datatypes.GetString(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
 	}
@@ -35,8 +34,8 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 // WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	fileName := util.GetString(args[0])
-	text := util.GetString(args[1])
+	fileName := datatypes.GetString(args[0])
+	text := datatypes.GetString(args[1])
 
 	fileName = sandboxName(fileName)
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
@@ -46,7 +45,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 // DeleteFile deletes a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	fileName := util.GetString(args[0])
+	fileName := datatypes.GetString(args[0])
 	fileName = sandboxName(fileName)
 
 	err := os.Remove(fileName)
@@ -56,11 +55,11 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // Expand expands a list of file or path names into a list of files.
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 	ext := ""
 
 	if len(args) > 1 {
-		ext = util.GetString(args[1])
+		ext = datatypes.GetString(args[1])
 	}
 
 	path = sandboxName(path)
@@ -126,7 +125,7 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	path := util.GetString(args[0])
+	path := datatypes.GetString(args[0])
 	result := datatypes.NewArray(datatypes.InterfaceType, 0)
 
 	path = sandboxName(path)

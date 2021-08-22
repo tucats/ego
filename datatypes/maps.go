@@ -142,7 +142,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetFloat(k)
+			array[idx] = GetFloat64(k)
 			idx++
 		}
 
@@ -160,7 +160,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetFloat(k)
+			array[idx] = GetFloat64(k)
 			idx++
 		}
 

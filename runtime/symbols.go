@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // FormatSymbols implements the util.symbols() function. We skip over the current
@@ -19,7 +18,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	json := false
 
 	if len(args) > 0 {
-		json = strings.EqualFold(util.GetString(args[0]), "json")
+		json = strings.EqualFold(datatypes.GetString(args[0]), "json")
 	}
 
 	if len(args) > 1 {

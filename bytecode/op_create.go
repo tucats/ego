@@ -7,7 +7,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // makeArrayByteCode implements the MakeArray opcode
@@ -165,7 +164,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
-		name := util.GetString(nx)
+		name := datatypes.GetString(nx)
 		if !strings.HasPrefix(name, datatypes.MetadataPrefix) {
 			fields = append(fields, name)
 		}

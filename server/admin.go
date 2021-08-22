@@ -220,7 +220,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
-			if errors.Nil(err) && !util.GetBool(v) {
+			if errors.Nil(err) && !datatypes.GetBool(v) {
 				w.WriteHeader(http.StatusNotFound)
 
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`

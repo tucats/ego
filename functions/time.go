@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
@@ -37,11 +36,11 @@ func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 // TimeParse time.Parse().
 func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	str := util.GetString(args[0])
+	str := datatypes.GetString(args[0])
 	fmt := basicLayout
 
 	if len(args) > 1 {
-		fmt = util.GetString(args[1])
+		fmt = datatypes.GetString(args[1])
 	}
 
 	t, err := time.Parse(fmt, str)
@@ -60,7 +59,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	t, err := getTime(s)
 	if errors.Nil(err) {
-		d, err := time.ParseDuration(util.GetString(args[0]))
+		d, err := time.ParseDuration(datatypes.GetString(args[0]))
 		if errors.Nil(err) {
 			t2 := t.Add(d)
 
@@ -101,7 +100,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, err
 	}
 
-	layout := util.GetString(args[0])
+	layout := datatypes.GetString(args[0])
 
 	return t.Format(layout), nil
 }

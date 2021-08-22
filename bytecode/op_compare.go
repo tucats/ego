@@ -5,7 +5,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // equalByteCode implements the Equal opcode
@@ -74,7 +73,7 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 		if v1 == nil && v2 == nil {
 			r = true
 		} else {
@@ -159,7 +158,7 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		r = !reflect.DeepEqual(v1, v2)
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case nil:
@@ -223,7 +222,7 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -285,7 +284,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -348,7 +347,7 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -410,7 +409,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 
 	default:
-		v1, v2 = util.Normalize(v1, v2)
+		v1, v2 = datatypes.Normalize(v1, v2)
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			r = datatypes.GetInt(v1) <= datatypes.GetInt(v2)

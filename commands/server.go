@@ -13,12 +13,12 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/server"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 var PathList []string
@@ -60,7 +60,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		_ = symbols.RootSymbolTable.SetAlways("_session", server.Session)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get("_session")
-		server.Session = util.GetString(s)
+		server.Session = datatypes.GetString(s)
 	}
 
 	server.Version = c.Version

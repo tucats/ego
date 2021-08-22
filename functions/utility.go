@@ -14,12 +14,11 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Sleep implements util.sleep().
 func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	duration, err := time.ParseDuration(util.GetString(args[0]))
+	duration, err := time.ParseDuration(datatypes.GetString(args[0]))
 	if errors.Nil(err) {
 		time.Sleep(duration)
 	}
@@ -29,14 +28,14 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 // ProfileGet implements the profile.get() function.
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	key := util.GetString(args[0])
+	key := datatypes.GetString(args[0])
 
 	return persistence.Get(key), nil
 }
 
 // ProfileSet implements the profile.set() function.
 func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	key := util.GetString(args[0])
+	key := datatypes.GetString(args[0])
 
 	// Quick check here. The key must already exist if it's one of the
 	// "system" settings. That is, you can't create an ego.* setting that
@@ -48,7 +47,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
-	value := util.GetString(args[1])
+	value := datatypes.GetString(args[1])
 	if value == "" {
 		persistence.Delete(key)
 	} else {
@@ -60,7 +59,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 // ProfileDelete implements the profile.delete() function.
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	key := util.GetString(args[0])
+	key := datatypes.GetString(args[0])
 	persistence.Delete(key)
 
 	return nil, nil
@@ -110,7 +109,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return 0, nil
 
 	default:
-		v := util.Coerce(args[0], "")
+		v := datatypes.Coerce(args[0], "")
 		if v == nil {
 			return 0, nil
 		}
@@ -123,7 +122,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // bytes like len() does.
 func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	count := 0
-	v := util.GetString(args[0])
+	v := datatypes.GetString(args[0])
 
 	for range v {
 		count++
@@ -135,7 +134,7 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // GetEnv implements the util.getenv() function which reads
 // an environment variable from the os.
 func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return os.Getenv(util.GetString(args[0])), nil
+	return os.Getenv(datatypes.GetString(args[0])), nil
 }
 
 // GetMode implements the util.Mode() function which reports the runtime mode.
@@ -283,7 +282,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		floatArray := make([]float64, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, util.GetFloat64(i))
+			floatArray = append(floatArray, datatypes.GetFloat64(i))
 		}
 
 		sort.Float64s(floatArray)
@@ -300,7 +299,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		stringArray := make([]string, 0)
 
 		for _, i := range array {
-			stringArray = append(stringArray, util.GetString(i))
+			stringArray = append(stringArray, datatypes.GetString(i))
 		}
 
 		sort.Strings(stringArray)

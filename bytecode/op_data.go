@@ -3,7 +3,6 @@ package bytecode
 import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // storeByteCode implements the Store opcode
@@ -33,7 +32,7 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Get the name. If it is the reserved name "_" it means
 	// to just discard the value.
-	varname := util.GetString(i)
+	varname := datatypes.GetString(i)
 	if varname == "_" {
 		return nil
 	}
@@ -79,7 +78,7 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get the name that is to be used on the other side. If the other item is
 	// already known to be a channel, then create this variable (with a nil value)
 	// so it can receive the channel info regardless of its type.
-	varname := util.GetString(i)
+	varname := datatypes.GetString(i)
 
 	x, ok := c.symbolGet(varname)
 	if !ok {
@@ -130,7 +129,7 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Get the name.
-	varname := util.GetString(i)
+	varname := datatypes.GetString(i)
 
 	err = c.symbols.Root().SetAlways(varname, v)
 	if !errors.Nil(err) {
@@ -155,7 +154,7 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
 func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 
 	dest, ok := c.symbolGet(name)
 	if !ok {
@@ -176,19 +175,19 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		*actual = src
 
 	case *bool:
-		d := util.Coerce(src, true)
+		d := datatypes.Coerce(src, true)
 		*actual = d.(bool)
 
 	case *int:
-		d := util.Coerce(src, 1)
+		d := datatypes.Coerce(src, 1)
 		*actual = d.(int)
 
 	case *float64:
-		d := util.Coerce(src, 1.0)
+		d := datatypes.Coerce(src, 1.0)
 		*actual = d.(float64)
 
 	case *string:
-		d := util.Coerce(src, "")
+		d := datatypes.Coerce(src, "")
 		*actual = d.(string)
 
 	case **datatypes.EgoArray:
@@ -223,7 +222,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Get the name.
-	varname := util.GetString(i)
+	varname := datatypes.GetString(i)
 
 	err = c.symbolSetAlways(varname, v)
 	if !errors.Nil(err) {
@@ -247,7 +246,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // loadByteCode instruction processor.
 func loadByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier).Context(name)
 	}
@@ -287,7 +286,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 				empty = false
 				v, _, _ := m.Get(k)
 
-				err = c.symbolSetAlways(util.GetString(k), v)
+				err = c.symbolSetAlways(datatypes.GetString(k), v)
 				if !errors.Nil(err) {
 					break
 				}

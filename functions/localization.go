@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
@@ -28,7 +27,7 @@ func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	parameters := map[string]string{}
-	property := util.GetString(args[0])
+	property := datatypes.GetString(args[0])
 
 	language := os.Getenv("LANG")
 
@@ -42,13 +41,13 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 			keys := egoMap.Keys()
 			for _, key := range keys {
 				value, _, _ := egoMap.Get(key)
-				parameters[util.GetString(key)] = util.GetString(value)
+				parameters[datatypes.GetString(key)] = datatypes.GetString(value)
 			}
 		} else if egoStruct, ok := value.(*datatypes.EgoStruct); ok {
 			fields := egoStruct.FieldNames()
 			for _, field := range fields {
 				value := egoStruct.GetAlways(field)
-				parameters[field] = util.GetString(value)
+				parameters[field] = datatypes.GetString(value)
 			}
 		} else if value != nil {
 			return nil, errors.New(errors.ErrInvalidArgType)
@@ -56,7 +55,7 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	if len(args) > 2 {
-		language = util.GetString(args[2])
+		language = datatypes.GetString(args[2])
 	}
 
 	if language == "" {
@@ -88,7 +87,7 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 				return property, nil
 			}
 
-			msgString := util.GetString(message)
+			msgString := datatypes.GetString(message)
 			t := template.New(property)
 
 			t, e := t.Parse(msgString)

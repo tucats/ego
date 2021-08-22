@@ -19,7 +19,7 @@ const MaxDeepCopyDepth = 100
 
 // Normalize coerces a value to match the type of a model value.
 func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	v1, v2 := util.Normalize(args[0], args[1])
+	v1, v2 := datatypes.Normalize(args[0], args[1])
 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
 }
@@ -313,13 +313,13 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			} else if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, datatypes.GetInt(v))
 			} else if elementKind.IsType(datatypes.Float64Type) {
-				_ = r.Set(i, util.GetFloat64(v))
+				_ = r.Set(i, datatypes.GetFloat64(v))
 			} else if elementKind.IsType(datatypes.Float32Type) {
-				_ = r.Set(i, util.GetFloat32(v))
+				_ = r.Set(i, datatypes.GetFloat32(v))
 			} else if elementKind.IsType(datatypes.StringType) {
-				_ = r.Set(i, util.GetString(v))
+				_ = r.Set(i, datatypes.GetString(v))
 			} else if elementKind.IsType(datatypes.BoolType) {
-				_ = r.Set(i, util.GetBool(v))
+				_ = r.Set(i, datatypes.GetBool(v))
 			} else {
 				return nil, errors.New(errors.ErrInvalidType)
 			}
@@ -339,19 +339,19 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return r, nil
 		}
 
-		return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
+		return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
 
 	default:
 		if kind.IsArray() {
 			r := datatypes.NewArray(*kind.BaseType(), 1)
-			value := util.Coerce(source, datatypes.InstanceOfType(*kind.BaseType()))
+			value := datatypes.Coerce(source, datatypes.InstanceOfType(*kind.BaseType()))
 			_ = r.Set(0, value)
 			return r, nil
 		}
 
-		v := util.Coerce(source, datatypes.InstanceOfType(kind))
+		v := datatypes.Coerce(source, datatypes.InstanceOfType(kind))
 		if v != nil {
-			return util.Coerce(source, datatypes.InstanceOfType(kind)), nil
+			return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
 		}
 		return nil, errors.New(errors.ErrInvalidType)
 	}

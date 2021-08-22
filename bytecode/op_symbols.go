@@ -54,7 +54,7 @@ func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // symbolCreateByteCode instruction processor.
 func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
-	n := util.GetString(i)
+	n := datatypes.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -69,7 +69,7 @@ func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // symbolCreateIfByteCode instruction processor.
 func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
-	n := util.GetString(i)
+	n := datatypes.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -93,7 +93,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // symbolDeleteByteCode instruction processor.
 func symbolDeleteByteCode(c *Context, i interface{}) *errors.EgoError {
-	n := util.GetString(i)
+	n := datatypes.GetString(i)
 
 	err := c.symbolDelete(n)
 	if !errors.Nil(err) {
@@ -110,7 +110,7 @@ func constantByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
-	varname := util.GetString(i)
+	varname := datatypes.GetString(i)
 
 	err = c.constantSet(varname, v)
 	if !errors.Nil(err) {

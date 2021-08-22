@@ -3,7 +3,6 @@ package bytecode
 import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // Range describes what we know about the (current) for..range loop. This
@@ -47,8 +46,8 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 	r := Range{}
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
-		r.indexName = util.GetString(list[0])
-		r.valueName = util.GetString(list[1])
+		r.indexName = datatypes.GetString(list[0])
+		r.valueName = datatypes.GetString(list[1])
 
 		if r.indexName != "" && r.indexName != "_" {
 			err = c.symbols.Create(r.indexName)

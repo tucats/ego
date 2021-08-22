@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // passwordPromptPrefix is the string prefix you can put in the prompt
@@ -77,7 +76,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	prompt := ""
 	if len(args) > 0 {
-		prompt = util.GetString(args[0])
+		prompt = datatypes.GetString(args[0])
 	}
 
 	var text string
@@ -100,5 +99,5 @@ func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	return expressions.Evaluate(util.GetString(args[0]), symbols)
+	return expressions.Evaluate(datatypes.GetString(args[0]), symbols)
 }

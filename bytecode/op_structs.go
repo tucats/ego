@@ -5,7 +5,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // This manages operations on structures (structs, maps, and arrays)
@@ -77,7 +76,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	case *datatypes.EgoStruct:
-		key := util.GetString(index)
+		key := datatypes.GetString(index)
 		v, _ := a.Get(key)
 		err = c.stackPush(v)
 		c.lastStruct = a
@@ -177,7 +176,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := destination.(type) {
 	case datatypes.Type:
-		a.DefineFunction(util.GetString(index), v)
+		a.DefineFunction(datatypes.GetString(index), v)
 
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); errors.Nil(err) {
@@ -189,7 +188,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 	case *datatypes.EgoStruct:
-		key := util.GetString(index)
+		key := datatypes.GetString(index)
 
 		err = a.Set(key, v)
 		if !errors.Nil(err) {

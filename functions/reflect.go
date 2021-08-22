@@ -211,3 +211,9 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		return tt.String(), nil
 	}
 }
+
+// SizeOf returns the size in bytes of an arbibrary object.
+func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	size := util.RealSizeOf(args[0])
+	return size, nil
+}

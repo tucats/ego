@@ -5,7 +5,6 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 // StaticTypeOpcode implements the StaticType opcode, which
@@ -13,7 +12,7 @@ import (
 func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if errors.Nil(err) {
-		c.Static = util.GetBool(v)
+		c.Static = datatypes.GetBool(v)
 		err = c.symbols.SetAlways("__static_data_types", c.Static)
 	}
 
@@ -78,13 +77,13 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				if t.IsType(datatypes.IntType) {
 					v = datatypes.GetInt(v)
 				} else if t.IsType(datatypes.Float32Type) {
-					v = util.GetFloat32(v)
+					v = datatypes.GetFloat32(v)
 				} else if t.IsType(datatypes.Float64Type) {
-					v = util.GetFloat64(v)
+					v = datatypes.GetFloat64(v)
 				} else if t.IsType(datatypes.StringType) {
-					v = util.GetString(v)
+					v = datatypes.GetString(v)
 				} else if t.IsType(datatypes.BoolType) {
-					v = util.GetBool(v)
+					v = datatypes.GetBool(v)
 				}
 			}
 		}
@@ -146,13 +145,13 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	} else if t.IsType(datatypes.IntType) {
 		v = datatypes.GetInt(v)
 	} else if t.IsType(datatypes.Float64Type) {
-		v = util.GetFloat64(v)
+		v = datatypes.GetFloat64(v)
 	} else if t.IsType(datatypes.Float32Type) {
-		v = util.GetFloat32(v)
+		v = datatypes.GetFloat32(v)
 	} else if t.IsType(datatypes.BoolType) {
-		v = util.GetBool(v)
+		v = datatypes.GetBool(v)
 	} else if t.IsType(datatypes.StringType) {
-		v = util.GetString(v)
+		v = datatypes.GetString(v)
 	} else if t.IsType(datatypes.InterfaceType) || t.IsUndefined() {
 		// No work to do here.
 	} else {
@@ -169,7 +168,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		model := datatypes.InstanceOfType(elementType)
 
 		for i, element := range base {
-			_ = array.Set(i, util.Coerce(element, model))
+			_ = array.Set(i, datatypes.Coerce(element, model))
 		}
 
 		v = array
@@ -200,7 +199,7 @@ func (b ByteCode) NeedsCoerce(kind datatypes.Type) bool {
 }
 
 func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
@@ -211,7 +210,7 @@ func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 func deRefByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {

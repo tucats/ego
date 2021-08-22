@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Print will output a table using current rows and format specifications.
@@ -133,7 +133,7 @@ func (t *Table) FormatJSON() string {
 				break
 			}
 
-			if !util.GetBool(v) {
+			if !datatypes.GetBool(v) {
 				continue
 			}
 		}
@@ -262,7 +262,7 @@ func (t *Table) FormatText() []string {
 				break
 			}
 
-			if !util.GetBool(v) {
+			if !datatypes.GetBool(v) {
 				continue
 			}
 		}

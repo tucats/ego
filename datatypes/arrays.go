@@ -314,7 +314,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	} else if a.valueType.IsType(Float64Type) {
 		values := make([]float64, a.Len())
 		for i, v := range a.data {
-			values[i] = GetFloat(v)
+			values[i] = GetFloat64(v)
 		}
 
 		sort.Float64s(values)

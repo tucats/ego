@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // sortSlice implements the sort.Slice() function. Beause this function requires a callback
@@ -59,7 +58,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		}
 
 		// Return the result as this function's value.
-		return util.GetBool(ctx.Result())
+		return datatypes.GetBool(ctx.Result())
 	})
 
 	return array, funcError

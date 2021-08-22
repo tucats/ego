@@ -60,7 +60,7 @@ func logByteCode(c *Context, i interface{}) *errors.EgoError {
 	if id, ok := i.(int); ok {
 		class = id
 	} else {
-		class = ui.Logger(util.GetString(i))
+		class = ui.Logger(datatypes.GetString(i))
 	}
 
 	if class < 0 {
@@ -90,7 +90,7 @@ func sayByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	fmt := "%s\n"
-	if util.GetBool(i) && len(msg) > 0 {
+	if datatypes.GetBool(i) && len(msg) > 0 {
 		fmt = "%s"
 	}
 
@@ -119,11 +119,11 @@ func newlineByteCode(c *Context, i interface{}) *errors.EgoError {
 // templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
 func templateByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 
 	t, err := c.Pop()
 	if errors.Nil(err) {
-		t, e2 := template.New(name).Parse(util.GetString(t))
+		t, e2 := template.New(name).Parse(datatypes.GetString(t))
 		if e2 == nil {
 			err = c.stackPush(t)
 		}
@@ -146,7 +146,7 @@ func fromFileByteCode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	b, err := ioutil.ReadFile(util.GetString(i))
+	b, err := ioutil.ReadFile(datatypes.GetString(i))
 	if errors.Nil(err) {
 		c.tokenizer = tokenizer.New(string(b))
 	}

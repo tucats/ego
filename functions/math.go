@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Min implements the min() function.
@@ -19,7 +18,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	r := args[0]
 
 	for _, v := range args[1:] {
-		v = util.Coerce(v, r)
+		v = datatypes.Coerce(v, r)
 		if v == nil {
 			return nil, errors.New(errors.ErrInvalidType).In("min()")
 		}
@@ -31,7 +30,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			}
 
 		case float32, float64:
-			if util.GetFloat64(v) < util.GetFloat64(r) {
+			if datatypes.GetFloat64(v) < datatypes.GetFloat64(r) {
 				r = v
 			}
 
@@ -61,7 +60,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	r := args[0]
 
 	for _, v := range args[1:] {
-		v = util.Coerce(v, r)
+		v = datatypes.Coerce(v, r)
 		if v == nil {
 			return nil, errors.New(errors.ErrInvalidType).In("max()")
 		}
@@ -73,7 +72,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			}
 
 		case float32, float64:
-			if util.GetFloat64(v) > util.GetFloat64(r) {
+			if datatypes.GetFloat64(v) > datatypes.GetFloat64(r) {
 				r = v
 			}
 
@@ -100,7 +99,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	base := args[0]
 
 	for _, addend := range args[1:] {
-		addend = util.Coerce(addend, base)
+		addend = datatypes.Coerce(addend, base)
 		if addend == nil {
 			return nil, errors.New(errors.ErrInvalidType).In("sum()")
 		}
@@ -137,21 +136,21 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 // Sqrt implements the sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	f := util.GetFloat64(args[0])
+	f := datatypes.GetFloat64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	f := util.GetFloat64(args[0])
+	f := datatypes.GetFloat64(args[0])
 
 	return math.Abs(f), nil
 }
 
 // Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	return math.Log(util.GetFloat64(args[0])), nil
+	return math.Log(datatypes.GetFloat64(args[0])), nil
 }
 
 // Random implmeents the math.Random function.

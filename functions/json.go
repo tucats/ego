@@ -7,14 +7,13 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // Decode reads a string as JSON data.
 func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var v interface{}
 
-	jsonBuffer := util.GetString(args[0])
+	jsonBuffer := datatypes.GetString(args[0])
 	err := json.Unmarshal([]byte(jsonBuffer), &v)
 
 	// If there is no model, assume a generic return value is okay

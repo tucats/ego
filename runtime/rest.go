@@ -117,8 +117,8 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	client := resty.New()
 
 	if len(args) == 2 {
-		username := util.GetString(args[0])
-		password := util.GetString(args[1])
+		username := datatypes.GetString(args[0])
+		password := datatypes.GetString(args[1])
 
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
@@ -148,7 +148,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // no base URL defined, then nothing is changed.
 func applyBaseURL(url string, this *datatypes.EgoStruct) string {
 	if b, ok := this.Get(baseURLFieldName); ok {
-		base := util.GetString(b)
+		base := datatypes.GetString(b)
 		if base == "" {
 			return url
 		}
@@ -209,7 +209,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	verify := allowInsecure
 
 	if len(args) == 1 {
-		verify = util.GetBool(args[0])
+		verify = datatypes.GetBool(args[0])
 	}
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
@@ -233,7 +233,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	base := ""
 
 	if len(args) > 0 {
-		base = util.GetString(args[0])
+		base = datatypes.GetString(args[0])
 	} else {
 		base = persistence.Get(defs.LogonServerSetting)
 	}
@@ -253,7 +253,7 @@ func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	this := getThisStruct(s)
 
-	flag := util.GetBool((args[0]))
+	flag := datatypes.GetBool((args[0]))
 	r.SetDebug(flag)
 
 	return this, nil
@@ -274,8 +274,8 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	user := util.GetString(args[0])
-	pass := util.GetString(args[1])
+	user := datatypes.GetString(args[0])
+	pass := datatypes.GetString(args[1])
 
 	r.SetBasicAuth(user, pass)
 
@@ -299,7 +299,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	token := persistence.Get(defs.LogonTokenSetting)
 
 	if len(args) > 0 {
-		token = util.GetString(args[0])
+		token = datatypes.GetString(args[0])
 	}
 
 	r.SetAuthToken(token)
@@ -317,7 +317,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	}
 
 	this := getThisStruct(s)
-	media := util.GetString(args[0])
+	media := datatypes.GetString(args[0])
 	this.SetAlways(mediaTypeFieldName, media)
 
 	return this, nil
@@ -341,12 +341,12 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	url := applyBaseURL(util.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.GetString(args[0]), this)
 	r := client.NewRequest()
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := util.GetString(media)
+		ms := datatypes.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content-Type", ms)
@@ -439,7 +439,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	client.SetRedirectPolicy()
 
 	this := getThisStruct(s)
-	url := applyBaseURL(util.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.GetString(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -448,7 +448,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := util.GetString(mt)
+		media := datatypes.GetString(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if !errors.Nil(err) {
@@ -463,7 +463,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := util.GetString(media)
+		ms := datatypes.GetString(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
 
 		r.Header.Add("Accept", ms)
@@ -513,7 +513,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	this := getThisStruct(s)
-	url := applyBaseURL(util.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.GetString(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -522,7 +522,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := util.GetString(mt)
+		media := datatypes.GetString(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if !errors.Nil(err) {
@@ -537,7 +537,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := util.GetString(media)
+		ms := datatypes.GetString(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 
 		r.Header.Add("Accept", ms)
@@ -688,7 +688,7 @@ func AddAgent(r *resty.Request, agentType string) {
 	var version string
 
 	if x, found := symbols.RootSymbolTable.Get("_version"); found {
-		version = util.GetString(x)
+		version = datatypes.GetString(x)
 	}
 
 	platform := runtime.Version() + ", " + runtime.GOOS + ", " + runtime.GOARCH

@@ -13,7 +13,7 @@ type packageDef struct {
 }
 
 func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
-	name := util.GetString(i)
+	name := datatypes.GetString(i)
 
 	// Are we already in this package? Happens when a directory of package
 	// files are concatenated together...
@@ -71,7 +71,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.packageStack = c.packageStack[:size-1]
 
 	// Verify that we're on the right package.
-	if pkgdef.name != util.GetString(i) {
+	if pkgdef.name != datatypes.GetString(i) {
 		return c.newError(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
 	}
 	// Retrieve the package variable

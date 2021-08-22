@@ -2,6 +2,7 @@ package functions
 
 import (
 	"github.com/google/uuid"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -23,7 +24,7 @@ func UUIDNil(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 
 // UUIDParse implements the uuid.Parse() function.
 func UUIDParse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	s := util.GetString(args[0])
+	s := datatypes.GetString(args[0])
 
 	u, err := uuid.Parse(s)
 	if err != nil {

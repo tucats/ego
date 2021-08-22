@@ -52,6 +52,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"members":              {Min: 1, Max: 1, F: Members},
 	"new":                  {Min: 1, Max: 1, F: New},
 	"reflect":              {Min: 1, Max: 1, F: Reflect},
+	"sizeof":               {Min: 1, Max: 1, F: SizeOf},
 	"type":                 {Min: 1, Max: 1, F: Type},
 	"cipher.Create":        {Min: 1, Max: 2, F: CreateToken, ErrReturn: true},
 	"cipher.Decrypt":       {Min: 2, Max: 2, F: Decrypt, ErrReturn: true},

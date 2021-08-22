@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 /******************************************\
@@ -31,14 +30,14 @@ func stopByteCode(c *Context, i interface{}) *errors.EgoError {
 // panicByteCode instruction processor generates an error. The boolean flag is used
 // to indicate if this is a fatal error that stops Ego, versus a user error.
 func panicByteCode(c *Context, i interface{}) *errors.EgoError {
-	c.running = !util.GetBool(i)
+	c.running = !datatypes.GetBool(i)
 
 	strValue, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
 	}
 
-	msg := util.GetString(strValue)
+	msg := datatypes.GetString(strValue)
 
 	return c.newError(errors.ErrPanic).Context(msg)
 }
@@ -84,7 +83,7 @@ func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
-	if !util.GetBool(v) {
+	if !datatypes.GetBool(v) {
 		c.programCounter = address
 	}
 
@@ -121,7 +120,7 @@ func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
-	if util.GetBool(v) {
+	if datatypes.GetBool(v) {
 		c.programCounter = address
 	}
 
@@ -167,7 +166,7 @@ func goByteCode(c *Context, i interface{}) *errors.EgoError {
 	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
 	waitGroup.Add(1)
 
-	go GoRoutine(util.GetString(fName), c, args)
+	go GoRoutine(datatypes.GetString(fName), c, args)
 
 	return nil
 }
@@ -430,7 +429,7 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 		max = datatypes.GetInt(v[1])
 
 		if len(v) == 3 {
-			name = util.GetString(v[2])
+			name = datatypes.GetString(v[2])
 		}
 
 	case int:
@@ -528,7 +527,7 @@ func waitByteCode(c *Context, i interface{}) *errors.EgoError {
 
 func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 	mode, found := c.symbols.Get("__exec_mode")
-	valid := found && (util.GetString(i) == util.GetString(mode))
+	valid := found && (datatypes.GetString(i) == datatypes.GetString(mode))
 
 	if valid {
 		return nil
@@ -541,10 +540,10 @@ func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
 	var entryPointName string
 
 	if i != nil {
-		entryPointName = util.GetString(i)
+		entryPointName = datatypes.GetString(i)
 	} else {
 		v, _ := c.Pop()
-		entryPointName = util.GetString(v)
+		entryPointName = datatypes.GetString(v)
 	}
 
 	entryPoint, found := c.symbolGet(entryPointName)

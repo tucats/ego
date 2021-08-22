@@ -4,7 +4,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/util"
 )
 
 // memberByteCode instruction processor. This pops two values from
@@ -15,14 +14,14 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	var name string
 
 	if i != nil {
-		name = util.GetString(i)
+		name = datatypes.GetString(i)
 	} else {
 		v, err := c.Pop()
 		if !errors.Nil(err) {
 			return err
 		}
 
-		name = util.GetString(v)
+		name = datatypes.GetString(v)
 	}
 
 	m, err := c.Pop()
@@ -104,7 +103,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if v, err = c.Pop(); err == nil {
 		if bc, ok := v.(*ByteCode); ok {
-			bc.Name = util.GetString(i)
+			bc.Name = datatypes.GetString(i)
 			err = c.symbols.SetAlways(bc.Name, bc)
 		} else {
 			err = errors.New(errors.ErrInvalidType)

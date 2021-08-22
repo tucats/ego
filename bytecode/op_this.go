@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/util"
 )
 
 // setThisByteCode implements the SetThis opcode. Given a named value,
@@ -29,7 +28,7 @@ func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
 		name = datatypes.GenerateName()
 		_ = c.symbolSetAlways(name, v)
 	} else {
-		name = util.GetString(i)
+		name = datatypes.GetString(i)
 	}
 
 	if v, ok := c.symbolGet(name); ok {
@@ -44,7 +43,7 @@ func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
 // named value. This is done as part of prologue of a function that
 // has a receiver.
 func getThisByteCode(c *Context, i interface{}) *errors.EgoError {
-	this := util.GetString(i)
+	this := datatypes.GetString(i)
 
 	if v, ok := c.popThis(); ok {
 		return c.symbolSetAlways(this, v)

@@ -54,7 +54,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	mode := os.O_RDONLY
 
-	fname, err := filepath.Abs(sandboxName(util.GetString(args[0])))
+	fname, err := filepath.Abs(sandboxName(datatypes.GetString(args[0])))
 	if !errors.Nil(err) {
 		return nil, errors.New(err)
 	}
@@ -62,7 +62,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	modeValue := "input"
 
 	if len(args) > 1 {
-		modeValue = strings.ToLower(util.GetString(args[1]))
+		modeValue = strings.ToLower(datatypes.GetString(args[1]))
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
@@ -114,12 +114,12 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	b.WriteString("<file")
 
 	if bx, ok := f.Get(validFieldName); ok {
-		if util.GetBool(bx) {
+		if datatypes.GetBool(bx) {
 			b.WriteString("; open")
 			b.WriteString("; name \"")
 
 			if name, ok := f.Get(nameFieldName); ok {
-				b.WriteString(util.GetString(name))
+				b.WriteString(datatypes.GetString(name))
 			}
 
 			b.WriteString("\"")
@@ -159,7 +159,7 @@ func getThis(s *symbols.SymbolTable) *datatypes.EgoStruct {
 // handle-based function.
 func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
 	this := getThis(s)
-	if v, ok := this.Get(validFieldName); ok && util.GetBool(v) {
+	if v, ok := this.Get(validFieldName); ok && datatypes.GetBool(v) {
 		fh, ok := this.Get(fileFieldName)
 		if ok {
 			f, ok := fh.(*os.File)
@@ -236,7 +236,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	f, err := getFile("WriteString", s)
 	if errors.Nil(err) {
-		length, e2 = f.WriteString(util.GetString(args[0]) + "\n")
+		length, e2 = f.WriteString(datatypes.GetString(args[0]) + "\n")
 		if e2 != nil {
 			err = errors.New(e2)
 		}

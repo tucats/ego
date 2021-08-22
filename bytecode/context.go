@@ -9,6 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -80,7 +81,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// ultimately set by a profile setting or CLI option).
 	static := false
 	if s, ok := s.Get("__static_data_types"); ok {
-		static = util.GetBool(s)
+		static = datatypes.GetBool(s)
 	}
 
 	// If we weren't given a table, create an empty temp table.

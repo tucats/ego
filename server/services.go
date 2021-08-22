@@ -26,7 +26,6 @@ import (
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // Define a cache. This keeps a copy of the compiler and the bytecode
@@ -167,11 +166,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	var debug bool
 
 	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
-		debugPath := util.GetString(b)
+		debugPath := datatypes.GetString(b)
 		if debugPath == "/" {
 			debug = true
 		} else {
-			debug = strings.EqualFold(util.GetString(b), endpoint)
+			debug = strings.EqualFold(datatypes.GetString(b), endpoint)
 		}
 	}
 
@@ -412,7 +411,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		buffer := ""
 		if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")
-			buffer = util.GetString(bufferValue)
+			buffer = datatypes.GetString(bufferValue)
 		}
 
 		_, _ = io.WriteString(w, buffer)

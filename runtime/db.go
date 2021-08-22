@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
@@ -48,7 +47,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	initDBTypeDef()
 
 	// Get the connection string, which MUST be in URL format.
-	connStr := util.GetString(args[0])
+	connStr := datatypes.GetString(args[0])
 
 	url, err := url.Parse(connStr)
 	if !errors.Nil(err) {
@@ -162,7 +161,7 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 
 	this := getThisStruct(s)
-	this.SetAlways(asStructFieldName, util.GetBool(args[0]))
+	this.SetAlways(asStructFieldName, datatypes.GetBool(args[0]))
 
 	return this, nil
 }
@@ -198,14 +197,14 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	this := getThisStruct(s)
-	asStruct := util.GetBool(this.GetAlways(asStructFieldName))
+	asStruct := datatypes.GetBool(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
 
 	var rows *sql.Rows
 
 	var e2 error
 
-	query := util.GetString(args[0])
+	query := datatypes.GetString(args[0])
 	ui.Debug(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
@@ -303,7 +302,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	var err error
 
-	query := util.GetString(args[0])
+	query := datatypes.GetString(args[0])
 
 	ui.Debug(ui.DBLogger, "Executing: %s", query)
 

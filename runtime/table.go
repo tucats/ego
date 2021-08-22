@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 var tableTypeDef *datatypes.Type
@@ -50,14 +49,14 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		if list, ok := h.(*datatypes.EgoArray); ok {
 			for idx := 0; idx < list.Len(); idx++ {
 				str, _ := list.Get(idx)
-				headings = append(headings, util.GetString(str))
+				headings = append(headings, datatypes.GetString(str))
 			}
 		} else if list, ok := h.([]interface{}); ok {
 			for _, hh := range list {
-				headings = append(headings, util.GetString(hh))
+				headings = append(headings, datatypes.GetString(hh))
 			}
 		} else {
-			headings = append(headings, util.GetString(h))
+			headings = append(headings, datatypes.GetString(h))
 		}
 	}
 
@@ -147,7 +146,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 						p, ok := t.FindColumn(k)
 						if ok {
-							values[p] = util.GetString(v)
+							values[p] = datatypes.GetString(v)
 						}
 					}
 
@@ -184,7 +183,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			v := args[i]
 			ascending := true
 
-			heading := util.GetString(v)
+			heading := datatypes.GetString(v)
 			if strings.HasPrefix(heading, "~") {
 				ascending = false
 				heading = heading[1:]
@@ -219,12 +218,12 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 		lines := true
 
 		if len(args) > 0 {
-			headings = util.GetBool(args[0])
+			headings = datatypes.GetBool(args[0])
 			lines = headings
 		}
 
 		if len(args) > 1 {
-			lines = util.GetBool(args[1])
+			lines = datatypes.GetBool(args[1])
 		}
 
 		t.ShowHeadings(headings)
@@ -289,7 +288,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = util.GetString(args[0])
+		fmt = datatypes.GetString(args[0])
 	}
 
 	t, err := getTable(s)
@@ -305,7 +304,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = util.GetString(args[0])
+		fmt = datatypes.GetString(args[0])
 	}
 
 	t, err := getTable(s)

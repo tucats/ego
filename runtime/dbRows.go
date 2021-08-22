@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 var dbRowsTypeDef *datatypes.Type
@@ -37,7 +36,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	this := getThisStruct(s)
 	this.SetAlways(rowCountFieldName, -1)
 
-	query := util.GetString(args[0])
+	query := datatypes.GetString(args[0])
 
 	var rows *sql.Rows
 
@@ -119,7 +118,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	db := this.GetAlways(dbFieldName).(*datatypes.EgoStruct)
-	asStruct := util.GetBool(db.GetAlways(asStructFieldName))
+	asStruct := datatypes.GetBool(db.GetAlways(asStructFieldName))
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
