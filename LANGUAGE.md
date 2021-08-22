@@ -140,7 +140,8 @@ listed here.
 | `bool`   | true     | true, false      | A Boolean value that is either true or false |
 | `byte`   | 5        | 0-255            | An 8-bit unsigned integer |
 | `int32`  | 1024     | -32768 to 32767  | A signed 32-bit integer |
-| `int`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
+| `int`  | 1024     | -32768 to 32767  | A signed 32-bit integer |
+| `int64`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
 | `float32`  | -3.14  | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
 | `float64`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
