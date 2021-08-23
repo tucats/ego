@@ -310,6 +310,9 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, v2 = datatypes.Normalize(v1, v2)
 
 	switch v1.(type) {
+	case bool:
+		return c.stackPush(v1.(bool) || v2.(bool))
+
 	case byte:
 		return c.stackPush(v1.(byte) * v2.(byte))
 
@@ -327,9 +330,6 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	case float64:
 		return c.stackPush(v1.(float64) * v2.(float64))
-
-	case bool:
-		return c.stackPush(v1.(bool) || v2.(bool))
 
 	default:
 		return c.newError(errors.ErrInvalidType)

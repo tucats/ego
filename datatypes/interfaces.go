@@ -37,6 +37,11 @@ func GetInt(v interface{}) int {
 	result := 0
 
 	switch actual := v.(type) {
+	case bool:
+		if actual {
+			result = 1
+		}
+
 	case byte:
 		result = int(actual)
 
@@ -55,14 +60,8 @@ func GetInt(v interface{}) int {
 	case float64:
 		result = int(actual)
 
-	case bool:
-		if actual {
-			result = 1
-		}
-
 	case string:
 		result, _ = strconv.Atoi(actual)
-
 	}
 
 	return result
@@ -72,6 +71,11 @@ func GetInt64(v interface{}) int64 {
 	var result int64
 
 	switch actual := v.(type) {
+	case bool:
+		if actual {
+			result = int64(1)
+		}
+
 	case byte:
 		result = int64(actual)
 
@@ -89,11 +93,6 @@ func GetInt64(v interface{}) int64 {
 
 	case float64:
 		result = int64(actual)
-
-	case bool:
-		if actual {
-			result = int64(1)
-		}
 
 	case string:
 		fmt.Scanf("%d", &result)
@@ -106,6 +105,11 @@ func GetFloat64(v interface{}) float64 {
 	var result float64
 
 	switch actual := v.(type) {
+	case bool:
+		if actual {
+			result = 1.0
+		}
+
 	case int32:
 		result = float64(actual)
 
@@ -120,11 +124,6 @@ func GetFloat64(v interface{}) float64 {
 
 	case float64:
 		result = actual
-
-	case bool:
-		if actual {
-			result = 1.0
-		}
 
 	case string:
 		result, _ = strconv.ParseFloat(actual, 64)
@@ -141,9 +140,8 @@ func GetFloat32(v interface{}) float32 {
 
 func GetBool(v interface{}) bool {
 	switch actual := v.(type) {
-	case byte, int32, int:
-
-		return GetInt(v) != 0
+	case byte, int32, int, int64:
+		return GetInt64(v) != 0
 
 	case float64, float32:
 		return GetFloat64(v) != 0.0
@@ -168,19 +166,21 @@ func DeepCopy(v interface{}) interface{} {
 	}
 
 	switch actual := v.(type) {
+	case bool:
+		return actual
 	case byte:
 		return actual
 	case int32:
 		return actual
 	case int:
 		return actual
-	case string:
-		return actual
-	case bool:
+	case int64:
 		return actual
 	case float32:
 		return actual
 	case float64:
+		return actual
+	case string:
 		return actual
 
 	case *EgoArray:

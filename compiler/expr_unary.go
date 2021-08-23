@@ -26,7 +26,19 @@ func (c *Compiler) unary() *errors.EgoError {
 
 		if i.Operation == bytecode.Push {
 			switch v := i.Operand.(type) {
+			case byte:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
+			case int32:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
 			case int:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
+			case int64:
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i
 

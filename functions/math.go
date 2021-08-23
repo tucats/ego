@@ -105,6 +105,9 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		}
 
 		switch addend.(type) {
+		case bool:
+			base = base.(bool) || addend.(bool)
+
 		case byte:
 			base = base.(byte) + addend.(byte)
 
@@ -112,6 +115,9 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			base = base.(int32) + addend.(int32)
 
 		case int:
+			base = base.(int) + addend.(int)
+
+		case int64:
 			base = base.(int) + addend.(int)
 
 		case float32:
@@ -122,9 +128,6 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 		case string:
 			base = base.(string) + addend.(string)
-
-		case bool:
-			base = base.(bool) || addend.(bool)
 
 		default:
 			return nil, errors.New(errors.ErrInvalidType).In("sum()")

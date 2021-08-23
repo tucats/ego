@@ -405,6 +405,9 @@ func TypeOf(i interface{}) Type {
 	case **sync.Mutex:
 		return Pointer(MutexType)
 
+	case bool:
+		return BoolType
+
 	case byte:
 		return ByteType
 
@@ -412,6 +415,9 @@ func TypeOf(i interface{}) Type {
 		return Int32Type
 
 	case int:
+		return IntType
+
+	case int64:
 		return IntType
 
 	case float32:
@@ -422,9 +428,6 @@ func TypeOf(i interface{}) Type {
 
 	case string:
 		return StringType
-
-	case bool:
-		return BoolType
 
 	case EgoPackage:
 		if t, ok := GetMetadata(v, TypeMDKey); ok {

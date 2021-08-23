@@ -325,8 +325,8 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	switch v := args[0].(type) {
-	case int:
-		os.Exit(v)
+	case bool, byte, int32, int, int64, float32, float64:
+		os.Exit(datatypes.GetInt(args[0]))
 
 	case string:
 		return nil, errors.NewMessage(v)

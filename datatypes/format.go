@@ -45,12 +45,6 @@ func Format(element interface{}) string {
 	case error:
 		return fmt.Sprintf("%v", v)
 
-	case int:
-		return fmt.Sprintf("%d", v)
-
-	case int64:
-		return fmt.Sprintf("%d", v)
-
 	case bool:
 		if v {
 			return "true"
@@ -64,11 +58,20 @@ func Format(element interface{}) string {
 	case int32:
 		return fmt.Sprintf("%v", v)
 
+	case int:
+		return fmt.Sprintf("%d", v)
+
+	case int64:
+		return fmt.Sprintf("%d", v)
+
 	case float32:
 		return fmt.Sprintf("%v", v)
 
 	case float64:
 		return fmt.Sprintf("%v", v)
+
+	case string:
+		return "\"" + v + "\""
 
 	case EgoPackage:
 		var b strings.Builder
@@ -102,9 +105,6 @@ func Format(element interface{}) string {
 		b.WriteString(" >")
 
 		return b.String()
-
-	case string:
-		return "\"" + v + "\""
 
 	case *EgoStruct:
 		return v.String()

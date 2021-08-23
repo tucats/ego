@@ -514,6 +514,12 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 	case bool:
 		return m, nil
 
+	case byte:
+		return m, nil
+
+	case int32:
+		return m, nil
+
 	case int:
 		return m, nil
 

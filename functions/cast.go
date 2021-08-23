@@ -183,6 +183,9 @@ func DeepCopy(source interface{}, depth int) interface{} {
 	}
 
 	switch v := source.(type) {
+	case bool:
+		return v
+
 	case byte:
 		return v
 
@@ -192,6 +195,9 @@ func DeepCopy(source interface{}, depth int) interface{} {
 	case int:
 		return v
 
+	case int64:
+		return v
+
 	case string:
 		return v
 
@@ -199,9 +205,6 @@ func DeepCopy(source interface{}, depth int) interface{} {
 		return v
 
 	case float64:
-		return v
-
-	case bool:
 		return v
 
 	case []interface{}:
