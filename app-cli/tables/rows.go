@@ -2,7 +2,6 @@ package tables
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/tucats/ego/errors"
 )
@@ -34,28 +33,9 @@ func (t *Table) AddRowItems(items ...interface{}) *errors.EgoError {
 	}
 
 	row := make([]string, t.columnCount)
-	buffer := ""
 
 	for n, item := range items {
-		switch v := item.(type) {
-		case int:
-			buffer = strconv.Itoa(v)
-
-		case string:
-			buffer = v
-
-		case bool:
-			if v {
-				buffer = "true"
-			} else {
-				buffer = "false"
-			}
-
-		default:
-			buffer = fmt.Sprintf("%v", item)
-		}
-
-		row[n] = buffer
+		row[n] = fmt.Sprintf("%v", item)
 	}
 
 	return t.AddRow(row)
