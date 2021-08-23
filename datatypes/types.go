@@ -418,7 +418,7 @@ func TypeOf(i interface{}) Type {
 		return IntType
 
 	case int64:
-		return IntType
+		return Int64Type
 
 	case float32:
 		return Float32Type
@@ -438,10 +438,22 @@ func TypeOf(i interface{}) Type {
 
 		return UndefinedType
 
+	case *byte:
+		return Pointer(ByteType)
+
+	case *int32:
+		return Pointer(Int32Type)
+
 	case *int:
 		return Pointer(IntType)
 
-	case *float32, *float64:
+	case *int64:
+		return Pointer(Int64Type)
+
+	case *float32:
+		return Pointer(Float32Type)
+
+	case *float64:
 		return Pointer(Float64Type)
 
 	case *string:
