@@ -1,0 +1,24 @@
+{
+    "client": "Thunder Client",
+    "environmentName": "Testing Environment",
+    "dateExported": "2021-09-06T19:59:34.289Z",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "BEARER_TOKEN",
+            "value": "not-set-yet"
+        },
+        {
+            "name": "SERVER",
+            "value": "localhost"
+        },
+        {
+            "name": "PORT",
+            "value": "8080"
+        },
+        {
+            "name": "SERVER_ID",
+            "value": "not-set-yet"
+        }
+    ]
+}
