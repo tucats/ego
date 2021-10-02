@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 /******************************************\
@@ -33,7 +32,7 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
-		s := util.FormatUnquoted(v)
+		s := datatypes.FormatUnquoted(v)
 
 		if c.output == nil {
 			fmt.Printf("%s", s)

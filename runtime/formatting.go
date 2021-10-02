@@ -3,14 +3,14 @@ package runtime
 import (
 	"strings"
 
-	"github.com/tucats/ego/util"
+	"github.com/tucats/ego/datatypes"
 )
 
 // Pad the formatted value of a given object to the specified number
 // of characters. Negative numbers are right-aligned, positive numbers
 // are left-aligned.
 func Pad(v interface{}, w int) string {
-	s := util.FormatUnquoted(v)
+	s := datatypes.FormatUnquoted(v)
 	count := w
 
 	if count < 0 {

@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // For a new() on an object, we won't recursively copy objects
@@ -279,7 +278,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 				r.WriteRune(int32(datatypes.GetInt(ch)))
 			}
 		} else {
-			str := util.FormatUnquoted(source)
+			str := datatypes.FormatUnquoted(source)
 			r.WriteString(str)
 		}
 

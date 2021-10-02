@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 type This struct {
@@ -295,7 +294,7 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 			stringValue = strings.ReplaceAll(stringValue, "\n", "\\n")
 			b.WriteString(stringValue)
 		} else {
-			b.WriteString(util.Format(s[n]))
+			b.WriteString(datatypes.Format(s[n]))
 		}
 
 		if !newlines && b.Len() > 50 {

@@ -92,7 +92,7 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 		}
 	}
 
-	return util.FormatUnquoted(v)
+	return datatypes.FormatUnquoted(v)
 }
 
 func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {

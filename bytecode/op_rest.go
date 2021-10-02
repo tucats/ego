@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/util"
 )
 
 /******************************************\
@@ -143,7 +142,7 @@ func responseByteCode(c *Context, i interface{}) *errors.EgoError {
 	if isJson {
 		_ = c.symbols.Root().SetAlways("_rest_response", v)
 	} else {
-		output := util.FormatUnquoted(v)
+		output := datatypes.FormatUnquoted(v)
 
 		writeResponse(c, output+"\n")
 	}

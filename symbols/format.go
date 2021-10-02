@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // Format formats a symbol table into a string for printing/display.
@@ -119,7 +118,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		if k == "_password" || k == "_token" {
 			b.WriteString("\"******\"")
 		} else {
-			b.WriteString(util.Format(v))
+			b.WriteString(datatypes.Format(v))
 		}
 
 		b.WriteString("\n")
@@ -220,7 +219,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			v = "\"******\""
 		}
 
-		row[2] = util.Format(v)
+		row[2] = datatypes.Format(v)
 		rows = append(rows, row)
 	}
 

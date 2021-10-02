@@ -13,7 +13,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 type column struct {
@@ -239,7 +238,7 @@ func AsJSON(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 			v, ok := rowMap[c.Name]
 			if ok {
-				width := len(util.FormatUnquoted(v))
+				width := len(datatypes.FormatUnquoted(v))
 				if width > c.FormattedWidth {
 					c.FormattedWidth = width
 					r.Columns[n] = c
@@ -318,7 +317,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 			v, ok := row[c.Name]
 			if ok {
-				width := len(util.FormatUnquoted(v))
+				width := len(datatypes.FormatUnquoted(v))
 				if width > c.FormattedWidth {
 					c.FormattedWidth = width
 					columns[n] = c
