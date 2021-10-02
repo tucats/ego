@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -83,7 +82,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	if strings.HasPrefix(prompt, passwordPromptPrefix) {
 		text = ui.PromptPassword(prompt[len(passwordPromptPrefix):])
 	} else {
-		text = io.ReadConsoleText(prompt)
+		text = ReadConsoleText(prompt)
 	}
 
 	text = strings.TrimSuffix(text, "\n")

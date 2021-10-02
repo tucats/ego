@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -346,7 +345,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 		var h strings.Builder
 
 		for _, c := range columns {
-			b.WriteString(io.Pad(c.Name, c.FormattedWidth))
+			b.WriteString(Pad(c.Name, c.FormattedWidth))
 			b.WriteRune(' ')
 
 			w := c.FormattedWidth
@@ -371,7 +370,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 		for _, c := range columns {
 			v, ok := row[c.Name]
 			if ok {
-				b.WriteString(io.Pad(v, c.FormattedWidth))
+				b.WriteString(Pad(v, c.FormattedWidth))
 				b.WriteRune(' ')
 			} else {
 				b.WriteString(strings.Repeat(" ", c.FormattedWidth+1))

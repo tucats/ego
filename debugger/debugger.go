@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/io"
+	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -193,7 +193,7 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 // getLine reads a line of text from the console, and requires that it contain matching
 // tick-quotes and braces.
 func getLine() string {
-	text := io.ReadConsoleText("debug> ")
+	text := runtime.ReadConsoleText("debug> ")
 	if len(strings.TrimSpace(text)) == 0 {
 		return ""
 	}
@@ -236,7 +236,7 @@ func getLine() string {
 		}
 
 		if braceCount > 0 || parenCount > 0 || bracketCount > 0 || openTick {
-			text = text + io.ReadConsoleText(".....> ")
+			text = text + runtime.ReadConsoleText(".....> ")
 			t = tokenizer.New(text)
 
 			continue

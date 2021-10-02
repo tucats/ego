@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -107,7 +106,7 @@ func Test_pad(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := io.Pad(tt.args.s, tt.args.w); got != tt.want {
+			if got := Pad(tt.args.s, tt.args.w); got != tt.want {
 				t.Errorf("pad() = %v, want %v", got, tt.want)
 			}
 		})

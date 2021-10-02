@@ -17,7 +17,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/io"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -140,7 +139,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				fmt.Printf("%s\n", banner)
 			}
 
-			text = io.ReadConsoleText(prompt)
+			text = runtime.ReadConsoleText(prompt)
 			interactive = true
 		} else {
 			wasCommandLine = true // It is a pipe, so no prompting for more!
@@ -200,7 +199,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
 			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
-				text = text + io.ReadConsoleText("...> ")
+				text = text + runtime.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
 				lineNumber++
 
@@ -226,7 +225,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			}
 
 			if count > 0 {
-				text = text + io.ReadConsoleText("...> ")
+				text = text + runtime.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
 				lineNumber++
 
@@ -308,7 +307,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			break
 		}
 
-		text = io.ReadConsoleText(prompt)
+		text = runtime.ReadConsoleText(prompt)
 	}
 
 	if exitValue > 0 {
