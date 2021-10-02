@@ -13,12 +13,14 @@ func f(c chan) {
    c <- "sent from afar"
 }
 
-// Make a channel, and share it with the function we then run
-// as an asynchronous routine
-var xc chan
-go f(xc)
-
-// Hang out until we get a value back from the channel
-fmt.Println("Waiting on a reply...")
-m <- xc
-fmt.Printf("Message was %s\n", m)
+func main() {
+   // Make a channel, and share it with the function we then run
+   // as an asynchronous routine
+   var xc chan
+   go f(xc)
+   
+   // Hang out until we get a value back from the channel
+   fmt.Println("Waiting on a reply...")
+   m <- xc
+   fmt.Printf("Message was %s\n", m)
+}

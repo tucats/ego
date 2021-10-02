@@ -5,7 +5,8 @@ func main() int {
 
    for i := 0; i < count; i = i + 1 {
       x := math.Factor(1234567890)
-}
+   }
+
 
    finish := time.Now()
    fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
