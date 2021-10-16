@@ -69,6 +69,9 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	if su != "" {
 		err = setPermission(su, "root", true)
+		if err != nil {
+			err = setPermission(su, "logon", true)
+		}
 	}
 
 	return err
@@ -179,6 +182,10 @@ func validatePassword(user, pass string) bool {
 
 		hashPass := HashString(pass)
 		ok = realPass == hashPass
+
+		if findPermission(u, "logon") < 0 {
+			ok = false
+		}
 	}
 
 	return ok

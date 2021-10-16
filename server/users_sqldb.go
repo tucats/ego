@@ -95,7 +95,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 			Name:        defaultUser,
 			Password:    HashString(defaultPassword),
 			ID:          uuid.New(),
-			Permissions: []string{"root"},
+			Permissions: []string{"root", "logon"},
 		}
 
 		e2 = svc.WriteUser(user)

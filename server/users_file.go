@@ -54,7 +54,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 				ID:          uuid.New(),
 				Name:        defaultUser,
 				Password:    HashString(defaultPassword),
-				Permissions: []string{"root"},
+				Permissions: []string{"root", "logon"},
 			},
 		}
 		svc.dirty = true
