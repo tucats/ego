@@ -173,12 +173,6 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 		}
 	}
 
-	// Merge in any package definitions
-	// c.AddPackageToSymbols(c.b.Symbols)
-
-	// Also merge in any other symbols created for this function
-	// c.b.Symbols.Merge(c.Symbols())
-
 	return c.b, nil
 }
 
@@ -330,17 +324,6 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 			continue
 		}
 
-		// Do we already have a package of this name defined?
-		// @tomcole I think this is bogus; we may have to redefine
-		// packages that were auto-imported in the local table if
-		// they extend existing packages... Eliding for now.
-		if false {
-			_, found := s.Get(packageName)
-			if found {
-				continue
-			}
-		}
-
 		m := datatypes.EgoPackage{}
 
 		for k, v := range packageDictionary {
@@ -408,7 +391,6 @@ func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 		}
 	} else {
 		for _, p := range RequiredPackages {
-			uniqueNames[p] = true
 			uniqueNames[p] = true
 		}
 	}
