@@ -440,10 +440,10 @@ The _Ego_ language is, by default, a case-sensitive language, such
 
 &nbsp;
 
-There is a reserved name that is just an underscore, "_". This name
+There is a reserved name that is just an underscore, "&lowbar;". This name
 means _value we will ignore._ So anytime you need to reference a variable
 to conform to the syntax of the language, but you do not want or need
-the value for your particular program, you can specify "_" which is a
+the value for your particular program, you can specify "&lowbar;" which is a
 short-hand value for "discard this value".
 
 A symbol name that starts with an underscore character is a read-only
