@@ -436,7 +436,7 @@ The _Ego_ language is, by default, a case-sensitive language, such
 | A123      | Valid name, different than `a123`|
 | _egg      | Valid name, but is a read-only variable |
 | 15States  | Invalid name, does not start with an alphabetic character |
-| $name     | Invalid name, `$` is not a valid symbol character |
+| $name     | Invalid name, dollar-sign is not a valid symbol character |
 
 &nbsp;
 
