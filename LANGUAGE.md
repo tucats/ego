@@ -134,18 +134,18 @@ listed here.
 
 &nbsp;
 
-|   Type   | Example  |    Range         | Description  |
-| -------- | -------- | ---------------- | -------------|
-| `nil`    | nil      | nil | The `nil` value indicates no value or type specified |
-| `bool`   | true     | true, false      | A Boolean value that is either true or false |
-| `byte`   | 5        | 0-255            | An 8-bit unsigned integer |
-| `int32`  | 1024     | -32768 to 32767  | A signed 32-bit integer |
-| `int`  | 1024     | -32768 to 32767  | A signed 32-bit integer |
-| `int64`    | 1573     | -2^63 to 2^63 -1 | A 64-bit integer value |
-| `float32`  | -3.14  | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
+|   Type     | Example  |    Range              | Description  |
+| ---------- | -------- | --------------------- | -------------|
+| `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
+| `bool`     | true     | true, false           | A Boolean value that is either true or false |
+| `byte`     | 5        | 0-255                 | An 8-bit unsigned integer |
+| `int32`    | 1024     | -32768 to 32767       | A signed 32-bit integer |
+| `int`      | 1024     | -32768 to 32767       | A signed 32-bit integer |
+| `int64`    | 1573     | -2^63 to 2^63 -1      | A 64-bit integer value |
+| `float32`  | -3.14    | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
 | `float64`  | -153.35  | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
-| `string` | "Andrew" | any              | A string value, consisting of a varying number of Unicode characters |
-| `chan`   |  chan    | any              | A channel, used to communicate values between threads |
+| `string`   | "Andrew" | any                   | A string value, consisting of a varying number of Unicode characters |
+| `chan`     |  chan    | any                   | A channel, used to communicate values between threads |
 
 _Note that the numeric range values shown are approximate._ Also,
 _Ego_ supports a single integer type of `int` which is a 64-bit integer.
@@ -250,9 +250,8 @@ map is declared as having a key type and a value type, and a hashmap
 is constructed based on that information. You can set a value in the
 map and you can fetch a value from the map.
 
-Current, it is a limitation that the only way to create a map is by
-setting a value to an empty map constant. Map initialization syntax
-is not yet supported.  For example,
+You can create create a map by setting a value to an empty map constant. 
+For example,
 
     staff := map[int]string{}
 
@@ -261,12 +260,16 @@ the key, and stores a string value for each unique key. A map can
 contain only one key of a given value; setting the key value a second
 time just replaces the value of the map for that key.
 
-    staff[101] = "Jeff"
-    staff[102] = "Susan"
+You can also initialize the map values using `{}` notation, as in:
+
+    staff := map[int]string{101:"Jeff", 102:"Susan"}
+
+    staff[103] = "Buddy"
+    staff[104] = "Donna"
 
 This adds members to the map. Note that the key  _must_ be an integer
 value, and the value _must_ be a string value because that's how the
-map was declared. Unlike a variable, a map has a static definition
+map was declared. Unlike a variable, a map always has a static definition
 once it is created and cannot contain values of a different type.
 Attempting to store a boolean in the map results in a runtime error,
 for example.
@@ -277,6 +280,19 @@ for example.
 This uses an integer variable to retrieve a value from the map. In this
 case, the value of `name` will be set to "Susan". If there is nothing
 in the map with the given key, the value of the expression is `nil`.
+
+You can test for the existence of an item when you attempt to read it
+from the map. In this notation, the second value returned in the assignment
+is a boolean that indicates if the item was found or not.
+
+    emp, found := staff[105]
+
+In this example, `found` will be true if there was a value in the map for
+the key value `105`, and the value of the map item (a string in this case)
+will be stoerd in `emp`. If there was no value in the map for the given key,
+`found` will be set to false, and `emp` will be nil. (Note that this is
+slightly different than traditional Go, where the result would be the zero
+value for the type, i.e. an empty string in this case).
 
 ## Pointers<a name="pointers"></a>
 
@@ -413,21 +429,21 @@ The _Ego_ language is, by default, a case-sensitive language, such
 
 &nbsp;
 
-| Name | Description |
-| ---- | ----------- |
-| a123 | Valid name |
+| Name      | Description |
+| --------- | ----------- |
+| a123      | Valid name |
 | user_name | Valid name |
-| A123 | Valid name, different than `a123`|
-| _egg | Valid name, but is a read-only variable |
-| 15States | Invalid name, does not start with an alphabetic character |
-| $name | Invalid name, `$` is not a valid symbol character |
+| A123      | Valid name, different than `a123`|
+| _egg      | Valid name, but is a read-only variable |
+| 15States  | Invalid name, does not start with an alphabetic character |
+| $name     | Invalid name, `$` is not a valid symbol character |
 
 &nbsp;
 
-There is a reserved name that is just an underscore, "&lowbar;". This name
+There is a reserved name that is just an underscore, "_". This name
 means _value we will ignore._ So anytime you need to reference a variable
 to conform to the syntax of the language, but you do not want or need
-the value for your particular program, you can specify "&lowbar;" which is a
+the value for your particular program, you can specify "_" which is a
 short-hand value for "discard this value".
 
 A symbol name that starts with an underscore character is a read-only
@@ -523,11 +539,11 @@ a struct, values of a type, or index into an array.
 
 &nbsp;
 
-| Operator | Example | Description |
-| --- | --- | --- |
-| .   | emp.age | Find the member named `age` in the struct named `emp` |
-| []  | items[5] | Find the value at index 5 of the array named `items` |
-| {}  | emp{} | Create an instance of a struct of the type `emp` |
+| Operator | Example  | Description |
+| -------- | -------- | ----------- |
+| .        | emp.age  | Find the member named `age` in the struct named `emp` |
+| []       | items[5] | Find the value at index 5 of the array named `items` |
+| {}       | emp{}    | Create an instance of a struct of the type `emp` |
 
 The `[]` operator can also be used to access a map, by supplying the key value
 in the brackets. This key value must be of the same type as the map's declared
@@ -542,7 +558,7 @@ on the single value given.
 &nbsp;
 
 | Operator | Example | Description |
-| -------- | ------- | --- |
+| -------- | ------- | ----------- |
 |  -       | -temp   | Calculate the negative of the value in `temp` |
 | !        | !active | Calculate the boolean NOT of the value in `active` |
 
@@ -585,14 +601,14 @@ describing the relationship between the two values.
 
 &nbsp;
 
-| Operator | Example | Description |
-| --- | --- | --- |
-|  ==  | a == b | True if `a` is equal to `b` |
-|  !=  | a != b | True if `a` is not equal to `b` |
-|  &gt; | a &gt; b | True if `a` is less than `b` |
-|  &gt;= | a &gt;= b | True if `a` is less than or equal to `b` |
-|  &lt; | a &lt; b | True if `a` is greater than `b` |
-|  &lt;= | a &lt;= b | True if `a` is greater than or equal to `b` |
+| Operator | Example    | Description |
+| -------- | ---------- | ----------- |
+|  ==      | a == b     | True if `a` is equal to `b` |
+|  !=      | a != b     | True if `a` is not equal to `b` |
+|  &gt;    | a &gt; b   | True if `a` is less than `b` |
+|  &gt;=   | a &gt;= b  | True if `a` is less than or equal to `b` |
+|  &lt;    | a &lt; b   | True if `a` is greater than `b` |
+|  &lt;=   | a &lt;= b  | True if `a` is greater than or equal to `b` |
 
 &nbsp;
 
