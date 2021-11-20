@@ -137,7 +137,7 @@ func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
 // For a given package and type name, get the underlying type.
 func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type, bool) {
 	if p, found := c.packages.Package[packageName]; found {
-		if t, found := p[typeName]; found {
+		if t, found := p.Get(typeName); found {
 			if theType, ok := t.(*datatypes.Type); ok {
 				return theType, true
 			}
@@ -146,13 +146,13 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type
 		// It was a package, but without a package body. Already moved to global storage?
 		if pkg, found := c.s.Root().Get(packageName); found {
 			if m, ok := pkg.(datatypes.EgoPackage); ok {
-				if t, found := m[typeName]; found {
+				if t, found := m.Get(typeName); found {
 					if theType, ok := t.(datatypes.Type); ok {
 						return &theType, true
 					}
 				}
 
-				if t, found := m["__type"]; found {
+				if t, found := m.Get(datatypes.TypeMDKey); found {
 					if theType, ok := t.(datatypes.Type); ok {
 						return theType.BaseType(), true
 					}

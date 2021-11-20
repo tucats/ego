@@ -65,7 +65,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		// Make a list of the visible member names
 		memberList := []string{}
 
-		for k := range m {
+		for _, k := range m.Keys() {
 			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
 				memberList = append(memberList, k)
 			}

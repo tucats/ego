@@ -93,7 +93,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 				// the newly created type we're working on.
 				if pkgData, found := c.Symbols().Get(packageName); found {
 					if pkg, ok := pkgData.(datatypes.EgoPackage); ok {
-						if typeInterface, ok := pkg[name]; ok {
+						if typeInterface, ok := pkg.Get(name); ok {
 							if typeData, ok := typeInterface.(datatypes.Type); ok {
 								embedType(&t, typeData)
 

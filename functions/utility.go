@@ -168,7 +168,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	case datatypes.EgoPackage:
 		keys := datatypes.NewArray(datatypes.StringType, 0)
 
-		for k := range v {
+		for _, k := range v.Keys() {
 			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
 				keys.Append(k)
 			}

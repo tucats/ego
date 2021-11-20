@@ -269,11 +269,12 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
 
-	if _, found := fd[name]; found {
+	if _, found := fd.Get(name); found {
 		return c.newError(errors.ErrFunctionAlreadyExists)
 	}
 
-	fd[name] = function
+	fd.Set(name, function)
+
 	c.packages.Package[pkgname] = fd
 
 	return nil
@@ -287,17 +288,19 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 	defer c.packages.Mutex.Unlock()
 
 	fd, found := c.packages.Package[pkgname]
-	if fd == nil || !found {
-		fd = datatypes.EgoPackage{}
+	if !found || fd.IsEmpty() {
+		fd = datatypes.NewPackage()
+
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
 
-	if _, found := fd[name]; found {
+	if _, found := fd.Get(name); found {
 		return c.newError(errors.ErrFunctionAlreadyExists)
 	}
 
-	fd[name] = value
+	fd.Set(name, value)
+
 	c.packages.Package[pkgname] = fd
 
 	return nil
@@ -324,9 +327,11 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 			continue
 		}
 
-		m := datatypes.EgoPackage{}
+		m := datatypes.NewPackage()
+		keys := packageDictionary.Keys()
 
-		for k, v := range packageDictionary {
+		for _, k := range keys {
+			v, _ := packageDictionary.Get(k)
 			// Do we already have a package of this name defined?
 			_, found := s.Get(k)
 			if found {
@@ -338,7 +343,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 				_ = s.SetConstant(k, v)
 			} else {
 				// Otherwise, copy the entire map
-				m[k] = v
+				m.Set(k, v)
 			}
 		}
 		// Make sure the package is marked as readonly so the user can't modify
@@ -451,9 +456,11 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 	defer c.packages.Mutex.Unlock()
 
 	for n, m := range c.packages.Package {
-		packData := datatypes.EgoPackage{}
-		for k, v := range m {
-			packData[k] = v
+		packData := datatypes.NewPackage()
+		keys := m.Keys()
+		for _, k := range keys {
+			v, _ := m.Get(k)
+			packData.Set(k, v)
 		}
 
 		packages.Package[n] = packData

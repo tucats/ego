@@ -144,7 +144,9 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		dropList := []string{}
 
 		// Organize the new item by removing things that are handled via the parent.
-		for k, vv := range v {
+		keys := v.Keys()
+		for _, k := range keys {
+			vv, _ := v.Get(k)
 			// IF it's an internal function, we don't want to copy it; it can be found via the
 			// __parent link to the type
 			vx := reflect.ValueOf(vv)
@@ -162,7 +164,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 		for _, name := range dropList {
-			delete(v, name)
+			v.Delete(name)
 		}
 
 	default:
@@ -241,9 +243,11 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	case datatypes.EgoPackage:
 		r := datatypes.EgoPackage{}
+		keys := v.Keys()
 
-		for k, d := range v {
-			r[k] = DeepCopy(d, depth-1)
+		for _, k := range keys {
+			d, _ := v.Get(k)
+			r.Set(k, DeepCopy(d, depth-1))
 		}
 
 		return r

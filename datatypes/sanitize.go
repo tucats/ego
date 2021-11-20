@@ -35,7 +35,8 @@ func Sanitize(v interface{}) interface{} {
 	case EgoPackage:
 		result := map[string]interface{}{}
 
-		for key, value := range v {
+		for _, key := range v.Keys() {
+			value, _ := v.Get(key)
 			if !strings.HasPrefix(key, MetadataPrefix) {
 				result[key] = Sanitize(value)
 			}

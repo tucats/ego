@@ -30,24 +30,24 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	})
 	*/
 
-	_ = s.SetAlways("rest", datatypes.EgoPackage{
+	_ = s.SetAlways("rest", datatypes.NewPackageFromMap(map[string]interface{}{
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,
 		datatypes.TypeMDKey:     datatypes.Package("rest"),
 		datatypes.ReadonlyMDKey: true,
-	})
+	}))
 
-	_ = s.SetAlways("db", datatypes.EgoPackage{
+	_ = s.SetAlways("db", datatypes.NewPackageFromMap(map[string]interface{}{
 		"New":                   DBNew,
 		datatypes.TypeMDKey:     datatypes.Package("db"),
 		datatypes.ReadonlyMDKey: true,
-	})
+	}))
 
-	_ = s.SetAlways("tables", datatypes.EgoPackage{
+	_ = s.SetAlways("tables", datatypes.NewPackageFromMap(map[string]interface{}{
 		"New":                   TableNew,
 		datatypes.TypeMDKey:     datatypes.Package("tables"),
 		datatypes.ReadonlyMDKey: true,
-	})
+	}))
 
 	// Add the sort.Slice function, which must live outside
 	// the function package to avoid import cycles.

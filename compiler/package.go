@@ -4,12 +4,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -118,7 +118,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				// if it was already processed once.
 				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
 				c.packages.Mutex.Lock()
-				c.packages.Package[packageName] = nil
+				c.packages.Package[packageName] = datatypes.NewPackage()
 				c.packages.Mutex.Unlock()
 			}
 
@@ -189,12 +189,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				if ui.LoggerIsActive(ui.CompilerLogger) {
 					ui.Debug(ui.CompilerLogger, "+++ updating package in global dictionary: %s", fileName)
 
-					keys := []string{}
-					for k := range pkgData {
-						keys = append(keys, k)
-					}
-
-					sort.Strings(keys)
+					keys := pkgData.Keys()
 
 					keyString := ""
 					for idx, k := range keys {

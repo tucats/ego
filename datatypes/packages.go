@@ -1,9 +1,118 @@
 package datatypes
 
-// @tomcole this should be made a first-class object
-// with name, type, and values map.
-type EgoPackage map[string]interface{}
+import (
+	"sort"
+	"sync"
+)
 
+// This describes the items in a package. Each item could be an arbitrary object
+// (function, data type, etc).
+type EgoPackage struct {
+	items map[string]interface{}
+}
+
+// This mutex protects ALL packages. This serializes package operations across all threads. This
+// should only materially affect parallel compilation operations, which will become slightly more
+// synchronous.
+
+var packageLock sync.RWMutex
+
+// NewPackage creates a new, empty package definition.
+func NewPackage() EgoPackage {
+	pkg := EgoPackage{
+		items: map[string]interface{}{},
+	}
+
+	return pkg
+}
+
+// NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
+// is a nil value, then an empty package definition is created.
+func NewPackageFromMap(items map[string]interface{}) EgoPackage {
+	if items == nil {
+		items = map[string]interface{}{}
+	}
+
+	pkg := EgoPackage{
+		items: items,
+	}
+
+	return pkg
+}
+
+// IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
+// internal hash map, or an empty hash map,
+func (p *EgoPackage) IsEmpty() bool {
+	if p == nil {
+		return true
+	}
+
+	if p.items == nil {
+		return true
+	}
+
+	return len(p.items) > 0
+}
+
+// String formats the package as a string value, to support "%v" operations.
 func (p *EgoPackage) String() string {
 	return Format(p)
+}
+
+// Delete removes a package from the list. It is not an error if the package does not
+// have a hash map, or the value is not in the hash map.
+func (p *EgoPackage) Delete(name string) {
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
+	if p.items != nil {
+		delete(p.items, name)
+	}
+}
+
+// Keys provides a list of keys for the package as an array of strings. The array will
+// be empty if the package pointer is null, the hash map is uninitialized, or the hash
+// map is empty.
+func (p *EgoPackage) Keys() []string {
+	packageLock.RLock()
+	defer packageLock.RUnlock()
+
+	keys := make([]string, 0)
+	if p != nil && p.items != nil {
+		for k := range p.items {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+	}
+
+	return keys
+}
+
+// Set sets a given value in the package. If the hash map was not yet initialized,
+// it is created now before setting the value.
+func (p *EgoPackage) Set(key string, value interface{}) {
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
+	if p.items == nil {
+		p.items = map[string]interface{}{}
+	}
+
+	p.items[key] = value
+}
+
+// Get retrieves a value from the package structure by name. It returns the value and
+// a boolean value indicating if it was found. The flag is true if the package has been
+// initialized, the hash map is initialized, and the named value is found in the hashmap.
+func (p *EgoPackage) Get(key string) (interface{}, bool) {
+	packageLock.RLock()
+	defer packageLock.RUnlock()
+
+	if p.items == nil {
+		return nil, false
+	}
+
+	value, found := p.items[key]
+	return value, found
 }

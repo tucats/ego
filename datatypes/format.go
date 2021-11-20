@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
-	"sort"
 	"strings"
 	"sync"
 
@@ -88,21 +87,11 @@ func Format(element interface{}) string {
 	case EgoPackage:
 		var b strings.Builder
 
-		// Make a list of the keys, ignoring hidden members whose name
-		// starts with datatypes.MetadataPrefix
-		keys := make([]string, 0)
-
-		for k := range v {
-			if len(k) < 2 || k[0:2] != MetadataPrefix {
-				keys = append(keys, k)
-			}
-		}
-
-		sort.Strings(keys)
+		keys := v.Keys()
 		b.WriteString("Pkg<")
 
 		for n, k := range keys {
-			i := v[k]
+			i, _ := v.Get(k)
 
 			if n > 0 {
 				b.WriteString(",")

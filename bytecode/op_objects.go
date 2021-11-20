@@ -54,7 +54,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	case datatypes.EgoPackage:
 		tt := datatypes.TypeOf(mv)
 
-		v, found = findMember(mv, name)
+		v, found = mv.Get(name)
 		if !found {
 			// Okay, could it be a function based on the type of this object?
 			fv := tt.Function(name)
@@ -86,14 +86,6 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.stackPush(v)
 
 	return nil
-}
-
-func findMember(m datatypes.EgoPackage, name string) (interface{}, bool) {
-	if v, ok := m[name]; ok {
-		return v, true
-	}
-
-	return nil, false
 }
 
 func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {

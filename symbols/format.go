@@ -67,8 +67,10 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			}
 
 			hasBuiltins := false
+			keys := actual.Keys()
 
-			for _, k2 := range actual {
+			for _, k := range keys {
+				k2, _ := actual.Get(k)
 				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError)); ok {
 					hasBuiltins = true
 					omitType = true
@@ -179,8 +181,10 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			}
 
 			hasBuiltins := false
+			keys := actual.Keys()
 
-			for _, k2 := range actual {
+			for _, k := range keys {
+				k2, _ := actual.Get(k)
 				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError)); ok {
 					hasBuiltins = true
 				}

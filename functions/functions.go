@@ -176,12 +176,13 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 
 			// Is this a value bound to the package, or a function?
 			if d.V != nil {
-				pkg[n] = d.V
+				pkg.Set(n, d.V)
 
 				_ = symbols.SetAlways(d.Pkg, pkg)
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
-				pkg[n] = d.F
+				pkg.Set(n, d.F)
+
 				datatypes.SetMetadata(pkg, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
 				datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
 				_ = symbols.SetAlways(d.Pkg, pkg)
@@ -264,7 +265,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
 		if p, ok := pkg.(datatypes.EgoPackage); ok {
-			p[fd.Name] = fd.F
+			p.Set(fd.Name, fd.F)
 		}
 	}
 

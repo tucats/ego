@@ -33,13 +33,13 @@ func SetType(m EgoPackage, t Type) {
 // For a given structure, set a key/value in the metadata. The
 // metadata member and it's map are created if necessary.
 func SetMetadata(m EgoPackage, key string, v interface{}) {
-	m[key] = v
+	m.Set(key, v)
 }
 
 // For a given struct, fetch a metadata value by key. The boolean flag
 // indicates if the value was found or has to be created.
 func GetMetadata(value EgoPackage, key string) (interface{}, bool) {
-	v, ok := value[key]
+	v, ok := value.Get(key)
 
 	return v, ok
 }

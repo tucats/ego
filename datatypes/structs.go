@@ -68,7 +68,7 @@ func NewStruct(t Type) *EgoStruct {
 func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	t := Structure()
 
-	if value, ok := GetMetadata(m, TypeMDKey); ok {
+	if value, ok := m[TypeMDKey]; ok {
 		t = GetType(value)
 	} else {
 		for k, v := range m {
@@ -77,12 +77,12 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	}
 
 	static := (len(m) > 0)
-	if value, ok := GetMetadata(m, StaticMDKey); ok {
+	if value, ok := m[StaticMDKey]; ok {
 		static = GetBool(value)
 	}
 
 	readonly := false
-	if value, ok := GetMetadata(m, ReadonlyMDKey); ok {
+	if value, ok := m[ReadonlyMDKey]; ok {
 		readonly = GetBool(value)
 	}
 
