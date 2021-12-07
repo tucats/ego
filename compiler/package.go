@@ -112,13 +112,13 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			builtinsAdded := c.AddBuiltins(packageName)
 			if builtinsAdded {
-				ui.Debug(ui.CompilerLogger, "+++ Adding builtins for package "+packageName)
+				ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+packageName)
 			} else {
 				// The nil in the packages list just prevents this from being read again
 				// if it was already processed once.
 				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
 				c.packages.Mutex.Lock()
-				c.packages.Package[packageName] = datatypes.NewPackage()
+				c.packages.Package[packageName] = datatypes.NewPackage(packageName)
 				c.packages.Mutex.Unlock()
 			}
 
@@ -179,13 +179,18 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			c.packages.Mutex.Lock()
 			pkgData, ok := c.packages.Package[fileName]
-			//fmt.Println(pkgData)
 			c.packages.Mutex.Unlock()
 
 			if !ok {
 				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
 			} else {
 				// Rewrite the package now that we've added stuff to it.
+
+				oldPackageX, found := symbols.RootSymbolTable.Get(fileName)
+				if found {
+					pkgData.Merge(oldPackageX.(datatypes.EgoPackage))
+				}
+
 				if ui.LoggerIsActive(ui.CompilerLogger) {
 					ui.Debug(ui.CompilerLogger, "+++ updating package in global dictionary: %s", fileName)
 
@@ -203,7 +208,10 @@ func (c *Compiler) compileImport() *errors.EgoError {
 					ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
 				}
 
-				_ = symbols.RootSymbolTable.SetGlobal(fileName, pkgData)
+				err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
+				if !errors.Nil(err2) {
+					return err2
+				}
 			}
 		}
 

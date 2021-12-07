@@ -186,9 +186,18 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		compilerName = c.s.Name
 	}
 
-	ui.Debug(ui.CompilerLogger, "Adding builtin packages to %s", compilerName)
+	ui.Debug(ui.CompilerLogger, "### Adding builtin packages to %s compilation unit", compilerName)
 
-	for name, f := range functions.FunctionDictionary {
+	functionNames := make([]string, 0)
+	for k := range functions.FunctionDictionary {
+		functionNames = append(functionNames, k)
+	}
+
+	sort.Strings(functionNames)
+
+	for _, name := range functionNames {
+		f := functions.FunctionDictionary[name]
+
 		if dot := strings.Index(name, "."); dot >= 0 {
 			f.Pkg = name[:dot]
 			f.Name = name[dot+1:]
@@ -198,12 +207,20 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		}
 
 		if f.Pkg == pkgname {
+			if ui.LoggerIsActive(ui.CompilerLogger) {
+				debugName := name
+				if f.Pkg != "" {
+					debugName = f.Pkg + "." + name
+				}
+				ui.Debug(ui.CompilerLogger, "... processing builtin %s", debugName)
+			}
+
 			if pkgname == "" && c.s != nil {
 				_ = c.s.SetAlways(name, f.F)
 			} else {
+				added = true
 				if f.F != nil {
 					_ = c.addPackageFunction(pkgname, name, f.F)
-					added = true
 				} else {
 					_ = c.addPackageValue(pkgname, name, f.V)
 				}
@@ -211,7 +228,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		}
 	}
 
-	// If we added one ore more functions, update the package definition
+	// If we added one or more functions, update the package definition
 	// in the root symbol table for this builtin package.
 	if added {
 		_ = c.RootTable.SetAlways(pkgname, c.packages.Package[pkgname])
@@ -263,8 +280,8 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	defer c.packages.Mutex.Unlock()
 
 	fd, found := c.packages.Package[pkgname]
-	if !found {
-		fd = datatypes.EgoPackage{}
+	if !found || fd.IsEmpty() {
+		fd = datatypes.NewPackage(pkgname)
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
@@ -276,6 +293,15 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	fd.Set(name, function)
 
 	c.packages.Package[pkgname] = fd
+
+	// Keep the global symbol version in sync also. If it exists already, get its values
+	// and merge into this new definition, then write out the value.
+	// @tomcole This MAY be able to completly supplan the compiler package structures at
+	// some point in the future.
+	if oldPackage, found := symbols.RootSymbolTable.Get(pkgname); found {
+		fd.Merge(oldPackage.(datatypes.EgoPackage))
+	}
+	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
 
 	return nil
 }
@@ -289,7 +315,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 
 	fd, found := c.packages.Package[pkgname]
 	if !found || fd.IsEmpty() {
-		fd = datatypes.NewPackage()
+		fd = datatypes.NewPackage(pkgname)
 
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
@@ -327,7 +353,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 			continue
 		}
 
-		m := datatypes.NewPackage()
+		m := datatypes.NewPackage(packageName)
 		keys := packageDictionary.Keys()
 
 		for _, k := range keys {
@@ -456,7 +482,7 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 	defer c.packages.Mutex.Unlock()
 
 	for n, m := range c.packages.Package {
-		packData := datatypes.NewPackage()
+		packData := datatypes.NewPackage(n)
 		keys := m.Keys()
 		for _, k := range keys {
 			v, _ := m.Get(k)

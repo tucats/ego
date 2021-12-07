@@ -1,6 +1,10 @@
 @test "cipher: token functions"
 
-import cipher
+import (
+    cipher
+    time
+)
+
 
 // Simple test of storing user data
 {

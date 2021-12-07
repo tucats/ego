@@ -14,3 +14,4 @@ server.csr
 server.key.org
 go.sum
 builds
+debug.log

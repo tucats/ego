@@ -1,13 +1,17 @@
 package datatypes
 
 import (
+	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/tucats/ego/app-cli/ui"
 )
 
 // This describes the items in a package. Each item could be an arbitrary object
 // (function, data type, etc).
 type EgoPackage struct {
+	name  string
 	items map[string]interface{}
 }
 
@@ -18,8 +22,9 @@ type EgoPackage struct {
 var packageLock sync.RWMutex
 
 // NewPackage creates a new, empty package definition.
-func NewPackage() EgoPackage {
+func NewPackage(name string) EgoPackage {
 	pkg := EgoPackage{
+		name:  name,
 		items: map[string]interface{}{},
 	}
 
@@ -28,12 +33,13 @@ func NewPackage() EgoPackage {
 
 // NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
 // is a nil value, then an empty package definition is created.
-func NewPackageFromMap(items map[string]interface{}) EgoPackage {
+func NewPackageFromMap(name string, items map[string]interface{}) EgoPackage {
 	if items == nil {
 		items = map[string]interface{}{}
 	}
 
 	pkg := EgoPackage{
+		name:  name,
 		items: items,
 	}
 
@@ -99,6 +105,17 @@ func (p *EgoPackage) Set(key string, value interface{}) {
 		p.items = map[string]interface{}{}
 	}
 
+	// If we're doing symbol tracing, indicate what we're doing (set vs. update) for the
+	// given package, key, and value.
+	if ui.LoggerIsActive(ui.SymbolLogger) {
+		v := Format(value)
+		action := "set"
+		if _, ok := p.items[key]; ok {
+			action = "update"
+		}
+		ui.Debug(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %v", p.name, action, key, v))
+	}
+
 	p.items[key] = value
 }
 
@@ -115,4 +132,18 @@ func (p *EgoPackage) Get(key string) (interface{}, bool) {
 
 	value, found := p.items[key]
 	return value, found
+}
+
+// Merge adds any entries from a package to the current package that do not already
+// exist.
+func (p *EgoPackage) Merge(source EgoPackage) {
+
+	keys := source.Keys()
+	for _, key := range keys {
+		if _, found := p.Get(key); !found {
+			value, _ := source.Get(key)
+			p.Set(key, value)
+			ui.Debug(ui.CompilerLogger, "... merging key %s from existing package", key)
+		}
+	}
 }

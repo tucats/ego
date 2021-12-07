@@ -30,20 +30,20 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	})
 	*/
 
-	_ = s.SetAlways("rest", datatypes.NewPackageFromMap(map[string]interface{}{
+	_ = s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,
 		datatypes.TypeMDKey:     datatypes.Package("rest"),
 		datatypes.ReadonlyMDKey: true,
 	}))
 
-	_ = s.SetAlways("db", datatypes.NewPackageFromMap(map[string]interface{}{
+	_ = s.SetAlways("db", datatypes.NewPackageFromMap("db", map[string]interface{}{
 		"New":                   DBNew,
 		datatypes.TypeMDKey:     datatypes.Package("db"),
 		datatypes.ReadonlyMDKey: true,
 	}))
 
-	_ = s.SetAlways("tables", datatypes.NewPackageFromMap(map[string]interface{}{
+	_ = s.SetAlways("tables", datatypes.NewPackageFromMap("tables", map[string]interface{}{
 		"New":                   TableNew,
 		datatypes.TypeMDKey:     datatypes.Package("tables"),
 		datatypes.ReadonlyMDKey: true,

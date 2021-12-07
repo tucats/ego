@@ -86,8 +86,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	pkg, _ := pkgValue.(datatypes.EgoPackage)
 	if pkg.IsEmpty() {
-		pkg = datatypes.NewPackage()
-
+		pkg = datatypes.NewPackage(pkgdef.name)
 	}
 
 	first := true
@@ -95,7 +94,6 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	for k := range c.symbols.Symbols {
 		if util.HasCapitalizedName(k) {
 			v, _ := c.symbols.Get(k)
-			pkg.Set(k, v)
 
 			if first {
 				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
@@ -104,14 +102,13 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			ui.Debug(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
+			pkg.Set(k, v)
 		}
 	}
 
 	// Copy all the exported constants
 	for k, v := range c.symbols.Constants {
 		if util.HasCapitalizedName(k) {
-			pkg.Set(k, v)
-
 			if first {
 				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
 
@@ -119,6 +116,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			ui.Debug(ui.ByteCodeLogger, "(%d)   constant %s", c.threadID, k)
+			pkg.Set(k, v)
 		}
 	}
 

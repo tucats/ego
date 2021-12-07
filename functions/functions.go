@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -151,7 +152,15 @@ var FunctionDictionary = map[string]FunctionDefinition{
 func AddBuiltins(symbols *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbols.Name)
 
-	for n, d := range FunctionDictionary {
+	functionNames := make([]string, 0)
+	for k := range FunctionDictionary {
+		functionNames = append(functionNames, k)
+	}
+
+	sort.Strings(functionNames)
+
+	for _, n := range functionNames {
+		d := FunctionDictionary[n]
 		if dot := strings.Index(n, "."); dot >= 0 {
 			d.Pkg = n[:dot]
 			n = n[dot+1:]
@@ -164,9 +173,9 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			// is just a struct containing where each member is a function
 			// definition.
 
-			pkg := datatypes.EgoPackage{}
+			pkg := datatypes.NewPackage(d.Pkg)
 
-			if p, found := symbols.Get(d.Pkg); found {
+			if p, found := symbols.Root().Get(d.Pkg); found {
 				if pp, ok := p.(datatypes.EgoPackage); ok {
 					pkg = pp
 				}
@@ -178,14 +187,14 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			if d.V != nil {
 				pkg.Set(n, d.V)
 
-				_ = symbols.SetAlways(d.Pkg, pkg)
+				_ = symbols.Root().SetAlways(d.Pkg, pkg)
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				pkg.Set(n, d.F)
 
 				datatypes.SetMetadata(pkg, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
 				datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
-				_ = symbols.SetAlways(d.Pkg, pkg)
+				_ = symbols.Root().SetAlways(d.Pkg, pkg)
 
 				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
