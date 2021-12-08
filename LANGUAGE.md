@@ -2851,7 +2851,7 @@ The table is then printed to the default output and the memory structures are re
 The `time` package assist with functions that access or calculate time/date values. This
 is similar to the "time" package in Go, but has significant differences and is not as
 complete as the _Go_ version.  The `time.Now()` and `time.Parse()` functions each create
-a new `time.time` variable type, which has a set of functions that can be performed
+a new `time.Time` variable type, which has a set of functions that can be performed
 on it.
 
 | Function     | Example                    | Description                                                     |
@@ -2907,7 +2907,7 @@ the call is made with only one return value specified, then the error is discard
 
 ### time.Sleep(duration)
 
-The `Duration()` function of thee `time` package will sleep for the specified amount of time. The duration
+The `Sleep()` function of thee `time` package will sleep for the specified amount of time. The duration
 is expressed as a string. For example,
 
     time.Sleep("10s")
@@ -2919,7 +2919,7 @@ executing for the given duration.
 ## util <a name="util"></a>
 
 The `util` package contains miscellaneous utility functions that may be convenient
-for developers write writing _Ego_ programs.
+for developers writing _Ego_ programs.
 
 ### util.Memory()
 
