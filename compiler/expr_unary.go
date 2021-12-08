@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 )
 
@@ -51,10 +50,10 @@ func (c *Compiler) unary() *errors.EgoError {
 				c.b.Opcodes()[addr] = *i
 
 			default:
-				c.b.Emit(bc.Negate, false)
+				c.b.Emit(bytecode.Negate, false)
 			}
 		} else {
-			c.b.Emit(bc.Negate, false)
+			c.b.Emit(bytecode.Negate, false)
 		}
 
 	case "!":
@@ -65,7 +64,7 @@ func (c *Compiler) unary() *errors.EgoError {
 			return err
 		}
 
-		c.b.Emit(bc.Negate, true)
+		c.b.Emit(bytecode.Negate, true)
 
 	default:
 		return c.functionOrReference()

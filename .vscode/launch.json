@@ -6,6 +6,7 @@
     "configurations": [
 
 
+
     {
         "name": "profile show token",
         "type": "go",
@@ -36,7 +37,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["run", "test.ego"]
+            "args": ["-d","compiler,symbols,trace", "run", "test.ego"]
         },
         {
             "name": "Debug test.ego",

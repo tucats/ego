@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -29,7 +28,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			colon := c.t.Peek(3)
 
 			if tokenizer.IsSymbol(name) && colon == ":" {
-				c.b.Emit(bc.Push, datatypes.TypeMDKey)
+				c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 				err := c.expressionAtom()
 				if !errors.Nil(err) {
@@ -42,8 +41,6 @@ func (c *Compiler) reference() *errors.EgoError {
 				i[len(i)-1] = ix
 			} else {
 				parsing = false
-
-				break
 			}
 		// Function invocation
 		case "(":
@@ -68,10 +65,10 @@ func (c *Compiler) reference() *errors.EgoError {
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
 			if c.t.Peek(1) == "(" {
-				c.b.Emit(bc.SetThis)
+				c.b.Emit(bytecode.SetThis)
 			}
 
-			c.b.Emit(bc.Member, lastName)
+			c.b.Emit(bytecode.Member, lastName)
 
 			if c.t.IsNext("{}") {
 				c.b.Emit(bytecode.Load, "new")
@@ -112,7 +109,7 @@ func (c *Compiler) reference() *errors.EgoError {
 					return err
 				}
 
-				c.b.Emit(bc.LoadSlice)
+				c.b.Emit(bytecode.LoadSlice)
 
 				if c.t.Next() != "]" {
 					return c.newError(errors.ErrMissingBracket)
@@ -123,7 +120,7 @@ func (c *Compiler) reference() *errors.EgoError {
 					return c.newError(errors.ErrMissingBracket)
 				}
 
-				c.b.Emit(bc.LoadIndex)
+				c.b.Emit(bytecode.LoadIndex)
 			}
 
 		// Nothing else, term is complete

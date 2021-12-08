@@ -99,10 +99,12 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			packageName = strings.ToLower(packageName)
 
 			// If this is an import of a package already processed, no work to do.
-			if _, found := c.s.Get(packageName); found {
-				ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
+			if pkg, found := c.s.Root().Get(packageName); found {
+				if p, ok := pkg.(datatypes.EgoPackage); ok && p.Imported {
+					ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
 
-				continue
+					continue
+				}
 			}
 
 			// If this is an import of the package we're currently importing, no work to do.
@@ -185,6 +187,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
 			} else {
 				// Rewrite the package now that we've added stuff to it.
+				pkgData.Imported = true
 
 				oldPackageX, found := symbols.RootSymbolTable.Get(fileName)
 				if found {

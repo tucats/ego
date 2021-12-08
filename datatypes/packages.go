@@ -11,8 +11,9 @@ import (
 // This describes the items in a package. Each item could be an arbitrary object
 // (function, data type, etc).
 type EgoPackage struct {
-	name  string
-	items map[string]interface{}
+	name     string
+	Imported bool
+	items    map[string]interface{}
 }
 
 // This mutex protects ALL packages. This serializes package operations across all threads. This

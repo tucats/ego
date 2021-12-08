@@ -253,7 +253,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				panic(fmt.Sprintf("Unable to auto-import packages: " + err.Error()))
 			}
 
-			comp.AddPackageToSymbols(symbolTable)
+			comp.AddPackageToSymbols(&symbols.RootSymbolTable)
 			comp.SetInteractive(interactive)
 		}
 

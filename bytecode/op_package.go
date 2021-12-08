@@ -31,7 +31,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Create an initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
-	pkg := datatypes.EgoPackage{}
+	pkg := datatypes.NewPackage(name)
 
 	if v, ok := c.symbols.Root().Get(name); ok {
 		switch actual := v.(type) {
@@ -53,7 +53,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Define the attribute of the struct as a package.
 	datatypes.SetType(pkg, datatypes.Package(name))
 
-	return c.symbols.SetAlways(name, pkg)
+	return c.symbols.Root().SetAlways(name, pkg)
 }
 
 // Instruction to indicate we are done with any definitions for a
@@ -74,8 +74,9 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	if pkgdef.name != datatypes.GetString(i) {
 		return c.newError(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
 	}
+
 	// Retrieve the package variable
-	pkgValue, found := c.symbols.Get(pkgdef.name)
+	pkgValue, found := c.symbols.Root().Get(pkgdef.name)
 	if !found {
 		return c.newError(errors.ErrMissingPackageStatement)
 	}

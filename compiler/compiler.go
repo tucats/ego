@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -213,12 +214,16 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 					debugName = f.Pkg + "." + name
 				}
 				ui.Debug(ui.CompilerLogger, "... processing builtin %s", debugName)
+				if debugName == "time.reference" {
+					fmt.Println("Debug stop here")
+				}
 			}
+
+			added = true
 
 			if pkgname == "" && c.s != nil {
 				_ = c.s.SetAlways(name, f.F)
 			} else {
-				added = true
 				if f.F != nil {
 					_ = c.addPackageFunction(pkgname, name, f.F)
 				} else {
@@ -231,7 +236,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	// If we added one or more functions, update the package definition
 	// in the root symbol table for this builtin package.
 	if added {
-		_ = c.RootTable.SetAlways(pkgname, c.packages.Package[pkgname])
+		_ = c.RootTable.Root().SetAlways(pkgname, c.packages.Package[pkgname])
 	}
 
 	return added
@@ -281,7 +286,14 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 
 	fd, found := c.packages.Package[pkgname]
 	if !found || fd.IsEmpty() {
-		fd = datatypes.NewPackage(pkgname)
+		fx, found := c.RootTable.Get(pkgname)
+		if !found {
+			fd = datatypes.NewPackage(pkgname)
+		} else {
+			fd = fx.(datatypes.EgoPackage)
+			c.packages.Package[pkgname] = fd
+		}
+
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
 	}
@@ -302,7 +314,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 		fd.Merge(oldPackage.(datatypes.EgoPackage))
 	}
 	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
-
+	ui.Debug(ui.CompilerLogger, "... added function %s", name)
 	return nil
 }
 
@@ -315,7 +327,13 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 
 	fd, found := c.packages.Package[pkgname]
 	if !found || fd.IsEmpty() {
-		fd = datatypes.NewPackage(pkgname)
+		fx, found := c.RootTable.Get(pkgname)
+		if !found {
+			fd = datatypes.NewPackage(pkgname)
+		} else {
+			fd = fx.(datatypes.EgoPackage)
+			c.packages.Package[pkgname] = fd
+		}
 
 		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
 		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)

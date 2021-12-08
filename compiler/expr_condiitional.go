@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 )
 
@@ -24,7 +23,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 
 	m1 := c.b.Mark()
 
-	c.b.Emit(bc.BranchFalse, 0)
+	c.b.Emit(bytecode.BranchFalse, 0)
 
 	// Parse both parts of the alternate values
 	c.t.Advance(1)
@@ -40,7 +39,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 
 	m2 := c.b.Mark()
 
-	c.b.Emit(bc.Branch, 0)
+	c.b.Emit(bytecode.Branch, 0)
 	_ = c.b.SetAddressHere(m1)
 	c.t.Advance(1)
 
