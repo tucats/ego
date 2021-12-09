@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -214,9 +213,6 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 					debugName = f.Pkg + "." + name
 				}
 				ui.Debug(ui.CompilerLogger, "... processing builtin %s", debugName)
-				if debugName == "time.reference" {
-					fmt.Println("Debug stop here")
-				}
 			}
 
 			added = true

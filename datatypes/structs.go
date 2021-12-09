@@ -315,6 +315,20 @@ func (s EgoStruct) Reflect() *EgoStruct {
 		m["basetype"] = s.typeDef.String()
 	}
 
+	// If there are methods associated with this type, add them to the output structure.
+	methods := s.typeDef.FunctionNameList()
+	if methods > "" {
+		nameList := strings.Split(methods, ",")
+		names := make([]interface{}, 0)
+		for _, name := range nameList {
+			if name > "" {
+				names = append(names, strings.TrimSuffix(name, "()"))
+			}
+		}
+
+		m["methods"] = NewArrayFromArray(StringType, names)
+	}
+
 	m["istype"] = false
 	m["native"] = true
 	m["members"] = s.FieldNamesArray()
