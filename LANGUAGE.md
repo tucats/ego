@@ -147,8 +147,7 @@ listed here.
 | `string`   | "Andrew" | any                   | A string value, consisting of a varying number of Unicode characters |
 | `chan`     |  chan    | any                   | A channel, used to communicate values between threads |
 
-_Note that the numeric range values shown are approximate._ Also,
-_Ego_ supports a single integer type of `int` which is a 64-bit integer.
+_Note that the numeric range values shown are approximate._ 
 
 &nbsp;
 
