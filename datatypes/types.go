@@ -599,6 +599,11 @@ func (t Type) Reflect() *EgoStruct {
 		r["type"] = "type"
 	}
 
+	methodList := t.FunctionNameList()
+	if methodList > "" {
+		r["methods"] = methodList
+	}
+
 	if t.name != "" {
 		r["name"] = t.name
 	}
