@@ -205,7 +205,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		createTable(user, tableName, sessionID, w, r)
 
 	case http.MethodDelete:
-		deleteTable(user, tableName, sessionID, w, r)
+		dbtables.DeleteTable(user, tableName, sessionID, w, r)
 
 	case http.MethodPatch:
 		alterTable(user, tableName, sessionID, w, r)
@@ -264,16 +264,6 @@ func updateRows(user string, tableName string, sessionID int32, w http.ResponseW
 func createTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	msg := fmt.Sprintf("Creating new table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
-}
-
-// @tomcole to be implemented
-func deleteTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Deleting table %s for user %s", tableName, user)
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
