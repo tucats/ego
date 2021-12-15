@@ -199,7 +199,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		readTable(user, tableName, sessionID, w, r)
+		dbtables.ReadTable(user, tableName, sessionID, w, r)
 
 	case http.MethodPut:
 		createTable(user, tableName, sessionID, w, r)
@@ -264,16 +264,6 @@ func updateRows(user string, tableName string, sessionID int32, w http.ResponseW
 func createTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	msg := fmt.Sprintf("Creating new table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
-}
-
-// @tomcole to be implemented
-func readTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Reading metadata from table %s for user %s", tableName, user)
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
