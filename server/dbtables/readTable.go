@@ -58,8 +58,23 @@ func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWr
 func queryParameters(source string, args map[string]string) string {
 	result := source
 	for k, v := range args {
+		v = sqlEscape(v)
 		result = strings.ReplaceAll(result, "{{"+k+"}}", v)
 	}
 
 	return result
+}
+
+// @tomcole probably need to dump this entirely and work on variadic substitution arguments in query!
+func sqlEscape(source string) string {
+	var result strings.Builder
+
+	for _, ch := range source {
+		if ch == '\'' || ch == '"' || ch == '.' || ch == ',' || ch == ';' || ch == '(' || ch == ')' {
+			return "INVALID-NAME"
+		}
+		result.WriteRune(ch)
+	}
+
+	return result.String()
 }

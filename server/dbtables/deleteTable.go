@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// @tomcole to be implemented
+//DeleteTable will delete a database table from the user's schema
 func DeleteTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	db, err := OpenDB(sessionID, user, "")
