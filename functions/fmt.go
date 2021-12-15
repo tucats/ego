@@ -2,7 +2,6 @@ package functions
 
 import (
 	"fmt"
-	_fmt "fmt"
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
@@ -176,7 +175,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%v":
 			var v interface{}
 
-			_, e := _fmt.Sscanf(d[idx], "%v", &v)
+			_, e := fmt.Sscanf(d[idx], "%v", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -192,7 +191,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%t":
 			v := false
 
-			_, e := _fmt.Sscanf(d[idx], "%t", &v)
+			_, e := fmt.Sscanf(d[idx], "%t", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -205,7 +204,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%f":
 			v := 0.0
 
-			_, e := _fmt.Sscanf(d[idx], "%f", &v)
+			_, e := fmt.Sscanf(d[idx], "%f", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -218,7 +217,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%d":
 			v := 0
 
-			_, e := _fmt.Sscanf(d[idx], "%d", &v)
+			_, e := fmt.Sscanf(d[idx], "%d", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -231,8 +230,6 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		default:
 			if token != d[idx] {
 				parsing = false
-
-				break
 			}
 		}
 	}

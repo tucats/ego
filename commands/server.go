@@ -87,6 +87,9 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	http.HandleFunc("/admin/heartbeat/", HeartbeatHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
+	http.HandleFunc("/tables/", server.TablesHandler)
+	ui.Debug(ui.ServerLogger, "Enabling /tables endpoints")
+
 	// Set up tracing for the server, and enable the logger if
 	// needed.
 	if c.WasFound("trace") {

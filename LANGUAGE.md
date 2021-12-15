@@ -293,6 +293,14 @@ will be stoerd in `emp`. If there was no value in the map for the given key,
 slightly different than traditional Go, where the result would be the zero
 value for the type, i.e. an empty string in this case).
 
+You can delete a member from a map using the delete() function, such as:
+
+     delete(staff, 103)
+
+This is delete an entry from the map `staff` with a key value of `103`. If
+the member does not exist, no error is thrown.
+
+
 ## Pointers<a name="pointers"></a>
 
 The _Ego_ language adopts the Go standards for pointers. Pointers exist

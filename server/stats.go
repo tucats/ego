@@ -14,6 +14,7 @@ const (
 	CodeRequestCounter
 	HeartbeatRequestCounter
 	AssetRequestCounter
+	TableRequestCounter
 
 	logRequestCounterDuration = 60
 )
@@ -23,9 +24,13 @@ var serviceRequestCount int32
 var codeRequestCount int32
 var heartbeatRequestCount int32
 var assetRequestCount int32
+var tableRequestCount int32
 
 func CountRequest(kind int) {
 	switch kind {
+	case TableRequestCounter:
+		atomic.AddInt32(&tableRequestCount, 1)
+
 	case AssetRequestCounter:
 		atomic.AddInt32(&assetRequestCount, 1)
 
@@ -59,13 +64,15 @@ func LogRequestCounts() {
 		code := atomic.SwapInt32(&codeRequestCount, 0)
 		heartbeats := atomic.SwapInt32(&heartbeatRequestCount, 0)
 		assets := atomic.SwapInt32(&assetRequestCount, 0)
+		tables := atomic.SwapInt32(&tableRequestCount, 0)
 
 		// If no activity in the last minute, no work to do.
 		if admin+service+code+heartbeats+assets == 0 {
 			continue
 		}
 
-		ui.Debug(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)", duration, admin, service, assets, code, heartbeats)
+		ui.Debug(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
+			duration, admin, service, assets, code, heartbeats, tables)
 	}
 }
 
