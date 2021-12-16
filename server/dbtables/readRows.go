@@ -44,14 +44,15 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 					rowCount++
 				}
 			}
+
+			b, _ := json.MarshalIndent(result, "", "  ")
+			w.Write(b)
+			ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+
+			return
 		}
-
-		b, _ := json.MarshalIndent(result, "", "  ")
-		w.Write(b)
-		ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
-
-		return
 	}
+
 	ui.Debug(ui.ServerLogger, "[%d] Error reading table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(err.Error()))
