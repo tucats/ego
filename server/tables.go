@@ -175,7 +175,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if rows {
 		switch r.Method {
 		case http.MethodGet:
-			readRows(user, tableName, sessionID, w, r)
+			dbtables.ReadRows(user, tableName, sessionID, w, r)
 
 		case http.MethodPut:
 			appendRows(user, tableName, sessionID, w, r)
@@ -218,16 +218,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 	}
 
-}
-
-// @tomcole to be implemented
-func readRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Reading rows from table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
 }
 
 // @tomcole to be implemented
