@@ -9,10 +9,3 @@ const (
 	deleteVerb = "DELETE"
 	updateVerb = "UPDATE"
 )
-
-type DBColumn struct {
-	Name     string
-	Type     string
-	Size     int
-	Nullable bool
-}
