@@ -2,10 +2,14 @@ package dbtables
 
 import (
 	"database/sql"
+	"encoding/json"
+	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
@@ -28,4 +32,17 @@ func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
 	}
 
 	return db, err
+}
+
+func errorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
+	response := defs.RestResponse{
+		Message: msg,
+		Status:  status,
+	}
+
+	b, _ := json.MarshalIndent(response, "", "  ")
+
+	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
+	w.WriteHeader(status)
+	w.Write(b)
 }

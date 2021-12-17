@@ -8,6 +8,13 @@ import (
 // EgoGrammar handles the command line options.
 var EgoGrammar = []cli.Option{
 	{
+		LongName:    "table",
+		Aliases:     []string{"tables"},
+		Description: "Operate on database tables",
+		OptionType:  cli.Subcommand,
+		Value:       TableGrammar,
+	},
+	{
 		LongName:           "path",
 		Description:        "Print the default ego path",
 		OptionType:         cli.Subcommand,
@@ -36,6 +43,77 @@ var EgoGrammar = []cli.Option{
 		Action:               commands.TestAction,
 		ParametersExpected:   -99,
 		ParameterDescription: "file or path",
+	},
+}
+
+var TableGrammar = []cli.Option{
+	{
+		LongName:    "list",
+		Description: "List tables",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TableList,
+	},
+	{
+		LongName:           "show",
+		Description:        "Show table metadata",
+		OptionType:         cli.Subcommand,
+		Action:             commands.TableShow,
+		ParametersExpected: 1,
+	},
+	{
+		LongName:           "drop",
+		Description:        "Delete a table",
+		OptionType:         cli.Subcommand,
+		Action:             commands.TableDrop,
+		ParametersExpected: 1,
+	},
+	{
+		LongName:           "contents",
+		Aliases:            []string{"read", "get", "select"},
+		Description:        "Show contents of a table",
+		OptionType:         cli.Subcommand,
+		Action:             commands.TableContents,
+		ParametersExpected: 1,
+		Value: []cli.Option{
+			{
+				LongName:    "columns",
+				ShortName:   "c",
+				Aliases:     []string{"column"},
+				Description: "List of optional column names to display. If not specified, all columns are returned.",
+				OptionType:  cli.StringListType,
+			},
+
+			{
+				LongName:    "order-by",
+				ShortName:   "o",
+				Aliases:     []string{"sort", "order"},
+				Description: "List of optional columns use to sort output",
+				OptionType:  cli.StringListType,
+			},
+			{
+				LongName:    "filter",
+				ShortName:   "f",
+				Aliases:     []string{"where"},
+				Description: "List of optional filter clauses",
+				OptionType:  cli.StringListType,
+			},
+		},
+	},
+	{
+		LongName:           "delete",
+		Description:        "Delete rows from a table",
+		OptionType:         cli.Subcommand,
+		Action:             commands.TableDelete,
+		ParametersExpected: 1,
+		Value: []cli.Option{
+			{
+				LongName:    "filter",
+				ShortName:   "f",
+				Aliases:     []string{"where"},
+				Description: "Filter for rows to delete. If not specified, all rows are deleted",
+				OptionType:  cli.StringListType,
+			},
+		},
 	},
 }
 

@@ -8,15 +8,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		msg := "Unsupported method"
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(msg))
+		msg := "Unsupported method " + r.Method + " " + r.URL.Path
+		errorResponse(w, sessionID, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -49,9 +47,12 @@ func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Req
 			ui.Debug(ui.ServerLogger, "[%d] read %d table names", sessionID, count)
 
 			if err == nil {
-				b, _ := json.MarshalIndent(names, "", "  ")
+				resp := defs.TableInfo{
+					Tables:       names,
+					RestResponse: defs.RestResponse{Status: 200},
+				}
 
-				w.WriteHeader(http.StatusTeapot)
+				b, _ := json.MarshalIndent(resp, "", "  ")
 				w.Write(b)
 
 				return
@@ -64,7 +65,5 @@ func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Req
 		msg = "Unexpected nil database object pointer"
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Unable to open database, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(msg))
+	errorResponse(w, sessionID, msg, http.StatusBadRequest)
 }

@@ -160,7 +160,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		sessionID, user, hasAdminPermission, r.Method, path)
 
 	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
-	ui.Debug(ui.ServerLogger, "[%d] urlParts (valid=%v) %v", sessionID, valid, urlParts)
+	//ui.Debug(ui.ServerLogger, "[%d] urlParts (valid=%v) %v", sessionID, valid, urlParts)
 
 	if !valid || !datatypes.GetBool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path

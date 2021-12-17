@@ -13,6 +13,33 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+type TableInfo struct {
+	Tables []string `json:"tables"`
+	RestResponse
+}
+
+type DBColumn struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Size     int    `json:"size"`
+	Nullable bool   `json:"nullable"`
+}
+
+type DBRows struct {
+	Rows []map[string]interface{} `json:"rows"`
+	RestResponse
+}
+
+type TableColumnsInfo struct {
+	Columns []DBColumn
+	RestResponse
+}
+
+type DBRowCount struct {
+	Count int `json:"count"`
+	RestResponse
+}
+
 type ServerInfo struct {
 	Hostname string `json:"host"`
 	ID       string `json:"id"`

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 // ReadTable reads the metadata for a given table, and returns it as an array
@@ -27,17 +28,22 @@ func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWr
 		if err == nil {
 			names, _ := rows.Columns()
 			types, _ := rows.ColumnTypes()
-			columns := make([]DBColumn, len(names))
+			columns := make([]defs.DBColumn, len(names))
 
 			for i, name := range names {
 				typeInfo := types[i]
 				typeName := typeInfo.ScanType().Name()
 				size, _ := typeInfo.Length()
 				nullable, _ := typeInfo.Nullable()
-				columns[i] = DBColumn{Name: name, Type: typeName, Size: int(size), Nullable: nullable}
+				columns[i] = defs.DBColumn{Name: name, Type: typeName, Size: int(size), Nullable: nullable}
 			}
 
-			b, _ := json.MarshalIndent(columns, "", "  ")
+			resp := defs.TableColumnsInfo{
+				Columns:      columns,
+				RestResponse: defs.RestResponse{Status: 200},
+			}
+
+			b, _ := json.MarshalIndent(resp, "", "  ")
 			w.Write(b)
 
 			return
@@ -45,11 +51,15 @@ func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWr
 	}
 
 	msg := fmt.Sprintf("Database table metadata error, %v", err)
-	if err == nil && db == nil {
-		msg = "Unexpected nil database object pointer"
+	status := http.StatusBadRequest
+	if strings.Contains(err.Error(), "not found") {
+		status = http.StatusNotFound
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Unable to read table, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(msg))
+	if err == nil && db == nil {
+		msg = "Unexpected nil database object pointer"
+		status = http.StatusInternalServerError
+	}
+
+	errorResponse(w, sessionID, msg, status)
 }

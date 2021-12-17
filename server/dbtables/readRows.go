@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 )
 
 // ReadRows reads the data for a given table, and returns it as an array
@@ -47,7 +48,13 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 				}
 			}
 
-			b, _ := json.MarshalIndent(result, "", "  ")
+			resp := defs.DBRows{Rows: result,
+				RestResponse: defs.RestResponse{
+					Status: 200,
+				},
+			}
+
+			b, _ := json.MarshalIndent(resp, "", "  ")
 			w.Write(b)
 			ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 
@@ -60,10 +67,9 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 	w.Write([]byte(err.Error()))
 }
 
-// ReadRows reads the data for a given table, and returns it as an array
-// of structs for each row, with the struct tag being the column name. The
-// query can also specify filter, sort, and column query parameters to refine
-// the read operation.
+// DeleteRows deletes rows from a table. If no filter is provided, then all rows are
+// deleted and the tale is empty. If filter(s) are applied, only the matching rows
+// are deleted. The function returns the number of rows deleted.
 func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 
@@ -76,7 +82,11 @@ func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseW
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
 
-			b, _ := json.MarshalIndent(rowCount, "", "  ")
+			resp := defs.DBRowCount{
+				Count:        int(rowCount),
+				RestResponse: defs.RestResponse{Status: 200},
+			}
+			b, _ := json.MarshalIndent(resp, "", "  ")
 			w.Write(b)
 			ui.Debug(ui.ServerLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
 

@@ -102,7 +102,8 @@ func (t *Table) SetIndent(s int) *errors.EgoError {
 	return nil
 }
 
-// SetAlignment sets the alignment for a given column.
+// SetAlignment sets the alignment for a given column. Column
+// numbers are zero-based.
 func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
 	if column < 0 || column >= t.columnCount {
 		return errors.New(errors.ErrInvalidColumnNumber).Context(column)

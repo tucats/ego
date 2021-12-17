@@ -141,4 +141,5 @@ const (
 	AdminAgent  = "admin"
 	ClientAgent = "rest client"
 	LogonAgent  = "logon"
+	TableAgent  = "tables"
 )

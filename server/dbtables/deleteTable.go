@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/tucats/ego/app-cli/ui"
 )
 
 //DeleteTable will delete a database table from the user's schema
@@ -21,6 +19,7 @@ func DeleteTable(user string, tableName string, sessionID int32, w http.Response
 
 		_, err = db.Exec(q)
 		if err == nil {
+			errorResponse(w, sessionID, "Table "+tableName+"successfully deleted", 200)
 			return
 		}
 
@@ -36,7 +35,5 @@ func DeleteTable(user string, tableName string, sessionID int32, w http.Response
 		status = http.StatusNotFound
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Unable to delete table, %v", sessionID, err)
-	w.WriteHeader(status)
-	w.Write([]byte(msg))
+	errorResponse(w, sessionID, msg, status)
 }
