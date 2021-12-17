@@ -181,7 +181,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			appendRows(user, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			deleteRows(user, tableName, sessionID, w, r)
+			dbtables.DeleteRows(user, tableName, sessionID, w, r)
 
 		case http.MethodPatch:
 			updateRows(user, tableName, sessionID, w, r)
@@ -224,16 +224,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 func appendRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	msg := fmt.Sprintf("Append rows to table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
-}
-
-// @tomcole to be implemented
-func deleteRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Delete rows from table %s for user %s", tableName, user)
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)

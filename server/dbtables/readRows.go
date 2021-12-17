@@ -8,14 +8,16 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// ReadTable reads the metadata for a given table, and returns it as an array
-// of column names and types
+// ReadRows reads the data for a given table, and returns it as an array
+// of structs for each row, with the struct tag being the column name. The
+// query can also specify filter, sort, and column query parameters to refine
+// the read operation.
 func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
 
-		q := formQuery(r.URL, user)
+		q := formQuery(r.URL, user, selectVerb)
 		var rows *sql.Rows
 
 		result := []map[string]interface{}{}
@@ -54,6 +56,35 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 	}
 
 	ui.Debug(ui.ServerLogger, "[%d] Error reading table, %v", sessionID, err)
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte(err.Error()))
+}
+
+// ReadRows reads the data for a given table, and returns it as an array
+// of structs for each row, with the struct tag being the column name. The
+// query can also specify filter, sort, and column query parameters to refine
+// the read operation.
+func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	db, err := OpenDB(sessionID, user, "")
+
+	if err == nil && db != nil {
+
+		q := formQuery(r.URL, user, deleteVerb)
+
+		ui.Debug(ui.ServerLogger, "[%d] Exec: %s", sessionID, q)
+		rows, err := db.Exec(q)
+		if err == nil {
+			rowCount, _ := rows.RowsAffected()
+
+			b, _ := json.MarshalIndent(rowCount, "", "  ")
+			w.Write(b)
+			ui.Debug(ui.ServerLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
+
+			return
+		}
+	}
+
+	ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(err.Error()))
 }

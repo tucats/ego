@@ -225,7 +225,7 @@ func sortList(u *url.URL) string {
 	return result.String()
 }
 
-func formQuery(u *url.URL, user string) string {
+func formQuery(u *url.URL, user string, verb string) string {
 	if u == nil {
 		return ""
 	}
@@ -250,13 +250,18 @@ func formQuery(u *url.URL, user string) string {
 
 	var result strings.Builder
 
-	result.WriteString("SELECT ")
-	result.WriteString(columns)
+	result.WriteString(verb + " ")
+	if verb == selectVerb {
+		result.WriteString(columns)
+	}
+
 	result.WriteString(" FROM " + table)
+
 	if where != "" {
 		result.WriteString(" " + where)
 	}
-	if sort != "" {
+
+	if sort != "" && verb == selectVerb {
 		result.WriteString(" " + sort)
 	}
 
