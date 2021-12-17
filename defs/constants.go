@@ -89,6 +89,20 @@ const (
 	// the file is not encrypted and is readable json.
 	LogonUserdataKeySetting = "ego.server.userdata.key"
 
+	// The URL path for the tables database functionality
+	TablesServerDatabase = "ego.server.database.url"
+
+	// The user:password credentials to use with the local tables database
+	TablesServerDatabaseCredentials = "ego.server.database.credentials"
+
+	// The name of the tables database in the local database store (schemas
+	// are used to partition this database by Ego username)
+	TablesServerDatabaseName = "ego.server.database.name"
+
+	// Boolean indicating if the communication with the tables database
+	// should be done using SSL secured communications
+	TablesServerDatabaseSSLMode = "ego.server.database.ssl"
+
 	// The key string used to encrypt authentication tokens.
 	TokenKeySetting = "ego.token.key"
 
