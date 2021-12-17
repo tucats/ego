@@ -14,24 +14,20 @@ import (
 	"github.com/tucats/ego/server/dbtables"
 )
 
+const (
+	rootPrivileges       = "root"
+	tablesPrivileges     = "tables"
+	tableAccessPrivilege = "table_read"
+	tableAdminPrivilege  = "table_admin"
+	tableUpdatePrivilege = "table_modify"
+)
+
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	CountRequest(AssetRequestCounter)
 	w.Header().Add("Content-type", "application/json")
 
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
-
-	//	Tables API
-	//
-	//	/tables/				- list of tables available to this user
-	//	/tables/<name>/	        - list of columns for this table
-	//	/tables/<name>/rows	    - GET reads rows, PUT writes rows, PATCH updates rows
-	//							  optional filters:
-	//								+ filter=
-	//								+ limit=
-	//								+ start=
-	//								+ columns=
-	//
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
@@ -77,7 +73,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 			valid := ", invalid credential"
 			if authenticatedCredentials {
-				if getPermission(user, "root") {
+				if getPermission(user, rootPrivileges) {
 					valid = ", root privilege user"
 				} else {
 					valid = ", normal user"
@@ -101,7 +97,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		valid := ", invalid credential"
 		if authenticatedCredentials {
-			if getPermission(user, "root") {
+			if getPermission(user, rootPrivileges) {
 				valid = ", root privilege user"
 			} else {
 				valid = ", normal user"
@@ -124,12 +120,33 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission := getPermission(user, "tables")
-	if !hasPermission {
-		hasPermission = getPermission(user, "root")
+	// Let's check in on permissions.
+	//
+	// 1. A user with table_read permission can read rows
+	// 2. A user with table_modify permission can read and update rows
+	// 3. A user with table_admin permission can list and modify tables
+	// 4. A user with tables permission can do any table operation
+	// 5. A user with root permission can do any table operation
+
+	hasReadPermission := getPermission(user, tableAccessPrivilege)
+	hasAdminPermission := getPermission(user, tableAdminPrivilege)
+	hasUpdatePermission := getPermission(user, tableUpdatePrivilege)
+
+	if !hasReadPermission {
+		hasReadPermission = getPermission(user, rootPrivileges)
+		if hasReadPermission {
+			hasAdminPermission = true
+			hasUpdatePermission = true
+		} else {
+			hasReadPermission = getPermission(user, tablesPrivileges)
+			if hasReadPermission {
+				hasAdminPermission = true
+				hasUpdatePermission = true
+			}
+		}
 	}
 
-	if !hasPermission {
+	if !hasReadPermission {
 		msg := "User does not have tables permissions"
 
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
@@ -139,7 +156,8 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Table request; user %s; %s %s", sessionID, user, r.Method, path)
+	ui.Debug(ui.ServerLogger, "[%d] Table request for user %s (admin=%v); %s %s",
+		sessionID, user, hasAdminPermission, r.Method, path)
 
 	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
 	ui.Debug(ui.ServerLogger, "[%d] urlParts (valid=%v) %v", sessionID, valid, urlParts)
@@ -173,6 +191,17 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if rows {
+
+		if r.Method != http.MethodGet && !hasUpdatePermission {
+			msg := "User does not have permission to modify tables"
+
+			ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(msg))
+
+			return
+		}
+
 		switch r.Method {
 		case http.MethodGet:
 			dbtables.ReadRows(user, tableName, sessionID, w, r)
@@ -193,6 +222,18 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(msg))
 		}
+
+		return
+	}
+
+	// Sionce it's not a row operation, it must be a table-level operation, which is
+	// only permitted for root users or those with "table_admin" privilege
+	if !hasAdminPermission {
+		msg := "User does not have permission to admin tables"
+
+		ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(msg))
 
 		return
 	}
