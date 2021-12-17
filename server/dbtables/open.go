@@ -36,7 +36,7 @@ func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
 		}
 
 		conStr = fmt.Sprintf("postgres://%slocalhost/%s%s", credentials, dbname, sslMode)
-		ui.Debug(ui.ServerLogger, "[%d] Connection string: %s", sessionID, conStr)
+		//ui.Debug(ui.ServerLogger, "[%d] Connection string: %s", sessionID, conStr)
 	}
 
 	var url *url.URL
