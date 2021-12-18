@@ -349,3 +349,67 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 
 	return result.String(), values
 }
+
+func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (string, []interface{}) {
+	if u == nil {
+		return "", nil
+	}
+
+	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	if !ok {
+		return "", nil
+	}
+
+	tableItem, ok := parts["name"]
+	if !ok {
+		return "", nil
+	}
+
+	// Get the table name. If it doesn't already have a schema part, then assign
+	// the username as the schema.
+	table := datatypes.GetString(tableItem)
+	if !strings.Contains(table, ".") {
+		if user != "" {
+			table = user + "." + table
+		}
+	}
+
+	var result strings.Builder
+
+	result.WriteString(insertVerb)
+	result.WriteString(" INTO ")
+
+	result.WriteString(table)
+
+	keys := make([]string, 0)
+	values := make([]interface{}, len(data))
+
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for i, key := range keys {
+		if i == 0 {
+			result.WriteRune('(')
+		} else {
+			result.WriteRune(',')
+		}
+		result.WriteString(key)
+	}
+
+	result.WriteString(") VALUES (")
+
+	for i, key := range keys {
+		values[i] = data[key]
+
+		if i > 0 {
+			result.WriteString(",")
+		}
+		result.WriteString(fmt.Sprintf("$%d", i+1))
+	}
+
+	result.WriteRune(')')
+
+	return result.String(), values
+}

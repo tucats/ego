@@ -115,6 +115,32 @@ var TableGrammar = []cli.Option{
 			},
 		},
 	},
+	{
+		LongName:             "insert",
+		Aliases:              []string{"write", "append"},
+		Description:          "Insert a row to a table",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableInsert,
+		ParametersExpected:   -99,
+		ParameterDescription: "table-name column=value [column=value...]",
+	},
+	{
+		LongName:             "update",
+		Description:          "Update rows to a table",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableUpdate,
+		ParametersExpected:   -99,
+		ParameterDescription: "table-name column=value [column=value...]",
+		Value: []cli.Option{
+			{
+				LongName:    "filter",
+				ShortName:   "f",
+				Aliases:     []string{"where"},
+				Description: "Filter for rows to update. If not specified, all rows are updated",
+				OptionType:  cli.StringListType,
+			},
+		},
+	},
 }
 
 var ServerDeleteGrammar = []cli.Option{

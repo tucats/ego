@@ -207,7 +207,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
-			appendRows(user, tableName, sessionID, w, r)
+			dbtables.InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
 			dbtables.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
@@ -256,16 +256,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(msg))
 	}
 
-}
-
-// @tomcole to be implemented
-func appendRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Append rows to table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	_, _ = w.Write(b)
 }
 
 // @tomcole to be implemented

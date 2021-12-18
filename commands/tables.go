@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -31,10 +32,10 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 		if ui.OutputFormat == "text" {
 			t, _ := tables.New([]string{"Name"})
-			t.SetOrderBy("Name")
+			_ = t.SetOrderBy("Name")
 
 			for _, row := range resp.Tables {
-				t.AddRowItems(row)
+				_ = t.AddRowItems(row)
 			}
 			t.Print(ui.OutputFormat)
 		} else {
@@ -63,11 +64,11 @@ func TableShow(c *cli.Context) *errors.EgoError {
 
 		if ui.OutputFormat == "text" {
 			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable"})
-			t.SetOrderBy("Name")
-			t.SetAlignment(2, tables.AlignmentRight)
+			_ = t.SetOrderBy("Name")
+			_ = t.SetAlignment(2, tables.AlignmentRight)
 
 			for _, row := range resp.Columns {
-				t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable)
+				_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable)
 			}
 			t.Print(ui.OutputFormat)
 		} else {
@@ -153,7 +154,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 				for i, key := range keys {
 					values[i] = row[key]
 				}
-				t.AddRowItems(values...)
+				_ = t.AddRowItems(values...)
 			}
 			t.Print(ui.OutputFormat)
 		} else {
@@ -167,6 +168,165 @@ func TableContents(c *cli.Context) *errors.EgoError {
 	}
 
 	return errors.New(err)
+}
+
+func TableInsert(c *cli.Context) *errors.EgoError {
+
+	resp := defs.DBRowCount{}
+	table := c.GetParameter(0)
+
+	payload := map[string]interface{}{}
+	for i := 1; i < 999; i++ {
+		p := c.GetParameter(i)
+		if p == "" {
+			break
+		}
+
+		t := tokenizer.New(p)
+		column := t.Next()
+		if !t.IsNext("=") {
+			return errors.New(errors.ErrMissingAssignment)
+		}
+
+		kind := "any"
+		value := t.Next()
+		if t.IsNext(":") {
+			kind = strings.ToLower(value)
+			value = t.Next()
+		}
+
+		switch kind {
+		case "string":
+			payload[column] = value
+
+		case "boolean", "bool":
+			if strings.EqualFold(value, "true") {
+				payload[column] = true
+			} else {
+				payload[column] = false
+			}
+
+		case "int", "integer":
+			i, err := strconv.Atoi(value)
+			if err != nil {
+				return errors.New(errors.ErrInvalidInteger).Context(value)
+			}
+			payload[column] = i
+
+		case "any":
+			fallthrough
+
+		default:
+			if strings.EqualFold(value, "true") {
+				payload[column] = true
+			} else if strings.EqualFold(value, "false") {
+				payload[column] = false
+			} else if i, err := strconv.Atoi(value); err == nil {
+				payload[column] = i
+			} else {
+				payload[column] = value
+			}
+		}
+	}
+
+	err := runtime.Exchange("/tables/"+table+"/rows", "PUT", payload, &resp, defs.TableAgent)
+	if errors.Nil(err) {
+		if resp.Status > 299 {
+			return errors.NewMessage(resp.Message)
+		}
+		ui.Say("Added row to table %s", table)
+	}
+
+	return err
+}
+
+func TableUpdate(c *cli.Context) *errors.EgoError {
+
+	resp := defs.DBRowCount{}
+	table := c.GetParameter(0)
+
+	payload := map[string]interface{}{}
+	for i := 1; i < 999; i++ {
+		p := c.GetParameter(i)
+		if p == "" {
+			break
+		}
+
+		t := tokenizer.New(p)
+		column := t.Next()
+		if !t.IsNext("=") {
+			return errors.New(errors.ErrMissingAssignment)
+		}
+
+		kind := "any"
+		value := t.Next()
+		if t.IsNext(":") {
+			kind = strings.ToLower(value)
+			value = t.Next()
+		}
+
+		switch kind {
+		case "string":
+			payload[column] = value
+
+		case "boolean", "bool":
+			if strings.EqualFold(value, "true") {
+				payload[column] = true
+			} else {
+				payload[column] = false
+			}
+
+		case "int", "integer":
+			i, err := strconv.Atoi(value)
+			if err != nil {
+				return errors.New(errors.ErrInvalidInteger).Context(value)
+			}
+			payload[column] = i
+
+		case "any":
+			fallthrough
+
+		default:
+			if strings.EqualFold(value, "true") {
+				payload[column] = true
+			} else if strings.EqualFold(value, "false") {
+				payload[column] = false
+			} else if i, err := strconv.Atoi(value); err == nil {
+				payload[column] = i
+			} else {
+				payload[column] = value
+			}
+		}
+	}
+
+	var args strings.Builder
+
+	if filter, ok := c.GetStringList("filter"); ok {
+		f := makeFilter(filter)
+		if f != filterParseError {
+			addArg(&args, "filter", f)
+		} else {
+			msg := strings.TrimPrefix(f, filterParseError)
+			return errors.NewMessage(msg)
+		}
+	}
+
+	err := runtime.Exchange(
+		fmt.Sprintf("/tables/%s/rows%s", table, args.String()),
+		"PATCH",
+		payload,
+		&resp,
+		defs.TableAgent)
+
+	if errors.Nil(err) {
+		if resp.Status > 299 {
+			return errors.NewMessage(resp.Message)
+		}
+
+		ui.Say("Updated %d rows in table %s", resp.Count, table)
+	}
+
+	return err
 }
 
 func TableDelete(c *cli.Context) *errors.EgoError {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
@@ -644,10 +645,12 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	AddAgent(r, agentType)
 
 	if body != nil {
-		b, err := json.Marshal(body)
+		b, err := json.MarshalIndent(body, "", "  ")
 		if !errors.Nil(err) {
 			return errors.New(err)
 		}
+
+		ui.Debug(ui.DebugLogger, "REST Payload:\n%s", string(b))
 
 		r.SetBody(b)
 	}
