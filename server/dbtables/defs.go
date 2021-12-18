@@ -7,5 +7,4 @@ const (
 
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
-	updateVerb = "UPDATE"
 )

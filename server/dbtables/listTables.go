@@ -11,10 +11,10 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
-		errorResponse(w, sessionID, msg, http.StatusBadRequest)
+		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -40,6 +40,12 @@ func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Req
 				if err != nil {
 					break
 				}
+
+				// Is the user authorized to see this table at all?
+				if !isAdmin && Authorized(sessionID, db, user, name, readOperation) {
+					continue
+				}
+
 				count++
 				names = append(names, name)
 			}
@@ -53,7 +59,7 @@ func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Req
 				}
 
 				b, _ := json.MarshalIndent(resp, "", "  ")
-				w.Write(b)
+				_, _ = w.Write(b)
 
 				return
 			}
@@ -65,5 +71,5 @@ func ListTables(user string, sessionID int32, w http.ResponseWriter, r *http.Req
 		msg = "Unexpected nil database object pointer"
 	}
 
-	errorResponse(w, sessionID, msg, http.StatusBadRequest)
+	ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 }

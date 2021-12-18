@@ -54,7 +54,7 @@ func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
 	return db, err
 }
 
-func errorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
+func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
 	response := defs.RestResponse{
 		Message: msg,
 		Status:  status,
@@ -64,5 +64,5 @@ func errorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 
 	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
 	w.WriteHeader(status)
-	w.Write(b)
+	_, _ = w.Write(b)
 }

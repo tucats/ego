@@ -25,6 +25,21 @@ func sqlEscape(source string) string {
 }
 
 func queryParameters(source string, args map[string]string) string {
+
+	// Before anything else, let's see if the table name was specified,
+	// and it contains a "dot" notation. If so, replace the schema name
+	// with the dot name prefix.
+
+	if tableName, ok := args["table"]; ok {
+		dot := strings.Index(tableName, ".")
+		if dot >= 0 {
+			args["table"] = tableName[dot+1:]
+			args["schema"] = tableName[:dot]
+		}
+	}
+
+	// Skip through the substition strings provided and do any replace
+	// needed.
 	result := source
 	for k, v := range args {
 		v = sqlEscape(v)

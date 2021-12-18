@@ -12,11 +12,17 @@ import (
 
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types
-func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
+
+		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
+			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			return
+		}
+
 		var rows *sql.Rows
 
 		q := queryParameters(tableMetadataQuerySting, map[string]string{
@@ -44,7 +50,7 @@ func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWr
 			}
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
-			w.Write(b)
+			_, _ = w.Write(b)
 
 			return
 		}
@@ -61,5 +67,5 @@ func ReadTable(user string, tableName string, sessionID int32, w http.ResponseWr
 		status = http.StatusInternalServerError
 	}
 
-	errorResponse(w, sessionID, msg, status)
+	ErrorResponse(w, sessionID, msg, status)
 }

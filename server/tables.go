@@ -116,7 +116,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(msg))
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 
@@ -152,7 +152,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusForbidden)
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(msg))
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 
@@ -168,7 +168,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(msg))
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 
@@ -180,12 +180,12 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(msg))
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 
 	if tableName == "" {
-		dbtables.ListTables(user, sessionID, w, r)
+		dbtables.ListTables(user, hasAdminPermission, sessionID, w, r)
 
 		return
 	}
@@ -197,20 +197,20 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 			ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
 			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(msg))
+			_, _ = w.Write([]byte(msg))
 
 			return
 		}
 
 		switch r.Method {
 		case http.MethodGet:
-			dbtables.ReadRows(user, tableName, sessionID, w, r)
+			dbtables.ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
 			appendRows(user, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			dbtables.DeleteRows(user, tableName, sessionID, w, r)
+			dbtables.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPatch:
 			updateRows(user, tableName, sessionID, w, r)
@@ -220,7 +220,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(msg))
+			_, _ = w.Write([]byte(msg))
 		}
 
 		return
@@ -230,23 +230,20 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// only permitted for root users or those with "table_admin" privilege
 	if !hasAdminPermission {
 		msg := "User does not have permission to admin tables"
-
-		ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(msg))
+		dbtables.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 		return
 	}
 
 	switch r.Method {
 	case http.MethodGet:
-		dbtables.ReadTable(user, tableName, sessionID, w, r)
+		dbtables.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPut:
 		createTable(user, tableName, sessionID, w, r)
 
 	case http.MethodDelete:
-		dbtables.DeleteTable(user, tableName, sessionID, w, r)
+		dbtables.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPatch:
 		alterTable(user, tableName, sessionID, w, r)
@@ -256,7 +253,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(msg))
+		_, _ = w.Write([]byte(msg))
 	}
 
 }
@@ -268,7 +265,7 @@ func appendRows(user string, tableName string, sessionID int32, w http.ResponseW
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 // @tomcole to be implemented
@@ -278,7 +275,7 @@ func updateRows(user string, tableName string, sessionID int32, w http.ResponseW
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 // @tomcole to be implemented
@@ -288,7 +285,7 @@ func createTable(user string, tableName string, sessionID int32, w http.Response
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 // @tomcole to be implemented
@@ -298,5 +295,5 @@ func alterTable(user string, tableName string, sessionID int32, w http.ResponseW
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)
-	w.Write(b)
+	_, _ = w.Write(b)
 }

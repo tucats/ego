@@ -13,10 +13,15 @@ import (
 // of structs for each row, with the struct tag being the column name. The
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
-func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
+
+		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
+			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			return
+		}
 
 		q := formQuery(r.URL, user, selectVerb)
 		var rows *sql.Rows
@@ -55,7 +60,7 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 			}
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
-			w.Write(b)
+			_, _ = w.Write(b)
 			ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 
 			return
@@ -64,16 +69,21 @@ func ReadRows(user string, tableName string, sessionID int32, w http.ResponseWri
 
 	ui.Debug(ui.ServerLogger, "[%d] Error reading table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(err.Error()))
+	_, _ = w.Write([]byte(err.Error()))
 }
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
-func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
+
+		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
+			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			return
+		}
 
 		q := formQuery(r.URL, user, deleteVerb)
 
@@ -87,7 +97,7 @@ func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseW
 				RestResponse: defs.RestResponse{Status: 200},
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
-			w.Write(b)
+			_, _ = w.Write(b)
 			ui.Debug(ui.ServerLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
 
 			return
@@ -96,5 +106,5 @@ func DeleteRows(user string, tableName string, sessionID int32, w http.ResponseW
 
 	ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(err.Error()))
+	_, _ = w.Write([]byte(err.Error()))
 }

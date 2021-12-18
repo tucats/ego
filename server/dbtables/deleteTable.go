@@ -7,11 +7,17 @@ import (
 )
 
 //DeleteTable will delete a database table from the user's schema
-func DeleteTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
+
+		if !isAdmin && Authorized(sessionID, nil, user, tableName, adminOperation) {
+			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			return
+		}
+
 		q := queryParameters(tableDeleteString, map[string]string{
 			"table":  tableName,
 			"schema": user,
@@ -19,10 +25,11 @@ func DeleteTable(user string, tableName string, sessionID int32, w http.Response
 
 		_, err = db.Exec(q)
 		if err == nil {
-			errorResponse(w, sessionID, "Table "+tableName+"successfully deleted", 200)
+			ErrorResponse(w, sessionID, "Table "+tableName+"successfully deleted", 200)
 			return
 		}
 
+		RemoveTablePermissions(sessionID, db, tableName)
 	}
 
 	msg := fmt.Sprintf("Database table delete error, %v", err)
@@ -35,5 +42,5 @@ func DeleteTable(user string, tableName string, sessionID int32, w http.Response
 		status = http.StatusNotFound
 	}
 
-	errorResponse(w, sessionID, msg, status)
+	ErrorResponse(w, sessionID, msg, status)
 }
