@@ -35,6 +35,7 @@ Example:
 &nbsp;
 * Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.md). 
 * Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
+* Details on using _Ego_ as a REST-based database are in [Ego Table Server](TABLES.md)
 
 &nbsp; 
 &nbsp;
