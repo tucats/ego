@@ -324,7 +324,8 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	result.WriteString(table)
 
 	keys := make([]string, 0)
-	values := make([]interface{}, 0)
+	values := make([]interface{}, len(data))
+
 	for k := range data {
 		keys = append(keys, k)
 	}
