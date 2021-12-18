@@ -25,11 +25,12 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 		_, err = db.Exec(q)
 		if err == nil {
-			ErrorResponse(w, sessionID, "Table "+tableName+"successfully deleted", 200)
+			RemoveTablePermissions(sessionID, db, tableName)
+			ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", 200)
+
 			return
 		}
 
-		RemoveTablePermissions(sessionID, db, tableName)
 	}
 
 	msg := fmt.Sprintf("Database table delete error, %v", err)

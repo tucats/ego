@@ -213,7 +213,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPatch:
-			updateRows(user, tableName, sessionID, w, r)
+			dbtables.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
 			msg := "Unsupported method"
@@ -262,16 +262,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 func appendRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 
 	msg := fmt.Sprintf("Append rows to table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	_, _ = w.Write(b)
-}
-
-// @tomcole to be implemented
-func updateRows(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Updating rows in table %s for user %s", tableName, user)
 	b, _ := json.MarshalIndent(msg, "", "  ")
 
 	w.WriteHeader(http.StatusTeapot)

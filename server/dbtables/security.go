@@ -11,8 +11,7 @@ const (
 	readOperation   = "read"
 	deleteOperation = "delete"
 	adminOperation  = "admin"
-
-	permissionsTable = "admin.privileges"
+	updateOperation = "update"
 )
 
 // authorized uses the database located in the the Ego tables database
@@ -21,9 +20,7 @@ const (
 // The permissions string for the table and user is read, if it exists,
 // must contain the given permission.
 func Authorized(sessionID int32, db *sql.DB, user string, table string, operations ...string) bool {
-
-	q := "SELECT permissions FROM $1 WHERE username = $2 and tablename = $3"
-	rows, err := db.Query(q, permissionsTable, user, table)
+	rows, err := db.Query(permissionsSelectString, user, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions: %v", sessionID, err)
 
@@ -73,9 +70,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
-
-	q := "delete FROM $1 WHERE tablename = $2"
-	result, err := db.Exec(q, permissionsTable, table)
+	result, err := db.Exec(permissionsDeleteString, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error deleting permissions: %v", sessionID, err)
 
@@ -109,8 +104,7 @@ func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, per
 		}
 	}
 
-	q := "insert into $1 (username, tablename, permissions) values($2, $3, $4)"
-	_, err := db.Exec(q, permissionsTable, user, table, permissionList)
+	_, err := db.Exec(permissionsInsertString, user, table, permissionList)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error updating permissions: %v", sessionID, err)
 

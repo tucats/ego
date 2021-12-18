@@ -1,7 +1,9 @@
 package dbtables
 
 import (
+	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
@@ -240,7 +242,7 @@ func sortList(u *url.URL) string {
 	return result.String()
 }
 
-func formQuery(u *url.URL, user string, verb string) string {
+func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	if u == nil {
 		return ""
 	}
@@ -255,10 +257,15 @@ func formQuery(u *url.URL, user string, verb string) string {
 		return ""
 	}
 
+	// Get the table name. If it doesn't already have a schema part, then assign
+	// the username as the schema.
 	table := datatypes.GetString(tableItem)
-	if user != "" {
-		table = user + "." + table
+	if !strings.Contains(table, ".") {
+		if user != "" {
+			table = user + "." + table
+		}
 	}
+
 	columns := columnList(u)
 	where := filterList(u)
 	sort := sortList(u)
@@ -281,4 +288,63 @@ func formQuery(u *url.URL, user string, verb string) string {
 	}
 
 	return result.String()
+}
+
+func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (string, []interface{}) {
+	if u == nil {
+		return "", nil
+	}
+
+	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	if !ok {
+		return "", nil
+	}
+
+	tableItem, ok := parts["name"]
+	if !ok {
+		return "", nil
+	}
+
+	// Get the table name. If it doesn't already have a schema part, then assign
+	// the username as the schema.
+	table := datatypes.GetString(tableItem)
+	if !strings.Contains(table, ".") {
+		if user != "" {
+			table = user + "." + table
+		}
+	}
+
+	where := filterList(u)
+
+	var result strings.Builder
+
+	result.WriteString(updateVerb)
+	result.WriteRune(' ')
+
+	result.WriteString(table)
+
+	keys := make([]string, 0)
+	values := make([]interface{}, 0)
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for i, key := range keys {
+		values[i] = data[key]
+
+		if i == 0 {
+			result.WriteString(" SET ")
+		} else {
+			result.WriteString(", ")
+		}
+		result.WriteString(key)
+		result.WriteString(fmt.Sprintf(" = $%d", i+1))
+	}
+
+	if where != "" {
+		result.WriteString(" " + where)
+	}
+
+	return result.String(), values
 }

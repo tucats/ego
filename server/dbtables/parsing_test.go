@@ -202,7 +202,7 @@ func Test_formQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := formQuery(u, "", selectVerb); got != tt.want {
+			if got := formSelectorDeleteQuery(u, "", selectVerb); got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 		})

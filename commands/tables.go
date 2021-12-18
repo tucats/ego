@@ -90,9 +90,6 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange("/tables/"+table, "DELETE", nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-
-		fmt.Println(resp)
-
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
 		}

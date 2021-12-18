@@ -58,7 +58,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 	msg := fmt.Sprintf("Database table metadata error, %v", err)
 	status := http.StatusBadRequest
-	if strings.Contains(err.Error(), "not found") {
+	if strings.Contains(err.Error(), "does not exist") {
 		status = http.StatusNotFound
 	}
 
