@@ -1,9 +1,11 @@
 package dbtables
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -31,14 +33,23 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		q := formCreateQuery(r.URL, user, data)
+		q := formCreateQuery(r.URL, user, isAdmin, data, sessionID, w)
+		if q == "" {
+			return
+		}
+
+		if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
+			return
+		}
+
 		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
 
 		counts, err := db.Exec(q)
 		if err == nil {
-
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{Count: int(rows), RestResponse: defs.RestResponse{Status: 200}}
+
+			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -61,4 +72,30 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 	}
 	_, _ = w.Write([]byte(err.Error()))
 
+}
+
+// Verify that the schema exists for this user, and create it if not found.
+func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, user string, tableName string) bool {
+
+	schema := user
+	if dot := strings.Index(tableName, "."); dot >= 0 {
+		schema = tableName[:dot]
+	}
+
+	q := queryParameters(createSchemaString, map[string]string{
+		"schema": schema,
+	})
+
+	result, err := db.Exec(q)
+	if err != nil {
+		ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
+		return false
+	}
+
+	count, _ := result.RowsAffected()
+	if count > 0 {
+		ui.Debug(ui.ServerLogger, "[%d] Created schema %s", sessionID, schema)
+	}
+
+	return true
 }

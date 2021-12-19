@@ -2,6 +2,7 @@ package dbtables
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -415,7 +416,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	return result.String(), values
 }
 
-func formCreateQuery(u *url.URL, user string, data []defs.DBColumn) string {
+func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []defs.DBColumn, sessionID int32, w http.ResponseWriter) string {
 	if u == nil {
 		return ""
 	}
@@ -436,6 +437,11 @@ func formCreateQuery(u *url.URL, user string, data []defs.DBColumn) string {
 	if !strings.Contains(table, ".") {
 		if user != "" {
 			table = user + "." + table
+		}
+	} else {
+		// This is a multipart name. You must be an adminsitrator to do this
+		if !hasAdminPrivileges {
+			ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 		}
 	}
 

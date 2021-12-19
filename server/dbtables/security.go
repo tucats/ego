@@ -91,6 +91,25 @@ func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
+
+	// If this is a two-part name, we must create a permissions object for the owner/schema of the table
+	if dot := strings.Index(table, "."); dot > 0 {
+		schema := table[:dot]
+		//table = table[dot+1:]
+		ok := doCreateTablePermissions(sessionID, db, schema, table, permissions...)
+
+		//If this failed, or the two part name was already correct for this user, no more work.
+		if !ok || schema == user {
+			return ok
+		}
+	}
+
+	// Also create an entry for the current user.
+	return doCreateTablePermissions(sessionID, db, user, table, permissions...)
+
+}
+
+func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
 	var permissionList string
 
 	if len(permissions) == 0 {
@@ -111,7 +130,7 @@ func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, per
 		return false
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] permissions for %s set to %s", sessionID, table, permissionList)
+	ui.Debug(ui.ServerLogger, "[%d] permissions for %s, table %s, set to %s", sessionID, user, table, permissionList)
 
 	return true
 }
