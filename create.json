@@ -1,0 +1,15 @@
+[
+    {
+        "name": "id",
+        "type": "int"
+    },
+    {
+        "name": "last",
+        "type": "string"
+    },
+    {
+        "name": "first",
+        "type": "string",
+        "nullable": true
+    }
+]

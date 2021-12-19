@@ -1,4 +1,4 @@
-// Simple heartbest service
+// Simple heartbeat service
  
 import "http"
 

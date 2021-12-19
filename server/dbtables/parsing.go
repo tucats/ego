@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/tokenizer"
@@ -412,4 +413,77 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	result.WriteRune(')')
 
 	return result.String(), values
+}
+
+func formCreateQuery(u *url.URL, user string, data []defs.DBColumn) string {
+	if u == nil {
+		return ""
+	}
+
+	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}")
+	if !ok {
+		return ""
+	}
+
+	tableItem, ok := parts["name"]
+	if !ok {
+		return ""
+	}
+
+	// Get the table name. If it doesn't already have a schema part, then assign
+	// the username as the schema.
+	table := datatypes.GetString(tableItem)
+	if !strings.Contains(table, ".") {
+		if user != "" {
+			table = user + "." + table
+		}
+	}
+
+	var result strings.Builder
+
+	result.WriteString("CREATE TABLE ")
+	result.WriteString(table)
+
+	for i, column := range data {
+		if i == 0 {
+			result.WriteRune('(')
+		} else {
+			result.WriteString(", ")
+		}
+
+		result.WriteString(column.Name)
+		result.WriteRune(' ')
+
+		nativeType := mapColumnType(column.Type)
+		result.WriteString(nativeType)
+
+		if column.Nullable {
+			result.WriteString(" NULL")
+		}
+	}
+
+	result.WriteRune(')')
+
+	return result.String()
+}
+
+// mapColumnType converts native Ego types into the equivalent Postgres data types.
+func mapColumnType(native string) string {
+
+	types := map[string]string{
+		"string":  "CHAR VARYING",
+		"int32":   "INT32",
+		"int":     "INT",
+		"bool":    "BOOLEAN",
+		"boolean": "BOOLEAN",
+		"float32": "REAL",
+		"float64": "DOUBLE PRECISION",
+	}
+
+	native = strings.ToLower(native)
+	if newType, ok := types[native]; ok {
+		return newType
+	}
+
+	return native
 }

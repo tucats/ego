@@ -240,7 +240,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		dbtables.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPut:
-		createTable(user, tableName, sessionID, w, r)
+		dbtables.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodDelete:
 		dbtables.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
@@ -256,16 +256,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(msg))
 	}
 
-}
-
-// @tomcole to be implemented
-func createTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
-	msg := fmt.Sprintf("Creating new table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	_, _ = w.Write(b)
 }
 
 // @tomcole to be implemented
