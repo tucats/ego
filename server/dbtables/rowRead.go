@@ -24,50 +24,62 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
-		var rows *sql.Rows
 
-		result := []map[string]interface{}{}
-		rowCount := 0
-		columnCount := 0
 		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
-		rows, err = db.Query(q)
+
+		err = readRowData(db, q, sessionID, w)
 		if err == nil {
-			columnNames, _ := rows.Columns()
-			columnCount = len(columnNames)
-
-			for rows.Next() {
-				row := make([]interface{}, columnCount)
-				rowptrs := make([]interface{}, columnCount)
-				for i := range row {
-					rowptrs[i] = &row[i]
-				}
-
-				err := rows.Scan(rowptrs...)
-				if err == nil {
-					newRow := map[string]interface{}{}
-					for i, v := range row {
-						newRow[columnNames[i]] = v
-					}
-					result = append(result, newRow)
-					rowCount++
-				}
-			}
-
-			resp := defs.DBRows{Rows: result,
-				RestResponse: defs.RestResponse{
-					Status: 200,
-				},
-			}
-
-			b, _ := json.MarshalIndent(resp, "", "  ")
-			_, _ = w.Write(b)
-			ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
-
 			return
 		}
+
 	}
 
 	ui.Debug(ui.ServerLogger, "[%d] Error reading table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write([]byte(err.Error()))
+}
+
+func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
+	var rows *sql.Rows
+	var err error
+
+	result := []map[string]interface{}{}
+	rowCount := 0
+	columnCount := 0
+
+	rows, err = db.Query(q)
+	if err == nil {
+		columnNames, _ := rows.Columns()
+		columnCount = len(columnNames)
+
+		for rows.Next() {
+			row := make([]interface{}, columnCount)
+			rowptrs := make([]interface{}, columnCount)
+			for i := range row {
+				rowptrs[i] = &row[i]
+			}
+
+			err = rows.Scan(rowptrs...)
+			if err == nil {
+				newRow := map[string]interface{}{}
+				for i, v := range row {
+					newRow[columnNames[i]] = v
+				}
+				result = append(result, newRow)
+				rowCount++
+			}
+		}
+
+		resp := defs.DBRows{Rows: result,
+			RestResponse: defs.RestResponse{
+				Status: 200,
+			},
+		}
+
+		b, _ := json.MarshalIndent(resp, "", "  ")
+		_, _ = w.Write(b)
+		ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+	}
+
+	return err
 }

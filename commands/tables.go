@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -129,45 +130,51 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url, "GET", nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
-		if ui.OutputFormat == "text" {
-
-			if len(resp.Rows) == 0 {
-				ui.Say("No rows in query")
-
-				return nil
-			}
-
-			keys := make([]string, 0)
-			for k := range resp.Rows[0] {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-
-			t, _ := tables.New(keys)
-
-			for _, row := range resp.Rows {
-				values := make([]interface{}, len(row))
-				for i, key := range keys {
-					values[i] = row[key]
-				}
-				_ = t.AddRowItems(values...)
-			}
-			t.Print(ui.OutputFormat)
-		} else {
-			var b []byte
-
-			b, err := json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
-		}
+		err = printRowSet(resp)
 	}
 
 	return errors.New(err)
+}
+
+func printRowSet(resp defs.DBRows) *errors.EgoError {
+	if resp.Status > 299 {
+		return errors.NewMessage(resp.Message)
+	}
+
+	if ui.OutputFormat == "text" {
+
+		if len(resp.Rows) == 0 {
+			ui.Say("No rows in query")
+
+			return nil
+		}
+
+		keys := make([]string, 0)
+		for k := range resp.Rows[0] {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		t, _ := tables.New(keys)
+
+		for _, row := range resp.Rows {
+			values := make([]interface{}, len(row))
+			for i, key := range keys {
+				values[i] = row[key]
+			}
+			_ = t.AddRowItems(values...)
+		}
+		t.Print(ui.OutputFormat)
+	} else {
+		var b []byte
+
+		b, err := json.Marshal(resp)
+		if errors.Nil(err) {
+			fmt.Printf("%s\n", string(b))
+		}
+	}
+
+	return nil
 }
 
 func TableInsert(c *cli.Context) *errors.EgoError {
@@ -475,4 +482,74 @@ func makeFilter(filters []string) string {
 	}
 
 	return b.String()
+}
+
+// TableSQL executes arbitrary SQL against the server.
+func TableSQL(c *cli.Context) *errors.EgoError {
+	var sql string
+
+	for i := 0; i < 999; i++ {
+		sqlItem := c.GetParameter(i)
+		if sqlItem == "" {
+			break
+		}
+		sql = sql + " " + sqlItem
+	}
+
+	if c.WasFound("sql-file") {
+		fn, _ := c.GetString("sql-file")
+		b, err := ioutil.ReadFile(fn)
+		if err != nil {
+			return errors.New(err)
+		}
+		if len(sql) > 0 {
+			sql = sql + " "
+		}
+		sql = sql + string(b)
+	}
+
+	if len(strings.TrimSpace(sql)) == 0 {
+		ui.Say("Enter a blank line to terminate SQL command input")
+
+		for {
+			line := runtime.ReadConsoleText("sql> ")
+			if len(strings.TrimSpace(line)) == 0 {
+				break
+			}
+			sql = sql + " " + line
+		}
+	}
+
+	sql = strings.TrimSpace(sql)
+
+	if strings.HasPrefix(strings.ToLower(sql), "select ") {
+		rows := defs.DBRows{}
+
+		err := runtime.Exchange("/tables/@sql", "PUT", sql, &rows, defs.TableAgent)
+		if !errors.Nil(err) {
+			return err
+		}
+
+		_ = printRowSet(rows)
+	} else {
+		resp := defs.DBRowCount{}
+
+		err := runtime.Exchange("/tables/@sql", "PUT", sql, &resp, defs.TableAgent)
+		if !errors.Nil(err) {
+			return err
+		}
+
+		if resp.Status > 299 {
+			return errors.NewMessage(resp.Message)
+		}
+		if resp.Count == 0 {
+			ui.Say("No rows modified")
+		} else if resp.Count == 1 {
+			ui.Say("1 row modified")
+		} else {
+			ui.Say("%d rows modified", resp.Count)
+		}
+	}
+
+	return nil
 }

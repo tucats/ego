@@ -48,6 +48,22 @@ var EgoGrammar = []cli.Option{
 
 var TableGrammar = []cli.Option{
 	{
+		LongName:           "sql",
+		Description:        "Directly execute a SQL command",
+		OptionType:         cli.Subcommand,
+		Action:             commands.TableSQL,
+		ParametersExpected: -99,
+		Value: []cli.Option{
+			{
+				LongName:    "sql-file",
+				ShortName:   "f",
+				Aliases:     []string{"file"},
+				Description: "Filename of SQL command text",
+				OptionType:  cli.StringType,
+			},
+		},
+	},
+	{
 		LongName:    "list",
 		Description: "List tables",
 		OptionType:  cli.Subcommand,

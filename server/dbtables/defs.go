@@ -13,4 +13,6 @@ const (
 	deleteVerb = "DELETE"
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
+
+	rowIDName = "_row_id_"
 )

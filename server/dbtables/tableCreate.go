@@ -19,6 +19,55 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 	if err == nil && db != nil {
 
+		// Special case; if the table name is @SQL then the payload is processed as a simple
+		// SQL  statement and not a table creation.
+		if strings.EqualFold(tableName, "@sql") {
+
+			if !isAdmin {
+				ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)
+
+				return
+			}
+
+			var statementText string
+
+			err := json.NewDecoder(r.Body).Decode(&statementText)
+			if err == nil {
+
+				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statementText)), "select ") {
+					ui.Debug(ui.ServerLogger, "[%d] SQL query: %s", sessionID, statementText)
+
+					err = readRowData(db, statementText, sessionID, w)
+					if err != nil {
+						ErrorResponse(w, sessionID, "Error reading SQL query; "+err.Error(), http.StatusInternalServerError)
+
+						return
+					}
+				} else {
+					var rows sql.Result
+
+					ui.Debug(ui.ServerLogger, "[%d] SQL execute: %s", sessionID, statementText)
+
+					rows, err = db.Exec(statementText)
+					if err == nil {
+						count, _ := rows.RowsAffected()
+						reply := defs.DBRowCount{Count: int(count)}
+
+						b, _ := json.MarshalIndent(reply, "", "  ")
+						_, _ = w.Write(b)
+
+						return
+					}
+				}
+			}
+
+			if err != nil {
+				ErrorResponse(w, sessionID, "Error in SQL execute; "+err.Error(), http.StatusInternalServerError)
+			}
+
+			return
+		}
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 			return

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
@@ -29,6 +30,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
 
 			return
+		}
+
+		if _, found := data[rowIDName]; !found {
+			data[rowIDName] = uuid.New().String()
 		}
 
 		q, values := formInsertQuery(r.URL, user, data)

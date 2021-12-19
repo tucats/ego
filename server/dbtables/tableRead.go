@@ -13,19 +13,18 @@ import (
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	var rows *sql.Rows
+	var q string
 
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 			return
 		}
 
-		var rows *sql.Rows
-
-		q := queryParameters(tableMetadataQuerySting, map[string]string{
+		q = queryParameters(tableMetadataQuerySting, map[string]string{
 			"table":  tableName,
 			"schema": user,
 		})
@@ -38,7 +37,12 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 			for i, name := range names {
 				typeInfo := types[i]
+
 				typeName := typeInfo.ScanType().Name()
+				if name == rowIDName {
+					typeName = "UUID"
+				}
+
 				size, _ := typeInfo.Length()
 				nullable, _ := typeInfo.Nullable()
 				columns[i] = defs.DBColumn{Name: name, Type: typeName, Size: int(size), Nullable: nullable}

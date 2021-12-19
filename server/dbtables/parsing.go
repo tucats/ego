@@ -450,6 +450,24 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	result.WriteString("CREATE TABLE ")
 	result.WriteString(table)
 
+	// See if the column data already contains a row ID value; if not,
+	// add it in to the table definition.
+	hasRowID := false
+	for _, column := range data {
+		if column.Name == rowIDName {
+			hasRowID = true
+
+			break
+		}
+	}
+
+	if !hasRowID {
+		data = append(data, defs.DBColumn{
+			Name: rowIDName,
+			Type: "string",
+		})
+	}
+
 	for i, column := range data {
 		if i == 0 {
 			result.WriteRune('(')
