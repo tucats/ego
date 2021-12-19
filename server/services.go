@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -48,12 +49,19 @@ var nextSessionID int32
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
-var MaxCachedEntries = 10
+var MaxCachedEntries = -1
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
+	cacheMutex.Lock()
+	if MaxCachedEntries < 0 {
+		txt := persistence.Get(defs.MaxCacheSizeSetting)
+		MaxCachedEntries, _ = strconv.Atoi(txt)
+	}
+	cacheMutex.Unlock()
+
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	requestor := r.RemoteAddr

@@ -25,7 +25,7 @@ const (
 	// describes the URL of the logon server (less the endpoint).
 	LogonServerSetting = "ego.logon.server"
 
-	// LogonTokenSetting is th ename of the profile item that
+	// LogonTokenSetting is the name of the profile item that
 	// contains the logon token received from a successful logon.
 	LogonTokenSetting = "ego.logon.token"
 )

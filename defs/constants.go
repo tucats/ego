@@ -136,6 +136,10 @@ const (
 	// If true, the default state for staring an Ego is to not require HTTPS/SSL
 	// but rather run in "insecure" mode.
 	InsecureServerSetting = "ego.server.insecure"
+
+	// Maximum cache size for server cache. The default is zero, no caching
+	// performed.
+	MaxCacheSizeSetting = "ego.server.cache.size"
 )
 
 // This section contains the names of the command-line options. These often
