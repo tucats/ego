@@ -14,8 +14,9 @@ import (
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
 func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	db, err := OpenDB(sessionID, user, "")
+	tableName, _ = fullName(user, tableName)
 
+	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {

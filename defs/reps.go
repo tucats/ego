@@ -13,8 +13,14 @@ type RestResponse struct {
 	Message string `json:"msg"`
 }
 
+type Table struct {
+	Name        string `json:"name"`
+	Schema      string `json:"schema,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
 type TableInfo struct {
-	Tables []string `json:"tables"`
+	Tables []Table `json:"tables"`
 	RestResponse
 }
 

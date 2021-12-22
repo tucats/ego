@@ -13,9 +13,9 @@ import (
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
+	tableName, _ = fullName(user, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
-
 	if err == nil && db != nil {
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {

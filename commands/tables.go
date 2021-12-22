@@ -32,11 +32,11 @@ func TableList(c *cli.Context) *errors.EgoError {
 		}
 
 		if ui.OutputFormat == "text" {
-			t, _ := tables.New([]string{"Name"})
+			t, _ := tables.New([]string{"Schema", "Name"})
 			_ = t.SetOrderBy("Name")
 
 			for _, row := range resp.Tables {
-				_ = t.AddRowItems(row)
+				_ = t.AddRowItems(row.Schema, row.Name)
 			}
 			t.Print(ui.OutputFormat)
 		} else {

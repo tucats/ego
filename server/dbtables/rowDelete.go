@@ -12,8 +12,9 @@ import (
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	db, err := OpenDB(sessionID, user, "")
+	tableName, _ = fullName(user, tableName)
 
+	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {

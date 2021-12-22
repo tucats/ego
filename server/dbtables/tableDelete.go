@@ -8,7 +8,7 @@ import (
 
 //DeleteTable will delete a database table from the user's schema
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
+	tableName, _ = fullName(user, tableName)
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
@@ -19,8 +19,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		}
 
 		q := queryParameters(tableDeleteString, map[string]string{
-			"table":  tableName,
-			"schema": user,
+			"table": tableName,
 		})
 
 		_, err = db.Exec(q)

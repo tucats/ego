@@ -1,0 +1,88 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: Ego Server API
+  license:
+    name: MIT
+host: localhost:8080
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /tables:
+    get:
+      summary: List all tables for which the user has access.
+      operationId: listTables
+      tags:
+        - tables
+      responses:
+        "200":
+          description: An array of table names
+          schema:
+            $ref: '#/definitions/Tables'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      summary: Create a table
+      operationId: createTable
+      tags:
+        - tables
+      responses:
+        "200":
+          description: Success
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /tables/{table}:
+    get:
+      summary: Info for a table
+      operationId: showTable
+      tags:
+        - tables
+      parameters:
+        - name: table
+          in: path
+          required: true
+          description: The name of the table to display
+          type: string
+      responses:
+        "200":
+          description: Expected response to a valid request
+          schema:
+            $ref: '#/definitions/Tables'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Table:
+    type: "object"
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        description: Name of the table
+  Tables:
+    type: array
+    items:
+      $ref: '#/definitions/Table'
+  Error:
+    type: "object"
+    required:
+      - status
+      - message
+    properties:
+      status:
+        type: integer
+        format: int32
+        description: the HTTP status code for the response
+      message:
+        type: string
+        description: the message text

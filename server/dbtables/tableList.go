@@ -52,9 +52,15 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 			ui.Debug(ui.ServerLogger, "[%d] read %d table names", sessionID, count)
 
+			tables := make([]defs.Table, len(names))
+			for i, j := range names {
+				tables[i].Name = j
+				tables[i].Schema = user
+			}
+
 			if err == nil {
 				resp := defs.TableInfo{
-					Tables:       names,
+					Tables:       tables,
 					RestResponse: defs.RestResponse{Status: 200},
 				}
 

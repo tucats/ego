@@ -185,6 +185,15 @@ func columnList(u *url.URL) string {
 	return result.String()
 }
 
+func fullName(user, table string) (string, bool) {
+	wasFullyQualified := true
+	if dot := strings.Index(table, "."); dot < 0 {
+		table = user + "." + table
+		wasFullyQualified = false
+	}
+	return table, wasFullyQualified
+}
+
 func filterList(u *url.URL) string {
 	var result strings.Builder
 
@@ -261,12 +270,7 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table := datatypes.GetString(tableItem)
-	if !strings.Contains(table, ".") {
-		if user != "" {
-			table = user + "." + table
-		}
-	}
+	table, _ := fullName(user, datatypes.GetString(tableItem))
 
 	columns := columnList(u)
 	where := filterList(u)
@@ -307,15 +311,8 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		return "", nil
 	}
 
-	// Get the table name. If it doesn't already have a schema part, then assign
-	// the username as the schema.
-	table := datatypes.GetString(tableItem)
-	if !strings.Contains(table, ".") {
-		if user != "" {
-			table = user + "." + table
-		}
-	}
-
+	// Get the table name and filter list
+	table, _ := fullName(user, datatypes.GetString(tableItem))
 	where := filterList(u)
 
 	var result strings.Builder
@@ -367,14 +364,8 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		return "", nil
 	}
 
-	// Get the table name. If it doesn't already have a schema part, then assign
-	// the username as the schema.
-	table := datatypes.GetString(tableItem)
-	if !strings.Contains(table, ".") {
-		if user != "" {
-			table = user + "." + table
-		}
-	}
+	// Get the table name.
+	table, _ := fullName(user, datatypes.GetString(tableItem))
 
 	var result strings.Builder
 
@@ -433,16 +424,10 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table := datatypes.GetString(tableItem)
-	if !strings.Contains(table, ".") {
-		if user != "" {
-			table = user + "." + table
-		}
-	} else {
-		// This is a multipart name. You must be an adminsitrator to do this
-		if !hasAdminPrivileges {
-			ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
-		}
+	table, wasFullyQualified := fullName(user, datatypes.GetString(tableItem))
+	// This is a multipart name. You must be an adminsitrator to do this
+	if !wasFullyQualified && !hasAdminPrivileges {
+		ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 	}
 
 	var result strings.Builder

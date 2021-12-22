@@ -16,6 +16,8 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	var rows *sql.Rows
 	var q string
 
+	tableName, _ = fullName(user, tableName)
+
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
@@ -25,8 +27,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		}
 
 		q = queryParameters(tableMetadataQuerySting, map[string]string{
-			"table":  tableName,
-			"schema": user,
+			"table": tableName,
 		})
 
 		rows, err = db.Query(q)

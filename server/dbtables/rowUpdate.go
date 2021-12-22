@@ -10,10 +10,10 @@ import (
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload
 func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	tableName, _ = fullName(user, tableName)
+
 	db, err := OpenDB(sessionID, user, "")
-
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 			return
