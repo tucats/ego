@@ -248,6 +248,80 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 	return err
 }
 
+func TableCreate(c *cli.Context) *errors.EgoError {
+	table := c.GetParameter(0)
+	payload := make([]defs.DBColumn, 0)
+	resp := defs.DBRowCount{}
+
+	defined := map[string]bool{}
+
+	for i := 1; i < 999; i++ {
+		columnInfo := defs.DBColumn{}
+
+		columnDefText := c.GetParameter(i)
+		if columnDefText == "" {
+			break
+		}
+
+		t := tokenizer.New(columnDefText)
+		column := t.Next()
+		if !t.IsNext(":") {
+			return errors.New(errors.ErrInvalidColumnDefinition).Context(columnDefText)
+		}
+
+		// If we've already defined this one, complain
+		if _, ok := defined[column]; ok {
+			return errors.New(errors.ErrDuplicateColumnName).Context(column)
+		}
+
+		columnType := t.Next()
+		found := false
+		for _, typeName := range []string{"string", "int", "int32", "float32", "float64", "real", "double", "bool", "datetime"} {
+
+			if strings.EqualFold(columnType, typeName) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New(errors.ErrInvalidType).Context(columnType)
+		}
+
+		for t.IsNext(",") {
+			flag := t.Next()
+			switch strings.ToLower(flag) {
+			case "nullable":
+				columnInfo.Nullable = true
+
+			default:
+				return errors.New(errors.ErrInvalidKeyword).Context(flag)
+			}
+		}
+
+		columnInfo.Name = column
+		columnInfo.Type = columnType
+		defined[column] = true
+		payload = append(payload, columnInfo)
+	}
+
+	err := runtime.Exchange(
+		fmt.Sprintf("/tables/%s", table),
+		"PUT",
+		payload,
+		&resp,
+		defs.TableAgent)
+
+	if errors.Nil(err) {
+		if resp.Status > 299 {
+			return errors.NewMessage(resp.Message)
+		}
+
+		ui.Say("Created table %s with %d columns", table, len(payload))
+	}
+
+	return err
+}
+
 func TableUpdate(c *cli.Context) *errors.EgoError {
 
 	resp := defs.DBRowCount{}

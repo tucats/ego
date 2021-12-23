@@ -46,7 +46,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					continue
 				}
 
-				columnQuery := "SELECT * FROM " + name + " WHERE 1=0"
+				// See how many columns are in this table. Must be a fully-qualfiied name.
+				columnQuery := "SELECT * FROM " + user + "." + name + " WHERE 1=0"
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
 					continue

@@ -98,6 +98,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{Count: int(rows), RestResponse: defs.RestResponse{Status: 200}}
 
+			tableName, _ = fullName(user, tableName)
 			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
 
 			b, _ := json.MarshalIndent(result, "", "  ")

@@ -16,7 +16,7 @@ type RestResponse struct {
 type Table struct {
 	Name        string `json:"name"`
 	Schema      string `json:"schema,omitempty"`
-	Columns     int
+	Columns     int    `json:"columns"`
 	Description string `json:"description,omitempty"`
 }
 

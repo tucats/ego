@@ -157,6 +157,14 @@ var TableGrammar = []cli.Option{
 			},
 		},
 	},
+	{
+		LongName:             "create",
+		Description:          "Create a new table",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableCreate,
+		ParametersExpected:   -999,
+		ParameterDescription: "table-name column:type [column:type...]",
+	},
 }
 
 var ServerDeleteGrammar = []cli.Option{

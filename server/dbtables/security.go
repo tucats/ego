@@ -20,6 +20,8 @@ const (
 // The permissions string for the table and user is read, if it exists,
 // must contain the given permission.
 func Authorized(sessionID int32, db *sql.DB, user string, table string, operations ...string) bool {
+	_, _ = db.Exec(createPermissionString)
+
 	rows, err := db.Query(permissionsSelectString, user, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions: %v", sessionID, err)
@@ -70,6 +72,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
+	_, _ = db.Exec(createPermissionString)
 	result, err := db.Exec(permissionsDeleteString, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error deleting permissions: %v", sessionID, err)
@@ -91,6 +94,7 @@ func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
+	_, _ = db.Exec(createPermissionString)
 
 	// If this is a two-part name, we must create a permissions object for the owner/schema of the table
 	if dot := strings.Index(table, "."); dot > 0 {
@@ -112,6 +116,8 @@ func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, per
 func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
 	var permissionList string
 
+	_, _ = db.Exec(createPermissionString)
+
 	if len(permissions) == 0 {
 		permissionList = strings.Join([]string{readOperation, deleteOperation}, ",")
 	} else {
@@ -125,7 +131,7 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 
 	// Upsert isn't always available, so delete any candidate row(s) before
 	// adding in the new one.
-	q := "DELETE FROM admin.permissions WHERE username = $1 AND tablename = $2"
+	q := "DELETE FROM admin.privileges WHERE username = $1 AND tablename = $2"
 	_, err := db.Exec(q, user, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error updating permissions: %v", sessionID, err)
