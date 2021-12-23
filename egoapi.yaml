@@ -97,6 +97,7 @@ definitions:
     required:
       - name
       - schema
+      - columns
     properties:
       name:
         type: string
@@ -104,6 +105,9 @@ definitions:
       schema:
         type: string
         description: Name fo the schema
+      columns:
+        type: int
+        description: Number of columns in the table
   Tables:
     type: array
     items:

@@ -31,7 +31,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		rows, err = db.Query(q)
 		if err == nil {
 
-			names := make([]string, 0)
+			names := make([]defs.Table, 0)
 			var name string
 			count := 0
 
@@ -46,21 +46,27 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					continue
 				}
 
+				columnQuery := "SELECT * FROM " + name + " WHERE 1=0"
+				tableInfo, err := db.Query(columnQuery)
+				if err != nil {
+					continue
+				}
+
+				columns, _ := tableInfo.Columns()
 				count++
-				names = append(names, name)
+
+				names = append(names, defs.Table{
+					Name:    name,
+					Schema:  user,
+					Columns: len(columns),
+				})
 			}
 
 			ui.Debug(ui.ServerLogger, "[%d] read %d table names", sessionID, count)
 
-			tables := make([]defs.Table, len(names))
-			for i, j := range names {
-				tables[i].Name = j
-				tables[i].Schema = user
-			}
-
 			if err == nil {
 				resp := defs.TableInfo{
-					Tables:       tables,
+					Tables:       names,
 					RestResponse: defs.RestResponse{Status: 200},
 				}
 
