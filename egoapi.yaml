@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  version: 1.0.0
+  version: 1.2
   title: Ego Server API
   license:
     name: MIT
@@ -27,19 +27,30 @@ paths:
           description: unexpected error
           schema:
             $ref: '#/definitions/Error'
-    post:
-      summary: Create a table
+  /tables/{table}:
+    put:
+      summary: Create a new table
       operationId: createTable
       tags:
         - tables
+      parameters:
+        - name: table
+          in: path
+          required: true
+          description: The name of the table to create
+          type: string
+        - in: body
+          name: Columns
+          description: The array of column types to create for the new table.
+          schema:
+              $ref: '#/components/schemas/Columns'
       responses:
         "200":
           description: Success
         default:
-          description: unexpected error
+          description: Unexpected error occurred. The status and message fields contain additional information.
           schema:
             $ref: '#/definitions/Error'
-  /tables/{table}:
     get:
       summary: Info for a table
       operationId: showTable
@@ -55,20 +66,44 @@ paths:
         "200":
           description: Expected response to a valid request
           schema:
-            $ref: '#/definitions/Tables'
+            $ref: '#/definitions/Columns'
         default:
           description: unexpected error
           schema:
             $ref: '#/definitions/Error'
 definitions:
+  Column:
+    type: "object"
+    required:
+      - name
+      - type
+      - nullable
+    properties:
+      name:
+        type: string
+        description: Name of the column
+      type:
+        type: string
+        description: Ego type name of the column's data values.
+      nullable:
+        type: boolean
+        description: True if the column is allowed to contain a null value.
+  Columns:
+    type: array
+    items:
+      $ref: '#/definitions/Column'
   Table:
     type: "object"
     required:
       - name
+      - schema
     properties:
       name:
         type: string
         description: Name of the table
+      schema:
+        type: string
+        description: Name fo the schema
   Tables:
     type: array
     items:
