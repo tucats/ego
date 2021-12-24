@@ -250,10 +250,33 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 func TableCreate(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
+	fields := map[string]defs.DBColumn{}
 	payload := make([]defs.DBColumn, 0)
 	resp := defs.DBRowCount{}
 
 	defined := map[string]bool{}
+
+	// If the user specified a file with a JSON payload, use that to seed the
+	// field definitions map. We will also look for command line parameters to
+	// extend or modify the field list.
+	if c.WasFound("file") {
+		fn, _ := c.GetString("file")
+		b, err := ioutil.ReadFile(fn)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		err = json.Unmarshal(b, &payload)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		// Move the info read in to a map so we can replace fields from
+		// the command line if specified.
+		for _, field := range payload {
+			fields[field.Name] = field
+		}
+	}
 
 	for i := 1; i < 999; i++ {
 		columnInfo := defs.DBColumn{}
@@ -301,9 +324,23 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		columnInfo.Name = column
 		columnInfo.Type = columnType
 		defined[column] = true
-		payload = append(payload, columnInfo)
+		fields[column] = columnInfo
 	}
 
+	// Convert the map to an array of fields
+	keys := make([]string, 0)
+	for k := range fields {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	payload = make([]defs.DBColumn, len(keys))
+	for i, k := range keys {
+		payload[i] = fields[k]
+	}
+
+	// Send the array to the server
 	err := runtime.Exchange(
 		fmt.Sprintf("/tables/%s", table),
 		"PUT",

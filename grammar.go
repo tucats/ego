@@ -164,6 +164,15 @@ var TableGrammar = []cli.Option{
 		Action:               commands.TableCreate,
 		ParametersExpected:   -999,
 		ParameterDescription: "table-name column:type [column:type...]",
+		Value: []cli.Option{
+			{
+				LongName:    "file",
+				Aliases:     []string{"json-file", "json"},
+				ShortName:   "f",
+				Description: "File name containing JSON column info",
+				OptionType:  cli.StringListType,
+			},
+		},
 	},
 }
 
