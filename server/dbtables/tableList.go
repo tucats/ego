@@ -53,13 +53,23 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					continue
 				}
 
-				columns, _ := tableInfo.Columns()
 				count++
+
+				columns, _ := tableInfo.Columns()
+				columnCount := len(columns)
+
+				for _, columnName := range columns {
+					if columnName == rowIDName {
+						columnCount--
+
+						break
+					}
+				}
 
 				names = append(names, defs.Table{
 					Name:    name,
 					Schema:  user,
-					Columns: len(columns),
+					Columns: columnCount,
 				})
 			}
 

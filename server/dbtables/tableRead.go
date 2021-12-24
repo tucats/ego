@@ -34,19 +34,34 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		if err == nil {
 			names, _ := rows.Columns()
 			types, _ := rows.ColumnTypes()
-			columns := make([]defs.DBColumn, len(names))
+			columns := make([]defs.DBColumn, 0)
 
 			for i, name := range names {
+				// Special case, we synthetically create a rowIDName column
+				// and it is always of type "UUID". But we don't return it
+				// as a user column name.
+				if name == rowIDName {
+					continue
+				}
+
 				typeInfo := types[i]
 
+				// Start by seeing what Go type it will become. IF that isn't
+				// known, then get the underlying database type name instead.
 				typeName := typeInfo.ScanType().Name()
-				if name == rowIDName {
-					typeName = "UUID"
+				if typeName == "" {
+					typeName = typeInfo.DatabaseTypeName()
 				}
 
 				size, _ := typeInfo.Length()
 				nullable, _ := typeInfo.Nullable()
-				columns[i] = defs.DBColumn{Name: name, Type: typeName, Size: int(size), Nullable: nullable}
+
+				columns = append(columns, defs.DBColumn{
+					Name:     name,
+					Type:     typeName,
+					Size:     int(size),
+					Nullable: nullable},
+				)
 			}
 
 			resp := defs.TableColumnsInfo{
