@@ -202,6 +202,21 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
 
 	payload := map[string]interface{}{}
+
+	// If there is a JSON file to initialize the payload with, do it now.
+	if c.WasFound("file") {
+		fn, _ := c.GetString("file")
+		b, err := ioutil.ReadFile(fn)
+		if err != nil {
+			return errors.New(err)
+		}
+
+		err = json.Unmarshal(b, &payload)
+		if err != nil {
+			return errors.New(err)
+		}
+	}
+
 	for i := 1; i < 999; i++ {
 		p := c.GetParameter(i)
 		if p == "" {
@@ -255,6 +270,11 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		}
 	}
 
+	if len(payload) == 0 {
+		ui.Say("Nothing to insert")
+		return nil
+	}
+
 	err := runtime.Exchange("/tables/"+table+"/rows", "PUT", payload, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
@@ -263,7 +283,11 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		ui.Say("Added row to table %s", table)
 	}
 
-	return err
+	if !errors.Nil(err) {
+		return err.Context(table)
+	}
+
+	return nil
 }
 
 func TableCreate(c *cli.Context) *errors.EgoError {

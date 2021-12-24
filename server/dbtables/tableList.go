@@ -77,8 +77,11 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 			if err == nil {
 				resp := defs.TableInfo{
-					Tables:       names,
-					RestResponse: defs.RestResponse{Status: 200},
+					Tables: names,
+					Count:  len(names),
+					RestResponse: defs.RestResponse{
+						Status: 200,
+					},
 				}
 
 				b, _ := json.MarshalIndent(resp, "", "  ")

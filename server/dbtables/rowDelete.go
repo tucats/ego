@@ -30,11 +30,15 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			rowCount, _ := rows.RowsAffected()
 
 			resp := defs.DBRowCount{
-				Count:        int(rowCount),
-				RestResponse: defs.RestResponse{Status: 200},
+				Count: int(rowCount),
+				RestResponse: defs.RestResponse{
+					Status: 200,
+				},
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
+
 			_, _ = w.Write(b)
+
 			ui.Debug(ui.ServerLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
 
 			return

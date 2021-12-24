@@ -71,7 +71,9 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 			}
 		}
 
-		resp := defs.DBRows{Rows: result,
+		resp := defs.DBRows{
+			Rows:  result,
+			Count: len(result),
 			RestResponse: defs.RestResponse{
 				Status: 200,
 			},

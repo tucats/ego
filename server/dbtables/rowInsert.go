@@ -43,7 +43,12 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		if err == nil {
 
 			rows, _ := counts.RowsAffected()
-			result := defs.DBRowCount{Count: int(rows), RestResponse: defs.RestResponse{Status: 200}}
+			result := defs.DBRowCount{
+				Count: int(rows),
+				RestResponse: defs.RestResponse{
+					Status: 200,
+				},
+			}
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)

@@ -65,8 +65,11 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			}
 
 			resp := defs.TableColumnsInfo{
-				Columns:      columns,
-				RestResponse: defs.RestResponse{Status: 200},
+				Columns: columns,
+				Count:   len(columns),
+				RestResponse: defs.RestResponse{
+					Status: 200,
+				},
 			}
 
 			b, _ := json.MarshalIndent(resp, "", "  ")

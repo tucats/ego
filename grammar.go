@@ -139,7 +139,16 @@ var TableGrammar = []cli.Option{
 		OptionType:           cli.Subcommand,
 		Action:               commands.TableInsert,
 		ParametersExpected:   -99,
-		ParameterDescription: "table-name column=value [column=value...]",
+		ParameterDescription: "table-name [column=value...]",
+		Value: []cli.Option{
+			{
+				LongName:    "file",
+				Aliases:     []string{"json-file", "json"},
+				ShortName:   "f",
+				Description: "File name containing JSON row info",
+				OptionType:  cli.StringListType,
+			},
+		},
 	},
 	{
 		LongName:             "update",

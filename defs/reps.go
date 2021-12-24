@@ -22,6 +22,7 @@ type Table struct {
 
 type TableInfo struct {
 	Tables []Table `json:"tables"`
+	Count  int     `json:"count"`
 	RestResponse
 }
 
@@ -33,11 +34,13 @@ type DBColumn struct {
 }
 
 type DBRows struct {
-	Rows []map[string]interface{} `json:"rows"`
+	Rows  []map[string]interface{} `json:"rows"`
+	Count int                      `json:"count"`
 	RestResponse
 }
 
 type TableColumnsInfo struct {
+	Count   int `json:"count"`
 	Columns []DBColumn
 	RestResponse
 }
