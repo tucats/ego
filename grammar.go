@@ -77,11 +77,12 @@ var TableGrammar = []cli.Option{
 		ParametersExpected: 1,
 	},
 	{
-		LongName:           "drop",
-		Description:        "Delete a table",
-		OptionType:         cli.Subcommand,
-		Action:             commands.TableDrop,
-		ParametersExpected: 1,
+		LongName:             "drop",
+		Description:          "Delete one or more tables",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableDrop,
+		ParametersExpected:   -99,
+		ParameterDescription: "table-name [table-name...]",
 	},
 	{
 		LongName:           "contents",

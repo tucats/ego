@@ -87,19 +87,37 @@ func TableShow(c *cli.Context) *errors.EgoError {
 }
 
 func TableDrop(c *cli.Context) *errors.EgoError {
+	var count int
+	var err error
+	var table string
 
 	resp := defs.TableColumnsInfo{}
-	table := c.GetParameter(0)
-
-	err := runtime.Exchange("/tables/"+table, "DELETE", nil, &resp, defs.TableAgent)
-	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
+	for i := 0; i < 999; i++ {
+		table = c.GetParameter(i)
+		if table == "" {
+			break
 		}
-		ui.Say("Table %s deleted", table)
+
+		err = runtime.Exchange("/tables/"+table, "DELETE", nil, &resp, defs.TableAgent)
+		if errors.Nil(err) {
+			if resp.Status > 299 {
+				return errors.NewMessage(resp.Message).Context(table)
+			}
+			count++
+
+			ui.Say("Table %s deleted", table)
+		} else {
+			break
+		}
 	}
 
-	return err
+	if err == nil && count > 1 {
+		ui.Say("Deleted %d tables", count)
+	} else if !errors.Nil(err) {
+		return errors.New(err).Context(table)
+	}
+
+	return nil
 }
 
 func TableContents(c *cli.Context) *errors.EgoError {
