@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -84,14 +85,17 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 			GoVersion string `json:"go"`
 			OS        string `json:"os"`
 			Arch      string `json:"arch"`
+			File      string `json:"file"`
 		}
 
+		fullPath, _ := filepath.Abs(os.Args[0])
 		v := VersionInfo{
 			Name:      c.FindGlobal().AppName,
 			Version:   c.FindGlobal().Version,
 			GoVersion: runtime.Version(),
 			OS:        runtime.GOOS,
 			Arch:      runtime.GOARCH,
+			File:      fullPath,
 		}
 		if ui.OutputFormat == "json" {
 			b, _ := json.Marshal(v)
