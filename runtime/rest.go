@@ -627,6 +627,8 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	url = strings.TrimSuffix(url, "/") + endpoint
+	ui.Debug(ui.DebugLogger, "REST URL %s", url)
+
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
@@ -682,6 +684,11 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		}
 
 		err = json.Unmarshal([]byte(body), response)
+		if errors.Nil(err) && ui.LoggerIsActive(ui.DebugLogger) {
+			responseBytes, _ := json.MarshalIndent(response, "", "  ")
+
+			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(responseBytes))
+		}
 	}
 
 	return errors.New(err)
