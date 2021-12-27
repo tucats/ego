@@ -710,8 +710,9 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 
 func TablePermissions(c *cli.Context) *errors.EgoError {
 	permissions := defs.AllPermissionResponse{}
+	userParameter := getUserOption(c)
 
-	err := runtime.Exchange("/tables/@permissions", "GET", nil, &permissions, defs.TableAgent)
+	err := runtime.Exchange("/tables/@permissions"+userParameter, "GET", nil, &permissions, defs.TableAgent)
 	if errors.Nil(err) {
 		switch ui.OutputFormat {
 		case "text":
@@ -733,13 +734,25 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	return err
 }
 
+// Fetch the username from the command line context, and form a valid
+// URL parameter with the username if given.
+func getUserOption(c *cli.Context) string {
+	user, found := c.GetString("user")
+	if found {
+		user = "?user=" + user
+	}
+
+	return user
+}
+
 func TableGrant(c *cli.Context) *errors.EgoError {
 
 	permissions, _ := c.GetStringList("permission")
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
+	userParameter := getUserOption(c)
 
-	err := runtime.Exchange("/tables/"+table+"/permissions", "PUT", permissions, &result, defs.TableAgent)
+	err := runtime.Exchange("/tables/"+table+"/permissions"+userParameter, "PUT", permissions, &result, defs.TableAgent)
 	if errors.Nil(err) {
 		printPermissionObject(result)
 	}

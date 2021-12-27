@@ -218,6 +218,21 @@ func filterList(u *url.URL) string {
 	return "WHERE " + result.String()
 }
 
+// With a default user name string, and the current URL, determine if the
+// username should be overridden with one from the URL.
+func requestForUser(user string, u *url.URL) string {
+	values := u.Query()
+	for k, v := range values {
+		if strings.EqualFold(k, "user") {
+			if len(v) > 0 {
+				user = v[0]
+			}
+		}
+	}
+
+	return user
+}
+
 func sortList(u *url.URL) string {
 	var result strings.Builder
 

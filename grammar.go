@@ -48,11 +48,12 @@ var EgoGrammar = []cli.Option{
 
 var TableGrammar = []cli.Option{
 	{
-		LongName:           "sql",
-		Description:        "Directly execute a SQL command",
-		OptionType:         cli.Subcommand,
-		Action:             commands.TableSQL,
-		ParametersExpected: -99,
+		LongName:             "sql",
+		Description:          "Directly execute a SQL command",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableSQL,
+		ParametersExpected:   -99,
+		ParameterDescription: "sql-text",
 		Value: []cli.Option{
 			{
 				LongName:    "sql-file",
@@ -70,15 +71,31 @@ var TableGrammar = []cli.Option{
 		OptionType:         cli.Subcommand,
 		Action:             commands.TablePermissions,
 		ParametersExpected: 0,
+		Value: []cli.Option{
+			{
+				LongName:    "user",
+				ShortName:   "u",
+				Description: "If specified, list only this user",
+				OptionType:  cli.StringType,
+			},
+		},
 	},
 	{
-		LongName:             "permission",
-		Aliases:              []string{"perm"},
+		LongName:             "show-permission",
+		Aliases:              []string{"permission", "perm"},
 		Description:          "List table permissions",
 		OptionType:           cli.Subcommand,
 		Action:               commands.TableShowPermission,
 		ParametersExpected:   1,
 		ParameterDescription: "table-name",
+		Value: []cli.Option{
+			{
+				LongName:    "user",
+				ShortName:   "u",
+				Description: "User (if other than current user) to list)",
+				OptionType:  cli.StringType,
+			},
+		},
 	},
 	{
 		LongName:             "grant",
@@ -93,9 +110,15 @@ var TableGrammar = []cli.Option{
 				LongName:    "permission",
 				Aliases:     []string{"permission", "permissions", "perms", "perm"},
 				ShortName:   "p",
-				Description: "User for which permissions are being updated",
+				Description: "Permissions to set for this table updated",
 				OptionType:  cli.StringListType,
 				Required:    true,
+			},
+			{
+				LongName:    "user",
+				ShortName:   "u",
+				Description: "User (if other than current user) to update",
+				OptionType:  cli.StringType,
 			},
 		},
 	},
@@ -106,7 +129,7 @@ var TableGrammar = []cli.Option{
 		Action:      commands.TableList,
 	},
 	{
-		LongName:           "show",
+		LongName:           "show-table",
 		Description:        "Show table metadata",
 		OptionType:         cli.Subcommand,
 		Action:             commands.TableShow,
@@ -121,9 +144,9 @@ var TableGrammar = []cli.Option{
 		ParameterDescription: "table-name [table-name...]",
 	},
 	{
-		LongName:           "contents",
-		Aliases:            []string{"read", "get", "select"},
-		Description:        "Show contents of a table",
+		LongName:           "read",
+		Aliases:            []string{"select", "get", "show-contents", "contents"},
+		Description:        "Read contents of a table",
 		OptionType:         cli.Subcommand,
 		Action:             commands.TableContents,
 		ParametersExpected: 1,

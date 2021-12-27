@@ -230,7 +230,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if perms {
-		ui.Debug(ui.ServerLogger, "[%d] Permissions request detected", sessionID)
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := "User does not have permission to modify tables"
 

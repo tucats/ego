@@ -3,6 +3,7 @@ package dbtables
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -74,7 +75,14 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 		Permissions: []defs.PermissionObject{},
 	}
 
-	rows, err := db.Query(`SELECT username, tablename, permissions FROM admin.privileges ORDER BY username,tablename`)
+	filter := ""
+	if f := requestForUser("", r.URL); f != "" {
+		filter = fmt.Sprintf("WHERE username = '%s'", sqlEscape(f))
+	}
+
+	q := fmt.Sprintf(`SELECT username, tablename, permissions FROM admin.privileges %s ORDER BY username,tablename`, filter)
+	ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
+	rows, err := db.Query(q)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions: %v", sessionID, err)
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
@@ -134,6 +142,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 	}
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
+	user = requestForUser(user, r.URL)
 	table, fullyQualified := fullName(user, tableName)
 	if !hasAdminPermission && !fullyQualified {
 		ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)

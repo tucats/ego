@@ -207,6 +207,11 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
 			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissions)
+			if err == nil {
+				ui.Debug(ui.ServerLogger, "[%d] created permissions for %s", sessionID, tableName)
+			}
+		} else {
+			ui.Debug(ui.ServerLogger, "[%d] updated permissions for %s", sessionID, tableName)
 		}
 	}
 

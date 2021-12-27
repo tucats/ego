@@ -79,16 +79,36 @@ user. All commands start with `ego tables` following by the subcommands:
     ego table [command]          Operate on database tables
 
     Commands:
-       contents                  Show contents of a table   
+       create                    Create a new table
        delete                    Delete rows from a table   
        drop                      Delete a table             
        help                      Display help text          
        insert                    Insert a row to a table    
-       list                      List tables                
-       show                      Show table metadata        
+       list                      List tables      
+       permissions               Show all table permissions (required admin privileges)
+       read                      Show contents of a table   
+       show-permissions          Show table permissions          
+       show-table                Show table metadata    
+       sql                       Execute arbitrary SQL (requires admin privileges)    
        update                    Update rows to a table     
 
 The following sections detail each command.
+
+## create
+The `create` command creates a new table, specified as the first parameter of the
+command line. This must be followed by one or more column specifications. A column
+specification consists of the column name, a `:` (colon) character, and the _Ego_
+data type for that column. If the column is also nullable, you can specify ",nullable"
+after the data type. If the column specification contains spaces, the entire column
+specification must be in quotes.
+
+    
+    ego table create employees id:int last:string "first:string, nullable"
+
+This creates a new table with three user-defined columns. The third specification is
+in quotes because there is a space after the comma. This could be expressed wtihout
+the quotes by removing the space character from the command.
+
 
 ## list
 
@@ -109,16 +129,16 @@ The data is printed to the console as a list of the table names. For example,
 This shows a listing of three tables that the current user can read.
 
 
-## show
+## show-table
 
-The `show` command is used to display the column information for a given table.
+The `show-table` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
 a null/empty value.  For example, here is a display of the privilges table
 discussed in an earlier section, assuming the current user has logged into the
 session as the `admin` user:
 
-    user@Macbook  % ./ego tables show privileges
+    user@Macbook  % ./ego tables show-table privileges
     Name           Type      Size    Nullable    
     ===========    ======    ====    ========    
     permissions    string      -5    false       
@@ -130,13 +150,13 @@ the size (-5 applys to `char varying` types), and none of the fields are allowed
 to have null values.
 
 
-## contents
+## read
 
-The `contents` command (which can also be expressed as `read` or `select`) reads
+The `read` command (which can also be expressed as `contents` or `select`) reads
 rows from a table and displays the values on the console. You must specify the name
 of the table as the command parameter.
 
-    user@Macbook ~ % ./ego table contents simple
+    user@Macbook ~ % ./ego table read simple
     id     name    
     ===    ====    
     203    Fred    
@@ -151,7 +171,7 @@ Note that the order of the rows in unpredictable (in practice, it usually is in 
 order the items were added or last updated, but this is not guaranteed). You can specify
 the order of the output using the `--order-by` command option:
 
-   user@Macbook ~ % ./ego table contents simple --order-by id
+   user@Macbook ~ % ./ego table read simple --order-by id
     id     name    
     ===    ====    
     101    Tom     
@@ -165,7 +185,7 @@ the order of the output using the `--order-by` command option:
 You can further influence the output by specifying filters that are applied to the
 query to select specific rows. For example,
 
-   user@Macbook ~ % ./ego table contents simple filter='id < 200' --order-by id
+   user@Macbook ~ % ./ego table read simple filter='id < 200' --order-by id
     id     name    
     ===    ====    
     101    Tom     
@@ -176,7 +196,7 @@ query to select specific rows. For example,
 This limites the output to only rows where the `id` column is less than the value
 200. You can specify multiple filters separated by commas if needed:
 
-   user@Macbook ~ % ./ego table contents simple filter='id < 200','name="Tom" --order-by id
+   user@Macbook ~ % ./ego table read simple filter='id < 200','name="Tom" --order-by id
     id     name    
     ===    ====    
     101    Tom     
@@ -187,7 +207,7 @@ cannot be a space outside the quotes in the filter expression, including after t
 Finally, you can choose to only display specific column(s) in the output, using the `--column`
 command option:
 
-    user@Macbook ~ % ./ego table contents simple filter='id = 101','name="Tom" --column=name
+    user@Macbook ~ % ./ego table read simple filter='id = 101','name="Tom" --column=name
     name    
     ====    
     Tom     
