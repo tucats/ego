@@ -50,6 +50,25 @@ type DBRowCount struct {
 	RestResponse
 }
 
+type PermissionObject struct {
+	User        string   `json:"user"`
+	Schema      string   `json:"schema"`
+	Table       string   `json:"table"`
+	Permissions []string `json:"permissions"`
+	RestResponse
+}
+
+type PermissionResponse struct {
+	PermissionObject
+	RestResponse
+}
+
+type AllPermissionResponse struct {
+	Permissions []PermissionObject `json:"permissions"`
+	Count       int                `json:"count"`
+	RestResponse
+}
+
 type ServerInfo struct {
 	Hostname string `json:"host"`
 	ID       string `json:"id"`

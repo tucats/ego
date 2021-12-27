@@ -21,7 +21,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 		// Special case; if the table name is @SQL then the payload is processed as a simple
 		// SQL  statement and not a table creation.
-		if strings.EqualFold(tableName, "@sql") {
+		if strings.EqualFold(tableName, sqlPseudoTable) {
 
 			if !isAdmin {
 				ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)

@@ -15,5 +15,7 @@ const (
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
 
-	rowIDName = "_row_id_"
+	rowIDName              = "_row_id_"
+	sqlPseudoTable         = "@sql"
+	permissionsPseudoTable = "@permissions"
 )

@@ -496,3 +496,8 @@ func mapColumnType(native string) string {
 
 	return native
 }
+
+func tableNameParts(user string, name string) []string {
+	fullyQualified, _ := fullName(user, name)
+	return strings.Split(fullyQualified, ".")
+}

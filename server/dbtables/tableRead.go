@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
 
@@ -16,11 +17,27 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	var rows *sql.Rows
 	var q string
 
-	tableName, _ = fullName(user, tableName)
-
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
+
+		// Special case; if the table name is @permissions then the payload is processed as request
+		// to read all the permissions data
+		if strings.EqualFold(tableName, permissionsPseudoTable) {
+			ui.Debug(ui.ServerLogger, "[%d] Attempting to read all permissions data", sessionID)
+			if !isAdmin {
+				ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+
+				return
+			}
+
+			ReadAllPermissions(db, sessionID, w, r)
+
+			return
+		}
+
+		tableName, _ = fullName(user, tableName)
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 			return
