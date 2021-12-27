@@ -2,9 +2,14 @@ package dbtables
 
 import (
 	"database/sql"
+	"encoding/json"
+	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 const (
@@ -149,4 +154,222 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 	ui.Debug(ui.ServerLogger, "[%d] permissions for %s, table %s, set to %s", sessionID, user, table, permissionList)
 
 	return true
+}
+
+func grantPermissions(sessionID int32, db *sql.DB, user string, table string, permissions string) *errors.EgoError {
+	// Decompose the permissions list
+	permissionNames := strings.Split(permissions, ",")
+	tableName, _ := fullName(user, table)
+
+	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, user, tableName)
+	if err != nil {
+		return errors.New(err).Context(user + ":" + tableName)
+	}
+
+	permMap := map[string]bool{}
+	permissionsString := ""
+
+	for rows.Next() {
+		_ = rows.Scan(&permissionsString)
+		for _, perm := range strings.Split(permissionsString, ",") {
+			normalizedPermName := strings.ToLower(strings.TrimSpace(perm))
+			permMap[normalizedPermName] = true
+		}
+	}
+
+	// Apply the permissions we were given
+	for _, perm := range permissionNames {
+		normalizedName := strings.ToLower(strings.TrimSpace(perm))
+		if normalizedName[0:1] == "-" {
+			delete(permMap, normalizedName[1:])
+		} else {
+			if normalizedName[0:1] == "+" {
+				normalizedName = normalizedName[1:]
+			}
+			permMap[normalizedName] = true
+		}
+	}
+
+	// Build the new permissions string
+	permissions = ""
+	for key := range permMap {
+		if len(permissions) > 0 {
+			permissions = permissions + ","
+		}
+		permissions = permissions + key
+	}
+
+	// Attempt to update the permissions.
+	var result sql.Result
+	context := "updating permissions"
+	result, err = db.Exec(`update admin.privileges set permissions=$1 where username=$2 and tablename=$3`, permissions, user, tableName)
+	if err == nil {
+		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
+			context = "adding permissions"
+			_, err = db.Exec(`insert into admin.privileges(permissions, username, tablename) values($1,$2,$3)`, permissions, user, tableName)
+		}
+	}
+
+	if err != nil {
+		return errors.New(err).Context(context)
+	}
+
+	return nil
+
+}
+
+func ReadPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	db, err := OpenDB(sessionID, user, "")
+	if err != nil {
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	_, _ = db.Exec(createPermissionString)
+
+	table, fullyQualified := fullName(user, tableName)
+	if !hasAdminPermission && !fullyQualified {
+		ErrorResponse(w, sessionID, "Not authorized to read permissions", http.StatusForbidden)
+
+		return
+	}
+
+	type PermissionsResponse struct {
+		Permissions []string `json:"permissions"`
+		defs.RestResponse
+	}
+
+	reply := PermissionsResponse{}
+
+	rows, err := db.Query(permissionsSelectString, user, table)
+	if err != nil {
+		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions field: %v", sessionID, err)
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	permissionsMap := map[string]bool{}
+
+	for rows.Next() {
+		permissionString := ""
+		_ = rows.Scan(&permissionString)
+		ui.Debug(ui.ServerLogger, "[%d] Read permissions field: %v", sessionID, permissionString)
+
+		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
+			permissionsMap[strings.TrimSpace(perm)] = true
+		}
+	}
+
+	reply.Permissions = make([]string, 0)
+	for k := range permissionsMap {
+		reply.Permissions = append(reply.Permissions, k)
+	}
+
+	sort.Strings(reply.Permissions)
+	reply.Status = http.StatusOK
+	w.WriteHeader(http.StatusOK)
+
+	b, _ := json.MarshalIndent(reply, "", "  ")
+	_, _ = w.Write(b)
+}
+
+func GrantPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	db, err := OpenDB(sessionID, user, "")
+	if err != nil {
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+	}
+	_, _ = db.Exec(createPermissionString)
+
+	table, fullyQualified := fullName(user, tableName)
+	if !hasAdminPermission && !fullyQualified {
+		ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)
+
+		return
+	}
+
+	type PermissionsResponse struct {
+		Permissions []string `json:"permissions"`
+		defs.RestResponse
+	}
+
+	reply := PermissionsResponse{}
+
+	rows, err := db.Query(permissionsSelectString, user, table)
+	if err != nil {
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+	}
+
+	permissionsMap := map[string]bool{}
+
+	for rows.Next() {
+		permissionString := ""
+		_ = rows.Scan(&permissionString)
+		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
+			permissionsMap[strings.TrimSpace(perm)] = true
+		}
+	}
+
+	reply.Permissions = make([]string, 0)
+	for k := range permissionsMap {
+		reply.Permissions = append(reply.Permissions, k)
+	}
+
+	sort.Strings(reply.Permissions)
+	reply.Status = http.StatusOK
+	w.WriteHeader(http.StatusOK)
+
+	b, _ := json.MarshalIndent(reply, "", "  ")
+	_, _ = w.Write(b)
+}
+
+func DeletePermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	db, err := OpenDB(sessionID, user, "")
+	if err != nil {
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+	}
+	_, _ = db.Exec(createPermissionString)
+
+	table, fullyQualified := fullName(user, tableName)
+	if !hasAdminPermission && !fullyQualified {
+		ErrorResponse(w, sessionID, "Not authorized to read permissions", http.StatusForbidden)
+
+		return
+	}
+
+	type PermissionsResponse struct {
+		Permissions []string `json:"permissions"`
+		defs.RestResponse
+	}
+
+	reply := PermissionsResponse{}
+
+	rows, err := db.Query(permissionsSelectString, user, table)
+	if err != nil {
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+	}
+
+	permissionsMap := map[string]bool{}
+
+	for rows.Next() {
+		permissionString := ""
+		_ = rows.Scan(&permissionString)
+		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
+			permissionsMap[strings.TrimSpace(perm)] = true
+		}
+	}
+
+	reply.Permissions = make([]string, 0)
+	for k := range permissionsMap {
+		reply.Permissions = append(reply.Permissions, k)
+	}
+
+	sort.Strings(reply.Permissions)
+	reply.Status = http.StatusOK
+	w.WriteHeader(http.StatusOK)
+
+	b, _ := json.MarshalIndent(reply, "", "  ")
+	_, _ = w.Write(b)
 }

@@ -160,7 +160,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		sessionID, user, hasAdminPermission, r.Method, path)
 
 	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
-	//ui.Debug(ui.ServerLogger, "[%d] urlParts (valid=%v) %v", sessionID, valid, urlParts)
+	if !valid {
+		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/permissions")
+	}
 
 	if !valid || !datatypes.GetBool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
@@ -174,6 +176,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	tableName := datatypes.GetString(urlParts["table"])
 	rows := datatypes.GetBool(urlParts["rows"])
+	perms := datatypes.GetBool(urlParts["permissions"])
 
 	if tableName == "" && r.Method != "GET" {
 		msg := "Unsupported method"
@@ -226,7 +229,40 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sionce it's not a row operation, it must be a table-level operation, which is
+	if perms {
+
+		if r.Method != http.MethodGet && !hasUpdatePermission {
+			msg := "User does not have permission to modify tables"
+
+			ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(msg))
+
+			return
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			dbtables.ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+
+		case http.MethodPut:
+			dbtables.GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+
+		case http.MethodDelete:
+			dbtables.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+
+		default:
+			msg := "Unsupported method"
+			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
+				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(msg))
+		}
+
+		return
+	}
+
+	// Since it's not a row operation, it must be a table-level operation, which is
 	// only permitted for root users or those with "table_admin" privilege
 	if !hasAdminPermission {
 		msg := "User does not have permission to admin tables"
