@@ -707,3 +707,82 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 
 	return nil
 }
+
+func TablePermissions(c *cli.Context) *errors.EgoError {
+	permissions := defs.AllPermissionResponse{}
+
+	err := runtime.Exchange("/tables/@permissions", "GET", nil, &permissions, defs.TableAgent)
+	if errors.Nil(err) {
+		switch ui.OutputFormat {
+		case "text":
+			t, _ := tables.New([]string{"User", "Schema", "Table", "Permissions"})
+			for _, permission := range permissions.Permissions {
+				t.AddRowItems(permission.User,
+					permission.Schema,
+					permission.Table,
+					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
+				)
+			}
+			t.Print("text")
+		case "json":
+			b, _ := json.MarshalIndent(permissions, "", "  ")
+			fmt.Printf("%s\n", string(b))
+		}
+	}
+
+	return err
+}
+
+func TableGrant(c *cli.Context) *errors.EgoError {
+
+	permissions, _ := c.GetStringList("permission")
+	table := c.GetParameter(0)
+	result := defs.PermissionResponse{}
+
+	err := runtime.Exchange("/tables/"+table+"/permissions", "PUT", permissions, &result, defs.TableAgent)
+	if errors.Nil(err) {
+		printPermissionObject(result)
+	}
+
+	return err
+}
+
+func TableShowPermission(c *cli.Context) *errors.EgoError {
+	table := c.GetParameter(0)
+	result := defs.PermissionResponse{}
+
+	err := runtime.Exchange("/tables/"+table+"/permissions", "GET", nil, &result, defs.TableAgent)
+	if errors.Nil(err) {
+		printPermissionObject(result)
+	}
+
+	return err
+
+}
+
+func printPermissionObject(result defs.PermissionResponse) {
+	switch ui.OutputFormat {
+	case "text":
+		plural := "s"
+		verb := "are"
+		if len(result.Permissions) < 1 {
+			plural = ""
+			verb = "is"
+			if len(result.Permissions) == 0 {
+				result.Permissions = []string{"none"}
+			}
+		}
+		ui.Say("User %s permission%s for %s.%s %s %s",
+			result.User,
+			plural,
+			result.Schema,
+			result.Table,
+			verb,
+			strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
+		)
+
+	case "json":
+		b, _ := json.MarshalIndent(result, "", "  ")
+		fmt.Printf("%s\n", b)
+	}
+}

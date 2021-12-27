@@ -189,6 +189,38 @@ table. The `filter` parameter contains a filter expression, of the same form as 
 operation.
 
 
+&nbsp;
+&nbsp;
+## Permissions
+A permissions table is managed by the _Ego_ server that controls whether a given use can read,
+update, or delete a given table.  By default, a user can only set these attributes on tables
+that they own. An administrator (a user account with "root" privilege) can change the attributes
+of any table for any user.
+
+You can read the entire list of permissions if you are an admin user.
+
+### GET /tables/@permissions
+
+This command specifies the pseudo table name `@permissions` to indicate that the request is to
+read all the permissions data for all tables. The result is a JSON payload with an array for
+each permissions object stored in the database, listing the user, schema, table, and a string
+array of permission names.
+
+### GET /tables/_table_/permissions
+
+This command returns a permissions object for the given table and the current user.  This includes
+the user, schema, table, and a string array of permission names.
+
+### PUT /tables/_tables_/permissions
+
+This command will update the permissions for the given table and the current user. The body of
+the request must contain a JSON payload with a string array of permission names. The name can
+start with a "+" in which case the permission is added to the existing data. If the name starts
+with a "-" then the permission is removed. It is not an error to remove a permission that does
+not exist.
+
+If there is no existing permission data for the user, a new permissions object is created in the
+security database for the current user, initialized with the permissions provided.
 
 &nbsp;
 &nbsp;

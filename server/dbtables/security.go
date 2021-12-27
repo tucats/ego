@@ -156,6 +156,8 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	permissionNames := strings.Split(permissions, ",")
 	tableName, _ := fullName(user, table)
 
+	ui.Debug(ui.ServerLogger, "[%d] Attempting to set %s permissions for %s to %s", sessionID, user, tableName, permissionNames)
+
 	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, user, tableName)
 	if err != nil {
 		return errors.New(err).Context(user + ":" + tableName)
@@ -188,6 +190,9 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	// Build the new permissions string
 	permissions = ""
 	for key := range permMap {
+		if len(key) == 0 {
+			continue
+		}
 		if len(permissions) > 0 {
 			permissions = permissions + ","
 		}
@@ -201,7 +206,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	if err == nil {
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
-			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissionNames)
+			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissions)
 		}
 	}
 
