@@ -2,13 +2,9 @@ package dbtables
 
 import (
 	"database/sql"
-	"encoding/json"
-	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -25,9 +21,9 @@ const (
 // The permissions string for the table and user is read, if it exists,
 // must contain the given permission.
 func Authorized(sessionID int32, db *sql.DB, user string, table string, operations ...string) bool {
-	_, _ = db.Exec(createPermissionString)
+	_, _ = db.Exec(permissionsCreateTableQuery)
 
-	rows, err := db.Query(permissionsSelectString, user, table)
+	rows, err := db.Query(permissionsSelectQuery, user, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions: %v", sessionID, err)
 
@@ -77,8 +73,8 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
-	_, _ = db.Exec(createPermissionString)
-	result, err := db.Exec(permissionsDeleteString, table)
+	_, _ = db.Exec(permissionsCreateTableQuery)
+	result, err := db.Exec(permissionsDeleteAllQuery, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error deleting permissions: %v", sessionID, err)
 
@@ -99,7 +95,7 @@ func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
 // RemoveTablePermissions updates the permissions data to remove references to
 // the named table.
 func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
-	_, _ = db.Exec(createPermissionString)
+	_, _ = db.Exec(permissionsCreateTableQuery)
 
 	// If this is a two-part name, we must create a permissions object for the owner/schema of the table
 	if dot := strings.Index(table, "."); dot > 0 {
@@ -121,7 +117,7 @@ func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, per
 func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
 	var permissionList string
 
-	_, _ = db.Exec(createPermissionString)
+	_, _ = db.Exec(permissionsCreateTableQuery)
 
 	if len(permissions) == 0 {
 		permissionList = strings.Join([]string{readOperation, deleteOperation}, ",")
@@ -136,15 +132,14 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 
 	// Upsert isn't always available, so delete any candidate row(s) before
 	// adding in the new one.
-	q := "DELETE FROM admin.privileges WHERE username = $1 AND tablename = $2"
-	_, err := db.Exec(q, user, table)
+	_, err := db.Exec(permissionsDeleteAllQuery, user, table)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error updating permissions: %v", sessionID, err)
 
 		return false
 	}
 
-	_, err = db.Exec(permissionsInsertString, user, table, permissionList)
+	_, err = db.Exec(permissionsInsertQuery, user, table, permissionList)
 	if err != nil {
 		ui.Debug(ui.ServerLogger, "[%d] Error updating permissions: %v", sessionID, err)
 
@@ -202,11 +197,11 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	// Attempt to update the permissions.
 	var result sql.Result
 	context := "updating permissions"
-	result, err = db.Exec(`update admin.privileges set permissions=$1 where username=$2 and tablename=$3`, permissions, user, tableName)
+	result, err = db.Exec(permissionsUpdateQuery, user, tableName, permissions)
 	if err == nil {
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
-			_, err = db.Exec(`insert into admin.privileges(permissions, username, tablename) values($1,$2,$3)`, permissions, user, tableName)
+			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissionNames)
 		}
 	}
 
@@ -216,185 +211,4 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	return nil
 
-}
-
-func ReadPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	db, err := OpenDB(sessionID, user, "")
-	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	_, _ = db.Exec(createPermissionString)
-
-	table, fullyQualified := fullName(user, tableName)
-	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to read permissions", http.StatusForbidden)
-
-		return
-	}
-
-	reply := defs.PermissionResponse{}
-	parts := tableNameParts(user, table)
-	reply.User = user
-	reply.Schema = parts[0]
-	reply.Table = parts[1]
-
-	rows, err := db.Query(permissionsSelectString, user, table)
-	if err != nil {
-		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions field: %v", sessionID, err)
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	permissionsMap := map[string]bool{}
-
-	for rows.Next() {
-		permissionString := ""
-		_ = rows.Scan(&permissionString)
-		ui.Debug(ui.ServerLogger, "[%d] Read permissions field: %v", sessionID, permissionString)
-
-		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
-			permissionsMap[strings.TrimSpace(perm)] = true
-		}
-	}
-
-	reply.Permissions = make([]string, 0)
-	for k := range permissionsMap {
-		reply.Permissions = append(reply.Permissions, k)
-	}
-
-	sort.Strings(reply.Permissions)
-	reply.Status = http.StatusOK
-	w.WriteHeader(http.StatusOK)
-
-	b, _ := json.MarshalIndent(reply, "", "  ")
-	_, _ = w.Write(b)
-}
-
-func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	_, _ = db.Exec(createPermissionString)
-
-	reply := defs.AllPermissionResponse{
-		Permissions: []defs.PermissionObject{},
-	}
-
-	rows, err := db.Query(`SELECT username, tablename, permissions FROM admin.privileges ORDER BY username,tablename`)
-	if err != nil {
-		ui.Debug(ui.ServerLogger, "[%d] Error reading permissions: %v", sessionID, err)
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	count := 0
-	for rows.Next() {
-		var user, table, permissionString string
-
-		permObject := defs.PermissionObject{}
-		permissionsMap := map[string]bool{}
-		count = count + 1
-
-		err = rows.Scan(&user, &table, &permissionString)
-		if err != nil {
-			ui.Debug(ui.ServerLogger, "[%d] Error scanning permissions: %v", sessionID, err)
-			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-			return
-		}
-
-		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
-			permissionsMap[strings.TrimSpace(perm)] = true
-		}
-
-		permObject.Permissions = make([]string, 0)
-		for k := range permissionsMap {
-			permObject.Permissions = append(permObject.Permissions, k)
-		}
-
-		sort.Strings(permObject.Permissions)
-
-		parts := tableNameParts(user, table)
-		permObject.User = user
-		permObject.Schema = parts[0]
-		permObject.Table = parts[1]
-
-		reply.Permissions = append(reply.Permissions, permObject)
-	}
-
-	reply.Status = http.StatusOK
-	reply.Count = count
-	w.WriteHeader(http.StatusOK)
-
-	b, _ := json.MarshalIndent(reply, "", "  ")
-	_, _ = w.Write(b)
-}
-
-func GrantPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	db, err := OpenDB(sessionID, user, "")
-	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-	_, _ = db.Exec(createPermissionString)
-
-	table, fullyQualified := fullName(user, tableName)
-	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)
-
-		return
-	}
-
-	permissionsList := []string{}
-
-	err = json.NewDecoder(r.Body).Decode(&permissionsList)
-	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	var buff strings.Builder
-	for i, key := range permissionsList {
-		if i > 0 {
-			buff.WriteRune(',')
-		}
-		buff.WriteString(strings.TrimSpace(strings.ToLower(key)))
-	}
-
-	err = grantPermissions(sessionID, db, user, table, buff.String())
-
-	if !errors.Nil(err) {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	ReadPermissions(user, hasAdminPermission, table, sessionID, w, r)
-}
-
-func DeletePermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	db, err := OpenDB(sessionID, user, "")
-	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-	}
-	_, _ = db.Exec(createPermissionString)
-
-	table, fullyQualified := fullName(user, tableName)
-	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to delete permissions", http.StatusForbidden)
-
-		return
-	}
-
-	_, err = db.Exec(`DELETE FROM admin.privileges where username=$1 and tablename=$2`, user, table)
-	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }

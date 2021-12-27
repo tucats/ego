@@ -20,7 +20,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		q := queryParameters(tableDeleteString, map[string]string{
+		q := queryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
 

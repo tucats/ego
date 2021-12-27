@@ -43,7 +43,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			return
 		}
 
-		q = queryParameters(tableMetadataQuerySting, map[string]string{
+		q = queryParameters(tableMetadataQuery, map[string]string{
 			"table": tableName,
 		})
 

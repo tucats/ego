@@ -1,14 +1,16 @@
 package dbtables
 
 const (
-	tablesQueryString       = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name;`
-	tableMetadataQuerySting = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0;`
-	tableDeleteString       = `DROP TABLE {{schema}}.{{table}};`
-	createPermissionString  = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`
-	permissionsSelectString = `SELECT permissions FROM admin.privileges WHERE username = $1 and tablename = $2`
-	permissionsDeleteString = `DELETE FROM admin.privileges WHERE tablename = $1`
-	permissionsInsertString = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
-	createSchemaString      = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
+	tablesListQuery             = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name;`
+	tableMetadataQuery          = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0;`
+	tableDeleteQuery            = `DROP TABLE {{schema}}.{{table}};`
+	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
+	permissionsCreateTableQuery = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`
+	permissionsSelectQuery      = `SELECT permissions FROM admin.privileges WHERE username = $1 and tablename = $2`
+	permissionsDeleteQuery      = `DELETE FORM admin.privileges WHERE username=$1 AND tablename = $2`
+	permissionsDeleteAllQuery   = `DELETE FROM admin.privileges WHERE tablename = $1`
+	permissionsInsertQuery      = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
+	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
 
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"

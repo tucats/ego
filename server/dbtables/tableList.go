@@ -23,7 +23,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	if err == nil && db != nil {
 		var rows *sql.Rows
 
-		q := strings.ReplaceAll(tablesQueryString, "{{schema}}", user)
+		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", user)
 
 		ui.Debug(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
 		ui.Debug(ui.ServerLogger, "[%d]    with query %s", sessionID, q)

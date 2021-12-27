@@ -137,7 +137,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 		schema = tableName[:dot]
 	}
 
-	q := queryParameters(createSchemaString, map[string]string{
+	q := queryParameters(createSchemaQuery, map[string]string{
 		"schema": schema,
 	})
 
