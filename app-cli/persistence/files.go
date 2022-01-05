@@ -220,8 +220,12 @@ func GetUsingList(key string, values ...string) int {
 
 // Delete removes a key from the map entirely. Also removes if from the
 // active defaults.
-func Delete(key string) {
+func Delete(key string) *errors.EgoError {
 	c := getCurrentConfiguration()
+
+	if _, found := c.Items[key]; !found {
+		return errors.New(errors.ErrInvalidConfigName).Context(key)
+	}
 
 	delete(c.Items, key)
 	delete(explicitValues.Items, key)
@@ -229,6 +233,8 @@ func Delete(key string) {
 	ProfileDirty = true
 
 	ui.Debug(ui.AppLogger, "Deleting profile key \"%s\"", key)
+
+	return nil
 }
 
 // Keys returns the list of keys in the profile as an array

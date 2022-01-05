@@ -52,6 +52,7 @@ var ErrInvalidColumnDefinition = errors.New("invalid database column definition"
 var ErrInvalidColumnName = errors.New("invalid column name")
 var ErrInvalidColumnNumber = errors.New("invalid column number")
 var ErrInvalidColumnWidth = errors.New("invalid column width")
+var ErrInvalidConfigName = errors.New("invalid configuration name")
 var ErrInvalidConstant = errors.New("invalid constant expression")
 var ErrInvalidCredentials = errors.New("invalid credentials")
 var ErrInvalidDebugCommand = errors.New("invalid debugger command")

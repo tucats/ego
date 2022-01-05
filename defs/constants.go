@@ -15,131 +15,134 @@ const JSONMediaType = "application/json"
 // This section describes the profile keys used by Ego
 
 const (
+	// The prefix for all configuration keys reserved to Ego.
+	PrivilegedKeyPrefix = "ego."
+
 	// File system location used to locate services, lib,
 	// and test directories.
-	EgoPathSetting = "ego.runtime.path"
+	EgoPathSetting = PrivilegedKeyPrefix + "runtime.path"
 
 	// Do we normalize the case of all symbols to a common
 	// (lower) case string. If not true, symbol names are
 	// case-sensitive.
-	CaseNormalizedSetting = "ego.compiler.normalized"
+	CaseNormalizedSetting = PrivilegedKeyPrefix + "compiler.normalized"
 
 	// What is the output format that should be used by
 	// default for operations that could return either
 	// "text" , "indent", or "json" output.
-	OutputFormatSetting = "ego.console.format"
+	OutputFormatSetting = PrivilegedKeyPrefix + "console.format"
 
 	// If true, the script language includes language
 	// extensions such as print, call, try/catch.
-	ExtensionsEnabledSetting = "ego.compiler.extensions"
+	ExtensionsEnabledSetting = PrivilegedKeyPrefix + "compiler.extensions"
 
 	// Should an interactive session automatically import
 	// all the pre-defined packages?
-	AutoImportSetting = "ego.compiler.import"
+	AutoImportSetting = PrivilegedKeyPrefix + "compiler.import"
 
 	// Should the interactive RUN mode exit when the user
 	// enters a blank line on the console?
-	ExitOnBlankSetting = "ego.console.exit.on.blank"
+	ExitOnBlankSetting = PrivilegedKeyPrefix + "console.exit.on.blank"
 
 	// Should the copyright message be omitted when in
 	// interactive prompt mode?
-	NoCopyrightSetting = "ego.console.no.copyright"
+	NoCopyrightSetting = PrivilegedKeyPrefix + "console.no.copyright"
 
 	// Should the interactive command input processor use
 	// readline?
-	UseReadline = "ego.console.readline"
+	UseReadline = PrivilegedKeyPrefix + "console.readline"
 
 	// Set to true if the full stack should be listed during
 	// tracing.
-	FullStackListingSetting = "ego.compiler.full.stack"
+	FullStackListingSetting = PrivilegedKeyPrefix + "compiler.full.stack"
 
 	// Should the Ego program(s) be run with "static" or
 	// "dynamic" typing? The default is "dynamic".
-	StaticTypesSetting = "ego.compiler.types"
+	StaticTypesSetting = PrivilegedKeyPrefix + "compiler.types"
 
 	// Feature flag to enable native structures (rather than
 	// maps with hidden metadata). Defaults to false.
-	NativeStructuresSetting = "ego.compiler.native.structures"
+	NativeStructuresSetting = PrivilegedKeyPrefix + "compiler.native.structures"
 
 	// The base URL of the Ego server providing application services.
-	ApplicationServerSetting = "ego.application.server"
+	ApplicationServerSetting = PrivilegedKeyPrefix + "application.server"
 
 	// The base URL of the Ego server providing logon services.
-	LogonServerSetting = "ego.logon.server"
+	LogonServerSetting = PrivilegedKeyPrefix + "logon.server"
 
 	// The last token created by a ego logon command, which
 	// is used by default for server admin commands as well
 	// as rest calls.
-	LogonTokenSetting = "ego.logon.token"
+	LogonTokenSetting = PrivilegedKeyPrefix + "logon.token"
 
 	// The default user if no userdatabase has been initialized
 	// yet. This is a strong of the form "user:password", which
 	// is defined as the root user.
-	DefaultCredentialSetting = "ego.server.default-credential"
+	DefaultCredentialSetting = PrivilegedKeyPrefix + "server.default-credential"
 
 	// If present, this user is always assigned super-user (root)
 	// privileges regardless of the userdata settings. This can be
 	// used to access an encrypted user data file.
-	LogonSuperuserSetting = "ego.server.superuser"
+	LogonSuperuserSetting = PrivilegedKeyPrefix + "server.superuser"
 
 	// The file system location where the user database is stored.
-	LogonUserdataSetting = "ego.server.userdata"
+	LogonUserdataSetting = PrivilegedKeyPrefix + "server.userdata"
 
 	// The encryption key for the userdata file. If not present,
 	// the file is not encrypted and is readable json.
-	LogonUserdataKeySetting = "ego.server.userdata.key"
+	LogonUserdataKeySetting = PrivilegedKeyPrefix + "server.userdata.key"
 
 	// The URL path for the tables database functionality
-	TablesServerDatabase = "ego.server.database.url"
+	TablesServerDatabase = PrivilegedKeyPrefix + "server.database.url"
 
 	// The user:password credentials to use with the local tables database
-	TablesServerDatabaseCredentials = "ego.server.database.credentials"
+	TablesServerDatabaseCredentials = PrivilegedKeyPrefix + "server.database.credentials"
 
 	// The name of the tables database in the local database store (schemas
 	// are used to partition this database by Ego username)
-	TablesServerDatabaseName = "ego.server.database.name"
+	TablesServerDatabaseName = PrivilegedKeyPrefix + "server.database.name"
 
 	// Boolean indicating if the communication with the tables database
 	// should be done using SSL secured communications
-	TablesServerDatabaseSSLMode = "ego.server.database.ssl"
+	TablesServerDatabaseSSLMode = PrivilegedKeyPrefix + "server.database.ssl"
 
 	// The key string used to encrypt authentication tokens.
-	TokenKeySetting = "ego.server.token.key"
+	ServerTokenKeySetting = PrivilegedKeyPrefix + "server.token.key"
 
 	// A string indicating the duration of a token before it is
 	// considered expired. Examples are "15m" or "24h".
-	TokenExpirationSetting = "ego.server.token.expiration"
+	ServerTokenExpirationSetting = PrivilegedKeyPrefix + "server.token.expiration"
 
 	// If true, functions that return multiple values including an
 	// error that do not assign that error to a value will result in
 	// the error being thrown.
-	ThrowUncheckedErrorsSetting = "ego.runtime.unchecked.errors"
+	ThrowUncheckedErrorsSetting = PrivilegedKeyPrefix + "runtime.unchecked.errors"
 
 	// If true, the TRACE operation will print the full stack instead of
 	// a shorter single-line version.
-	FullStackTraceSetting = "ego.runtime.stack.trace"
+	FullStackTraceSetting = PrivilegedKeyPrefix + "runtime.stack.trace"
 
 	// If specified, has the Go-style format string to be used for log
 	// messages showing the time of the event.
-	LogTimestampFormat = "ego.log.timestamp"
+	LogTimestampFormat = PrivilegedKeyPrefix + "log.timestamp"
 
 	// If specified, all filename references in ego programs (such as the
 	// ReadFile() function) must start with this path, or it will be prefixed
 	// with this path. This lets you limit where/how the files can be managed
 	// by an ego program. This is especially important in server mode.
-	SandboxPathSetting = "ego.sandbox.path"
+	SandboxPathSetting = PrivilegedKeyPrefix + "sandbox.path"
 
 	// PidDirectorySettings has the path used to store and find PID files for
 	// server invocations and management.
-	PidDirectorySetting = "ego.server.piddir"
+	PidDirectorySetting = PrivilegedKeyPrefix + "server.piddir"
 
 	// If true, the default state for staring an Ego is to not require HTTPS/SSL
 	// but rather run in "insecure" mode.
-	InsecureServerSetting = "ego.server.insecure"
+	InsecureServerSetting = PrivilegedKeyPrefix + "server.insecure"
 
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
-	MaxCacheSizeSetting = "ego.server.cache.size"
+	MaxCacheSizeSetting = PrivilegedKeyPrefix + "server.cache.size"
 )
 
 // This section contains the names of the command-line options. These often
@@ -161,3 +164,39 @@ const (
 	LogonAgent  = "logon"
 	TableAgent  = "tables"
 )
+
+// This map describes the list of valid settings, and whether they can be set by the
+// command line.
+var ValidSettings map[string]bool = map[string]bool{
+	EgoPathSetting:                  true,
+	CaseNormalizedSetting:           true,
+	OutputFormatSetting:             true,
+	ExtensionsEnabledSetting:        true,
+	AutoImportSetting:               true,
+	ExitOnBlankSetting:              true,
+	NoCopyrightSetting:              true,
+	UseReadline:                     true,
+	FullStackListingSetting:         true,
+	StaticTypesSetting:              true,
+	NativeStructuresSetting:         true,
+	ApplicationServerSetting:        true,
+	LogonServerSetting:              true,
+	LogonTokenSetting:               true,
+	DefaultCredentialSetting:        true,
+	LogonSuperuserSetting:           true,
+	LogonUserdataSetting:            true,
+	LogonUserdataKeySetting:         true,
+	TablesServerDatabase:            true,
+	TablesServerDatabaseCredentials: true,
+	TablesServerDatabaseName:        true,
+	TablesServerDatabaseSSLMode:     true,
+	ServerTokenKeySetting:           true,
+	ServerTokenExpirationSetting:    true,
+	ThrowUncheckedErrorsSetting:     true,
+	FullStackTraceSetting:           true,
+	LogTimestampFormat:              true,
+	SandboxPathSetting:              true,
+	PidDirectorySetting:             true,
+	InsecureServerSetting:           true,
+	MaxCacheSizeSetting:             true,
+}

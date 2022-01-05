@@ -55,6 +55,14 @@ var Grammar = []cli.Option{
 		Action:               DeleteAction,
 		ParametersExpected:   1,
 		ParameterDescription: "key",
+		Value: []cli.Option{
+			{
+				LongName:    "force",
+				ShortName:   "f",
+				OptionType:  cli.BooleanType,
+				Description: "Do not signal error if option not found",
+			},
+		},
 	},
 	{
 		LongName:             "remove",
@@ -150,6 +158,11 @@ func SetAction(c *cli.Context) *errors.EgoError {
 		key = key[:equals]
 	}
 
+	// Sanity check -- if it is a privileged setting, is it valid?
+	if invalidKeyError := validateKey(key); !errors.Nil(invalidKeyError) {
+		return invalidKeyError
+	}
+
 	persistence.Set(key, value)
 	ui.Say("Profile key %s written", key)
 
@@ -158,8 +171,22 @@ func SetAction(c *cli.Context) *errors.EgoError {
 
 // DeleteAction deletes a named key value.
 func DeleteAction(c *cli.Context) *errors.EgoError {
+	var err *errors.EgoError
+
 	key := c.GetParameter(0)
-	persistence.Delete(key)
+
+	// Sanity check -- if it is a privileged setting, is it valid?
+	if err = validateKey(key); !errors.Nil(err) {
+		return err
+	}
+
+	if err = persistence.Delete(key); !errors.Nil(err) {
+		if c.GetBool("force") {
+			err = nil
+		}
+		return err
+	}
+
 	ui.Say("Profile key %s deleted", key)
 
 	return nil
@@ -185,6 +212,23 @@ func SetDescriptionAction(c *cli.Context) *errors.EgoError {
 	config.Description = c.GetParameter(0)
 	persistence.Configurations[persistence.ProfileName] = config
 	persistence.ProfileDirty = true
+
+	return nil
+}
+
+// Determine if a key is allowed to be updated by the CLI. This rule
+// applies to keys with the privileged key prefix ("ego.")
+func validateKey(key string) *errors.EgoError {
+
+	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
+		allowed, found := defs.ValidSettings[key]
+		if !found {
+			return errors.New(errors.ErrInvalidConfigName)
+		}
+		if !allowed {
+			return errors.New(errors.ErrNoPrivilegeForOperation)
+		}
+	}
 
 	return nil
 }

@@ -16,8 +16,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const TokenExpirationSetting = defs.TokenExpirationSetting
-const TokenKeySetting = defs.TokenKeySetting
+const TokenExpirationSetting = defs.ServerTokenExpirationSetting
+const TokenKeySetting = defs.ServerTokenKeySetting
 
 // Token is the Go native expression of a token value, which contains
 // the identity of the creator, an arbitrary data payload, an expiration

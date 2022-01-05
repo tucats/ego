@@ -35,6 +35,8 @@ func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 // ProfileSet implements the profile.set() function.
 func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	var err *errors.EgoError
+
 	key := datatypes.GetString(args[0])
 
 	// Quick check here. The key must already exist if it's one of the
@@ -49,12 +51,12 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// store the value for the key.
 	value := datatypes.GetString(args[1])
 	if value == "" {
-		persistence.Delete(key)
+		err = persistence.Delete(key)
 	} else {
 		persistence.Set(key, value)
 	}
 
-	return nil, persistence.Save()
+	return err, persistence.Save()
 }
 
 // ProfileDelete implements the profile.delete() function.
