@@ -20,14 +20,6 @@ import (
 const (
 	// LogonEndpoint is the endpoint for the logon service.
 	LogonEndpoint = "/services/admin/logon/"
-
-	// LogonServerSetting is the name of the profile item that
-	// describes the URL of the logon server (less the endpoint).
-	LogonServerSetting = "ego.logon.server"
-
-	// LogonTokenSetting is the name of the profile item that
-	// contains the logon token received from a successful logon.
-	LogonTokenSetting = "ego.logon.token"
 )
 
 // LogonGrammar describes the login subcommand.
@@ -69,7 +61,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
-	url := persistence.Get(LogonServerSetting)
+	url := persistence.Get(defs.LogonServerSetting)
 	if c.WasFound("logon-server") {
 		url, _ = c.GetString("logon-server")
 
@@ -80,7 +72,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 			return e2
 		}
 
-		persistence.Set(LogonServerSetting, url)
+		persistence.Set(defs.LogonServerSetting, url)
 	}
 
 	if url == "" {
@@ -126,7 +118,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 		}
 
 		token := payload.Token
-		persistence.Set(LogonTokenSetting, token)
+		persistence.Set(defs.LogonTokenSetting, token)
 
 		err = persistence.Save()
 		if errors.Nil(err) {

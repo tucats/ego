@@ -16,7 +16,7 @@ func handler(req http.Request, resp http.Response ) {
     payload := {
         "issuer":_session,
         "token":token, 
-        "expires": time.Now().Add(profile.Get("ego.token.expiration")).String(),
+        "expires": time.Now().Add(profile.Get("ego.server.token.expiration")).String(),
         "identity": _user,
         }
 
