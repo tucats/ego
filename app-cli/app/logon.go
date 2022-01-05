@@ -104,7 +104,10 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 	req := restClient.NewRequest()
 	req.Header.Set("Accept", "application/json")
+
 	runtime.AddAgent(req, defs.LogonAgent)
+
+	ui.Debug(ui.DebugLogger, "REST URL: %s", url)
 
 	r, err := req.Get(url)
 
@@ -117,6 +120,10 @@ func Logon(c *cli.Context) *errors.EgoError {
 			return errors.New(err).Context("logon")
 		}
 
+		if ui.LoggerIsActive(ui.DebugLogger) {
+			b, _ := json.MarshalIndent(payload, "", "  ")
+			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(b))
+		}
 		token := payload.Token
 		persistence.Set(defs.LogonTokenSetting, token)
 
