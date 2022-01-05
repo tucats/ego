@@ -78,10 +78,10 @@ in one of three ways when running the `ego` command line tool:
 1.  If the `lib` and `test` directories are in the same location as the `ego`
     command line program, then that is assumed to be the active _Ego path_.
 
-2.  If there is a profile preference called `ego.path` it contains the absolute
+2.  If there is a profile preference called `ego.runtime.path` it contains the absolute
     path name of the _Ego path_. You can set this value using a command like:
 
-        $ ego profile set ego.path=/home/tom/ego
+        $ ego configile set ego.runtime.path=/home/tom/ego
     
     This sets the _Ego path_ value to be `/home/tom/ego` each time the `ego` 
     command line is run.
@@ -93,8 +93,8 @@ in one of three ways when running the `ego` command line tool:
         $ ego
 
 Typically, once you have decided where to place the _Ego_ directories, use the
-`ego profile` command to store this location in the persistent profile store so
-it is available anytime the `ego` command is run. You can use the `ego profile show`
+`ego configile` command to store this location in the persistent profile store so
+it is available anytime the `ego` command is run. You can use the `ego configile show`
 command to display the current profile values.
 
 
@@ -157,7 +157,7 @@ ommand-line interface, and are also used by the other subcommands that run unit 
 REST server, etc.
 
 The preferences are stored in ~/.org.fernwood/ego.json which is a JSON file that contains
-all the active profiles and their defaults. You can use the `ego profile` command to view
+all the active profiles and their defaults. You can use the `ego configile` command to view
 the list of available profiles, the current contents of the profiles, and to set or
 delete profile items in the active profile.
 

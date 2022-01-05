@@ -1431,14 +1431,14 @@ c := math.Sum(b...)</code></pre>
 os.Remove(fn)</code></pre>
 <p>When this program runs, the physical file “newdata.txt” will have been deleted from the file system, assuming the current user has permission to delete the file.</p>
 <h2 id="profile">profile <a name="profile"></a></h2>
-<p>The <code>profile</code> package help manage persistent profile settings. These are the same settings that can be accessed from the command line using the <code>ego profile</code> command. They apply to settings found in the current active profile.</p>
+<p>The <code>profile</code> package help manage persistent profile settings. These are the same settings that can be accessed from the command line using the <code>ego configile</code> command. They apply to settings found in the current active profile.</p>
 <p>Profile settings all have a name, which is a string value to identify the key. The prefix “ego.” is reserved for settings related to the <em>Ego</em> compiler, runtime, and server settings. You can use any other prefix to store settings related to your particular <em>Ego</em> application usage.</p>
 <p>The profile values are stored in the .org.fernwood/ego.json file located in your default home directory. This file must be readable to access profile settings, and the file is rewritten when a setting value is changed and <em>Ego</em> exits. Note that this file contains all the profiles, not just the default profile (or profile specified with the –profile command-line option).</p>
 <h3 id="profile.deletekey">profile.Delete(key)</h3>
 <p>The <code>Delete()</code> function deletes a setting from the active profile by name. If the profile value does not exist, there is no error.</p>
 <h3 id="profile.getkey">profile.Get(key)</h3>
 <p>The <code>Get()</code> function retrieves the current value of a given setting by name. For example,</p>
-<p>path := profile.Get(“ego.path”)</p>
+<p>path := profile.Get(“ego.runtime.path”)</p>
 <p>In this case, the variable <code>path</code> is a string containing the file system location for the <em>Ego</em> main path, where service functions, import libraries, and test programs are found. If you request a profile value for a setting that does not exist, an empty string is returned.</p>
 <h3 id="profile.keys">profile.Keys()</h3>
 <p>The <code>Keys()</code> call returns a string array containing the names of all the profile values that are currently set (i.e. have non-empty values). This can be used to determine if a profile setting exists or not before getting its value.</p>

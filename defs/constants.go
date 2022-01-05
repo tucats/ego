@@ -17,7 +17,7 @@ const JSONMediaType = "application/json"
 const (
 	// File system location used to locate services, lib,
 	// and test directories.
-	EgoPathSetting = "ego.path"
+	EgoPathSetting = "ego.runtime.path"
 
 	// Do we normalize the case of all symbols to a common
 	// (lower) case string. If not true, symbol names are
@@ -27,7 +27,7 @@ const (
 	// What is the output format that should be used by
 	// default for operations that could return either
 	// "text" , "indent", or "json" output.
-	OutputFormatSetting = "ego.output-format"
+	OutputFormatSetting = "ego.console.format"
 
 	// If true, the script language includes language
 	// extensions such as print, call, try/catch.
@@ -104,11 +104,11 @@ const (
 	TablesServerDatabaseSSLMode = "ego.server.database.ssl"
 
 	// The key string used to encrypt authentication tokens.
-	TokenKeySetting = "ego.token.key"
+	TokenKeySetting = "ego.server.token.key"
 
 	// A string indicating the duration of a token before it is
 	// considered expired. Examples are "15m" or "24h".
-	TokenExpirationSetting = "ego.token.expiration"
+	TokenExpirationSetting = "ego.server.token.expiration"
 
 	// If true, functions that return multiple values including an
 	// error that do not assign that error to a value will result in

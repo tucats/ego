@@ -97,8 +97,10 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		return datatypes.InstanceOfType(datatypes.WaitGroupType), nil
 	}
 
-	// If it's a Mutex, make a new one.
-	if _, ok := args[0].(sync.Mutex); ok {
+	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
+	// cast attempt will yield a warning on invalid mutex copy operation.
+	switch args[0].(type) {
+	case sync.Mutex:
 		return datatypes.InstanceOfType(datatypes.MutexType), nil
 	}
 

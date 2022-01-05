@@ -2,14 +2,14 @@
 // This also tests the filepath.Join function
 
 {
-    here := profile.Get("ego.path")
+    here := profile.Get("ego.runtime.path")
     want := [filepath.Join(here, "main.go")]
     got := io.Expand(filepath.Join(here,"main.go"))
     @assert T.Equal(want, got, "single path name with no extension" )
 }
 
 {
-    here := profile.Get("ego.path")
+    here := profile.Get("ego.runtime.path")
     want := filepath.Join(here, "app-cli/app/actions.go")
     got := io.Expand(here, ".go")
     gotf := got[0]
@@ -17,7 +17,7 @@
 }
 
 {
-    here := profile.Get("ego.path")
+    here := profile.Get("ego.runtime.path")
     want := filepath.Join(here, "tests/README.md")
     got := io.Expand(filepath.Join(here, "tests"))
     @assert T.True(len(got)>0, "did not return a list")

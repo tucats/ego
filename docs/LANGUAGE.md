@@ -2141,7 +2141,7 @@ file.
 ## profile <a name="profile"></a>
 
 The `profile` package help manage persistent profile settings. These are the same settings
-that can be accessed from the command line using the `ego profile` command. They apply to
+that can be accessed from the command line using the `ego configile` command. They apply to
 settings found in the current active profile.
 
 Profile settings all have a name, which is a string value to identify the key. The prefix
@@ -2164,7 +2164,7 @@ value does not exist, there is no error.
 
 The `Get()` function retrieves the current value of a given setting by name. For example,
 
-   path := profile.Get("ego.path")
+   path := profile.Get("ego.runtime.path")
 
 In this case, the variable `path` is a string containing the file system location for the
 _Ego_ main path, where service functions, import libraries, and test programs are found.

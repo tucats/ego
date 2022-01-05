@@ -609,7 +609,7 @@ var RunGrammar = []cli.Option{
 	},
 	{
 		LongName:            "auto-import",
-		Description:         "Override auto-import profile setting",
+		Description:         "Override auto-import configuration setting",
 		OptionType:          cli.BooleanValueType,
 		EnvironmentVariable: "EGO_AUTOIMPORT",
 	},

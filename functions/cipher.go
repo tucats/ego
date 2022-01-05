@@ -10,13 +10,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
-const TokenExpirationSetting = "ego.token.expiration"
-const TokenKeySetting = "ego.token.key"
+const TokenExpirationSetting = defs.TokenExpirationSetting
+const TokenKeySetting = defs.TokenKeySetting
 
 // Token is the Go native expression of a token value, which contains
 // the identity of the creator, an arbitrary data payload, an expiration

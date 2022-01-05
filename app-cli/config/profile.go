@@ -1,4 +1,4 @@
-package profile
+package config
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -18,13 +19,13 @@ const maxKeyValuePrintWidth = 60
 var Grammar = []cli.Option{
 	{
 		LongName:    "list",
-		Description: "List all profiles",
+		Description: "List all configurations",
 		Action:      ListAction,
 		OptionType:  cli.Subcommand,
 	},
 	{
 		LongName:             "show",
-		Description:          "Show the current profile",
+		Description:          "Show the current configuration",
 		Action:               ShowAction,
 		ParameterDescription: "key",
 		ParametersExpected:   -1,
@@ -41,7 +42,7 @@ var Grammar = []cli.Option{
 	{
 		LongName:             "set-description",
 		OptionType:           cli.Subcommand,
-		Description:          "Set the profile description",
+		Description:          "Set the configuration description",
 		ParameterDescription: "text",
 		ParametersExpected:   1,
 		Action:               SetDescriptionAction,
@@ -50,7 +51,7 @@ var Grammar = []cli.Option{
 		LongName:             "delete",
 		Aliases:              []string{"unset"},
 		OptionType:           cli.Subcommand,
-		Description:          "Delete a key from the profile",
+		Description:          "Delete a key from the configuration",
 		Action:               DeleteAction,
 		ParametersExpected:   1,
 		ParameterDescription: "key",
@@ -58,14 +59,14 @@ var Grammar = []cli.Option{
 	{
 		LongName:             "remove",
 		OptionType:           cli.Subcommand,
-		Description:          "Delete an entire profile",
+		Description:          "Delete an entire configuration",
 		Action:               DeleteProfileAction,
 		ParametersExpected:   1,
 		ParameterDescription: "name",
 	},
 	{
 		LongName:             "set",
-		Description:          "Set a profile value",
+		Description:          "Set a configuration value",
 		Action:               SetAction,
 		OptionType:           cli.Subcommand,
 		ParametersExpected:   1,
@@ -73,7 +74,7 @@ var Grammar = []cli.Option{
 	},
 }
 
-// ShowAction Displays the current contents of the active profile.
+// ShowAction Displays the current contents of the active configuration.
 func ShowAction(c *cli.Context) *errors.EgoError {
 	// Is the user asking for a single value?
 	if c.GetParameterCount() > 0 {
@@ -104,7 +105,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-// ListAction Displays the current contents of the active profile.
+// ListAction Displays the current contents of the active configuration.
 func ListAction(c *cli.Context) *errors.EgoError {
 	t, _ := tables.New([]string{"Name", "Description"})
 
@@ -127,7 +128,7 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			ui.TextFormat,
 			ui.JSONFormat,
 			ui.JSONIndentedFormat) {
-			persistence.Set("ego.output-format", outputType)
+			persistence.Set(defs.OutputFormatSetting, outputType)
 
 			return nil
 		}

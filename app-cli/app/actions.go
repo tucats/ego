@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	rest_runtime "github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/util"
@@ -33,7 +34,7 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrInvalidOutputFormat).Context(formatString)
 		}
 
-		persistence.SetDefault("ego.output-format", strings.ToLower(formatString))
+		persistence.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
 	}
 
 	return nil

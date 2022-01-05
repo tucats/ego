@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/app-cli/persistence"
-	"github.com/tucats/ego/app-cli/profile"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
@@ -26,11 +26,11 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 			EnvironmentVariable: "EGO_INSECURE_CLIENT",
 		},
 		{
-			LongName:    "profile",
-			Aliases:     []string{"prof"},
+			LongName:    "config",
+			Aliases:     []string{"configuration", "profile", "prof"},
 			OptionType:  cli.Subcommand,
-			Description: "Manage the default profile",
-			Value:       profile.Grammar,
+			Description: "Manage the default configuration",
+			Value:       config.Grammar,
 		},
 		{
 			LongName:    "logon",

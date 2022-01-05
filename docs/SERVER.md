@@ -189,15 +189,15 @@ reduce re-compilation times for services used frequently.
 
 ## Profile items <a name="profile"></a>
 The REST server can be easily controlled by persistent items in the current profile,
-which are set with the `ego profile set` command or via program operation using the
+which are set with the `ego configile set` command or via program operation using the
 `profile` package.
 
 | item | description |
 |------| ------------|
 | ego.logon.defaultuser | A string value of "user:pass" describing the default credential to apply when there is no user database |
 | ego.logon.userdata | the path to the JSON file or database containing the user data |
-| ego.token.expiration | the default duration a token is considered valid. The default is "15m" for 15 minutes |
-| ego.token.key | A string used to encrypt tokens. This can be any string value |
+| ego.server.token.expiration | the default duration a token is considered valid. The default is "15m" for 15 minutes |
+| ego.server.token.key | A string used to encrypt tokens. This can be any string value |
 &nbsp; 
 &nbsp;
 

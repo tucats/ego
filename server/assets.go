@@ -165,7 +165,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 			path = path[1:]
 		}
 
-		root := persistence.Get("ego.path")
+		root := persistence.Get("ego.runtime.path")
 		fn := filepath.Join(root, "lib/services", path)
 
 		ui.Debug(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)

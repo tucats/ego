@@ -44,7 +44,7 @@ func (r *Response) WriteTemplate( fn string, i interface{}) {
 
     try {
         // Load the page file as a template
-        fn := filepath.Join(profile.Get("ego.path"), fn)
+        fn := filepath.Join(profile.Get("ego.runtime.path"), fn)
         @template mempage io.ReadFile(fn)
 
         // Render the page using the dynamic data, and return it as the response
