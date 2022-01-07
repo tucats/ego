@@ -23,7 +23,7 @@ const (
 )
 
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
-	CountRequest(AssetRequestCounter)
+	CountRequest(TableRequestCounter)
 	w.Header().Add("Content-type", "application/json")
 
 	sessionID := atomic.AddInt32(&nextSessionID, 1)

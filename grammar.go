@@ -9,7 +9,7 @@ import (
 var EgoGrammar = []cli.Option{
 	{
 		LongName:    "table",
-		Aliases:     []string{"tables"},
+		Aliases:     []string{"tables", "db", "database"},
 		Description: "Operate on database tables",
 		OptionType:  cli.Subcommand,
 		Value:       TableGrammar,
