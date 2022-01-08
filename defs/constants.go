@@ -78,11 +78,9 @@ const (
 	// "dynamic" typing? The default is "dynamic".
 	StaticTypesSetting = PrivilegedKeyPrefix + "compiler.types"
 
-	// Feature flag to enable native structures (rather than
-	// maps with hidden metadata). Defaults to false.
-	NativeStructuresSetting = PrivilegedKeyPrefix + "compiler.native.structures"
-
-	// The base URL of the Ego server providing application services.
+	// The base URL of the Ego server providing application services. This
+	// is normally the same as the logon server, but may be set differently
+	// if the logon services are hosted on a different server.
 	ApplicationServerSetting = PrivilegedKeyPrefix + "application.server"
 
 	// The base URL of the Ego server providing logon services.
@@ -191,15 +189,14 @@ var ValidSettings map[string]bool = map[string]bool{
 	OutputFormatSetting:             true,
 	ExtensionsEnabledSetting:        true,
 	AutoImportSetting:               true,
-	ExitOnBlankSetting:              true,
-	NoCopyrightSetting:              true,
+	ExitOnBlankSetting:              false,
+	NoCopyrightSetting:              false,
 	UseReadline:                     true,
 	FullStackListingSetting:         true,
 	StaticTypesSetting:              true,
-	NativeStructuresSetting:         true,
-	ApplicationServerSetting:        true,
+	ApplicationServerSetting:        false,
 	LogonServerSetting:              true,
-	LogonTokenSetting:               true,
+	LogonTokenSetting:               false,
 	DefaultCredentialSetting:        true,
 	LogonSuperuserSetting:           true,
 	LogonUserdataSetting:            true,
