@@ -27,6 +27,10 @@ const EgoLogEnv = "EGO_LOG"
 // The file extension for Ego programs"
 const EgoFilenameExtension = ".ego"
 
+// This is the name of a column automatically added to tables created using
+// the 'tables' REST API
+const RowIDName = "_row_id_"
+
 // This section describes the profile keys used by Ego
 const (
 	// The prefix for all configuration keys reserved to Ego.

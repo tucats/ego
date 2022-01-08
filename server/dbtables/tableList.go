@@ -59,7 +59,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				columnCount := len(columns)
 
 				for _, columnName := range columns {
-					if columnName == rowIDName {
+					if columnName == defs.RowIDName {
 						columnCount--
 
 						break

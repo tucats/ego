@@ -152,6 +152,13 @@ var TableGrammar = []cli.Option{
 		ParametersExpected: 1,
 		Value: []cli.Option{
 			{
+				LongName:    "row-ids",
+				ShortName:   "i",
+				Aliases:     []string{"ids"},
+				Description: "Include the row UUID column in the output",
+				OptionType:  cli.BooleanType,
+			},
+			{
 				LongName:    "columns",
 				ShortName:   "c",
 				Aliases:     []string{"column"},

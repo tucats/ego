@@ -454,7 +454,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	// add it in to the table definition.
 	hasRowID := false
 	for _, column := range data {
-		if column.Name == rowIDName {
+		if column.Name == defs.RowIDName {
 			hasRowID = true
 
 			break
@@ -463,7 +463,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 
 	if !hasRowID {
 		data = append(data, defs.DBColumn{
-			Name: rowIDName,
+			Name: defs.RowIDName,
 			Type: "string",
 		})
 	}

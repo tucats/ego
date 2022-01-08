@@ -32,8 +32,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		if _, found := data[rowIDName]; !found {
-			data[rowIDName] = uuid.New().String()
+		if _, found := data[defs.RowIDName]; !found {
+			data[defs.RowIDName] = uuid.New().String()
 		}
 
 		q, values := formInsertQuery(r.URL, user, data)

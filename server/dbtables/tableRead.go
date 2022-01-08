@@ -52,10 +52,10 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			columns := make([]defs.DBColumn, 0)
 
 			for i, name := range names {
-				// Special case, we synthetically create a rowIDName column
+				// Special case, we synthetically create a defs.RowIDName column
 				// and it is always of type "UUID". But we don't return it
 				// as a user column name.
-				if name == rowIDName {
+				if name == defs.RowIDName {
 					continue
 				}
 

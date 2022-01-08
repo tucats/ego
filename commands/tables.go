@@ -150,13 +150,13 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		err = printRowSet(resp)
+		err = printRowSet(resp, c.GetBool("row-ids"))
 	}
 
 	return errors.New(err)
 }
 
-func printRowSet(resp defs.DBRows) *errors.EgoError {
+func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
 	if resp.Status > 299 {
 		return errors.NewMessage(resp.Message)
 	}
@@ -171,20 +171,34 @@ func printRowSet(resp defs.DBRows) *errors.EgoError {
 
 		keys := make([]string, 0)
 		for k := range resp.Rows[0] {
+			if k == defs.RowIDName && !showRowID {
+				continue
+			}
 			keys = append(keys, k)
 		}
+
 		sort.Strings(keys)
 
 		t, _ := tables.New(keys)
 
 		for _, row := range resp.Rows {
-			values := make([]interface{}, len(row))
-			for i, key := range keys {
-				values[i] = row[key]
+			values := make([]interface{}, 0)
+			for _, key := range keys {
+				if key == defs.RowIDName && !showRowID {
+					continue
+				}
+				values = append(values, row[key])
 			}
 			_ = t.AddRowItems(values...)
 		}
 		t.Print(ui.OutputFormat)
+	} else if ui.OutputFormat == ui.JSONIndentedFormat {
+		var b []byte
+
+		b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		if errors.Nil(err) {
+			fmt.Printf("%s\n", string(b))
+		}
 	} else {
 		var b []byte
 
@@ -668,7 +682,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 			return err
 		}
 
-		_ = printRowSet(rows)
+		_ = printRowSet(rows, true)
 	} else {
 		resp := defs.DBRowCount{}
 
