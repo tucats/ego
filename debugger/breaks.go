@@ -189,8 +189,6 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 				text := c.GetTokenizer().GetLine(line)
 				msg = fmt.Sprintf("%s:\n\t%5d, %s", breakAt, line, text)
 				b.hit++
-
-				break
 			}
 		}
 	}

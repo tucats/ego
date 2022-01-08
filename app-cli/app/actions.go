@@ -24,7 +24,7 @@ func InsecureAction(c *cli.Context) *errors.EgoError {
 }
 
 // OutputFormatAction sets the default output format to use. This must be one of
-// the supported types ("text", "json", or "indented").
+// the supported types "test"", "json"", or "indented").
 func OutputFormatAction(c *cli.Context) *errors.EgoError {
 	if formatString, present := c.FindGlobal().GetString("format"); present {
 		if util.InList(strings.ToLower(formatString),
@@ -73,7 +73,7 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 		arch = "Apple Silicon"
 	}
 
-	if ui.OutputFormat == "text" {
+	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s version %s (%s, %s)\n",
 			c.FindGlobal().AppName,
 			c.FindGlobal().Version,
@@ -98,7 +98,7 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 			Arch:      runtime.GOARCH,
 			File:      fullPath,
 		}
-		if ui.OutputFormat == "json" {
+		if ui.OutputFormat == ui.JSONFormat {
 			b, _ := json.Marshal(v)
 			fmt.Println(string(b))
 		} else {

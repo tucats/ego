@@ -12,8 +12,22 @@ const DefaultUserdataFileName = "sqlite3://users.db"
 // for REST calls based on JSON.
 const JSONMediaType = "application/json"
 
-// This section describes the profile keys used by Ego
+// The environment variable that defines where the runtime files are
+// to be found
+const EgoPathEnv = "EGO_PATH"
 
+// The subdirection in "EGO_PATH" where the .ego runtime files and assets
+// are found
+const LibPathName = "lib"
+
+// The environment variable that contains the path to which the log file
+// is written.
+const EgoLogEnv = "EGO_LOG"
+
+// The file extension for Ego programs"
+const EgoFilenameExtension = ".ego"
+
+// This section describes the profile keys used by Ego
 const (
 	// The prefix for all configuration keys reserved to Ego.
 	PrivilegedKeyPrefix = "ego."
@@ -29,7 +43,7 @@ const (
 
 	// What is the output format that should be used by
 	// default for operations that could return either
-	// "text" , "indent", or "json" output.
+	// "text" , "indented", or "json" output.
 	OutputFormatSetting = PrivilegedKeyPrefix + "console.format"
 
 	// If true, the script language includes language

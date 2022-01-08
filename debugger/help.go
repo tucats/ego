@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/app-cli/tables"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -40,7 +41,7 @@ func Help() *errors.EgoError {
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)
 		_ = table.SetOrderBy("Command")
-		_ = table.Print("text")
+		_ = table.Print(ui.TextFormat)
 	}
 
 	return err

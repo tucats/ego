@@ -208,7 +208,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
 		cacheMutex.Unlock()
 	} else {
-		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+".ego"))
+		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+defs.EgoFilenameExtension))
 		if !errors.Nil(err) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			cacheMutex.Unlock()
@@ -402,7 +402,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isJSON {
-		w.Header()["Content-Type"] = []string{"application/json"}
+		w.Header()["Content-Type"] = []string{defs.JSONMediaType}
 	}
 
 	w.WriteHeader(status)

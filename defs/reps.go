@@ -6,6 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// The payload for the status check "/up" endpoint
+type RemoteStatusResponse struct {
+	Pid      int    `json:"pid"`
+	Session  string `json:"session"`
+	Since    string `json:"since"`
+	Hostname string `json:"host"`
+}
+
 // RestResponse describes the HTTP status result and any helpful
 // additional message. This must be part of all response objects.
 type RestResponse struct {

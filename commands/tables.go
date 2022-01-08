@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,13 +26,13 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 	resp := defs.TableInfo{}
 
-	err := runtime.Exchange("/tables/", "GET", nil, &resp, defs.TableAgent)
+	err := runtime.Exchange("/tables/", http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
 		}
 
-		if ui.OutputFormat == "text" {
+		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"Schema", "Name", "Columns"})
 			_ = t.SetOrderBy("Name")
 			_ = t.SetAlignment(2, tables.AlignmentRight)
@@ -58,13 +59,13 @@ func TableShow(c *cli.Context) *errors.EgoError {
 	resp := defs.TableColumnsInfo{}
 	table := c.GetParameter(0)
 
-	err := runtime.Exchange("/tables/"+table, "GET", nil, &resp, defs.TableAgent)
+	err := runtime.Exchange("/tables/"+table, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
 		}
 
-		if ui.OutputFormat == "text" {
+		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable"})
 			_ = t.SetOrderBy("Name")
 			_ = t.SetAlignment(2, tables.AlignmentRight)
@@ -98,7 +99,7 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 			break
 		}
 
-		err = runtime.Exchange("/tables/"+table, "DELETE", nil, &resp, defs.TableAgent)
+		err = runtime.Exchange("/tables/"+table, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if errors.Nil(err) {
 			if resp.Status > 299 {
 				return errors.NewMessage(resp.Message).Context(table)
@@ -128,17 +129,17 @@ func TableContents(c *cli.Context) *errors.EgoError {
 	var args strings.Builder
 
 	if columns, ok := c.GetStringList("columns"); ok {
-		addArg(&args, "columns", columns...)
+		addArg(&args, defs.ColumnParameterName, columns...)
 	}
 
 	if order, ok := c.GetStringList("order-by"); ok {
-		addArg(&args, "sort", order...)
+		addArg(&args, defs.SortParameterName, order...)
 	}
 
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, "filter", f)
+			addArg(&args, defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
@@ -147,7 +148,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	url := fmt.Sprintf("/tables/%s/rows%s", table, args.String())
 
-	err := runtime.Exchange(url, "GET", nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		err = printRowSet(resp)
 	}
@@ -160,7 +161,7 @@ func printRowSet(resp defs.DBRows) *errors.EgoError {
 		return errors.NewMessage(resp.Message)
 	}
 
-	if ui.OutputFormat == "text" {
+	if ui.OutputFormat == ui.TextFormat {
 
 		if len(resp.Rows) == 0 {
 			ui.Say("No rows in query")
@@ -197,10 +198,8 @@ func printRowSet(resp defs.DBRows) *errors.EgoError {
 }
 
 func TableInsert(c *cli.Context) *errors.EgoError {
-
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
-
 	payload := map[string]interface{}{}
 
 	// If there is a JSON file to initialize the payload with, do it now.
@@ -465,7 +464,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, "filter", f)
+			addArg(&args, defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
@@ -474,7 +473,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(
 		fmt.Sprintf("/tables/%s/rows%s", table, args.String()),
-		"PATCH",
+		http.MethodPatch,
 		payload,
 		&resp,
 		defs.TableAgent)
@@ -491,7 +490,6 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 }
 
 func TableDelete(c *cli.Context) *errors.EgoError {
-
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 
@@ -500,7 +498,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, "filter", f)
+			addArg(&args, defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
@@ -509,13 +507,13 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 
 	url := fmt.Sprintf("/tables/%s/rows%s", table, args.String())
 
-	err := runtime.Exchange(url, "DELETE", nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url, http.MethodDelete, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
 		}
 
-		if ui.OutputFormat == "text" {
+		if ui.OutputFormat == ui.TextFormat {
 
 			if resp.Count == 0 {
 				ui.Say("No rows deleted")
@@ -712,10 +710,10 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	permissions := defs.AllPermissionResponse{}
 	userParameter := getUserOption(c)
 
-	err := runtime.Exchange("/tables/@permissions"+userParameter, "GET", nil, &permissions, defs.TableAgent)
+	err := runtime.Exchange("/tables/@permissions"+userParameter, http.MethodGet, nil, &permissions, defs.TableAgent)
 	if errors.Nil(err) {
 		switch ui.OutputFormat {
-		case "text":
+		case ui.TextFormat:
 			t, _ := tables.New([]string{"User", "Schema", "Table", "Permissions"})
 			for _, permission := range permissions.Permissions {
 				t.AddRowItems(permission.User,
@@ -724,8 +722,8 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
 				)
 			}
-			t.Print("text")
-		case "json":
+			t.Print(ui.TextFormat)
+		case ui.JSONFormat:
 			b, _ := json.MarshalIndent(permissions, "", "  ")
 			fmt.Printf("%s\n", string(b))
 		}
@@ -739,14 +737,13 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 func getUserOption(c *cli.Context) string {
 	user, found := c.GetString("user")
 	if found {
-		user = "?user=" + user
+		user = fmt.Sprintf("?%s=%s", defs.UserParameterName, user)
 	}
 
 	return user
 }
 
 func TableGrant(c *cli.Context) *errors.EgoError {
-
 	permissions, _ := c.GetStringList("permission")
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
@@ -764,7 +761,7 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
 
-	err := runtime.Exchange("/tables/"+table+"/permissions", "GET", nil, &result, defs.TableAgent)
+	err := runtime.Exchange("/tables/"+table+"/permissions", http.MethodGet, nil, &result, defs.TableAgent)
 	if errors.Nil(err) {
 		printPermissionObject(result)
 	}
@@ -775,7 +772,7 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 
 func printPermissionObject(result defs.PermissionResponse) {
 	switch ui.OutputFormat {
-	case "text":
+	case ui.TextFormat:
 		plural := "s"
 		verb := "are"
 		if len(result.Permissions) < 1 {
@@ -794,7 +791,7 @@ func printPermissionObject(result defs.PermissionResponse) {
 			strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		)
 
-	case "json":
+	case ui.JSONFormat:
 		b, _ := json.MarshalIndent(result, "", "  ")
 		fmt.Printf("%s\n", b)
 	}

@@ -33,7 +33,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		Limit: size,
 	}
 
-	err = runtime.Exchange("/admin/caches", "POST", &cacheStatus, &cacheStatus, defs.AdminAgent)
+	err = runtime.Exchange("/admin/caches", http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return errors.New(err)
 	}
@@ -72,7 +72,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange("/admin/caches", "DELETE", nil, &cacheStatus, defs.AdminAgent)
+	err := runtime.Exchange("/admin/caches", http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return err
 	}
@@ -110,7 +110,7 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 func ListServerCaches(c *cli.Context) *errors.EgoError {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange("/admin/caches", "GET", nil, &cacheStatus, defs.AdminAgent)
+	err := runtime.Exchange("/admin/caches", http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return err
 	}
@@ -150,7 +150,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 
 			_ = t.SortRows(0, true)
 			_ = t.SetIndent(2)
-			t.Print("text")
+			t.Print(ui.TextFormat)
 			fmt.Printf("\n")
 		}
 

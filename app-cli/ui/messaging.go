@@ -12,7 +12,7 @@ import (
 )
 
 // Formatted output types for data more complex than individual messages, such
-// as the format for tabular data output. Choices are "text", "json", "indent",
+// as the format for tabular data output. Choices are "text", "json", "indented",
 // or default which means whatever was set by the command line or profile.
 const (
 	// DefaultTableFormat means use whatever the default is that may have been set
@@ -34,7 +34,7 @@ const (
 
 // OutputFormat is the default output format if not overridden by a global option
 // or explicit call from the user.
-var OutputFormat = "text"
+var OutputFormat = TextFormat
 
 // QuietMode determines if optional messaging is performed.
 var QuietMode = false

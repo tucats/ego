@@ -103,7 +103,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	req := restClient.NewRequest()
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", defs.JSONMediaType)
 
 	runtime.AddAgent(req, defs.LogonAgent)
 
@@ -185,7 +185,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	if hasScheme {
 		persistence.SetDefault("ego.application.server", name)
 
-		err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
+		err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
 		if errors.Nil(err) {
 			return name, nil
 		}
@@ -196,7 +196,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
+	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
 	if errors.Nil(err) {
 		return normalizedName, nil
 	}
@@ -206,7 +206,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.LogonAgent)
+	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
 
 	return normalizedName, errors.New(err)
 }

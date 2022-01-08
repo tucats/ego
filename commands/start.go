@@ -138,7 +138,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	// environment variable)? If not, use the default name.
 	logFileName, _ := c.GetString("log")
 	if logFileName == "" {
-		logFileName = os.Getenv("EGO_LOG")
+		logFileName = os.Getenv(defs.EgoLogEnv)
 	}
 
 	if logFileName == "" {

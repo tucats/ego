@@ -63,7 +63,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	if len(c.Parent.Parameters) == 0 {
 		path := persistence.Get(defs.EgoPathSetting)
 		if path == "" {
-			path = os.Getenv("EGO_PATH")
+			path = os.Getenv(defs.EgoPathEnv)
 		}
 
 		defaultName := "tests"
@@ -79,7 +79,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 	// Now use the list of locations given to build an expanded list of files
 	for _, fileOrPath := range locations {
-		files, err := functions.ExpandPath(fileOrPath, ".ego")
+		files, err := functions.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -203,11 +203,11 @@ func ReadDirectory(name string) (string, *errors.EgoError) {
 	}
 
 	// For all the items that aren't directories themselves, and
-	// for file names ending in ".ego", read them into the master
+	// for file names ending in defs.EgoExtension, read them into the master
 	// result string. Note that recursive directory reading is
 	// not supported.
 	for _, f := range fi {
-		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), defs.EgoFilenameExtension) {
 			fileName := filepath.Join(dirname, f.Name())
 
 			t, err := ReadFile(fileName)
@@ -235,10 +235,10 @@ func ReadFile(name string) (string, *errors.EgoError) {
 	// Not a directory, try to read the file
 	content, e2 := ioutil.ReadFile(name)
 	if e2 != nil {
-		content, e2 = ioutil.ReadFile(name + ".ego")
+		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
 		if e2 != nil {
-			r := os.Getenv("EGO_PATH")
-			fn := filepath.Join(r, "lib", name+".ego")
+			r := os.Getenv(defs.EgoPathEnv)
+			fn := filepath.Join(r, defs.LibPathName, name+defs.EgoFilenameExtension)
 
 			content, e2 = ioutil.ReadFile(fn)
 			if e2 != nil {

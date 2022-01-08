@@ -34,11 +34,11 @@ func queryParameters(source string, args map[string]string) string {
 	// and it contains a "dot" notation. If so, replace the schema name
 	// with the dot name prefix.
 
-	if tableName, ok := args["table"]; ok {
+	if tableName, ok := args[defs.TableParameterName]; ok {
 		dot := strings.Index(tableName, ".")
 		if dot >= 0 {
-			args["table"] = tableName[dot+1:]
-			args["schema"] = tableName[:dot]
+			args[defs.TableParameterName] = tableName[dot+1:]
+			args[defs.SchemaParameterName] = tableName[:dot]
 		}
 	}
 
@@ -168,7 +168,7 @@ func columnList(u *url.URL) string {
 
 	values := u.Query()
 	for k, v := range values {
-		if strings.EqualFold(k, "column") || strings.EqualFold(k, "columns") {
+		if strings.EqualFold(k, defs.ColumnParameterName) {
 			for _, name := range v {
 				if result.Len() > 0 {
 					result.WriteRune(',')
@@ -203,7 +203,7 @@ func filterList(u *url.URL) string {
 
 	values := u.Query()
 	for k, v := range values {
-		if strings.EqualFold(k, "filter") || strings.EqualFold(k, "filters") {
+		if strings.EqualFold(k, defs.FilterParameterName) {
 			clause := formWhereClause(v)
 			if result.Len() > 0 {
 				result.WriteString(" AND ")
@@ -223,7 +223,7 @@ func filterList(u *url.URL) string {
 func requestForUser(user string, u *url.URL) string {
 	values := u.Query()
 	for k, v := range values {
-		if strings.EqualFold(k, "user") {
+		if strings.EqualFold(k, defs.UserParameterName) {
 			if len(v) > 0 {
 				user = v[0]
 			}

@@ -126,7 +126,7 @@ func ShowHelp(c *Context) {
 	}
 
 	if headerShown {
-		tc.Print("text")
+		tc.Print(ui.TextFormat)
 		fmt.Printf("\n")
 	}
 

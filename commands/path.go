@@ -17,7 +17,7 @@ import (
 func PathAction(c *cli.Context) *errors.EgoError {
 	// If there is already an environment variable, use that. Else get the
 	// preference setting.
-	p := os.Getenv("EGO_PATH")
+	p := os.Getenv(defs.EgoPathEnv)
 	if p == "" {
 		p = persistence.Get(defs.EgoPathSetting)
 	}

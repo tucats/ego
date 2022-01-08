@@ -28,7 +28,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.AutoImportSetting:            "true",
 		defs.CaseNormalizedSetting:        "false",
 		defs.StaticTypesSetting:           "dynamic",
-		defs.OutputFormatSetting:          "text",
+		defs.OutputFormatSetting:          ui.TextFormat,
 		defs.ExtensionsEnabledSetting:     "false",
 		defs.UseReadline:                  "true",
 		defs.ServerTokenExpirationSetting: "24h",

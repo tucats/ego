@@ -101,13 +101,13 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// each endpoint.
 	server.PathRoot, _ = c.GetString("context-root")
 	if server.PathRoot == "" {
-		server.PathRoot = os.Getenv("EGO_PATH")
+		server.PathRoot = os.Getenv(defs.EgoPathEnv)
 		if server.PathRoot == "" {
 			server.PathRoot = persistence.Get(defs.EgoPathSetting)
 		}
 	}
 
-	server.PathRoot = path.Join(server.PathRoot, "lib")
+	server.PathRoot = path.Join(server.PathRoot, defs.LibPathName)
 
 	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")
@@ -273,7 +273,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	if hasScheme {
 		persistence.SetDefault("ego.application.server", name)
 
-		return runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.AdminAgent)
+		return runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
 	}
 
 	// No scheme, so let's try https. If no port supplied, assume the default port.
@@ -281,7 +281,7 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.AdminAgent)
+	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
 	if errors.Nil(err) {
 		return nil
 	}
@@ -291,5 +291,5 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	return runtime.Exchange("/admin/heartbeat", "GET", nil, nil, defs.AdminAgent)
+	return runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
 }

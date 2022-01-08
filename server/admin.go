@@ -102,7 +102,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		return http.StatusForbidden
 	}
 
-	if !util.InList(r.Method, "POST", "DELETE", "GET") {
+	if !util.InList(r.Method, http.MethodPost, http.MethodDelete, http.MethodGet) {
 		w.WriteHeader(http.StatusTeapot)
 
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
@@ -114,7 +114,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	logHeaders(r, sessionID)
 
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		// Get the payload which must be a user spec in JSON
 		buf := new(bytes.Buffer)
 
@@ -140,7 +140,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
-		case "POST":
+		case http.MethodPost:
 			args := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 			_, _ = args.Set("name", u.Name)
 			_, _ = args.Set("password", u.Password)
@@ -195,7 +195,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 		// DELETE A USER
-		case "DELETE":
+		case http.MethodDelete:
 			u, exists := service.ReadUser(name)
 			if !errors.Nil(exists) {
 				w.WriteHeader(http.StatusNotFound)
@@ -245,7 +245,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 		// GET A COLLECTION OR A SPECIFIC USER
-		case "GET":
+		case http.MethodGet:
 			// If it's a single user, do that.
 			if name != "" {
 				status := http.StatusOK
@@ -336,7 +336,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	logHeaders(r, sessionID)
 
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		var result defs.CacheResponse
 
 		buf := new(bytes.Buffer)
@@ -372,7 +372,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		return result.Status
 
 	// Get the list of cached items.
-	case "GET":
+	case http.MethodGet:
 		result := defs.CacheResponse{
 			Count:      len(serviceCache),
 			Limit:      MaxCachedEntries,
@@ -402,7 +402,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 	// DELETE the cached service compilation units. In-flight services
 	// are unaffected.
-	case "DELETE":
+	case http.MethodDelete:
 		w.WriteHeader(http.StatusOK)
 		FlushAssetCache()
 
@@ -517,7 +517,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 	logHeaders(r, sessionID)
 
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(r.Body)
 
@@ -552,7 +552,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 		fallthrough
 
-	case "GET":
+	case http.MethodGet:
 		response.Filename = ui.CurrentLogFile()
 		response.Loggers = map[string]bool{}
 

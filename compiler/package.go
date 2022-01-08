@@ -244,22 +244,22 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 
 	content, e2 := ioutil.ReadFile(fn)
 	if e2 != nil {
-		content, e2 = ioutil.ReadFile(name + ".ego")
+		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
 		if !errors.Nil(e2) {
 			// Path name did not resolve. Get the Ego path and try
 			// variations on that.
-			r := os.Getenv("EGO_PATH")
+			r := os.Getenv(defs.EgoPathEnv)
 			if r == "" {
 				r = persistence.Get(defs.EgoPathSetting)
 			}
 
 			// Try to see if it's in the lib directory under EGO path
-			fn = filepath.Join(r, "lib", name+".ego")
+			fn = filepath.Join(r, defs.LibPathName, name+defs.EgoFilenameExtension)
 			content, e2 = ioutil.ReadFile(fn)
 
 			// Nope, see if it's in the path relative to EGO path
 			if e2 != nil {
-				fn = filepath.Join(r, name+".ego")
+				fn = filepath.Join(r, name+defs.EgoFilenameExtension)
 				content, e2 = ioutil.ReadFile(fn)
 			}
 
@@ -269,7 +269,7 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 				return "", c.newError(e2)
 			}
 		} else {
-			fn = name + ".ego"
+			fn = name + defs.EgoFilenameExtension
 		}
 	}
 
@@ -285,12 +285,12 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 	var b strings.Builder
 
-	r := os.Getenv("EGO_PATH")
+	r := os.Getenv(defs.EgoPathEnv)
 	if r == "" {
 		r = persistence.Get(EgoPathSetting)
 	}
 
-	r = filepath.Join(r, "lib")
+	r = filepath.Join(r, defs.LibPathName)
 
 	dirname := name
 	if !strings.HasPrefix(dirname, r) {
@@ -313,11 +313,11 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 	}
 
 	// For all the items that aren't directories themselves, and
-	// for file names ending in ".ego", read them into the master
+	// for file names ending in defs.EgoExtension, read them into the master
 	// result string. Note that recursive directory reading is
 	// not supported.
 	for _, f := range fi {
-		if !f.IsDir() && strings.HasSuffix(f.Name(), ".ego") {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), defs.EgoFilenameExtension) {
 			fileName := filepath.Join(dirname, f.Name())
 
 			t, err := c.readPackageFile(fileName)

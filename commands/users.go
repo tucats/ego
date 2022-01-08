@@ -42,9 +42,9 @@ func AddUser(c *cli.Context) *errors.EgoError {
 	}
 	resp := defs.UserResponse{}
 
-	err = runtime.Exchange("/admin/users/", "POST", payload, &resp, defs.AdminAgent)
+	err = runtime.Exchange("/admin/users/", http.MethodPost, payload, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
-		if ui.OutputFormat == "text" {
+		if ui.OutputFormat == ui.TextFormat {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
@@ -72,9 +72,9 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 
 	resp := defs.UserResponse{}
 
-	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), "DELETE", nil, &resp, defs.AdminAgent)
+	err = runtime.Exchange(fmt.Sprintf("/admin/users/%s", user), http.MethodDelete, nil, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
-		if ui.OutputFormat == "text" {
+		if ui.OutputFormat == ui.TextFormat {
 			ui.Say(resp.Message)
 		} else {
 			var b []byte
@@ -154,7 +154,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 				}
 
 				_ = t.SortRows(0, true)
-				_ = t.Print("text")
+				_ = t.Print(ui.TextFormat)
 
 			case ui.JSONFormat:
 				fmt.Printf("%s\n", body)

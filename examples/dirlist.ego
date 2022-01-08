@@ -20,5 +20,5 @@ for _, f := range d {
 }
 
 // Print the table (in text format) to the console, and then the count of rows.
-t.Print("text")
+t.Print(ui.TextFormat)
 fmt.Printf("\n%d items\n", len(d))

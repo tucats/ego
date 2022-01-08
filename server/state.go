@@ -26,7 +26,7 @@ var PathRoot string
 var Realm string
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
-// the directorie(s) found to identify ".ego" programs that can be defined as
+// the directorie(s) found to identify defs.EgoExtension programs that can be defined as
 // available service endpoints.
 func DefineLibHandlers(root, subpath string) *errors.EgoError {
 	paths := make([]string, 0)
@@ -38,7 +38,7 @@ func DefineLibHandlers(root, subpath string) *errors.EgoError {
 
 	for _, f := range fids {
 		fullname := f.Name()
-		if !f.IsDir() && path.Ext(fullname) != ".ego" {
+		if !f.IsDir() && path.Ext(fullname) != defs.EgoFilenameExtension {
 			continue
 		}
 

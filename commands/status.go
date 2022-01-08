@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -53,12 +54,7 @@ func Status(c *cli.Context) *errors.EgoError {
 
 // Ping a remote server's "up" service to see its status.
 func remoteStatus(addr string) *errors.EgoError {
-	resp := struct {
-		Pid      int    `json:"pid"`
-		Session  string `json:"session"`
-		Since    string `json:"since"`
-		Hostname string `json:"host"`
-	}{}
+	resp := defs.RemoteStatusResponse{}
 
 	if err := ResolveServerName(addr); !errors.Nil(err) {
 		if strings.Contains(err.Error(), "connect: connection refused") {
@@ -69,7 +65,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		return err
 	}
 
-	err := runtime.Exchange("/services/up/", "GET", nil, &resp, defs.AdminAgent)
+	err := runtime.Exchange("/services/up/", http.MethodGet, nil, &resp, defs.AdminAgent)
 	if !errors.Nil(err) {
 		fmt.Println("DOWN")
 		os.Exit(3)

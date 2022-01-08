@@ -12,7 +12,7 @@ import (
 )
 
 func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
 		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 		return

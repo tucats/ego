@@ -60,7 +60,7 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 			ShortName:           "f",
 			Description:         "Specify text, json or indented output format",
 			OptionType:          cli.KeywordType,
-			Keywords:            []string{"json", "indented", "text"},
+			Keywords:            []string{ui.JSONFormat, ui.JSONIndentedFormat, ui.TextFormat},
 			Action:              OutputFormatAction,
 			EnvironmentVariable: "CLI_OUTPUT_FORMAT",
 		},

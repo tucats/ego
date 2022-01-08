@@ -24,7 +24,7 @@ const (
 
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	CountRequest(TableRequestCounter)
-	w.Header().Add("Content-type", "application/json")
+	w.Header().Add("Content-type", defs.JSONMediaType)
 
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
@@ -178,7 +178,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	rows := datatypes.GetBool(urlParts["rows"])
 	perms := datatypes.GetBool(urlParts["permissions"])
 
-	if tableName == "" && r.Method != "GET" {
+	if tableName == "" && r.Method != http.MethodGet {
 		msg := "Unsupported method"
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)

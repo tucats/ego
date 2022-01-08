@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -79,7 +80,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		// Send the update, get a reply
-		err := runtime.Exchange("/admin/loggers/", "POST", &loggers, &response, defs.AdminAgent)
+		err := runtime.Exchange("/admin/loggers/", http.MethodPost, &loggers, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -93,22 +94,22 @@ func Logging(c *cli.Context) *errors.EgoError {
 		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
 		lines := []string{}
 
-		err := runtime.Exchange(url, "GET", nil, &lines, defs.AdminAgent)
+		err := runtime.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
 
 		switch ui.OutputFormat {
-		case "text":
+		case ui.TextFormat:
 			for _, line := range lines {
 				fmt.Println(line)
 			}
 
-		case "json":
+		case ui.JSONFormat:
 			b, _ := json.Marshal(lines)
 			fmt.Println(string(b))
 
-		case "indented":
+		case ui.JSONIndentedFormat:
 			b, _ := json.MarshalIndent(lines, "", "  ")
 			fmt.Println(string(b))
 		}
@@ -116,7 +117,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	} else {
 		// No changes, just ask for status
-		err := runtime.Exchange("/admin/loggers/", "GET", nil, &response, defs.AdminAgent)
+		err := runtime.Exchange("/admin/loggers/", http.MethodGet, nil, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -131,7 +132,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 	fileOnly := c.GetBool("file")
 
 	switch ui.OutputFormat {
-	case "text":
+	case ui.TextFormat:
 		if fileOnly {
 			ui.Say("%s", response.Filename)
 		} else {
@@ -151,7 +152,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 			}
 		}
 
-	case "json":
+	case ui.JSONFormat:
 		if fileOnly {
 			ui.Say("\"%s\"", response.Filename)
 		} else {
@@ -159,7 +160,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 			ui.Say(string(b))
 		}
 
-	case "indented":
+	case ui.JSONIndentedFormat:
 		if fileOnly {
 			ui.Say("\"%s\"", response.Filename)
 		} else {

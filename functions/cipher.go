@@ -16,14 +16,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-const TokenExpirationSetting = defs.ServerTokenExpirationSetting
-const TokenKeySetting = defs.ServerTokenKeySetting
-
-// Token is the Go native expression of a token value, which contains
+// AuthToken is the Go native expression of a token value, which contains
 // the identity of the creator, an arbitrary data payload, an expiration
 // time after which the token is no longer valid, a unique ID for this
 // token, and the unique ID of the Ego session that created the token.
-type Token struct {
+type AuthToken struct {
 	Name    string
 	Data    string
 	TokenID uuid.UUID
@@ -98,7 +95,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return false, nil
 	}
 
-	var t = Token{}
+	var t = AuthToken{}
 
 	err = json.Unmarshal([]byte(j), &t)
 	if !errors.Nil(err) {
@@ -145,7 +142,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ErrInvalidTokenEncryption).In("extract()")
 	}
 
-	var t = Token{}
+	var t = AuthToken{}
 
 	err = json.Unmarshal([]byte(j), &t)
 	if !errors.Nil(err) {
@@ -174,7 +171,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
-	t := Token{
+	t := AuthToken{
 		Name:    datatypes.GetString(args[0]),
 		TokenID: uuid.New(),
 	}
@@ -195,7 +192,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	// Fetch the default interval, or use 15 minutes as the default.
 	// Calculate a time value for when this token expires
-	interval := persistence.Get(TokenExpirationSetting)
+	interval := persistence.Get(defs.ServerTokenExpirationSetting)
 	if interval == "" {
 		interval = "15m"
 	}
@@ -225,11 +222,11 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // getTokenKey fetches the key used to encrypt tokens. If it
 // was not already set up, a new random one is generated.
 func getTokenKey() string {
-	key := persistence.Get(TokenKeySetting)
+	key := persistence.Get(defs.ServerTokenKeySetting)
 	if key == "" {
 		key = uuid.New().String() + "-" + uuid.New().String()
 
-		persistence.Set(TokenKeySetting, key)
+		persistence.Set(defs.ServerTokenKeySetting, key)
 		_ = persistence.Save()
 	}
 
