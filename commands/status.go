@@ -65,7 +65,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		return err
 	}
 
-	err := runtime.Exchange("/services/up/", http.MethodGet, nil, &resp, defs.AdminAgent)
+	err := runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.AdminAgent)
 	if !errors.Nil(err) {
 		fmt.Println("DOWN")
 		os.Exit(3)

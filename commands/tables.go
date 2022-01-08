@@ -26,7 +26,7 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 	resp := defs.TableInfo{}
 
-	err := runtime.Exchange("/tables/", http.MethodGet, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(defs.TablesPath, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
@@ -59,7 +59,9 @@ func TableShow(c *cli.Context) *errors.EgoError {
 	resp := defs.TableColumnsInfo{}
 	table := c.GetParameter(0)
 
-	err := runtime.Exchange("/tables/"+table, http.MethodGet, nil, &resp, defs.TableAgent)
+	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+
+	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
@@ -99,7 +101,9 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 			break
 		}
 
-		err = runtime.Exchange("/tables/"+table, http.MethodDelete, nil, &resp, defs.TableAgent)
+		urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+
+		err = runtime.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if errors.Nil(err) {
 			if resp.Status > 299 {
 				return errors.NewMessage(resp.Message).Context(table)
@@ -122,33 +126,29 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 }
 
 func TableContents(c *cli.Context) *errors.EgoError {
-
 	resp := defs.DBRows{}
 	table := c.GetParameter(0)
-
-	var args strings.Builder
+	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
 	if columns, ok := c.GetStringList("columns"); ok {
-		addArg(&args, defs.ColumnParameterName, columns...)
+		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
 	}
 
 	if order, ok := c.GetStringList("order-by"); ok {
-		addArg(&args, defs.SortParameterName, order...)
+		url.Parameter(defs.SortParameterName, toInterfaces(order)...)
 	}
 
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, defs.FilterParameterName, f)
+			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
 		}
 	}
 
-	url := fmt.Sprintf("/tables/%s/rows%s", table, args.String())
-
-	err := runtime.Exchange(url, http.MethodGet, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		err = printRowSet(resp)
 	}
@@ -274,7 +274,9 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	err := runtime.Exchange("/tables/"+table+"/rows", "PUT", payload, &resp, defs.TableAgent)
+	urlString := runtime.URLBuilder(defs.TablesRowsPath, table).String()
+
+	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
@@ -381,9 +383,11 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		payload[i] = fields[k]
 	}
 
+	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+
 	// Send the array to the server
 	err := runtime.Exchange(
-		fmt.Sprintf("/tables/%s", table),
+		urlString,
 		"PUT",
 		payload,
 		&resp,
@@ -459,12 +463,12 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	var args strings.Builder
+	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, defs.FilterParameterName, f)
+			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
@@ -472,7 +476,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(
-		fmt.Sprintf("/tables/%s/rows%s", table, args.String()),
+		url.String(),
 		http.MethodPatch,
 		payload,
 		&resp,
@@ -493,21 +497,19 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 
-	var args strings.Builder
+	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
 	if filter, ok := c.GetStringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
-			addArg(&args, defs.FilterParameterName, f)
+			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
 			return errors.NewMessage(msg)
 		}
 	}
 
-	url := fmt.Sprintf("/tables/%s/rows%s", table, args.String())
-
-	err := runtime.Exchange(url, http.MethodDelete, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
@@ -534,22 +536,6 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 	}
 
 	return errors.New(err)
-}
-
-func addArg(b *strings.Builder, name string, values ...string) {
-	if b.Len() == 0 {
-		b.WriteRune('?')
-	} else {
-		b.WriteRune('&')
-	}
-	b.WriteString(name)
-	b.WriteRune('=')
-	for i, value := range values {
-		if i > 0 {
-			b.WriteRune(',')
-		}
-		b.WriteString(value)
-	}
 }
 
 func makeFilter(filters []string) string {
@@ -677,7 +663,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	if strings.HasPrefix(strings.ToLower(sql), "select ") {
 		rows := defs.DBRows{}
 
-		err := runtime.Exchange("/tables/@sql", "PUT", sql, &rows, defs.TableAgent)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &rows, defs.TableAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -686,7 +672,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := runtime.Exchange("/tables/@sql", "PUT", sql, &resp, defs.TableAgent)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &resp, defs.TableAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -708,9 +694,14 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 
 func TablePermissions(c *cli.Context) *errors.EgoError {
 	permissions := defs.AllPermissionResponse{}
-	userParameter := getUserOption(c)
+	url := runtime.URLBuilder(defs.TablesPermissionsPath)
 
-	err := runtime.Exchange("/tables/@permissions"+userParameter, http.MethodGet, nil, &permissions, defs.TableAgent)
+	user, found := c.GetString("user")
+	if found {
+		url.Parameter(defs.UserParameterName, user)
+	}
+
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if errors.Nil(err) {
 		switch ui.OutputFormat {
 		case ui.TextFormat:
@@ -732,24 +723,17 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-// Fetch the username from the command line context, and form a valid
-// URL parameter with the username if given.
-func getUserOption(c *cli.Context) string {
-	user, found := c.GetString("user")
-	if found {
-		user = fmt.Sprintf("?%s=%s", defs.UserParameterName, user)
-	}
-
-	return user
-}
-
 func TableGrant(c *cli.Context) *errors.EgoError {
 	permissions, _ := c.GetStringList("permission")
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
-	userParameter := getUserOption(c)
 
-	err := runtime.Exchange("/tables/"+table+"/permissions"+userParameter, "PUT", permissions, &result, defs.TableAgent)
+	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
+	if user, found := c.GetString("user"); found {
+		url.Parameter(defs.UserParameterName, user)
+	}
+
+	err := runtime.Exchange(url.String(), "PUT", permissions, &result, defs.TableAgent)
 	if errors.Nil(err) {
 		printPermissionObject(result)
 	}
@@ -760,8 +744,9 @@ func TableGrant(c *cli.Context) *errors.EgoError {
 func TableShowPermission(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
+	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 
-	err := runtime.Exchange("/tables/"+table+"/permissions", http.MethodGet, nil, &result, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if errors.Nil(err) {
 		printPermissionObject(result)
 	}
@@ -795,4 +780,13 @@ func printPermissionObject(result defs.PermissionResponse) {
 		b, _ := json.MarshalIndent(result, "", "  ")
 		fmt.Printf("%s\n", b)
 	}
+}
+
+func toInterfaces(items []string) []interface{} {
+	result := make([]interface{}, len(items))
+	for i, item := range items {
+		result[i] = item
+	}
+
+	return result
 }

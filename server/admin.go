@@ -123,7 +123,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		name = u.Name
 	} else {
-		name = strings.TrimPrefix(r.URL.Path, "/admin/users/")
+		name = strings.TrimPrefix(r.URL.Path, defs.AdminUsersPath)
 		if name != "" {
 			if ud, ok := service.ReadUser(name); errors.Nil(ok) {
 				u = ud

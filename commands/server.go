@@ -74,20 +74,20 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.GetBool("code") {
-		http.HandleFunc("/code", server.CodeHandler)
+		http.HandleFunc(defs.CodePath, server.CodeHandler)
 
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
-	http.HandleFunc("/assets/", server.AssetsHandler)
-	http.HandleFunc("/admin/users/", server.UserHandler)
-	http.HandleFunc("/admin/caches", server.CachesHandler)
-	http.HandleFunc("/admin/loggers/", server.LoggingHandler)
-	http.HandleFunc("/admin/heartbeat/", HeartbeatHandler)
+	http.HandleFunc(defs.AssetsPath, server.AssetsHandler)
+	http.HandleFunc(defs.AdminUsersPath, server.UserHandler)
+	http.HandleFunc(defs.AdminCachesPath, server.CachesHandler)
+	http.HandleFunc(defs.AdminLoggersPath, server.LoggingHandler)
+	http.HandleFunc(defs.AdminHeartbeatPath, HeartbeatHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
-	http.HandleFunc("/tables/", server.TablesHandler)
+	http.HandleFunc(defs.TablesPath, server.TablesHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Set up tracing for the server, and enable the logger if
@@ -273,7 +273,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	if hasScheme {
 		persistence.SetDefault("ego.application.server", name)
 
-		return runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
+		return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	}
 
 	// No scheme, so let's try https. If no port supplied, assume the default port.
@@ -281,7 +281,7 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
+	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	if errors.Nil(err) {
 		return nil
 	}
@@ -291,5 +291,5 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	return runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.AdminAgent)
+	return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 }

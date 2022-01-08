@@ -17,11 +17,6 @@ import (
 	"github.com/tucats/ego/runtime"
 )
 
-const (
-	// LogonEndpoint is the endpoint for the logon service.
-	LogonEndpoint = "/services/admin/logon/"
-)
-
 // LogonGrammar describes the login subcommand.
 var LogonGrammar = []cli.Option{
 	{
@@ -92,7 +87,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	// Turn logon server address and endpoint into full URL.
-	url = strings.TrimSuffix(url, "/") + LogonEndpoint
+	url = strings.TrimSuffix(url, "/") + defs.ServicesLogonPath
 
 	// Create a new client, set it's attribute for basic authentication, and
 	// generate a request. The request is made using the logon agent info.
@@ -185,7 +180,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	if hasScheme {
 		persistence.SetDefault("ego.application.server", name)
 
-		err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
+		err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 		if errors.Nil(err) {
 			return name, nil
 		}
@@ -196,7 +191,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
+	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if errors.Nil(err) {
 		return normalizedName, nil
 	}
@@ -206,7 +201,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	persistence.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange("/admin/heartbeat", http.MethodGet, nil, nil, defs.LogonAgent)
+	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
 	return normalizedName, errors.New(err)
 }

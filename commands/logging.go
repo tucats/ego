@@ -80,7 +80,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		// Send the update, get a reply
-		err := runtime.Exchange("/admin/loggers/", http.MethodPost, &loggers, &response, defs.AdminAgent)
+		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -117,7 +117,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	} else {
 		// No changes, just ask for status
-		err := runtime.Exchange("/admin/loggers/", http.MethodGet, nil, &response, defs.AdminAgent)
+		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
 		if !errors.Nil(err) {
 			return err
 		}
