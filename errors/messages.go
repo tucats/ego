@@ -96,6 +96,7 @@ var ErrInvalidType = errors.New("invalid or unsupported data type for this opera
 var ErrInvalidTypeCheck = errors.New("invalid @type keyword")
 var ErrInvalidTypeName = errors.New("invalid type name")
 var ErrInvalidTypeSpec = errors.New("invalid type specification")
+var ErrInvalidURL = errors.New("invalid URL path specification")
 var ErrInvalidValue = errors.New("invalid value")
 var ErrInvalidVarType = errors.New("invalid type for this variable")
 var ErrInvalidVariableArguments = errors.New("invalid variable-argument operation")

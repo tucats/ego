@@ -2197,6 +2197,35 @@ are expressed as JSON data to the server, or sending and receiving text payloads
 If the server being communicated with is an _Ego_ server, then you can use the
 `ego logon` command to create a local token used to authenticate to the server.
 
+### rest.ParseURL(path [, template])
+
+This parses a URL string, and returns a map containing each part of the string.
+If a template is provided, the path component is also reparsed to create additional
+elements in the map for each part of the path. Path elements in the map that match
+the text of the template have a name of the path element and a value of true. If
+the template contains a pseudo-name, such as `{{name}}`in the template path,  that part of the
+path is assumed to be a named item, and an entry in the map is created with the
+given value (in this case, "name"). Other elements of the map that are provided
+by the parser include:
+
+&nbsp;
+
+| Field | Description |
+| ----- | ----------- |
+| urlScheme | the URL scheme, such as "http" or "https" |
+| urlHost | the URL host, such as "abc.com" |
+| urlPort | the URL port string, if it was given |
+| urlUsername | The username from the URL, if given |
+| urlPassword | The password from the URL, if given |
+| urlPath | The raw path string from the URL |
+| urlQuery | A map[string][]string for each query parameter specified |
+
+&nbsp;
+
+Note that if there are no query parameters, or if any other part of the URL is missing,
+then there is no map entry for the corresponding part. Also, username and passwords are
+generally not secure when used as part of a URL transmitted over a network.
+
 ### rest.New(<user, password>)
 
 This returns a rest connection handle (an opaque Go object represented by an Ego symbol

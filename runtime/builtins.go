@@ -33,6 +33,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	_ = s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,
+		"ParseURL":              RestParseURL,
 		datatypes.TypeMDKey:     datatypes.Package("rest"),
 		datatypes.ReadonlyMDKey: true,
 	}))
