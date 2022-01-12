@@ -652,18 +652,18 @@ a single value.
 
 &nbsp;
 
-| Function | Example               | Description |
-| -------- | --------------------- | ----------- |
-| append() | append(list, 5, 6, 7) | Append the items together into an array. |
-| close()  | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
-| delete() | delete(emp, "Name")   | Remove the named field from a map, or a struct member |
-| error()  | error("panic") | Generate a runtime error named "panic". |
-| eval()   | eval("3 + 5")  | Evaluate the expression in the string value, and return the result, `8` |
-| index()  | index(items, 55) | Return the array index of `items` that contains the value `55` |
-| len()    | len(items)     | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
-| make()   | make([]int, 5) | Create an array of int values with `5` elements in the array |
-| members() | members(emp)  | Return an array of strings containing the struct member names of the argument |
-| type()   | type(emp)      | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
+| Function  | Example               | Description |
+| :-------- | :-------------------- | ----------- |
+| append()  | append(list, 5, 6, 7) | Append the items together into an array. |
+| close()   | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
+| delete()  | delete(emp, "Name")   | Remove the named field from a map, or a delete a dynamic struct member |
+| error()   | error("panic")        | Generate a runtime error with the given name (for example,  "panic") |
+| eval()    | eval("3 + 5")         | Evaluate the expression in the string value, and return the result, `8` |
+| index()   | index(items, 55)      | Return the array index of `items` that contains the value `55` |
+| len()     | len(items)            | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
+| make()    | make([]int, 5)        | Create an array of int values with `5` elements in the array |
+| members() | members(emp)          | Return an array of strings containing the struct member names of the argument |
+| type()    | type(emp)             | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
 &nbsp;
 &nbsp;
 
@@ -1063,9 +1063,9 @@ regardless of the type of the value passed in when the function
 was called.  
 
 The `func` statement allows for a special data type `interface{}`
- which really means "any type is allowed" and no conversion occurs.
-  If the function body needs to know the actual type of the value
-   passed, the `type()` function would be used.
+which really means "any type is allowed" and no conversion occurs.
+If the function body needs to know the actual type of the value
+passed, the `type()` function would be used.
 
 A function that does not return a value at all should omit the
 return type declaration.
@@ -1087,8 +1087,8 @@ return value.  If the example above had a `string` result type,
 
 The resulting value  for `y` would be the string "6". This is
 because not only will the boolean `true` value and the integer
- 5 be converted to floating point values, bue the result will
- be converted to a string value when the function exits.
+5 be converted to floating point values, bue the result will
+be converted to a string value when the function exits.
 
 Note that if the `func` statement does not specify a type for
 the result, the function is assumed not to return a result at
@@ -1112,10 +1112,10 @@ no `return` statement needed in this case.
 Also note that the invocation of the `show` function does not
 specify a variable in which to store the result, because there
 is none. In this way you can see that a function can be called
- with a value that can be used in an assignment statement or
- an expression, or just called and the result value ignored.
-  Even if the `show` function returned a value, the invocation
-  ignores the result and it is discarded.
+with a value that can be used in an assignment statement or
+an expression, or just called and the result value ignored.
+Even if the `show` function returned a value, the invocation
+ignores the result and it is discarded.
 
 ## The `defer` Statement  <a name="defer-statement"></a>
 
@@ -1138,11 +1138,11 @@ clean up a function (for example, closing a file that had been
 In this example, the function opens a file (the `io` package is
 discussed later). Because we have opened a file, we want to be
 sure to close it when we're done. This function has two `return`
- statements. We could code it such that before each one, we also
- call the io.Close() function each time. But the `defer` statement
-  allows the function to specify a statement that will be executed
-  _whenever the function actually returns_ regardless of which
-  branch(es) through the conditional code are executed.
+statements. We could code it such that before each one, we also
+call the io.Close() function each time. But the `defer` statement
+allows the function to specify a statement that will be executed
+_whenever the function actually returns_ regardless of which
+branch(es) through the conditional code are executed.
 
 Each `defer` statement identifies a statement or a _basic block_
 of statements (enclosed in "{" and "}") to be executed. If there
@@ -1165,7 +1165,7 @@ Functions can be values themselves. For example, consider:
 This statement gets the value of the function `fmt.Println` and
 stores it in the variable p. From this point on, if you wanted
 to call the package function that prints items to the console,
-instead o fusing `fmt.Println` you can use the variable `p` to
+instead of using `fmt.Println` you can use the variable `p` to
 invoke the function:
 
     p("The answer is", x)

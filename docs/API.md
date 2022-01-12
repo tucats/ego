@@ -59,6 +59,12 @@ the resulting payload and store it away to use for subsequent REST API
 operations. When using this token, it should be used as a Bearer token in 
 subsequent REST operations as the `Authentication: Bearer` header.
 
+A less secure mechanism can be used to authenticate, by providing username
+and password credentials using the `Authentication: Basic` header, followed
+by a Base64 encoding of the "username:password" string. This can be used for
+initial development and debugging, but an authenticated token is the preferred
+way to interact with the table services. In the future, the `Basic` authentication
+support may be removed, requiring a `Bearer` token authentication.
 
 &nbsp;
 &nbsp;
