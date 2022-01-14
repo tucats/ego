@@ -2142,7 +2142,7 @@ file.
 ## profile <a name="profile"></a>
 
 The `profile` package help manage persistent profile settings. These are the same settings
-that can be accessed from the command line using the `ego configile` command. They apply to
+that can be accessed from the command line using the `ego config` command. They apply to
 settings found in the current active profile.
 
 Profile settings all have a name, which is a string value to identify the key. The prefix

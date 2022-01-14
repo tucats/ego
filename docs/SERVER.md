@@ -189,7 +189,7 @@ reduce re-compilation times for services used frequently.
 
 ## Profile items <a name="profile"></a>
 The REST server can be easily controlled by persistent items in the current profile,
-which are set with the `ego configile set` command or via program operation using the
+which are set with the `ego config set` command or via program operation using the
 `profile` package.
 
 | item | description |

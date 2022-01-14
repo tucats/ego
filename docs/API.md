@@ -9,6 +9,8 @@
 
 2. [Tables](#tables)
 
+3. [Administration](#admin)
+
 3. [Services](#services)
 
 &nbsp;
@@ -231,4 +233,33 @@ security database for the current user, initialized with the permissions provide
 &nbsp;
 &nbsp;
 
+# Administrative Functions <a name="admin"></a>
+Administrative functions are REST APIS used to support managing the REST server, including the
+status and state of the server, the database of valid user credentials and permissions, and support
+for caching and logging functions on the server.
+
+The following sections will cover the following paths:
+
+&nbsp;
+
+| Path | Description |
+| ---- | -----|
+| /admin/caches | View, flush, or set size of runtime caches |
+| /admin/heartbeat | Simple check if server is active/responding |
+| /admin/loggers | View or configure logging classes on the server |
+| /admin/users | Manage user credentials and permissions |
+| /assets/ | Access HTML assets (images, etc.) used in HTML pages |
+| 
+
+&nbsp;
+
 # Services <a name="services"> </a>
+
+All remaining REST endpoints are provided under the `/services` path point. Use of this path
+means that the server will load, compile, and run an Ego program that will respond to the given
+REST API. This is the mechanism by which the developer can extend the server functionality
+specific to the needs of the end users.
+
+There are a number of /services endpoints provided in the default installation, and at least
+one (the /services/admin/logon endpoint) is required for a secure, authenticated server. This
+section will describe the endpoints provided in the default deployment.

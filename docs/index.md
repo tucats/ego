@@ -36,7 +36,7 @@ Example:
 * Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.md). 
 * Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
 * Details on using _Ego_ as a command line database are in [Ego Table Server Commands](TABLES.md)
-* Details on using _Ego_ as a REST-based database are in [Ego Table Server APIs](API.md)
+* Details on connect to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
 
 &nbsp; 
 &nbsp;
@@ -82,7 +82,7 @@ in one of three ways when running the `ego` command line tool:
 2.  If there is a profile preference called `ego.runtime.path` it contains the absolute
     path name of the _Ego path_. You can set this value using a command like:
 
-        $ ego configile set ego.runtime.path=/home/tom/ego
+        $ ego config set ego.runtime.path=/home/tom/ego
     
     This sets the _Ego path_ value to be `/home/tom/ego` each time the `ego` 
     command line is run.
@@ -94,8 +94,8 @@ in one of three ways when running the `ego` command line tool:
         $ ego
 
 Typically, once you have decided where to place the _Ego_ directories, use the
-`ego configile` command to store this location in the persistent profile store so
-it is available anytime the `ego` command is run. You can use the `ego configile show`
+`ego config` command to store this location in the persistent profile store so
+it is available anytime the `ego` command is run. You can use the `ego config show`
 command to display the current profile values.
 
 
@@ -158,7 +158,7 @@ ommand-line interface, and are also used by the other subcommands that run unit 
 REST server, etc.
 
 The preferences are stored in ~/.org.fernwood/ego.json which is a JSON file that contains
-all the active profiles and their defaults. You can use the `ego configile` command to view
+all the active profiles and their defaults. You can use the `ego config` command to view
 the list of available profiles, the current contents of the profiles, and to set or
 delete profile items in the active profile.
 
