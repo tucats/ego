@@ -1,7 +1,7 @@
 # Introduction
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
-interpreted (scripting) language similar to _Go_. Think of this as _Emulated Go_. The
-command can either run a program interactive, start a REST server that uses _Ego_
+scripting language similar to _Go_. Think of this as _Emulated Go_. The
+command can either run a program interactively, start a REST server that uses _Ego_
 programs as service endpoints, and other operations.
 
 This command accepts either an input file
@@ -23,7 +23,8 @@ the command `exit`. You can also pipe a program directly to _Ego_, as in
 
 
 If a statement is more complex, or you wish to run a complete program, it may be easier 
-to create a text file with the code, and then compile and run the file. After the input
+to create a text file with the code, and then run the file (which reads the text from 
+disk and performs in internal compilation phase before running it). After the input
 is read from the file and run, the `ego` program exits.
 
 Example:
@@ -35,8 +36,8 @@ Example:
 &nbsp;
 * Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.md). 
 * Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
-* Details on using _Ego_ as a command line database are in [Ego Table Server Commands](TABLES.md)
-* Details on connect to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
+* Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](TABLES.md)
+* Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
 
 &nbsp; 
 &nbsp;
@@ -162,7 +163,10 @@ all the active profiles and their defaults. You can use the `ego config` command
 the list of available profiles, the current contents of the profiles, and to set or
 delete profile items in the active profile.
 
-Here are some common profile settings you might want to set.
+Here are some common profile settings you might want to set. Additional preferences are
+referenced in the relevant sections of the [Language](LANGUAGE.MD), [Server](SERVER.MD), 
+[Table](TABLES.MD), and [API](API.MD) guides.
+
 ### ego.compiler.extensions
 This defaults to `false`. When set to `true`, it allows extensions to the language to be
 used in programs. Examples include the `print` statement and the `exit` statement.
@@ -174,8 +178,10 @@ explicit `import` statement. Note this only imports the packages that have built
 so user-created packages will still need to be explicitly imported.
 
 ### ego.compiler.normalized
-This defaults to `false`. When set to `true`, symbol names (variables, packages, functions)
-are not case-sensitive. When set to `true`, calling `fmt.Println()` is the same as `fmt.printLN()`.
+This defaults to `false`, which means that names in _Ego_ are case-sensitive. By default,
+a symbol `Tom` is not considered the same as `tom`. When set to `true`, 
+symbol names (variables, packages, functions) are not case-sensitive. For example, when set to
+'true', referencing `fmt.Println` is the same as `fmt.printLN`.
 
 ### ego.compiler.types
 This defaults to `dynamic` which means that a variable can take on different types during the
@@ -183,16 +189,9 @@ execution of a program. When set to `static`, it means that once a variable is d
 a given scope, it can never contain a variable of a different type (that is, if declared as a
 string, it can not be set to an int value).
 
-### ego.console.exit.on.blank
-Normally the Ego command line interface will continue to prompt for input from the console
-when run interactively. Blank lines are ignored in this case, and you must use the `exit`
-command to terminate command-line input.
-
-If this preference is set to `true` then a blank line causes the interactive input to end,
-as if an exit command was specified.
-
 ### ego.console.readline
-This defaults to `true`, which uses the full readline package for console input.This supports
-command line recall and command line editing. If this value is set to `false` or `off` then 
-the readline processor is not used, and input is read directly from stdin. This is intended 
-to be used if the terminal/console window is not compatible with readline.
+This defaults to `true`, which uses the full Unix readline package for console input.
+This supports command line recall and command line editing operations. If this value 
+is set  to `false` or `off` then the readline processor is not used, and input is 
+read directly from Unix stdin. This is intended  to be used if the terminal/console 
+window is not compatible with the standard readline library.

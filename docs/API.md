@@ -5,11 +5,10 @@
 
 1. [Authentication](#auth)
 
-1. [Administration](#admin)
+3. [Administration](#admin)
 
 2. [Tables](#tables)
 
-3. [Administration](#admin)
 
 3. [Services](#services)
 
@@ -71,11 +70,133 @@ support may be removed, requiring a `Bearer` token authentication.
 &nbsp;
 &nbsp;
 
-# Administration <a name="admin"> </a>
 
+# Administrative Functions <a name="admin"></a>
+Administrative functions are REST APIS used to support managing the REST server, including the
+status and state of the server, the database of valid user credentials and permissions, and support
+for caching and logging functions on the server.
+
+The following sections will cover the following paths:
+
+&nbsp;
+
+| Path | Description |
+| ---- | -----|
+| /admin/caches | View, flush, or set size of runtime caches |
+| /admin/heartbeat | Simple check if server is active/responding |
+| /admin/loggers | View or configure logging classes on the server |
+| /admin/users | Manage user credentials and permissions |
+| /assets/ | Access HTML assets (images, etc.) used in HTML pages |
+
+## Heartbeat
+The `heartbeat` endpoint is the simplest and fasted way to determine if an Ego server
+is running and responding to requests. It does not require authentication of any kind,
+and returns a 200 success code if the server is available. Any other return code
+indicates that the server is not running or there is a network/gateway problem between
+the REST client code and the Ego server.
+
+This endpoint only supports the GET method.
+
+## Caches
+The _Ego_ server maintains caches to make repeated use of the server more efficient
+by saving operations in memory instead of having to re-load and re-compile services,
+reload assets, etc.
+
+You can examine what is in the server cache, direct the server to flush (i.e. remove
+from memory) any cached items, and you can set the size of the services cache using
+REST calls to the `admin/caches` endpoint.
+
+When a service is invoked by a user to execute _Ego_ code written by the developer(s)
+running the _Ego_ server, the server first searches the cache to see if it has already
+executed this code before. When this is the case, the server does not have to reload
+the service source code from disk or compile it again. Instead, it uses the previous
+results of the compile to execute the service again on behalf of the client.
+
+When the service cannot be found in the cache, it is loaded from disk and compiled
+before it can be executed. The service just compiled is placed in the cache. If the
+cache is too large (based on the limit on the number of items the server is configured
+to allow) the oldest (least recently used) item in the cache is discarded before 
+storing the newly-compiled service in the cache. For example, if the cache limit is
+set to 10, then the cache will contain the ten most-recently used services. The
+premise is that the cache should be set large enough to hold the most commonly used
+services, so they are available for most users most of the time without recompiling.
+
+Similarly, an "asset" cache is managed by the server. When a REST call is made to 
+the server to the `/asset` endpoint, the remainder of the path represents the location
+in the _Ego_ server's disk storage where assets are found. When a request is made for
+an item, the server first checks to see if it is in memory already, and if so will
+just return the contents of the cached item. If it was not found, then the item is
+loaded from disk and also stored in the cache. The assets are typically image
+files or similar HTML assets that might be used by a browser-based application.
+As such, the asset cache is limited by the number of bytes of storaget that it can
+consume in memory, regardless of the number of assets. By default, the cache is
+one megabyte in size.
+
+Note that a side effect of having a non-zero asset cache size is that if a server
+has already cached a value in memory, then changing the disk copy will not result
+in the updated information being used as the cached value. For example, if an HTML
+web page requests an image from the `/assets` path, and then after that the
+developer changes the image on disk using an image editing program, subsequent
+calls to the server will still return the old copy. You must flush the server
+cache to cause it to discard all the asset storage and start again reading from
+disk to satisfy asset requests.
+
+### GET /admin/caches
+This gets information about the caching status in the server. This API requires that
+the user have "admin" privileges. The result is a JSON payload with the following
+fields:
+&nbsp;
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| host      | A string containing the name of the computer running the _Ego_ server |
+| id        | A string containing the UUID of the server instance |
+| count     | The number of items in the services cache |
+| limit     | The maximum number of items in the services cache |
+| items     | An array of strings with the names of the cached services |
+| assets    | The number of assets stored in the in-memory cached |
+| assetSize | The maximum size in bytes of the asset cache |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
 
 &nbsp;
 &nbsp;
+
+### DELETE /admin/caches
+The `DELETE` REST method tells the _Ego_ server to flush the caches; i.e. all the
+copies of service compilations and asset objects are deleted from memory. Subsequent
+REST calls will require that the server reload the item(s) from the disk store and
+also then store them in the cache for future use.
+
+You must have "admin" privileges to execute this REST call.
+
+### PUT /admin/caches
+You can set the size of the caches using the `PUT` method. The JSON payload for
+this operation is a structure with one or both of the following fields:
+&nbsp;
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| limit     | The maximum number of items in the services cache |
+| assetSize | The maximum size in bytes of the asset cache |
+
+&nbsp;
+&nbsp;
+
+You must be an "admin" user to execute this call.
+
+## Loggers
+
+## Users
+
+## Assets
+
+## Heartbeat
+
+&nbsp;
+&nbsp; 
 
 # Tables <a name="tables"> </a>
 
@@ -166,7 +287,7 @@ field in that row.
 You can specify the sort order of the results set by naming one or more columns on which the
 data is sorted before it is retuned to you. Use the `sort` parameter, with a value which is 
 a comma-separated list of columns. The first column named is the primary sort key, the second
-column (if any) is the secondary sort key, etc. You can prefix the column name with a tilde ("`")
+column (if any) is the secondary sort key, etc. You can prefix the column name with a tilde ("~")
 character to make the sort order descending instead of ascending.
 
 You can specify the columns that are to be returned using the `columns` parameter, with a value
@@ -177,8 +298,8 @@ expression. This consists of an operator, followed by one or two operands in par
 operands can themselves be filter expressions to create complex expressions. The operators
 are:
 
-| Operator | Example | Description |
-| -------- | ------- | ----------- |
+| Operator | Example      | Description |
+| -------- | ------------ | ----------- |
 | EQ       | EQ(id,101)   | Match rows where the named column has the given value |
 | LT       | LT(age, 65)  | Match rows where the named column's value is less than the given value. |
 | LE       | LE(size,12)  | Match rows where the named column's value is less than or equal to the given value. |
@@ -188,11 +309,13 @@ are:
 | OR       | OR(EQ(id,1),EQ(id,2)) | Either operands must be true |
 | NOT      | NOT(EQ(id,101)) | Match rows where the operand expression is not true |
 
+Note that in these examples, the value being tested is an integer. You can also specify a string value 
+in double quotes, or a floating point value (such as 123.45).
 
 ### DELETE /tables/_table_/rows
 
 This deletes rows from a table. If no parameters are given, then all rows are deleted. You can
-optionall specify the `filter` parameter to indicate which row(s) are to be deleted from the
+optionally specify the `filter` parameter to indicate which row(s) are to be deleted from the
 table. The `filter` parameter contains a filter expression, of the same form as the GET
 operation.
 
@@ -233,25 +356,6 @@ security database for the current user, initialized with the permissions provide
 &nbsp;
 &nbsp;
 
-# Administrative Functions <a name="admin"></a>
-Administrative functions are REST APIS used to support managing the REST server, including the
-status and state of the server, the database of valid user credentials and permissions, and support
-for caching and logging functions on the server.
-
-The following sections will cover the following paths:
-
-&nbsp;
-
-| Path | Description |
-| ---- | -----|
-| /admin/caches | View, flush, or set size of runtime caches |
-| /admin/heartbeat | Simple check if server is active/responding |
-| /admin/loggers | View or configure logging classes on the server |
-| /admin/users | Manage user credentials and permissions |
-| /assets/ | Access HTML assets (images, etc.) used in HTML pages |
-| 
-
-&nbsp;
 
 # Services <a name="services"> </a>
 
