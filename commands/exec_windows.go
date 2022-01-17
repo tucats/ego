@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"os"
 	"os/exec"
 )
 
