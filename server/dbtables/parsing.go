@@ -253,7 +253,7 @@ func pagingClauses(u *url.URL) string {
 
 	values := u.Query()
 	for k, v := range values {
-		if keywordMatch(k, "list", "count") {
+		if keywordMatch(k, "limit", "count") {
 			limit := 0
 
 			if len(v) == 1 {
