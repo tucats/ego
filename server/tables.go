@@ -117,6 +117,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(msg))
+
 		return
 	}
 
@@ -153,6 +154,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusForbidden)
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte(msg))
+
 		return
 	}
 
@@ -171,6 +173,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(msg))
+
 		return
 	}
 
@@ -180,10 +183,12 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if tableName == "" && r.Method != http.MethodGet {
 		msg := "Unsupported method"
+
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(msg))
+
 		return
 	}
 
@@ -194,7 +199,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if rows {
-
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := "User does not have permission to modify tables"
 
@@ -220,6 +224,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		default:
 			msg := "Unsupported method"
+
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
 			w.WriteHeader(http.StatusBadRequest)
@@ -252,6 +257,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		default:
 			msg := "Unsupported method"
+
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
 			w.WriteHeader(http.StatusBadRequest)
@@ -285,17 +291,16 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		msg := "Unsupported method"
+
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(msg))
 	}
-
 }
 
-// @tomcole to be implemented
+// @tomcole to be implemented.
 func alterTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-
 	msg := fmt.Sprintf("Altering metadata from table %s for user %s", tableName, user)
 	b, _ := json.MarshalIndent(msg, "", "  ")
 

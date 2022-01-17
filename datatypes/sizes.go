@@ -6,11 +6,9 @@ import (
 )
 
 func RealSizeOf(v interface{}) int {
-
 	size := 0
 
 	switch v.(type) {
-
 	case bool:
 		size = 1
 	case byte:
@@ -30,6 +28,7 @@ func RealSizeOf(v interface{}) int {
 		if err := gob.NewEncoder(b).Encode(v); err != nil {
 			return 0
 		}
+
 		size = b.Len()
 	}
 

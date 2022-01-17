@@ -6,7 +6,6 @@ import (
 )
 
 func (t *Tokenizer) DumpTokens(before, after int) {
-
 	start := t.TokenP - before
 	if start < 0 {
 		start = 0
@@ -29,6 +28,7 @@ func (t *Tokenizer) DumpTokens(before, after int) {
 		} else {
 			pointer.WriteString("  ")
 		}
+
 		for j := 3; j < len(next); j++ {
 			pointer.WriteRune(' ')
 		}

@@ -13,25 +13,25 @@ const DefaultUserdataFileName = "sqlite3://users.db"
 const JSONMediaType = "application/json"
 
 // The environment variable that defines where the runtime files are
-// to be found
+// to be found.
 const EgoPathEnv = "EGO_PATH"
 
 // The subdirection in "EGO_PATH" where the .ego runtime files and assets
-// are found
+// are found.
 const LibPathName = "lib"
 
 // The environment variable that contains the path to which the log file
 // is written.
 const EgoLogEnv = "EGO_LOG"
 
-// The file extension for Ego programs"
+// The file extension for Ego programs".
 const EgoFilenameExtension = ".ego"
 
 // This is the name of a column automatically added to tables created using
-// the 'tables' REST API
+// the 'tables' REST API.
 const RowIDName = "_row_id_"
 
-// This section describes the profile keys used by Ego
+// This section describes the profile keys used by Ego.
 const (
 	// The prefix for all configuration keys reserved to Ego.
 	PrivilegedKeyPrefix = "ego."
@@ -108,18 +108,18 @@ const (
 	// the file is not encrypted and is readable json.
 	LogonUserdataKeySetting = PrivilegedKeyPrefix + "server.userdata.key"
 
-	// The URL path for the tables database functionality
+	// The URL path for the tables database functionality.
 	TablesServerDatabase = PrivilegedKeyPrefix + "server.database.url"
 
-	// The user:password credentials to use with the local tables database
+	// The user:password credentials to use with the local tables database.
 	TablesServerDatabaseCredentials = PrivilegedKeyPrefix + "server.database.credentials"
 
 	// The name of the tables database in the local database store (schemas
-	// are used to partition this database by Ego username)
+	// are used to partition this database by Ego username).
 	TablesServerDatabaseName = PrivilegedKeyPrefix + "server.database.name"
 
 	// Boolean indicating if the communication with the tables database
-	// should be done using SSL secured communications
+	// should be done using SSL secured communications.
 	TablesServerDatabaseSSLMode = PrivilegedKeyPrefix + "server.database.ssl"
 
 	// The key string used to encrypt authentication tokens.

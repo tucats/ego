@@ -21,11 +21,9 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
-
 		// Special case; if the table name is @SQL then the payload is processed as a simple
 		// SQL  statement and not a table creation.
 		if strings.EqualFold(tableName, sqlPseudoTable) {
-
 			if !isAdmin {
 				ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)
 
@@ -36,7 +34,6 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 			err := json.NewDecoder(r.Body).Decode(&statementText)
 			if err == nil {
-
 				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statementText)), "select ") {
 					ui.Debug(ui.TableLogger, "[%d] SQL query: %s", sessionID, statementText)
 
@@ -73,6 +70,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -111,6 +109,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
+
 			ui.Debug(ui.ServerLogger, "[%d] table created", sessionID)
 
 			return
@@ -125,16 +124,16 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
+
 	if err == nil {
 		err = fmt.Errorf("unknown error")
 	}
-	_, _ = w.Write([]byte(err.Error()))
 
+	_, _ = w.Write([]byte(err.Error()))
 }
 
 // Verify that the schema exists for this user, and create it if not found.
 func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, user string, tableName string) bool {
-
 	schema := user
 	if dot := strings.Index(tableName, "."); dot >= 0 {
 		schema = tableName[:dot]
@@ -147,6 +146,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 	result, err := db.Exec(q)
 	if err != nil {
 		ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
+
 		return false
 	}
 
@@ -159,15 +159,14 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 }
 
 // ReadTable reads the metadata for a given table, and returns it as an array
-// of column names and types
+// of column names and types.
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var rows *sql.Rows
+
 	var q string
 
 	db, err := OpenDB(sessionID, user, "")
-
 	if err == nil && db != nil {
-
 		// Special case; if the table name is @permissions then the payload is processed as request
 		// to read all the permissions data
 		if strings.EqualFold(tableName, permissionsPseudoTable) {
@@ -186,6 +185,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -246,6 +246,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 	msg := fmt.Sprintf("Database table metadata error, %v", err)
 	status := http.StatusBadRequest
+
 	if strings.Contains(err.Error(), "does not exist") {
 		status = http.StatusNotFound
 	}
@@ -258,15 +259,15 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	ErrorResponse(w, sessionID, msg, status)
 }
 
-//DeleteTable will delete a database table from the user's schema
+//DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
+
 	db, err := OpenDB(sessionID, user, "")
-
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, adminOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -284,7 +285,6 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 			return
 		}
-
 	}
 
 	msg := fmt.Sprintf("Database table delete error, %v", err)
@@ -305,6 +305,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
 		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+
 		return
 	}
 
@@ -320,9 +321,9 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 		rows, err = db.Query(q)
 		if err == nil {
+			var name string
 
 			names := make([]defs.Table, 0)
-			var name string
 			count := 0
 
 			for rows.Next() {

@@ -34,7 +34,6 @@ func PathAction(c *cli.Context) *errors.EgoError {
 		// Now strip off the actual name of the executable, leaving
 		// only the path.
 		p = strings.TrimSuffix(p, "ego")
-
 	}
 
 	fmt.Println(p)

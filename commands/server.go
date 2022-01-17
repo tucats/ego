@@ -186,7 +186,9 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	go server.LogRequestCounts()
 
 	var e2 error
+
 	secure := true
+
 	if persistence.GetBool(defs.InsecureServerSetting) {
 		secure = false
 	}

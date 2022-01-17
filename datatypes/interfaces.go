@@ -25,11 +25,13 @@ func GetString(v interface{}) string {
 
 func GetByte(v interface{}) byte {
 	i := GetInt(v)
+
 	return byte(i)
 }
 
 func GetInt32(v interface{}) int32 {
 	i := GetInt(v)
+
 	return int32(i)
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// The payload for the status check "/up" endpoint
+// The payload for the status check "/up" endpoint.
 type RemoteStatusResponse struct {
 	Pid      int    `json:"pid"`
 	Session  string `json:"session"`

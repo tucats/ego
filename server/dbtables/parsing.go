@@ -22,6 +22,7 @@ func sqlEscape(source string) string {
 		if ch == '\'' || ch == '"' || ch == ';' {
 			return "INVALID-NAME"
 		}
+
 		result.WriteRune(ch)
 	}
 
@@ -29,11 +30,9 @@ func sqlEscape(source string) string {
 }
 
 func queryParameters(source string, args map[string]string) string {
-
 	// Before anything else, let's see if the table name was specified,
 	// and it contains a "dot" notation. If so, replace the schema name
 	// with the dot name prefix.
-
 	if tableName, ok := args[defs.TableParameterName]; ok {
 		dot := strings.Index(tableName, ".")
 		if dot >= 0 {
@@ -45,6 +44,7 @@ func queryParameters(source string, args map[string]string) string {
 	// Skip through the substition strings provided and do any replace
 	// needed.
 	result := source
+
 	for k, v := range args {
 		v = sqlEscape(v)
 		result = strings.ReplaceAll(result, "{{"+k+"}}", v)
@@ -73,9 +73,11 @@ func formWhereClause(filters []string) string {
 			}
 
 			result.WriteString(clause)
+
 			if !tokens.IsNext(",") {
 				break
 			}
+
 			result.WriteString(" AND ")
 		}
 	}
@@ -87,9 +89,11 @@ func whereClause(tokens *tokenizer.Tokenizer) (string, error) {
 	var result strings.Builder
 
 	operator := tokens.Next()
+
 	if !tokens.IsNext("(") {
 		// Assume it's a constant value of some kind. Convert Ego strings to SQL strings
 		isString := false
+
 		if strings.HasPrefix(operator, "\"") && strings.HasSuffix(operator, "\"") {
 			operator = strings.TrimPrefix(strings.TrimSuffix(operator, "\""), "\"")
 			isString = true
@@ -173,6 +177,7 @@ func columnList(u *url.URL) string {
 				if result.Len() > 0 {
 					result.WriteRune(',')
 				}
+
 				result.WriteString(name)
 			}
 		}
@@ -187,10 +192,12 @@ func columnList(u *url.URL) string {
 
 func fullName(user, table string) (string, bool) {
 	wasFullyQualified := true
+
 	if dot := strings.Index(table, "."); dot < 0 {
 		table = user + "." + table
 		wasFullyQualified = false
 	}
+
 	return table, wasFullyQualified
 }
 
@@ -205,9 +212,11 @@ func filterList(u *url.URL) string {
 	for k, v := range values {
 		if strings.EqualFold(k, defs.FilterParameterName) {
 			clause := formWhereClause(v)
+
 			if result.Len() > 0 {
 				result.WriteString(" AND ")
 			}
+
 			result.WriteString(clause)
 		}
 	}
@@ -215,6 +224,7 @@ func filterList(u *url.URL) string {
 	if result.Len() == 0 {
 		return ""
 	}
+
 	return "WHERE " + result.String()
 }
 
@@ -256,6 +266,7 @@ func sortList(u *url.URL) string {
 				} else {
 					result.WriteString(",")
 				}
+
 				result.WriteString(name)
 			}
 		}
@@ -294,6 +305,7 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	var result strings.Builder
 
 	result.WriteString(verb + " ")
+
 	if verb == selectVerb {
 		result.WriteString(columns)
 	}
@@ -343,6 +355,7 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	for k := range data {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
 
 	for i, key := range keys {
@@ -353,6 +366,7 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		} else {
 			result.WriteString(", ")
 		}
+
 		result.WriteString(key)
 		result.WriteString(fmt.Sprintf(" = $%d", i+1))
 	}
@@ -395,6 +409,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	for k := range data {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
 
 	for i, key := range keys {
@@ -403,6 +418,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		} else {
 			result.WriteRune(',')
 		}
+
 		result.WriteString(key)
 	}
 
@@ -414,6 +430,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		if i > 0 {
 			result.WriteString(",")
 		}
+
 		result.WriteString(fmt.Sprintf("$%d", i+1))
 	}
 
@@ -440,7 +457,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
 	table, wasFullyQualified := fullName(user, datatypes.GetString(tableItem))
-	// This is a multipart name. You must be an adminsitrator to do this
+	// This is a multipart name. You must be an administrator to do this
 	if !wasFullyQualified && !hasAdminPrivileges {
 		ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 	}
@@ -453,6 +470,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	// See if the column data already contains a row ID value; if not,
 	// add it in to the table definition.
 	hasRowID := false
+
 	for _, column := range data {
 		if column.Name == defs.RowIDName {
 			hasRowID = true
@@ -493,7 +511,6 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 
 // mapColumnType converts native Ego types into the equivalent Postgres data types.
 func mapColumnType(native string) string {
-
 	types := map[string]string{
 		"string":  "CHAR VARYING",
 		"int32":   "INT32",
@@ -514,5 +531,6 @@ func mapColumnType(native string) string {
 
 func tableNameParts(user string, name string) []string {
 	fullyQualified, _ := fullName(user, name)
+
 	return strings.Split(fullyQualified, ".")
 }

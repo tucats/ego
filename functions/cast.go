@@ -65,7 +65,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// Is the type an string? If so it's a type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
-
 		case "byte":
 			return byte(0), nil
 
@@ -301,10 +300,12 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		if kind.IsType(datatypes.StringType) &&
 			(actual.ValueType().IsIntegerType() || actual.ValueType().IsType(datatypes.InterfaceType)) {
 			r := strings.Builder{}
+
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(rune(datatypes.GetInt(ch)))
 			}
+
 			return r.String(), nil
 		}
 
@@ -337,7 +338,6 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	case string:
 		if kind.IsType(datatypes.Array(datatypes.IntType)) {
-
 			r := datatypes.NewArray(datatypes.IntType, 0)
 
 			for _, rune := range actual {
@@ -354,6 +354,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			r := datatypes.NewArray(*kind.BaseType(), 1)
 			value := datatypes.Coerce(source, datatypes.InstanceOfType(*kind.BaseType()))
 			_ = r.Set(0, value)
+
 			return r, nil
 		}
 
@@ -361,6 +362,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		if v != nil {
 			return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
 		}
+
 		return nil, errors.New(errors.ErrInvalidType)
 	}
 }

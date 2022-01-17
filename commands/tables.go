@@ -23,7 +23,6 @@ const (
 )
 
 func TableList(c *cli.Context) *errors.EgoError {
-
 	resp := defs.TableInfo{}
 
 	err := runtime.Exchange(defs.TablesPath, http.MethodGet, nil, &resp, defs.TableAgent)
@@ -40,6 +39,7 @@ func TableList(c *cli.Context) *errors.EgoError {
 			for _, row := range resp.Tables {
 				_ = t.AddRowItems(row.Schema, row.Name, row.Columns)
 			}
+
 			t.Print(ui.OutputFormat)
 		} else {
 			var b []byte
@@ -55,7 +55,6 @@ func TableList(c *cli.Context) *errors.EgoError {
 }
 
 func TableShow(c *cli.Context) *errors.EgoError {
-
 	resp := defs.TableColumnsInfo{}
 	table := c.GetParameter(0)
 
@@ -75,6 +74,7 @@ func TableShow(c *cli.Context) *errors.EgoError {
 			for _, row := range resp.Columns {
 				_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable)
 			}
+
 			t.Print(ui.OutputFormat)
 		} else {
 			var b []byte
@@ -91,10 +91,13 @@ func TableShow(c *cli.Context) *errors.EgoError {
 
 func TableDrop(c *cli.Context) *errors.EgoError {
 	var count int
+
 	var err error
+
 	var table string
 
 	resp := defs.TableColumnsInfo{}
+
 	for i := 0; i < 999; i++ {
 		table = c.GetParameter(i)
 		if table == "" {
@@ -144,6 +147,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
+
 			return errors.NewMessage(msg)
 		}
 	}
@@ -162,7 +166,6 @@ func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-
 		if len(resp.Rows) == 0 {
 			ui.Say("No rows in query")
 
@@ -170,10 +173,12 @@ func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
 		}
 
 		keys := make([]string, 0)
+
 		for k := range resp.Rows[0] {
 			if k == defs.RowIDName && !showRowID {
 				continue
 			}
+
 			keys = append(keys, k)
 		}
 
@@ -183,14 +188,18 @@ func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
 
 		for _, row := range resp.Rows {
 			values := make([]interface{}, 0)
+
 			for _, key := range keys {
 				if key == defs.RowIDName && !showRowID {
 					continue
 				}
+
 				values = append(values, row[key])
 			}
+
 			_ = t.AddRowItems(values...)
 		}
+
 		t.Print(ui.OutputFormat)
 	} else if ui.OutputFormat == ui.JSONIndentedFormat {
 		var b []byte
@@ -219,6 +228,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 	// If there is a JSON file to initialize the payload with, do it now.
 	if c.WasFound("file") {
 		fn, _ := c.GetString("file")
+
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
 			return errors.New(err)
@@ -238,12 +248,14 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 		t := tokenizer.New(p)
 		column := t.Next()
+
 		if !t.IsNext("=") {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
 		kind := "any"
 		value := t.Next()
+
 		if t.IsNext(":") {
 			kind = strings.ToLower(value)
 			value = t.Next()
@@ -265,6 +277,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 			if err != nil {
 				return errors.New(errors.ErrInvalidInteger).Context(value)
 			}
+
 			payload[column] = i
 
 		case "any":
@@ -285,6 +298,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 	if len(payload) == 0 {
 		ui.Say("Nothing to insert")
+
 		return nil
 	}
 
@@ -295,6 +309,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
 		}
+
 		ui.Say("Added row to table %s", table)
 	}
 
@@ -318,6 +333,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 	// extend or modify the field list.
 	if c.WasFound("file") {
 		fn, _ := c.GetString("file")
+
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
 			return errors.New(err)
@@ -345,6 +361,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 
 		t := tokenizer.New(columnDefText)
 		column := t.Next()
+
 		if !t.IsNext(":") {
 			return errors.New(errors.ErrInvalidColumnDefinition).Context(columnDefText)
 		}
@@ -356,13 +373,15 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 
 		columnType := t.Next()
 		found := false
-		for _, typeName := range []string{"string", "int", "int32", "float32", "float64", "real", "double", "bool", "datetime"} {
 
+		for _, typeName := range []string{"string", "int", "int32", "float32", "float64", "real", "double", "bool", "datetime"} {
 			if strings.EqualFold(columnType, typeName) {
 				found = true
+
 				break
 			}
 		}
+
 		if !found {
 			return errors.New(errors.ErrInvalidType).Context(columnType)
 		}
@@ -419,11 +438,11 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 }
 
 func TableUpdate(c *cli.Context) *errors.EgoError {
-
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 
 	payload := map[string]interface{}{}
+
 	for i := 1; i < 999; i++ {
 		p := c.GetParameter(i)
 		if p == "" {
@@ -432,12 +451,14 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 
 		t := tokenizer.New(p)
 		column := t.Next()
+
 		if !t.IsNext("=") {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
 		kind := "any"
 		value := t.Next()
+
 		if t.IsNext(":") {
 			kind = strings.ToLower(value)
 			value = t.Next()
@@ -459,6 +480,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 			if err != nil {
 				return errors.New(errors.ErrInvalidInteger).Context(value)
 			}
+
 			payload[column] = i
 
 		case "any":
@@ -485,6 +507,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
+
 			return errors.NewMessage(msg)
 		}
 	}
@@ -519,6 +542,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 			url.Parameter(defs.FilterParameterName, f)
 		} else {
 			msg := strings.TrimPrefix(f, filterParseError)
+
 			return errors.NewMessage(msg)
 		}
 	}
@@ -530,7 +554,6 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 		}
 
 		if ui.OutputFormat == ui.TextFormat {
-
 			if resp.Count == 0 {
 				ui.Say("No rows deleted")
 
@@ -538,7 +561,6 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 			}
 
 			ui.Say("%d rows deleted", resp.Count)
-
 		} else {
 			var b []byte
 
@@ -556,10 +578,9 @@ func makeFilter(filters []string) string {
 	terms := make([]string, 0)
 
 	for _, filter := range filters {
-
 		var term strings.Builder
-		t := tokenizer.New(filter)
 
+		t := tokenizer.New(filter)
 		term1 := t.Next()
 		op := t.Next()
 
@@ -629,6 +650,7 @@ func makeFilter(filters []string) string {
 	}
 
 	b.WriteString(terms[termCount-1])
+
 	for i := 0; i < termCount-1; i++ {
 		b.WriteRune(')')
 	}
@@ -645,18 +667,22 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 		if sqlItem == "" {
 			break
 		}
+
 		sql = sql + " " + sqlItem
 	}
 
 	if c.WasFound("sql-file") {
 		fn, _ := c.GetString("sql-file")
+
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
 			return errors.New(err)
 		}
+
 		if len(sql) > 0 {
 			sql = sql + " "
 		}
+
 		sql = sql + string(b)
 	}
 
@@ -668,6 +694,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 			if len(strings.TrimSpace(line)) == 0 {
 				break
 			}
+
 			sql = sql + " " + line
 		}
 	}
@@ -721,12 +748,13 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 		case ui.TextFormat:
 			t, _ := tables.New([]string{"User", "Schema", "Table", "Permissions"})
 			for _, permission := range permissions.Permissions {
-				t.AddRowItems(permission.User,
+				_ = t.AddRowItems(permission.User,
 					permission.Schema,
 					permission.Table,
 					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
 				)
 			}
+
 			t.Print(ui.TextFormat)
 		case ui.JSONFormat:
 			b, _ := json.MarshalIndent(permissions, "", "  ")
@@ -766,7 +794,6 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 	}
 
 	return err
-
 }
 
 func printPermissionObject(result defs.PermissionResponse) {
@@ -774,13 +801,16 @@ func printPermissionObject(result defs.PermissionResponse) {
 	case ui.TextFormat:
 		plural := "s"
 		verb := "are"
+
 		if len(result.Permissions) < 1 {
 			plural = ""
 			verb = "is"
+
 			if len(result.Permissions) == 0 {
 				result.Permissions = []string{"none"}
 			}
 		}
+
 		ui.Say("User %s permission%s for %s.%s %s %s",
 			result.User,
 			plural,

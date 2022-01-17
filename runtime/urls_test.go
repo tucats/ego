@@ -6,7 +6,6 @@ import (
 )
 
 func TestURLs(t *testing.T) {
-
 	tests := []struct {
 		name string
 		args []interface{}
@@ -30,7 +29,6 @@ func TestURLs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			u := URLBuilder()
 			u.Path(tt.name, tt.args...)
 

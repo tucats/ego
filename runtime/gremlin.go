@@ -567,7 +567,7 @@ func gremlinResultValue(i interface{}) (interface{}, *errors.EgoError) {
 				return i, nil
 			}
 
-			return int(i), nil
+			return i, nil
 
 		case "gx:BigDecimal":
 			if r, ok := v.(float64); ok {

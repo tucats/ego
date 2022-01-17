@@ -89,7 +89,6 @@ var httpStatusCodeMessages = map[int]string{
 const (
 	urlSchemeElement   = "urlScheme"
 	urlHostElement     = "urlHost"
-	urlPortElement     = "urlPort"
 	urlUsernameElement = "urlUsername"
 	urlPasswordElement = "urlPassword"
 	urlPathElement     = "urlPath"
@@ -189,6 +188,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	}
 
 	urlString := datatypes.GetString(args[0])
+
 	url, err := url.Parse(urlString)
 	if err != nil {
 		return nil, errors.New(err).Context(urlString)
@@ -200,9 +200,10 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	// If the second parameter was provided, it's a template string. Use it to parse
 	// apart the path components of the url.
 	if len(args) > 1 {
+		var valid bool
+
 		path := url.Path
 		templateString := datatypes.GetString(args[1])
-		valid := true
 
 		// Scan the URL and the template, and bulid a map of the parts.
 		urlParts, valid = functions.ParseURLPattern(path, templateString)
@@ -254,13 +255,14 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			for i, j := range value {
 				values[i] = j
 			}
+
 			query[key] = datatypes.NewArrayFromArray(datatypes.StringType, values)
 		}
+
 		urlParts[urlQueryElmeent] = datatypes.NewMapFromMap(query)
 	}
 
 	return datatypes.NewStructFromMap(urlParts), nil
-
 }
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {

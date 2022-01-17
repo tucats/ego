@@ -21,15 +21,16 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+
 			return
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
 
 		ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+
 		rows, err := db.Exec(q)
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
@@ -41,7 +42,6 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				},
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
-
 			_, _ = w.Write(b)
 
 			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
@@ -55,18 +55,19 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	_, _ = w.Write([]byte(err.Error()))
 }
 
-// UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload
+// UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
+
 	tableName, _ = fullName(user, tableName)
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -88,7 +89,6 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
-
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
 				Count: int(rows),
@@ -99,6 +99,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
+
 			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
 
 			return
@@ -113,11 +114,12 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	ui.Debug(ui.ServerLogger, "[%d] Error inserting into table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
+
 	if err == nil {
 		err = fmt.Errorf("unknown error")
 	}
-	_, _ = w.Write([]byte(err.Error()))
 
+	_, _ = w.Write([]byte(err.Error()))
 }
 
 // ReadRows reads the data for a given table, and returns it as an array
@@ -131,9 +133,9 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
-
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -145,7 +147,6 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		if err == nil {
 			return
 		}
-
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
@@ -155,6 +156,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
 	var rows *sql.Rows
+
 	var err error
 
 	result := []map[string]interface{}{}
@@ -169,6 +171,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 		for rows.Next() {
 			row := make([]interface{}, columnCount)
 			rowptrs := make([]interface{}, columnCount)
+
 			for i := range row {
 				rowptrs[i] = &row[i]
 			}
@@ -179,6 +182,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 				for i, v := range row {
 					newRow[columnNames[i]] = v
 				}
+
 				result = append(result, newRow)
 				rowCount++
 			}
@@ -194,13 +198,14 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
+
 		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 	}
 
 	return err
 }
 
-// UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload
+// UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 
@@ -210,6 +215,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+
 			return
 		}
 
@@ -225,7 +231,6 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
-
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
 				Count: int(rows),
@@ -236,6 +241,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
+
 			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
 
 			return

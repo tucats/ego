@@ -60,13 +60,14 @@ func (u *URLString) Path(format string, parts ...interface{}) *URLString {
 
 // Parameter adds a parameter to the URL being constructed. The name string
 // contains the parameter name. This is added to the URL being built. The arguments
-// are optional additonal arguments which follow the parameter value if specified.
+// are optional additional arguments which follow the parameter value if specified.
 func (u *URLString) Parameter(name string, arguments ...interface{}) *URLString {
 	if u.parameterCount == 0 {
 		u.buffer.WriteRune('?')
 	} else {
 		u.buffer.WriteRune('&')
 	}
+
 	u.buffer.WriteString(url.QueryEscape(name))
 	u.parameterCount++
 
@@ -77,6 +78,7 @@ func (u *URLString) Parameter(name string, arguments ...interface{}) *URLString 
 			} else {
 				u.buffer.WriteRune(',')
 			}
+
 			u.buffer.WriteString(url.QueryEscape(fmt.Sprintf("%v", argument)))
 		}
 	}

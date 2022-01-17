@@ -49,6 +49,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions field: %v", sessionID, err)
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -93,7 +94,9 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 	}
 
 	q := fmt.Sprintf(`SELECT username, tablename, permissions FROM admin.privileges %s ORDER BY username,tablename`, filter)
+
 	ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+
 	rows, err := db.Query(q)
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
@@ -103,6 +106,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 	}
 
 	count := 0
+
 	for rows.Next() {
 		var user, table, permissionString string
 
@@ -139,6 +143,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 
 	reply.Status = http.StatusOK
 	reply.Count = count
+
 	w.WriteHeader(http.StatusOK)
 
 	b, _ := json.MarshalIndent(reply, "", "  ")
@@ -155,10 +160,11 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 
 		return
 	}
-	_, _ = db.Exec(permissionsCreateTableQuery)
 
+	_, _ = db.Exec(permissionsCreateTableQuery)
 	user = requestForUser(user, r.URL)
 	table, fullyQualified := fullName(user, tableName)
+
 	if !hasAdminPermission && !fullyQualified {
 		ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)
 
@@ -175,10 +181,12 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 	}
 
 	var buff strings.Builder
+
 	for i, key := range permissionsList {
 		if i > 0 {
 			buff.WriteRune(',')
 		}
+
 		buff.WriteString(strings.TrimSpace(strings.ToLower(key)))
 	}
 
@@ -186,6 +194,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 
 	if !errors.Nil(err) {
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -199,7 +208,9 @@ func DeletePermissions(user string, hasAdminPermission bool, tableName string, s
 	if err != nil {
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
+		return
 	}
+
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
 	table, fullyQualified := fullName(user, tableName)
@@ -241,6 +252,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 	}
 
 	permissions := ""
+
 	err = rows.Scan(&permissions)
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
@@ -250,6 +262,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 
 	permissions = strings.ToLower(permissions)
 	auth := true
+
 	for _, operation := range operations {
 		if !strings.Contains(permissions, strings.ToLower(operation)) {
 			auth = false
@@ -260,6 +273,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 
 	if !auth && ui.LoggerIsActive(ui.TableLogger) {
 		operationsList := ""
+
 		for i, operation := range operations {
 			if i > 0 {
 				operationsList = operationsList + ","
@@ -278,6 +292,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 // the named table.
 func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
 	_, _ = db.Exec(permissionsCreateTableQuery)
+
 	result, err := db.Exec(permissionsDeleteAllQuery, table)
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error deleting permissions: %v", sessionID, err)
@@ -314,7 +329,6 @@ func CreateTablePermissions(sessionID int32, db *sql.DB, user, table string, per
 
 	// Also create an entry for the current user.
 	return doCreateTablePermissions(sessionID, db, user, table, permissions...)
-
 }
 
 func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, permissions ...string) bool {
@@ -371,6 +385,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	for rows.Next() {
 		_ = rows.Scan(&permissionsString)
+
 		for _, perm := range strings.Split(permissionsString, ",") {
 			normalizedPermName := strings.ToLower(strings.TrimSpace(perm))
 			permMap[normalizedPermName] = true
@@ -392,23 +407,29 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	// Build the new permissions string
 	permissions = ""
+
 	for key := range permMap {
 		if len(key) == 0 {
 			continue
 		}
+
 		if len(permissions) > 0 {
 			permissions = permissions + ","
 		}
+
 		permissions = permissions + key
 	}
 
 	// Attempt to update the permissions.
 	var result sql.Result
+
 	context := "updating permissions"
+
 	result, err = db.Exec(permissionsUpdateQuery, user, tableName, permissions)
 	if err == nil {
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
+
 			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissions)
 			if err == nil {
 				ui.Debug(ui.TableLogger, "[%d] created permissions for %s", sessionID, tableName)
@@ -423,5 +444,4 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	}
 
 	return nil
-
 }

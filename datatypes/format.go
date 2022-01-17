@@ -88,6 +88,7 @@ func Format(element interface{}) string {
 		var b strings.Builder
 
 		keys := v.Keys()
+
 		b.WriteString("Pkg<")
 
 		for n, k := range keys {

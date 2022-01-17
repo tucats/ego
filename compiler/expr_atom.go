@@ -196,6 +196,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is it a type cast?
 	if c.t.Peek(2) == "(" {
 		mark := c.t.Mark()
+
 		if typeSpec, err := c.parseType(true); err == nil {
 			if c.t.IsNext("(") { // Skip the parentheses
 				b, err := c.Expression()
@@ -217,10 +218,12 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 					c.b.Emit(bytecode.Push, typeSpec)
 					c.b.Append(b)
 					c.b.Emit(bytecode.Call, 1)
+
 					return err
 				}
 			}
 		}
+
 		c.t.Set(mark)
 	}
 

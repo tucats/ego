@@ -62,7 +62,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 // ProfileDelete implements the profile.delete() function.
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	key := datatypes.GetString(args[0])
-	persistence.Delete(key)
+	_ = persistence.Delete(key)
 
 	return nil, nil
 }

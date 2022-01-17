@@ -48,7 +48,7 @@ func NewPackageFromMap(name string, items map[string]interface{}) EgoPackage {
 }
 
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
-// internal hash map, or an empty hash map,
+// internal hash map, or an empty hash map.
 func (p *EgoPackage) IsEmpty() bool {
 	if p == nil {
 		return true
@@ -85,6 +85,7 @@ func (p *EgoPackage) Keys() []string {
 	defer packageLock.RUnlock()
 
 	keys := make([]string, 0)
+
 	if p != nil && p.items != nil {
 		for k := range p.items {
 			keys = append(keys, k)
@@ -111,9 +112,11 @@ func (p *EgoPackage) Set(key string, value interface{}) {
 	if ui.LoggerIsActive(ui.SymbolLogger) {
 		v := Format(value)
 		action := "set"
+
 		if _, ok := p.items[key]; ok {
 			action = "update"
 		}
+
 		ui.Debug(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %v", p.name, action, key, v))
 	}
 
@@ -132,13 +135,13 @@ func (p *EgoPackage) Get(key string) (interface{}, bool) {
 	}
 
 	value, found := p.items[key]
+
 	return value, found
 }
 
 // Merge adds any entries from a package to the current package that do not already
 // exist.
 func (p *EgoPackage) Merge(source EgoPackage) {
-
 	keys := source.Keys()
 	for _, key := range keys {
 		if _, found := p.Get(key); !found {

@@ -213,6 +213,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 				if f.Pkg != "" {
 					debugName = f.Pkg + "." + name
 				}
+
 				ui.Debug(ui.CompilerLogger, "... processing builtin %s", debugName)
 			}
 
@@ -310,8 +311,11 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	if oldPackage, found := symbols.RootSymbolTable.Get(pkgname); found {
 		fd.Merge(oldPackage.(datatypes.EgoPackage))
 	}
+
 	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
+
 	ui.Debug(ui.CompilerLogger, "... added function %s", name)
+
 	return nil
 }
 
@@ -498,6 +502,7 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 
 	for n, m := range c.packages.Package {
 		packData := datatypes.NewPackage(n)
+
 		keys := m.Keys()
 		for _, k := range keys {
 			v, _ := m.Get(k)
