@@ -1,8 +1,8 @@
 package dbtables
 
 const (
-	tablesListQuery             = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name;`
-	tableMetadataQuery          = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0;`
+	tablesListQuery             = `SELECT table_name FROM information_schema.tables WHERE table_schema = '{{schema}}' ORDER BY table_name`
+	tableMetadataQuery          = `SELECT * FROM {{schema}}.{{table}} WHERE 1=0`
 	tableDeleteQuery            = `DROP TABLE {{schema}}.{{table}};`
 	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
 	permissionsCreateTableQuery = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`

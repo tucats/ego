@@ -315,6 +315,9 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		var rows *sql.Rows
 
 		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", user)
+		if paging := pagingClauses(r.URL); paging != "" {
+			q = q + paging
+		}
 
 		ui.Debug(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
 		ui.Debug(ui.TableLogger, "[%d]    with query %s", sessionID, q)
