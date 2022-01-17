@@ -250,3 +250,30 @@ func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	return base64.URLEncoding.EncodeToString(b), nil
 }
+
+// EncodeBase64 encodes a string as a BASE64 string using standard encoding rules.
+func EncodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) != 1 {
+		return nil, errors.New(errors.ErrArgumentCount)
+	}
+
+	text := datatypes.GetString(args[0])
+
+	return base64.StdEncoding.EncodeToString([]byte(text)), nil
+}
+
+// DecodeBase64 encodes a string as a BASE64 string using standard encoding rules.
+func DecodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) != 1 {
+		return nil, errors.New(errors.ErrArgumentCount)
+	}
+
+	text := datatypes.GetString(args[0])
+
+	b, err := base64.StdEncoding.DecodeString(text)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	return string(b), nil
+}
