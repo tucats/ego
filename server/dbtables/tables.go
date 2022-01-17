@@ -38,7 +38,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			if err == nil {
 
 				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statementText)), "select ") {
-					ui.Debug(ui.ServerLogger, "[%d] SQL query: %s", sessionID, statementText)
+					ui.Debug(ui.TableLogger, "[%d] SQL query: %s", sessionID, statementText)
 
 					err = readRowData(db, statementText, sessionID, w)
 					if err != nil {
@@ -49,7 +49,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 				} else {
 					var rows sql.Result
 
-					ui.Debug(ui.ServerLogger, "[%d] SQL execute: %s", sessionID, statementText)
+					ui.Debug(ui.TableLogger, "[%d] SQL execute: %s", sessionID, statementText)
 
 					rows, err = db.Exec(statementText)
 					if err == nil {
@@ -94,7 +94,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d] Create table with query: %s", sessionID, q)
 
 		counts, err := db.Exec(q)
 		if err == nil {
@@ -123,7 +123,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Error inserting into table, %v", sessionID, err)
+	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	if err == nil {
 		err = fmt.Errorf("unknown error")
@@ -152,7 +152,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 
 	count, _ := result.RowsAffected()
 	if count > 0 {
-		ui.Debug(ui.ServerLogger, "[%d] Created schema %s", sessionID, schema)
+		ui.Debug(ui.TableLogger, "[%d] Created schema %s", sessionID, schema)
 	}
 
 	return true
@@ -192,6 +192,8 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		q = queryParameters(tableMetadataQuery, map[string]string{
 			"table": tableName,
 		})
+
+		ui.Debug(ui.TableLogger, "[%d] Reading table metadata with query %s", sessionID, q)
 
 		rows, err = db.Query(q)
 		if err == nil {
@@ -273,7 +275,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		})
 
 		ui.Debug(ui.ServerLogger, "[%d] attempting to delete table %s", sessionID, tableName)
-		ui.Debug(ui.ServerLogger, "[%d]    with query %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d]    with query %s", sessionID, q)
 
 		_, err = db.Exec(q)
 		if err == nil {
@@ -314,7 +316,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		q := strings.ReplaceAll(tablesListQuery, "{{schema}}", user)
 
 		ui.Debug(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
-		ui.Debug(ui.ServerLogger, "[%d]    with query %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d]    with query %s", sessionID, q)
 
 		rows, err = db.Query(q)
 		if err == nil {
@@ -336,6 +338,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
 				columnQuery := "SELECT * FROM " + user + "." + name + " WHERE 1=0"
+				ui.Debug(ui.TableLogger, "[%d] Reading columns metadata with query %s", sessionID, q)
+
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
 					continue

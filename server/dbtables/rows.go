@@ -17,6 +17,8 @@ import (
 func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 
+	ui.Debug(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 
@@ -27,7 +29,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
 
-		ui.Debug(ui.ServerLogger, "[%d] Exec: %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
 		rows, err := db.Exec(q)
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
@@ -42,7 +44,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			_, _ = w.Write(b)
 
-			ui.Debug(ui.ServerLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
+			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
 
 			return
 		}
@@ -57,6 +59,8 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 	tableName, _ = fullName(user, tableName)
+
+	ui.Debug(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
@@ -80,7 +84,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		q, values := formInsertQuery(r.URL, user, data)
-		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d] Insert rows with query: %s", sessionID, q)
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
@@ -95,12 +99,12 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
-			ui.Debug(ui.ServerLogger, "[%d] Updated %d rows", sessionID, rows)
+			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
 
 			return
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] Error inserting into table, %v", sessionID, err)
+		ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, err)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(err.Error()))
 
@@ -123,6 +127,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 
+	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 
@@ -133,7 +139,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
 
-		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
 		err = readRowData(db, q, sessionID, w)
 		if err == nil {
@@ -142,7 +148,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write([]byte(err.Error()))
 }
@@ -188,7 +194,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
-		ui.Debug(ui.ServerLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 	}
 
 	return err
@@ -197,6 +203,8 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload
 func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
+
+	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
@@ -213,7 +221,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		q, values := formUpdateQuery(r.URL, user, data)
-		ui.Debug(ui.ServerLogger, "[%d] Query: %s", sessionID, q)
+		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
 		counts, err := db.Exec(q, values...)
 		if err == nil {
@@ -228,13 +236,13 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
-			ui.Debug(ui.ServerLogger, "[%d] Updated %d rows", sessionID, rows)
+			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
 
 			return
 		}
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Error updating table, %v", sessionID, err)
+	ui.Debug(ui.TableLogger, "[%d] Error updating table, %v", sessionID, err)
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write([]byte(err.Error()))
 }
