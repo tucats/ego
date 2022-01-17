@@ -338,7 +338,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
 				columnQuery := "SELECT * FROM " + user + "." + name + " WHERE 1=0"
-				ui.Debug(ui.TableLogger, "[%d] Reading columns metadata with query %s", sessionID, q)
+				ui.Debug(ui.TableLogger, "[%d] Reading columns metadata with query %s", sessionID, columnQuery)
 
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
