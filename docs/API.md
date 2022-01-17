@@ -36,7 +36,7 @@ for the functions of that API.
 To authenticate, use a "GET" method to the endpoint "/services/admin/logon". The
 request must:
 
-* Use BASIC authentication to pass the username and password to the servce. 
+* Use BASIC authentication to pass the username and password to the service. 
 * Specify that the reply type accepted is "application/json"
 
 The result is a JSON payload indicating if there was an error or not, and

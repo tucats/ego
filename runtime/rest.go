@@ -726,12 +726,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	url = strings.TrimSuffix(url, "/") + endpoint
-	ui.Debug(ui.DebugLogger, "REST URL %s", url)
+
+	ui.Debug(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
+		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
 	}
 
 	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
@@ -751,13 +753,15 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			return errors.New(err)
 		}
 
-		ui.Debug(ui.DebugLogger, "REST Payload:\n%s", string(b))
+		ui.Debug(ui.RestLogger, "Payload:\n%s", string(b))
 
 		r.SetBody(b)
 	}
 
 	resp, err = r.Execute(method, url)
 	status := resp.StatusCode()
+
+	ui.Debug(ui.RestLogger, "Status: %d", status)
 
 	switch status {
 	case http.StatusForbidden:
@@ -783,10 +787,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		}
 
 		err = json.Unmarshal([]byte(body), response)
-		if errors.Nil(err) && ui.LoggerIsActive(ui.DebugLogger) {
+		if errors.Nil(err) && ui.LoggerIsActive(ui.RestLogger) {
 			responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(responseBytes))
+			ui.Debug(ui.RestLogger, "Response:\n%s", string(responseBytes))
 		}
 	}
 
@@ -804,4 +808,5 @@ func AddAgent(r *resty.Request, agentType string) {
 	agent := "Ego " + version + " (" + platform + ") " + agentType
 
 	r.Header.Add("User-Agent", agent)
+	ui.Debug(ui.RestLogger, "User agent: %s", agent)
 }

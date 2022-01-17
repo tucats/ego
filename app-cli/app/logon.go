@@ -102,7 +102,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 	runtime.AddAgent(req, defs.LogonAgent)
 
-	ui.Debug(ui.DebugLogger, "REST URL: %s", url)
+	ui.Debug(ui.DebugLogger, "REST GET %s", url)
 
 	r, err := req.Get(url)
 

@@ -374,7 +374,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		columnType := t.Next()
 		found := false
 
-		for _, typeName := range []string{"string", "int", "int32", "float32", "float64", "real", "double", "bool", "datetime"} {
+		for _, typeName := range []string{"string", "int", "int32", "float32", "float64", "real", "double", "bool", "datetime", "time", "date"} {
 			if strings.EqualFold(columnType, typeName) {
 				found = true
 

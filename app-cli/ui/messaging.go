@@ -55,6 +55,7 @@ const (
 	DBLogger
 	DebugLogger
 	InfoLogger
+	RestLogger
 	ServerLogger
 	SymbolLogger
 	TableLogger
@@ -76,6 +77,7 @@ var loggers []logger = []logger{
 	{"DB", false},
 	{"DEBUG", false},
 	{"INFO", false},
+	{"REST", false},
 	{"SERVER", false},
 	{"SYMBOLS", false},
 	{"TABLES", false},

@@ -561,13 +561,16 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 // mapColumnType converts native Ego types into the equivalent Postgres data types.
 func mapColumnType(native string) string {
 	types := map[string]string{
-		"string":  "CHAR VARYING",
-		"int32":   "INT32",
-		"int":     "INT",
-		"bool":    "BOOLEAN",
-		"boolean": "BOOLEAN",
-		"float32": "REAL",
-		"float64": "DOUBLE PRECISION",
+		"string":    "CHAR VARYING",
+		"int32":     "INT32",
+		"int":       "INT",
+		"bool":      "BOOLEAN",
+		"boolean":   "BOOLEAN",
+		"float32":   "REAL",
+		"float64":   "DOUBLE PRECISION",
+		"timestamp": "TIMESTAMP WITH TIME ZONE",
+		"time":      "TIME",
+		"date":      "DATE",
 	}
 
 	native = strings.ToLower(native)
