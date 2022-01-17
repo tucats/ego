@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
@@ -172,7 +173,7 @@ func columnList(u *url.URL) string {
 
 	values := u.Query()
 	for k, v := range values {
-		if strings.EqualFold(k, defs.ColumnParameterName) {
+		if keywordMatch(k, "column", defs.ColumnParameterName) {
 			for _, name := range v {
 				if result.Len() > 0 {
 					result.WriteRune(',')
@@ -225,7 +226,7 @@ func filterList(u *url.URL) string {
 		return ""
 	}
 
-	return "WHERE " + result.String()
+	return " WHERE " + result.String()
 }
 
 // With a default user name string, and the current URL, determine if the
@@ -243,6 +244,49 @@ func requestForUser(user string, u *url.URL) string {
 	return user
 }
 
+func pagingClauses(u *url.URL) string {
+	var result strings.Builder
+
+	if u == nil {
+		return ""
+	}
+
+	values := u.Query()
+	for k, v := range values {
+		if keywordMatch(k, "list", "count") {
+			limit := 0
+
+			if len(v) == 1 {
+				if i, err := strconv.Atoi(v[0]); err == nil {
+					limit = i
+				}
+			}
+
+			if limit != 0 {
+				result.WriteString(" LIMIT ")
+				result.WriteString(strconv.Itoa(limit))
+			}
+		}
+
+		if keywordMatch(k, "start", "offset") {
+			start := 0
+
+			if len(v) == 1 {
+				if i, err := strconv.Atoi(v[0]); err == nil {
+					start = i
+				}
+			}
+
+			if start != 0 {
+				result.WriteString(" OFFSET ")
+				// Note that offset is zero-based, so subtract 1
+				result.WriteString(strconv.Itoa(start - 1))
+			}
+		}
+	}
+
+	return result.String()
+}
 func sortList(u *url.URL) string {
 	var result strings.Builder
 
@@ -254,7 +298,7 @@ func sortList(u *url.URL) string {
 	ascending := true
 
 	for k, v := range values {
-		if strings.EqualFold(k, "sort") || strings.EqualFold(k, "order") {
+		if keywordMatch(k, "sort", "order", "sort-by", "order-by") {
 			for i, name := range v {
 				if strings.HasPrefix(name, "~") {
 					name = strings.TrimPrefix(name, "~")
@@ -262,7 +306,7 @@ func sortList(u *url.URL) string {
 				}
 
 				if i == 0 {
-					result.WriteString("ORDER BY ")
+					result.WriteString(" ORDER BY ")
 				} else {
 					result.WriteString(",")
 				}
@@ -301,6 +345,7 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	columns := columnList(u)
 	where := filterList(u)
 	sort := sortList(u)
+	paging := pagingClauses(u)
 
 	var result strings.Builder
 
@@ -313,11 +358,15 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	result.WriteString(" FROM " + table)
 
 	if where != "" {
-		result.WriteString(" " + where)
+		result.WriteString(where)
 	}
 
 	if sort != "" && verb == selectVerb {
-		result.WriteString(" " + sort)
+		result.WriteString(sort)
+	}
+
+	if paging != "" && verb == selectVerb {
+		result.WriteString(paging)
 	}
 
 	return result.String()
@@ -533,4 +582,14 @@ func tableNameParts(user string, name string) []string {
 	fullyQualified, _ := fullName(user, name)
 
 	return strings.Split(fullyQualified, ".")
+}
+
+func keywordMatch(k string, list ...string) bool {
+	for _, item := range list {
+		if strings.EqualFold(k, item) {
+			return true
+		}
+	}
+
+	return false
 }
