@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
@@ -71,7 +74,17 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
+		var columns []defs.DBColumn
+
 		var data map[string]interface{}
+
+		tableName, _ = fullName(user, tableName)
+		columns, err = getColumnInfo(db, tableName, sessionID)
+		if !errors.Nil(err) {
+			ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
+
+			return
+		}
 
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
@@ -82,6 +95,22 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		if _, found := data[defs.RowIDName]; !found {
 			data[defs.RowIDName] = uuid.New().String()
+		}
+
+		for _, column := range columns {
+			v, ok := data[column.Name]
+			if !ok {
+				ErrorResponse(w, sessionID, "Invalid column in request payload: "+column.Name, http.StatusBadRequest)
+
+				return
+			}
+
+			// If it's one of the date/time values, make sure it is wrapped in single qutoes.
+			if keywordMatch(column.Type, "time", "date", "timestamp") {
+				text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
+				data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
+				ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, data[column.Name])
+			}
 		}
 
 		q, values := formInsertQuery(r.URL, user, data)

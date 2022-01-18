@@ -27,3 +27,17 @@ const (
 	TablesPermissionsPath     = TablesPath + "@permissions"
 	TablesNamePermissionsPath = TablesNamePath + "/permissions"
 )
+
+var TableColumnTypeNames []string = []string{
+	"int",
+	"int32",
+	"int64",
+	"string",
+	"float",
+	"double",
+	"float32",
+	"float64",
+	"time",
+	"timestamp",
+	"date",
+}

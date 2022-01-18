@@ -130,6 +130,7 @@ var TableGrammar = []cli.Option{
 	},
 	{
 		LongName:           "show-table",
+		Aliases:            []string{"show", "metadata", "columns"},
 		Description:        "Show table metadata",
 		OptionType:         cli.Subcommand,
 		Action:             commands.TableShow,

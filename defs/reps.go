@@ -37,8 +37,8 @@ type TableInfo struct {
 type DBColumn struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
-	Size     int    `json:"size"`
-	Nullable bool   `json:"nullable"`
+	Size     int    `json:"size,omitempty"`
+	Nullable bool   `json:"nullable,omitempty"`
 }
 
 type DBRows struct {
