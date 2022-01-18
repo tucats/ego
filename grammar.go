@@ -127,6 +127,20 @@ var TableGrammar = []cli.Option{
 		Description: "List tables",
 		OptionType:  cli.Subcommand,
 		Action:      commands.TableList,
+		Value: []cli.Option{
+			{
+				LongName:    "limit",
+				Aliases:     []string{"count"},
+				Description: "If specified, limit the result set to this many rows",
+				OptionType:  cli.IntType,
+			},
+			{
+				LongName:    "start",
+				Aliases:     []string{"offset"},
+				Description: "If specified, start result set at this row",
+				OptionType:  cli.IntType,
+			},
+		},
 	},
 	{
 		LongName:           "show-table",
@@ -180,6 +194,18 @@ var TableGrammar = []cli.Option{
 				Aliases:     []string{"where"},
 				Description: "List of optional filter clauses",
 				OptionType:  cli.StringListType,
+			},
+			{
+				LongName:    "limit",
+				Aliases:     []string{"count"},
+				Description: "If specified, limit the result set to this many rows",
+				OptionType:  cli.IntType,
+			},
+			{
+				LongName:    "start",
+				Aliases:     []string{"offset"},
+				Description: "If specified, start result set at this row",
+				OptionType:  cli.IntType,
 			},
 		},
 	},

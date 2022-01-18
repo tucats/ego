@@ -7,6 +7,8 @@ const (
 	ColumnParameterName = "columns"
 	FilterParameterName = "filter"
 	SortParameterName   = "sort"
+	StartParameterName  = "start"
+	LimitParameterName  = "limit"
 )
 
 const (

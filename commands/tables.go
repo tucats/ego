@@ -25,7 +25,17 @@ const (
 func TableList(c *cli.Context) *errors.EgoError {
 	resp := defs.TableInfo{}
 
-	err := runtime.Exchange(defs.TablesPath, http.MethodGet, nil, &resp, defs.TableAgent)
+	url := runtime.URLBuilder(defs.TablesPath)
+
+	if limit, found := c.GetInteger("limit"); found {
+		url.Parameter(defs.LimitParameterName, limit)
+	}
+
+	if start, found := c.GetInteger("start"); found {
+		url.Parameter(defs.StartParameterName, start)
+	}
+
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if resp.Status > 299 {
 			return errors.NewMessage(resp.Message)
@@ -139,6 +149,14 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	if order, ok := c.GetStringList("order-by"); ok {
 		url.Parameter(defs.SortParameterName, toInterfaces(order)...)
+	}
+
+	if limit, found := c.GetInteger("limit"); found {
+		url.Parameter(defs.LimitParameterName, limit)
+	}
+
+	if start, found := c.GetInteger("start"); found {
+		url.Parameter(defs.StartParameterName, start)
 	}
 
 	if filter, ok := c.GetStringList("filter"); ok {

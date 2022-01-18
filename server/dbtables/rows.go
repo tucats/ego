@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
@@ -19,6 +20,15 @@ import (
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
+	// Verify that the parameters are valid, if given.
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.FilterParameterName: "any",
+		defs.UserParameterName:   "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
 
@@ -61,6 +71,15 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
+
+	// Verify that the parameters are valid, if given.
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.UserParameterName: "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
 
 	tableName, _ = fullName(user, tableName)
 
@@ -158,6 +177,20 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 
+	// Verify that the parameters are valid, if given.
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.StartParameterName:  "int",
+		defs.LimitParameterName:  "int",
+		defs.ColumnParameterName: "list",
+		defs.SortParameterName:   "list",
+		defs.FilterParameterName: "any",
+		defs.UserParameterName:   "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
@@ -237,7 +270,15 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
+	// Verify that the parameters are valid, if given.
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.FilterParameterName: "any",
+		defs.UserParameterName:   "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
+		return
+	}
 	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")

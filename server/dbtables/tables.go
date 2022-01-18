@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 // TableCreate creates a new table based on the JSON payload, which must be an array of DBColumn objects, defining
@@ -18,6 +19,15 @@ import (
 // table name.
 func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
+
+	// Verify that there are no parameters
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.UserParameterName: "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
 
 	db, err := OpenDB(sessionID, user, "")
 
@@ -182,6 +192,15 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types.
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	// Verify that there are no parameters
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.UserParameterName: "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		// Special case; if the table name is @permissions then the payload is processed as request
@@ -292,6 +311,15 @@ func getColumnInfo(db *sql.DB, tableName string, sessionID int32) ([]defs.DBColu
 
 //DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	// Verify that there are no parameters
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.UserParameterName: "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	tableName, _ = fullName(user, tableName)
 
 	db, err := OpenDB(sessionID, user, "")
@@ -336,6 +364,17 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
 		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+
+		return
+	}
+
+	// Verify that the parameters are valid, if given.
+	if invalid := util.ValidateParameters(r.URL, map[string]string{
+		defs.StartParameterName: "int",
+		defs.LimitParameterName: "int",
+		defs.UserParameterName:  "string",
+	}); !errors.Nil(invalid) {
+		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
