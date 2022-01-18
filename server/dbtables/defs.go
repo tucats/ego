@@ -7,7 +7,7 @@ const (
 	createSchemaQuery           = `CREATE SCHEMA IF NOT EXISTS {{schema}}`
 	permissionsCreateTableQuery = `CREATE TABLE IF NOT EXISTS admin.privileges(username CHAR VARYING, tablename CHAR VARYING, permissions CHAR VARYING)`
 	permissionsSelectQuery      = `SELECT permissions FROM admin.privileges WHERE username = $1 and tablename = $2`
-	permissionsDeleteQuery      = `DELETE FORM admin.privileges WHERE username=$1 AND tablename = $2`
+	permissionsDeleteQuery      = `DELETE FROM admin.privileges WHERE username=$1 AND tablename = $2`
 	permissionsDeleteAllQuery   = `DELETE FROM admin.privileges WHERE tablename = $1`
 	permissionsInsertQuery      = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
 	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
