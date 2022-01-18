@@ -349,7 +349,7 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 
 	// Upsert isn't always available, so delete any candidate row(s) before
 	// adding in the new one.
-	_, err := db.Exec(permissionsDeleteAllQuery, user, table)
+	_, err := db.Exec(permissionsDeleteQuery, user, table)
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error updating permissions: %v", sessionID, err)
 
