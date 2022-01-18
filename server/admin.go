@@ -32,13 +32,13 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If INFO logging, put out the prologue message for the operation.
-	ui.Debug(ui.InfoLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 
 	// Do the actual work.
 	status := userHandler(sessionID, w, r)
 
 	// If not doing INFO logging, no intermediate messages have been generated so we can generate a single summary here.
-	if !ui.LoggerIsActive(ui.InfoLogger) {
+	if !ui.LoggerIsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
@@ -54,10 +54,10 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.InfoLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 	status := cachesHandler(sessionID, w, r)
 
-	if !ui.LoggerIsActive(ui.InfoLogger) {
+	if !ui.LoggerIsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
@@ -73,10 +73,10 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.InfoLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 	status := loggingHandler(sessionID, w, r)
 
-	if !ui.LoggerIsActive(ui.InfoLogger) {
+	if !ui.LoggerIsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
@@ -92,7 +92,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.InfoLogger, "[%d] User %s not authorized", sessionID, user)
+		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := `{ "status" : http.403, "msg" : "Forbidden" }`
@@ -189,7 +189,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				_, _ = io.WriteString(w, string(msg))
 
-				ui.Debug(ui.InfoLogger, "[%d] 200 Success", sessionID)
+				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
 				return 200
 			}
@@ -204,7 +204,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
 
-				ui.Debug(ui.InfoLogger, "[%d] 404 No such user", sessionID)
+				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
 				return 404
 			}
@@ -227,7 +227,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
 
-				ui.Debug(ui.InfoLogger, "[%d] 404 No such user", sessionID)
+				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
 				return 404
 			}
@@ -239,7 +239,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				_, _ = w.Write(b)
 
-				ui.Debug(ui.InfoLogger, "[%d] 200 Success", sessionID)
+				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
 				return 200
 			}
@@ -270,7 +270,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				_, _ = w.Write(b)
 
-				ui.Debug(ui.InfoLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
+				ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
 
 				return status
 			}
@@ -299,7 +299,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write(b)
 
-			ui.Debug(ui.InfoLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
+			ui.Debug(ui.ServerLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
 
 			return 200
 		}
@@ -312,7 +312,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
 
-	ui.Debug(ui.InfoLogger, "[%d] 500 ]Internal server error %v", sessionID, err)
+	ui.Debug(ui.ServerLogger, "[%d] 500 ]Internal server error %v", sessionID, err)
 
 	return 500
 }
@@ -323,7 +323,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.InfoLogger, "[%d] User %s not authorized", sessionID, user)
+		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := `{ "status" : 403, "msg" : "Not authorized" }`
@@ -367,7 +367,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.InfoLogger, fmt.Sprintf("[%d] %d, sending JSON response", sessionID, result.Status))
+		ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d, sending JSON response", sessionID, result.Status))
 
 		return result.Status
 
@@ -396,7 +396,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.InfoLogger, "[%d] 200, sending JSON response", sessionID)
+		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
 
 		return 200
 
@@ -422,7 +422,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.InfoLogger, "[%d] 200, sending JSON response", sessionID)
+		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
 
 		return 200
 
@@ -433,7 +433,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
 
-		ui.Debug(ui.InfoLogger, "[%d] 418, sending JSON response: unsupported method %s", sessionID, r.Method)
+		ui.Debug(ui.ServerLogger, "[%d] 418, sending JSON response: unsupported method %s", sessionID, r.Method)
 
 		return 418
 	}
@@ -447,7 +447,7 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
-		ui.Debug(ui.InfoLogger, "No authentication credentials given")
+		ui.Debug(ui.AuthLogger, "No authentication credentials given")
 
 		return "<invalid>", false
 	}
@@ -462,23 +462,23 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 			tokenString = tokenString[:10] + "..."
 		}
 
-		ui.Debug(ui.InfoLogger, "Auth using token %s...", tokenString)
+		ui.Debug(ui.AuthLogger, "Auth using token %s...", tokenString)
 
 		if validateToken(token) {
 			user := tokenUser(token)
 			if user == "" {
-				ui.Debug(ui.InfoLogger, "No username associated with token")
+				ui.Debug(ui.AuthLogger, "No username associated with token")
 			}
 
 			hasAdminPrivileges = getPermission(user, "root")
 		} else {
-			ui.Debug(ui.InfoLogger, "No valid token presented")
+			ui.Debug(ui.AuthLogger, "No valid token presented")
 		}
 	} else {
 		// Not a token, so assume BasicAuth
 		user, pass, ok := r.BasicAuth()
 		if ok {
-			ui.Debug(ui.InfoLogger, "Auth using user %s", user)
+			ui.Debug(ui.AuthLogger, "Auth using user %s", user)
 
 			if ok := validatePassword(user, pass); ok {
 				hasAdminPrivileges = getPermission(user, "root")
@@ -502,7 +502,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.InfoLogger, "[%d] User %s not authorized", sessionID, user)
+		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
 		response.Status = http.StatusForbidden
@@ -525,7 +525,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		if err != nil {
 			response.Status = 400
 			response.Message = err.Error()
-			ui.Debug(ui.InfoLogger, "[%d] Bad payload: %v", sessionID, err)
+			ui.Debug(ui.ServerLogger, "[%d] Bad payload: %v", sessionID, err)
 
 			return 400
 		}
@@ -536,7 +536,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 				response.Status = 400
 				response.Message = err.Error()
 
-				ui.Debug(ui.InfoLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
+				ui.Debug(ui.ServerLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
 				return 400
 			}
@@ -570,7 +570,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		return http.StatusOK
 
 	default:
-		ui.Debug(ui.InfoLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
+		ui.Debug(ui.ServerLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		response.Status = http.StatusMethodNotAllowed

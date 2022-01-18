@@ -73,9 +73,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	if ui.LoggerIsActive(ui.InfoLogger) {
-		ui.Debug(ui.InfoLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.ServerLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 
+	if ui.LoggerIsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
 			if strings.EqualFold(headerName, "Authorization") {
 				continue
@@ -275,7 +275,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
-		ui.Debug(ui.InfoLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -287,7 +287,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If doing INFO logging, make a neutered version of the token showing
 		// only the first few bytes of the token string.
-		if ui.LoggerIsActive(ui.InfoLogger) {
+		if ui.LoggerIsActive(ui.AuthLogger) {
 			tokenstr := token
 			if len(tokenstr) > 10 {
 				tokenstr = tokenstr[:10] + "..."
@@ -302,7 +302,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			ui.Debug(ui.InfoLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
+			ui.Debug(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -312,7 +312,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Debug(ui.InfoLogger, "[%d] BasicAuth invalid", sessionID)
+			ui.Debug(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
 		} else {
 			authenticatedCredentials = validatePassword(user, pass)
 		}
@@ -329,7 +329,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		ui.Debug(ui.InfoLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+		ui.Debug(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
 			user, valid)
 	}
 

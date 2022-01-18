@@ -386,7 +386,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func validateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
 	if !errors.Nil(err) {
-		ui.Debug(ui.InfoLogger, "Token validation error: "+err.Error())
+		ui.Debug(ui.AuthLogger, "Token validation error: "+err.Error())
 	}
 
 	return v.(bool)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/persistence"
 	"github.com/tucats/ego/app-cli/ui"
@@ -20,7 +21,7 @@ import (
 // as the payload, compiles and runs it. Because this is a major
 // security risk surface, this mode is not enabled by default.
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
-	ui.Debug(ui.ServerLogger, "REST call, %s", r.URL.Path)
+	sessionID := atomic.AddInt32(&nextSessionID, 1)
 
 	CountRequest(CodeRequestCounter)
 
@@ -49,6 +50,8 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
+
+	ui.Debug(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, text)
 
 	// Tokenize the input
 	t := tokenizer.New(text)
