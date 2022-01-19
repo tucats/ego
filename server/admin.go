@@ -101,7 +101,10 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		msg := `{ "status" : 403, "msg" : "Forbidden" }`
 
-		_, _ = io.WriteString(w, msg)
+		//_, _ = io.WriteString(w, msg)
+
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(msg))
 
 		return http.StatusForbidden
 	}
@@ -111,9 +114,10 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
 
-		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
+		w.WriteHeader(http.StatusTeapot)
+		_, _ = w.Write([]byte(fmt.Sprintf(msg, r.Method)))
 
-		return 418
+		return http.StatusTeapot
 	}
 
 	logHeaders(r, sessionID)
@@ -190,8 +194,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				w.WriteHeader(http.StatusOK)
 
 				msg, _ := json.Marshal(response)
-
-				_, _ = io.WriteString(w, string(msg))
+				_, _ = w.Write(msg)
 
 				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
@@ -202,11 +205,10 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		case http.MethodDelete:
 			u, exists := service.ReadUser(name)
 			if !errors.Nil(exists) {
-				w.WriteHeader(http.StatusNotFound)
-
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
 
-				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(fmt.Sprintf(msg, name)))
 
 				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
@@ -224,12 +226,11 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
-			if errors.Nil(err) && !datatypes.GetBool(v) {
+			if !errors.Nil(err) || !datatypes.GetBool(v) {
 				w.WriteHeader(http.StatusNotFound)
 
 				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
-
-				_, _ = io.WriteString(w, fmt.Sprintf(msg, name))
+				_, _ = w.Write([]byte(fmt.Sprintf(msg, name)))
 
 				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
@@ -312,11 +313,10 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	// We had some kind of error, so report that.
 	w.WriteHeader(http.StatusInternalServerError)
 
-	msg := `{ "status" : 500, "msg" : "%s"`
+	msg := `{ "status" : 500, "msg" : "%s"}`
+	_, _ = w.Write([]byte(fmt.Sprintf(msg, err.Error())))
 
-	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
-
-	ui.Debug(ui.ServerLogger, "[%d] 500 ]Internal server error %v", sessionID, err)
+	ui.Debug(ui.ServerLogger, "[%d] 500 Internal server error %v", sessionID, err)
 
 	return http.StatusInternalServerError
 }

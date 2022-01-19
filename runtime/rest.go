@@ -710,7 +710,9 @@ func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
 	return this
 }
 
-// Exchange is a helper wrapper around a rest call.
+// Exchange is a helper wrapper around a rest call. This is generally used by all the
+// CLI client operations _except_ the logon operation, since at that point the token
+// is not known (or used).
 func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string) *errors.EgoError {
 	var resp *resty.Response
 
@@ -791,6 +793,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
 			ui.Debug(ui.RestLogger, "Response:\n%s", string(responseBytes))
+		}
+
+		if err == nil && status != http.StatusOK {
+			if m, ok := response.(map[string]interface{}); ok {
+				if msg, ok := m["Message"]; ok {
+					err = errors.NewMessage(datatypes.GetString(msg))
+				}
+			}
 		}
 	}
 
