@@ -232,6 +232,18 @@ A GET call to the /tables endpoint will return a list of the tables. This is a J
 containing an array of strings, each of which is a table name that the current user has
 read access to.
 
+Because the list of tables might be quite long, you can specify URL parameters that limit
+the result set:
+
+&nbsp;
+
+| Parameter | Example    | Description |
+| --------- | ---------- | ----------- |
+| limit     | ?limit=10  | Return at most this mahy rows from the result set |
+| start     | ?start=100 | Specify the first row of the result set (1-based) |
+
+&nbsp;
+
 ### GET /tables/_table_
 
 If you specify a specific table with the GET operation, it returns JSON payload containing
@@ -284,6 +296,21 @@ are returned, in an unpredictable order. The result is a JSON payload containing
 of structures, each of which is a set of fields for each column name, and the value of that
 field in that row.
 
+The Rows API supports the following parameters on the URL that affect the result set. 
+Additional information about the parameters follows this table:
+
+&nbsp;
+
+| Parameter | Example                | Description |
+| --------- | ---------------------- | ----------- |
+| columns   | ?columns=id,name       | Specify the columns to return (if not specified, all columns are returned) |
+| filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
+| limit     | ?limit=10              | Return at most this mahy rows from the result set |
+| sort      | ?sort=id               | Sort the result set by the named column |
+| start     | ?start=100             | Specify the first row of the result set (1-based) |
+
+&nbsp;
+
 You can specify the sort order of the results set by naming one or more columns on which the
 data is sorted before it is retuned to you. Use the `sort` parameter, with a value which is 
 a comma-separated list of columns. The first column named is the primary sort key, the second
@@ -312,10 +339,44 @@ are:
 Note that in these examples, the value being tested is an integer. You can also specify a string value 
 in double quotes, or a floating point value (such as 123.45).
 
+### PATCH /tables/_table_/rows
+The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
+as the PUT method) but does not have to specify all the values in the row. Only the values
+specified in the request body are updated; the other values are left unchanged.
+
+Use the `filter` parameter to select which row(s) are to be updated:
+
+&nbsp;
+
+| Parameter | Example                | Description |
+| --------- | ---------------------- | ----------- |
+| filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
+
+&nbsp;
+
+If not specified, all rows will be updated using the same value. Use the `filter`
+option to select specific rows. You can reference the column values if they are
+sufficiently unique. You can also perform a GET operation to see the current
+values, and then use the `_row_id_` value from the result set to specify a single
+specific row to be updated.
+
+
+
 ### DELETE /tables/_table_/rows
 
-This deletes rows from a table. If no parameters are given, then all rows are deleted. You can
-optionally specify the `filter` parameter to indicate which row(s) are to be deleted from the
+This deletes rows from a table. By default, all rows are deleted. You can use the following
+parameter to specify which rows are to be deleted:
+
+&nbsp;
+
+| Parameter | Example                | Description |
+| --------- | ---------------------- | ----------- |
+| filter    | ?filter=EQ(name,"TOM") | Only delete rows that match the filter |
+
+&nbsp;
+
+If no parameters are given, then all rows are deleted. You can
+specify the `filter` parameter to indicate which row(s) are to be deleted from the
 table. The `filter` parameter contains a filter expression, of the same form as the GET
 operation.
 
