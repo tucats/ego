@@ -125,8 +125,7 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	destination := datatypes.GetInt(i)
 
-	stackSize := len(c.rangeStack)
-	if stackSize == 0 {
+	if stackSize := len(c.rangeStack); stackSize == 0 {
 		c.programCounter = destination
 	} else {
 		r := c.rangeStack[stackSize-1]

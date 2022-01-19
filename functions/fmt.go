@@ -13,14 +13,14 @@ import (
 
 // Printf implements fmt.printf() and is a wrapper around the native Go function.
 func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	len := 0
+	length := 0
 
 	str, err := Sprintf(s, args)
 	if errors.Nil(err) {
-		len, _ = fmt.Printf("%s", datatypes.GetString(str))
+		length, _ = fmt.Printf("%s", datatypes.GetString(str))
 	}
 
-	return len, err
+	return length, err
 }
 
 // Sprintf implements fmt.sprintf() and is a wrapper around the native Go function.

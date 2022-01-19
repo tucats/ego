@@ -37,8 +37,7 @@ func stringAction(c *Context) *errors.EgoError {
 }
 
 func booleanValueAction(c *Context) *errors.EgoError {
-	v := c.Boolean("boolean")
-	if v != true {
+	if v := c.Boolean("boolean"); v != true {
 		return errors.NewMessage("Boolean value not true")
 	}
 
@@ -46,8 +45,7 @@ func booleanValueAction(c *Context) *errors.EgoError {
 }
 
 func booleanAction(c *Context) *errors.EgoError {
-	v := c.Boolean("flag")
-	if v != true {
+	if v := c.Boolean("flag"); !v {
 		return errors.NewMessage("Boolean not present")
 	}
 

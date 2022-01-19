@@ -490,8 +490,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 }
 
 func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
-	quote := s[0:1]
-	if s[len(s)-1:] != quote {
+	if quote := s[0:1]; s[len(s)-1:] != quote {
 		return s[1:], c.newError(errors.ErrBlockQuote, quote)
 	}
 

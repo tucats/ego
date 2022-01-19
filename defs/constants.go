@@ -181,7 +181,7 @@ const (
 	TableAgent  = "tables"
 )
 
-// This map describes the list of valid settings, and whether they can be set by the
+// ValidSettings describes the list of valid settings, and whether they can be set by the
 // command line.
 var ValidSettings map[string]bool = map[string]bool{
 	EgoPathSetting:                  true,

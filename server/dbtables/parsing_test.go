@@ -96,7 +96,7 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "filter list",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\"),eq(age,55)",
-			want: "WHERE name = 'Tom' AND age = 55",
+			want: " WHERE name = 'Tom' AND age = 55",
 		},
 		{
 			name: "no filter",
@@ -106,12 +106,12 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "one filter",
 			arg:  "https://localhost:8500/tables/data?filter=eq(age,55)",
-			want: "WHERE age = 55",
+			want: " WHERE age = 55",
 		},
 		{
 			name: "multiple filters",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\")&filter=eq(name,\"Mary\")",
-			want: "WHERE name = 'Tom' AND name = 'Mary'",
+			want: " WHERE name = 'Tom' AND name = 'Mary'",
 		},
 
 		// TODO: Add test cases.
@@ -135,7 +135,7 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "sort list",
 			arg:  "https://localhost:8500/tables/data?sort=tom,age",
-			want: "ORDER BY tom,age",
+			want: " ORDER BY tom,age",
 		},
 		{
 			name: "no sort",
@@ -145,17 +145,17 @@ func Test_sortList(t *testing.T) {
 		{
 			name: "one sort",
 			arg:  "https://localhost:8500/tables/data?order=age",
-			want: "ORDER BY age",
+			want: " ORDER BY age",
 		},
 		{
 			name: "multiple sorts",
 			arg:  "https://localhost:8500/tables/data?sort=name&sort=age",
-			want: "ORDER BY name,age",
+			want: " ORDER BY name,age",
 		},
 		{
 			name: "descending sort",
 			arg:  "https://localhost:8500/tables/data?sort=~age",
-			want: "ORDER BY age DESC",
+			want: " ORDER BY age DESC",
 		},
 
 		// TODO: Add test cases.
@@ -179,22 +179,22 @@ func Test_formQuery(t *testing.T) {
 		{
 			name: "no query parameters",
 			arg:  "https://localhost:8500/tables/data",
-			want: "SELECT * FROM data",
+			want: "SELECT * FROM admin.data",
 		},
 		{
 			name: "column specification",
 			arg:  "https://localhost:8500/tables/data?columns=name,age",
-			want: "SELECT name,age FROM data",
+			want: "SELECT name,age FROM admin.data",
 		},
 		{
 			name: "column and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age",
-			want: "SELECT name,age FROM data ORDER BY age",
+			want: "SELECT name,age FROM admin.data ORDER BY age",
 		},
 		{
 			name: "column, filter, and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age&filter=GE(age,18)",
-			want: "SELECT name,age FROM data WHERE age >= 18 ORDER BY age",
+			want: "SELECT name,age FROM admin.data WHERE age >= 18 ORDER BY age",
 		},
 
 		// TODO: Add test cases.
@@ -202,7 +202,7 @@ func Test_formQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := formSelectorDeleteQuery(u, "", selectVerb); got != tt.want {
+			if got := formSelectorDeleteQuery(u, "admin", selectVerb); got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 		})

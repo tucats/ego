@@ -46,7 +46,7 @@ var Configurations map[string]Configuration
 
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) *errors.EgoError {
-	var c Configuration = Configuration{
+	var c = Configuration{
 		Description: "Default configuration",
 		Items:       map[string]string{},
 	}

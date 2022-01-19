@@ -324,6 +324,8 @@ func sortList(u *url.URL) string {
 }
 
 func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
+	var result strings.Builder
+
 	if u == nil {
 		return ""
 	}
@@ -342,30 +344,23 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	// the username as the schema.
 	table, _ := fullName(user, datatypes.GetString(tableItem))
 
-	columns := columnList(u)
-	where := filterList(u)
-	sort := sortList(u)
-	paging := pagingClauses(u)
-
-	var result strings.Builder
-
 	result.WriteString(verb + " ")
 
 	if verb == selectVerb {
-		result.WriteString(columns)
+		result.WriteString(columnList(u))
 	}
 
 	result.WriteString(" FROM " + table)
 
-	if where != "" {
+	if where := filterList(u); where != "" {
 		result.WriteString(where)
 	}
 
-	if sort != "" && verb == selectVerb {
+	if sort := sortList(u); sort != "" && verb == selectVerb {
 		result.WriteString(sort)
 	}
 
-	if paging != "" && verb == selectVerb {
+	if paging := pagingClauses(u); paging != "" && verb == selectVerb {
 		result.WriteString(paging)
 	}
 
@@ -389,7 +384,6 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 
 	// Get the table name and filter list
 	table, _ := fullName(user, datatypes.GetString(tableItem))
-	where := filterList(u)
 
 	var result strings.Builder
 
@@ -420,7 +414,7 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 		result.WriteString(fmt.Sprintf(" = $%d", i+1))
 	}
 
-	if where != "" {
+	if where := filterList(u); where != "" {
 		result.WriteString(" " + where)
 	}
 

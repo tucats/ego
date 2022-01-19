@@ -54,8 +54,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		return nil, errors.New(err)
 	}
 
-	scheme := url.Scheme
-	if scheme == "sqlite3" {
+	if scheme := url.Scheme; scheme == "sqlite3" {
 		connStr = strings.TrimPrefix(connStr, scheme+"://")
 	}
 

@@ -70,15 +70,14 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 // used to verify that multiple return-values on the stack
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
-	count := datatypes.GetInt(i)
-	if c.stackPointer <= count {
+	if count := datatypes.GetInt(i); c.stackPointer <= count {
 		return c.newError(errors.ErrReturnValueCount)
-	}
-
-	// The marker is an instance of a StackMarker object.
-	v := c.stack[c.stackPointer-(count+1)]
-	if _, ok := v.(StackMarker); ok {
-		return nil
+	} else {
+		// The marker is an instance of a StackMarker object.
+		v := c.stack[c.stackPointer-(count+1)]
+		if _, ok := v.(StackMarker); ok {
+			return nil
+		}
 	}
 
 	return c.newError(errors.ErrReturnValueCount)

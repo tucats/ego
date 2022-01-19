@@ -269,6 +269,8 @@ func getColumnInfo(db *sql.DB, tableName string, sessionID int32) ([]defs.DBColu
 
 	rows, err := db.Query(q)
 	if err == nil {
+		defer rows.Close()
+
 		names, _ := rows.Columns()
 		types, _ := rows.ColumnTypes()
 
@@ -395,6 +397,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		if err == nil {
 			var name string
 
+			defer rows.Close()
+
 			names := make([]defs.Table, 0)
 			count := 0
 
@@ -418,6 +422,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					continue
 				}
 
+				defer tableInfo.Close()
 				count++
 
 				columns, _ := tableInfo.Columns()

@@ -25,8 +25,7 @@ import (
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) *errors.EgoError {
-	kind := datatypes.GetBool(i)
-	if kind {
+	if datatypes.GetBool(i) {
 		return NotImpl(c, i)
 	}
 

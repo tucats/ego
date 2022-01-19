@@ -47,6 +47,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 
 	rows, err := db.Query(permissionsSelectQuery, user, table)
 	if err != nil {
+		defer rows.Close()
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions field: %v", sessionID, err)
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
@@ -99,6 +100,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 
 	rows, err := db.Query(q)
 	if err != nil {
+		defer rows.Close()
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
 		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
@@ -260,6 +262,8 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 		return false
 	}
 
+	defer rows.Close()
+
 	permissions = strings.ToLower(permissions)
 	auth := true
 
@@ -268,8 +272,6 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 			auth = false
 		}
 	}
-
-	_ = rows.Close()
 
 	if !auth && ui.LoggerIsActive(ui.TableLogger) {
 		operationsList := ""
@@ -379,6 +381,8 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	if err != nil {
 		return errors.New(err).Context(user + ":" + tableName)
 	}
+
+	defer rows.Close()
 
 	permMap := map[string]bool{}
 	permissionsString := ""

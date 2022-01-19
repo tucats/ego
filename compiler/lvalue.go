@@ -20,14 +20,14 @@ func (c *Compiler) isAssignmentTarget() bool {
 		c.t.Advance(1)
 	}
 
-	name := c.t.Peek(1)
-	if !tokenizer.IsSymbol(name) {
+	// See if it's a symbol
+	if name := c.t.Peek(1); !tokenizer.IsSymbol(name) {
 		return false
-	}
-
-	// See if it's a reserved word.
-	if tokenizer.IsReserved(name, c.extensionsEnabled) {
-		return false
+	} else {
+		// See if it's a reserved word.
+		if tokenizer.IsReserved(name, c.extensionsEnabled) {
+			return false
+		}
 	}
 
 	// Let's look ahead to see if it contains any of the tell-tale

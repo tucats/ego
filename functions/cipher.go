@@ -243,8 +243,7 @@ func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	b := make([]byte, n)
 
-	_, err := rand.Read(b)
-	if err != nil {
+	if _, err := rand.Read(b); err != nil {
 		return nil, errors.New(err)
 	}
 

@@ -87,9 +87,9 @@ var loggers []logger = []logger{
 	{"USER", false},
 }
 
-// This will contain the format string used to produce log messages, using the Go
-// standard format string. You can override the default by creating a profile item
-// called "ego.log.format".
+// LogTimeStampFormat stores the format string used to produce log messages,
+// using the Go standard format string. You can override the default by
+// creating a profile item called "ego.log.format".
 var LogTimeStampFormat string
 
 func LoggerNames() []string {

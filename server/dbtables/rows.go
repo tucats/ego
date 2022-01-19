@@ -224,12 +224,13 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 	result := []map[string]interface{}{}
 	rowCount := 0
-	columnCount := 0
 
 	rows, err = db.Query(q)
 	if err == nil {
+		defer rows.Close()
+
 		columnNames, _ := rows.Columns()
-		columnCount = len(columnNames)
+		columnCount := len(columnNames)
 
 		for rows.Next() {
 			row := make([]interface{}, columnCount)
@@ -280,7 +281,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		return
 	}
-	
+
 	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")

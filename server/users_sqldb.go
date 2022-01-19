@@ -268,9 +268,9 @@ func (pg *DatabaseService) Flush() *errors.EgoError {
 
 // Verify that the database is initialized.
 func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
-	_, dberr := pg.db.Query(probeTableExistsQueryString)
+	rows, dberr := pg.db.Query(probeTableExistsQueryString)
 	if dberr != nil {
-		_, dberr = pg.db.Exec(createTableQueryString)
+		_, dberr := pg.db.Exec(createTableQueryString)
 
 		if dberr == nil {
 			ui.Debug(ui.DBLogger, "Created empty credentials table")
@@ -278,6 +278,8 @@ func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
 			ui.Debug(ui.ServerLogger, "error creating table: %v", dberr)
 		}
 	}
+
+	defer rows.Close()
 
 	return errors.New(dberr)
 }

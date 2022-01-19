@@ -84,8 +84,7 @@ func rollOverTask() {
 // Roll over the open log. Close the current log, and rename it to include a timestamp of when
 // it was created. Then create a new log file.
 func RollOverLog() {
-	err1 := SaveLastLog()
-	if err1 != nil {
+	if err1 := SaveLastLog(); err1 != nil {
 		panic("Unable to roll over log file; " + err1.Error())
 	}
 
