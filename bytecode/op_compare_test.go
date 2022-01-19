@@ -8,7 +8,6 @@ import (
 )
 
 func TestComparisons(t *testing.T) {
-
 	tests := []struct {
 		// Name of test
 		name string
@@ -22,7 +21,7 @@ func TestComparisons(t *testing.T) {
 		// Expected result
 		r interface{}
 
-		// Opcode funtion to test
+		// Opcode function to test
 		f func(c *Context, i interface{}) *errors.EgoError
 
 		// Opcode parameter
@@ -132,7 +131,6 @@ func TestComparisons(t *testing.T) {
 				}
 			} else if errors.Nil(e) == tt.err {
 				t.Errorf("%s bad return code, unexpected %v", tt.name, e)
-
 			}
 		})
 	}

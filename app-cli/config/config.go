@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -87,18 +87,18 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	// Is the user asking for a single value?
 	if c.GetParameterCount() > 0 {
 		key := c.GetParameter(0)
-		if !persistence.Exists(key) {
+		if !settings.Exists(key) {
 			return errors.New(errors.ErrNoSuchProfileKey).Context(key)
 		}
 
-		fmt.Println(persistence.Get(key))
+		fmt.Println(settings.Get(key))
 
 		return nil
 	}
 
 	t, _ := tables.New([]string{"Key", "Value"})
 
-	for k, v := range persistence.CurrentConfiguration.Items {
+	for k, v := range settings.CurrentConfiguration.Items {
 		if len(fmt.Sprintf("%v", v)) > maxKeyValuePrintWidth {
 			v = fmt.Sprintf("%v", v)[:maxKeyValuePrintWidth] + "..."
 		}
@@ -117,7 +117,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 func ListAction(c *cli.Context) *errors.EgoError {
 	t, _ := tables.New([]string{"Name", "Description"})
 
-	for k, v := range persistence.Configurations {
+	for k, v := range settings.Configurations {
 		_ = t.AddRowItems(k, v.Description)
 	}
 
@@ -136,7 +136,7 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			ui.TextFormat,
 			ui.JSONFormat,
 			ui.JSONIndentedFormat) {
-			persistence.Set(defs.OutputFormatSetting, outputType)
+			settings.Set(defs.OutputFormatSetting, outputType)
 
 			return nil
 		}
@@ -163,7 +163,7 @@ func SetAction(c *cli.Context) *errors.EgoError {
 		return invalidKeyError
 	}
 
-	persistence.Set(key, value)
+	settings.Set(key, value)
 	ui.Say("Profile key %s written", key)
 
 	return nil
@@ -180,10 +180,11 @@ func DeleteAction(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	if err = persistence.Delete(key); !errors.Nil(err) {
-		if c.GetBool("force") {
+	if err = settings.Delete(key); !errors.Nil(err) {
+		if c.Boolean("force") {
 			err = nil
 		}
+
 		return err
 	}
 
@@ -196,7 +197,7 @@ func DeleteAction(c *cli.Context) *errors.EgoError {
 func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 	key := c.GetParameter(0)
 
-	err := persistence.DeleteProfile(key)
+	err := settings.DeleteProfile(key)
 	if errors.Nil(err) {
 		ui.Say("Profile %s deleted", key)
 
@@ -208,23 +209,23 @@ func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 
 // SetDescriptionAction sets the profile description string.
 func SetDescriptionAction(c *cli.Context) *errors.EgoError {
-	config := persistence.Configurations[persistence.ProfileName]
+	config := settings.Configurations[settings.ProfileName]
 	config.Description = c.GetParameter(0)
-	persistence.Configurations[persistence.ProfileName] = config
-	persistence.ProfileDirty = true
+	settings.Configurations[settings.ProfileName] = config
+	settings.ProfileDirty = true
 
 	return nil
 }
 
 // Determine if a key is allowed to be updated by the CLI. This rule
-// applies to keys with the privileged key prefix ("ego.")
+// applies to keys with the privileged key prefix ("ego.").
 func validateKey(key string) *errors.EgoError {
-
 	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
 		allowed, found := defs.ValidSettings[key]
 		if !found {
 			return errors.New(errors.ErrInvalidConfigName)
 		}
+		
 		if !allowed {
 			return errors.New(errors.ErrNoPrivilegeForOperation)
 		}

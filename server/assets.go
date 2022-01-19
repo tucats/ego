@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 )
 
@@ -165,7 +165,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 			path = path[1:]
 		}
 
-		root := persistence.Get("ego.runtime.path")
+		root := settings.Get("ego.runtime.path")
 		fn := filepath.Join(root, "lib/services", path)
 
 		ui.Debug(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)

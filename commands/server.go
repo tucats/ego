@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
@@ -36,7 +36,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)
 
-		if fn, ok := c.GetString("log"); ok {
+		if fn, ok := c.String("log"); ok {
 			err := ui.OpenLogFile(fn, true)
 			if !errors.Nil(err) {
 				return err
@@ -45,7 +45,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.SymbolAllocationSize, _ = c.GetInteger(defs.SymbolTableSizeOption)
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
 			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 		}
@@ -55,7 +55,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// we'll use the default value created during symbol table startup.
 	var found bool
 
-	server.Session, found = c.GetString("session-uuid")
+	server.Session, found = c.String("session-uuid")
 	if found {
 		_ = symbols.RootSymbolTable.SetAlways("_session", server.Session)
 	} else {
@@ -65,7 +65,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	server.Version = c.Version
 
-	debugPath, _ := c.GetString("debug")
+	debugPath, _ := c.String("debug")
 	if len(debugPath) > 0 {
 		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}
@@ -73,7 +73,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	ui.Debug(ui.ServerLogger, "Starting server, session %s", server.Session)
 
 	// Do we enable the /code endpoint? This is off by default.
-	if c.GetBool("code") {
+	if c.Boolean("code") {
 		http.HandleFunc(defs.CodePath, server.CodeHandler)
 
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
@@ -99,11 +99,11 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Figure out the root location of the services, which will
 	// also become the context-root of the ultimate URL path for
 	// each endpoint.
-	server.PathRoot, _ = c.GetString("context-root")
+	server.PathRoot, _ = c.String("context-root")
 	if server.PathRoot == "" {
 		server.PathRoot = os.Getenv(defs.EgoPathEnv)
 		if server.PathRoot == "" {
-			server.PathRoot = persistence.Get(defs.EgoPathSetting)
+			server.PathRoot = settings.Get(defs.EgoPathSetting)
 		}
 	}
 
@@ -112,7 +112,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")
 	if c.WasFound("realm") {
-		server.Realm, _ = c.GetString("realm")
+		server.Realm, _ = c.String("realm")
 	}
 
 	if server.Realm == "" {
@@ -154,29 +154,29 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	// Specify port and security status, and create the approriate listener.
 	port := 8080
-	if p, ok := c.GetInteger("port"); ok {
+	if p, ok := c.Integer("port"); ok {
 		port = p
 	}
 
 	// If there is a maximum size to the cache of compiled service programs,
 	// set it now.
 	if c.WasFound("cache-size") {
-		server.MaxCachedEntries, _ = c.GetInteger("cache-size")
+		server.MaxCachedEntries, _ = c.Integer("cache-size")
 	}
 
 	if c.WasFound("static-types") {
-		persistence.SetDefault(defs.StaticTypesSetting, "dynamic")
+		settings.SetDefault(defs.StaticTypesSetting, "dynamic")
 	}
 
 	if c.WasFound("sandbox-path") {
-		sandboxPath, _ := c.GetString("sandbox-path")
+		sandboxPath, _ := c.String("sandbox-path")
 
 		sandboxPath, e2 := filepath.Abs(sandboxPath)
 		if e2 != nil {
 			return errors.New(errors.ErrInvalidSandboxPath).Context(sandboxPath)
 		}
 
-		persistence.SetDefault(defs.SandboxPathSetting, sandboxPath)
+		settings.SetDefault(defs.SandboxPathSetting, sandboxPath)
 		ui.Debug(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
 	}
 
@@ -189,11 +189,11 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	secure := true
 
-	if persistence.GetBool(defs.InsecureServerSetting) {
+	if settings.GetBool(defs.InsecureServerSetting) {
 		secure = false
 	}
 
-	if c.GetBool("not-secure") {
+	if c.Boolean("not-secure") {
 		secure = false
 	}
 
@@ -273,7 +273,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	// Start by trying to connect with what we have, if it had a scheme. In this
 	// case, the string is expected to be complete.
 	if hasScheme {
-		persistence.SetDefault("ego.application.server", name)
+		settings.SetDefault("ego.application.server", name)
 
 		return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	}
@@ -281,7 +281,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	// No scheme, so let's try https. If no port supplied, assume the default port.
 	normalizedName = "https://" + name + port
 
-	persistence.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault("ego.application.server", normalizedName)
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	if errors.Nil(err) {
@@ -291,7 +291,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	// Nope. Same deal with http scheme.
 	normalizedName = "http://" + name + port
 
-	persistence.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault("ego.application.server", normalizedName)
 
 	return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 }

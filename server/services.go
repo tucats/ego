@@ -16,7 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -57,7 +57,7 @@ var MaxCachedEntries = -1
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	cacheMutex.Lock()
 	if MaxCachedEntries < 0 {
-		txt := persistence.Get(defs.MaxCacheSizeSetting)
+		txt := settings.Get(defs.MaxCacheSizeSetting)
 		MaxCachedEntries, _ = strconv.Atoi(txt)
 	}
 	cacheMutex.Unlock()
@@ -95,7 +95,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_start_time", StartTime)
 	_ = symbolTable.SetAlways("_requestor", requestor)
 
-	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	// Get the query parameters and store as a local variable
@@ -227,7 +227,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Add the standard non-package functions
 		compilerInstance.AddStandard(symbolTable)
 
-		err = compilerInstance.AutoImport(persistence.GetBool(defs.AutoImportSetting))
+		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
 		}

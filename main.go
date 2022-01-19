@@ -13,7 +13,7 @@ import (
 // injected during a build by the build script.
 var BuildVersion = "0.0-0"
 
-// BuildTime is a timestamp for this build
+// BuildTime is a timestamp for this build.
 var BuildTime string
 
 // Copyright is the copyright string for this application.

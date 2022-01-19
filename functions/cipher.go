@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -192,7 +192,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	// Fetch the default interval, or use 15 minutes as the default.
 	// Calculate a time value for when this token expires
-	interval := persistence.Get(defs.ServerTokenExpirationSetting)
+	interval := settings.Get(defs.ServerTokenExpirationSetting)
 	if interval == "" {
 		interval = "15m"
 	}
@@ -222,12 +222,12 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // getTokenKey fetches the key used to encrypt tokens. If it
 // was not already set up, a new random one is generated.
 func getTokenKey() string {
-	key := persistence.Get(defs.ServerTokenKeySetting)
+	key := settings.Get(defs.ServerTokenKeySetting)
 	if key == "" {
 		key = uuid.New().String() + "-" + uuid.New().String()
 
-		persistence.Set(defs.ServerTokenKeySetting, key)
-		_ = persistence.Save()
+		settings.Set(defs.ServerTokenKeySetting, key)
+		_ = settings.Save()
 	}
 
 	return key

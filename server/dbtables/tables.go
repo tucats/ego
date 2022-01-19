@@ -106,8 +106,8 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 				return
 			}
-			if !keywordMatch(column.Type, defs.TableColumnTypeNames...) {
 
+			if !keywordMatch(column.Type, defs.TableColumnTypeNames...) {
 				ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
 
 				return
@@ -269,7 +269,6 @@ func getColumnInfo(db *sql.DB, tableName string, sessionID int32) ([]defs.DBColu
 
 	rows, err := db.Query(q)
 	if err == nil {
-
 		names, _ := rows.Columns()
 		types, _ := rows.ColumnTypes()
 

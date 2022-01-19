@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
@@ -103,8 +103,8 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		symbols:              s,
 		fullSymbolScope:      true,
 		thisStack:            nil,
-		throwUncheckedErrors: persistence.GetBool(defs.ThrowUncheckedErrorsSetting),
-		fullStackTrace:       persistence.GetBool(defs.FullStackTraceSetting),
+		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
+		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
 		packageStack:         make([]packageDef, 0),
 		tryStack:             make([]TryInfo, 0),
 		rangeStack:           make([]*Range, 0),

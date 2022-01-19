@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
@@ -250,7 +250,7 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 			// variations on that.
 			r := os.Getenv(defs.EgoPathEnv)
 			if r == "" {
-				r = persistence.Get(defs.EgoPathSetting)
+				r = settings.Get(defs.EgoPathSetting)
 			}
 
 			// Try to see if it's in the lib directory under EGO path
@@ -287,7 +287,7 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 
 	r := os.Getenv(defs.EgoPathEnv)
 	if r == "" {
-		r = persistence.Get(EgoPathSetting)
+		r = settings.Get(EgoPathSetting)
 	}
 
 	r = filepath.Join(r, defs.LibPathName)

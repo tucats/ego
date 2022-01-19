@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -17,9 +17,9 @@ import (
 )
 
 func Logging(c *cli.Context) *errors.EgoError {
-	addr := persistence.Get(defs.ApplicationServerSetting)
+	addr := settings.Get(defs.ApplicationServerSetting)
 	if addr == "" {
-		addr = persistence.Get(defs.LogonServerSetting)
+		addr = settings.Get(defs.LogonServerSetting)
 		if addr == "" {
 			addr = "localhost"
 		}
@@ -46,7 +46,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 
 	if c.WasFound("enable") || c.WasFound("disable") {
 		if c.WasFound("enable") {
-			loggerNames, _ := c.GetStringList("enable")
+			loggerNames, _ := c.StringList("enable")
 
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
@@ -63,7 +63,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		if c.WasFound("disable") {
-			loggerNames, _ := c.GetStringList("disable")
+			loggerNames, _ := c.StringList("disable")
 
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
@@ -86,7 +86,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	} else if c.WasFound("tail") {
 		// Was it a --tail request?
-		count, _ := c.GetInteger("tail")
+		count, _ := c.Integer("tail")
 		if count < 1 {
 			count = 50
 		}
@@ -129,7 +129,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	fileOnly := c.GetBool("file")
+	fileOnly := c.Boolean("file")
 
 	switch ui.OutputFormat {
 	case ui.TextFormat:

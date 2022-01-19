@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
@@ -88,7 +88,7 @@ func New(name string) *Compiler {
 			Package: map[string]datatypes.EgoPackage{},
 		},
 		LowercaseIdentifiers: false,
-		extensionsEnabled:    persistence.GetBool(ExtensionsSetting),
+		extensionsEnabled:    settings.GetBool(ExtensionsSetting),
 		RootTable:            &symbols.RootSymbolTable,
 	}
 

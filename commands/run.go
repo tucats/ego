@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -33,7 +33,7 @@ const QuitCommand = "%quit"
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) *errors.EgoError {
-	if logFile, found := c.GetString("log"); found {
+	if logFile, found := c.String("log"); found {
 		err := ui.OpenLogFile(logFile, false)
 		if !errors.Nil(err) {
 			return err
@@ -47,13 +47,13 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	programArgs := make([]interface{}, 0)
 	mainName := "main"
 	prompt := c.MainProgram + "> "
-	debug := c.GetBool("debug")
+	debug := c.Boolean("debug")
 	text := ""
 	wasCommandLine := true
 	fullScope := false
 	lineNumber := 1
 
-	entryPoint, _ := c.GetString("entry-point")
+	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
 		entryPoint = "main"
 	}
@@ -61,32 +61,32 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	var comp *compiler.Compiler
 
 	if c.WasFound(defs.SymbolTableSizeOption) {
-		symbols.SymbolAllocationSize, _ = c.GetInteger(defs.SymbolTableSizeOption)
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
 			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 		}
 	}
 
-	autoImport := persistence.GetBool(defs.AutoImportSetting)
+	autoImport := settings.GetBool(defs.AutoImportSetting)
 	if c.WasFound(defs.AutoImportSetting) {
-		autoImport = c.GetBool(defs.AutoImportOption)
+		autoImport = c.Boolean(defs.AutoImportOption)
 	}
 
 	if c.WasFound(defs.FullSymbolScopeOption) {
-		fullScope = c.GetBool(defs.FullSymbolScopeOption)
+		fullScope = c.Boolean(defs.FullSymbolScopeOption)
 	}
 
-	disassemble := c.GetBool(defs.DisassembleOption)
+	disassemble := c.Boolean(defs.DisassembleOption)
 	if disassemble {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
-	exitOnBlankLine := persistence.GetBool(defs.ExitOnBlankSetting)
+	exitOnBlankLine := settings.GetBool(defs.ExitOnBlankSetting)
 	interactive := false
 
-	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	if c.WasFound(defs.StaticTypesOption) {
-		staticTypes = c.GetBool(defs.StaticTypesOption)
+		staticTypes = c.Boolean(defs.StaticTypesOption)
 	}
 
 	argc := c.GetParameterCount()
@@ -129,7 +129,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		if !ui.IsConsolePipe() {
 			var banner string
 
-			if persistence.Get(defs.NoCopyrightSetting) != "true" {
+			if settings.Get(defs.NoCopyrightSetting) != "true" {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
 
@@ -243,7 +243,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
 
 		if comp == nil {
-			comp = compiler.New("run").WithNormalization(persistence.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
+			comp = compiler.New("run").WithNormalization(settings.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
 			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)
@@ -298,7 +298,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				exitValue = 0
 			}
 
-			if c.GetBool("symbols") {
+			if c.Boolean("symbols") {
 				fmt.Println(symbolTable.Format(false))
 			}
 		}
@@ -331,7 +331,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 		_ = symbolTable.SetAlways("__exec_mode", "run")
 	}
 
-	if c.GetBool("trace") {
+	if c.Boolean("trace") {
 		ui.SetLogger(ui.TraceLogger, true)
 	}
 

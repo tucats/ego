@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -29,7 +29,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	_ = symbolTable.SetAlways("__exec_mode", "server")
 
-	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	u := r.URL.Query()
@@ -58,7 +58,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Compile the token stream
 	comp := compiler.New("code endpoint").ExtensionsEnabled(true)
-	comp.LowercaseIdentifiers = persistence.GetBool(defs.CaseNormalizedSetting)
+	comp.LowercaseIdentifiers = settings.GetBool(defs.CaseNormalizedSetting)
 
 	b, err := comp.Compile("code", t)
 	if !errors.Nil(err) {
@@ -68,7 +68,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		// Add the builtin functions
 		comp.AddStandard(symbolTable)
 
-		err := comp.AutoImport(persistence.GetBool(defs.AutoImportSetting))
+		err := comp.AutoImport(settings.GetBool(defs.AutoImportSetting))
 		if !errors.Nil(err) {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: %v", err)
 		}

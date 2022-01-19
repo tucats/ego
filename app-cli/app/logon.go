@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -56,9 +56,9 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
-	url := persistence.Get(defs.LogonServerSetting)
+	url := settings.Get(defs.LogonServerSetting)
 	if c.WasFound("logon-server") {
-		url, _ = c.GetString("logon-server")
+		url, _ = c.String("logon-server")
 
 		var e2 *errors.EgoError
 
@@ -67,7 +67,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 			return e2
 		}
 
-		persistence.Set(defs.LogonServerSetting, url)
+		settings.Set(defs.LogonServerSetting, url)
 	}
 
 	if url == "" {
@@ -75,13 +75,13 @@ func Logon(c *cli.Context) *errors.EgoError {
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
-	user, _ := c.GetString("username")
+	user, _ := c.String("username")
 	for user == "" {
 		user = ui.Prompt("Username: ")
 	}
 
 	// Get the password. If not supplied by the user, prompt until provided.
-	pass, _ := c.GetString("password")
+	pass, _ := c.String("password")
 	for pass == "" {
 		pass = ui.PromptPassword("Password: ")
 	}
@@ -110,6 +110,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// newline from the result body and store the string as the new token value.
 	if errors.Nil(err) && r.StatusCode() == http.StatusOK {
 		payload := defs.LogonResponse{}
+
 		err := json.Unmarshal(r.Body(), &payload)
 		if err != nil {
 			return errors.New(err).Context("logon")
@@ -119,10 +120,11 @@ func Logon(c *cli.Context) *errors.EgoError {
 			b, _ := json.MarshalIndent(payload, "", "  ")
 			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(b))
 		}
+		
 		token := payload.Token
-		persistence.Set(defs.LogonTokenSetting, token)
+		settings.Set(defs.LogonTokenSetting, token)
 
-		err = persistence.Save()
+		err = settings.Save()
 		if errors.Nil(err) {
 			ui.Say("Successfully logged in as \"%s\", valid until %s", user, payload.Expiration)
 		}
@@ -178,7 +180,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	// Start by trying to connect with what we have, if it had a scheme. In this
 	// case, the string is expected to be complete.
 	if hasScheme {
-		persistence.SetDefault("ego.application.server", name)
+		settings.SetDefault("ego.application.server", name)
 
 		err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 		if errors.Nil(err) {
@@ -189,7 +191,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	// No scheme, so let's try https. If no port supplied, assume the default port.
 	normalizedName = "https://" + name + port
 
-	persistence.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault("ego.application.server", normalizedName)
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if errors.Nil(err) {
@@ -199,7 +201,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	// Nope. Same deal with http scheme.
 	normalizedName = "http://" + name + port
 
-	persistence.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault("ego.application.server", normalizedName)
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 

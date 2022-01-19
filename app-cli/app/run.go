@@ -5,7 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
@@ -91,7 +91,7 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 	grammar = append(grammar, context.Grammar...)
 
 	// Load the active profile, if any from the profile for this application.
-	_ = persistence.Load(context.AppName, "default")
+	_ = settings.Load(context.AppName, "default")
 
 	// If the CLI_DEBUG environment variable is set, then turn on
 	// debugging now, so messages will come out before that particular
@@ -105,7 +105,7 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 
 	// If no errors, then write out an updated profile as needed.
 	if errors.Nil(err) {
-		err = persistence.Save()
+		err = settings.Save()
 	}
 
 	return err

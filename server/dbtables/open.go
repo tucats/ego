@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
@@ -17,20 +17,20 @@ func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
 	// Is a full database access URL provided?  If so, use that. Otherwise,
 	// we assume it's a postgres server on the local system, and fill in the
 	// info with the database credentials, name, etc.
-	conStr := persistence.Get(defs.TablesServerDatabase)
+	conStr := settings.Get(defs.TablesServerDatabase)
 	if conStr == "" {
-		credentials := persistence.Get(defs.TablesServerDatabaseCredentials)
+		credentials := settings.Get(defs.TablesServerDatabaseCredentials)
 		if credentials != "" {
 			credentials = credentials + "@"
 		}
 
-		dbname := persistence.Get(defs.TablesServerDatabaseName)
+		dbname := settings.Get(defs.TablesServerDatabaseName)
 		if dbname == "" {
 			dbname = "ego_tables"
 		}
 
 		sslMode := "?sslmode=disable"
-		if persistence.GetBool(defs.TablesServerDatabaseSSLMode) {
+		if settings.GetBool(defs.TablesServerDatabaseSSLMode) {
 			sslMode = ""
 		}
 

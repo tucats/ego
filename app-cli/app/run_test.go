@@ -52,7 +52,7 @@ func testAction0(c *cli.Context) *errors.EgoError {
 }
 
 func testAction1(c *cli.Context) *errors.EgoError {
-	v, _ := c.GetString("explode")
+	v, _ := c.String("explode")
 	fmt.Printf("Found the option value %s\n", v)
 
 	if v != "bob" {
@@ -63,7 +63,7 @@ func testAction1(c *cli.Context) *errors.EgoError {
 }
 
 func testAction2(c *cli.Context) *errors.EgoError {
-	v, _ := c.GetInteger("count")
+	v, _ := c.Integer("count")
 	fmt.Printf("Found the option value %v\n", v)
 
 	if v != 42 {

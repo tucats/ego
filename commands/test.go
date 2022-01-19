@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
@@ -32,15 +32,15 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 	// Set extensions to be enabled for this run. Also, sandboxing file system
 	// operations will break tests, so disable that.
-	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
-	persistence.SetDefault(defs.SandboxPathSetting, "")
+	settings.SetDefault(defs.ExtensionsEnabledSetting, "true")
+	settings.SetDefault(defs.SandboxPathSetting, "")
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests")
-	staticTypes := persistence.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 
 	if c.WasFound("static-types") {
-		staticTypes = c.GetBool("static-types")
+		staticTypes = c.Boolean("static-types")
 	}
 
 	// Add test-specific functions and values
@@ -61,7 +61,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	fileList := []string{}
 
 	if len(c.Parent.Parameters) == 0 {
-		path := persistence.Get(defs.EgoPathSetting)
+		path := settings.Get(defs.EgoPathSetting)
 		if path == "" {
 			path = os.Getenv(defs.EgoPathEnv)
 		}
@@ -147,14 +147,14 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			ctx := bytecode.NewContext(symbolTable, b)
 
 			ctx.EnableConsoleOutput(false)
-			if c.GetBool("trace") {
+			if c.Boolean("trace") {
 				ui.SetLogger(ui.TraceLogger, true)
 			}
 
 			// If we are doing source tracing of execution, we'll need to link the tokenizer
 			// back to the execution context. If you don't need source tracing, you can use
 			// the simpler CompileString() function which doesn't require a discrete tokenizer.
-			if c.GetBool("source-tracing") {
+			if c.Boolean("source-tracing") {
 				ctx.SetTokenizer(t)
 			}
 

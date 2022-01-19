@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -20,13 +20,13 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.Eg
 	c.ExtensionsEnabled(true)
 
 	oldState := "true"
-	if !persistence.GetBool(defs.ExtensionsEnabledSetting) {
+	if !settings.GetBool(defs.ExtensionsEnabledSetting) {
 		oldState = "false"
 	}
 
-	defer persistence.SetDefault(defs.ExtensionsEnabledSetting, oldState)
+	defer settings.SetDefault(defs.ExtensionsEnabledSetting, oldState)
 
-	persistence.SetDefault(defs.ExtensionsEnabledSetting, "true")
+	settings.SetDefault(defs.ExtensionsEnabledSetting, "true")
 
 	// Set the depth >0 so we will process all statements without requiring a function
 	// body.

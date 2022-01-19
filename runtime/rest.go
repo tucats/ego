@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
@@ -140,7 +140,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
 	} else {
-		token := persistence.Get(defs.LogonTokenSetting)
+		token := settings.Get(defs.LogonTokenSetting)
 		if token != "" {
 			client.SetAuthToken(token)
 		}
@@ -335,7 +335,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	if len(args) > 0 {
 		base = datatypes.GetString(args[0])
 	} else {
-		base = persistence.Get(defs.LogonServerSetting)
+		base = settings.Get(defs.LogonServerSetting)
 	}
 
 	this.SetAlways(baseURLFieldName, base)
@@ -396,7 +396,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	token := persistence.Get(defs.LogonTokenSetting)
+	token := settings.Get(defs.LogonTokenSetting)
 
 	if len(args) > 0 {
 		token = datatypes.GetString(args[0])
@@ -716,9 +716,9 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	var err error
 
-	url := persistence.Get(defs.ApplicationServerSetting)
+	url := settings.Get(defs.ApplicationServerSetting)
 	if url == "" {
-		url = persistence.Get(defs.LogonServerSetting)
+		url = settings.Get(defs.LogonServerSetting)
 	}
 
 	if url == "" {
@@ -731,7 +731,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
+	if token := settings.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
 		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
 	}

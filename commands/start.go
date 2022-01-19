@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -25,7 +25,7 @@ func Start(c *cli.Context) *errors.EgoError {
 			// is running. Unix unhelpfully always returns something for FindProcess
 			// if the pid is or was ever running...
 			err := p.Signal(syscall.Signal(0))
-			if errors.Nil(err) && !c.GetBool("force") {
+			if errors.Nil(err) && !c.Boolean("force") {
 				return errors.New(errors.ErrServerAlreadyRunning).Context(status.PID)
 			}
 		}
@@ -59,7 +59,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	// Are we defaulting to insecure? If so, make it explicit in the
 	// arguments to the server, so restarts will still work in the
 	// future if the default changes.
-	if !isInsecure && persistence.GetBool(defs.InsecureServerSetting) {
+	if !isInsecure && settings.GetBool(defs.InsecureServerSetting) {
 		args = append(args, "-k")
 	}
 
@@ -101,7 +101,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	if userDatabaseArg > 0 {
 		args[userDatabaseArg] = normalizeDBName(args[userDatabaseArg])
 	} else {
-		udf := persistence.Get(defs.LogonUserdataSetting)
+		udf := settings.Get(defs.LogonUserdataSetting)
 		if udf == "" {
 			udf = defs.DefaultUserdataFileName
 		}
@@ -136,7 +136,7 @@ func Start(c *cli.Context) *errors.EgoError {
 
 	// Is there a log file specified (either as a command-line option or as an
 	// environment variable)? If not, use the default name.
-	logFileName, _ := c.GetString("log")
+	logFileName, _ := c.String("log")
 	if logFileName == "" {
 		logFileName = os.Getenv(defs.EgoLogEnv)
 	}

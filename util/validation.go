@@ -21,6 +21,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
+
 				if values[0] != "" {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
@@ -29,6 +30,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
+
 				if _, ok := strconv.Atoi(datatypes.GetString(values[0])); ok != nil {
 					return errors.New(errors.ErrInvalidInteger).Context(name)
 				}

@@ -55,6 +55,7 @@ func ShowHelp(c *Context) {
 		if g.ExpectedParameterCount < 1 {
 			parmDesc = "[" + parmDesc + "]"
 		}
+		
 		composedCommand = composedCommand + " " + parmDesc
 	} else if e == 1 {
 		composedCommand = composedCommand + " [parameter]"

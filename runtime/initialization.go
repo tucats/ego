@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -23,7 +23,7 @@ func InitProfileDefaults() *errors.EgoError {
 	piddir := path.Join(homedir, ".org.fernwood")
 
 	// The default values we check for.
-	settings := map[string]string{
+	initialSettings := map[string]string{
 		defs.EgoPathSetting:               egopath,
 		defs.AutoImportSetting:            "true",
 		defs.CaseNormalizedSetting:        "false",
@@ -45,20 +45,20 @@ func InitProfileDefaults() *errors.EgoError {
 	// value, set the default value.
 	dirty := false
 
-	for k, v := range settings {
-		if !persistence.Exists(k) {
-			persistence.Set(k, v)
+	for k, v := range initialSettings {
+		if !settings.Exists(k) {
+			settings.Set(k, v)
 
 			dirty = true
 		}
 	}
 
 	if dirty {
-		err = persistence.Save()
+		err = settings.Save()
 	}
 
 	// Patch up some things now that we have a stable profile
-	if fmtstring := persistence.Get(defs.LogTimestampFormat); fmtstring != "" {
+	if fmtstring := settings.Get(defs.LogTimestampFormat); fmtstring != "" {
 		ui.LogTimeStampFormat = fmtstring
 	}
 

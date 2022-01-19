@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -23,9 +23,9 @@ import (
 func AddUser(c *cli.Context) *errors.EgoError {
 	var err error
 
-	user, _ := c.GetString("username")
-	pass, _ := c.GetString("password")
-	permissions, _ := c.GetStringList("permissions")
+	user, _ := c.String("username")
+	pass, _ := c.String("password")
+	permissions, _ := c.StringList("permissions")
 
 	for user == "" {
 		user = ui.Prompt("Username: ")
@@ -64,7 +64,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 func DeleteUser(c *cli.Context) *errors.EgoError {
 	var err error
 
-	user, _ := c.GetString("username")
+	user, _ := c.String("username")
 
 	for user == "" {
 		user = ui.Prompt("Username: ")
@@ -91,7 +91,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 }
 
 func ListUsers(c *cli.Context) *errors.EgoError {
-	path := persistence.Get(defs.LogonServerSetting)
+	path := settings.Get(defs.LogonServerSetting)
 	if path == "" {
 		path = "http://localhost:8080"
 	}
@@ -103,7 +103,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
-	if token := persistence.Get(defs.LogonTokenSetting); token != "" {
+	if token := settings.Get(defs.LogonTokenSetting); token != "" {
 		client.SetAuthToken(token)
 	}
 

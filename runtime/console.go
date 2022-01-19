@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/chzyer/readline"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
@@ -23,7 +23,7 @@ var consoleLock sync.Mutex
 
 // ReadConsoleText reads a line of text from the user's console.
 func ReadConsoleText(prompt string) string {
-	useReadLine := persistence.GetBool(defs.UseReadline)
+	useReadLine := settings.GetBool(defs.UseReadline)
 
 	// If readline has been explicitly disabled for some reason,
 	// do a more primitive input operation.
@@ -63,10 +63,10 @@ func ReadConsoleText(prompt string) string {
 	defer consoleLock.Unlock()
 
 	if consoleReader == nil {
-		historyFile := persistence.Get("ego.console.history")
+		historyFile := settings.Get("ego.console.history")
 		if historyFile == "" {
 			homeDir, _ := os.UserHomeDir()
-			historyFile = filepath.Join(homeDir, persistence.ProfileDirectory, "ego-commands.txt")
+			historyFile = filepath.Join(homeDir, settings.ProfileDirectory, "ego-commands.txt")
 		}
 
 		consoleReader, _ = readline.NewEx(&readline.Config{

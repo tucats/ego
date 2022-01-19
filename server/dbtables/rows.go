@@ -98,6 +98,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		var data map[string]interface{}
 
 		tableName, _ = fullName(user, tableName)
+
 		columns, err = getColumnInfo(db, tableName, sessionID)
 		if !errors.Nil(err) {
 			ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
@@ -279,6 +280,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		return
 	}
+	
 	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
 	db, err := OpenDB(sessionID, user, "")

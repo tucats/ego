@@ -3,7 +3,7 @@ package compiler
 import (
 	"testing"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/errors"
 )
 
@@ -30,7 +30,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 		// TODO: Add test cases.
 	}
 
-	_ = persistence.Load("ego", "")
+	_ = settings.Load("ego", "")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

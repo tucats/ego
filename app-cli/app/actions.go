@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -26,7 +26,7 @@ func InsecureAction(c *cli.Context) *errors.EgoError {
 // OutputFormatAction sets the default output format to use. This must be one of
 // the supported types "test"", "json"", or "indented").
 func OutputFormatAction(c *cli.Context) *errors.EgoError {
-	if formatString, present := c.FindGlobal().GetString("format"); present {
+	if formatString, present := c.FindGlobal().String("format"); present {
 		if util.InList(strings.ToLower(formatString),
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
 			ui.OutputFormat = formatString
@@ -34,7 +34,7 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrInvalidOutputFormat).Context(formatString)
 		}
 
-		persistence.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
+		settings.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
 	}
 
 	return nil
@@ -44,7 +44,7 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.
 func DebugAction(c *cli.Context) *errors.EgoError {
-	loggers, specified := c.FindGlobal().GetStringList("debug")
+	loggers, specified := c.FindGlobal().StringList("debug")
 
 	if specified {
 		for _, v := range loggers {
@@ -62,7 +62,7 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 
 // QuietAction is an action routine to set the global debug status if specified.
 func QuietAction(c *cli.Context) *errors.EgoError {
-	ui.QuietMode = c.FindGlobal().GetBool("quiet")
+	ui.QuietMode = c.FindGlobal().Boolean("quiet")
 
 	return nil
 }
@@ -113,8 +113,8 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 // UseProfileAction is the action routine when --profile is specified as a global
 // option. Its string value is used as the name of the active profile.
 func UseProfileAction(c *cli.Context) *errors.EgoError {
-	name, _ := c.GetString("profile")
-	persistence.UseProfile(name)
+	name, _ := c.String("profile")
+	settings.UseProfile(name)
 
 	ui.Debug(ui.AppLogger, "Using profile %s", name)
 

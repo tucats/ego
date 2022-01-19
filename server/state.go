@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -137,7 +137,7 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 // Use the --port specifiation, if any, to create a platform-specific
 // filename for the pid.
 func getPidFileName(c *cli.Context) string {
-	port, ok := c.GetInteger("port")
+	port, ok := c.Integer("port")
 	portString := fmt.Sprintf("-%d", port)
 
 	if !ok {
@@ -145,7 +145,7 @@ func getPidFileName(c *cli.Context) string {
 	}
 
 	// Figure out the operating-system-approprite pid file name
-	pidPath := persistence.Get(defs.PidDirectorySetting)
+	pidPath := settings.Get(defs.PidDirectorySetting)
 	if pidPath == "" {
 		pidPath = "/tmp/"
 

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -27,7 +27,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 	if userDatabaseFile != "" {
 		b, err := ioutil.ReadFile(userDatabaseFile)
 		if errors.Nil(err) {
-			if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
+			if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
 				r, err := util.Decrypt(string(b), key)
 				if !errors.Nil(err) {
 					return svc, err
@@ -116,7 +116,7 @@ func (f *FileService) Flush() *errors.EgoError {
 		return errors.New(err)
 	}
 
-	if key := persistence.Get(defs.LogonUserdataKeySetting); key != "" {
+	if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
 		r, err := util.Encrypt(string(b), key)
 		if !errors.Nil(err) {
 			return err

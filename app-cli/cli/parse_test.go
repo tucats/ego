@@ -11,7 +11,7 @@ func dummyAction(c *Context) *errors.EgoError {
 }
 
 func integerAction(c *Context) *errors.EgoError {
-	v, found := c.GetInteger("integer")
+	v, found := c.Integer("integer")
 	if !found {
 		return errors.NewMessage("No integer option found")
 	}
@@ -24,7 +24,7 @@ func integerAction(c *Context) *errors.EgoError {
 }
 
 func stringAction(c *Context) *errors.EgoError {
-	v, found := c.GetString("string")
+	v, found := c.String("string")
 	if !found {
 		return errors.NewMessage("No string option found")
 	}
@@ -37,7 +37,7 @@ func stringAction(c *Context) *errors.EgoError {
 }
 
 func booleanValueAction(c *Context) *errors.EgoError {
-	v := c.GetBool("boolean")
+	v := c.Boolean("boolean")
 	if v != true {
 		return errors.NewMessage("Boolean value not true")
 	}
@@ -46,7 +46,7 @@ func booleanValueAction(c *Context) *errors.EgoError {
 }
 
 func booleanAction(c *Context) *errors.EgoError {
-	v := c.GetBool("flag")
+	v := c.Boolean("flag")
 	if v != true {
 		return errors.NewMessage("Boolean not present")
 	}

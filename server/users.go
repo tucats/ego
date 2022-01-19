@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
@@ -34,7 +34,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	defaultUser := "admin"
 	defaultPassword := "password"
 
-	if up := persistence.Get(defs.DefaultCredentialSetting); up != "" {
+	if up := settings.Get(defs.DefaultCredentialSetting); up != "" {
 		if pos := strings.Index(up, ":"); pos >= 0 {
 			defaultUser = up[:pos]
 			defaultPassword = strings.TrimSpace(up[pos+1:])
@@ -45,9 +45,9 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	}
 
 	// Is there a user database to load?
-	userDatabaseFile, _ = c.GetString("users")
+	userDatabaseFile, _ = c.String("users")
 	if userDatabaseFile == "" {
-		userDatabaseFile = persistence.Get(defs.LogonUserdataSetting)
+		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
 	}
 
 	if userDatabaseFile == "" {
@@ -62,9 +62,9 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
-	su, ok := c.GetString("superuser")
+	su, ok := c.String("superuser")
 	if !ok {
-		su = persistence.Get(defs.LogonSuperuserSetting)
+		su = settings.Get(defs.LogonSuperuserSetting)
 	}
 
 	if su != "" {

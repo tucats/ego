@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -19,7 +19,7 @@ func PathAction(c *cli.Context) *errors.EgoError {
 	// preference setting.
 	p := os.Getenv(defs.EgoPathEnv)
 	if p == "" {
-		p = persistence.Get(defs.EgoPathSetting)
+		p = settings.Get(defs.EgoPathSetting)
 	}
 
 	// If it's not an environment variable or a preference, see if we can infer

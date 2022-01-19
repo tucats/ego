@@ -27,11 +27,11 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 	url := runtime.URLBuilder(defs.TablesPath)
 
-	if limit, found := c.GetInteger("limit"); found {
+	if limit, found := c.Integer("limit"); found {
 		url.Parameter(defs.LimitParameterName, limit)
 	}
 
-	if start, found := c.GetInteger("start"); found {
+	if start, found := c.Integer("start"); found {
 		url.Parameter(defs.StartParameterName, start)
 	}
 
@@ -143,23 +143,23 @@ func TableContents(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
-	if columns, ok := c.GetStringList("columns"); ok {
+	if columns, ok := c.StringList("columns"); ok {
 		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
 	}
 
-	if order, ok := c.GetStringList("order-by"); ok {
+	if order, ok := c.StringList("order-by"); ok {
 		url.Parameter(defs.SortParameterName, toInterfaces(order)...)
 	}
 
-	if limit, found := c.GetInteger("limit"); found {
+	if limit, found := c.Integer("limit"); found {
 		url.Parameter(defs.LimitParameterName, limit)
 	}
 
-	if start, found := c.GetInteger("start"); found {
+	if start, found := c.Integer("start"); found {
 		url.Parameter(defs.StartParameterName, start)
 	}
 
-	if filter, ok := c.GetStringList("filter"); ok {
+	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
 			url.Parameter(defs.FilterParameterName, f)
@@ -172,7 +172,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		err = printRowSet(resp, c.GetBool("row-ids"))
+		err = printRowSet(resp, c.Boolean("row-ids"))
 	}
 
 	return errors.New(err)
@@ -245,7 +245,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 	// If there is a JSON file to initialize the payload with, do it now.
 	if c.WasFound("file") {
-		fn, _ := c.GetString("file")
+		fn, _ := c.String("file")
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
@@ -350,7 +350,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 	// field definitions map. We will also look for command line parameters to
 	// extend or modify the field list.
 	if c.WasFound("file") {
-		fn, _ := c.GetString("file")
+		fn, _ := c.String("file")
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
@@ -519,7 +519,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
-	if filter, ok := c.GetStringList("filter"); ok {
+	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
 			url.Parameter(defs.FilterParameterName, f)
@@ -554,7 +554,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
-	if filter, ok := c.GetStringList("filter"); ok {
+	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
 		if f != filterParseError {
 			url.Parameter(defs.FilterParameterName, f)
@@ -690,7 +690,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	}
 
 	if c.WasFound("sql-file") {
-		fn, _ := c.GetString("sql-file")
+		fn, _ := c.String("sql-file")
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
@@ -755,7 +755,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	permissions := defs.AllPermissionResponse{}
 	url := runtime.URLBuilder(defs.TablesPermissionsPath)
 
-	user, found := c.GetString("user")
+	user, found := c.String("user")
 	if found {
 		url.Parameter(defs.UserParameterName, user)
 	}
@@ -784,12 +784,12 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 }
 
 func TableGrant(c *cli.Context) *errors.EgoError {
-	permissions, _ := c.GetStringList("permission")
+	permissions, _ := c.StringList("permission")
 	table := c.GetParameter(0)
 	result := defs.PermissionResponse{}
 
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
-	if user, found := c.GetString("user"); found {
+	if user, found := c.String("user"); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
 

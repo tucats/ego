@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tucats/ego/app-cli/persistence"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -30,7 +30,7 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	key := datatypes.GetString(args[0])
 
-	return persistence.Get(key), nil
+	return settings.Get(key), nil
 }
 
 // ProfileSet implements the profile.set() function.
@@ -43,7 +43,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// "system" settings. That is, you can't create an ego.* setting that
 	// doesn't exist yet, for example
 	if strings.HasPrefix(key, "ego.") {
-		if !persistence.Exists(key) {
+		if !settings.Exists(key) {
 			return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 		}
 	}
@@ -51,25 +51,25 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// store the value for the key.
 	value := datatypes.GetString(args[1])
 	if value == "" {
-		err = persistence.Delete(key)
+		err = settings.Delete(key)
 	} else {
-		persistence.Set(key, value)
+		settings.Set(key, value)
 	}
 
-	return err, persistence.Save()
+	return err, settings.Save()
 }
 
 // ProfileDelete implements the profile.delete() function.
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	key := datatypes.GetString(args[0])
-	_ = persistence.Delete(key)
+	_ = settings.Delete(key)
 
 	return nil, nil
 }
 
 // ProfileKeys implements the profile.keys() function.
 func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	keys := persistence.Keys()
+	keys := settings.Keys()
 	result := make([]interface{}, len(keys))
 
 	for i, key := range keys {

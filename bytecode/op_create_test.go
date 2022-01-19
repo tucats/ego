@@ -11,6 +11,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 		stack []interface{}
 		i     int
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -41,7 +42,6 @@ func Test_makeArrayByteCode(t *testing.T) {
 			if e != nil {
 				t.Errorf("Unexpected error %v", e)
 			}
-
 		})
 	}
 }

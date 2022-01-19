@@ -50,6 +50,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 
 	// Test if TOS is false
 	_ = ctx.stackPush(false)
+
 	e := branchFalseByteCode(ctx, 2)
 	if !errors.Nil(e) {
 		t.Errorf("branchFalseByteCode unexpected error %v", e)
@@ -98,6 +99,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 
 	// Test if TOS is false
 	_ = ctx.stackPush(false)
+
 	e := branchTrueByteCode(ctx, 2)
 	if !errors.Nil(e) {
 		t.Errorf("branchTrueByteCode unexpected error %v", e)
@@ -130,5 +132,4 @@ func Test_branchTrueByteCode(t *testing.T) {
 	if ctx.programCounter != 2 {
 		t.Errorf("branchTrueByteCode wrong program counter %v", ctx.programCounter)
 	}
-
 }
