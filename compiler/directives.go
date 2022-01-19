@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -314,12 +315,12 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 	_ = c.modeCheck("server", true)
 
 	if c.t.AtEnd() {
-		token = "any"
+		token = defs.Any
 	} else {
 		token = strings.ToLower(c.t.Next())
 	}
 
-	if !util.InList(token, "user", "admin", "any", "token", "tokenadmin") {
+	if !util.InList(token, "user", "admin", defs.Any, "token", "tokenadmin") {
 		return c.newError(errors.ErrInvalidAuthenticationType, token)
 	}
 

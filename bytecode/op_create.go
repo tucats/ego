@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -212,7 +213,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 				vx := reflect.ValueOf(v)
 				if vx.Kind() == reflect.Ptr {
 					ts := vx.String()
-					if ts == "<*bytecode.ByteCode Value>" {
+					if ts == defs.ByteCodeReflectionTypeString {
 						continue
 					}
 				}

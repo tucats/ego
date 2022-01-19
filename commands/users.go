@@ -99,7 +99,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 	url := strings.TrimSuffix(path, "/") + "/admin/users/"
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(runtime.MaxRedirectCount))
-	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 

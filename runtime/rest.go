@@ -101,7 +101,7 @@ func AllowInsecure(flag bool) {
 	allowInsecure = flag
 
 	if flag {
-		os.Setenv("EGO_INSECURE_CLIENT", "true")
+		os.Setenv("EGO_INSECURE_CLIENT", defs.True)
 	} else {
 		os.Setenv("EGO_INSECURE_CLIENT", "")
 	}
@@ -736,7 +736,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
 	}
 
-	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 

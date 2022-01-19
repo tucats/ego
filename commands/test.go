@@ -32,7 +32,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 	// Set extensions to be enabled for this run. Also, sandboxing file system
 	// operations will break tests, so disable that.
-	settings.SetDefault(defs.ExtensionsEnabledSetting, "true")
+	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
 	settings.SetDefault(defs.SandboxPathSetting, "")
 
 	// Create an empty symbol table and store the program arguments.
@@ -159,7 +159,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			}
 
 			err = ctx.Run()
-			if err.Is(errors.Stop) {
+			if err.Is(errors.ErrStop) {
 				err = nil
 			}
 

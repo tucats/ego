@@ -18,6 +18,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const (
+	SuccessMessage = "Success"
+)
+
 // UserHandler is the rest handler for /admin/user endpoint
 // operations.
 func UserHandler(w http.ResponseWriter, r *http.Request) {
@@ -249,7 +253,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			// If it's a single user, do that.
 			if name != "" {
 				status := http.StatusOK
-				msg := "Success"
+				msg := SuccessMessage
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
@@ -357,7 +361,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 				Items: []defs.CachedItem{},
 			}
 			result.Status = http.StatusOK
-			result.Message = "Success"
+			result.Message = SuccessMessage
 
 			for k, v := range serviceCache {
 				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
@@ -383,7 +387,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		result.Hostname = util.Hostname()
 		result.ID = Session
 		result.Status = http.StatusOK
-		result.Message = "Success"
+		result.Message = SuccessMessage
 
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age, Count: v.count})
@@ -417,7 +421,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		result.Hostname = util.Hostname()
 		result.ID = Session
 		result.Status = http.StatusOK
-		result.Message = "Success"
+		result.Message = SuccessMessage
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)

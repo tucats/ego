@@ -7,11 +7,11 @@ func InvokeDebugger(e *errors.EgoError) bool {
 		return false
 	}
 
-	if e.Is(errors.SignalDebugger) {
+	if e.Is(errors.ErrSignalDebugger) {
 		return true
 	}
 
-	if e.Is(errors.StepOver) {
+	if e.Is(errors.ErrStepOver) {
 		return true
 	}
 

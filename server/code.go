@@ -80,7 +80,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()
-		if err.Is(errors.Stop) {
+		if err.Is(errors.ErrStop) {
 			err = nil
 		}
 

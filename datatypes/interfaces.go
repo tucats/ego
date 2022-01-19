@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/tucats/ego/defs"
 )
 
 // For a given type interface, unwrap it.
@@ -152,7 +154,7 @@ func GetBool(v interface{}) bool {
 		return actual
 
 	case string:
-		for _, str := range []string{"true", "yes", "1", "y", "t"} {
+		for _, str := range []string{defs.True, "yes", "1", "y", "t"} {
 			if strings.EqualFold(actual, str) {
 				return true
 			}

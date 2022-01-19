@@ -2,6 +2,8 @@ package cli
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/defs"
 )
 
 // ValidKeyword does a case-insensitive compare of a string containing
@@ -36,14 +38,14 @@ func FindKeyword(test string, valid []string) int {
 func ValidateBoolean(value string) (bool, bool) {
 	valid := false
 
-	for _, x := range []string{"1", "true", "t", "yes", "y"} {
+	for _, x := range []string{"1", defs.True, "t", "yes", "y"} {
 		if strings.ToLower(value) == x {
 			return true, true
 		}
 	}
 
 	if !valid {
-		for _, x := range []string{"0", "false", "f", "no", "n"} {
+		for _, x := range []string{"0", defs.False, "f", "no", "n"} {
 			if strings.ToLower(value) == x {
 				return false, true
 			}

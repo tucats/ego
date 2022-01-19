@@ -151,7 +151,7 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 func SetAction(c *cli.Context) *errors.EgoError {
 	// Generic --key and --value specification.
 	key := c.GetParameter(0)
-	value := "true"
+	value := defs.True
 
 	if equals := strings.Index(key, "="); equals >= 0 {
 		value = key[equals+1:]
@@ -225,7 +225,7 @@ func validateKey(key string) *errors.EgoError {
 		if !found {
 			return errors.New(errors.ErrInvalidConfigName)
 		}
-		
+
 		if !allowed {
 			return errors.New(errors.ErrNoPrivilegeForOperation)
 		}

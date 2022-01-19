@@ -154,13 +154,13 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 
 			err := ctx.Run()
 			if !errors.Nil(err) {
-				if err.Is(errors.StepOver) {
+				if err.Is(errors.ErrStepOver) {
 					err = nil
 
 					ctx.StepOver(true)
 				}
 
-				if err == errors.SignalDebugger {
+				if err == errors.ErrSignalDebugger {
 					err = nil
 				}
 			}

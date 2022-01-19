@@ -48,7 +48,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := symbols.NewRootSymbolTable(tt.name)
-			if err := RunString(tt.name, s, tt.text); !errors.Nil(err) && err.Error() != errors.Stop.Error() {
+			if err := RunString(tt.name, s, tt.text); !errors.Nil(err) && err.Error() != errors.ErrStop.Error() {
 				t.Errorf("Unexpected error %v", err)
 			}
 			result, found := s.Get("result")

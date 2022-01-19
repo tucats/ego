@@ -175,7 +175,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
 			err = ctx.Run()
-			if err != nil && !err.Is(errors.Stop) {
+			if err != nil && !err.Is(errors.ErrStop) {
 				break
 			}
 

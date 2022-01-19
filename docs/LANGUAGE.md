@@ -1765,7 +1765,7 @@ characters (" ", etc) are ignored.  The supported format values are:
 
 | Format | Description |
 |:------:| ----- |
-| %t | Boolean "true" or "false" value |
+| %t | Boolean defs.True or defs.False value |
 | %f | Floating point value |
 | %d | Integer value |
 | %s | String values |

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -176,7 +177,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "Type coercion bool to string",
 			expr: "\"true\" || false",
-			want: "true",
+			want: defs.True,
 		},
 		{
 			name: "Type coercion string to bool",
@@ -369,7 +370,7 @@ func TestNew(t *testing.T) {
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)
-			if err.Is(errors.Stop) {
+			if err.Is(errors.ErrStop) {
 				err = nil
 			}
 			if !errors.Nil(err) && tt.want != nil {

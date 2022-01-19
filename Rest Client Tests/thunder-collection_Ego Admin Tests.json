@@ -127,31 +127,31 @@
                     "type": "json-query",
                     "custom": "json.loggers.APP",
                     "action": "equal",
-                    "value": "false"
+                    "value": defs.False
                 },
                 {
                     "type": "json-query",
                     "custom": "json.loggers.BYTECODE",
                     "action": "equal",
-                    "value": "false"
+                    "value": defs.False
                 },
                 {
                     "type": "json-query",
                     "custom": "json.loggers.CLI",
                     "action": "equal",
-                    "value": "false"
+                    "value": defs.False
                 },
                 {
                     "type": "json-query",
                     "custom": "json.loggers.COMPILER",
                     "action": "equal",
-                    "value": "false"
+                    "value": defs.False
                 },
                 {
                     "type": "json-query",
                     "custom": "json.loggers.SERVER",
                     "action": "equal",
-                    "value": "true"
+                    "value": defs.True
                 },
                 {
                     "type": "json-query",
@@ -334,13 +334,13 @@
                     "type": "json-query",
                     "custom": "json.token_valid",
                     "action": "equal",
-                    "value": "false"
+                    "value": defs.False
                 },
                 {
                     "type": "json-query",
                     "custom": "json.valid_user",
                     "action": "equal",
-                    "value": "true"
+                    "value": defs.True
                 }
             ]
         }

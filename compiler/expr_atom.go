@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -165,9 +166,9 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return nil
 	}
 
-	if t == "true" || t == "false" {
+	if t == defs.True || t == defs.False {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, (t == "true"))
+		c.b.Emit(bytecode.Push, (t == defs.True))
 
 		return nil
 	}

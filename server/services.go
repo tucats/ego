@@ -40,6 +40,12 @@ type cachedCompilationUnit struct {
 	count int
 }
 
+const (
+	CredentialInvalidMessage = ", invalid credential"
+	CredentialAdminMessage   = ", root privilege user"
+	CredentialNormalMessage  = ", normal user"
+)
+
 var Session string
 var StartTime string
 var Version string
@@ -293,12 +299,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				tokenstr = tokenstr[:10] + "..."
 			}
 
-			valid := ", invalid credential"
+			valid := CredentialInvalidMessage
 			if authenticatedCredentials {
 				if getPermission(user, "root") {
-					valid = ", root privilege user"
+					valid = CredentialAdminMessage
 				} else {
-					valid = ", normal user"
+					valid = CredentialNormalMessage
 				}
 			}
 
@@ -320,12 +326,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		_ = symbolTable.SetAlways("_token", "")
 		_ = symbolTable.SetAlways("_token_valid", false)
 
-		valid := ", invalid credential"
+		valid := CredentialInvalidMessage
 		if authenticatedCredentials {
 			if getPermission(user, "root") {
-				valid = ", root privilege user"
+				valid = CredentialAdminMessage
 			} else {
-				valid = ", normal user"
+				valid = CredentialNormalMessage
 			}
 		}
 
@@ -363,7 +369,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		err = ctx.Run()
 	}
 
-	if err.Is(errors.Stop) {
+	if err.Is(errors.ErrStop) {
 		err = nil
 	}
 

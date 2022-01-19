@@ -3,6 +3,8 @@ package cli
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func TestValidKeyword(t *testing.T) {
@@ -139,7 +141,7 @@ func TestValidateBoolean(t *testing.T) {
 			name: "Valid2", args: args{value: "f"}, want: false, want1: true,
 		},
 		{
-			name: "Valid3", args: args{value: "fAlse"}, want: false, want1: true,
+			name: "Valid3", args: args{value: defs.False}, want: false, want1: true,
 		},
 		{
 			name: "Valid4", args: args{value: "n"}, want: false, want1: true,
@@ -154,7 +156,7 @@ func TestValidateBoolean(t *testing.T) {
 			name: "Valid7", args: args{value: "T"}, want: true, want1: true,
 		},
 		{
-			name: "Valid8", args: args{value: "truE"}, want: true, want1: true,
+			name: "Valid8", args: args{value: defs.True}, want: true, want1: true,
 		},
 		{
 			name: "Valid9", args: args{value: "Y"}, want: true, want1: true,

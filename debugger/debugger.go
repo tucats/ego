@@ -31,11 +31,11 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 
 	for errors.Nil(err) {
 		err = c.Resume()
-		if err.Is(errors.SignalDebugger) {
+		if err.Is(errors.ErrSignalDebugger) {
 			err = Debugger(c)
 		}
 
-		if !c.IsRunning() || err.Is(errors.Stop) {
+		if !c.IsRunning() || err.Is(errors.ErrStop) {
 			return nil
 		}
 	}
@@ -140,7 +140,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				ui.SetLogger(ui.TraceLogger, false)
 
 				err = compiler.Run("debugger", s, t2)
-				if err.Is(errors.Stop) {
+				if err.Is(errors.ErrStop) {
 					err = nil
 				}
 
@@ -150,19 +150,19 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = Break(c, tokens)
 
 			case "exit":
-				return errors.New(errors.Stop)
+				return errors.New(errors.ErrStop)
 
 			default:
 				err = errors.New(errors.ErrInvalidDebugCommand).Context(t)
 			}
 
-			if !errors.Nil(err) && !err.Is(errors.Stop) && !err.Is(errors.StepOver) {
+			if !errors.Nil(err) && !err.Is(errors.ErrStop) && !err.Is(errors.ErrStepOver) {
 				fmt.Printf("Debugger error, %v\n", err)
 
 				err = nil
 			}
 
-			if err.Is(errors.Stop) {
+			if err.Is(errors.ErrStop) {
 				err = nil
 				prompt = false
 			}
@@ -183,7 +183,7 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 	ui.SetLogger(ui.TraceLogger, allowTrace)
 
 	err := compiler.Run("debugger", s, t2)
-	if err.Is(errors.Stop) {
+	if err.Is(errors.ErrStop) {
 		err = nil
 	}
 

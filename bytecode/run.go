@@ -146,7 +146,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
 				}
 			} else {
-				if !err.Is(errors.SignalDebugger) && !err.Is(errors.Stop) {
+				if !err.Is(errors.ErrSignalDebugger) && !err.Is(errors.ErrStop) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
 				}
 
@@ -195,7 +195,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 		}
 	}
 
-	if !err.Is(errors.Stop) {
+	if !err.Is(errors.ErrStop) {
 		fmt.Printf("Go routine  %s failed, %v\n", fName, err)
 		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)

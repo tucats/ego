@@ -19,14 +19,14 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) *errors.Eg
 	c := New(name)
 	c.ExtensionsEnabled(true)
 
-	oldState := "true"
+	oldState := defs.True
 	if !settings.GetBool(defs.ExtensionsEnabledSetting) {
-		oldState = "false"
+		oldState = defs.False
 	}
 
 	defer settings.SetDefault(defs.ExtensionsEnabledSetting, oldState)
 
-	settings.SetDefault(defs.ExtensionsEnabledSetting, "true")
+	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
 
 	// Set the depth >0 so we will process all statements without requiring a function
 	// body.

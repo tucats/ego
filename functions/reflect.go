@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -34,7 +35,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	// Name field value and use that with the name. A function literal
 	// will have no name.
 	if vv.Kind() == reflect.Ptr {
-		if ts == "<*bytecode.ByteCode Value>" {
+		if ts == defs.ByteCodeReflectionTypeString {
 			switch v := args[0].(type) {
 			default:
 				e := reflect.ValueOf(v).Elem()
@@ -198,7 +199,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 			if vv.Kind() == reflect.Ptr {
 				ts := vv.String()
-				if ts == "<*bytecode.ByteCode Value>" {
+				if ts == defs.ByteCodeReflectionTypeString {
 					return "func", nil
 				}
 

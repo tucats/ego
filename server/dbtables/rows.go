@@ -22,7 +22,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	tableName, _ = fullName(user, tableName)
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName: "any",
+		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   "string",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
@@ -184,7 +184,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		defs.LimitParameterName:  "int",
 		defs.ColumnParameterName: "list",
 		defs.SortParameterName:   "list",
-		defs.FilterParameterName: "any",
+		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   "string",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
@@ -274,7 +274,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	tableName, _ = fullName(user, tableName)
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName: "any",
+		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   "string",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)

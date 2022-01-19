@@ -9,7 +9,7 @@ import (
 func Test_stopByteCode(t *testing.T) {
 	ctx := &Context{running: true}
 
-	if e := stopByteCode(ctx, nil); !e.Equal(errors.Stop) {
+	if e := stopByteCode(ctx, nil); !e.Equal(errors.ErrStop) {
 		t.Errorf("stopByteCode unexpected error %v", e)
 	}
 

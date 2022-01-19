@@ -20,6 +20,8 @@ const (
 	tableAccessPrivilege = "table_read"
 	tableAdminPrivilege  = "table_admin"
 	tableUpdatePrivilege = "table_modify"
+
+	unsupportedMethodMessage = "Unsupported method"
 )
 
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +184,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	perms := datatypes.GetBool(urlParts["permissions"])
 
 	if tableName == "" && r.Method != http.MethodGet {
-		msg := "Unsupported method"
+		msg := unsupportedMethodMessage
 
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
@@ -223,7 +225,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			msg := "Unsupported method"
+			msg := unsupportedMethodMessage
 
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
@@ -256,7 +258,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			msg := "Unsupported method"
+			msg := unsupportedMethodMessage
 
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
@@ -290,7 +292,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		alterTable(user, tableName, sessionID, w, r)
 
 	default:
-		msg := "Unsupported method"
+		msg := unsupportedMethodMessage
 
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
 			sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)

@@ -24,9 +24,9 @@ This returns the value 33.
 ### bool(any)
 Return the argument coerced to a bool data type. For numeric values,
 this means zero for false, or non-zero for true. For a string, it must
-contain the strings "true" or "false" to be converted without error.
+contain the strings defs.True or defs.False to be converted without error.
 
-    bool("true")
+    bool(defs.True)
 
 This returns the value true.
 
@@ -150,7 +150,7 @@ Some examples:
 |:-|:-|
 | len("fortitude")   | 9, the number of characters in the string. |
 | len(135)           | 3, the number of characters when 135 is converted to string "135" |
-| len(false)         | 5, the number of characters in "false" |
+| len(false)         | 5, the number of characters in defs.False |
 | len(3.1415)        | 6, the number of characters in "3.1415" |
 | len([5,3,1])       | 3, the number of elements in the array | 
 | len({a:1, b:true}) | 2, the number of fields in the array |

@@ -93,7 +93,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// generate a request. The request is made using the logon agent info.
 	// Finall, call the endpoint.
 	restClient := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass)
-	if os.Getenv("EGO_INSECURE_CLIENT") == "true" {
+	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
 		restClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
@@ -120,7 +120,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 			b, _ := json.MarshalIndent(payload, "", "  ")
 			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(b))
 		}
-		
+
 		token := payload.Token
 		settings.Set(defs.LogonTokenSetting, token)
 

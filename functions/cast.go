@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -154,7 +155,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 
 			if vx.Kind() == reflect.Ptr {
 				ts := vx.String()
-				if ts == "<*bytecode.ByteCode Value>" {
+				if ts == defs.ByteCodeReflectionTypeString {
 					dropList = append(dropList, k)
 				}
 			} else {

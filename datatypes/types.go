@@ -30,7 +30,7 @@ const (
 	ErrorKind
 	ChanKind
 	MapKind
-	InterfaceKind // alias for "any"
+	InterfaceKind // alias for defs.Any
 	PointerKind   // Pointer to some type
 	ArrayKind     // Array of some type
 	PackageKind   // A package

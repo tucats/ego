@@ -2,6 +2,8 @@ package tables
 
 import (
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func TestTable_FormatJSON(t *testing.T) {
@@ -44,7 +46,7 @@ func TestTable_FormatJSON(t *testing.T) {
 			fields: fields{
 				columnCount: 3,
 				columns:     []string{"one", "two", "three"},
-				rows:        [][]string{{"1", "true", "Tom"}},
+				rows:        [][]string{{"1", defs.True, "Tom"}},
 				columnOrder: []int{0, 1, 2},
 			},
 			want: "[{\"one\":1,\"two\":true,\"three\":\"Tom\"}]",

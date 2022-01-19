@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -192,10 +193,10 @@ func Get(key string) string {
 }
 
 // GetBool returns the boolean value of a profile string. If the string is
-// "Y", "YES", "1", or "TRUE" then the value returns true.
+// "Y", "YES", "1", or defs.True then the value returns true.
 func GetBool(key string) bool {
 	s := strings.ToLower(Get(key))
-	if s == "y" || s == "yes" || s == "true" || s == "t" || s == "1" {
+	if s == "y" || s == "yes" || s == defs.True || s == "t" || s == "1" {
 		return true
 	}
 

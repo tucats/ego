@@ -129,7 +129,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		if !ui.IsConsolePipe() {
 			var banner string
 
-			if settings.Get(defs.NoCopyrightSetting) != "true" {
+			if settings.Get(defs.NoCopyrightSetting) != defs.True {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
 
@@ -285,7 +285,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				err = ctx.Run()
 			}
 
-			if err.Is(errors.Stop) {
+			if err.Is(errors.ErrStop) {
 				err = nil
 			}
 

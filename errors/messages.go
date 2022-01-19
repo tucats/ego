@@ -8,10 +8,10 @@ import "errors"
 
 // Return values used to signal flow change.
 
-var Continue = errors.New("continue")
-var SignalDebugger = errors.New("signal")
-var StepOver = errors.New("step-over")
-var Stop = errors.New("stop")
+var ErrContinue = errors.New("continue")
+var ErrSignalDebugger = errors.New("signal")
+var ErrStepOver = errors.New("step-over")
+var ErrStop = errors.New("stop")
 
 // Return values reflecting runtime error conditions.
 

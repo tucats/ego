@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -83,10 +84,10 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 			return nil
 		}
 
-		kind = "any"
+		kind = defs.Any
 	}
 
-	if kind == "any" {
+	if kind == defs.Any {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_authenticated"); ok {

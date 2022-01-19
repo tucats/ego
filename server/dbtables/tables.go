@@ -13,6 +13,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const UnexpectedNilPointerError = "Unexpected nil database object pointer"
+
 // TableCreate creates a new table based on the JSON payload, which must be an array of DBColumn objects, defining
 // the characteristics of each column in the table. If the table name is the special name "@sql" the payload instead
 // is assumed to be a JSON-encoded string containing arbitrary SQL to exectue. Only an admin user can use the "@sql"
@@ -252,7 +254,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	}
 
 	if err == nil && db == nil {
-		msg = "Unexpected nil database object pointer"
+		msg = UnexpectedNilPointerError
 		status = http.StatusInternalServerError
 	}
 
@@ -349,7 +351,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 	msg := fmt.Sprintf("Database table delete error, %v", err)
 	if err == nil && db == nil {
-		msg = "Unexpected nil database object pointer"
+		msg = UnexpectedNilPointerError
 	}
 
 	status := http.StatusBadRequest
@@ -464,7 +466,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 	msg := fmt.Sprintf("Database list error, %v", err)
 	if err == nil && db == nil {
-		msg = "Unexpected nil database object pointer"
+		msg = UnexpectedNilPointerError
 	}
 
 	ErrorResponse(w, sessionID, msg, http.StatusBadRequest)

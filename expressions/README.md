@@ -77,7 +77,7 @@ run using the previoiusly parsed expression.
 
 This is used in github.com/tucats/ego/app-cli/tables for example, to support a filter
 expression in the tables.SetWhere() method. When an expression is set on a table, the table
-printing operation will only show rows for which the where-clause results in a boolean "true"
+printing operation will only show rows for which the where-clause results in a boolean defs.True
 value. The symbol table is refreshed with each row of the table (the symbol names are taken
 from the table column names) so the expression can be re-evaluated with each row.
 

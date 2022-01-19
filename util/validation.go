@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -40,11 +41,11 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-				if !InList(strings.ToLower(values[0]), "true", "false", "1", "0", "yes", "no") {
+				if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
 					return errors.New(errors.ErrInvalidBooleanValue).Context(name)
 				}
 
-			case "any", "string":
+			case defs.Any, "string":
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}

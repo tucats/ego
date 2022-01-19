@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"gopkg.in/resty.v1"
 )
 
@@ -58,10 +59,10 @@ func Format(element interface{}) string {
 
 	case bool:
 		if v {
-			return "true"
+			return defs.True
 		}
 
-		return "false"
+		return defs.False
 
 	case byte:
 		return fmt.Sprintf("%v", v)
@@ -159,7 +160,7 @@ func Format(element interface{}) string {
 		// will have no name.
 		if vv.Kind() == reflect.Ptr {
 			ts := vv.String()
-			if ts == "<*bytecode.ByteCode Value>" {
+			if ts == defs.ByteCodeReflectionTypeString {
 				e := reflect.ValueOf(v).Elem()
 
 				name := fmt.Sprintf("%v", e.Field(0).Interface())

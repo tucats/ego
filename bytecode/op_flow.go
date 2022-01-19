@@ -24,7 +24,7 @@ import (
 func stopByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
-	return errors.New(errors.Stop)
+	return errors.New(errors.ErrStop)
 }
 
 // panicByteCode instruction processor generates an error. The boolean flag is used
@@ -52,7 +52,7 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
 	// Are we in debug mode?
 	if c.line > 0 && c.debugging {
-		return errors.New(errors.SignalDebugger)
+		return errors.New(errors.ErrSignalDebugger)
 	}
 	// If we are tracing, put that out now.
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
@@ -403,7 +403,7 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	if errors.Nil(err) && c.breakOnReturn {
 		c.breakOnReturn = false
 
-		return errors.New(errors.SignalDebugger)
+		return errors.New(errors.ErrSignalDebugger)
 	}
 
 	return errors.New(err)

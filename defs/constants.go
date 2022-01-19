@@ -181,6 +181,16 @@ const (
 	TableAgent  = "tables"
 )
 
+const (
+	True  = "true"
+	False = "false"
+	Any   = "any"
+)
+
+const (
+	ByteCodeReflectionTypeString = "<*bytecode.ByteCode Value>"
+)
+
 // ValidSettings describes the list of valid settings, and whether they can be set by the
 // command line.
 var ValidSettings map[string]bool = map[string]bool{

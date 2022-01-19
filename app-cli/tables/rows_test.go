@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -313,9 +314,9 @@ func TestTable_AddRowItems(t *testing.T) {
 		_ = tb.SortRows(3, false)
 
 		expected := [][]string{
-			{"62", "Tony", "false", "35.9"},
-			{"60", "Tom", "true", "28.5"},
-			{"59", "Mary", "true", "23.5"},
+			{"62", "Tony", defs.False, "35.9"},
+			{"60", "Tom", defs.True, "28.5"},
+			{"59", "Mary", defs.True, "23.5"},
 		}
 		if !reflect.DeepEqual(tb.rows, expected) {
 			t.Errorf("Table.AddRowItems() got %v, want %v", tb.rows, expected)

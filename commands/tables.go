@@ -271,7 +271,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
-		kind := "any"
+		kind := defs.Any
 		value := t.Next()
 
 		if t.IsNext(":") {
@@ -284,7 +284,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 			payload[column] = value
 
 		case "boolean", "bool":
-			if strings.EqualFold(value, "true") {
+			if strings.EqualFold(value, defs.True) {
 				payload[column] = true
 			} else {
 				payload[column] = false
@@ -298,13 +298,13 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 			payload[column] = i
 
-		case "any":
+		case defs.Any:
 			fallthrough
 
 		default:
-			if strings.EqualFold(value, "true") {
+			if strings.EqualFold(value, defs.True) {
 				payload[column] = true
-			} else if strings.EqualFold(value, "false") {
+			} else if strings.EqualFold(value, defs.False) {
 				payload[column] = false
 			} else if i, err := strconv.Atoi(value); err == nil {
 				payload[column] = i
@@ -474,7 +474,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
-		kind := "any"
+		kind := defs.Any
 		value := t.Next()
 
 		if t.IsNext(":") {
@@ -487,7 +487,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 			payload[column] = value
 
 		case "boolean", "bool":
-			if strings.EqualFold(value, "true") {
+			if strings.EqualFold(value, defs.True) {
 				payload[column] = true
 			} else {
 				payload[column] = false
@@ -501,13 +501,13 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 
 			payload[column] = i
 
-		case "any":
+		case defs.Any:
 			fallthrough
 
 		default:
-			if strings.EqualFold(value, "true") {
+			if strings.EqualFold(value, defs.True) {
 				payload[column] = true
-			} else if strings.EqualFold(value, "false") {
+			} else if strings.EqualFold(value, defs.False) {
 				payload[column] = false
 			} else if i, err := strconv.Atoi(value); err == nil {
 				payload[column] = i

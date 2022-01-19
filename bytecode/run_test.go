@@ -311,7 +311,7 @@ func TestByteCode_Run(t *testing.T) {
 			functions.AddBuiltins(c.symbols)
 
 			err := c.Run()
-			if err.Is(errors.Stop) {
+			if err.Is(errors.ErrStop) {
 				err = nil
 			}
 			if (!errors.Nil(err)) != tt.wantErr {

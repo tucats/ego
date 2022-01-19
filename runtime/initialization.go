@@ -25,20 +25,20 @@ func InitProfileDefaults() *errors.EgoError {
 	// The default values we check for.
 	initialSettings := map[string]string{
 		defs.EgoPathSetting:               egopath,
-		defs.AutoImportSetting:            "true",
-		defs.CaseNormalizedSetting:        "false",
+		defs.AutoImportSetting:            defs.True,
+		defs.CaseNormalizedSetting:        defs.False,
 		defs.StaticTypesSetting:           "dynamic",
 		defs.OutputFormatSetting:          ui.TextFormat,
-		defs.ExtensionsEnabledSetting:     "false",
-		defs.UseReadline:                  "true",
+		defs.ExtensionsEnabledSetting:     defs.False,
+		defs.UseReadline:                  defs.True,
 		defs.ServerTokenExpirationSetting: "24h",
 		defs.ServerTokenKeySetting:        strings.ReplaceAll(uuid.New().String()+uuid.New().String(), "-", ""),
-		defs.ExitOnBlankSetting:           "false",
-		defs.ThrowUncheckedErrorsSetting:  "true",
-		defs.FullStackTraceSetting:        "false",
+		defs.ExitOnBlankSetting:           defs.False,
+		defs.ThrowUncheckedErrorsSetting:  defs.True,
+		defs.FullStackTraceSetting:        defs.False,
 		defs.LogTimestampFormat:           "2006-01-02 15:04:05",
 		defs.PidDirectorySetting:          piddir,
-		defs.InsecureServerSetting:        "false",
+		defs.InsecureServerSetting:        defs.False,
 	}
 
 	// See if there is a value for each on of these. If no
