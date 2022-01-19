@@ -133,7 +133,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			result := defs.DBRowCount{
 				Count: int(rows),
 				RestResponse: defs.RestResponse{
-					Status: 200,
+					Status: http.StatusOK,
 				},
 			}
 
@@ -233,7 +233,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 				Columns: columns,
 				Count:   len(columns),
 				RestResponse: defs.RestResponse{
-					Status: 200,
+					Status: http.StatusOK,
 				},
 			}
 
@@ -343,7 +343,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		_, err = db.Exec(q)
 		if err == nil {
 			RemoveTablePermissions(sessionID, db, tableName)
-			ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", 200)
+			ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 
 			return
 		}
@@ -452,7 +452,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					Tables: names,
 					Count:  len(names),
 					RestResponse: defs.RestResponse{
-						Status: 200,
+						Status: http.StatusOK,
 					},
 				}
 

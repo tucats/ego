@@ -148,7 +148,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
-		w.WriteHeader(403)
+		w.WriteHeader(http.StatusForbidden)
 
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
 		_, _ = w.Write([]byte(msg))
@@ -186,6 +186,6 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		saveAsset(sessionID, path, data)
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
 }

@@ -99,7 +99,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		w.WriteHeader(http.StatusForbidden)
 
-		msg := `{ "status" : http.403, "msg" : "Forbidden" }`
+		msg := `{ "status" : 403, "msg" : "Forbidden" }`
 
 		_, _ = io.WriteString(w, msg)
 
@@ -195,7 +195,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
-				return 200
+				return http.StatusOK
 			}
 
 		// DELETE A USER
@@ -210,7 +210,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
-				return 404
+				return http.StatusNotFound
 			}
 
 			// Clear the password for the return response object
@@ -233,7 +233,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
 
-				return 404
+				return http.StatusNotFound
 			}
 
 			if errors.Nil(err) {
@@ -245,7 +245,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
-				return 200
+				return http.StatusOK
 			}
 
 		// GET A COLLECTION OR A SPECIFIC USER
@@ -305,20 +305,20 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			ui.Debug(ui.ServerLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
 
-			return 200
+			return http.StatusOK
 		}
 	}
 
 	// We had some kind of error, so report that.
 	w.WriteHeader(http.StatusInternalServerError)
 
-	msg := `{ "status" : HTTP.STATUSINTERNALSERVERERROR, "msg" : "%s"`
+	msg := `{ "status" : 500, "msg" : "%s"`
 
 	_, _ = io.WriteString(w, fmt.Sprintf(msg, err.Error()))
 
 	ui.Debug(ui.ServerLogger, "[%d] 500 ]Internal server error %v", sessionID, err)
 
-	return 500
+	return http.StatusInternalServerError
 }
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
@@ -331,7 +331,6 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		w.WriteHeader(http.StatusForbidden)
 
 		msg := `{ "status" : 403, "msg" : "Not authorized" }`
-
 		_, _ = io.WriteString(w, msg)
 
 		return http.StatusForbidden
@@ -402,7 +401,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
 
-		return 200
+		return http.StatusOK
 
 	// DELETE the cached service compilation units. In-flight services
 	// are unaffected.
@@ -428,7 +427,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
 
-		return 200
+		return http.StatusOK
 
 	default:
 		w.WriteHeader(http.StatusTeapot)
@@ -439,7 +438,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		ui.Debug(ui.ServerLogger, "[%d] 418, sending JSON response: unsupported method %s", sessionID, r.Method)
 
-		return 418
+		return http.StatusTeapot
 	}
 }
 
@@ -527,22 +526,22 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 		err := json.Unmarshal(buf.Bytes(), &loggers)
 		if err != nil {
-			response.Status = 400
+			response.Status = http.StatusBadRequest
 			response.Message = err.Error()
 			ui.Debug(ui.ServerLogger, "[%d] Bad payload: %v", sessionID, err)
 
-			return 400
+			return http.StatusBadRequest
 		}
 
 		for loggerName, mode := range loggers.Loggers {
 			logger := ui.Logger(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
-				response.Status = 400
+				response.Status = http.StatusBadRequest
 				response.Message = err.Error()
 
 				ui.Debug(ui.ServerLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
-				return 400
+				return http.StatusBadRequest
 			}
 
 			modeString := "enable"

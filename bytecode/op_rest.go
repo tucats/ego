@@ -65,7 +65,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
-		writeStatus(c, 403)
+		writeStatus(c, http.StatusForbidden)
 		ui.Debug(ui.InfoLogger, "@authenticated token: no valid token")
 
 		return nil

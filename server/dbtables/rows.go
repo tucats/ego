@@ -51,7 +51,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			resp := defs.DBRowCount{
 				Count: int(rowCount),
 				RestResponse: defs.RestResponse{
-					Status: 200,
+					Status: http.StatusOK,
 				},
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
@@ -142,7 +142,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			result := defs.DBRowCount{
 				Count: int(rows),
 				RestResponse: defs.RestResponse{
-					Status: 200,
+					Status: http.StatusOK,
 				},
 			}
 
@@ -256,7 +256,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 			Rows:  result,
 			Count: len(result),
 			RestResponse: defs.RestResponse{
-				Status: 200,
+				Status: http.StatusOK,
 			},
 		}
 
@@ -308,7 +308,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			result := defs.DBRowCount{
 				Count: int(rows),
 				RestResponse: defs.RestResponse{
-					Status: 200,
+					Status: http.StatusOK,
 				},
 			}
 

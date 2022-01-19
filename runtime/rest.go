@@ -771,7 +771,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		err = errors.New(errors.ErrNotFound)
 	}
 
-	if errors.Nil(err) && status != 200 && response == nil {
+	if errors.Nil(err) && status != http.StatusOK && response == nil {
 		return errors.New(errors.ErrHTTP).Context(status)
 	}
 
