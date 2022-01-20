@@ -52,8 +52,20 @@ The resulting JSON payload is a struct with the following fields:
 | :-------- | ----------- |
 | expires   | A string containing the timestamp of when the token expires |
 | issuer    | A UUID of the _Ego_ server instance that created the token |
-| token     | A string containing the token text itself. |
+| token     | A variable-length string containing the token text itself. |
 | identity  | The username encoded within the token. |
+
+Here is an example response payload:
+&nbsp;
+
+    {
+      "expires": "Fri Jan 21 13:12:25 EST 2022",
+      "identity": "admin",
+      "issuer": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+      "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
+    }
+
+&nbsp;
 
 It is the responsibility of the application to extract the `token` field from
 the resulting payload and store it away to use for subsequent REST API 
@@ -95,7 +107,7 @@ and returns a 200 success code if the server is available. Any other return code
 indicates that the server is not running or there is a network/gateway problem between
 the REST client code and the Ego server.
 
-This endpoint only supports the GET method.
+This endpoint only supports the GET method, and returns no response body.
 
 ## Caches
 The _Ego_ server maintains caches to make repeated use of the server more efficient
@@ -188,8 +200,169 @@ this operation is a structure with one or both of the following fields:
 You must be an "admin" user to execute this call.
 
 ## Loggers
+You can use the loggers endpoint to get information about the current state of logging on the
+server, enable or disable specific loggers, and retrive the text of the log.
+
+### GET /admin/loggers
+This retrieves the current state of logging on the server. The response is a JSON payload
+that indicates the host name where the server is running, it's unique instance UUID, the
+name of the text file on the server where the log is being written, and an structure 
+that indicates if each logger is enabled or disabled.
+
+This service requires authentication with credentials for a user with administrative
+privileges.
+
+Here is an example response payload from this request:
+&nbsp;
+
+    {
+    "host": "appserver.abc.com",
+    "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561364ce",
+    "file": "/Users/tom/ego/ego-server_2022-01-20-000000.log",
+    "loggers": {
+        "APP": false,
+        "AUTH": true,
+        "BYTECODE": false,
+        "CLI": false,
+        "COMPILER": false,
+        "DB": false,
+        "DEBUG": false,
+        "INFO": false,
+        "REST": false,
+        "SERVER": true,
+        "SYMBOLS": false,
+        "TABLES": true,
+        "TRACE": false,
+        "USER": false
+    },
+    "status": 200,
+    "msg": ""
+    }
+
+&nbsp;
+
+### GET /services/admin/log
+
+This path will return the text of the log file itself. If you specify that the REST call
+accepts JSON, it will be returned as an array of strings. If you specify that it accepts
+TEXT, the text is returned as-is.
+
+If you add the parameter `?tail=n` where `n` is a number of lines of text, the GET operation
+will return the last lines from the log. If you specify a value of zero, then all
+lines are returned, otherwise the result is limited to the last `n` lines of the log
+
+Here is an example output with a `tail` value of 5:
+&nbsp;
+
+    [
+    "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
+    "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
+    "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
+    "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
+    "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
+    ]
+    
+&nbsp;
+
+
+### PUT /admin/loggers
+This call is used to modify the state of logging on the server. The payload must contain
+the `loggers` structure that tells which loggers are to change state. Note that any logger
+not mentioned in the payload does not have it's state changed.
+
+This service requires authentication with credentials for a user with administrative
+privileges. The response is the same as the GET operation; a summar of the current state
+of logging.
+
+Here is a sample request body, that enables the INFO logger and disables the TRACE logger.
+Note that the names of the loggers are not case-sensitive.
+
+&nbsp;
+
+    {
+    "loggers": {
+        "INFO": true,
+        "TRACE": false
+      }
+    }
+
+&nbsp;
+
+
 
 ## Users
+The users interface allows an administrative user to create and delete user credentials, set
+user passwords, and update the permissions list for a given user.
+
+### GET /admin/users/
+
+This call returns the list of users that are in the credentials store. The result is a JSON
+structure with the following fields:
+&nbsp;
+
+| Field | Description |
+| ----- | ----------- |
+| host | The host name running the Ego server |
+| id   | The unique instance UUID of the server |
+| start | This value is always zero |
+| count | The number of items returned |
+| item | An array of user objects, described in the next table |
+| status | The HTTP status results of the call (200 is success) |
+| msg    | The text of any error message |
+
+&nbsp;
+
+The field "items" contains an array of user objects. The array of user objects
+has the following fields:
+&nbsp;
+
+| Field | Description |
+| ----- | ----------- |
+| name | The name of the user |
+| id   | A unique UUID for the user |
+| permissions | an array of strings containing permissions names |
+
+&nbsp;
+
+Here is example output from a request to this endpoint:
+&nbsp;
+
+    {
+    "host": "appserver.abc.com",
+    "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+    "start": 0,
+    "count": 2,
+    "items": [
+        {
+        "name": "admin",
+        "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
+        "permissions": [
+            "root",
+            "logon"
+        ]
+        },
+        {
+        "name": "iphoneUser",
+        "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
+        "permissions": [
+            "logon",
+            "table_create"
+        ]
+        }
+    ],
+    "status": 200,
+    "msg": ""
+    }
+
+&nbsp;
+
+In this example, there are two users defined. The user "admin" has the `root` privilege in their
+list, which makes them an administrative user. The user "iphoneUser" has `logon` and `table_create`
+privileges, which enable this user to connect to the server and have permission to create tables
+using the /tables API discussed below.
+
+
+
 
 ## Assets
 
