@@ -38,6 +38,10 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		return errors.New(err)
 	}
 
+	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
+		return errors.NewMessage(cacheStatus.Message)
+	}
+
 	switch ui.OutputFormat {
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
@@ -75,6 +79,10 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 	err := runtime.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
+		return errors.NewMessage(cacheStatus.Message)
 	}
 
 	switch ui.OutputFormat {
@@ -115,8 +123,8 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	if cacheStatus.Status != http.StatusOK {
-		return errors.New(errors.ErrHTTP).Context(cacheStatus.Status)
+	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
+		return errors.NewMessage(cacheStatus.Message)
 	}
 
 	switch ui.OutputFormat {

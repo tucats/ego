@@ -78,8 +78,8 @@ type AllPermissionResponse struct {
 }
 
 type ServerInfo struct {
-	Hostname string `json:"host"`
-	ID       string `json:"id"`
+	Hostname string `json:"host,omitempty"`
+	ID       string `json:"id,omitempty"`
 }
 
 type LoggingItem struct {
