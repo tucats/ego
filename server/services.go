@@ -517,3 +517,16 @@ func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *b
 		ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
 	}
 }
+
+func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
+	response := defs.RestResponse{
+		Message: msg,
+		Status:  status,
+	}
+
+	b, _ := json.MarshalIndent(response, "", "  ")
+
+	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
+	w.WriteHeader(status)
+	_, _ = w.Write(b)
+}

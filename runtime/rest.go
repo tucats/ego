@@ -765,14 +765,6 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	ui.Debug(ui.RestLogger, "Status: %d", status)
 
-	switch status {
-	case http.StatusForbidden:
-		err = errors.New(errors.ErrNoPrivilegeForOperation)
-
-	case http.StatusNotFound:
-		err = errors.New(errors.ErrNotFound)
-	}
-
 	if errors.Nil(err) && status != http.StatusOK && response == nil {
 		return errors.New(errors.ErrHTTP).Context(status)
 	}

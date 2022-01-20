@@ -96,26 +96,15 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		w.WriteHeader(http.StatusForbidden)
-
-		msg := `{ "status" : 403, "msg" : "Forbidden" }`
-
-		//_, _ = io.WriteString(w, msg)
-
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, fmt.Sprintf("User %s not authorized to access credentials", user), http.StatusForbidden)
 
 		return http.StatusForbidden
 	}
 
 	if !util.InList(r.Method, http.MethodPost, http.MethodDelete, http.MethodGet) {
-		w.WriteHeader(http.StatusTeapot)
+		msg := fmt.Sprintf("Unsupported method %s", r.Method)
 
-		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
-
-		w.WriteHeader(http.StatusTeapot)
-		_, _ = w.Write([]byte(fmt.Sprintf(msg, r.Method)))
+		ErrorResponse(w, sessionID, msg, http.StatusTeapot)
 
 		return http.StatusTeapot
 	}
@@ -205,12 +194,9 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		case http.MethodDelete:
 			u, exists := service.ReadUser(name)
 			if !errors.Nil(exists) {
-				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
+				msg := fmt.Sprintf("No username entry for '%s'", name)
 
-				w.WriteHeader(http.StatusNotFound)
-				_, _ = w.Write([]byte(fmt.Sprintf(msg, name)))
-
-				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
+				ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 
 				return http.StatusNotFound
 			}
@@ -227,12 +213,9 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
 			if !errors.Nil(err) || !datatypes.GetBool(v) {
-				w.WriteHeader(http.StatusNotFound)
+				msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
-				msg := `{ "status" : 404, "msg" : "No username entry for '%s'" }`
-				_, _ = w.Write([]byte(fmt.Sprintf(msg, name)))
-
-				ui.Debug(ui.ServerLogger, "[%d] 404 No such user", sessionID)
+				ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 
 				return http.StatusNotFound
 			}
