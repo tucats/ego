@@ -1,10 +1,11 @@
 swagger: "2.0"
 info:
-  version: 1.2
+  version: "1.2.0"
   title: Ego Server API
   license:
     name: MIT
 host: localhost:8080
+basePath: "/ego"
 schemes:
   - http
 consumes:
@@ -43,16 +44,18 @@ paths:
           name: Columns
           description: The array of column types to create for the new table.
           schema:
-              $ref: '#/components/schemas/Columns'
+              $ref: "#/definitions/Columns"
       responses:
         "200":
           description: Success
+          schema: 
+            $ref: "#/definitions/Columns"
         default:
           description: Unexpected error occurred. The status and message fields contain additional information.
           schema:
             $ref: '#/definitions/Error'
     get:
-      summary: Info for a table
+      summary: Get existing metadata information for columns in a table.
       operationId: showTable
       tags:
         - tables
@@ -62,11 +65,19 @@ paths:
           required: true
           description: The name of the table to display
           type: string
+        - name: start
+          in: query
+          description: Starting row of result set to return
+          type: integer
+        - name: limit
+          in: query
+          description: Limit on number of rows to return
+          type: integer
       responses:
         "200":
           description: Expected response to a valid request
           schema:
-            $ref: '#/definitions/Columns'
+            $ref: '#/definitions/ColumnsResponse'
         default:
           description: unexpected error
           schema:
@@ -82,14 +93,24 @@ definitions:
       name:
         type: string
         description: Name of the column
+        example: "mycolumn"
       type:
         type: string
         description: Ego type name of the column's data values.
+        example: "string"
       nullable:
         type: boolean
         description: True if the column is allowed to contain a null value.
+  ColumnsResponse:
+    type: object
+    properties:
+      columns:
+        $ref: "#/definitions/Columns"
+      status:
+        $ref: "#/definitions/Error"
   Columns:
     type: array
+    description: An array of column definitions.
     items:
       $ref: '#/definitions/Column'
   Table:
@@ -106,7 +127,7 @@ definitions:
         type: string
         description: Name fo the schema
       columns:
-        type: int
+        type: integer
         description: Number of columns in the table
   Tables:
     type: array
@@ -122,6 +143,7 @@ definitions:
         type: integer
         format: int32
         description: the HTTP status code for the response
+        default: 200
       message:
         type: string
-        description: the message text
+        description: the message text if an error occurred
