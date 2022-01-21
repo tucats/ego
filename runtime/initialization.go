@@ -39,6 +39,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.LogTimestampFormat:           "2006-01-02 15:04:05",
 		defs.PidDirectorySetting:          piddir,
 		defs.InsecureServerSetting:        defs.False,
+		defs.RestClientErrorSetting:       defs.True,
 	}
 
 	// See if there is a value for each on of these. If no

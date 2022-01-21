@@ -246,7 +246,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		err = e2
 	}
 
-	msg := fmt.Sprintf("Database table metadata error, %v", err)
+	msg := fmt.Sprintf("database table metadata error, %v", err)
 	status := http.StatusBadRequest
 
 	if strings.Contains(err.Error(), "does not exist") {
@@ -349,7 +349,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		}
 	}
 
-	msg := fmt.Sprintf("Database table delete error, %v", err)
+	msg := fmt.Sprintf("database table delete error, %v", err)
 	if err == nil && db == nil {
 		msg = UnexpectedNilPointerError
 	}

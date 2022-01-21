@@ -769,6 +769,28 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		return errors.New(errors.ErrHTTP).Context(status)
 	}
 
+	// If there was an error, and the runtime rest automatic error handling is enabled,
+	// try to find the message text in the response, and if found, form an error response
+	// to the local caller using that text.
+	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
+		errorResponse := map[string]interface{}{}
+
+		err := json.Unmarshal(resp.Body(), &errorResponse)
+		if err == nil {
+			if msg, found := errorResponse["msg"]; found {
+				ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+
+				return errors.NewMessage(datatypes.GetString(msg))
+			}
+
+			if msg, found := errorResponse["message"]; found {
+				ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+
+				return errors.NewMessage(datatypes.GetString(msg))
+			}
+		}
+	}
+
 	if errors.Nil(err) && response != nil {
 		body := string(resp.Body())
 		if !util.InList(body[0:1], "{", "[", "\"") {

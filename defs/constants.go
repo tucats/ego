@@ -159,6 +159,11 @@ const (
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
 	MaxCacheSizeSetting = PrivilegedKeyPrefix + "server.cache.size"
+
+	// Do we automatically process non-success ErrorResponse payloads from
+	// client REST calls as if they were the return code value? Default is
+	// true.
+	RestClientErrorSetting = PrivilegedKeyPrefix + "runtime.rest.errors"
 )
 
 // This section contains the names of the command-line options. These often
@@ -224,4 +229,5 @@ var ValidSettings map[string]bool = map[string]bool{
 	PidDirectorySetting:             true,
 	InsecureServerSetting:           true,
 	MaxCacheSizeSetting:             true,
+	RestClientErrorSetting:          true,
 }
