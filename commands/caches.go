@@ -38,10 +38,6 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		return errors.New(err)
 	}
 
-	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
-		return errors.NewMessage(cacheStatus.Message)
-	}
-
 	switch ui.OutputFormat {
 	case ui.JSONFormat:
 		b, _ := json.Marshal(cacheStatus)
@@ -54,14 +50,6 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
-		if cacheStatus.Status != http.StatusOK {
-			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.ErrNoPrivilegeForOperation)
-			}
-
-			return errors.NewMessage(cacheStatus.Message)
-		}
-
 		ui.Say("Server cache size updated")
 	}
 
@@ -81,10 +69,6 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
-		return errors.NewMessage(cacheStatus.Message)
-	}
-
 	switch ui.OutputFormat {
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -97,14 +81,6 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
-		if cacheStatus.Status != http.StatusOK {
-			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.ErrNoPrivilegeForOperation)
-			}
-
-			return errors.NewMessage(cacheStatus.Message)
-		}
-
 		ui.Say("Server cache emptied")
 	}
 
@@ -123,10 +99,6 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	if cacheStatus.Status != http.StatusOK && cacheStatus.Message != "" {
-		return errors.NewMessage(cacheStatus.Message)
-	}
-
 	switch ui.OutputFormat {
 	case ui.JSONIndentedFormat:
 		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -137,14 +109,6 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
-		if cacheStatus.Status != http.StatusOK {
-			if cacheStatus.Status == http.StatusForbidden {
-				return errors.New(errors.ErrNoPrivilegeForOperation)
-			}
-
-			return errors.NewMessage(cacheStatus.Message)
-		}
-
 		fmt.Printf("Server Cache, hostname %s, ID %s\n", cacheStatus.Hostname, cacheStatus.ID)
 
 		if cacheStatus.Count > 0 {

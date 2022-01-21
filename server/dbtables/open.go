@@ -54,7 +54,7 @@ func OpenDB(sessionID int32, user, table string) (db *sql.DB, err error) {
 
 func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
 	response := defs.RestResponse{
-		Message: msg,
+		Message: strings.TrimPrefix(msg, "pq: "),
 		Status:  status,
 	}
 

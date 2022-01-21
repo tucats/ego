@@ -123,10 +123,6 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	if response.Message != "" {
-		return errors.NewMessage(response.Message)
-	}
-
 	// Formulate the output.
 	if ui.QuietMode {
 		return nil

@@ -37,10 +37,6 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"Schema", "Name", "Columns"})
 			_ = t.SetOrderBy("Name")
@@ -72,10 +68,6 @@ func TableShow(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable"})
 			_ = t.SetOrderBy("Name")
@@ -118,9 +110,6 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 
 		err = runtime.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if errors.Nil(err) {
-			if resp.Status > 299 {
-				return errors.NewMessage(resp.Message).Context(table)
-			}
 			count++
 
 			ui.Say("Table %s deleted", table)
@@ -179,10 +168,6 @@ func TableContents(c *cli.Context) *errors.EgoError {
 }
 
 func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
-	if resp.Status > 299 {
-		return errors.NewMessage(resp.Message)
-	}
-
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("No rows in query")
@@ -324,10 +309,6 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		ui.Say("Added row to table %s", table)
 	}
 
@@ -445,10 +426,6 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		defs.TableAgent)
 
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		ui.Say("Created table %s with %d columns", table, len(payload))
 	}
 
@@ -538,10 +515,6 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		defs.TableAgent)
 
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		ui.Say("Updated %d rows in table %s", resp.Count, table)
 	}
 
@@ -567,10 +540,6 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
-
 		if ui.OutputFormat == ui.TextFormat {
 			if resp.Count == 0 {
 				ui.Say("No rows deleted")
@@ -736,9 +705,6 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 			return err
 		}
 
-		if resp.Status > 299 {
-			return errors.NewMessage(resp.Message)
-		}
 		if resp.Count == 0 {
 			ui.Say("No rows modified")
 		} else if resp.Count == 1 {

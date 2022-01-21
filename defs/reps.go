@@ -31,7 +31,6 @@ type Table struct {
 type TableInfo struct {
 	Tables []Table `json:"tables"`
 	Count  int     `json:"count"`
-	RestResponse
 }
 
 type DBColumn struct {
@@ -44,18 +43,15 @@ type DBColumn struct {
 type DBRows struct {
 	Rows  []map[string]interface{} `json:"rows"`
 	Count int                      `json:"count"`
-	RestResponse
 }
 
 type TableColumnsInfo struct {
 	Count   int `json:"count"`
 	Columns []DBColumn
-	RestResponse
 }
 
 type DBRowCount struct {
 	Count int `json:"count"`
-	RestResponse
 }
 
 type PermissionObject struct {
@@ -90,7 +86,6 @@ type LoggingItem struct {
 type LoggingResponse struct {
 	ServerInfo
 	LoggingItem
-	RestResponse
 }
 
 type CachedItem struct {
@@ -108,7 +103,6 @@ type CacheResponse struct {
 	Items      []CachedItem `json:"items"`
 	AssetCount int          `json:"assets"`
 	AssetSize  int          `json:"assetSize"`
-	RestResponse
 }
 
 // User describbes a single user in the user database. The password field
@@ -133,14 +127,6 @@ type UserCollection struct {
 	BaseCollection
 	Count int    `json:"count"`
 	Items []User `json:"items"`
-	RestResponse
-}
-
-// UserResponse describes a user when the information is passed
-// back to a caller as a response object.
-type UserResponse struct {
-	User
-	RestResponse
 }
 
 // ServerStatus describes the state of a running server. A json version

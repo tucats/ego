@@ -154,28 +154,18 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				_, _ = args.Set("permissions", perms)
 			}
 
-			var response defs.UserResponse
+			var response defs.User
 
 			_, err = SetUser(s, []interface{}{args})
 			if errors.Nil(err) {
 				u, err = service.ReadUser(name)
 				if errors.Nil(err) {
 					u.Name = name
-					response = defs.UserResponse{
-						User: u,
-						RestResponse: defs.RestResponse{
-							Status:  http.StatusOK,
-							Message: fmt.Sprintf("successfully updated user '%s'", u.Name),
-						},
-					}
+					response = u
 				} else {
-					response = defs.UserResponse{
-						User: u,
-						RestResponse: defs.RestResponse{
-							Status:  http.StatusInternalServerError,
-							Message: err.Error(),
-						},
-					}
+					ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+					return http.StatusInternalServerError
 				}
 			}
 
@@ -203,13 +193,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			// Clear the password for the return response object
 			u.Password = ""
-			response := defs.UserResponse{
-				User: u,
-				RestResponse: defs.RestResponse{
-					Status:  http.StatusOK,
-					Message: fmt.Sprintf("successfully deleted user '%s'", name),
-				},
-			}
+			response := u
 
 			v, err := DeleteUser(s, []interface{}{u.Name})
 			if !errors.Nil(err) || !datatypes.GetBool(v) {
@@ -241,24 +225,17 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
-					status = http.StatusNotFound
-					msg = "User not found"
+					ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
+
+					return http.StatusNotFound
 				}
-
-				result := defs.UserResponse{
-					User: u,
-					RestResponse: defs.RestResponse{
-						Status:  status,
-						Message: msg,
-					},
-				}
-				b, _ := json.Marshal(result)
-
-				w.WriteHeader(status)
-
-				_, _ = w.Write(b)
 
 				ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
+				w.WriteHeader(status)
+
+				result := u
+				b, _ := json.Marshal(result)
+				_, _ = w.Write(b)
 
 				return status
 			}
@@ -266,8 +243,6 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			result := defs.UserCollection{
 				Items: []defs.User{},
 			}
-			result.Status = http.StatusOK
-			result.Hostname = util.Hostname()
 			result.ID = Session
 
 			userDatabase := service.ListUsers()
@@ -334,16 +309,15 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		}
 
 		if !errors.Nil(err) {
-			result.Status = http.StatusBadRequest
-			result.Message = err.Error()
+			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+
+			return http.StatusBadRequest
 		} else {
 			result = defs.CacheResponse{
 				Count: len(serviceCache),
 				Limit: MaxCachedEntries,
 				Items: []defs.CachedItem{},
 			}
-			result.Status = http.StatusOK
-			result.Message = SuccessMessage
 
 			for k, v := range serviceCache {
 				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
@@ -353,9 +327,9 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d, sending JSON response", sessionID, result.Status))
+		ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d, sending JSON response", sessionID, http.StatusOK))
 
-		return result.Status
+		return http.StatusOK
 
 	// Get the list of cached items.
 	case http.MethodGet:
@@ -368,8 +342,6 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		}
 		result.Hostname = util.Hostname()
 		result.ID = Session
-		result.Status = http.StatusOK
-		result.Message = SuccessMessage
 
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age, Count: v.count})
@@ -402,8 +374,6 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		}
 		result.Hostname = util.Hostname()
 		result.ID = Session
-		result.Status = http.StatusOK
-		result.Message = SuccessMessage
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -489,13 +459,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
 		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		w.WriteHeader(http.StatusForbidden)
-
-		response.Status = http.StatusForbidden
-		response.Message = "Not authorized"
-
-		b, _ := json.Marshal(response)
-		_, _ = w.Write(b)
+		ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
 
 		return http.StatusForbidden
 	}
@@ -509,8 +473,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 		err := json.Unmarshal(buf.Bytes(), &loggers)
 		if err != nil {
-			response.Status = http.StatusBadRequest
-			response.Message = err.Error()
+			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 			ui.Debug(ui.ServerLogger, "[%d] Bad payload: %v", sessionID, err)
 
 			return http.StatusBadRequest
@@ -519,9 +482,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		for loggerName, mode := range loggers.Loggers {
 			logger := ui.Logger(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
-				response.Status = http.StatusBadRequest
-				response.Message = err.Error()
-
+				ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 				ui.Debug(ui.ServerLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
 				return http.StatusBadRequest
@@ -548,7 +509,6 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 		response.Hostname = util.Hostname()
 		response.ID = Session
-		response.Status = http.StatusOK
 
 		b, _ := json.Marshal(response)
 		_, _ = w.Write(b)
@@ -557,13 +517,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 	default:
 		ui.Debug(ui.ServerLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-
-		response.Status = http.StatusMethodNotAllowed
-		response.Message = "Method not allowd"
-
-		b, _ := json.Marshal(response)
-		_, _ = w.Write(b)
+		ErrorResponse(w, sessionID, "Method not allowed", http.StatusMethodNotAllowed)
 
 		return http.StatusMethodNotAllowed
 	}

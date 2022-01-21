@@ -132,9 +132,6 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
 				Count: int(rows),
-				RestResponse: defs.RestResponse{
-					Status: http.StatusOK,
-				},
 			}
 
 			tableName, _ = fullName(user, tableName)
@@ -232,9 +229,6 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			resp := defs.TableColumnsInfo{
 				Columns: columns,
 				Count:   len(columns),
-				RestResponse: defs.RestResponse{
-					Status: http.StatusOK,
-				},
 			}
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
@@ -451,9 +445,6 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				resp := defs.TableInfo{
 					Tables: names,
 					Count:  len(names),
-					RestResponse: defs.RestResponse{
-						Status: http.StatusOK,
-					},
 				}
 
 				b, _ := json.MarshalIndent(resp, "", "  ")
