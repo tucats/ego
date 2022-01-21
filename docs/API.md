@@ -3,14 +3,13 @@
 
 1. [Introduction](#intro)
 
-1. [Authentication](#auth)
+2. [Authentication](#auth)
 
 3. [Administration](#admin)
 
-2. [Tables](#tables)
+4. [Tables](#tables)
 
-
-3. [Services](#services)
+5. [Services](#services)
 
 &nbsp;
 &nbsp;
@@ -100,6 +99,9 @@ The following sections will cover the following paths:
 | /admin/users | Manage user credentials and permissions |
 | /assets/ | Access HTML assets (images, etc.) used in HTML pages |
 
+&nbsp;
+&nbsp;
+
 ## Heartbeat
 The `heartbeat` endpoint is the simplest and fasted way to determine if an Ego server
 is running and responding to requests. It does not require authentication of any kind,
@@ -108,6 +110,8 @@ indicates that the server is not running or there is a network/gateway problem b
 the REST client code and the Ego server.
 
 This endpoint only supports the GET method, and returns no response body.
+&nbsp;
+&nbsp;
 
 ## Caches
 The _Ego_ server maintains caches to make repeated use of the server more efficient
@@ -153,6 +157,8 @@ calls to the server will still return the old copy. You must flush the server
 cache to cause it to discard all the asset storage and start again reading from
 disk to satisfy asset requests.
 
+&nbsp;
+&nbsp;
 ### GET /admin/caches
 This gets information about the caching status in the server. This API requires that
 the user have "admin" privileges. The result is a JSON payload with the following
@@ -169,6 +175,16 @@ fields:
 | items     | An array of strings with the names of the cached services |
 | assets    | The number of assets stored in the in-memory cached |
 | assetSize | The maximum size in bytes of the asset cache |
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
 | status    | 200 for successful query of cache information |
 | msg       | A string with the text of the status message |
 
@@ -182,7 +198,8 @@ REST calls will require that the server reload the item(s) from the disk store a
 also then store them in the cache for future use.
 
 You must have "admin" privileges to execute this REST call.
-
+&nbsp;
+&nbsp;
 ### PUT /admin/caches
 You can set the size of the caches using the `PUT` method. The JSON payload for
 this operation is a structure with one or both of the following fields:
@@ -198,10 +215,26 @@ this operation is a structure with one or both of the following fields:
 &nbsp;
 
 You must be an "admin" user to execute this call.
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ## Loggers
 You can use the loggers endpoint to get information about the current state of logging on the
 server, enable or disable specific loggers, and retrive the text of the log.
+&nbsp;
+&nbsp;
 
 ### GET /admin/loggers
 This retrieves the current state of logging on the server. The response is a JSON payload
@@ -235,10 +268,21 @@ Here is an example response payload from this request:
         "TRACE": false,
         "USER": false
     },
-    "status": 200,
-    "msg": ""
     }
 
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
 &nbsp;
 
 ### GET /services/admin/log
@@ -263,7 +307,20 @@ Here is an example output with a `tail` value of 5:
     ]
     
 &nbsp;
+&nbsp;
 
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ### PUT /admin/loggers
 This call is used to modify the state of logging on the server. The payload must contain
@@ -287,12 +344,27 @@ Note that the names of the loggers are not case-sensitive.
     }
 
 &nbsp;
+&nbsp;
 
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
 
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ## Users
 The users interface allows an administrative user to create and delete user credentials, set
 user passwords, and update the permissions list for a given user.
+
+&nbsp;
+&nbsp;
 
 ### GET /admin/users/
 
@@ -307,8 +379,6 @@ structure with the following fields:
 | start | This value is always zero |
 | count | The number of items returned |
 | item | An array of user objects, described in the next table |
-| status | The HTTP status results of the call (200 is success) |
-| msg    | The text of any error message |
 
 &nbsp;
 
@@ -349,9 +419,7 @@ Here is example output from a request to this endpoint:
             "table_create"
         ]
         }
-    ],
-    "status": 200,
-    "msg": ""
+    ]
     }
 
 &nbsp;
@@ -361,21 +429,32 @@ list, which makes them an administrative user. The user "iphoneUser" has `logon`
 privileges, which enable this user to connect to the server and have permission to create tables
 using the /tables API discussed below.
 
+&nbsp;
 
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
 
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ## Assets
 
-## Heartbeat
-
 &nbsp;
 &nbsp; 
-
 # Tables <a name="tables"> </a>
 
 The _Ego_ server includes a REST API for communicating with a PostgreSQL database configured
 for use by the server. The API can be used to manage database tables and read, write, update,
 and delete rows from tables.
+&nbsp;
+&nbsp;
 
 ## Table API
 
@@ -399,6 +478,8 @@ something happened with the request that may not be the desired result, so an ad
 `message` contains the text of any error message genrated (for example, attempting to read a 
 table column that doesn't exist, or not having permissions for the requested operation).
 
+&nbsp;
+&nbsp;
 ### GET /tables
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
@@ -417,15 +498,62 @@ the result set:
 
 &nbsp;
 
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ### GET /tables/_table_
 
 If you specify a specific table with the GET operation, it returns JSON payload containing
 an array of structure, each of which defines the column name, type, size, and nullability.
 
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ### DELETE /tables/_table_
 
 A DELETE operation to a specific table will delete that table and it's contents from the
 database, if the current user has `delete` privilege for that table.
+
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ### PUT /tables/_table_
 
@@ -446,6 +574,21 @@ The valid types that you can specify in the array of column structure definition
 | bool    | Boolean value (can only be `true` or `false`)
 
 
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ### PUT /tables/@sql
 
 This is a variation of the previous operation; it allows execution of an arbitrary SQL
@@ -455,12 +598,30 @@ rowset or a rowcount object, depending on whether the statement was a `select` o
 (which returns a row set), versus any other statement which just returns a count of the
 number of rows affected.
 
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ## Row API
 
 The API for accessing row data in a table uses the /tables/_table_/rows endpoint name. The
 result is either a row set (for GET of table rows) or a row count for any other operation
 that indicates how many rows were affected by the operation. This includes PUT (write rows),
 PATCH (update rows), and DELETE (delete rows)
+&nbsp;
+&nbsp;
 
 ### GET /tables/_table_/rows
 
@@ -498,6 +659,8 @@ expression. This consists of an operator, followed by one or two operands in par
 operands can themselves be filter expressions to create complex expressions. The operators
 are:
 
+&nbsp;
+
 | Operator | Example      | Description |
 | -------- | ------------ | ----------- |
 | EQ       | EQ(id,101)   | Match rows where the named column has the given value |
@@ -509,8 +672,25 @@ are:
 | OR       | OR(EQ(id,1),EQ(id,2)) | Either operands must be true |
 | NOT      | NOT(EQ(id,101)) | Match rows where the operand expression is not true |
 
+&nbsp;
+
 Note that in these examples, the value being tested is an integer. You can also specify a string value 
 in double quotes, or a floating point value (such as 123.45).
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ### PATCH /tables/_table_/rows
 The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
@@ -533,7 +713,20 @@ sufficiently unique. You can also perform a GET operation to see the current
 values, and then use the `_row_id_` value from the result set to specify a single
 specific row to be updated.
 
+&nbsp;
 
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ### DELETE /tables/_table_/rows
 
@@ -555,7 +748,20 @@ operation.
 
 
 &nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
 &nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ## Permissions
 A permissions table is managed by the _Ego_ server that controls whether a given use can read,
 update, or delete a given table.  By default, a user can only set these attributes on tables
@@ -564,6 +770,9 @@ of any table for any user.
 
 You can read the entire list of permissions if you are an admin user.
 
+&nbsp;
+&nbsp;
+
 ### GET /tables/@permissions
 
 This command specifies the pseudo table name `@permissions` to indicate that the request is to
@@ -571,10 +780,41 @@ read all the permissions data for all tables. The result is a JSON payload with 
 each permissions object stored in the database, listing the user, schema, table, and a string
 array of permission names.
 
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
 ### GET /tables/_table_/permissions
 
 This command returns a permissions object for the given table and the current user.  This includes
 the user, schema, table, and a string array of permission names.
+
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 ### PUT /tables/_tables_/permissions
 
@@ -587,9 +827,21 @@ not exist.
 If there is no existing permission data for the user, a new permissions object is created in the
 security database for the current user, initialized with the permissions provided.
 
-&nbsp;
+
 &nbsp;
 
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+&nbsp;
+
+| Field     | Description |
+| --------- | ----------- |
+| status    | 200 for successful query of cache information |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
 
 # Services <a name="services"> </a>
 
