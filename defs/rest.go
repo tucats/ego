@@ -42,4 +42,5 @@ var TableColumnTypeNames []string = []string{
 	"time",
 	"timestamp",
 	"date",
+	"bool",
 }
