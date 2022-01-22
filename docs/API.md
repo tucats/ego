@@ -493,7 +493,7 @@ the result set:
 
 | Parameter | Example    | Description |
 | --------- | ---------- | ----------- |
-| limit     | ?limit=10  | Return at most this mahy rows from the result set |
+| limit     | ?limit=10  | Return at most this many rows from the result set |
 | start     | ?start=100 | Specify the first row of the result set (1-based) |
 
 &nbsp;
@@ -639,7 +639,7 @@ Additional information about the parameters follows this table:
 | --------- | ---------------------- | ----------- |
 | columns   | ?columns=id,name       | Specify the columns to return (if not specified, all columns are returned) |
 | filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
-| limit     | ?limit=10              | Return at most this mahy rows from the result set |
+| limit     | ?limit=10              | Return at most this many rows from the result set |
 | sort      | ?sort=id               | Sort the result set by the named column |
 | start     | ?start=100             | Specify the first row of the result set (1-based) |
 
@@ -678,6 +678,32 @@ Note that in these examples, the value being tested is an integer. You can also 
 in double quotes, or a floating point value (such as 123.45).
 
 &nbsp;
+
+Here is an example output from the call to read rows. This table has two columns defined
+by the user, called `Number` and `Name`. There are two rows in the result set. Note that
+the result set also includes the synthetic column name `_row_id_` which contains a unique
+identifier for each row in the database.
+
+&nbsp;
+
+    {
+    "rows": [
+        {
+        "Name": "Tom",
+        "Number": 101,
+        "_row_id_": "76d3e219-1015-49c8-9e77-decb750ad13e"
+        },
+        {
+        "Name": "Mary",
+        "Number": 102,
+        "_row_id_": "a974019e-f9e7-4554-adb4-2004b6f65c03"
+        }
+    ],
+    "count": 2
+    }
+
+&nbsp;
+
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:

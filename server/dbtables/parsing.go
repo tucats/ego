@@ -20,7 +20,7 @@ func sqlEscape(source string) string {
 	var result strings.Builder
 
 	for _, ch := range source {
-		if ch == '\'' || ch == '"' || ch == ';' {
+		if ch == '\'' || ch == ';' {
 			return "INVALID-NAME"
 		}
 
@@ -30,6 +30,17 @@ func sqlEscape(source string) string {
 	return result.String()
 }
 
+// stripQuotes removes double quotes from the input string. Leading and trailing double-quotes
+// are removed, as are internal "." quoted boudnaries. This prevents a name from being put through
+// the fullName() processor multiple times and accumulate extra quots.
+func stripQuotes(input string) string {
+	return strings.TrimPrefix(
+		strings.TrimSuffix(
+			strings.ReplaceAll(input, "\".\"", "."),
+			"\""),
+		"\"")
+}
+
 func queryParameters(source string, args map[string]string) string {
 	// Before anything else, let's see if the table name was specified,
 	// and it contains a "dot" notation. If so, replace the schema name
@@ -37,8 +48,8 @@ func queryParameters(source string, args map[string]string) string {
 	if tableName, ok := args[defs.TableParameterName]; ok {
 		dot := strings.Index(tableName, ".")
 		if dot >= 0 {
-			args[defs.TableParameterName] = tableName[dot+1:]
-			args[defs.SchemaParameterName] = tableName[:dot]
+			args[defs.TableParameterName] = "\"" + stripQuotes(tableName[dot+1:]) + "\""
+			args[defs.SchemaParameterName] = "\"" + stripQuotes(tableName[:dot]) + "\""
 		}
 	}
 
@@ -68,7 +79,7 @@ func formWhereClause(filters []string) string {
 		}
 
 		for {
-			clause, err := whereClause(tokens)
+			clause, err := filterClause(tokens)
 			if err != nil {
 				return "SYNTAX-ERROR:" + err.Error()
 			}
@@ -86,17 +97,18 @@ func formWhereClause(filters []string) string {
 	return result.String()
 }
 
-func whereClause(tokens *tokenizer.Tokenizer) (string, error) {
+func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	var result strings.Builder
 
 	operator := tokens.Next()
+	isName := tokenizer.IsSymbol(operator)
 
 	if !tokens.IsNext("(") {
 		// Assume it's a constant value of some kind. Convert Ego strings to SQL strings
 		isString := false
 
 		if strings.HasPrefix(operator, "\"") && strings.HasSuffix(operator, "\"") {
-			operator = strings.TrimPrefix(strings.TrimSuffix(operator, "\""), "\"")
+			operator = stripQuotes(operator)
 			isString = true
 		} else {
 			if strings.HasPrefix(operator, "'") && strings.HasSuffix(operator, "'") {
@@ -109,6 +121,10 @@ func whereClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 		if isString {
 			operator = "'" + operator + "'"
+		}
+
+		if isName {
+			operator = "\"" + operator + "\""
 		}
 
 		return operator, nil
@@ -144,16 +160,16 @@ func whereClause(tokens *tokenizer.Tokenizer) (string, error) {
 	}
 
 	if prefix != "" {
-		term, _ := whereClause(tokens)
+		term, _ := filterClause(tokens)
 		result.WriteString(prefix + " " + term)
 	} else {
-		term, _ := whereClause(tokens)
+		term, _ := filterClause(tokens)
 		result.WriteString(term + " ")
 		result.WriteString(infix + " ")
 		if !tokens.IsNext(",") {
 			return "", errors.New(errors.ErrInvalidList)
 		}
-		term, _ = whereClause(tokens)
+		term, _ = filterClause(tokens)
 		result.WriteString(term)
 	}
 
@@ -175,11 +191,15 @@ func columnList(u *url.URL) string {
 	for k, v := range values {
 		if keywordMatch(k, "column", defs.ColumnParameterName) {
 			for _, name := range v {
-				if result.Len() > 0 {
-					result.WriteRune(',')
-				}
+				names := strings.Split(name, ",")
 
-				result.WriteString(name)
+				for _, name := range names {
+					if result.Len() > 0 {
+						result.WriteRune(',')
+					}
+
+					result.WriteString("\"" + name + "\"")
+				}
 			}
 		}
 	}
@@ -193,10 +213,21 @@ func columnList(u *url.URL) string {
 
 func fullName(user, table string) (string, bool) {
 	wasFullyQualified := true
+	user = stripQuotes(user)
+	table = stripQuotes(table)
 
 	if dot := strings.Index(table, "."); dot < 0 {
-		table = user + "." + table
+		table = "\"" + user + "\".\"" + table + "\""
 		wasFullyQualified = false
+	} else {
+		parts := strings.Split(table, ".")
+		table = ""
+		for n, part := range parts {
+			if n > 0 {
+				table = table + "."
+			}
+			table = table + "\"" + part + "\""
+		}
 	}
 
 	return table, wasFullyQualified
@@ -287,6 +318,7 @@ func pagingClauses(u *url.URL) string {
 
 	return result.String()
 }
+
 func sortList(u *url.URL) string {
 	var result strings.Builder
 
@@ -309,6 +341,17 @@ func sortList(u *url.URL) string {
 					result.WriteString(" ORDER BY ")
 				} else {
 					result.WriteString(",")
+				}
+
+				parts := strings.Split(name, ",")
+				name := ""
+
+				for n, part := range parts {
+					if n > 0 {
+						name = name + ","
+					}
+
+					name = name + "\"" + part + "\""
 				}
 
 				result.WriteString(name)
@@ -410,7 +453,7 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 			result.WriteString(", ")
 		}
 
-		result.WriteString(key)
+		result.WriteString("\"" + key + "\"")
 		result.WriteString(fmt.Sprintf(" = $%d", i+1))
 	}
 
@@ -462,7 +505,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 			result.WriteRune(',')
 		}
 
-		result.WriteString(key)
+		result.WriteString("\"" + key + "\"")
 	}
 
 	result.WriteString(") VALUES (")
@@ -536,7 +579,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 			result.WriteString(", ")
 		}
 
-		result.WriteString(column.Name)
+		result.WriteString("\"" + column.Name + "\"")
 		result.WriteRune(' ')
 
 		nativeType := mapColumnType(column.Type)
@@ -578,7 +621,12 @@ func mapColumnType(native string) string {
 func tableNameParts(user string, name string) []string {
 	fullyQualified, _ := fullName(user, name)
 
-	return strings.Split(fullyQualified, ".")
+	parts := strings.Split(fullyQualified, ".")
+	for i, part := range parts {
+		parts[i] = stripQuotes(part)
+	}
+
+	return parts
 }
 
 func keywordMatch(k string, list ...string) bool {

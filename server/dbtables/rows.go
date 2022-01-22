@@ -97,7 +97,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		tableName, _ = fullName(user, tableName)
 
-		columns, err = getColumnInfo(db, tableName, sessionID)
+		columns, err = getColumnInfo(db, user, tableName, sessionID)
 		if !errors.Nil(err) {
 			ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 

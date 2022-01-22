@@ -223,7 +223,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			return
 		}
 
-		columns, e2 := getColumnInfo(db, tableName, sessionID)
+		columns, e2 := getColumnInfo(db, user, tableName, sessionID)
 		if errors.Nil(e2) {
 			resp := defs.TableColumnsInfo{
 				Columns: columns,
@@ -254,10 +254,12 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	ErrorResponse(w, sessionID, msg, status)
 }
 
-func getColumnInfo(db *sql.DB, tableName string, sessionID int32) ([]defs.DBColumn, *errors.EgoError) {
+func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) ([]defs.DBColumn, *errors.EgoError) {
 	columns := make([]defs.DBColumn, 0)
+	name, _ := fullName(user, tableName)
+
 	q := queryParameters(tableMetadataQuery, map[string]string{
-		"table": tableName,
+		"table": name,
 	})
 
 	ui.Debug(ui.TableLogger, "[%d] Reading table metadata with query %s", sessionID, q)
@@ -409,7 +411,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				}
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
-				columnQuery := "SELECT * FROM " + user + "." + name + " WHERE 1=0"
+				columnQuery := "SELECT * FROM \"" + user + "\".\"" + name + "\" WHERE 1=0"
 				ui.Debug(ui.TableLogger, "[%d] Reading columns metadata with query %s", sessionID, columnQuery)
 
 				tableInfo, err := db.Query(columnQuery)

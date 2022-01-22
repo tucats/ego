@@ -413,8 +413,8 @@ func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 //             "ID" : 1653
 //    }
 func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
-	urlParts := strings.Split(strings.ToLower(url), "/")
-	patternParts := strings.Split(strings.ToLower(pattern), "/")
+	urlParts := strings.Split(url, "/")
+	patternParts := strings.Split(pattern, "/")
 	result := map[string]interface{}{}
 
 	if len(urlParts) > len(patternParts) {
@@ -443,7 +443,7 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 		}
 
 		// If this part just matches, mark it as present.
-		if pat == urlParts[idx] {
+		if strings.EqualFold(pat, urlParts[idx]) {
 			result[pat] = true
 
 			continue
@@ -452,7 +452,9 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 		// If this pattern is a substitution operator, get the value now
 		// and store in the map using the substitution name
 		if strings.HasPrefix(pat, "{{") && strings.HasSuffix(pat, "}}") {
+			// Strip off the {{ }} from the name we going to save it as.
 			name := strings.Replace(strings.Replace(pat, "{{", "", 1), "}}", "", 1)
+			// Put it in the result using that key and the original value from the URL.
 			result[name] = urlParts[idx]
 		} else {
 			// It didn't match the url, so no data
