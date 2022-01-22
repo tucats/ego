@@ -380,9 +380,14 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
-		LongName:    "tail",
-		ShortName:   "t",
-		Description: "Display lines from the log",
+		LongName:    "status",
+		Description: "Display the state of each logger",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "limit",
+		ShortName:   "l",
+		Description: "Limit display to this many lines of text",
 		OptionType:  cli.IntType,
 	},
 	{
@@ -403,7 +408,7 @@ var ServerGrammar = []cli.Option{
 	{
 		LongName:             "logging",
 		Aliases:              []string{"logger", "log", "logs"},
-		Description:          "Enable or disable logging",
+		Description:          "Display or configure server logging",
 		OptionType:           cli.Subcommand,
 		Value:                LoggingGrammar,
 		ParametersExpected:   -1,

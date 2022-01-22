@@ -59,7 +59,11 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	}
 
+	showStatus := c.Boolean("status")
+
 	if c.WasFound("enable") || c.WasFound("disable") {
+		showStatus = true
+
 		if c.WasFound("enable") {
 			loggerNames, _ := c.StringList("enable")
 
@@ -99,9 +103,19 @@ func Logging(c *cli.Context) *errors.EgoError {
 		if !errors.Nil(err) {
 			return err
 		}
-	} else if c.WasFound("tail") {
-		// Was it a --tail request?
-		count, _ := c.Integer("tail")
+	}
+
+	fileOnly := c.Boolean("file")
+
+	if showStatus || fileOnly {
+		// No changes, just ask for status
+		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
+		if !errors.Nil(err) {
+			return err
+		}
+	} else {
+		// Was a number of lines specified?
+		count, _ := c.Integer("limit")
 		if count < 1 {
 			count = 50
 		}
@@ -130,20 +144,12 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		return nil
-	} else {
-		// No changes, just ask for status
-		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
-		if !errors.Nil(err) {
-			return err
-		}
 	}
 
 	// Formulate the output.
 	if ui.QuietMode {
 		return nil
 	}
-
-	fileOnly := c.Boolean("file")
 
 	switch ui.OutputFormat {
 	case ui.TextFormat:

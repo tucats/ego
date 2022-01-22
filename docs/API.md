@@ -741,6 +741,27 @@ specific row to be updated.
 
 &nbsp;
 
+Here is an example payload that can be sent to the server to update the row
+for account number 101 to change the name to "Bob". The account number (and
+the synthetic row ID) are not modified by this operation.
+
+&nbsp;
+
+    {
+        "Name": "Bob",
+    },
+
+&nbsp;
+
+The url request formed would be something like:
+
+    PATCH http://localhost:8080/tables/Accounts/rows?filter=EQ(Number,101)
+
+This specifies that the row is to be updated (a `PATCH` method call) and the
+only row(s) to be updated are those where the `Number` field is equal to 101.
+You can also use the `_row_id_` variable to specify a specific row, which is
+alwasy guaranteed to be unique.
+
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
