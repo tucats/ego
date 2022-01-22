@@ -48,7 +48,7 @@ the credentials store.
 The resulting JSON payload is a struct with the following fields:
 
 | Field     | Description |
-| :-------- | ----------- |
+| :-------- |:----------- |
 | expires   | A string containing the timestamp of when the token expires |
 | issuer    | A UUID of the _Ego_ server instance that created the token |
 | token     | A variable-length string containing the token text itself. |
@@ -92,7 +92,7 @@ The following sections will cover the following paths:
 &nbsp;
 
 | Path | Description |
-| ---- | -----|
+|:---- |:-----|
 | /admin/caches | View, flush, or set size of runtime caches |
 | /admin/heartbeat | Simple check if server is active/responding |
 | /admin/loggers | View or configure logging classes on the server |
@@ -164,10 +164,9 @@ This gets information about the caching status in the server. This API requires 
 the user have "admin" privileges. The result is a JSON payload with the following
 fields:
 &nbsp;
-&nbsp;
 
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | host      | A string containing the name of the computer running the _Ego_ server |
 | id        | A string containing the UUID of the server instance |
 | count     | The number of items in the services cache |
@@ -181,10 +180,8 @@ fields:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -203,11 +200,9 @@ You must have "admin" privileges to execute this REST call.
 ### PUT /admin/caches
 You can set the size of the caches using the `PUT` method. The JSON payload for
 this operation is a structure with one or both of the following fields:
-&nbsp;
-&nbsp;
 
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | limit     | The maximum number of items in the services cache |
 | assetSize | The maximum size in bytes of the asset cache |
 
@@ -220,10 +215,8 @@ You must be an "admin" user to execute this call.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -275,10 +268,8 @@ Here is an example response payload from this request:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -312,10 +303,8 @@ Here is an example output with a `tail` value of 5:
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -349,10 +338,8 @@ Note that the names of the loggers are not case-sensitive.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -373,7 +360,7 @@ structure with the following fields:
 &nbsp;
 
 | Field | Description |
-| ----- | ----------- |
+|:----- |:----------- |
 | host | The host name running the Ego server |
 | id   | The unique instance UUID of the server |
 | start | This value is always zero |
@@ -387,7 +374,7 @@ has the following fields:
 &nbsp;
 
 | Field | Description |
-| ----- | ----------- |
+|:----- |:----------- |
 | name | The name of the user |
 | id   | A unique UUID for the user |
 | permissions | an array of strings containing permissions names |
@@ -434,10 +421,8 @@ using the /tables API discussed below.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -489,24 +474,19 @@ read access to.
 Because the list of tables might be quite long, you can specify URL parameters that limit
 the result set:
 
-&nbsp;
-
 | Parameter | Example    | Description |
-| --------- | ---------- | ----------- |
+|:--------- |:---------- |:----------- |
 | limit     | ?limit=10  | Return at most this many rows from the result set |
 | start     | ?start=100 | Specify the first row of the result set (1-based) |
 
 &nbsp;
-
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -524,10 +504,8 @@ an array of structure, each of which defines the column name, type, size, and nu
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -539,16 +517,13 @@ will contain the following diagnostic fields as a JSON payload:
 A DELETE operation to a specific table will delete that table and it's contents from the
 database, if the current user has `delete` privilege for that table.
 
-
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -566,7 +541,7 @@ that uniquely identifies the row across all tables.
 The valid types that you can specify in the array of column structure definitions are:
 
 | Type    | Description |
-|:------- | ----------- |
+|:------- |:----------- |
 | string  | Varying length character string |
 | int     | Integer value |
 | float32 | Real floating point value |
@@ -579,10 +554,8 @@ The valid types that you can specify in the array of column structure definition
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -604,10 +577,8 @@ number of rows affected.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -633,10 +604,8 @@ field in that row.
 The Rows API supports the following parameters on the URL that affect the result set. 
 Additional information about the parameters follows this table:
 
-&nbsp;
-
 | Parameter | Example                | Description |
-| --------- | ---------------------- | ----------- |
+|:--------- |:---------------------- |:----------- |
 | columns   | ?columns=id,name       | Specify the columns to return (if not specified, all columns are returned) |
 | filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
 | limit     | ?limit=10              | Return at most this many rows from the result set |
@@ -662,7 +631,7 @@ are:
 &nbsp;
 
 | Operator | Example      | Description |
-| -------- | ------------ | ----------- |
+|:-------- |:------------ |:----------- |
 | EQ       | EQ(id,101)   | Match rows where the named column has the given value |
 | LT       | LT(age, 65)  | Match rows where the named column's value is less than the given value. |
 | LE       | LE(size,12)  | Match rows where the named column's value is less than or equal to the given value. |
@@ -708,10 +677,48 @@ identifier for each row in the database.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
+| Field     | Description |
+|:--------- |:----------- |
+| status    | The HTTP status message (integer other than 200) |
+| msg       | A string with the text of the status message |
+
+&nbsp;
 &nbsp;
 
+
+### PUT /tables/_table_/rows
+The PUT method inserts new rows into the table. The payload is a row descriptor
+which is a JSON object describing the values of each column in the row to be
+added. If a column is not specified in the body of the request, the corresponding
+value in the table is null/zero.
+
+You do not need to specify a `_row_id_` item; this will be set for you when the
+new row is created.
+
+&nbsp;
+
+Here is an example payload that can be sent to the server to insert a new row
+for account number 103 wtih name "Susan".
+
+&nbsp;
+
+    {
+        "Name": "Susan",
+        "Number": 103
+    }
+
+&nbsp;
+
+If the row is successfully inserted, the result is a JSON object with a single field,
+`count` which should contain the number 1. _In the future, it will be possible to
+insert multiple rows in a single call, in which case this value will reflect the number
+of rows inserted._
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -725,10 +732,8 @@ specified in the request body are updated; the other values are left unchanged.
 
 Use the `filter` parameter to select which row(s) are to be updated:
 
-&nbsp;
-
 | Parameter | Example                | Description |
-| --------- | ---------------------- | ----------- |
+|:--------- |:---------------------- |:----------- |
 | filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
 
 &nbsp;
@@ -771,10 +776,8 @@ row if you needed the update to be unique to a particular row.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -789,7 +792,7 @@ parameter to specify which rows are to be deleted:
 &nbsp;
 
 | Parameter | Example                | Description |
-| --------- | ---------------------- | ----------- |
+|:--------- |:---------------------- |:----------- |
 | filter    | ?filter=EQ(name,"TOM") | Only delete rows that match the filter |
 
 &nbsp;
@@ -805,10 +808,8 @@ operation.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -838,10 +839,8 @@ array of permission names.
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -853,16 +852,13 @@ will contain the following diagnostic fields as a JSON payload:
 This command returns a permissions object for the given table and the current user.  This includes
 the user, schema, table, and a string array of permission names.
 
-
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
@@ -880,16 +876,13 @@ not exist.
 If there is no existing permission data for the user, a new permissions object is created in the
 security database for the current user, initialized with the permissions provided.
 
-
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
-&nbsp;
-
 | Field     | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
