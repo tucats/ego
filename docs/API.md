@@ -185,7 +185,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -224,7 +224,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -279,7 +279,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -316,7 +316,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -353,7 +353,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -438,7 +438,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -507,7 +507,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -528,7 +528,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -549,7 +549,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -583,7 +583,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -608,7 +608,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -686,7 +686,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -722,7 +722,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -756,7 +756,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -789,7 +789,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -810,7 +810,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
@@ -837,7 +837,7 @@ will contain the following diagnostic fields as a JSON payload:
 
 | Field     | Description |
 | --------- | ----------- |
-| status    | 200 for successful query of cache information |
+| status    | The HTTP status message (integer other than 200) |
 | msg       | A string with the text of the status message |
 
 &nbsp;
