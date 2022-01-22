@@ -3,7 +3,6 @@ package dbtables
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -65,7 +64,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	_, _ = w.Write([]byte(err.Error()))
 }
 
-// UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
+// InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -84,8 +83,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
+		// Note that "update" here means add to or change the row. So we check "update"
+		// on test for insert permissions
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
-			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+			ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
 
 			return
 		}
@@ -105,7 +106,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+			ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
 
 			return
 		}
@@ -148,21 +149,14 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, err)
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(err.Error()))
+		ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Error inserting into table, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-
-	if err == nil {
-		err = fmt.Errorf("unknown error")
+	if !errors.Nil(err) {
+		ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
-
-	_, _ = w.Write([]byte(err.Error()))
 }
 
 // ReadRows reads the data for a given table, and returns it as an array
