@@ -281,6 +281,8 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+
+			return
 		}
 
 		q, values := formUpdateQuery(r.URL, user, data)
@@ -300,9 +302,13 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			return
 		}
+
+		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+
+		return
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error updating table, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte(err.Error()))
+	if !errors.Nil(err) {
+		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+	}
 }
