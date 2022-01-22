@@ -113,12 +113,10 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// If we don't have a user after all this, fail. Table servers REQUIRE
 	// authorization
 	if user == "" || !authenticatedCredentials {
-		msg := "Operation requires valid user credentials"
+		msg := fmt.Sprintf("Operation %s from user %s requires valid user credentials",
+			r.Method, user)
 
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, path, r.RemoteAddr, http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, msg, http.StatusUnauthorized)
 
 		return
 	}
@@ -150,12 +148,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !hasReadPermission {
-		msg := "User does not have tables permissions"
+		msg := fmt.Sprintf("User %s does not have tables permissions", user)
 
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, path, r.RemoteAddr, http.StatusForbidden)
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 		return
 	}
@@ -170,11 +165,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !valid || !datatypes.GetBool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
-
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -185,11 +176,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if tableName == "" && r.Method != http.MethodGet {
 		msg := unsupportedMethodMessage
-
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, path, r.RemoteAddr, http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -202,11 +189,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if rows {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
-			msg := "User does not have permission to modify tables"
+			msg := fmt.Sprintf("User %s does not have permission to modify tables", user)
 
-			ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(msg))
+			ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 			return
 		}
@@ -225,12 +210,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			msg := unsupportedMethodMessage
-
-			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(msg))
+			ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
 
 		return
@@ -240,9 +220,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := "User does not have permission to modify tables"
 
-			ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, http.StatusForbidden)
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(msg))
+			ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 			return
 		}
@@ -258,12 +236,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			msg := unsupportedMethodMessage
-
-			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-				sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(msg))
+			ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
 
 		return
@@ -292,12 +265,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		alterTable(user, tableName, sessionID, w, r)
 
 	default:
-		msg := unsupportedMethodMessage
-
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d",
-			sessionID, r.Method, r.URL.Path, r.RemoteAddr, http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(msg))
+		ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 	}
 }
 
