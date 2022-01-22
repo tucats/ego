@@ -762,6 +762,12 @@ only row(s) to be updated are those where the `Number` field is equal to 101.
 You can also use the `_row_id_` variable to specify a specific row, which is
 alwasy guaranteed to be unique.
 
+When this call runs successfully, the resulting payload is an object with a
+field `count` which contains the number of rows that were changed by this
+operation. A value of zero means the filter did not allow any rows to be
+modified. You can also use this to verify that you updated one and only one
+row if you needed the update to be unique to a particular row.
+
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
