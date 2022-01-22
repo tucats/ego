@@ -40,6 +40,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.PidDirectorySetting:          piddir,
 		defs.InsecureServerSetting:        defs.False,
 		defs.RestClientErrorSetting:       defs.True,
+		defs.LogRetainCountSetting:        "3",
 	}
 
 	// See if there is a value for each on of these. If no

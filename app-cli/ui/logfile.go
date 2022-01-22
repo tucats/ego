@@ -1,8 +1,11 @@
 package ui
 
 import (
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -13,13 +16,23 @@ var logFile *os.File
 var baseLogFileName string
 var currentLogFileName string
 
+// LogRetainCount is the number of roll-over log versions to keep in the
+// logging directory.
+var LogRetainCount = -1
+
 func OpenLogFile(userLogFileName string, withTimeStamp bool) *errors.EgoError {
+	if LogRetainCount < 1 {
+		LogRetainCount = 3
+	}
+
 	err := openLogFile(userLogFileName, withTimeStamp)
 	if !errors.Nil(err) {
 		return errors.New(err)
 	}
 
 	if withTimeStamp {
+		PurgeLogs()
+
 		go rollOverTask()
 	}
 
@@ -92,6 +105,8 @@ func RollOverLog() {
 	if err != nil {
 		panic("Unable to open new log file; " + err.Error())
 	}
+
+	PurgeLogs()
 }
 
 func timeStampLogFileName(path string) string {
@@ -116,4 +131,47 @@ func SaveLastLog() error {
 	}
 
 	return nil
+}
+
+func PurgeLogs() int {
+	count := 0
+	keep := LogRetainCount
+	searchPath := path.Dir(CurrentLogFile())
+	names := []string{}
+
+	Debug(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
+
+	files, err := ioutil.ReadDir(searchPath)
+	if !errors.Nil(err) {
+		Debug(ServerLogger, "Error making list of log files, %s", err.Error())
+
+		return count
+	}
+
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "ego-server_") && !file.IsDir() {
+			names = append(names, file.Name())
+		}
+	}
+
+	if len(names) <= 1 {
+		return 0
+	}
+
+	sort.Strings(names)
+
+	for n := 0; n < len(names)-keep; n++ {
+		name := names[n]
+		fileName := path.Join(searchPath, name)
+
+		err := os.Remove(fileName)
+		if !errors.Nil(err) {
+			Debug(ServerLogger, "Error purging log file, %v", err)
+		} else {
+			Debug(ServerLogger, "Purged log file %s", fileName)
+			count++
+		}
+	}
+
+	return count
 }

@@ -129,6 +129,9 @@ const (
 	// considered expired. Examples are "15m" or "24h".
 	ServerTokenExpirationSetting = PrivilegedKeyPrefix + "server.token.expiration"
 
+	// How many old logs do we maintain by default when in server mode?
+	LogRetainCountSetting = PrivilegedKeyPrefix + "server.retain.log.count"
+
 	// If true, functions that return multiple values including an
 	// error that do not assign that error to a value will result in
 	// the error being thrown.
@@ -230,4 +233,5 @@ var ValidSettings map[string]bool = map[string]bool{
 	InsecureServerSetting:           true,
 	MaxCacheSizeSetting:             true,
 	RestClientErrorSetting:          true,
+	LogRetainCountSetting:           true,
 }

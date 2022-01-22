@@ -80,6 +80,7 @@ type ServerInfo struct {
 
 type LoggingItem struct {
 	Filename string          `json:"file,omitempty"`
+	RetainCount     int             `json:"keep"`
 	Loggers  map[string]bool `json:"loggers,omitempty"`
 }
 

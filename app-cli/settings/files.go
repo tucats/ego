@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -201,6 +202,15 @@ func GetBool(key string) bool {
 	}
 
 	return false
+}
+
+// GetBool returns the boolean value of a profile string. If the string is
+// "Y", "YES", "1", or defs.True then the value returns true.
+func GetInt(key string) int {
+	s := strings.ToLower(Get(key))
+	value, _ := strconv.Atoi(s)
+
+	return value
 }
 
 // Get a key value, and compare it to a list of provided values. If it

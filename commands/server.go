@@ -32,6 +32,17 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	server.StartTime = time.Now().Format(time.UnixDate)
 
+	// Do we have a server log retention policy? If so, set that up
+	// before we start logging things.
+	if !c.WasFound("keep-logs") {
+		ui.LogRetainCount, _ = c.Integer("keep-logs")
+	} else {
+		ui.LogRetainCount = settings.GetInt(defs.LogRetainCountSetting)
+		if ui.LogRetainCount < 1 {
+			ui.LogRetainCount = 1
+		}
+	}
+
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
 		ui.SetLogger(ui.ServerLogger, true)

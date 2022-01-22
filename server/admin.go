@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -502,6 +503,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 	case http.MethodGet:
 		response.Filename = ui.CurrentLogFile()
 		response.Loggers = map[string]bool{}
+		response.RetainCount = ui.LogRetainCount
 
 		for _, k := range ui.LoggerNames() {
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
@@ -511,6 +513,35 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		response.ID = Session
 
 		b, _ := json.Marshal(response)
+		_, _ = w.Write(b)
+
+		return http.StatusOK
+
+	case http.MethodDelete:
+		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); !errors.Nil(err) {
+			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+
+			return http.StatusBadRequest
+		}
+
+		keep := ui.LogRetainCount
+		q := r.URL.Query()
+
+		if v, found := q["keep"]; found {
+			if len(v) == 1 {
+				keep, _ = strconv.Atoi(v[0])
+			}
+		}
+
+		if keep < 1 {
+			keep = 1
+		}
+
+		ui.LogRetainCount = keep
+		count := ui.PurgeLogs()
+
+		reply := defs.DBRowCount{Count: count}
+		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
 
 		return http.StatusOK

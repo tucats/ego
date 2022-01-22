@@ -386,6 +386,11 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
+		LongName:    "keep",
+		Description: "Specify how many log files to keep",
+		OptionType:  cli.IntType,
+	},
+	{
 		LongName:    "port",
 		ShortName:   "p",
 		OptionType:  cli.IntType,
@@ -524,6 +529,11 @@ var ServerRunGrammar = []cli.Option{
 		LongName:    "log",
 		Description: "File path of server log",
 		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "keep-logs",
+		Description: "The number of log files to keep",
+		OptionType:  cli.IntType,
 	},
 	{
 		LongName:    "sandbox-path",

@@ -44,6 +44,21 @@ func Logging(c *cli.Context) *errors.EgoError {
 	loggers := defs.LoggingItem{Loggers: map[string]bool{}}
 	response := defs.LoggingResponse{}
 
+	if c.WasFound("keep") {
+		keep, _ := c.Integer("keep")
+		u := runtime.URLBuilder("/admin/loggers/?keep=%d", keep)
+		count := defs.DBRowCount{}
+
+		err := runtime.Exchange(u.String(), http.MethodDelete, nil, &count, defs.AdminAgent)
+		if !errors.Nil(err) {
+			return err
+		}
+
+		if count.Count > 0 {
+			ui.Say("Purged %d old log files", count.Count)
+		}
+	}
+
 	if c.WasFound("enable") || c.WasFound("disable") {
 		if c.WasFound("enable") {
 			loggerNames, _ := c.StringList("enable")
@@ -148,6 +163,13 @@ func Logging(c *cli.Context) *errors.EgoError {
 
 			if response.Filename != "" {
 				fmt.Printf("\nServer log file is %s\n", response.Filename)
+				if response.RetainCount > 0 {
+					if response.RetainCount == 1 {
+						fmt.Printf("Server does not retain previous log files")
+					} else {
+						fmt.Printf("Server also retains last %d previous log files\n", response.RetainCount-1)
+					}
+				}
 			}
 		}
 
