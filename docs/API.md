@@ -446,11 +446,11 @@ This API is divided into two sets,
 ## Table API <a name="tablesapi"></a>
 
 This section covers APIs to:
-* Create a new table 
-* List existing tables
-* Show the column names and types for a table
-* Delete an entire table
-* Execute arbitrary SQL statements on the server
+* [List existing tables](#listtables)
+* [Create a new table](#createtable)
+* [Show the column names and types for a table](#metadata)
+* [Delete an entire table](#deletetable)
+* [Execute arbitrary SQL statements on the server](#sql)
 
 All tables operations return either a rowset or a rowcount response. A rowset contains an array of
 structure definitions where each column in the row is the field name, and the value of the column
@@ -467,7 +467,7 @@ table column that doesn't exist, or not having permissions for the requested ope
 
 &nbsp;
 &nbsp;
-### GET /tables
+### GET /tables <a name="listtables"></a>
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
 containing an array of strings, each of which is a table name that the current user has
@@ -495,44 +495,8 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_
 
-If you specify a specific table with the GET operation, it returns JSON payload containing
-an array of structure, each of which defines the column name, type, size, and nullability.
-
-
-&nbsp;
-
-In the event that the REST call returns a non-success status code, the response payload
-will contain the following diagnostic fields as a JSON payload:
-
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
-
-&nbsp;
-&nbsp;
-
-### DELETE /tables/_table_
-
-A DELETE operation to a specific table will delete that table and it's contents from the
-database, if the current user has `delete` privilege for that table.
-
-&nbsp;
-
-In the event that the REST call returns a non-success status code, the response payload
-will contain the following diagnostic fields as a JSON payload:
-
-| Field     | Description |
-|:--------- |:----------- |
-| status    | The HTTP status message (integer other than 200) |
-| msg       | A string with the text of the status message |
-
-&nbsp;
-&nbsp;
-
-### PUT /tables/_table_
+### PUT /tables/_table_  <a name="createtable"></a>
 
 A PUT to a named table will create the table. The payload must be a JSON specification that
 is an array of columns, each with a `name` and `type` field. The table is created using
@@ -564,7 +528,45 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/@sql
+
+### GET /tables/_table_  <a name="netadata"></a>
+
+If you specify a specific table with the GET operation, it returns JSON payload containing
+an array of structure, each of which defines the column name, type, size, and nullability.
+
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+| Field     | Description |
+|:--------- |:----------- |
+| status    | The HTTP status message (integer other than 200) |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
+### DELETE /tables/_table_  <a name="deletetable"></a>
+
+A DELETE operation to a specific table will delete that table and it's contents from the
+database, if the current user has `delete` privilege for that table.
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+| Field     | Description |
+|:--------- |:----------- |
+| status    | The HTTP status message (integer other than 200) |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
+### PUT /tables/@sql  <a name="sql"></a>
 
 This is a variation of the previous operation; it allows execution of an arbitrary SQL
 statement, if the current user has `admin` privileges. The SQL text to execute must be
@@ -572,7 +574,6 @@ passed as a JSON-encode string in the body of the request. The reply will either
 rowset or a rowcount object, depending on whether the statement was a `select` operation
 (which returns a row set), versus any other statement which just returns a count of the
 number of rows affected.
-
 
 &nbsp;
 
@@ -830,12 +831,16 @@ update, or delete a given table.  By default, a user can only set these attribut
 that they own. An administrator (a user account with "root" privilege) can change the attributes
 of any table for any user.
 
+* [Read all permittions](#allperms)
+* [Read permissions for a specific table](#tableperms)
+* [Set permissions for a specific table](#setperms)
+
 You can read the entire list of permissions if you are an admin user.
 
 &nbsp;
 &nbsp;
 
-### GET /tables/@permissions
+### GET /tables/@permissions <a name="allperms"></a>
 
 This command specifies the pseudo table name `@permissions` to indicate that the request is to
 read all the permissions data for all tables. The result is a JSON payload with an array for
@@ -855,7 +860,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_/permissions
+### GET /tables/_table_/permissions  <a name="tableperms"></a>
 
 This command returns a permissions object for the given table and the current user.  This includes
 the user, schema, table, and a string array of permission names.
@@ -873,7 +878,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PUT /tables/_tables_/permissions
+### PUT /tables/_tables_/permissions  <a name="setperms"></a>
 
 This command will update the permissions for the given table and the current user. The body of
 the request must contain a JSON payload with a string array of permission names. The name can
