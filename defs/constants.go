@@ -91,6 +91,11 @@ const (
 	// as rest calls.
 	LogonTokenSetting = PrivilegedKeyPrefix + "logon.token"
 
+	// Stores the expiration date from the last login. This can be
+	// used to detect an expired token and provide a better message
+	// to the client user than "not authorized".
+	LogonTokenExpirationSetting = PrivilegedKeyPrefix + "logon.token.expiration"
+
 	// The default user if no userdatabase has been initialized
 	// yet. This is a strong of the form "user:password", which
 	// is defined as the root user.
@@ -215,6 +220,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ApplicationServerSetting:        false,
 	LogonServerSetting:              true,
 	LogonTokenSetting:               false,
+	LogonTokenExpirationSetting:     false,
 	DefaultCredentialSetting:        true,
 	LogonSuperuserSetting:           true,
 	LogonUserdataSetting:            true,

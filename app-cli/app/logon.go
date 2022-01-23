@@ -121,8 +121,8 @@ func Logon(c *cli.Context) *errors.EgoError {
 			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(b))
 		}
 
-		token := payload.Token
-		settings.Set(defs.LogonTokenSetting, token)
+		settings.Set(defs.LogonTokenSetting, payload.Token)
+		settings.Set(defs.LogonTokenExpirationSetting, payload.Expiration)
 
 		err = settings.Save()
 		if errors.Nil(err) {

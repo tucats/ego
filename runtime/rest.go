@@ -9,6 +9,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty"
 	"github.com/tucats/ego/app-cli/settings"
@@ -734,6 +735,21 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if token := settings.Get(defs.LogonTokenSetting); token != "" {
+		// Let's check to see if it's expired already...
+		if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
+			expireTime, err := time.Parse(time.UnixDate, expirationString)
+			if err != nil {
+				return errors.New(err)
+			}
+
+			now := time.Since(expireTime)
+			if now > 0 {
+				ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
+
+				os.Exit(1)
+			}
+		}
+
 		client.SetAuthToken(token)
 		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
 	}
