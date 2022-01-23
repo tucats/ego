@@ -87,22 +87,16 @@ Administrative functions are REST APIS used to support managing the REST server,
 status and state of the server, the database of valid user credentials and permissions, and support
 for caching and logging functions on the server.
 
-The following sections will cover the following paths:
-
-&nbsp;
-
-| Path | Description |
-|:---- |:-----|
-| /admin/caches | View, flush, or set size of runtime caches |
-| /admin/heartbeat | Simple check if server is active/responding |
-| /admin/loggers | View or configure logging classes on the server |
-| /admin/users | Manage user credentials and permissions |
-| /assets/ | Access HTML assets (images, etc.) used in HTML pages |
+* [View, flush, or set size of runtime caches](#caches)
+* [Check if server is active/responding](#hearbeat)
+* [View or configure logging classes on the server](#loggers)
+* [Manage user credentials and permissions](#users)
+* [Access HTML assets (images, etc.) used in HTML pages](#assets)
 
 &nbsp;
 &nbsp;
 
-## Heartbeat
+## Heartbeat <a name="heartbeat"></a>
 The `heartbeat` endpoint is the simplest and fasted way to determine if an Ego server
 is running and responding to requests. It does not require authentication of any kind,
 and returns a 200 success code if the server is available. Any other return code
@@ -113,7 +107,7 @@ This endpoint only supports the GET method, and returns no response body.
 &nbsp;
 &nbsp;
 
-## Caches
+## Caches <a name="caches"></a>
 The _Ego_ server maintains caches to make repeated use of the server more efficient
 by saving operations in memory instead of having to re-load and re-compile services,
 reload assets, etc.
@@ -223,7 +217,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Loggers
+## Loggers <a name="loggers"></a>
 You can use the loggers endpoint to get information about the current state of logging on the
 server, enable or disable specific loggers, and retrive the text of the log.
 &nbsp;
@@ -346,7 +340,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Users
+## Users <a name="users"></a>
 The users interface allows an administrative user to create and delete user credentials, set
 user passwords, and update the permissions list for a given user.
 
@@ -429,7 +423,9 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Assets
+## Assets <a name="heartbeat"></a>
+
+_This section not documented yet._
 
 &nbsp;
 &nbsp; 
@@ -438,10 +434,16 @@ will contain the following diagnostic fields as a JSON payload:
 The _Ego_ server includes a REST API for communicating with a PostgreSQL database configured
 for use by the server. The API can be used to manage database tables and read, write, update,
 and delete rows from tables.
+
+This API is divided into two sets,
+
+* [Manipulating tables](#tablesapi)
+* [Manipulating rows in a table](#rows)
+
 &nbsp;
 &nbsp;
 
-## Table API
+## Table API <a name="tablesapi"></a>
 
 This section covers APIs to:
 * Create a new table 
@@ -585,7 +587,13 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-## Row API
+## Rows API <a name="rows"></a>
+
+This section covers API functions to
+* [Read rows from a table](#readrows)
+* [Insert new rows into a table](#insertrows)
+* [Update existing rows in a table](#updaterows)
+* [Delete rows from a table](#deleterows)
 
 The API for accessing row data in a table uses the /tables/_table_/rows endpoint name. The
 result is either a row set (for GET of table rows) or a row count for any other operation
@@ -594,7 +602,7 @@ PATCH (update rows), and DELETE (delete rows)
 &nbsp;
 &nbsp;
 
-### GET /tables/_table_/rows
+### GET /tables/_table_/rows <a name="readrows"></a>
 
 This reads the rows from a table. If no parameters are given, then all columns of all rows
 are returned, in an unpredictable order. The result is a JSON payload containing an array
@@ -686,7 +694,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 
-### PUT /tables/_table_/rows
+### PUT /tables/_table_/rows <a name="insertrows"></a>
 The PUT method inserts new rows into the table. The payload is a row descriptor
 which is a JSON object describing the values of each column in the row to be
 added. If a column is not specified in the body of the request, the corresponding
@@ -725,7 +733,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### PATCH /tables/_table_/rows
+### PATCH /tables/_table_/rows <a name="updaterows"></a>
 The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
 as the PUT method) but does not have to specify all the values in the row. Only the values
 specified in the request body are updated; the other values are left unchanged.
@@ -784,7 +792,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-### DELETE /tables/_table_/rows
+### DELETE /tables/_table_/rows <a name="deleterows"></a>
 
 This deletes rows from a table. By default, all rows are deleted. You can use the following
 parameter to specify which rows are to be deleted:
