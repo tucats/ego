@@ -160,7 +160,7 @@ var TableGrammar = []cli.Option{
 	},
 	{
 		LongName:           "read",
-		Aliases:            []string{"select", "get", "show-contents", "contents"},
+		Aliases:            []string{"select", "print", "get", "show-contents", "contents"},
 		Description:        "Read contents of a table",
 		OptionType:         cli.Subcommand,
 		Action:             commands.TableContents,

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
 
 // @tomcole probably need to dump this entirely and work on variadic substitution arguments in query!
@@ -410,7 +410,7 @@ func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
 	return result.String()
 }
 
-func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (string, []interface{}) {
+func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}) {
 	if u == nil {
 		return "", nil
 	}
@@ -435,17 +435,12 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 
 	result.WriteString(table)
 
-	keys := make([]string, 0)
-	values := make([]interface{}, len(data))
+	keys := util.InterfaceMapKeys(items)
+	values := make([]interface{}, len(keys))
 
-	for k := range data {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
+	// Loop over the item names and add SET clauses for each one
 	for i, key := range keys {
-		values[i] = data[key]
+		values[i] = items[key]
 
 		if i == 0 {
 			result.WriteString(" SET ")
@@ -464,7 +459,7 @@ func formUpdateQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	return result.String(), values
 }
 
-func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (string, []interface{}) {
+func formInsertQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}) {
 	if u == nil {
 		return "", nil
 	}
@@ -489,14 +484,8 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 
 	result.WriteString(table)
 
-	keys := make([]string, 0)
-	values := make([]interface{}, len(data))
-
-	for k := range data {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
+	keys := util.InterfaceMapKeys(items)
+	values := make([]interface{}, len(items))
 
 	for i, key := range keys {
 		if i == 0 {
@@ -511,7 +500,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	result.WriteString(") VALUES (")
 
 	for i, key := range keys {
-		values[i] = data[key]
+		values[i] = items[key]
 
 		if i > 0 {
 			result.WriteString(",")
@@ -525,7 +514,7 @@ func formInsertQuery(u *url.URL, user string, data map[string]interface{}) (stri
 	return result.String(), values
 }
 
-func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []defs.DBColumn, sessionID int32, w http.ResponseWriter) string {
+func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int32, w http.ResponseWriter) string {
 	if u == nil {
 		return ""
 	}
@@ -557,7 +546,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	// add it in to the table definition.
 	hasRowID := false
 
-	for _, column := range data {
+	for _, column := range items {
 		if column.Name == defs.RowIDName {
 			hasRowID = true
 
@@ -566,13 +555,13 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, data []de
 	}
 
 	if !hasRowID {
-		data = append(data, defs.DBColumn{
+		items = append(items, defs.DBColumn{
 			Name: defs.RowIDName,
 			Type: "string",
 		})
 	}
 
-	for i, column := range data {
+	for i, column := range items {
 		if i == 0 {
 			result.WriteRune('(')
 		} else {

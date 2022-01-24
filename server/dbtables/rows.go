@@ -260,6 +260,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   "string",
+		defs.ColumnParameterName: "string",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -276,6 +277,29 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
+		excludeList := map[string]bool{}
+
+		p := r.URL.Query()
+		if v, found := p[defs.ColumnParameterName]; found {
+			// There is a column list, so build a list of all the columns, and then
+			// remove the ones from the column parameter. This builds a list of columns
+			// that are excluded.
+			columns, err := getColumnInfo(db, user, tableName, sessionID)
+			if !errors.Nil(err) {
+				ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+				return
+			}
+
+			for _, column := range columns {
+				excludeList[column.Name] = true
+			}
+
+			for _, name := range v {
+				excludeList[name] = false
+			}
+		}
+
 		var data map[string]interface{}
 
 		err = json.NewDecoder(r.Body).Decode(&data)
@@ -284,6 +308,17 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			return
 		}
+
+		// Anything in the data map that is on the exclude list is removed
+		ui.Debug(ui.TableLogger, "[%d] exclude list = %v", sessionID, excludeList)
+
+		for key, excluded := range excludeList {
+			if excluded {
+				delete(data, key)
+			}
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
 		q, values := formUpdateQuery(r.URL, user, data)
 		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)

@@ -48,3 +48,27 @@ func MakeSortedArray(array []string) []interface{} {
 
 	return result
 }
+
+func InterfaceMapKeys(data map[string]interface{}) []string {
+	keys := make([]string, 0)
+
+	for key := range data {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+func StringMapKeys(data map[string]string) []string {
+	keys := make([]string, 0)
+
+	for key := range data {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}

@@ -745,6 +745,12 @@ Use the `filter` parameter to select which row(s) are to be updated:
 | Parameter | Example                | Description |
 |:--------- |:---------------------- |:----------- |
 | filter    | ?filter=EQ(name,"TOM") | Only return rows that match the filter |
+| columns   | ?columns=Id,Name       | Only update the named columns from the request payload |
+
+Note that the use of `columns` is present to support the case where the client needs to present
+a model of the entire object represetned by the table row, but only wants to update specific
+values in that model (this can be important for performance when updating an index value, for
+example). If `columns` is not specified, then all fields in the request payload are updated.
 
 &nbsp;
 
