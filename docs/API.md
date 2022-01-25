@@ -512,27 +512,27 @@ available tables of info:
 &nbsp;
 
     {
-    "tables": [
-        {
-        "name": "Accounts",
-        "schema": "smith",
-        "columns": 2,
-        "rows": 8
-        },
-        {
-        "name": "simple",
-        "schema": "smith",
-        "columns": 2,
-        "rows": 1053
-        },
-        {
-        "name": "test5",
-        "schema": "smith",
-        "columns": 1,
-        "rows": 23
-        }
-    ],
-    "count": 3
+        "tables": [
+            {
+                "name": "Accounts",
+                "schema": "smith",
+                "columns": 2,
+                "rows": 8
+            },
+            {
+                "name": "simple",
+                "schema": "smith",
+                "columns": 2,
+                "rows": 1053
+            },
+            {
+                "name": "test5",
+                "schema": "smith",
+                "columns": 1,
+                "rows": 23
+            }
+        ],
+        "count": 3
     }
 
 &nbsp;
