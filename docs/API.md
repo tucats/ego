@@ -509,29 +509,31 @@ objects, with the following fields:
 Here is an example of the result data when the call is made by the user "smith", returning three
 available tables of info:
 
-{
-  "tables": [
+&nbps;
+
     {
-      "name": "Accounts",
-      "schema": "smith",
-      "columns": 2,
-      "rows": 8
-    },
-    {
-      "name": "simple",
-      "schema": "smith",
-      "columns": 2,
-      "rows": 1053
-    },
-    {
-      "name": "test5",
-      "schema": "smith",
-      "columns": 1,
-      "rows": 23
+    "tables": [
+        {
+        "name": "Accounts",
+        "schema": "smith",
+        "columns": 2,
+        "rows": 8
+        },
+        {
+        "name": "simple",
+        "schema": "smith",
+        "columns": 2,
+        "rows": 1053
+        },
+        {
+        "name": "test5",
+        "schema": "smith",
+        "columns": 1,
+        "rows": 23
+        }
+    ],
+    "count": 3
     }
-  ],
-  "count": 3
-}
 
 &nbsp;
 &nbsp;
