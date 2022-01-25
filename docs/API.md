@@ -509,7 +509,7 @@ objects, with the following fields:
 Here is an example of the result data when the call is made by the user "smith", returning three
 available tables of info:
 
-&nbps;
+&nbsp;
 
     {
     "tables": [
