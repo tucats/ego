@@ -120,13 +120,17 @@ user and table with the `read` permission specified.
 The data is printed to the console as a list of the table names. For example,
 
     user@Macbook % ./ego tables list
-    Name          
-    ==========    
-    members    
-    simple        
-    test1         
+    Name          Schema     Columns  Rows
+    ==========    =========  =======  ====
+    members       admin            5   127
+    simple        admin            1     8
+    test1         admin            4     0
 
-This shows a listing of three tables that the current user can read.
+This shows a listing of three tables that the current user can read. The table "test1"
+has no rows in it, so the row count reported is zero.
+
+You can omit the row counts (which can take a while for very very large tables) using
+the `--no-row-counts` option on the `list` command.
 
 
 ## show-table

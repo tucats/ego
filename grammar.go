@@ -140,6 +140,11 @@ var TableGrammar = []cli.Option{
 				Description: "If specified, start result set at this row",
 				OptionType:  cli.IntType,
 			},
+			{
+				LongName:    "no-row-counts",
+				Description: "If specified, listing does not include row counts",
+				OptionType:  cli.BooleanType,
+			},
 		},
 	},
 	{

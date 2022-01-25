@@ -25,6 +25,11 @@ const (
 func TableList(c *cli.Context) *errors.EgoError {
 	resp := defs.TableInfo{}
 
+	rowCounts := true
+	if c.WasFound("no-row-counts") {
+		rowCounts = false
+	}
+
 	url := runtime.URLBuilder(defs.TablesPath)
 
 	if limit, found := c.Integer("limit"); found {
@@ -35,19 +40,35 @@ func TableList(c *cli.Context) *errors.EgoError {
 		url.Parameter(defs.StartParameterName, start)
 	}
 
+	if !rowCounts {
+		url.Parameter(defs.RowCountParameterName, false)
+	}
+
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{"Schema", "Name", "Columns", "Rows"})
-			_ = t.SetOrderBy("Name")
-			_ = t.SetAlignment(2, tables.AlignmentRight)
-			_ = t.SetAlignment(3, tables.AlignmentRight)
+			if rowCounts {
+				t, _ := tables.New([]string{"Schema", "Name", "Columns", "Rows"})
+				_ = t.SetOrderBy("Name")
+				_ = t.SetAlignment(2, tables.AlignmentRight)
+				_ = t.SetAlignment(3, tables.AlignmentRight)
 
-			for _, row := range resp.Tables {
-				_ = t.AddRowItems(row.Schema, row.Name, row.Columns, row.Rows)
+				for _, row := range resp.Tables {
+					_ = t.AddRowItems(row.Schema, row.Name, row.Columns, row.Rows)
+				}
+
+				t.Print(ui.OutputFormat)
+			} else {
+				t, _ := tables.New([]string{"Schema", "Name", "Columns"})
+				_ = t.SetOrderBy("Name")
+				_ = t.SetAlignment(2, tables.AlignmentRight)
+
+				for _, row := range resp.Tables {
+					_ = t.AddRowItems(row.Schema, row.Name, row.Columns)
+				}
+
+				t.Print(ui.OutputFormat)
 			}
-
-			t.Print(ui.OutputFormat)
 		} else if ui.OutputFormat == ui.JSONIndentedFormat {
 			var b []byte
 
