@@ -471,7 +471,7 @@ table column that doesn't exist, or not having permissions for the requested ope
 ### GET /tables <a name="listtables"></a>
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
-containing an array of strings, each of which is a table name that the current user has
+containing an array of objects, each of which describes a table that the current user has
 read access to.
 
 Because the list of tables might be quite long, you can specify URL parameters that limit
@@ -481,6 +481,57 @@ the result set:
 |:--------- |:---------- |:----------- |
 | limit     | ?limit=10  | Return at most this many rows from the result set |
 | start     | ?start=100 | Specify the first row of the result set (1-based) |
+| rowcounts     | ?rowcounts=false | Do not return row counts in the result |
+
+&nbsp;
+&nbsp;
+
+The `rowcounts` parameter defaults to `true`; the tables list operation will include the
+number of rows in the table in the result set. However, for very large tables this may
+become a performance problem, so the caller can request that the server not get the row
+count. When `rowcounts` is set to false, then the row count is always zero.
+
+The result of the call is an object with two fields, `count` and `tables`. The `count`
+is the number of tables returned in this REST call. The `tables` are an array of table
+objects, with the following fields:
+
+
+| Parameter | Type  | Description |
+|:--------- |:----- |:----------- |
+| name     | string | The name of the table |
+| schema   | string | The username for the database schema  |
+| columns  | int    | Count of columns in the table |
+| rows     | int    | Count of rows in the table |
+
+&nbsp;
+&nbsp;
+
+Here is an example of the result data when the call is made by the user "smith", returning three
+available tables of info:
+
+{
+  "tables": [
+    {
+      "name": "Accounts",
+      "schema": "smith",
+      "columns": 2,
+      "rows": 8
+    },
+    {
+      "name": "simple",
+      "schema": "smith",
+      "columns": 2,
+      "rows": 1053
+    },
+    {
+      "name": "test5",
+      "schema": "smith",
+      "columns": 1,
+      "rows": 23
+    }
+  ],
+  "count": 3
+}
 
 &nbsp;
 &nbsp;

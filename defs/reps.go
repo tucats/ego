@@ -25,6 +25,7 @@ type Table struct {
 	Name        string `json:"name"`
 	Schema      string `json:"schema,omitempty"`
 	Columns     int    `json:"columns"`
+	Rows        int    `json:"rows"`
 	Description string `json:"description,omitempty"`
 }
 
@@ -79,9 +80,9 @@ type ServerInfo struct {
 }
 
 type LoggingItem struct {
-	Filename string          `json:"file,omitempty"`
-	RetainCount     int             `json:"keep"`
-	Loggers  map[string]bool `json:"loggers,omitempty"`
+	Filename    string          `json:"file,omitempty"`
+	RetainCount int             `json:"keep"`
+	Loggers     map[string]bool `json:"loggers,omitempty"`
 }
 
 type LoggingResponse struct {

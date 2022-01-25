@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
@@ -368,13 +369,23 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.StartParameterName: "int",
-		defs.LimitParameterName: "int",
-		defs.UserParameterName:  "string",
+		defs.StartParameterName:    "int",
+		defs.LimitParameterName:    "int",
+		defs.UserParameterName:     "string",
+		defs.RowCountParameterName: "bool",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
+	}
+
+	// Currently, the default is to include row counts in the listing. You
+	// could change this in the future if it proves too inefficient.
+	includeRowCounts := true
+
+	v := r.URL.Query()[defs.RowCountParameterName]
+	if len(v) == 1 {
+		includeRowCounts = datatypes.GetBool(v[0])
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -433,10 +444,37 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					}
 				}
 
+				// Let's also count the rows. This may become too expensive but let's try it.
+				rowCount := 0
+
+				if includeRowCounts {
+					q := queryParameters(rowCountQuery, map[string]string{
+						"schema": user,
+						"table":  name,
+					})
+
+					ui.Debug(ui.TableLogger, "[%d] Reading row count with query %s", sessionID, q)
+
+					result, e2 := db.Query(q)
+					if !errors.Nil(e2) {
+						ErrorResponse(w, sessionID, e2.Error(), http.StatusInternalServerError)
+
+						return
+					}
+
+					defer result.Close()
+
+					if result.Next() {
+						_ = result.Scan(&rowCount)
+					}
+				}
+
+				// Package up the info for this table to add to the list.
 				names = append(names, defs.Table{
 					Name:    name,
 					Schema:  user,
 					Columns: columnCount,
+					Rows:    rowCount,
 				})
 			}
 

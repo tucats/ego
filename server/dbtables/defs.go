@@ -11,6 +11,7 @@ const (
 	permissionsDeleteAllQuery   = `DELETE FROM admin.privileges WHERE tablename = $1`
 	permissionsInsertQuery      = `INSERT INTO admin.privileges (username, tablename, permissions) VALUES($1, $2, $3)`
 	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
+	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
 
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
