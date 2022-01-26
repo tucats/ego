@@ -503,8 +503,28 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ## Assets <a name="heartbeat"></a>
+The _Ego_ server has the ability to serve up arbitrary file contents to a REST caller. These
+are referred to as "assets" and are typically things like image files, javascript payloads, 
+etc. that are created by the administrator of an instance of an _Ego_ web server, to support
+services written in _Ego_.
 
-_This section not documented yet._
+The only supported method is "GET"
+
+### GET /assets/_path_
+
+The "GET" operation reads an asset from the disk in the library part of the _Ego_ path. The
+root of this location is typically _EGO_PATH_/lib/services/assets/ followed by the path
+expressed in the REST URL call. You can only GET items, you cannot modify them or list
+them.
+
+Note that when an asset is read, it is also cached in memory (see the documentation on
+[caching](#caches) for more information). You can also see an example of an assset being
+read in the service located at _EGO_PATH_/lib/services/templates/memory.html which references
+an asset in HTML for a graphical image.
+
+     <!-- The asset must have a root path of /assets to be located properly --> 
+     <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
+     
 
 &nbsp;
 &nbsp; 
@@ -1050,3 +1070,140 @@ specific to the needs of the end users.
 There are a number of /services endpoints provided in the default installation, and at least
 one (the /services/admin/logon endpoint) is required for a secure, authenticated server. This
 section will describe the endpoints provided in the default deployment.
+
+By convention, the _EGO_PATH_/services directory includes a number of subdirectories to support
+functions of an _Ego_ web server.
+
+| Subdirectory | Description |
+|:------------ |:----------- |
+| admin        | Contains services to support administrative and debugging services, such as logon |
+| assets       | Contains any static resources that are served via the /assets endpoint, such as images |
+| templates    | Contains static template files (usually) HTML that are used by services. |
+
+You can see examples of this by examining the /services/admin/memory endpoint. 
+
+* The code that is loaded and run is in the admin/memory.ego file. This is the primary endpoint name.
+* The code uses a template located in the /templates directory that forms the HTML component of the result
+* The template includes references to read a PNG image from the /assets directory in forming the web page
+
+## Example Service Code
+Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
+
+
+    import "http"
+
+    func mb(f float64) string {
+        return fmt.Sprintf("%3.2fmb", f)
+    }
+
+    func handler( req http.Request, resp http.Response ) {
+
+        // Prepare the data to be used by the page.
+        m := util.Memory()
+        pageData := { 
+            Allocated: mb(m.current),
+            Total: mb(m.total),
+            System: mb(m.system),
+            GC: m.gc,
+            ID: _session,
+            Date: time.Now().String(),
+            Host: os.Hostname(),
+        }
+
+        // Given a path to the template asset, write the page using the
+        // dynamically generated data
+        resp.WriteTemplate("lib/services/templates/memory.html", pageData)
+
+    }
+
+The service always calls the `handler` entrypoint, and always passes in the request
+and response objects. The services uses the built-in `util.Memory()` function to get
+information about the system memory usage. It then extracts the data it wants to
+send to the user, including using the local `mb()` function defined in the service
+file to format bytes as megabytes.
+
+Finally, the code uses the `resp.WriteTemplate()` function to reference a template
+file, and provide the values that are to be plugged into the template file. The
+template processor reads the template file, performs any substitutions in the template
+from the supplied data structure (so that a reference to `{{.Total}}` in the template
+is replaced with the value of `pageData.Total` from the supplied data structure).
+
+## Example Template File
+
+The template contains the actual HTML text that will be sent back as the response to
+the query (via `resp.WriteTemplate()` in the service code). 
+
+The template contains
+both static text, and substitution operators, which are identified by being enclosed
+in double-braces, such as `{{.Total}}` which is a substutiton operator for a field
+named `Total` in the data structure supplied with the template. This allows the
+template to contain the design/formatting code needed to present the desired page,
+while variable values can be injected as part of the template processing.
+
+Here is the associated template file, located in lib/services/templates/memory.html:
+
+    <!DOCTYPE html>
+    <!-- Demo web page dynamically rendered by a service. -->
+    <html>
+        <head>
+            <title>Ego Memory ({{.Host}})</title>
+            <style>
+                table,
+                td,
+                th {
+                    border: none;
+                    width: 400px;
+                    border-collapse: collapse;
+                }
+            </style>
+        </head>
+
+        <body>
+            <table style="border: none;width: 440px;border-collapse:collapse">
+                <tr>
+                    <td>
+                        <!-- The asset must have a root path of /assets to be located properly -->
+                        <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
+                    </td>
+                    <td>
+                        <h1>&nbsp;&nbsp; Memory Statistics</h1>
+                    </td>
+                </tr>
+            </table>
+            <br> <br>{{.Date}}
+            <p>
+                <table>
+                    <tr>
+                        <td>Currently allocated</td>
+                        <td style="text-align: right">{{.Allocated}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total allocated</td>
+                        <td style="text-align: right">{{.Total}}</td>
+                    </tr>
+                    <tr>
+                        <td>System memory</td>
+                        <td style="text-align: right">{{.System}}</td>
+                    </tr>
+                    <tr>
+                        <td>Garbage collections</td>
+                        <td style="text-align: right">{{.GC}}</td>
+                    </tr>
+                </table>
+                <br> Server {{.Host}}, session {{.ID}}
+                <br>
+        </body>
+    </html>
+
+
+Note the references to substitution operators throughout the page, showing where the
+text of the service data structure items are injected into the HTML page that is
+sent back to the caller.
+
+Also note that there is a reference to an image via an img src="..." tag. This 
+will case the web brower presenting the HTML to make a second call to the _Ego_
+web server to retrieve the image from the assets directory on the web server.
+
+
+
+
