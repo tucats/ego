@@ -45,10 +45,10 @@ Example:
 
 &nbsp; 
 &nbsp;
-* Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.html). 
-* Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.html)
-* Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](TABLES.html)
-* Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](API.html)
+* Details on the _Ego_ language can be found in the [Language Reference](LANGUAGE.md). 
+* Details on using _Ego_ as a web server are in [Ego Web Server](SERVER.md)
+* Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](TABLES.md)
+* Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](API.md)
 
 &nbsp; 
 &nbsp;
