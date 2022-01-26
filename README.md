@@ -46,7 +46,7 @@ Example:
 &nbsp; 
 &nbsp;
 * Details on the _Ego_ language can be found in the [Language Reference](docs/LANGUAGE.md). 
-* Details on using _Ego_ as a web server are in [Ego Web Server](docs/docs/SERVER.md)
+* Details on using _Ego_ as a web server are in [Ego Web Server](docs/SERVER.md)
 * Details on using _Ego_ as a command-line database are in [Ego Table Server Commands](docs/TABLES.md)
 * Details on connecting to _Ego_ as a REST-based server are in [Ego Server APIs](docs/API.md)
 
