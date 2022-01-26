@@ -6,7 +6,7 @@
 
 
 
-# Introduction
+# Introduction to Ego
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
 scripting language similar to _Go_. Think of this as _Emulated Go_. The
 command can either run a program interactively, start a REST server that uses _Ego_
@@ -26,8 +26,8 @@ This prints the value 15. You can enter virtually any program statement that wil
 one line using the interactive command mode. To finish entering _Ego_ statements, use
 the command `exit`. You can also pipe a program directly to _Ego_, as in
 
-   echo 'print 3+5' | ego
-   8
+    echo 'print 3+5' | ego
+    8
 
 Note that in this example, the _Ego_ language extension verb `print` is used in place
 of the more formal `fmt.Println()` call. See the [Language Reference](#LANGUAGE.MD) for 
