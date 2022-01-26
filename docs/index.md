@@ -1,3 +1,11 @@
+      ___                                  _
+     / _ \  __   __   ___   _ __  __   __ (_)   ___  __      __
+    | | | | \ \ / /  / _ \ | '__| \ \ / / | |  / _ \ \ \ /\ / /
+    | |_| |  \ V /  |  __/ | |     \ V /  | | |  __/  \ V  V /
+     \___/    \_/    \___| |_|      \_/   |_|  \___|   \_/\_/
+
+
+
 # Introduction
 The `ego` command-line tool is an implementation of the _Ego_ language, which is an
 scripting language similar to _Go_. Think of this as _Emulated Go_. The

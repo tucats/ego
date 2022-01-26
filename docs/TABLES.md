@@ -1,4 +1,13 @@
-# Tables
+
+     _____           _       _
+    |_   _|   __ _  | |__   | |   ___   ___
+      | |    / _` | | '_ \  | |  / _ \ / __|
+      | |   | (_| | | |_) | | | |  __/ \__ \
+      |_|    \__,_| |_.__/  |_|  \___| |___/
+
+
+
+# Ego Table Services
 
 The _Ego_ server can be used as a REST-based database, with standard database
 operations like insert, update, delete that are ACID-compliant database 
