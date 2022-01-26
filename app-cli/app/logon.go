@@ -92,19 +92,25 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Create a new client, set it's attribute for basic authentication, and
 	// generate a request. The request is made using the logon agent info.
 	// Finall, call the endpoint.
-	restClient := resty.New().SetDisableWarn(true).SetBasicAuth(user, pass)
+	restClient := resty.New().SetDisableWarn(true)
 	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
 		restClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
 	req := restClient.NewRequest()
-	req.Header.Set("Accept", defs.JSONMediaType)
+	req.Body = defs.Credentials{Username: user, Password: pass}
 
+	if ui.LoggerIsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(req.Body, "", "  ")
+		ui.Debug(ui.RestLogger, "REST Request:\n%s", string(b))
+	}
+
+	req.Header.Set("Accept", defs.JSONMediaType)
 	runtime.AddAgent(req, defs.LogonAgent)
 
-	ui.Debug(ui.DebugLogger, "REST GET %s", url)
+	r, err := req.Post(url)
 
-	r, err := req.Get(url)
+	ui.Debug(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
@@ -116,9 +122,9 @@ func Logon(c *cli.Context) *errors.EgoError {
 			return errors.New(err).Context("logon")
 		}
 
-		if ui.LoggerIsActive(ui.DebugLogger) {
+		if ui.LoggerIsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(payload, "", "  ")
-			ui.Debug(ui.DebugLogger, "REST Response:\n%s", string(b))
+			ui.Debug(ui.RestLogger, "REST Response:\n%s", string(b))
 		}
 
 		settings.Set(defs.LogonTokenSetting, payload.Token)

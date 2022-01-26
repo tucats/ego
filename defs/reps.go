@@ -6,6 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // The payload for the status check "/up" endpoint.
 type RemoteStatusResponse struct {
 	Pid      int    `json:"pid"`

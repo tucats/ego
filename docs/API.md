@@ -33,20 +33,26 @@ for this is for the client to "log in" the user, and receive an encrypted token
 in return. This token can be presented to any other API to authenticate the user
 for the functions of that API.
 
-To authenticate, use a "GET" method to the endpoint "/services/admin/logon". The
-request must:
+To authenticate, you can use a "GET" or a "POST method to the endpoint "/services/admin/logon". 
+
+## GET /services/admin/logon
+Use GET when you wish to use Basic authentication in the HTTP header to send the
+username and password for logon. The request must:
 
 * Use BASIC authentication to pass the username and password to the service. 
 * Specify that the reply type accepted is "application/json"
 
-The result is a JSON payload indicating if there was an error or not, and
-the resulting secure token if the credntials were valid. The credentials must
-match the username and password stored in the _Ego_ server credentials data 
-store; you can use `ego` CLI commands to view and modify this store, as well
-as `/admin` endpoints described below to read, update, or delete entries in
+The rest status will either be a status of 403 indicating that the credentials 
+are invalid, or 200 indicating that the credentials were valid.
+
+The response payload is a JSON object with the resulting secure token if 
+the credntials were valid. The credentials must match the username and 
+password stored in the _Ego_ server credentials data store; you can use 
+`ego` CLI commands to view and modify this store, as well as `/admin` 
+endpoints described below to read, update, or delete entries in
 the credentials store.
 
-The resulting JSON payload is a struct with the following fields:
+The resulting JSON payload is an object with the following fields:
 
 | Field     | Description |
 | :-------- |:----------- |
@@ -60,7 +66,79 @@ Here is an example response payload:
 
     {
       "expires": "Fri Jan 21 13:12:25 EST 2022",
-      "identity": "admin",
+      "identity": "joesmith",
+      "issuer": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+      "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
+    }
+
+&nbsp;
+
+It is the responsibility of the application to extract the `token` field from
+the resulting payload and store it away to use for subsequent REST API 
+operations. When using this token, it should be used as a Bearer token in 
+subsequent REST operations as the `Authentication: Bearer` header.
+
+A less secure mechanism can be used to authenticate, by providing username
+and password credentials using the `Authentication: Basic` header, followed
+by a Base64 encoding of the "username:password" string. This can be used for
+initial development and debugging, but an authenticated token is the preferred
+way to interact with the table services. In the future, the `Basic` authentication
+support may be removed, requiring a `Bearer` token authentication.
+
+&nbsp;
+&nbsp;
+
+## POST /services/admin/logon
+Alternatively, if you do not want to use an authentication header in this initial
+communication, you can use a "POST" method to the same endpoint with a JSON
+payload with an object containing two field. For TLS/SSL-based communication, this
+embeds the credentials inside the encrypted body of the request which can be more
+secure. The request body must contain the following two fields:
+
+&nbsp;
+
+| Field     | Description |
+| :-------- |:----------- |
+| username   | A string containing username of the credentials |
+| password   | A string containing password of the credentials |
+
+Here is an example request payload for the logon operation, with a string for 
+the username and a string for the password:
+
+    {
+        "username": "joesmith",
+        "password": "3h97q-k35Z5"
+    }
+    
+
+&nbsp;
+
+The REST call will result in either be a status of 403 indicating that 
+the credentials are invalid, or 200 indicating that the credentials were 
+valid.
+
+The response payload is a JSON object with the resulting secure token if 
+the credntials were valid. The credentials must match the username and 
+password stored in the _Ego_ server credentials data store; you can use 
+`ego` CLI commands to view and modify this store, as well as `/admin` 
+endpoints described below to read, update, or delete entries in
+the credentials store.
+
+The resulting JSON payload is an object with the following fields:
+
+| Field     | Description |
+| :-------- |:----------- |
+| expires   | A string containing the timestamp of when the token expires |
+| issuer    | A UUID of the _Ego_ server instance that created the token |
+| token     | A variable-length string containing the token text itself. |
+| identity  | The username encoded within the token. |
+
+Here is an example response payload:
+&nbsp;
+
+    {
+      "expires": "Fri Jan 21 13:12:25 EST 2022",
+      "identity": "joesmith",
       "issuer": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
       "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
     }

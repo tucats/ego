@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -277,6 +278,25 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	auth := r.Header.Get("Authorization")
 
+	// If there are no authentication credentials provided, but the method is PUT with a payload
+	// containing credentials, use them.
+
+	if auth == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+		credentials := defs.Credentials{}
+
+		err := json.NewDecoder(r.Body).Decode(&credentials)
+		if errors.Nil(err) && credentials.Username != "" && credentials.Password != "" {
+			// Create the authorization header from the payload
+			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
+			r.Header.Set("Authorization", auth)
+			ui.Debug(ui.AuthLogger, "[%d] synthesized request body credntials for user %s", sessionID, credentials.Username)
+		} else {
+			ui.Debug(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
+		}
+	}
+
+	// If there was no autheorization item, or the credentials payload was incorrectly formed,
+	// we don't really have any credentials to use.
 	if auth == "" {
 		// No authentication credentials provided
 		authenticatedCredentials = false
