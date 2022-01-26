@@ -289,7 +289,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			// Create the authorization header from the payload
 			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			r.Header.Set("Authorization", auth)
-			ui.Debug(ui.AuthLogger, "[%d] synthesized request body credntials for user %s", sessionID, credentials.Username)
+			ui.Debug(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
 		} else {
 			ui.Debug(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
 		}
