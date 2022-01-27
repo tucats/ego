@@ -5,7 +5,7 @@
 #
 
 BASE=~/pg_backups
-FILE=$BASE/ego-tables-dump=$(date +%d.%m.%y-%H.%M.%S)
+FILE=$BASE/ego-tables-dump-$(date +%y.%m.%d-%H.%M.%S)
 
 echo Writing backup to $FILE
 
