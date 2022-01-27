@@ -33,14 +33,13 @@ you can specify the credentails to be used with the `ego.server.database.credent
 profile value. If the credentials are not specified, the current username is
 assumed, with no password.
 
-The database should be partitioned into schemas, one for each authenticated user
+The database will be partitioned into schemas, one for each authenticated user
 in _Ego_. By default, all database operations are done within the schema for the
-_Ego_ username. So for a username of `bob`,
+_Ego_ username. So for a username of `bob`, the Ego server will execute:
 
     create schema bob;
 
-will create the schema using the PSQL command line interface to Postgres. At
-this time, there is no CLI interface to perform this operation.
+to create the schema whenever the schema is referenced by a valid user id.
 
 Additionally, there should always be a schema of admin, which contains data
 needed for the security checks done on behalf of an Ego user.  This should
@@ -55,7 +54,7 @@ always include a table named `privileges` which contains three string columns.
 The columns serve the following functions:
 
 | Column      | Description |
-| ----------- | ----        |
+|:----------- |:----        |
 | username    | The _Ego_ username being granted permissions |
 | tablename   | The database table for which permissions are granted |
 | permissions | A comma-separated list of the permissions (read,update,delete) |
@@ -66,7 +65,7 @@ for their username and the name of the database they want to access, and a strin
 value containing the allowed permissions.
 
 | Permission | Description |
-| ---------- | ------------|
+|:---------- |:------------|
 | read       | User can see the table in a `list` operation, and read rows from the table |
 | update     | User can insert, delete or update rows in the table |
 | delete     | User can delete the table |
@@ -184,7 +183,7 @@ Note that the order of the rows in unpredictable (in practice, it usually is in 
 order the items were added or last updated, but this is not guaranteed). You can specify
 the order of the output using the `--order-by` command option:
 
-   user@Macbook ~ % ./ego table read simple --order-by id
+    user@Macbook ~ % ./ego table read simple --order-by id
     id     name    
     ===    ====    
     101    Tom     
@@ -198,7 +197,7 @@ the order of the output using the `--order-by` command option:
 You can further influence the output by specifying filters that are applied to the
 query to select specific rows. For example,
 
-   user@Macbook ~ % ./ego table read simple filter='id < 200' --order-by id
+    user@Macbook ~ % ./ego table read simple filter='id < 200' --order-by id
     id     name    
     ===    ====    
     101    Tom     
@@ -209,7 +208,7 @@ query to select specific rows. For example,
 This limites the output to only rows where the `id` column is less than the value
 200. You can specify multiple filters separated by commas if needed:
 
-   user@Macbook ~ % ./ego table read simple filter='id < 200','name="Tom" --order-by id
+    user@Macbook ~ % ./ego table read simple filter='id < 200','name="Tom" --order-by id
     id     name    
     ===    ====    
     101    Tom     
