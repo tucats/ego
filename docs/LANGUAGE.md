@@ -1130,7 +1130,7 @@ ignores the result and it is discarded.
 Sometimes a function may have multiple places where it returns
 from, but always wants to execute the same block of code to
 clean up a function (for example, closing a file that had been
- opened). For example,
+ opened).
 
     func getName() bool {
         f := io.Open("name")
@@ -1210,10 +1210,10 @@ Note that when defined as a function literal, the `func` keyword
 is not followed by a function name, but instead contains the
 parameter list, return value type, and function body directly.  
 There is no meaningful difference between the above and declaring
- `func p(first string...` except that the variable `p` has scope
-  that might be limited to the current _basic block_ of code.  
-  You can even define a function as a parameter to another
-  function directly, as in:
+`func p(first string...` except that the variable `p` has scope
+that might be limited to the current _basic block_ of code.  
+You can even define a function as a parameter to another
+function directly, as in:
 
     func compare( fn interface{}, v1 interface{}, v2 interface) bool {
         return fn(v1, v2)
@@ -1386,8 +1386,8 @@ to be printed out.
 
 You can use the `try` statement to run a block of code (in the same
 scope as the enclosing statement) and catch any panic errors that
-occur during the execution of that block. The error causes the code
-to execute the code in the `catch` block of the statement.
+occur during the execution of that block. The error causes Ego
+to execute the code in the `catch` clause of the statement.
 If there are no errors,  execution continues after the catch block.
 For example:
 
@@ -1406,9 +1406,7 @@ divide-by-zero error. When this happens, the remainder of the statements
 
 You can optionally specify the name of a variable that will be created within
 the catch block that contains the actual error encountered. Do this by
-adding the name in parenthesis before the catch block. This can be used
-in the `catch` block if it needs handle more than one possible error. For
-example:
+adding the name in parenthesis before the catch block. 
 
     x := 0
     try {
@@ -1425,7 +1423,10 @@ If you need to catch a possible error in an expression, you can
 use a short-form of the `try` and `catch` that works within an
 expression.  Consider the following example:
 
-    emp := { name: "Donna", age: 32 }
+    emp := { 
+        name: "Donna", 
+        age: 32,
+    }
     
     hours := 40
     pay := emp.wage * hours
@@ -1437,10 +1438,13 @@ operation that might result in an error (division by zero, perhaps)
 that you have a useful default for, use the conditional expression
 syntax:
 
-    emp := { name: "Donna", age: 32 }
+    emp := { 
+        name: "Donna", 
+        age: 32,
+    }
     
     hours := 40
-    pay := ?emp.wage:25.0 * hours
+    pay := ?emp.wage : 25.0 * hours
 
 The "?" indicates that the following expression component (up to the ":")
 is wrapped in a try/catch block. If no error occurs, the expression is
@@ -1697,6 +1701,7 @@ without filling up memory with the entire result set at once.
 | r.Next() | Prepare the next row for reading. Returns false if there are no more rows
 | r.Scan() | Read the next row and create either a struct or an array of the row data
 | r.Close() | End reading rows and release any resources consumed by the rowset read.
+
 &nbsp;
 &nbsp;
 
