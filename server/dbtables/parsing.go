@@ -194,6 +194,10 @@ func columnList(u *url.URL) string {
 				names := strings.Split(name, ",")
 
 				for _, name := range names {
+					if len(name) == 0 {
+						continue
+					}
+
 					if result.Len() > 0 {
 						result.WriteRune(',')
 					}

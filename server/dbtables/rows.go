@@ -353,7 +353,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 
 			for _, name := range v {
-				excludeList[name] = false
+				nameParts := strings.Split(name, ",")
+				for _, part := range nameParts {
+					if part != "" {
+						excludeList[part] = false
+					}
+				}
 			}
 		}
 
