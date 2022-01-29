@@ -41,8 +41,8 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
-		if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
-			ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+			ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 			return
 		}
@@ -251,8 +251,8 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
-		if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
-			ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+			ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 			return
 		}
@@ -431,8 +431,8 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
 			q, values := formUpdateQuery(r.URL, user, data)
-			if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
-				ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+				ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 				return
 			}
@@ -470,4 +470,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	} else {
 		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func filterErrorMessage(q string) string {
+	if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+		return "filter error: " + q[p+len(syntaxErrorPrefix):]
+	}
+
+	return q
 }

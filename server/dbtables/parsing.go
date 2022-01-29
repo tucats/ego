@@ -81,7 +81,7 @@ func formWhereClause(filters []string) string {
 		for {
 			clause, err := filterClause(tokens)
 			if err != nil {
-				return "SYNTAX-ERROR:" + err.Error()
+				return syntaxErrorPrefix + err.Error()
 			}
 
 			result.WriteString(clause)

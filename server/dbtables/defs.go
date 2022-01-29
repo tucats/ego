@@ -20,4 +20,6 @@ const (
 
 	sqlPseudoTable         = "@sql"
 	permissionsPseudoTable = "@permissions"
+
+	syntaxErrorPrefix = "SYNTAX-ERROR:"
 )
