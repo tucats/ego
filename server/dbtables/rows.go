@@ -41,6 +41,11 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
+		if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
+			ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+
+			return
+		}
 
 		ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
 
@@ -246,6 +251,11 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
+		if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
+			ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+
+			return
+		}
 
 		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
@@ -421,6 +431,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
 			q, values := formUpdateQuery(r.URL, user, data)
+			if p := strings.Index(q, "SYNTAX-ERROR:"); p > 0 {
+				ErrorResponse(w, sessionID, "filter error, "+q[p:], http.StatusBadRequest)
+
+				return
+			}
+
 			ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
 			counts, err := db.Exec(q, values...)
