@@ -311,6 +311,8 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
+	count := 0
+
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
@@ -355,50 +357,96 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 		}
 
-		var data map[string]interface{}
+		// For debugging, show the raw payload. We may remove this later...
+		buf := new(strings.Builder)
+		_, _ = io.Copy(buf, r.Body)
+		rawPayload := buf.String()
 
-		err = json.NewDecoder(r.Body).Decode(&data)
-		if err != nil {
-			ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
-			return
+		// Lets get the rows we are to update. This is either a row set, or a single object.
+		rowSet := defs.DBRows{}
+
+		err = json.Unmarshal([]byte(rawPayload), &rowSet)
+		if err != nil || len(rowSet.Rows) == 0 {
+			// Not a valid row set, but might be a single item
+			item := map[string]interface{}{}
+
+			err = json.Unmarshal([]byte(rawPayload), &item)
+			if err != nil {
+				ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+
+				return
+			} else {
+				rowSet.Count = 1
+				rowSet.Rows = make([]map[string]interface{}, 1)
+				rowSet.Rows[0] = item
+				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+			}
+		} else {
+			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// Anything in the data map that is on the exclude list is removed
 		ui.Debug(ui.TableLogger, "[%d] exclude list = %v", sessionID, excludeList)
 
-		for key, excluded := range excludeList {
-			if excluded {
-				delete(data, key)
+		// Start a transaction to ensure atomicity of the entire update
+		tx, _ := db.Begin()
+
+		// Loop over the row set doing the insert
+		for _, data := range rowSet.Rows {
+			hasRowID := false
+
+			if v, found := data[defs.RowIDName]; found {
+				if datatypes.GetString(v) != "" {
+					hasRowID = true
+				}
+			}
+
+			for key, excluded := range excludeList {
+				if key == defs.RowIDName && hasRowID {
+					continue
+				}
+
+				if excluded {
+					delete(data, key)
+				}
+			}
+
+			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
+
+			q, values := formUpdateQuery(r.URL, user, data)
+			ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+
+			counts, err := db.Exec(q, values...)
+			if err == nil {
+				rowsAffected, _ := counts.RowsAffected()
+				count = count + int(rowsAffected)
+			} else {
+				ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+				_ = tx.Rollback()
+
+				return
 			}
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
-
-		q, values := formUpdateQuery(r.URL, user, data)
-		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
-
-		counts, err := db.Exec(q, values...)
-		if err == nil {
-			rows, _ := counts.RowsAffected()
-			result := defs.DBRowCount{
-				Count: int(rows),
-			}
-
-			b, _ := json.MarshalIndent(result, "", "  ")
-			_, _ = w.Write(b)
-
-			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
-
-			return
+		if errors.Nil(err) {
+			err = tx.Commit()
+		} else {
+			_ = tx.Rollback()
 		}
-
-		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
-
-		return
 	}
 
-	if !errors.Nil(err) {
+	if errors.Nil(err) {
+		result := defs.DBRowCount{
+			Count: count,
+		}
+
+		b, _ := json.MarshalIndent(result, "", "  ")
+		_, _ = w.Write(b)
+
+		ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
+	} else {
 		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
 }

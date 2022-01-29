@@ -436,23 +436,55 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	result.WriteString(table)
 
 	keys := util.InterfaceMapKeys(items)
-	values := make([]interface{}, len(keys))
+	keyCount := len(keys)
 
-	// Loop over the item names and add SET clauses for each one
-	for i, key := range keys {
-		values[i] = items[key]
+	if _, found := items[defs.RowIDName]; found {
+		keyCount--
+	}
 
-		if i == 0 {
+	values := make([]interface{}, keyCount)
+
+	// Loop over the item names and add SET clauses for each one. We always
+	// ignore the rowid value because you cannot update it on an UPDATE call;
+	// it is only set on an insert.
+	filterCount := 0
+
+	for _, key := range keys {
+		if key == defs.RowIDName {
+			continue
+		}
+
+		values[filterCount] = items[key]
+
+		if filterCount == 0 {
 			result.WriteString(" SET ")
 		} else {
 			result.WriteString(", ")
 		}
 
+		filterCount++
+
 		result.WriteString("\"" + key + "\"")
-		result.WriteString(fmt.Sprintf(" = $%d", i+1))
+		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	if where := filterList(u); where != "" {
+	where := filterList(u)
+
+	// If the items we are updating includes a non-empty rowID, then graft it onto
+	// the filter string.
+	if id, found := items[defs.RowIDName]; found {
+		idString := datatypes.GetString(id)
+		if idString != "" {
+			if where == "" {
+				where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
+			} else {
+				where = where + " " + defs.RowIDName + " = '" + idString + "'"
+			}
+		}
+	}
+
+	// If we have a filter string now, add it to the query.
+	if where != "" {
 		result.WriteString(" " + where)
 	}
 
