@@ -809,26 +809,28 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	if errors.Nil(err) && response != nil {
 		body := string(resp.Body())
-		if !util.InList(body[0:1], "{", "[", "\"") {
-			r := defs.RestResponse{
-				Status:  resp.StatusCode(),
-				Message: strings.TrimSuffix(body, "\n"),
+		if body != "" {
+			if !util.InList(body[0:1], "{", "[", "\"") {
+				r := defs.RestResponse{
+					Status:  resp.StatusCode(),
+					Message: strings.TrimSuffix(body, "\n"),
+				}
+				b, _ := json.Marshal(r)
+				body = string(b)
 			}
-			b, _ := json.Marshal(r)
-			body = string(b)
-		}
 
-		err = json.Unmarshal([]byte(body), response)
-		if errors.Nil(err) && ui.LoggerIsActive(ui.RestLogger) {
-			responseBytes, _ := json.MarshalIndent(response, "", "  ")
+			err = json.Unmarshal([]byte(body), response)
+			if errors.Nil(err) && ui.LoggerIsActive(ui.RestLogger) {
+				responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-			ui.Debug(ui.RestLogger, "Response:\n%s", string(responseBytes))
-		}
+				ui.Debug(ui.RestLogger, "Response:\n%s", string(responseBytes))
+			}
 
-		if err == nil && status != http.StatusOK {
-			if m, ok := response.(map[string]interface{}); ok {
-				if msg, ok := m["Message"]; ok {
-					err = errors.NewMessage(datatypes.GetString(msg))
+			if err == nil && status != http.StatusOK {
+				if m, ok := response.(map[string]interface{}); ok {
+					if msg, ok := m["Message"]; ok {
+						err = errors.NewMessage(datatypes.GetString(msg))
+					}
 				}
 			}
 		}

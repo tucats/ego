@@ -3,6 +3,7 @@ package dbtables
 import (
 	"database/sql"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
@@ -91,9 +92,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
+		// Get the column metadata for the table we're insert into, so we can validate column info.
 		var columns []defs.DBColumn
-
-		var data map[string]interface{}
 
 		tableName, _ = fullName(user, tableName)
 
@@ -104,72 +104,105 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		err = json.NewDecoder(r.Body).Decode(&data)
-		if err != nil {
-			ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+		buf := new(strings.Builder)
+		_, _ = io.Copy(buf, r.Body)
+		rawPayload := buf.String()
+
+		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
+
+		// Lets get the rows we are to insert. This is either a row set, or a single object.
+		rowSet := defs.DBRows{}
+
+		err = json.Unmarshal([]byte(rawPayload), &rowSet)
+		if err != nil || len(rowSet.Rows) == 0 {
+			// Not a valid row set, but might be a single item
+			item := map[string]interface{}{}
+
+			err = json.Unmarshal([]byte(rawPayload), &item)
+			if err != nil {
+				ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+
+				return
+			} else {
+				rowSet.Count = 1
+				rowSet.Rows = make([]map[string]interface{}, 1)
+				rowSet.Rows[0] = item
+				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+			}
+		} else {
+			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
+		}
+
+		// If we're showing our payload in the log, do that now
+		if ui.LoggerIsActive(ui.RestLogger) {
+			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, string(b))
+		}
+
+		// If at this point we have an empty row set, then just bail out now. Return a success
+		// status but an indicator that nothing was done.
+		if len(rowSet.Rows) == 0 {
+			ErrorResponse(w, sessionID, "No rows found in INSERT payload", http.StatusNoContent)
 
 			return
 		}
 
-		// Is this the model where there is a rows array? If so and there is a
-		// single item in it, assume that is our data dicctionary
-		if rows, found := data["rows"]; found {
-			if rowArray, ok := rows.([]interface{}); ok {
-				if len(rowArray) == 1 {
-					x := rowArray[0]
-					if rowData, ok := x.(map[string]interface{}); ok {
-						data = rowData
-					}
+		// For any object in the payload, we must assign a UUID now. This overrides any previous
+		// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
+		// on input only.
+		for n := 0; n < len(rowSet.Rows); n++ {
+			rowSet.Rows[n][defs.RowIDName] = uuid.New().String()
+		}
+
+		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
+		// be just one row.
+		tx, _ := db.Begin()
+		count := 0
+
+		for _, row := range rowSet.Rows {
+			for _, column := range columns {
+				v, ok := row[column.Name]
+				if !ok {
+					ErrorResponse(w, sessionID, "Invalid column in request payload: "+column.Name, http.StatusBadRequest)
+
+					return
+				}
+
+				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
+				if keywordMatch(column.Type, "time", "date", "timestamp") {
+					text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
+					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
+					ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
 				}
 			}
-		}
 
-		if ui.LoggerIsActive(ui.RestLogger) {
-			//buf := new(bytes.Buffer)
-			//buf.ReadFrom(r.Body)
-			//s := buf.String()
-			b, _ := json.MarshalIndent(data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			q, values := formInsertQuery(r.URL, user, row)
+			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 
-			ui.Debug(ui.RestLogger, "[%d] REST Request payload:\n%s", sessionID, string(b))
-		}
-
-		if _, found := data[defs.RowIDName]; !found {
-			data[defs.RowIDName] = uuid.New().String()
-		}
-
-		for _, column := range columns {
-			v, ok := data[column.Name]
-			if !ok {
-				ErrorResponse(w, sessionID, "Invalid column in request payload: "+column.Name, http.StatusBadRequest)
-
-				return
-			}
-
-			// If it's one of the date/time values, make sure it is wrapped in single qutoes.
-			if keywordMatch(column.Type, "time", "date", "timestamp") {
-				text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
-				data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-				ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, data[column.Name])
+			_, err := db.Exec(q, values...)
+			if err == nil {
+				count++
 			}
 		}
 
-		q, values := formInsertQuery(r.URL, user, data)
-		ui.Debug(ui.TableLogger, "[%d] Insert rows with query: %s", sessionID, q)
-
-		counts, err := db.Exec(q, values...)
 		if err == nil {
-			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
-				Count: int(rows),
+				Count: count,
 			}
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
 
-			ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, rows)
+			err = tx.Commit()
+			if err == nil {
+				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows", sessionID, count)
 
-			return
+				return
+			}
 		}
+
+		_ = tx.Rollback()
 
 		ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 
