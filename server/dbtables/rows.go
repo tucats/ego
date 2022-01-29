@@ -111,6 +111,19 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
+		// Is this the model where there is a rows array? If so and there is a
+		// single item in it, assume that is our data dicctionary
+		if rows, found := data["rows"]; found {
+			if rowArray, ok := rows.([]interface{}); ok {
+				if len(rowArray) == 1 {
+					x := rowArray[0]
+					if rowData, ok := x.(map[string]interface{}); ok {
+						data = rowData
+					}
+				}
+			}
+		}
+
 		if ui.LoggerIsActive(ui.RestLogger) {
 			//buf := new(bytes.Buffer)
 			//buf.ReadFrom(r.Body)
