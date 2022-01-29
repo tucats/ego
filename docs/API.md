@@ -814,6 +814,15 @@ in double quotes, or a floating point value (such as 123.45).
 
 &nbsp;
 
+The result is called a "rowset" and consists of an object with two values.
+
+| Field | Description |
+|:----- |:----------- |
+| rows  | An array of JSON objects, representing a row. The field names are the column names, and the field value are the row values |
+| count | An integer value that indicates how many items were returned in the rows array |
+
+&nbsp;
+
 Here is an example output from the call to read rows. This table has two columns defined
 by the user, called `Number` and `Name`. There are two rows in the result set. Note that
 the result set also includes the synthetic column name `_row_id_` which contains a unique
@@ -853,9 +862,11 @@ will contain the following diagnostic fields as a JSON payload:
 
 
 ### PUT /tables/_table_/rows <a name="insertrows"></a>
-The PUT method inserts new rows into the table. The payload is a row descriptor
-which is a JSON object describing the values of each column in the row to be
-added. If a column is not specified in the body of the request, the corresponding
+The PUT method inserts new rows into the table. The payload is either a row 
+descriptor which is a JSON object describing the values of each column in 
+the row to be added, or a rowset which consists of an object with an array
+of row descriptors. The latter allows an insert of multiple rows at one time.
+If a column is not specified in the body of the request, the corresponding
 value in the table is null/zero.
 
 You do not need to specify a `_row_id_` item; this will be set for you when the
@@ -863,8 +874,8 @@ new row is created.
 
 &nbsp;
 
-Here is an example payload that can be sent to the server to insert a new row
-for account number 103 wtih name "Susan".
+Here is an example payload that can be sent to the server to insert a single
+new row for account number 103 wtih name "Susan".
 
 &nbsp;
 
@@ -879,6 +890,30 @@ If the row is successfully inserted, the result is a JSON object with a single f
 `count` which should contain the number 1. _In the future, it will be possible to
 insert multiple rows in a single call, in which case this value will reflect the number
 of rows inserted._
+
+You can also send a list of rows that are to be inserted using a rowset. Here is a 
+sample payload that inserts three rows as a single operation:
+&nbsp;
+
+    {
+        "rows" :[
+            {
+                "Name": "Susan",
+                "Number": 103
+            },
+            {
+                "Name": "Timmy",
+                "Number": 104
+            },
+            {
+                "Name": "Mike",
+                "Number": 105
+            }
+        ],
+        "count": 3
+    }
+
+&nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
@@ -910,17 +945,26 @@ example). If `columns` is not specified, then all fields in the request payload 
 
 &nbsp;
 
-If not specified, all rows will be updated using the same value. Use the `filter`
-option to select specific rows. You can reference the column values if they are
-sufficiently unique. You can also perform a GET operation to see the current
-values, and then use the `_row_id_` value from the result set to specify a single
-specific row to be updated.
+If a `_row_id_` field exists in the row representation, then *only* the matching row
+in the table with that exact ID will be update. If not specified, all rows will be updated 
+using the same value. In addition to a `_row_id_` you can use the `filter`
+option to select specific rows that are to be updated. You can reference the column values 
+if they are sufficiently unique. 
+
+A common usage is to perform a GET operation on the row(s) you wish to update so you have
+a rowset with all the IDs alreaady in them. You can then update the value(s) you wish in 
+the rowset, and then pass the rowset back for the PATCH operation to update the values. The
+presence of the `_row_id_` column in the rowset guarantees that only the rows in the rowset
+are updaed, and you may not need any further filtering. Note that in this case, you can still
+use the ?columns parameter to specify the columns in the rowset that are to be used for the
+update, and any other column info in the rowset is ignored.
 
 &nbsp;
 
 Here is an example payload that can be sent to the server to update the row
 for account number 101 to change the name to "Bob". The account number (and
-the synthetic row ID) are not modified by this operation.
+the synthetic row ID) are not modified by this operation. This assumes that
+only one row in the table has the given account number of 101.
 
 &nbsp;
 
