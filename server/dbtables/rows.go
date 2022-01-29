@@ -111,6 +111,15 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
+		if ui.LoggerIsActive(ui.RestLogger) {
+			//buf := new(bytes.Buffer)
+			//buf.ReadFrom(r.Body)
+			//s := buf.String()
+			b, _ := json.MarshalIndent(data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+			ui.Debug(ui.RestLogger, "[%d] REST Request payload:\n%s", sessionID, string(b))
+		}
+
 		if _, found := data[defs.RowIDName]; !found {
 			data[defs.RowIDName] = uuid.New().String()
 		}
