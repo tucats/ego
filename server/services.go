@@ -82,6 +82,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
+
 	if ui.LoggerIsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
 			if strings.EqualFold(headerName, "Authorization") {
@@ -549,4 +553,33 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
 	w.WriteHeader(status)
 	_, _ = w.Write(b)
+}
+
+func parameterString(r *http.Request) string {
+	m := r.URL.Query()
+	result := strings.Builder{}
+
+	for k, v := range m {
+		if result.Len() == 0 {
+			result.WriteRune('?')
+		} else {
+			result.WriteRune('&')
+		}
+
+		result.WriteString(k)
+
+		if len(v) > 0 {
+			result.WriteRune('=')
+
+			for n, value := range v {
+				if n > 0 {
+					result.WriteRune(',')
+				}
+
+				result.WriteString(value)
+			}
+		}
+	}
+
+	return result.String()
 }
