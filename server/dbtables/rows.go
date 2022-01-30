@@ -32,6 +32,10 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
 
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
@@ -86,6 +90,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	tableName, _ = fullName(user, tableName)
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
+
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
@@ -247,6 +255,10 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
 
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
@@ -372,7 +384,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 
 			for _, name := range v {
-				nameParts := strings.Split(name, ",")
+				nameParts := strings.Split(stripQuotes(name), ",")
 				for _, part := range nameParts {
 					if part != "" {
 						excludeList[part] = false
