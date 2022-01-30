@@ -13,6 +13,32 @@ const (
 	permissionsUpdateQuery      = `UPDATE admin.privileges SET permissions=$3 WHERE username=$1 AND tablename=$2`
 	rowCountQuery               = `SELECT COUNT(*) FROM "{{schema}}"."{{table}}"`
 
+	// Get a list of table columns that are nullable in the given schema.table.
+	nullableColumnsQuery = `SELECT  c.table_schema, 
+									c.table_name,
+									c.column_name,
+									case c.is_nullable
+										when 'NO' then false
+										when 'YES' then true
+									end as nullable
+									FROM information_schema.columns c
+									JOIN information_schema.tables t
+									ON c.table_schema = t.table_schema 
+										AND c.table_name = t.table_name
+									WHERE c.table_schema = '{{schema}}'
+										AND c.table_name = '{{table}}'
+										AND t.table_type = 'BASE TABLE' 
+									ORDER BY table_schema,
+										table_name,
+										column_name; `
+
+	// Get a list of the table columns that have UNIQUEness constraints.
+	uniqueColumnsQuery = `SELECT a.attname 
+							FROM   pg_index i  
+							JOIN   pg_attribute a 
+								ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) 
+							WHERE  i.indrelid = '{{schema}}.{{table}}'::regclass;   `
+
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
 	updateVerb = "UPDATE"

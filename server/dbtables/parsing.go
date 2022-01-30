@@ -619,8 +619,8 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 			result.WriteString(" UNIQUE")
 		}
 
-		if column.Nullable {
-			result.WriteString(" NULL")
+		if !column.Nullable {
+			result.WriteString(" NOT NULL ")
 		}
 	}
 

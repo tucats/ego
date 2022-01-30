@@ -224,18 +224,11 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			return
 		}
 
-		q := `SELECT a.attname 
-				FROM   pg_index i  
-	  			JOIN   pg_attribute a 
-					ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) 
-			 	WHERE  i.indrelid = '{{schema}}.{{table}}'::regclass;   `
-
-		q = queryParameters(q, map[string]string{
+		// Determine which columns must be unique
+		q := queryParameters(uniqueColumnsQuery, map[string]string{
 			"table": tableName,
 			"quote": "",
 		})
-
-		//ui.Debug(ui.TableLogger, "[%d] Getting indexes with query: %s", sessionID, q)
 
 		rows, err := db.Query(q)
 		if err != nil {
@@ -260,8 +253,48 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		ui.Debug(ui.TableLogger, "[%d] Unique columns: %v", sessionID, keys)
 
+		// Determine which columns are nullable.
+		q = queryParameters(nullableColumnsQuery, map[string]string{
+			"table": tableName,
+			"quote": "",
+		})
+
+		nrows, err := db.Query(q)
+		if err != nil {
+			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+			return
+		}
+
+		defer nrows.Close()
+
+		nullableColumns := map[string]bool{}
+		keys = []string{}
+
+		for nrows.Next() {
+			var schemaName, tableName, columnName string
+
+			var nullable bool
+
+			_ = nrows.Scan(&schemaName, &tableName, &columnName, &nullable)
+
+			if nullable {
+				nullableColumns[columnName] = true
+
+				keys = append(keys, columnName)
+			}
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] Nullable columns: %v", sessionID, keys)
+
+		// Get standard column names an type info.
 		columns, e2 := getColumnInfo(db, user, tableName, sessionID)
 		if errors.Nil(e2) {
+			// Determine which columns are nullable
+			for n, column := range columns {
+				columns[n].Nullable = nullableColumns[column.Name]
+			}
+
 			// Determine which columns are also unique
 			for n, column := range columns {
 				columns[n].Unique = uniqueColumns[column.Name]
