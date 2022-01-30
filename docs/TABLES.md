@@ -106,16 +106,37 @@ The following sections detail each command.
 The `create` command creates a new table, specified as the first parameter of the
 command line. This must be followed by one or more column specifications. A column
 specification consists of the column name, a `:` (colon) character, and the _Ego_
-data type for that column. If the column is also nullable, you can specify ",nullable"
-after the data type. If the column specification contains spaces, the entire column
-specification must be in quotes.
+data type for that column.  The valid types that you can specify for a table are:
+
+| Type    | Description |
+|:------- |:----------- |
+| string  | Varying length character string |
+| int     | Integer value |
+| int32   | Integer value expressed in 32-bits instead of 64 |
+| float32 | Real floating point value |
+| float64 | Double precision floating point value |
+| bool    | Boolean value (can only be `true` or `false`)
+
+
+Additionally, you can specify supported attributes of
+the column separated by commas after the type name.
+
+| Attribute | Description |
+|:--------- |:----------- |
+| nullable  | The column value is allowed by be a SQL null value |
+| unique    | The column values must be unique within the table |
+
+&nbsp;
+
+If the column specification contains spaces, the entire column
+specification must be in quotes. For example,
 
     
-    ego table create employees id:int last:string "first:string, nullable"
+    ego table create employees id:int first:string "last:string, unique, nullable"
 
 This creates a new table with three user-defined columns. The third specification is
 in quotes because there is a space after the comma. This could be expressed wtihout
-the quotes by removing the space character from the command.
+the quotes by removing the space characters from the specification.
 
 
 ## list

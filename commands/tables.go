@@ -98,15 +98,22 @@ func TableShow(c *cli.Context) *errors.EgoError {
 	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable"})
+			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable", "Unique"})
 			_ = t.SetOrderBy("Name")
 			_ = t.SetAlignment(2, tables.AlignmentRight)
 
 			for _, row := range resp.Columns {
-				_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable)
+				_ = t.AddRowItems(row.Name, row.Type, row.Size, row.Nullable, row.Unique)
 			}
 
 			t.Print(ui.OutputFormat)
+		} else if ui.OutputFormat == ui.JSONIndentedFormat {
+			var b []byte
+
+			b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			if errors.Nil(err) {
+				fmt.Printf("%s\n", string(b))
+			}
 		} else {
 			var b []byte
 

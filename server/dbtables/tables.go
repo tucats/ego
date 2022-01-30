@@ -224,8 +224,49 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			return
 		}
 
+		q := `SELECT a.attname 
+				FROM   pg_index i  
+	  			JOIN   pg_attribute a 
+					ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) 
+			 	WHERE  i.indrelid = '{{schema}}.{{table}}'::regclass;   `
+
+		q = queryParameters(q, map[string]string{
+			"table": tableName,
+			"quote": "",
+		})
+
+		//ui.Debug(ui.TableLogger, "[%d] Getting indexes with query: %s", sessionID, q)
+
+		rows, err := db.Query(q)
+		if err != nil {
+			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+			return
+		}
+
+		defer rows.Close()
+
+		uniqueColumns := map[string]bool{}
+		keys := []string{}
+
+		for rows.Next() {
+			var name string
+
+			_ = rows.Scan(&name)
+			uniqueColumns[name] = true
+
+			keys = append(keys, name)
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] Unique columns: %v", sessionID, keys)
+
 		columns, e2 := getColumnInfo(db, user, tableName, sessionID)
 		if errors.Nil(e2) {
+			// Determine which columns are also unique
+			for n, column := range columns {
+				columns[n].Unique = uniqueColumns[column.Name]
+			}
+
 			resp := defs.TableColumnsInfo{
 				Columns: columns,
 				Count:   len(columns),

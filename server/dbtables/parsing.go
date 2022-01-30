@@ -42,14 +42,19 @@ func stripQuotes(input string) string {
 }
 
 func queryParameters(source string, args map[string]string) string {
+	quote := "\""
+	if q, found := args["quote"]; found {
+		quote = q
+	}
+
 	// Before anything else, let's see if the table name was specified,
 	// and it contains a "dot" notation. If so, replace the schema name
 	// with the dot name prefix.
 	if tableName, ok := args[defs.TableParameterName]; ok {
 		dot := strings.Index(tableName, ".")
 		if dot >= 0 {
-			args[defs.TableParameterName] = "\"" + stripQuotes(tableName[dot+1:]) + "\""
-			args[defs.SchemaParameterName] = "\"" + stripQuotes(tableName[:dot]) + "\""
+			args[defs.TableParameterName] = quote + stripQuotes(tableName[dot+1:]) + quote
+			args[defs.SchemaParameterName] = quote + stripQuotes(tableName[:dot]) + quote
 		}
 	}
 
@@ -613,7 +618,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		if column.Unique {
 			result.WriteString(" UNIQUE")
 		}
-		
+
 		if column.Nullable {
 			result.WriteString(" NULL")
 		}
