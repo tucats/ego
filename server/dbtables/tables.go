@@ -227,8 +227,9 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		// Determine which columns must be unique
 		q := queryParameters(uniqueColumnsQuery, map[string]string{
 			"table": tableName,
-			"quote": "",
 		})
+
+		ui.Debug(ui.DebugLogger, "[%d] Read unique with query string: \n%s", sessionID, q)
 
 		rows, err := db.Query(q)
 		if err != nil {
@@ -258,6 +259,8 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"table": tableName,
 			"quote": "",
 		})
+
+		ui.Debug(ui.DebugLogger, "[%d] Read nullable with query string: \n%s", sessionID, q)
 
 		nrows, err := db.Query(q)
 		if err != nil {
