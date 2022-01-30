@@ -590,6 +590,8 @@ func parameterString(r *http.Request) string {
 		result.WriteString(k)
 
 		if len(v) > 0 {
+			result.WriteRune('=')
+
 			for n, value := range v {
 				if n > 0 {
 					result.WriteRune(',')
