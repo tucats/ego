@@ -351,14 +351,14 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 
 	// Upsert isn't always available, so delete any candidate row(s) before
 	// adding in the new one.
-	_, err := db.Exec(permissionsDeleteQuery, user, table)
+	_, err := db.Exec(permissionsDeleteQuery, stripQuotes(user), stripQuotes(table))
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error updating permissions: %v", sessionID, err)
 
 		return false
 	}
 
-	_, err = db.Exec(permissionsInsertQuery, user, table, permissionList)
+	_, err = db.Exec(permissionsInsertQuery, stripQuotes(user), stripQuotes(table), permissionList)
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error updating permissions: %v", sessionID, err)
 
@@ -377,7 +377,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	ui.Debug(ui.TableLogger, "[%d] Attempting to set %s permissions for %s to %s", sessionID, user, tableName, permissionNames)
 
-	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, user, tableName)
+	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, stripQuotes(user), stripQuotes(tableName))
 	if err != nil {
 		return errors.New(err).Context(user + ":" + tableName)
 	}
@@ -429,12 +429,12 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	context := "updating permissions"
 
-	result, err = db.Exec(permissionsUpdateQuery, user, tableName, permissions)
+	result, err = db.Exec(permissionsUpdateQuery, stripQuotes(user), stripQuotes(tableName), permissions)
 	if err == nil {
 		if rowCount, _ := result.RowsAffected(); rowCount == 0 {
 			context = "adding permissions"
 
-			_, err = db.Exec(permissionsInsertQuery, user, tableName, permissions)
+			_, err = db.Exec(permissionsInsertQuery, stripQuotes(user), stripQuotes(tableName), permissions)
 			if err == nil {
 				ui.Debug(ui.TableLogger, "[%d] created permissions for %s", sessionID, tableName)
 			}
