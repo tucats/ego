@@ -101,6 +101,7 @@ user. All commands start with `ego tables` following by the subcommands:
        update                    Update rows to a table     
 
 The following sections detail each command.
+&nbsp;
 
 ## create
 The `create` command creates a new table, specified as the first parameter of the
@@ -138,9 +139,9 @@ This creates a new table with three user-defined columns. The third specificatio
 in quotes because there is a space after the comma. This could be expressed wtihout
 the quotes by removing the space characters from the specification.
 
+&nbsp;
 
 ## list
-
 The `list` command lists all tables that the current user has access to. Note that there
 may be tables in the database that are not included in the list, if the user does not have
 admin privilege and there is not a corresponding entry in the permissions table for that
@@ -161,9 +162,9 @@ has no rows in it, so the row count reported is zero.
 You can omit the row counts (which can take a while for very very large tables) using
 the `--no-row-counts` option on the `list` command.
 
+&nbsp;
 
 ## show-table
-
 The `show-table` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
@@ -172,19 +173,19 @@ discussed in an earlier section, assuming the current user has logged into the
 session as the `admin` user:
 
     user@Macbook  % ./ego tables show-table privileges
-    Name           Type      Size    Nullable    
-    ===========    ======    ====    ========    
-    permissions    string      -5    false       
-    tablename      string      -5    false       
-    username       string      -5    false   
+    Name           Type      Size    Nullable    Unique
+    ===========    ======    ====    ========    ======
+    permissions    string      -5    true        false
+    tablename      string      -5    false       true
+    username       string      -5    false       true
 
 This shows the three column names, the type (in this case, always string values),
-the size (-5 applys to `char varying` types), and none of the fields are allowed
-to have null values.
+the size (-5 applys to `char varying` types) The `permissions` column is alloowed
+to have null values, and the `tablename` and `username` columns must be unique.
 
+&nbsp;
 
 ## read
-
 The `read` command (which can also be expressed as `contents` or `select`) reads
 rows from a table and displays the values on the console. You must specify the name
 of the table as the command parameter.
@@ -248,8 +249,9 @@ command option:
 You can specify multiple column names by separating them by commas. The columns are printed
 in the order specified in the `--column` option.
 
-## insert
+&nbsp;
 
+## insert
 The `insert` command adds a single row to the specified table. The first parameter must be
 the name of the table, and this is followed by one or more column value specifications.
 For example,
@@ -263,9 +265,9 @@ or `update` privilege for that table. You must only specify column names that al
 exist on the table; otherwise the row is not added and an error is reporting showing the
 first column in your command that is not in the named table.
 
+&nbsp;
 
 ## update
-
 The `update` command modifies columns in rows of the specified table. The first 
 parameter must be the name of the table, and this is followed by one or more column 
 value specifications. For example,
@@ -288,8 +290,9 @@ or `update` privilege for that table. You must only specify column names that al
 exist on the table; otherwise no rows are updated and an error is reporting showing the
 first column in your command that is not in the named table.
 
-## delete
+&nbsp;
 
+## delete
 The `delete` command deletes rows from the specified table. The first 
 parameter must be the name of the table. For example,
 

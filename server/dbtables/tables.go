@@ -575,3 +575,30 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 	ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 }
+
+func parameterString(r *http.Request) string {
+	m := r.URL.Query()
+	result := strings.Builder{}
+
+	for k, v := range m {
+		if result.Len() == 0 {
+			result.WriteRune('?')
+		} else {
+			result.WriteRune('&')
+		}
+
+		result.WriteString(k)
+
+		if len(v) > 0 {
+			for n, value := range v {
+				if n > 0 {
+					result.WriteRune(',')
+				}
+
+				result.WriteString(value)
+			}
+		}
+	}
+
+	return result.String()
+}

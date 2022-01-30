@@ -341,6 +341,10 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {

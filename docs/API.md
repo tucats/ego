@@ -673,6 +673,30 @@ The valid types that you can specify in the array of column structure definition
 
 &nbsp;
 
+
+The request payload must be a JSON representation of the columns to be created. As an
+example, this payload creates a table with three columns. 
+
+    [
+        {
+            "name": "first",
+            "type": "string",
+            "nullable": true
+        },
+        {
+            "name": "id",
+            "type": "int",
+            "unique": true
+        },
+        {
+            "name": "last",
+            "type": "string"
+        }
+    ]
+
+The first column is allowed to have a null value, and the second column must contain
+unique values.
+
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
@@ -684,12 +708,10 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-
 ### GET /tables/_table_  <a name="netadata"></a>
 
 If you specify a specific table with the GET operation, it returns JSON payload containing
 an array of structure, each of which defines the column name, type, size, and nullability.
-
 
 &nbsp;
 
@@ -730,6 +752,17 @@ passed as a JSON-encode string in the body of the request. The reply will either
 rowset or a rowcount object, depending on whether the statement was a `select` operation
 (which returns a row set), versus any other statement which just returns a count of the
 number of rows affected.
+
+For example, here is a request payload that joins two tables and returns a result. Because
+this is a SQL `select` statement, the _Ego_ server knows to reeturn a rowset as the result.
+Otherwise, it returns a rowcount as the result.
+
+    "select people.name, surname.name 
+         from \"mary\".\"people\" 
+         join \"mary\".\"surname\"
+            on people.id == surname.id"
+
+Note that the string must be properly escaped as a JSON string.
 
 &nbsp;
 
