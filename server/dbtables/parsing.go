@@ -610,6 +610,10 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		nativeType := mapColumnType(column.Type)
 		result.WriteString(nativeType)
 
+		if column.Unique {
+			result.WriteString(" UNIQUE")
+		}
+		
 		if column.Nullable {
 			result.WriteString(" NULL")
 		}

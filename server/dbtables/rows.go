@@ -188,6 +188,11 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			_, err := db.Exec(q, values...)
 			if err == nil {
 				count++
+			} else {
+				ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
+				_ = tx.Rollback()
+
+				return
 			}
 		}
 
@@ -474,7 +479,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 func filterErrorMessage(q string) string {
 	if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-		return "filter error: " + q[p+len(syntaxErrorPrefix):]
+		msg := q[p+len(syntaxErrorPrefix):]
+		if p := strings.Index(msg, defs.RowIDName); p > 0 {
+			msg = msg[:p]
+		}
+
+		return "filter error: " + msg
 	}
 
 	return q

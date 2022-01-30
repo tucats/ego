@@ -338,14 +338,12 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		ui.Say("Added row to table %s", table)
+		ui.Say("Added %d row(s) to table %s", resp.Count, table)
+
+		return nil
 	}
 
-	if !errors.Nil(err) {
-		return err.Context(table)
-	}
-
-	return nil
+	return errors.New(err)
 }
 
 func TableCreate(c *cli.Context) *errors.EgoError {
@@ -416,7 +414,10 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 
 		for t.IsNext(",") {
 			flag := t.Next()
+
 			switch strings.ToLower(flag) {
+			case "unique":
+				columnInfo.Unique = true
 			case "nullable":
 				columnInfo.Nullable = true
 

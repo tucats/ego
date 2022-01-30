@@ -44,6 +44,7 @@ type DBColumn struct {
 	Type     string `json:"type"`
 	Size     int    `json:"size,omitempty"`
 	Nullable bool   `json:"nullable,omitempty"`
+	Unique   bool   `json:"unique,omitempty"`
 }
 
 type DBRows struct {
