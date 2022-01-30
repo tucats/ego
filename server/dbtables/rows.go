@@ -465,7 +465,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)
 			} else {
-				ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+				ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 				_ = tx.Rollback()
 
 				return
