@@ -53,8 +53,8 @@ type DBRows struct {
 }
 
 type TableColumnsInfo struct {
-	Count   int `json:"count"`
-	Columns []DBColumn
+	Count   int        `json:"count"`
+	Columns []DBColumn `json:"columns"`
 }
 
 type DBRowCount struct {
