@@ -224,7 +224,7 @@ font-style: italic;
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">Columns <a href="#Column">Column</a> (optional)</div>
+      <div class="param">Columns <a href="#ColumnCollection">ColumnCollection</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -235,7 +235,7 @@ font-style: italic;
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      array[<a href="#Column">Column</a>]
+      <a href="#ColumnCollection">ColumnCollection</a>
       
     </div>
 
@@ -244,9 +244,18 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "nullable" : true,
-  "name" : "mycolumn",
-  "type" : "string"
+  "columns" : [ {
+    "nullable" : true,
+    "name" : "mycolumn",
+    "unqiue" : true,
+    "type" : "string"
+  }, {
+    "nullable" : true,
+    "name" : "mycolumn",
+    "unqiue" : true,
+    "type" : "string"
+  } ],
+  "count" : 0
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -259,7 +268,19 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     Success
-        
+        <a href="#ColumnCollection">ColumnCollection</a>
+    <h4 class="field-label">400</h4>
+    Incorrectly formed request body.
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Credentials not provided.
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    invalid credentials.
+        <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Table already exists.
+        <a href="#Error">Error</a>
     <h4 class="field-label">default</h4>
     Unexpected error occurred. The status and message fields contain additional information.
         <a href="#Error">Error</a>
@@ -280,7 +301,7 @@ font-style: italic;
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      array[<a href="#Table">Table</a>]
+      <a href="#TableCollection">TableCollection</a>
       
     </div>
 
@@ -289,9 +310,18 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "schema" : "schema",
-  "columns" : 0,
-  "name" : "name"
+  "tables" : [ {
+    "schema" : "Payroll",
+    "columns" : 8,
+    "name" : "Accounts",
+    "rows" : 135
+  }, {
+    "schema" : "Payroll",
+    "columns" : 8,
+    "name" : "Accounts",
+    "rows" : 135
+  } ],
+  "count" : 0
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -304,7 +334,7 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     An array of table names
-        
+        <a href="#TableCollection">TableCollection</a>
     <h4 class="field-label">default</h4>
     unexpected error
         <a href="#Error">Error</a>
@@ -339,7 +369,7 @@ font-style: italic;
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      <a href="#ColumnsResponse">ColumnsResponse</a>
+      <a href="#ColumnCollection">ColumnCollection</a>
       
     </div>
 
@@ -351,16 +381,15 @@ font-style: italic;
   "columns" : [ {
     "nullable" : true,
     "name" : "mycolumn",
+    "unqiue" : true,
     "type" : "string"
   }, {
     "nullable" : true,
     "name" : "mycolumn",
+    "unqiue" : true,
     "type" : "string"
   } ],
-  "status" : {
-    "message" : "message",
-    "status" : 0
-  }
+  "count" : 0
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -373,7 +402,7 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     Expected response to a valid request
-        <a href="#ColumnsResponse">ColumnsResponse</a>
+        <a href="#ColumnCollection">ColumnCollection</a>
     <h4 class="field-label">default</h4>
     unexpected error
         <a href="#Error">Error</a>
@@ -386,9 +415,10 @@ font-style: italic;
   <h3>Table of Contents</h3>
   <ol>
     <li><a href="#Column"><code>Column</code> - </a></li>
-    <li><a href="#ColumnsResponse"><code>ColumnsResponse</code> - </a></li>
+    <li><a href="#ColumnCollection"><code>ColumnCollection</code> - </a></li>
     <li><a href="#Error"><code>Error</code> - </a></li>
     <li><a href="#Table"><code>Table</code> - </a></li>
+    <li><a href="#TableCollection"><code>TableCollection</code> - </a></li>
   </ol>
 
   <div class="model">
@@ -398,14 +428,15 @@ font-style: italic;
       <div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the column </div>
 <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Ego type name of the column's data values. </div>
 <div class="param">nullable </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> True if the column is allowed to contain a null value. </div>
+<div class="param">unqiue (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> True if the column value must be unique in the table. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="ColumnsResponse"><code>ColumnsResponse</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
+    <h3><a name="ColumnCollection"><code>ColumnCollection</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Information about the columns of a table</div>
     <div class="field-items">
-      <div class="param">columns (optional)</div><div class="param-desc"><span class="param-type"><a href="#Column">array[Column]</a></span> An array of column definitions. </div>
-<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#Error">Error</a></span>  </div>
+      <div class="param">columns </div><div class="param-desc"><span class="param-type"><a href="#Column">array[Column]</a></span> An array of column definitions. </div>
+<div class="param">count </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> The number of items in the table array </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -413,7 +444,7 @@ font-style: italic;
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> the HTTP status code for the response format: int32</div>
-<div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> the message text if an error occurred </div>
+<div class="param">msg </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> the message text if an error occurred </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -423,6 +454,15 @@ font-style: italic;
       <div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the table </div>
 <div class="param">schema </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name fo the schema </div>
 <div class="param">columns </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of columns in the table </div>
+<div class="param">rows </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of rows in the table </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TableCollection"><code>TableCollection</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">tables </div><div class="param-desc"><span class="param-type"><a href="#Table">array[Table]</a></span> An array of the table name information </div>
+<div class="param">count </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> The number of items in the table array </div>
     </div>  <!-- field-items -->
   </div>
   </body>

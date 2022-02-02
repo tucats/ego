@@ -23,7 +23,7 @@ paths:
         "200":
           description: An array of table names
           schema:
-            $ref: '#/definitions/Tables'
+            $ref: '#/definitions/TableCollection'
         default:
           description: unexpected error
           schema:
@@ -43,13 +43,30 @@ paths:
         - in: body
           name: Columns
           description: The array of column types to create for the new table.
+          required: true
           schema:
-              $ref: "#/definitions/Columns"
+              $ref: "#/definitions/ColumnCollection"
       responses:
         "200":
           description: Success
           schema: 
-            $ref: "#/definitions/Columns"
+            $ref: "#/definitions/ColumnCollection"
+        "400":
+          description: Incorrectly formed request body.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Credentials not provided.
+          schema:
+            $ref: '#/definitions/Error'
+        "403":
+          description: invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: Table already exists.
+          schema:
+            $ref: '#/definitions/Error'
         default:
           description: Unexpected error occurred. The status and message fields contain additional information.
           schema:
@@ -77,7 +94,7 @@ paths:
         "200":
           description: Expected response to a valid request
           schema:
-            $ref: '#/definitions/ColumnsResponse'
+            $ref: '#/definitions/ColumnCollection'
         default:
           description: unexpected error
           schema:
@@ -89,6 +106,7 @@ definitions:
       - name
       - type
       - nullable
+      - unique
     properties:
       name:
         type: string
@@ -101,49 +119,79 @@ definitions:
       nullable:
         type: boolean
         description: True if the column is allowed to contain a null value.
-  ColumnsResponse:
-    type: object
+      unqiue:
+        type: boolean
+        description: True if the column value must be unique in the table.
+  ColumnCollection:
+    type: "object"
+    description: Information about the columns of a table
+    required:
+      - columns
+      - count
     properties:
       columns:
-        $ref: "#/definitions/Columns"
-      status:
-        $ref: "#/definitions/Error"
-  Columns:
-    type: array
-    description: An array of column definitions.
-    items:
-      $ref: '#/definitions/Column'
+        type: array
+        description: An array of column definitions.
+        items:
+          $ref: '#/definitions/Column'
+      count:
+        type: integer
+        description: The number of items in the table array
+
   Table:
     type: "object"
     required:
       - name
       - schema
       - columns
+      - rows
     properties:
       name:
         type: string
         description: Name of the table
+        example: Accounts
       schema:
         type: string
         description: Name fo the schema
+        example: Payroll
       columns:
         type: integer
         description: Number of columns in the table
+        example: 8
+      rows:
+        type: integer
+        description: Number of rows in the table
+        example: 135
   Tables:
     type: array
     items:
       $ref: '#/definitions/Table'
+  TableCollection:
+    type: "object"
+    required:
+      - tables
+      - count
+    properties:
+      tables:
+        type: array
+        items:
+          $ref: '#/definitions/Table'
+        description: An array of the table name information
+      count:
+        type: integer
+        description: The number of items in the table array
   Error:
     type: "object"
     required:
       - status
-      - message
+      - msg
     properties:
       status:
         type: integer
         format: int32
         description: the HTTP status code for the response
-        default: 200
-      message:
+        example: 400
+      msg:
         type: string
         description: the message text if an error occurred
+        example: The type name "color" is not valid

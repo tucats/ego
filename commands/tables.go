@@ -72,7 +72,7 @@ func TableList(c *cli.Context) *errors.EgoError {
 		} else if ui.OutputFormat == ui.JSONIndentedFormat {
 			var b []byte
 
-			b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentedFormat)
+			b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			if errors.Nil(err) {
 				fmt.Printf("%s\n", string(b))
 			}
