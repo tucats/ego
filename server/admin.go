@@ -242,7 +242,8 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			result := defs.UserCollection{
-				Items: []defs.User{},
+				BaseCollection: defs.BaseCollection{Version: defs.APIVersion},
+				Items:          []defs.User{},
 			}
 			result.ID = Session
 
@@ -335,6 +336,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	// Get the list of cached items.
 	case http.MethodGet:
 		result := defs.CacheResponse{
+			Version:    defs.APIVersion,
 			Count:      len(serviceCache),
 			Limit:      MaxCachedEntries,
 			Items:      []defs.CachedItem{},
@@ -367,6 +369,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		serviceCache = map[string]cachedCompilationUnit{}
 		result := defs.CacheResponse{
+			Version:    defs.APIVersion,
 			Count:      0,
 			Limit:      MaxCachedEntries,
 			Items:      []defs.CachedItem{},
@@ -455,7 +458,9 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 	w.Header().Add("Content-Type", defs.JSONMediaType)
 
 	loggers := defs.LoggingItem{}
-	response := defs.LoggingResponse{}
+	response := defs.LoggingResponse{
+		Version: defs.APIVersion,
+	}
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
@@ -540,7 +545,9 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		ui.LogRetainCount = keep
 		count := ui.PurgeLogs()
 
-		reply := defs.DBRowCount{Count: count}
+		reply := defs.DBRowCount{
+			Version: defs.APIVersion,
+			Count:   count}
 		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
 

@@ -65,7 +65,10 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 					rows, err = db.Exec(statementText)
 					if err == nil {
 						count, _ := rows.RowsAffected()
-						reply := defs.DBRowCount{Count: int(count)}
+						reply := defs.DBRowCount{
+							Version: defs.APIVersion,
+							Count:   int(count),
+						}
 
 						b, _ := json.MarshalIndent(reply, "", "  ")
 						_, _ = w.Write(b)
@@ -132,7 +135,8 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		if err == nil {
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
-				Count: int(rows),
+				Version: defs.APIVersion,
+				Count:   int(rows),
 			}
 
 			tableName, _ = fullName(user, tableName)
@@ -304,6 +308,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			}
 
 			resp := defs.TableColumnsInfo{
+				Version: defs.APIVersion,
 				Columns: columns,
 				Count:   len(columns),
 			}
@@ -559,8 +564,9 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 			if err == nil {
 				resp := defs.TableInfo{
-					Tables: names,
-					Count:  len(names),
+					Version: defs.APIVersion,
+					Tables:  names,
+					Count:   len(names),
 				}
 
 				b, _ := json.MarshalIndent(resp, "", "  ")

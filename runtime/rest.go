@@ -811,7 +811,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		body := string(resp.Body())
 		if body != "" {
 			if !util.InList(body[0:1], "{", "[", "\"") {
-				r := defs.RestResponse{
+				r := defs.RestStatusResponse{
 					Status:  resp.StatusCode(),
 					Message: strings.TrimSuffix(body, "\n"),
 				}

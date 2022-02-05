@@ -58,7 +58,8 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			rowCount, _ := rows.RowsAffected()
 
 			resp := defs.DBRowCount{
-				Count: int(rowCount),
+				Version: defs.APIVersion,
+				Count:   int(rowCount),
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
@@ -124,7 +125,9 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
-		rowSet := defs.DBRows{}
+		rowSet := defs.DBRowSet{
+			Version: defs.APIVersion,
+		}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
@@ -206,7 +209,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		if err == nil {
 			result := defs.DBRowCount{
-				Count: count,
+				Version: defs.APIVersion,
+				Count:   count,
 			}
 
 			b, _ := json.MarshalIndent(result, "", "  ")
@@ -321,9 +325,10 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 			}
 		}
 
-		resp := defs.DBRows{
-			Rows:  result,
-			Count: len(result),
+		resp := defs.DBRowSet{
+			Version: defs.APIVersion,
+			Rows:    result,
+			Count:   len(result),
 		}
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
@@ -401,7 +406,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBRows{}
+		rowSet := defs.DBRowSet{Version: defs.APIVersion}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
@@ -481,7 +486,8 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	if errors.Nil(err) {
 		result := defs.DBRowCount{
-			Count: count,
+			Version: defs.APIVersion,
+			Count:   count,
 		}
 
 		b, _ := json.MarshalIndent(result, "", "  ")

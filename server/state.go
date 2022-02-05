@@ -107,12 +107,12 @@ func RemovePidFile(c *cli.Context) *errors.EgoError {
 func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	var status = defs.ServerStatus{}
 
-	status.Hostname = util.Hostname()
-	status.ID = Session
-
 	b, err := ioutil.ReadFile(getPidFileName(c))
 	if errors.Nil(err) {
 		err = json.Unmarshal(b, &status)
+		status.Hostname = util.Hostname()
+		status.ID = Session
+		status.Version = defs.APIVersion
 	}
 
 	return &status, errors.New(err)
@@ -124,6 +124,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 	fn := getPidFileName(c)
 	status.Started = time.Now()
+	status.Version = defs.APIVersion
 	b, _ := json.MarshalIndent(status, "", "  ")
 
 	err := ioutil.WriteFile(fn, b, 0600)

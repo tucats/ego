@@ -241,3 +241,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	RestClientErrorSetting:          true,
 	LogRetainCountSetting:           true,
 }
+
+const (
+	APIVersion = 1
+)

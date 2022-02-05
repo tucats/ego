@@ -164,7 +164,7 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 }
 
 func TableContents(c *cli.Context) *errors.EgoError {
-	resp := defs.DBRows{}
+	resp := defs.DBRowSet{}
 	table := c.GetParameter(0)
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
@@ -203,7 +203,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 	return errors.New(err)
 }
 
-func printRowSet(resp defs.DBRows, showRowID bool) *errors.EgoError {
+func printRowSet(resp defs.DBRowSet, showRowID bool) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("No rows in query")
@@ -726,7 +726,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	sql = strings.TrimSpace(sql)
 
 	if strings.HasPrefix(strings.ToLower(sql), "select ") {
-		rows := defs.DBRows{}
+		rows := defs.DBRowSet{}
 
 		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &rows, defs.TableAgent)
 		if !errors.Nil(err) {
@@ -789,7 +789,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 func TableGrant(c *cli.Context) *errors.EgoError {
 	permissions, _ := c.StringList("permission")
 	table := c.GetParameter(0)
-	result := defs.PermissionResponse{}
+	result := defs.PermissionObject{}
 
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 	if user, found := c.String("user"); found {
@@ -806,7 +806,7 @@ func TableGrant(c *cli.Context) *errors.EgoError {
 
 func TableShowPermission(c *cli.Context) *errors.EgoError {
 	table := c.GetParameter(0)
-	result := defs.PermissionResponse{}
+	result := defs.PermissionObject{}
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
@@ -817,7 +817,7 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func printPermissionObject(result defs.PermissionResponse) {
+func printPermissionObject(result defs.PermissionObject) {
 	switch ui.OutputFormat {
 	case ui.TextFormat:
 		plural := "s"

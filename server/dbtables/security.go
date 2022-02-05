@@ -39,7 +39,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 		return
 	}
 
-	reply := defs.PermissionResponse{}
+	reply := defs.PermissionObject{}
 	parts := tableNameParts(user, table)
 	reply.User = user
 	reply.Schema = parts[0]
@@ -72,7 +72,6 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 	}
 
 	sort.Strings(reply.Permissions)
-	reply.Status = http.StatusOK
 	w.WriteHeader(http.StatusOK)
 
 	b, _ := json.MarshalIndent(reply, "", "  ")
@@ -143,7 +142,6 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 		reply.Permissions = append(reply.Permissions, permObject)
 	}
 
-	reply.Status = http.StatusOK
 	reply.Count = count
 
 	w.WriteHeader(http.StatusOK)

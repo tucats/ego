@@ -12,7 +12,8 @@ func handler( req http.Request, resp http.Response) {
     }
 
     @json {
-        msg := {pid:_pid, host:host, session:_session, since: _start_time}
+        // Note that this should change as API versions changes
+        msg := {apiVersion: 1, pid:_pid, host:host, session:_session, since: _start_time}
         resp.Write(msg)
     }
 }

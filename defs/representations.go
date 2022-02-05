@@ -13,15 +13,16 @@ type Credentials struct {
 
 // The payload for the status check "/up" endpoint.
 type RemoteStatusResponse struct {
+	Version  int    `json:"apiVersion,omitempty"`
 	Pid      int    `json:"pid"`
 	Session  string `json:"session"`
 	Since    string `json:"since"`
 	Hostname string `json:"host"`
 }
 
-// RestResponse describes the HTTP status result and any helpful
+// RestStatusResponse describes the HTTP status result and any helpful
 // additional message. This must be part of all response objects.
-type RestResponse struct {
+type RestStatusResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"msg"`
 }
@@ -35,8 +36,9 @@ type Table struct {
 }
 
 type TableInfo struct {
-	Tables []Table `json:"tables"`
-	Count  int     `json:"count"`
+	Version int     `json:"apiVersion,omitempty"`
+	Tables  []Table `json:"tables"`
+	Count   int     `json:"count"`
 }
 
 type DBColumn struct {
@@ -47,18 +49,21 @@ type DBColumn struct {
 	Unique   bool   `json:"unique,omitempty"`
 }
 
-type DBRows struct {
-	Rows  []map[string]interface{} `json:"rows"`
-	Count int                      `json:"count"`
+type DBRowSet struct {
+	Version int                      `json:"apiVersion,omitempty"`
+	Rows    []map[string]interface{} `json:"rows"`
+	Count   int                      `json:"count"`
 }
 
 type TableColumnsInfo struct {
-	Count   int        `json:"count"`
+	Version int        `json:"apiVersion,omitempty"`
 	Columns []DBColumn `json:"columns"`
+	Count   int        `json:"count"`
 }
 
 type DBRowCount struct {
-	Count int `json:"count"`
+	Version int `json:"apiVersion,omitempty"`
+	Count   int `json:"count"`
 }
 
 type PermissionObject struct {
@@ -66,18 +71,12 @@ type PermissionObject struct {
 	Schema      string   `json:"schema"`
 	Table       string   `json:"table"`
 	Permissions []string `json:"permissions"`
-	RestResponse
-}
-
-type PermissionResponse struct {
-	PermissionObject
-	RestResponse
 }
 
 type AllPermissionResponse struct {
+	Version     int                `json:"apiVersion,omitempty"`
 	Permissions []PermissionObject `json:"permissions"`
 	Count       int                `json:"count"`
-	RestResponse
 }
 
 type ServerInfo struct {
@@ -92,6 +91,7 @@ type LoggingItem struct {
 }
 
 type LoggingResponse struct {
+	Version int `json:"apiVersion,omitempty"`
 	ServerInfo
 	LoggingItem
 }
@@ -105,6 +105,7 @@ type CachedItem struct {
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint.
 type CacheResponse struct {
+	Version int `json:"apiVersion,omitempty"`
 	ServerInfo
 	Count      int          `json:"count"`
 	Limit      int          `json:"limit"`
@@ -125,6 +126,7 @@ type User struct {
 // BaseCollection is a component of any collection type returned
 // as a response.
 type BaseCollection struct {
+	Version int `json:"apiVersion,omitempty"`
 	ServerInfo
 	Count int `json:"count"`
 	Start int `json:"start"`
@@ -133,13 +135,13 @@ type BaseCollection struct {
 // UserCollection is a collection of User response objects.
 type UserCollection struct {
 	BaseCollection
-	Count int    `json:"count"`
 	Items []User `json:"items"`
 }
 
 // ServerStatus describes the state of a running server. A json version
 // of this information is the contents of the pid file.
 type ServerStatus struct {
+	Version int `json:"apiVersion,omitempty"`
 	ServerInfo
 	PID     int       `json:"pid"`
 	Started time.Time `json:"started"`
@@ -149,6 +151,7 @@ type ServerStatus struct {
 
 // LogonResponse is the info returned from a logon request.
 type LogonResponse struct {
+	Version    int    `json:"apiVersion,omitempty"`
 	Expiration string `json:"expires"`
 	Issuer     string `json:"issuer"`
 	Token      string `json:"token"`

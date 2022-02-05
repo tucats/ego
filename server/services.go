@@ -543,7 +543,7 @@ func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *b
 }
 
 func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
-	response := defs.RestResponse{
+	response := defs.RestStatusResponse{
 		Message: msg,
 		Status:  status,
 	}
