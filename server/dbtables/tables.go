@@ -23,6 +23,12 @@ const UnexpectedNilPointerError = "Unexpected nil database object pointer"
 func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
+		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	// Verify that there are no parameters
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
@@ -195,6 +201,12 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types.
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	if e := util.AcceptedMediaType(r, []string{defs.TableMetadataMediaType}); !errors.Nil(e) {
+		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	// Verify that there are no parameters
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
@@ -392,6 +404,12 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 
 //DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	if e := util.AcceptedMediaType(r, []string{}); !errors.Nil(e) {
+		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	// Verify that there are no parameters
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
@@ -442,6 +460,12 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 // ListTables will list all the tables for the given user.
 func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
+	if e := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); !errors.Nil(e) {
+		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
 		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)

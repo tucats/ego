@@ -7,7 +7,6 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -31,8 +30,8 @@ func initTestType() {
 		t.DefineFunction("isType", TestIsType)
 		t.DefineFunction("Nil", TestNil)
 		t.DefineFunction("NotNil", TestNotNil)
-		t.DefineFunction(defs.True, TestTrue)
-		t.DefineFunction(defs.False, TestFalse)
+		t.DefineFunction("True", TestTrue)
+		t.DefineFunction("False", TestFalse)
 		t.DefineFunction("Equal", TestEqual)
 		t.DefineFunction("NotEqual", TestNotEqual)
 

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -37,12 +38,14 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 				}
 
 			case "bool":
-				if len(values) != 1 {
+				if len(values) > 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-				if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
-					return errors.New(errors.ErrInvalidBooleanValue).Context(name)
+				if len(values) == 1 && datatypes.GetString(values[0]) != "" {
+					if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
+						return errors.New(errors.ErrInvalidBooleanValue).Context(name)
+					}
 				}
 
 			case defs.Any, "string":
@@ -73,4 +76,28 @@ func InList(s string, test ...string) bool {
 	}
 
 	return false
+}
+
+func AcceptedMediaType(r *http.Request, validList []string) *errors.EgoError {
+	mediaTypes := r.Header["Accepts"]
+
+	for _, mediaType := range mediaTypes {
+		if strings.EqualFold(mediaType, "application/json") {
+			continue
+		}
+
+		if strings.EqualFold(mediaType, "application/text") {
+			continue
+		}
+
+		if strings.EqualFold(mediaType, "application/html") {
+			continue
+		}
+
+		if !InList(mediaType, validList...) {
+			return errors.New(errors.ErrInvalidMediaType).Context(mediaType)
+		}
+	}
+
+	return nil
 }

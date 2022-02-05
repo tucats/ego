@@ -8,10 +8,6 @@ const AuthScheme = "bearer "
 // the user database file, if not specified by the user.
 const DefaultUserdataFileName = "sqlite3://users.db"
 
-// This is the default media type (for Content and Accept headers)
-// for REST calls based on JSON.
-const JSONMediaType = "application/json"
-
 // The environment variable that defines where the runtime files are
 // to be found.
 const EgoPathEnv = "EGO_PATH"

@@ -55,6 +55,13 @@ type DBRowSet struct {
 	Count   int                      `json:"count"`
 }
 
+type DBAbstractRowSet struct {
+	Version int             `json:"apiVersion,omitempty"`
+	Columns []string        `json:"columns"`
+	Rows    [][]interface{} `json:"rows"`
+	Count   int             `json:"count"`
+}
+
 type TableColumnsInfo struct {
 	Version int        `json:"apiVersion,omitempty"`
 	Columns []DBColumn `json:"columns"`

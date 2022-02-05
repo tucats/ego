@@ -10,6 +10,7 @@ const (
 	StartParameterName    = "start"
 	LimitParameterName    = "limit"
 	RowCountParameterName = "rowcounts"
+	AbstractParameterName = "abstract"
 )
 
 const (
@@ -45,3 +46,16 @@ var TableColumnTypeNames []string = []string{
 	"date",
 	"bool",
 }
+
+const (
+	TextMediaType = "application/text"
+	JSONMediaType = "application/json"
+	HTMLMediaType = "application/html"
+
+	EgoMediaType            = "application/vnd.ego."
+	RowSetMediaType         = EgoMediaType + "rows+json"
+	AbstractRowSetMediaType = EgoMediaType + "rows.abstract+json"
+	RowCountMediaType       = EgoMediaType + "rowcount+json"
+	TableMetadataMediaType  = EgoMediaType + "columns+json"
+	TablesMediaType         = EgoMediaType + "tables+json"
+)

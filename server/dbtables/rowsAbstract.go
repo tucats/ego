@@ -9,87 +9,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
-// DeleteRows deletes rows from a table. If no filter is provided, then all rows are
-// deleted and the tale is empty. If filter(s) are applied, only the matching rows
-// are deleted. The function returns the number of rows deleted.
-func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	tableName, _ = fullName(user, tableName)
-	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   "string",
-	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	ui.Debug(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
-
-	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
-	}
-
-	db, err := OpenDB(sessionID, user, "")
-	if err == nil && db != nil {
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
-			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
-
-			return
-		}
-
-		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
-		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-			ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
-
-			return
-		}
-
-		ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
-
-		rows, err := db.Exec(q)
-		if err == nil {
-			rowCount, _ := rows.RowsAffected()
-
-			resp := defs.DBRowCount{
-				Version: defs.APIVersion,
-				Count:   int(rowCount),
-			}
-			b, _ := json.MarshalIndent(resp, "", "  ")
-			_, _ = w.Write(b)
-
-			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
-
-			return
-		}
-	}
-
-	ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte(err.Error()))
-}
-
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
-
-	if e := util.AcceptedMediaType(r, nil); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
-	}
 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
@@ -97,12 +24,6 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		defs.AbstractParameterName: "bool",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	if useAbstract(r) {
-		InsertAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 
 		return
 	}
@@ -125,17 +46,19 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		// Get the column metadata for the table we're insert into, so we can validate column info.
-		var columns []defs.DBColumn
+		/*
+			// Get the column metadata for the table we're insert into, so we can validate column info.
+			var columns []defs.DBColumn
 
-		tableName, _ = fullName(user, tableName)
+			tableName, _ = fullName(user, tableName)
 
-		columns, err = getColumnInfo(db, user, tableName, sessionID)
-		if !errors.Nil(err) {
-			ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
+			columns, err = getColumnInfo(db, user, tableName, sessionID)
+			if !errors.Nil(err) {
+				ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 
-			return
-		}
+				return
+			}
+		*/
 
 		buf := new(strings.Builder)
 		_, _ = io.Copy(buf, r.Body)
@@ -144,7 +67,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
-		rowSet := defs.DBRowSet{
+		rowSet := defs.DBAbstractRowSet{
 			Version: defs.APIVersion,
 		}
 
@@ -160,8 +83,16 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				return
 			} else {
 				rowSet.Count = 1
-				rowSet.Rows = make([]map[string]interface{}, 1)
-				rowSet.Rows[0] = item
+				keys := make([]string, 0)
+				values := make([]interface{}, 0)
+				for k, v := range item {
+					keys = append(keys, k)
+					values = append(values, v)
+				}
+
+				rowSet.Rows = make([][]interface{}, 1)
+				rowSet.Rows[0] = values
+				rowSet.Columns = keys
 				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
 			}
 		} else {
@@ -186,8 +117,21 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		// For any object in the payload, we must assign a UUID now. This overrides any previous
 		// item in the set for _row_id_ or creates it if not found. Row IDs are always assigned
 		// on input only.
+		rowIDColumn := -1
+
+		for pos, name := range rowSet.Columns {
+			if name == defs.RowIDName {
+				rowIDColumn = pos
+			}
+		}
+
+		if rowIDColumn < 0 {
+			rowSet.Columns = append(rowSet.Columns, defs.RowIDName)
+			rowIDColumn = len(rowSet.Columns) - 1
+		}
+
 		for n := 0; n < len(rowSet.Rows); n++ {
-			rowSet.Rows[n][defs.RowIDName] = uuid.New().String()
+			rowSet.Rows[n][rowIDColumn] = uuid.New().String()
 		}
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
@@ -196,23 +140,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		count := 0
 
 		for _, row := range rowSet.Rows {
-			for _, column := range columns {
-				v, ok := row[column.Name]
-				if !ok {
-					ErrorResponse(w, sessionID, "Invalid column in request payload: "+column.Name, http.StatusBadRequest)
-
-					return
-				}
-
-				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
-				if keywordMatch(column.Type, "time", "date", "timestamp") {
-					text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
-					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-					ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
-				}
-			}
-
-			q, values := formInsertQuery(r.URL, user, row)
+			// @tomcole TODO If it's one of the date/time values, make sure it is wrapped in single qutoes.
+			q, values := formAbstractInsertQuery(r.URL, user, rowSet.Columns, row)
 			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 
 			_, err := db.Exec(q, values...)
@@ -259,14 +188,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 // of structs for each row, with the struct tag being the column name. The
 // query can also specify filter, sort, and column query parameters to refine
 // the read operation.
-func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
-
-	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.AbstractRowSetMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-
-		return
-	}
 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
@@ -274,22 +197,16 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		defs.LimitParameterName:    "int",
 		defs.ColumnParameterName:   "list",
 		defs.SortParameterName:     "list",
-		defs.AbstractParameterName: "bool",
 		defs.FilterParameterName:   defs.Any,
 		defs.UserParameterName:     "string",
+		defs.AbstractParameterName: "bool",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
 
-	if useAbstract(r) {
-		ReadAbstractRows(user, isAdmin, tableName, sessionID, w, r)
-
-		return
-	}
-
-	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
+	ui.Debug(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
@@ -312,7 +229,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
-		err = readRowData(db, q, sessionID, w)
+		err = readAbstractRowData(db, q, sessionID, w)
 		if err == nil {
 			return
 		}
@@ -322,12 +239,13 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 	ErrorResponse(w, sessionID, err.Error(), 400)
 }
 
-func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
+func readAbstractRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
 	var rows *sql.Rows
 
 	var err error
 
-	result := []map[string]interface{}{}
+	result := [][]interface{}{}
+
 	rowCount := 0
 
 	rows, err = db.Query(q)
@@ -347,18 +265,14 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 			err = rows.Scan(rowptrs...)
 			if err == nil {
-				newRow := map[string]interface{}{}
-				for i, v := range row {
-					newRow[columnNames[i]] = v
-				}
-
-				result = append(result, newRow)
+				result = append(result, row)
 				rowCount++
 			}
 		}
 
-		resp := defs.DBRowSet{
+		resp := defs.DBAbstractRowSet{
 			Version: defs.APIVersion,
+			Columns: columnNames,
 			Rows:    result,
 			Count:   len(result),
 		}
@@ -373,33 +287,22 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 }
 
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
-func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
+func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 	count := 0
 
-	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
-	}
-
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     "string",
-		defs.ColumnParameterName:   "string",
-		defs.AbstractParameterName: "bool",
+		defs.FilterParameterName: defs.Any,
+		defs.UserParameterName:   "string",
+		defs.ColumnParameterName: "string",
 	}); !errors.Nil(invalid) {
 		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
 
-	if useAbstract(r) {
-		UpdateAbstractRows(user, isAdmin, tableName, sessionID, w, r)
-
-		return
-	}
-
-	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
+	ui.Debug(ui.ServerLogger, "[%d] Request to update abstract rows in table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
@@ -413,34 +316,6 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		excludeList := map[string]bool{}
-
-		p := r.URL.Query()
-		if v, found := p[defs.ColumnParameterName]; found {
-			// There is a column list, so build a list of all the columns, and then
-			// remove the ones from the column parameter. This builds a list of columns
-			// that are excluded.
-			columns, err := getColumnInfo(db, user, tableName, sessionID)
-			if !errors.Nil(err) {
-				ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-
-				return
-			}
-
-			for _, column := range columns {
-				excludeList[column.Name] = true
-			}
-
-			for _, name := range v {
-				nameParts := strings.Split(stripQuotes(name), ",")
-				for _, part := range nameParts {
-					if part != "" {
-						excludeList[part] = false
-					}
-				}
-			}
-		}
-
 		// For debugging, show the raw payload. We may remove this later...
 		buf := new(strings.Builder)
 		_, _ = io.Copy(buf, r.Body)
@@ -449,12 +324,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBRowSet{Version: defs.APIVersion}
+		rowSet := defs.DBAbstractRowSet{Version: defs.APIVersion}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
 			// Not a valid row set, but might be a single item
-			item := map[string]interface{}{}
+			item := []interface{}{}
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
@@ -463,7 +338,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				return
 			} else {
 				rowSet.Count = 1
-				rowSet.Rows = make([]map[string]interface{}, 1)
+				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = item
 				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
 			}
@@ -471,35 +346,14 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
 		}
 
-		// Anything in the data map that is on the exclude list is removed
-		ui.Debug(ui.TableLogger, "[%d] exclude list = %v", sessionID, excludeList)
-
 		// Start a transaction to ensure atomicity of the entire update
 		tx, _ := db.Begin()
 
-		// Loop over the row set doing the insert
+		// Loop over the row set doing the updates
 		for _, data := range rowSet.Rows {
-			hasRowID := false
-
-			if v, found := data[defs.RowIDName]; found {
-				if datatypes.GetString(v) != "" {
-					hasRowID = true
-				}
-			}
-
-			for key, excluded := range excludeList {
-				if key == defs.RowIDName && hasRowID {
-					continue
-				}
-
-				if excluded {
-					delete(data, key)
-				}
-			}
-
 			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
-			q, values := formUpdateQuery(r.URL, user, data)
+			q := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
 			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
 				ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
@@ -508,7 +362,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
-			counts, err := db.Exec(q, values...)
+			counts, err := db.Exec(q, data...)
 			if err == nil {
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)
@@ -540,54 +394,4 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	} else {
 		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
-}
-
-func filterErrorMessage(q string) string {
-	if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-		msg := q[p+len(syntaxErrorPrefix):]
-		if p := strings.Index(msg, defs.RowIDName); p > 0 {
-			msg = msg[:p]
-		}
-
-		return "filter error: " + msg
-	}
-
-	return q
-}
-
-func useAbstract(r *http.Request) bool {
-	// First, did the specify a media type that tells us what to do?
-	mediaTypes := r.Header["Accepts"]
-
-	for _, mediaType := range mediaTypes {
-		if strings.EqualFold(strings.TrimSpace(mediaType), defs.AbstractRowSetMediaType) {
-			return true
-		}
-	}
-
-	// Or, did they use the ?abstract boolean flag to tell us what to do?
-	q := r.URL.Query()
-	for k, v := range q {
-		if k == defs.AbstractParameterName {
-			flag := false
-
-			if len(v) == 0 {
-				return true
-			}
-
-			if len(v) == 1 && datatypes.GetString(v[0]) == "" {
-				return true
-			}
-
-			if len(v) == 1 {
-				flag = datatypes.GetBool(v[0])
-			}
-
-			ui.Debug(ui.RestLogger, "Abstract parameter value: %v", flag)
-
-			return flag
-		}
-	}
-
-	return false
 }
