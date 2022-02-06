@@ -1,8 +1,10 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"unicode"
 )
 
@@ -74,4 +76,18 @@ func StringMapKeys(data map[string]string) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+// Session log is used to take a multi-line message for the server log,
+// and insert prefixes on each line with the session number so the log
+// lines will be tagged with the appropriate session identifier, and
+// can be read with the server log query for a specific session.
+func SessionLog(id int32, text string) string {
+	lines := strings.Split(text, "\n")
+
+	for n := 0; n < len(lines); n++ {
+		lines[n] = fmt.Sprintf("                                   : [%d] %s", id, lines[n])
+	}
+
+	return strings.Join(lines, "\n")
 }

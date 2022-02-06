@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
 
 // CodeHandler is the rest handler that accepts arbitrary Ego code
@@ -51,7 +52,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
 
-	ui.Debug(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, text)
+	ui.Debug(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, util.SessionLog(sessionID, text))
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// Tokenize the input

@@ -247,7 +247,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"table": tableName,
 		})
 
-		ui.Debug(ui.DebugLogger, "[%d] Read unique with query string: \n%s", sessionID, q)
+		ui.Debug(ui.DebugLogger, "[%d] Read unique with query string: \n%s", sessionID, util.SessionLog(sessionID, q))
 
 		rows, err := db.Query(q)
 		if err != nil {
@@ -278,7 +278,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"quote": "",
 		})
 
-		ui.Debug(ui.DebugLogger, "[%d] Read nullable with query string: \n%s", sessionID, q)
+		ui.Debug(ui.DebugLogger, "[%d] Read nullable with query string: \n%s", sessionID, util.SessionLog(sessionID, q))
 
 		nrows, err := db.Query(q)
 		if err != nil {

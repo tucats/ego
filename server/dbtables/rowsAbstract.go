@@ -64,7 +64,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
+		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
@@ -103,7 +103,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		if ui.LoggerIsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, string(b))
+			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 
 		// If at this point we have an empty row set, then just bail out now. Return a success
@@ -325,7 +325,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
+		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
