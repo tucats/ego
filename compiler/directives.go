@@ -374,6 +374,9 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 
 // errorDirective implements the @error directive.
 func (c *Compiler) errorDirective() *errors.EgoError {
+	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "call"})
+	c.b.Emit(bytecode.Load, "error")
+
 	if !c.atStatementEnd() {
 		code, err := c.Expression()
 		if errors.Nil(err) {
@@ -383,7 +386,8 @@ func (c *Compiler) errorDirective() *errors.EgoError {
 		c.b.Emit(bytecode.Push, errors.ErrPanic)
 	}
 
-	c.b.Emit(bytecode.Panic, false) // Does not cause fatal error
+	c.b.Emit(bytecode.Call, 1) // Does not cause fatal error
+	c.b.Emit(bytecode.DropToMarker)
 
 	return nil
 }

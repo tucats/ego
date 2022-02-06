@@ -1,7 +1,9 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -40,6 +42,9 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 		return c.compileFunctionDefinition(false)
 	}
 
+	if c.t.IsNext("panic") && settings.GetBool(defs.RuntimePanicsSetting) {
+		return c.compilePanic()
+	}
 	// At this point, we know we're trying to compile a statement,
 	// so store the current line number in the stream to help us
 	// form runtime error messages as needed.
@@ -266,4 +271,23 @@ func (c *Compiler) isFunctionCall() bool {
 	}
 
 	return false
+}
+
+func (c *Compiler) compilePanic() *errors.EgoError {
+	if !c.t.IsNext("(") {
+		return errors.New(errors.ErrMissingParenthesis)
+	}
+
+	err := c.expressionAtom()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	c.b.Emit(bytecode.Panic)
+
+	if !c.t.IsNext(")") {
+		return errors.New(errors.ErrMissingParenthesis)
+	}
+
+	return nil
 }

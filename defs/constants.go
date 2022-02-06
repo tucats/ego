@@ -27,6 +27,8 @@ const EgoFilenameExtension = ".ego"
 // the 'tables' REST API.
 const RowIDName = "_row_id_"
 
+const PanicMessagePrefix = "!"
+
 // This section describes the profile keys used by Ego.
 const (
 	// The prefix for all configuration keys reserved to Ego.
@@ -138,6 +140,10 @@ const (
 	// the error being thrown.
 	ThrowUncheckedErrorsSetting = PrivilegedKeyPrefix + "runtime.unchecked.errors"
 
+	// If true, then an error with a message string that starts with "!" will
+	// cause an actual go panic abend.
+	RuntimePanicsSetting = PrivilegedKeyPrefix + "runtime.panics"
+
 	// If true, the TRACE operation will print the full stack instead of
 	// a shorter single-line version.
 	FullStackTraceSetting = PrivilegedKeyPrefix + "runtime.stack.trace"
@@ -236,6 +242,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	MaxCacheSizeSetting:             true,
 	RestClientErrorSetting:          true,
 	LogRetainCountSetting:           true,
+	RuntimePanicsSetting:            true,
 }
 
 const (

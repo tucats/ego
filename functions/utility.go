@@ -47,6 +47,21 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 			return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 		}
 	}
+
+	// Additionally, we don't allow anyone to change runtime, compiler, or server settings from Ego code
+
+	mode := "interactive"
+	if modeValue, found := symbols.Get("__exec_mode"); found {
+		mode = datatypes.GetString(modeValue)
+	}
+
+	if mode != "test" &&
+		(strings.HasPrefix(key, "ego.runtime") ||
+			strings.HasPrefix(key, "ego.server") ||
+			strings.HasPrefix(key, "ego.compiler")) {
+		return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
+	}
+
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
 	value := datatypes.GetString(args[1])

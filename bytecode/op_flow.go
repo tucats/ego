@@ -39,7 +39,7 @@ func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	msg := datatypes.GetString(strValue)
 
-	return c.newError(errors.ErrPanic).Context(msg)
+	panic(msg)
 }
 
 // atLineByteCode instruction processor. This identifies the start of a new statement,

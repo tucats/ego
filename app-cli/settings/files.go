@@ -194,7 +194,7 @@ func Get(key string) string {
 }
 
 // GetBool returns the boolean value of a profile string. If the string is
-// "Y", "YES", "1", or defs.True then the value returns true.
+// "Y", "YES", "1", or "true" then the value returns true.
 func GetBool(key string) bool {
 	s := strings.ToLower(Get(key))
 	if s == "y" || s == "yes" || s == defs.True || s == "t" || s == "1" {
@@ -204,8 +204,7 @@ func GetBool(key string) bool {
 	return false
 }
 
-// GetBool returns the boolean value of a profile string. If the string is
-// "Y", "YES", "1", or defs.True then the value returns true.
+// GetInt returns the integer value of a profile string.
 func GetInt(key string) int {
 	s := strings.ToLower(Get(key))
 	value, _ := strconv.Atoi(s)
