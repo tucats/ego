@@ -386,6 +386,7 @@ var LoggingGrammar = []cli.Option{
 	},
 	{
 		LongName:    "status",
+		ShortName:   "s",
 		Description: "Display the state of each logger",
 		OptionType:  cli.BooleanType,
 	},
@@ -393,6 +394,11 @@ var LoggingGrammar = []cli.Option{
 		LongName:    "limit",
 		ShortName:   "l",
 		Description: "Limit display to this many lines of text",
+		OptionType:  cli.IntType,
+	},
+	{
+		LongName:    "session",
+		Description: "Limit display to log entries for this session number",
 		OptionType:  cli.IntType,
 	},
 	{

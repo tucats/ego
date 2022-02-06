@@ -534,7 +534,13 @@ func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}
 
 func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	count := datatypes.GetInt(args[0])
-	lines := ui.Tail(count)
+	filter := 0
+
+	if len(args) > 1 {
+		filter = datatypes.GetInt(args[1])
+	}
+
+	lines := ui.Tail(count, filter)
 
 	if lines == nil {
 		return []interface{}{}, nil

@@ -2,10 +2,12 @@ package ui
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"strings"
 )
 
-func Tail(count int) []string {
+func Tail(count int, session int) []string {
 	if logFile == nil {
 		return nil
 	}
@@ -23,6 +25,16 @@ func Tail(count int) []string {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
+		line := scanner.Text()
+
+		if session > 0 {
+			pattern := fmt.Sprintf(": [%d] ", session)
+
+			if !strings.Contains(line, pattern) {
+				continue
+			}
+		}
+
 		text = append(text, scanner.Text())
 	}
 

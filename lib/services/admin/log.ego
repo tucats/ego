@@ -8,6 +8,12 @@ func handler(req http.Request, resp http.Response ) {
 // Can only proceed if authenticated with as administrator
     @authenticated admin
 
+    session := 0
+    sessionArray, sesssionFound := req.Parameters["session"]
+    if sesssionFound {
+        session = sessionArray[0]
+    }
+
     count, found := req.Parameters["tail"]
     if found {
         count = count[0]
@@ -31,7 +37,7 @@ func handler(req http.Request, resp http.Response ) {
         count = 50
     }
     
-    lines := util.Log(count)
+    lines := util.Log(count, session)
     resp.WriteStatus(200)
 
     @text {

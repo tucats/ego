@@ -121,6 +121,11 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
+		session, _ := c.Integer("session")
+		if session > 0 {
+			url = fmt.Sprintf("%s&session=%d", url, session)
+		}
+
 		lines := defs.LogTextResponse{}
 
 		err := runtime.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
