@@ -3,6 +3,8 @@ package bytecode
 import (
 	"testing"
 
+	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -25,12 +27,13 @@ func Test_panicByteCode(t *testing.T) {
 		running:      true,
 	}
 
-	e := panicByteCode(ctx, nil)
-	if !e.Equal(errors.ErrPanic) {
-		t.Errorf("panicByteCode unexpected error %v", e)
-	}
+	// Need to do a temporary override of this value to ensure that
+	// the panic only returns an error rather than abending.
+	settings.Set(defs.RuntimePanicsSetting, "false")
 
-	if e.GetContext() != "test" {
+	e := panicByteCode(ctx, nil)
+
+	if e.GetContext() != "panic" {
 		t.Errorf("panicByteCode wrong context %v", e)
 	}
 }

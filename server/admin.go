@@ -242,10 +242,9 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			result := defs.UserCollection{
-				BaseCollection: defs.BaseCollection{Version: defs.APIVersion},
+				BaseCollection: util.MakeBaseCollection(sessionID),
 				Items:          []defs.User{},
 			}
-			result.ID = Session
 
 			userDatabase := service.ListUsers()
 			for k, u := range userDatabase {
@@ -316,9 +315,10 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			return http.StatusBadRequest
 		} else {
 			result = defs.CacheResponse{
-				Count: len(serviceCache),
-				Limit: MaxCachedEntries,
-				Items: []defs.CachedItem{},
+				ServerInfo: util.MakeServerInfo(sessionID),
+				Count:      len(serviceCache),
+				Limit:      MaxCachedEntries,
+				Items:      []defs.CachedItem{},
 			}
 
 			for k, v := range serviceCache {
@@ -336,15 +336,13 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	// Get the list of cached items.
 	case http.MethodGet:
 		result := defs.CacheResponse{
-			Version:    defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      len(serviceCache),
 			Limit:      MaxCachedEntries,
 			Items:      []defs.CachedItem{},
 			AssetSize:  GetAssetCacheSize(),
 			AssetCount: GetAssetCacheCount(),
 		}
-		result.Hostname = util.Hostname()
-		result.ID = Session
 
 		for k, v := range serviceCache {
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age, Count: v.count})
@@ -369,15 +367,13 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		serviceCache = map[string]cachedCompilationUnit{}
 		result := defs.CacheResponse{
-			Version:    defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      0,
 			Limit:      MaxCachedEntries,
 			Items:      []defs.CachedItem{},
 			AssetSize:  GetAssetCacheSize(),
 			AssetCount: GetAssetCacheCount(),
 		}
-		result.Hostname = util.Hostname()
-		result.ID = Session
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -459,7 +455,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 	loggers := defs.LoggingItem{}
 	response := defs.LoggingResponse{
-		Version: defs.APIVersion,
+		ServerInfo: util.MakeServerInfo(sessionID),
 	}
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
@@ -509,13 +505,11 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		response.Filename = ui.CurrentLogFile()
 		response.Loggers = map[string]bool{}
 		response.RetainCount = ui.LogRetainCount
+		response.ServerInfo = util.MakeServerInfo(sessionID)
 
 		for _, k := range ui.LoggerNames() {
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
 		}
-
-		response.Hostname = util.Hostname()
-		response.ID = Session
 
 		b, _ := json.Marshal(response)
 		_, _ = w.Write(b)
@@ -546,8 +540,8 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		count := ui.PurgeLogs()
 
 		reply := defs.DBRowCount{
-			Version: defs.APIVersion,
-			Count:   count}
+			ServerInfo: util.MakeServerInfo(sessionID),
+			Count:      count}
 		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
 

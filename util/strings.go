@@ -6,6 +6,8 @@ import (
 	"unicode"
 )
 
+// HasCapitalizedName returns true if the first rune/character of the
+// string is considered a capital letter in Unicode.
 func HasCapitalizedName(name string) bool {
 	var firstRune rune
 
@@ -18,6 +20,7 @@ func HasCapitalizedName(name string) bool {
 	return unicode.IsUpper(firstRune)
 }
 
+// Hostname gets a short form of the host namme (i.e. the first part of an FQDN).
 func Hostname() string {
 	if hostName, err := os.Hostname(); err == nil {
 		result := ""

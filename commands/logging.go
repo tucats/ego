@@ -121,7 +121,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
-		lines := []string{}
+		lines := defs.LogTextResponse{}
 
 		err := runtime.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
 		if !errors.Nil(err) {
@@ -130,7 +130,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 
 		switch ui.OutputFormat {
 		case ui.TextFormat:
-			for _, line := range lines {
+			for _, line := range lines.Lines {
 				fmt.Println(line)
 			}
 

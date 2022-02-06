@@ -1186,7 +1186,7 @@ Here is the full _Ego_ code for the /services/admin/memory service, found in the
             Total: mb(m.total),
             System: mb(m.system),
             GC: m.gc,
-            ID: _session,
+            ID: _server_instancer,
             Date: time.Now().String(),
             Host: os.Hostname(),
         }

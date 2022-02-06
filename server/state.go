@@ -110,8 +110,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	b, err := ioutil.ReadFile(getPidFileName(c))
 	if errors.Nil(err) {
 		err = json.Unmarshal(b, &status)
-		status.Hostname = util.Hostname()
-		status.ID = Session
+		status.ServerInfo = util.MakeServerInfo(0)
 		status.Version = defs.APIVersion
 	}
 

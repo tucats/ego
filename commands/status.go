@@ -71,7 +71,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		os.Exit(3)
 	}
 
-	ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.Session, resp.Since, addr)
+	ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
 
 	return nil
 }

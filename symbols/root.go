@@ -9,8 +9,8 @@ import (
 // symbol table. These must match the values in rootValues below.
 // The slot numbers must be sequential starting at zero.
 var rootNames = map[string]int{
-	"_copyright": 0,
-	"_session":   1,
+	"_copyright":        0,
+	"_server_instancer": 1,
 }
 
 var rootBaseValues = []interface{}{

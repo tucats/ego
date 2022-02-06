@@ -59,3 +59,6 @@ const (
 	TableMetadataMediaType  = EgoMediaType + "columns+json"
 	TablesMediaType         = EgoMediaType + "tables+json"
 )
+
+// ServerInstanceID is the UUID of the current Server Instance.
+var ServerInstanceID string

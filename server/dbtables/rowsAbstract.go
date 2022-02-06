@@ -68,7 +68,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
-			Version: defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 		}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
@@ -157,7 +157,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 		if err == nil {
 			result := defs.DBRowCount{
-				Version: defs.APIVersion,
+				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:   count,
 			}
 
@@ -271,7 +271,7 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int32, w http.ResponseW
 		}
 
 		resp := defs.DBAbstractRowSet{
-			Version: defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 			Columns: columnNames,
 			Rows:    result,
 			Count:   len(result),
@@ -324,7 +324,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBAbstractRowSet{Version: defs.APIVersion}
+		rowSet := defs.DBAbstractRowSet{
+			ServerInfo: util.MakeServerInfo(sessionID),
+			}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
@@ -383,7 +385,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 	if errors.Nil(err) {
 		result := defs.DBRowCount{
-			Version: defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:   count,
 		}
 

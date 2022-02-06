@@ -14,7 +14,7 @@ func handler(req http.Request, resp http.Response ) {
     token := cipher.Create(_user)
 
     payload := {
-        "issuer":_session,
+        "issuer":_server_instancer,
         "token":token, 
         "expires": time.Now().Add(profile.Get("ego.server.token.expiration")).String(),
         "identity": _user,

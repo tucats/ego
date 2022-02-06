@@ -47,7 +47,6 @@ const (
 	CredentialNormalMessage  = ", normal user"
 )
 
-var Session string
 var StartTime string
 var Version string
 var serviceCache = map[string]cachedCompilationUnit{}
@@ -99,7 +98,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
 	_ = symbolTable.SetAlways("_pid", os.Getpid())
-	_ = symbolTable.SetAlways("_session", Session)
+	_ = symbolTable.SetAlways("_server_instancer", defs.ServerInstanceID)
+	_ = symbolTable.SetAlways("_session", int(sessionID))
 	_ = symbolTable.SetAlways("_method", r.Method)
 	_ = symbolTable.SetAlways("__exec_mode", "server")
 	_ = symbolTable.SetAlways("_version", Version)

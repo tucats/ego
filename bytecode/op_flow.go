@@ -6,8 +6,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -39,7 +41,11 @@ func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	msg := datatypes.GetString(strValue)
 
-	panic(msg)
+	if settings.GetBool(defs.RuntimePanicsSetting) {
+		panic(msg)
+	}
+
+	return errors.NewMessage(msg).Context("panic")
 }
 
 // atLineByteCode instruction processor. This identifies the start of a new statement,

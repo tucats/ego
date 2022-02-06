@@ -66,12 +66,12 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// we'll use the default value created during symbol table startup.
 	var found bool
 
-	server.Session, found = c.String("session-uuid")
+	defs.ServerInstanceID, found = c.String("session-uuid")
 	if found {
-		_ = symbols.RootSymbolTable.SetAlways("_session", server.Session)
+		_ = symbols.RootSymbolTable.SetAlways("_server_instancer", defs.ServerInstanceID)
 	} else {
-		s, _ := symbols.RootSymbolTable.Get("_session")
-		server.Session = datatypes.GetString(s)
+		s, _ := symbols.RootSymbolTable.Get("_server_instancer")
+		defs.ServerInstanceID = datatypes.GetString(s)
 	}
 
 	server.Version = c.Version
@@ -81,7 +81,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}
 
-	ui.Debug(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, server.Session)
+	ui.Debug(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {

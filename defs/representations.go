@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+type ServerInfo struct {
+	Version  int    `json:"api,omitempty"`
+	Hostname string `json:"name,omitempty"`
+	ID       string `json:"id,omitempty"`
+	Session  int    `json:"session"`
 }
 
 // The payload for the status check "/up" endpoint.
 type RemoteStatusResponse struct {
-	Version  int    `json:"apiVersion,omitempty"`
-	Pid      int    `json:"pid"`
-	Session  string `json:"session"`
-	Since    string `json:"since"`
-	Hostname string `json:"host"`
+	ServerInfo `json:"server"`
+	Pid        int    `json:"pid"`
+	Since      string `json:"since"`
 }
 
 // RestStatusResponse describes the HTTP status result and any helpful
@@ -36,9 +36,9 @@ type Table struct {
 }
 
 type TableInfo struct {
-	Version int     `json:"apiVersion,omitempty"`
-	Tables  []Table `json:"tables"`
-	Count   int     `json:"count"`
+	ServerInfo `json:"server"`
+	Tables     []Table `json:"tables"`
+	Count      int     `json:"count"`
 }
 
 type DBColumn struct {
@@ -50,27 +50,32 @@ type DBColumn struct {
 }
 
 type DBRowSet struct {
-	Version int                      `json:"apiVersion,omitempty"`
-	Rows    []map[string]interface{} `json:"rows"`
-	Count   int                      `json:"count"`
+	ServerInfo `json:"server"`
+	Rows       []map[string]interface{} `json:"rows"`
+	Count      int                      `json:"count"`
 }
 
 type DBAbstractRowSet struct {
-	Version int             `json:"apiVersion,omitempty"`
-	Columns []string        `json:"columns"`
-	Rows    [][]interface{} `json:"rows"`
-	Count   int             `json:"count"`
+	ServerInfo `json:"server"`
+	Columns    []string        `json:"columns"`
+	Rows       [][]interface{} `json:"rows"`
+	Count      int             `json:"count"`
 }
 
 type TableColumnsInfo struct {
-	Version int        `json:"apiVersion,omitempty"`
-	Columns []DBColumn `json:"columns"`
-	Count   int        `json:"count"`
+	ServerInfo `json:"server"`
+	Columns    []DBColumn `json:"columns"`
+	Count      int        `json:"count"`
 }
 
 type DBRowCount struct {
-	Version int `json:"apiVersion,omitempty"`
-	Count   int `json:"count"`
+	ServerInfo `json:"server"`
+	Count      int `json:"count"`
+}
+
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type PermissionObject struct {
@@ -81,14 +86,9 @@ type PermissionObject struct {
 }
 
 type AllPermissionResponse struct {
-	Version     int                `json:"apiVersion,omitempty"`
+	ServerInfo  `json:"server"`
 	Permissions []PermissionObject `json:"permissions"`
 	Count       int                `json:"count"`
-}
-
-type ServerInfo struct {
-	Hostname string `json:"host,omitempty"`
-	ID       string `json:"id,omitempty"`
 }
 
 type LoggingItem struct {
@@ -98,9 +98,13 @@ type LoggingItem struct {
 }
 
 type LoggingResponse struct {
-	Version int `json:"apiVersion,omitempty"`
-	ServerInfo
+	ServerInfo `json:"server"`
 	LoggingItem
+}
+
+type LogTextResponse struct {
+	ServerInfo `json:"server"`
+	Lines      []string `json:"lines"`
 }
 
 type CachedItem struct {
@@ -112,8 +116,7 @@ type CachedItem struct {
 // CacheResponse describes the response object returned from
 // the /admin/caches endpoint.
 type CacheResponse struct {
-	Version int `json:"apiVersion,omitempty"`
-	ServerInfo
+	ServerInfo `json:"server"`
 	Count      int          `json:"count"`
 	Limit      int          `json:"limit"`
 	Items      []CachedItem `json:"items"`
@@ -133,10 +136,9 @@ type User struct {
 // BaseCollection is a component of any collection type returned
 // as a response.
 type BaseCollection struct {
-	Version int `json:"apiVersion,omitempty"`
-	ServerInfo
-	Count int `json:"count"`
-	Start int `json:"start"`
+	ServerInfo `json:"server"`
+	Count      int `json:"count"`
+	Start      int `json:"start"`
 }
 
 // UserCollection is a collection of User response objects.
@@ -148,17 +150,16 @@ type UserCollection struct {
 // ServerStatus describes the state of a running server. A json version
 // of this information is the contents of the pid file.
 type ServerStatus struct {
-	Version int `json:"apiVersion,omitempty"`
-	ServerInfo
-	PID     int       `json:"pid"`
-	Started time.Time `json:"started"`
-	LogID   uuid.UUID `json:"logID"`
-	Args    []string  `json:"args"`
+	ServerInfo `json:"server"`
+	PID        int       `json:"pid"`
+	Started    time.Time `json:"started"`
+	LogID      uuid.UUID `json:"logID"`
+	Args       []string  `json:"args"`
 }
 
 // LogonResponse is the info returned from a logon request.
 type LogonResponse struct {
-	Version    int    `json:"apiVersion,omitempty"`
+	ServerInfo `json:"server"`
 	Expiration string `json:"expires"`
 	Issuer     string `json:"issuer"`
 	Token      string `json:"token"`

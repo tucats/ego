@@ -41,7 +41,17 @@ func handler(req http.Request, resp http.Response ) {
     }
 
     @json {
-        resp.Write(lines)
+        reply := {
+            server: {
+                api: 1,
+                session: _session,
+                id: _server_instancer,
+                name: os.Hostname(),
+            },
+            lines: lines,
+        }
+
+        resp.Write(reply)
     }
 
     return

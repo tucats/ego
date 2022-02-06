@@ -183,7 +183,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	// Get the session ID of the current Ego program and add it to
 	// the token. A token can only be validated on the same system
 	// that created it.
-	if session, ok := s.Get("_session"); ok {
+	if session, ok := s.Get("_server_instancer"); ok {
 		t.AuthID, err = uuid.Parse(datatypes.GetString(session))
 		if !errors.Nil(err) {
 			return nil, errors.New(err)

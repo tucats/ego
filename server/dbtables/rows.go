@@ -64,8 +64,8 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			rowCount, _ := rows.RowsAffected()
 
 			resp := defs.DBRowCount{
-				Version: defs.APIVersion,
-				Count:   int(rowCount),
+				ServerInfo: util.MakeServerInfo(sessionID),
+				Count:      int(rowCount),
 			}
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
@@ -151,7 +151,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBRowSet{
-			Version: defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 		}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
@@ -234,8 +234,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		if err == nil {
 			result := defs.DBRowCount{
-				Version: defs.APIVersion,
-				Count:   count,
+				ServerInfo: util.MakeServerInfo(sessionID),
+				Count:      count,
 			}
 
 			b, _ := json.MarshalIndent(result, "", "  ")
@@ -364,9 +364,9 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 		}
 
 		resp := defs.DBRowSet{
-			Version: defs.APIVersion,
-			Rows:    result,
-			Count:   len(result),
+			ServerInfo: util.MakeServerInfo(sessionID),
+			Rows:       result,
+			Count:      len(result),
 		}
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
@@ -455,7 +455,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		ui.Debug(ui.RestLogger, "[%d] RAW payload:\n%s", sessionID, rawPayload)
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBRowSet{Version: defs.APIVersion}
+		rowSet := defs.DBRowSet{
+			ServerInfo: util.MakeServerInfo(sessionID),
+		}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
@@ -535,7 +537,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	if errors.Nil(err) {
 		result := defs.DBRowCount{
-			Version: defs.APIVersion,
+			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:   count,
 		}
 
