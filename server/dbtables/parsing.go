@@ -108,6 +108,10 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	operator := tokens.Next()
 	isName := tokenizer.IsSymbol(operator)
 
+	if operator == "true" || operator == "false" {
+		isName = false
+	}
+
 	if !tokens.IsNext("(") {
 		// Assume it's a constant value of some kind. Convert Ego strings to SQL strings
 		isString := false

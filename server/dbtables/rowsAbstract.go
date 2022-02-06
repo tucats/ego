@@ -30,7 +30,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 	tableName, _ = fullName(user, tableName)
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
+	ui.Debug(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)

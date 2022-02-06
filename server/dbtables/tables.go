@@ -162,7 +162,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		return
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, err)
+	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
 	w.WriteHeader(http.StatusBadRequest)
 
 	if err == nil {
@@ -334,7 +334,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		err = e2
 	}
 
-	msg := fmt.Sprintf("database table metadata error, %v", err)
+	msg := fmt.Sprintf("database table metadata error, %s", strings.TrimPrefix(err.Error(), "pq: "))
 	status := http.StatusBadRequest
 
 	if strings.Contains(err.Error(), "does not exist") {
@@ -445,7 +445,8 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		}
 	}
 
-	msg := fmt.Sprintf("database table delete error, %v", err)
+	msg := fmt.Sprintf("database table delete error, %s", strings.TrimPrefix(err.Error(), "pq: "))
+
 	if err == nil && db == nil {
 		msg = UnexpectedNilPointerError
 	}

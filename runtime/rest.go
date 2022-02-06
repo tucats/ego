@@ -714,7 +714,7 @@ func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
 // Exchange is a helper wrapper around a rest call. This is generally used by all the
 // CLI client operations _except_ the logon operation, since at that point the token
 // is not known (or used).
-func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string) *errors.EgoError {
+func Exchange(endpoint, method string, body interface{}, response interface{}, agentType string, mediaTypes ...string) *errors.EgoError {
 	var resp *resty.Response
 
 	var err error
@@ -760,9 +760,26 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	r := client.NewRequest()
 
-	r.Header.Add("Accept", defs.JSONMediaType)
-	r.Header.Add("Content-Type", defs.JSONMediaType)
+	// Lets figure out what media types we're sending and reciving. By default, they
+	// are anonymous JSON. But if the call included one or two strings, they are used
+	// as the receiving and sending media types respectively.
+	receiveMediaType := defs.JSONMediaType
+	sendMediaType := defs.JSONMediaType
 
+	if len(mediaTypes) > 0 {
+		receiveMediaType = mediaTypes[0]
+
+		ui.Debug(ui.RestLogger, "Adding media type: %s", receiveMediaType)
+	}
+
+	if len(mediaTypes) > 1 {
+		sendMediaType = mediaTypes[1]
+
+		ui.Debug(ui.RestLogger, "Adding media type: %s", sendMediaType)
+	}
+
+	r.Header.Add("Content-Type", sendMediaType)
+	r.Header.Add("Accepts", receiveMediaType)
 	AddAgent(r, agentType)
 
 	if body != nil {

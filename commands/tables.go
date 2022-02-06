@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -44,7 +45,7 @@ func TableList(c *cli.Context) *errors.EgoError {
 		url.Parameter(defs.RowCountParameterName, false)
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			if rowCounts {
@@ -95,7 +96,7 @@ func TableShow(c *cli.Context) *errors.EgoError {
 
 	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
-	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable", "Unique"})
@@ -157,7 +158,7 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 	if err == nil && count > 1 {
 		ui.Say("Deleted %d tables", count)
 	} else if !errors.Nil(err) {
-		return errors.New(err).Context(table)
+		return errors.New(err)
 	}
 
 	return nil
@@ -195,7 +196,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if errors.Nil(err) {
 		err = printRowSet(resp, c.Boolean("row-ids"))
 	}
@@ -549,7 +550,8 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		http.MethodPatch,
 		payload,
 		&resp,
-		defs.TableAgent)
+		defs.TableAgent,
+		defs.RowCountMediaType)
 
 	if errors.Nil(err) {
 		ui.Say("Updated %d rows in table %s", resp.Count, table)
@@ -575,7 +577,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent)
+	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			if resp.Count == 0 {
@@ -606,7 +608,23 @@ func makeFilter(filters []string) string {
 
 		t := tokenizer.New(filter)
 		term1 := t.Next()
+
+		if t.AtEnd() {
+			terms = append(terms, term1)
+
+			continue
+		}
+
 		op := t.Next()
+
+		if util.InList(term1, "!", "not", "NOT") {
+			term.WriteString("NOT(")
+			term.WriteString(op)
+			term.WriteString(")")
+			terms = append(terms, term.String())
+
+			continue
+		}
 
 		term2 := t.Next()
 
@@ -728,7 +746,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	if strings.HasPrefix(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &rows, defs.TableAgent)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -737,7 +755,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &resp, defs.TableAgent)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if !errors.Nil(err) {
 			return err
 		}

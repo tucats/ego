@@ -74,11 +74,17 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			return
 		}
+
+		ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
-	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte(err.Error()))
+	if !errors.Nil(err) {
+		ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
+		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.

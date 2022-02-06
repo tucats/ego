@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
     {
+        "name": "delete non-existant table",
+        "type": "go",
+        "request": "launch",
+        "mode": "auto",
+        "program": "${workspaceFolder}", 
+        "debugAdapter": "dlv-dap",
+        "args": ["-d", "rest", "db", "drop", "fizbo"]
+    },
+    {
         "name": "insert row into 'table'",
         "type": "go",
         "request": "launch",
