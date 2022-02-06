@@ -52,6 +52,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	text := buf.String()
 
 	ui.Debug(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, text)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// Tokenize the input
 	t := tokenizer.New(text)

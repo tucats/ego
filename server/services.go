@@ -80,6 +80,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ui.Debug(ui.ServerLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	if p := parameterString(r); p != "" {
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)

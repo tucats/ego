@@ -23,7 +23,7 @@ const UnexpectedNilPointerError = "Unexpected nil database object pointer"
 func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
+	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.RowCountMediaType}); !errors.Nil(e) {
 		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
@@ -142,7 +142,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			rows, _ := counts.RowsAffected()
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
-				Count:   int(rows),
+				Count:      int(rows),
 			}
 
 			tableName, _ = fullName(user, tableName)
@@ -321,8 +321,8 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 			resp := defs.TableColumnsInfo{
 				ServerInfo: util.MakeServerInfo(sessionID),
-				Columns: columns,
-				Count:   len(columns),
+				Columns:    columns,
+				Count:      len(columns),
 			}
 
 			b, _ := json.MarshalIndent(resp, "", "  ")

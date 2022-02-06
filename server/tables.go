@@ -157,6 +157,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	ui.Debug(ui.ServerLogger, "[%d] Table request for user %s (admin=%v); %s %s",
 		sessionID, user, hasAdminPermission, r.Method, path)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
 	if !valid {

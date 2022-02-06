@@ -38,6 +38,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 	// If INFO logging, put out the prologue message for the operation.
 	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// Do the actual work.
 	status := userHandler(sessionID, w, r)
@@ -60,6 +61,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+
 	status := cachesHandler(sessionID, w, r)
 
 	if !ui.LoggerIsActive(ui.ServerLogger) {
@@ -79,6 +82,8 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+
 	status := loggingHandler(sessionID, w, r)
 
 	if !ui.LoggerIsActive(ui.ServerLogger) {
