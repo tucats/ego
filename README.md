@@ -30,7 +30,7 @@ the command `exit`. You can also pipe a program directly to _Ego_, as in
     8
 
 Note that in this example, the _Ego_ language extension verb `print` is used in place
-of the more formal `fmt.Println()` call. See the [Language Reference](#LANGUAGE.MD) for 
+of the more formal `fmt.Println()` call. See the [Language Reference](docs/LANGUAGE.md) for 
 more information on extensions to the standard Go syntax provided by _Ego_.
 
 If a statement is more complex, or you wish to run a complete program, it may be easier 
