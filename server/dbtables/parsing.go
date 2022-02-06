@@ -579,7 +579,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	table, wasFullyQualified := fullName(user, datatypes.GetString(tableItem))
 	// This is a multipart name. You must be an administrator to do this
 	if !wasFullyQualified && !hasAdminPrivileges {
-		ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 	}
 
 	var result strings.Builder

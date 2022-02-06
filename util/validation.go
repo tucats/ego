@@ -94,6 +94,7 @@ func AcceptedMediaType(r *http.Request, validList []string) *errors.EgoError {
 			"text/plain",
 			"text/*",
 			"text",
+			"*/*",
 		) {
 			continue
 		}

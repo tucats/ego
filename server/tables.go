@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/server/dbtables"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -26,7 +26,6 @@ const (
 
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	CountRequest(TableRequestCounter)
-	w.Header().Add("Content-type", defs.JSONMediaType)
 
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
@@ -116,7 +115,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("Operation %s from user %s requires valid user credentials",
 			r.Method, user)
 
-		ErrorResponse(w, sessionID, msg, http.StatusUnauthorized)
+		util.ErrorResponse(w, sessionID, msg, http.StatusUnauthorized)
 
 		return
 	}
@@ -150,7 +149,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if !hasReadPermission {
 		msg := fmt.Sprintf("User %s does not have tables permissions", user)
 
-		ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 		return
 	}
@@ -166,7 +165,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !valid || !datatypes.GetBool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
-		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -177,7 +176,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if tableName == "" && r.Method != http.MethodGet {
 		msg := unsupportedMethodMessage
-		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -192,7 +191,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := fmt.Sprintf("User %s does not have permission to modify tables", user)
 
-			ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 			return
 		}
@@ -211,7 +210,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
 
 		return
@@ -221,7 +220,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && !hasUpdatePermission {
 			msg := "User does not have permission to modify tables"
 
-			ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 			return
 		}
@@ -237,7 +236,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			dbtables.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
-			ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 		}
 
 		return
@@ -247,7 +246,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// only permitted for root users or those with "table_admin" privilege
 	if !hasAdminPermission {
 		msg := "User does not have permission to admin tables"
-		dbtables.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 		return
 	}
@@ -266,15 +265,12 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		alterTable(user, tableName, sessionID, w, r)
 
 	default:
-		ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
+		util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
 	}
 }
 
 // @tomcole to be implemented.
 func alterTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	msg := fmt.Sprintf("Altering metadata from table %s for user %s", tableName, user)
-	b, _ := json.MarshalIndent(msg, "", "  ")
-
-	w.WriteHeader(http.StatusTeapot)
-	_, _ = w.Write(b)
+	msg := fmt.Sprintf("Unsupported request to alter metadata from table %s for user %s", tableName, user)
+	util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
 }

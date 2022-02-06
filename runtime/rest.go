@@ -802,6 +802,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		return errors.New(errors.ErrHTTP).Context(status)
 	}
 
+	if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
+		ui.Debug(ui.RestLogger, "Reply media type: %s", replyMedia)
+	}
+
 	// If there was an error, and the runtime rest automatic error handling is enabled,
 	// try to find the message text in the response, and if found, form an error response
 	// to the local caller using that text.

@@ -58,6 +58,12 @@ const (
 	RowCountMediaType       = EgoMediaType + "rowcount+json"
 	TableMetadataMediaType  = EgoMediaType + "columns+json"
 	TablesMediaType         = EgoMediaType + "tables+json"
+	ErrorMediaType          = EgoMediaType + "error+json"
+	UserMediaType           = EgoMediaType + "user+json"
+	UsersMediaType          = EgoMediaType + "users+json"
+	LogStatusMediaType      = EgoMediaType + "log.status+json"
+	LogLinesMediaType       = EgoMediaType + "log.lines+json"
+	CacheMediaType          = EgoMediaType + "cache+json"
 )
 
 // ServerInstanceID is the UUID of the current Server Instance.

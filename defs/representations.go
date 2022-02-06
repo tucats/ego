@@ -23,8 +23,9 @@ type RemoteStatusResponse struct {
 // RestStatusResponse describes the HTTP status result and any helpful
 // additional message. This must be part of all response objects.
 type RestStatusResponse struct {
-	Status  int    `json:"status"`
-	Message string `json:"msg"`
+	ServerInfo `json:"server"`
+	Status     int    `json:"status"`
+	Message    string `json:"msg"`
 }
 
 type Table struct {

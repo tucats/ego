@@ -543,19 +543,6 @@ func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *b
 	}
 }
 
-func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status int) {
-	response := defs.RestStatusResponse{
-		Message: msg,
-		Status:  status,
-	}
-
-	b, _ := json.MarshalIndent(response, "", "  ")
-
-	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
-	w.WriteHeader(status)
-	_, _ = w.Write(b)
-}
-
 func parameterString(r *http.Request) string {
 	m := r.URL.Query()
 	result := strings.Builder{}

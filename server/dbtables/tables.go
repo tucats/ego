@@ -24,7 +24,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 	var err error
 
 	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.RowCountMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -33,7 +33,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -45,7 +45,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		// SQL  statement and not a table creation.
 		if strings.EqualFold(tableName, sqlPseudoTable) {
 			if !isAdmin {
-				ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)
+				util.ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)
 
 				return
 			}
@@ -59,7 +59,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 					err = readRowData(db, statementText, sessionID, w)
 					if err != nil {
-						ErrorResponse(w, sessionID, "Error reading SQL query; "+err.Error(), http.StatusInternalServerError)
+						util.ErrorResponse(w, sessionID, "Error reading SQL query; "+err.Error(), http.StatusInternalServerError)
 
 						return
 					}
@@ -75,6 +75,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 							ServerInfo: util.MakeServerInfo(sessionID),
 							Count:      int(count),
 						}
+						w.Header().Add("Content-Type", defs.RowCountMediaType)
 
 						b, _ := json.MarshalIndent(reply, "", "  ")
 						_, _ = w.Write(b)
@@ -85,14 +86,14 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			}
 
 			if err != nil {
-				ErrorResponse(w, sessionID, "Error in SQL execute; "+err.Error(), http.StatusInternalServerError)
+				util.ErrorResponse(w, sessionID, "Error in SQL execute; "+err.Error(), http.StatusInternalServerError)
 			}
 
 			return
 		}
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
-			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 
 			return
 		}
@@ -101,26 +102,26 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
+			util.ErrorResponse(w, sessionID, "Invalid table create payload: "+err.Error(), http.StatusBadRequest)
 
 			return
 		}
 
 		for _, column := range data {
 			if column.Name == "" {
-				ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Missing or empty column name", http.StatusBadRequest)
 
 				return
 			}
 
 			if column.Type == "" {
-				ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Missing or empty type name", http.StatusBadRequest)
 
 				return
 			}
 
 			if !keywordMatch(column.Type, defs.TableColumnTypeNames...) {
-				ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Invalid type name: "+column.Type, http.StatusBadRequest)
 
 				return
 			}
@@ -146,7 +147,9 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			}
 
 			tableName, _ = fullName(user, tableName)
+
 			CreateTablePermissions(sessionID, db, user, tableName, readOperation, deleteOperation, updateOperation)
+			w.Header().Add("Content-Type", defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -157,19 +160,18 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 		}
 
 		ui.Debug(ui.ServerLogger, "[%d] Error creating table, %v", sessionID, err)
-		ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
-	w.WriteHeader(http.StatusBadRequest)
 
 	if err == nil {
 		err = fmt.Errorf("unknown error")
 	}
 
-	_, _ = w.Write([]byte(err.Error()))
+	util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 }
 
 // Verify that the schema exists for this user, and create it if not found.
@@ -185,7 +187,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 
 	result, err := db.Exec(q)
 	if err != nil {
-		ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, "Error creating schema; "+err.Error(), http.StatusInternalServerError)
 
 		return false
 	}
@@ -202,7 +204,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 // of column names and types.
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if e := util.AcceptedMediaType(r, []string{defs.TableMetadataMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -211,7 +213,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -222,7 +224,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		// to read all the permissions data
 		if strings.EqualFold(tableName, permissionsPseudoTable) {
 			if !isAdmin {
-				ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+				util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 				return
 			}
@@ -235,7 +237,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		tableName, _ = fullName(user, tableName)
 
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
-			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
 		}
@@ -249,7 +251,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		rows, err := db.Query(q)
 		if err != nil {
-			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 			return
 		}
@@ -280,7 +282,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		nrows, err := db.Query(q)
 		if err != nil {
-			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 			return
 		}
@@ -325,6 +327,8 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 				Count:      len(columns),
 			}
 
+			w.Header().Add("Content-Type", defs.TableMetadataMediaType)
+
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
 
@@ -346,7 +350,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		status = http.StatusInternalServerError
 	}
 
-	ErrorResponse(w, sessionID, msg, status)
+	util.ErrorResponse(w, sessionID, msg, status)
 }
 
 func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) ([]defs.DBColumn, *errors.EgoError) {
@@ -405,7 +409,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 //DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if e := util.AcceptedMediaType(r, []string{}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -414,7 +418,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -424,7 +428,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, adminOperation) {
-			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
 		}
@@ -439,7 +443,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		_, err = db.Exec(q)
 		if err == nil {
 			RemoveTablePermissions(sessionID, db, tableName)
-			ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
+			util.ErrorResponse(w, sessionID, "Table "+tableName+" successfully deleted", http.StatusOK)
 
 			return
 		}
@@ -456,20 +460,20 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 		status = http.StatusNotFound
 	}
 
-	ErrorResponse(w, sessionID, msg, status)
+	util.ErrorResponse(w, sessionID, msg, status)
 }
 
 // ListTables will list all the tables for the given user.
 func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if e := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); !errors.Nil(e) {
-		ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	if r.Method != http.MethodGet {
 		msg := "Unsupported method " + r.Method + " " + r.URL.Path
-		ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -481,7 +485,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		defs.UserParameterName:     "string",
 		defs.RowCountParameterName: "bool",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -564,7 +568,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 					result, e2 := db.Query(q)
 					if !errors.Nil(e2) {
-						ErrorResponse(w, sessionID, e2.Error(), http.StatusInternalServerError)
+						util.ErrorResponse(w, sessionID, e2.Error(), http.StatusInternalServerError)
 
 						return
 					}
@@ -594,6 +598,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					Count:      len(names),
 				}
 
+				w.Header().Add("Content-Type", defs.TablesMediaType)
+
 				b, _ := json.MarshalIndent(resp, "", "  ")
 				_, _ = w.Write(b)
 
@@ -607,7 +613,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		msg = UnexpectedNilPointerError
 	}
 
-	ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+	util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 }
 
 func parameterString(r *http.Request) string {

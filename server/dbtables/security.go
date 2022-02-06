@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/util"
 )
 
 const (
@@ -25,7 +26,7 @@ const (
 func ReadPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -34,7 +35,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 
 	table, fullyQualified := fullName(user, tableName)
 	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to read permissions", http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, "Not authorized to read permissions", http.StatusForbidden)
 
 		return
 	}
@@ -49,7 +50,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 	if err != nil {
 		defer rows.Close()
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions field: %v", sessionID, err)
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -101,7 +102,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 	if err != nil {
 		defer rows.Close()
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -118,7 +119,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 		err = rows.Scan(&user, &table, &permissionString)
 		if err != nil {
 			ui.Debug(ui.TableLogger, "[%d] Error scanning permissions: %v", sessionID, err)
-			ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 			return
 		}
@@ -156,7 +157,7 @@ func ReadAllPermissions(db *sql.DB, sessionID int32, w http.ResponseWriter, r *h
 func GrantPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -166,7 +167,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 	table, fullyQualified := fullName(user, tableName)
 
 	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, "Not authorized to update permissions", http.StatusForbidden)
 
 		return
 	}
@@ -175,7 +176,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 
 	err = json.NewDecoder(r.Body).Decode(&permissionsList)
 	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -193,7 +194,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 	err = grantPermissions(sessionID, db, user, table, buff.String())
 
 	if !errors.Nil(err) {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -206,7 +207,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 func DeletePermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	db, err := OpenDB(sessionID, user, "")
 	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -215,14 +216,14 @@ func DeletePermissions(user string, hasAdminPermission bool, tableName string, s
 
 	table, fullyQualified := fullName(user, tableName)
 	if !hasAdminPermission && !fullyQualified {
-		ErrorResponse(w, sessionID, "Not authorized to delete permissions", http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, "Not authorized to delete permissions", http.StatusForbidden)
 
 		return
 	}
 
 	_, err = db.Exec(permissionsDeleteQuery, user, table)
 	if err != nil {
-		ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}

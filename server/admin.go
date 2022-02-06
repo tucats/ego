@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -98,11 +97,9 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	var u = defs.User{Permissions: []string{}}
 
-	w.Header().Add("Content-Type", defs.JSONMediaType)
-
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ErrorResponse(w, sessionID, fmt.Sprintf("User %s not authorized to access credentials", user), http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not authorized to access credentials", user), http.StatusForbidden)
 
 		return http.StatusForbidden
 	}
@@ -110,7 +107,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	if !util.InList(r.Method, http.MethodPost, http.MethodDelete, http.MethodGet) {
 		msg := fmt.Sprintf("Unsupported method %s", r.Method)
 
-		ErrorResponse(w, sessionID, msg, http.StatusTeapot)
+		util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)
 
 		return http.StatusTeapot
 	}
@@ -169,7 +166,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 					u.Name = name
 					response = u
 				} else {
-					ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+					util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 					return http.StatusInternalServerError
 				}
@@ -177,6 +174,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			if errors.Nil(err) {
 				w.WriteHeader(http.StatusOK)
+				w.Header().Add("Content-Type", defs.UserMediaType)
 
 				msg, _ := json.Marshal(response)
 				_, _ = w.Write(msg)
@@ -192,7 +190,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			if !errors.Nil(exists) {
 				msg := fmt.Sprintf("No username entry for '%s'", name)
 
-				ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+				util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 
 				return http.StatusNotFound
 			}
@@ -205,7 +203,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			if !errors.Nil(err) || !datatypes.GetBool(v) {
 				msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
-				ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+				util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
 
 				return http.StatusNotFound
 			}
@@ -213,8 +211,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			if errors.Nil(err) {
 				b, _ := json.Marshal(response)
 
-				w.WriteHeader(http.StatusOK)
-
+				w.Header().Add("Content-Type", defs.UserMediaType)
 				_, _ = w.Write(b)
 
 				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
@@ -231,13 +228,13 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
-					ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
+					util.ErrorResponse(w, sessionID, fmt.Sprintf("User %s not found", name), http.StatusNotFound)
 
 					return http.StatusNotFound
 				}
 
 				ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
-				w.WriteHeader(status)
+				w.Header().Add("Content-Type", defs.UserMediaType)
 
 				result := u
 				b, _ := json.Marshal(result)
@@ -265,7 +262,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			b, _ := json.Marshal(result)
 
-			w.WriteHeader(http.StatusOK)
+			w.Header().Add("Content-Type", defs.UsersMediaType)
 			_, _ = w.Write(b)
 
 			ui.Debug(ui.ServerLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
@@ -275,11 +272,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	}
 
 	// We had some kind of error, so report that.
-	w.WriteHeader(http.StatusInternalServerError)
-
-	msg := `{ "status" : 500, "msg" : "%s"}`
-	_, _ = w.Write([]byte(fmt.Sprintf(msg, err.Error())))
-
+	util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	ui.Debug(ui.ServerLogger, "[%d] 500 Internal server error %v", sessionID, err)
 
 	return http.StatusInternalServerError
@@ -287,15 +280,10 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 // FlushCacheHandler is the rest handler for /admin/caches endpoint.
 func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
-	w.Header().Add("Content-Type", defs.JSONMediaType)
-
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
 		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		w.WriteHeader(http.StatusForbidden)
-
-		msg := `{ "status" : 403, "msg" : "Not authorized" }`
-		_, _ = io.WriteString(w, msg)
+		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
 
 		return http.StatusForbidden
 	}
@@ -315,7 +303,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		}
 
 		if !errors.Nil(err) {
-			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 			return http.StatusBadRequest
 		} else {
@@ -330,6 +318,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 				result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.age})
 			}
 		}
+
+		w.Header().Add("Content-Type", defs.CacheMediaType)
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -357,6 +347,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.lastUsed, Count: v.count})
 		}
 
+		w.Header().Add("Content-Type", defs.CacheMediaType)
+
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
@@ -367,7 +359,6 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	// DELETE the cached service compilation units. In-flight services
 	// are unaffected.
 	case http.MethodDelete:
-		w.WriteHeader(http.StatusOK)
 		FlushAssetCache()
 
 		serviceCache = map[string]cachedCompilationUnit{}
@@ -380,6 +371,8 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			AssetCount: GetAssetCacheCount(),
 		}
 
+		w.Header().Add("Content-Type", defs.CacheMediaType)
+
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
@@ -388,13 +381,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		return http.StatusOK
 
 	default:
-		w.WriteHeader(http.StatusTeapot)
-
-		msg := `{ "status" : 418, "msg" : "Unsupported method %s" }`
-
-		_, _ = io.WriteString(w, fmt.Sprintf(msg, r.Method))
-
-		ui.Debug(ui.ServerLogger, "[%d] 418, sending JSON response: unsupported method %s", sessionID, r.Method)
+		util.ErrorResponse(w, sessionID, "Unsupported method: "+r.Method, http.StatusTeapot)
 
 		return http.StatusTeapot
 	}
@@ -456,8 +443,6 @@ func isAdminRequestor(r *http.Request) (string, bool) {
 
 // loggingHandler is the rest handler for /admin/logging endpoint.
 func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
-	w.Header().Add("Content-Type", defs.JSONMediaType)
-
 	loggers := defs.LoggingItem{}
 	response := defs.LoggingResponse{
 		ServerInfo: util.MakeServerInfo(sessionID),
@@ -466,7 +451,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
 		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
-		ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
+		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
 
 		return http.StatusForbidden
 	}
@@ -480,7 +465,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 		err := json.Unmarshal(buf.Bytes(), &loggers)
 		if err != nil {
-			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 			ui.Debug(ui.ServerLogger, "[%d] Bad payload: %v", sessionID, err)
 
 			return http.StatusBadRequest
@@ -489,7 +474,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		for loggerName, mode := range loggers.Loggers {
 			logger := ui.Logger(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
-				ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 				ui.Debug(ui.ServerLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
 				return http.StatusBadRequest
@@ -516,6 +501,8 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
 		}
 
+		w.Header().Add("Content-Type", defs.LogStatusMediaType)
+
 		b, _ := json.Marshal(response)
 		_, _ = w.Write(b)
 
@@ -523,7 +510,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 	case http.MethodDelete:
 		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); !errors.Nil(err) {
-			ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 			return http.StatusBadRequest
 		}
@@ -547,6 +534,9 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 		reply := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      count}
+
+		w.Header().Add("Content-Type", defs.RowCountMediaType)
+
 		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
 
@@ -554,7 +544,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 
 	default:
 		ui.Debug(ui.ServerLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
-		ErrorResponse(w, sessionID, "Method not allowed", http.StatusMethodNotAllowed)
+		util.ErrorResponse(w, sessionID, "Method not allowed", http.StatusMethodNotAllowed)
 
 		return http.StatusMethodNotAllowed
 	}

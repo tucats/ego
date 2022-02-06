@@ -23,7 +23,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		defs.UserParameterName:     "string",
 		defs.AbstractParameterName: "bool",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -41,7 +41,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
-			ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
 
 			return
 		}
@@ -54,7 +54,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 			columns, err = getColumnInfo(db, user, tableName, sessionID)
 			if !errors.Nil(err) {
-				ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 
 				return
 			}
@@ -78,7 +78,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
 
 				return
 			} else {
@@ -109,7 +109,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		// If at this point we have an empty row set, then just bail out now. Return a success
 		// status but an indicator that nothing was done.
 		if len(rowSet.Rows) == 0 {
-			ErrorResponse(w, sessionID, "No rows found in INSERT payload", http.StatusNoContent)
+			util.ErrorResponse(w, sessionID, "No rows found in INSERT payload", http.StatusNoContent)
 
 			return
 		}
@@ -148,7 +148,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 			if err == nil {
 				count++
 			} else {
-				ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
+				util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 				_ = tx.Rollback()
 
 				return
@@ -158,8 +158,10 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		if err == nil {
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
-				Count:   count,
+				Count:      count,
 			}
+
+			w.Header().Add("Content-Type", defs.RowCountMediaType)
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
@@ -174,13 +176,13 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 		_ = tx.Rollback()
 
-		ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
 	if !errors.Nil(err) {
-		ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -201,7 +203,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 		defs.UserParameterName:     "string",
 		defs.AbstractParameterName: "bool",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -215,14 +217,14 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
-			ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-			ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
+			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 			return
 		}
@@ -236,7 +238,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
-	ErrorResponse(w, sessionID, err.Error(), 400)
+	util.ErrorResponse(w, sessionID, err.Error(), 400)
 }
 
 func readAbstractRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) error {
@@ -272,10 +274,12 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int32, w http.ResponseW
 
 		resp := defs.DBAbstractRowSet{
 			ServerInfo: util.MakeServerInfo(sessionID),
-			Columns: columnNames,
-			Rows:    result,
-			Count:   len(result),
+			Columns:    columnNames,
+			Rows:       result,
+			Count:      len(result),
 		}
+
+		w.Header().Add("Content-Type", defs.AbstractRowSetMediaType)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
@@ -297,7 +301,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		defs.UserParameterName:   "string",
 		defs.ColumnParameterName: "string",
 	}); !errors.Nil(invalid) {
-		ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -311,7 +315,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
-			ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 
 			return
 		}
@@ -326,7 +330,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		// Lets get the rows we are to update. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
 			ServerInfo: util.MakeServerInfo(sessionID),
-			}
+		}
 
 		err = json.Unmarshal([]byte(rawPayload), &rowSet)
 		if err != nil || len(rowSet.Rows) == 0 {
@@ -335,7 +339,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
 
 				return
 			} else {
@@ -357,7 +361,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 			q := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
 			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
-				ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
+				util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 				return
 			}
@@ -369,7 +373,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 				rowsAffected, _ := counts.RowsAffected()
 				count = count + int(rowsAffected)
 			} else {
-				ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
+				util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
 				_ = tx.Rollback()
 
 				return
@@ -386,14 +390,16 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 	if errors.Nil(err) {
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
-			Count:   count,
+			Count:      count,
 		}
+
+		w.Header().Add("Content-Type", defs.RowCountMediaType)
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
 
 		ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
 	} else {
-		ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
 }
