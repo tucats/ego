@@ -161,7 +161,6 @@ type ServerStatus struct {
 type LogonResponse struct {
 	ServerInfo `json:"server"`
 	Expiration string `json:"expires"`
-	Issuer     string `json:"issuer"`
 	Token      string `json:"token"`
 	Identity   string `json:"identity"`
 }

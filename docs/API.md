@@ -27,6 +27,21 @@ server, administration functions that can be performed by a suitably
 privileged user, APIs for directly accessing database tables and their data, 
 and APIs for accessing user-written services (implemented as _Ego_ programs)
 
+All REST API responses should return a server information object as a field in
+the payload named "server". This contains the following informmation:
+
+| Field     | Description |
+| :-------- |:----------- |
+| api       | An integer indicating the API version. Currently always 1. |
+| name      | The short host name of the machine running the server. |
+| id        | The UUID of this instance of the server. |
+| session   | The session correlator for the server (matches request log entries). |
+
+The server name can be used to locate where the log files are found. The server id
+helps identify when a server is restarted, as it is assigned a new UUID each time 
+and this information is in the server log. Finally, each logging entry from a
+REST client session includes a session number. This integer value can be used to
+find the specific log entries for this request.
 
 &nbsp;
 &nbsp;
@@ -61,8 +76,8 @@ The resulting JSON payload is an object with the following fields:
 
 | Field     | Description |
 | :-------- |:----------- |
+| server    | The server information object for this response. |
 | expires   | A string containing the timestamp of when the token expires |
-| issuer    | A UUID of the _Ego_ server instance that created the token |
 | token     | A variable-length string containing the token text itself. |
 | identity  | The username encoded within the token. |
 
@@ -70,9 +85,14 @@ Here is an example response payload:
 &nbsp;
 
     {
+      "server": {
+          "api": 1,
+          "name": "appserver.abc.com",
+          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+          "session": 151
+      },
       "expires": "Fri Jan 21 13:12:25 EST 2022",
       "identity": "joesmith",
-      "issuer": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
       "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
     }
 
@@ -133,8 +153,8 @@ The resulting JSON payload is an object with the following fields:
 
 | Field     | Description |
 | :-------- |:----------- |
-| expires   | A string containing the timestamp of when the token expires |
-| issuer    | A UUID of the _Ego_ server instance that created the token |
+| server    | The server information object for this response. |
+| expires   | A string containing the timestamp of when the token expires. |
 | token     | A variable-length string containing the token text itself. |
 | identity  | The username encoded within the token. |
 
@@ -142,9 +162,14 @@ Here is an example response payload:
 &nbsp;
 
     {
+      "server": {
+         "api": 1,
+         "name": payroll,
+         "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+         "session": 482
+      },
       "expires": "Fri Jan 21 13:12:25 EST 2022",
       "identity": "joesmith",
-      "issuer": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
       "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
     }
 
@@ -245,6 +270,7 @@ fields:
 
 | Field     | Description |
 |:--------- |:----------- |
+| server    | The server information object for this response |
 | host      | A string containing the name of the computer running the _Ego_ server |
 | id        | A string containing the UUID of the server instance |
 | count     | The number of items in the services cache |
@@ -320,25 +346,29 @@ Here is an example response payload from this request:
 &nbsp;
 
     {
-    "host": "appserver.abc.com",
-    "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561364ce",
-    "file": "/Users/tom/ego/ego-server_2022-01-20-000000.log",
-    "loggers": {
-        "APP": false,
-        "AUTH": true,
-        "BYTECODE": false,
-        "CLI": false,
-        "COMPILER": false,
-        "DB": false,
-        "DEBUG": false,
-        "INFO": false,
-        "REST": false,
-        "SERVER": true,
-        "SYMBOLS": false,
-        "TABLES": true,
-        "TRACE": false,
-        "USER": false
-    },
+        "server": {
+            "api": 1,
+            "name": "appserver.abc.com",
+            "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+            "session": 6385
+        },
+        "file": "/Users/tom/ego/ego-server_2022-01-20-000000.log",
+        "loggers": {
+            "APP": false,
+            "AUTH": true,
+            "BYTECODE": false,
+            "CLI": false,
+            "COMPILER": false,
+            "DB": false,
+            "DEBUG": false,
+            "INFO": false,
+            "REST": false,
+            "SERVER": true,
+            "SYMBOLS": false,
+            "TABLES": true,
+            "TRACE": false,
+            "USER": false
+        }
     }
 
 &nbsp;
@@ -367,14 +397,22 @@ lines are returned, otherwise the result is limited to the last `n` lines of the
 Here is an example output with a `tail` value of 5:
 &nbsp;
 
-    [
-    "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
-    "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
-    "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
-    "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
-    "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
-    ]
-    
+    {
+      "server": {
+          "api": 1,
+          "name": "appserver.abc.com",
+          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+          "session": 91103
+      },
+      "lines": [
+        "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
+        "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
+        "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
+        "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
+        "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
+      ]
+    }
+
 &nbsp;
 &nbsp;
 
@@ -437,13 +475,12 @@ This call returns the list of users that are in the credentials store. The resul
 structure with the following fields:
 &nbsp;
 
-| Field | Description |
-|:----- |:----------- |
-| host | The host name running the Ego server |
-| id   | The unique instance UUID of the server |
-| start | This value is always zero |
-| count | The number of items returned |
-| item | An array of user objects, described in the next table |
+| Field  | Description |
+|:------ |:----------- |
+| server | The server information object for this response |
+| start  | This value is always zero |
+| count  | The number of items returned |
+| items  | An array of user objects, described in the next table |
 
 &nbsp;
 
@@ -463,28 +500,32 @@ Here is example output from a request to this endpoint:
 &nbsp;
 
     {
-    "host": "appserver.abc.com",
-    "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-    "start": 0,
-    "count": 2,
-    "items": [
-        {
-        "name": "admin",
-        "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
-        "permissions": [
-            "root",
-            "logon"
-        ]
+        "server": {
+            "api": 1,
+            "name": "appserver.abc.com",
+            "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+            "session": 155
         },
-        {
-        "name": "iphoneUser",
-        "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
-        "permissions": [
-            "logon",
-            "table_create"
+        "start": 0,
+        "count": 2,
+        "items": [
+            {
+                "name": "admin",
+                "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
+                "permissions": [
+                    "root",
+                    "logon"
+                ]
+            },
+            {
+                "name": "iphoneUser",
+                "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
+                "permissions": [
+                    "logon",
+                    "table_create"
+                ]
+            }
         ]
-        }
-    ]
     }
 
 &nbsp;
@@ -615,7 +656,13 @@ available tables of info:
 &nbsp;
 
     {
-        "tables": [
+      "server": {
+          "api": 1,
+          "name": "appserver.abc.com",
+          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+          "session": 44622
+      },
+      "tables": [
             {
                 "name": "Accounts",
                 "schema": "smith",
@@ -677,22 +724,24 @@ The valid types that you can specify in the array of column structure definition
 The request payload must be a JSON representation of the columns to be created. As an
 example, this payload creates a table with three columns. 
 
-    [
-        {
-            "name": "first",
-            "type": "string",
-            "nullable": true
-        },
-        {
-            "name": "id",
-            "type": "int",
-            "unique": true
-        },
-        {
-            "name": "last",
-            "type": "string"
-        }
-    ]
+    {
+        "columns": [
+            {
+                "name": "first",
+                "type": "string",
+                "nullable": true
+            },
+            {
+                "name": "id",
+                "type": "int",
+                "unique": true
+            },
+            {
+                "name": "last",
+                "type": "string"
+            }
+        ]
+    }
 
 The first column is allowed to have a null value, and the second column must contain
 unique values.
@@ -863,18 +912,24 @@ identifier for each row in the database.
 &nbsp;
 
     {
-    "rows": [
+      "server": {
+          "api": 1,
+          "name": "appserver.abc.com",
+          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+          "session": 1525
+      },
+      "rows": [
         {
-        "Name": "Tom",
-        "Number": 101,
-        "_row_id_": "76d3e219-1015-49c8-9e77-decb750ad13e"
+            "Name": "Tom",
+            "Number": 101,
+            "_row_id_": "76d3e219-1015-49c8-9e77-decb750ad13e"
         },
         {
-        "Name": "Mary",
-        "Number": 102,
-        "_row_id_": "a974019e-f9e7-4554-adb4-2004b6f65c03"
+            "Name": "Mary",
+            "Number": 102,
+            "_row_id_": "a974019e-f9e7-4554-adb4-2004b6f65c03"
         }
-    ],
+      ],
     "count": 2
     }
 
@@ -928,21 +983,21 @@ sample payload that inserts three rows as a single operation:
 &nbsp;
 
     {
-        "rows" :[
-            {
-                "Name": "Susan",
-                "Number": 103
-            },
-            {
-                "Name": "Timmy",
-                "Number": 104
-            },
-            {
-                "Name": "Mike",
-                "Number": 105
-            }
-        ],
-        "count": 3
+      "rows" :[
+        {
+            "Name": "Susan",
+            "Number": 103
+        },
+        {
+            "Name": "Timmy",
+            "Number": 104
+        },
+        {
+            "Name": "Mike",
+            "Number": 105
+        }
+      ],
+      "count": 3
     }
 
 &nbsp;
@@ -1186,7 +1241,7 @@ Here is the full _Ego_ code for the /services/admin/memory service, found in the
             Total: mb(m.total),
             System: mb(m.system),
             GC: m.gc,
-            ID: _server_instancer,
+            ID: _server_instance,
             Date: time.Now().String(),
             Host: os.Hostname(),
         }

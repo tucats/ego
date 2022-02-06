@@ -14,7 +14,7 @@ func handler( req http.Request, resp http.Response ) {
         Total: mb(m.total),
         System: mb(m.system),
         GC: m.gc,
-        ID: _server_instancer,
+        ID: _server_instance,
         Date: time.Now().String(),
         Host: os.Hostname(),
     }

@@ -68,9 +68,9 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	defs.ServerInstanceID, found = c.String("session-uuid")
 	if found {
-		_ = symbols.RootSymbolTable.SetAlways("_server_instancer", defs.ServerInstanceID)
+		_ = symbols.RootSymbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
 	} else {
-		s, _ := symbols.RootSymbolTable.Get("_server_instancer")
+		s, _ := symbols.RootSymbolTable.Get("_server_instance")
 		defs.ServerInstanceID = datatypes.GetString(s)
 	}
 
