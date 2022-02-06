@@ -779,7 +779,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	r.Header.Add("Content-Type", sendMediaType)
-	r.Header.Add("Accepts", receiveMediaType)
+	r.Header.Add("Accept", receiveMediaType)
 	AddAgent(r, agentType)
 
 	if body != nil {

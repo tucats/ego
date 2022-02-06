@@ -78,22 +78,28 @@ func InList(s string, test ...string) bool {
 	return false
 }
 
+// AcceptedMediaType validates the media type in the "Accept" header for this
+// request against a list of valid media types. This includes common types that
+// are always accepted, as well as additional types provided as paraameters to
+// this function call.  The result is a nil error value if the media type is
+// valid, else an error indicating that there was an invalid media type found.
 func AcceptedMediaType(r *http.Request, validList []string) *errors.EgoError {
-	mediaTypes := r.Header["Accepts"]
+	mediaTypes := r.Header["Accept"]
 
 	for _, mediaType := range mediaTypes {
-		if strings.EqualFold(mediaType, "application/json") {
+		// Check for common times that are always accepted.
+		if InList(strings.ToLower(mediaType),
+			"application/json",
+			"application/text",
+			"text/plain",
+			"text/*",
+			"text",
+		) {
 			continue
 		}
 
-		if strings.EqualFold(mediaType, "application/text") {
-			continue
-		}
-
-		if strings.EqualFold(mediaType, "application/html") {
-			continue
-		}
-
+		// If not, verify that the media type is in the optional list of additional
+		// accepted media types.
 		if !InList(mediaType, validList...) {
 			return errors.New(errors.ErrInvalidMediaType).Context(mediaType)
 		}

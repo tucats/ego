@@ -538,7 +538,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if errors.Nil(err) {
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
-			Count:   count,
+			Count:      count,
 		}
 
 		b, _ := json.MarshalIndent(result, "", "  ")
@@ -565,7 +565,7 @@ func filterErrorMessage(q string) string {
 
 func useAbstract(r *http.Request) bool {
 	// First, did the specify a media type that tells us what to do?
-	mediaTypes := r.Header["Accepts"]
+	mediaTypes := r.Header["Accept"]
 
 	for _, mediaType := range mediaTypes {
 		if strings.EqualFold(strings.TrimSpace(mediaType), defs.AbstractRowSetMediaType) {
