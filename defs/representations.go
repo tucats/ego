@@ -10,7 +10,7 @@ type ServerInfo struct {
 	Version  int    `json:"api,omitempty"`
 	Hostname string `json:"name,omitempty"`
 	ID       string `json:"id,omitempty"`
-	Session  int    `json:"session"`
+	Session  int    `json:"session,omitempty"`
 }
 
 // The payload for the status check "/up" endpoint.

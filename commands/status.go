@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -25,13 +26,11 @@ func Status(c *cli.Context) *errors.EgoError {
 	}
 
 	// Otherwise, it's the local server by port number.
-	running := false
 	msg := "Server not running"
 
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
-			running = true
 			msg = fmt.Sprintf("UP (pid %d, host %s, session %s) since %s, LOCAL",
 				status.PID,
 				status.Hostname,
@@ -44,9 +43,18 @@ func Status(c *cli.Context) *errors.EgoError {
 
 	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s\n", msg)
+	} else if errors.Nil(err) {
+		if ui.OutputFormat == ui.JSONIndentedFormat {
+			b, _ := json.MarshalIndent(status, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			fmt.Print(string(b))
+		} else {
+			b, _ := json.Marshal(status)
+			fmt.Print(string(b))
+		}
 	} else {
-		// no difference for json vs indented
-		fmt.Printf("%v\n", running)
+		s := defs.RestStatusResponse{Status: 500, Message: msg}
+		b, _ := json.Marshal(s)
+		fmt.Print(string(b))
 	}
 
 	return nil
