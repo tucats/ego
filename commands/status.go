@@ -66,7 +66,21 @@ func remoteStatus(addr string) *errors.EgoError {
 
 	if err := ResolveServerName(addr); !errors.Nil(err) {
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			fmt.Println("DOWN")
+			if ui.OutputFormat == ui.TextFormat {
+				fmt.Println("DOWN")
+			} else {
+				s := defs.RestStatusResponse{Status: 500, Message: err.Error()}
+				var b []byte
+
+				if ui.OutputFormat == ui.JSONIndentedFormat {
+					b, _ = json.MarshalIndent(s, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+				} else {
+					b, _ = json.Marshal(s)
+				}
+
+				fmt.Print(string(b))
+			}
+
 			os.Exit(3)
 		}
 
@@ -75,11 +89,33 @@ func remoteStatus(addr string) *errors.EgoError {
 
 	err := runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.AdminAgent)
 	if !errors.Nil(err) {
-		fmt.Println("DOWN")
+		if ui.OutputFormat == ui.TextFormat {
+			fmt.Println("DOWN")
+		} else {
+			s := defs.RestStatusResponse{Status: 500, Message: err.Error()}
+			var b []byte
+
+			if ui.OutputFormat == ui.JSONIndentedFormat {
+				b, _ = json.MarshalIndent(s, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			} else {
+				b, _ = json.Marshal(s)
+			}
+
+			fmt.Print(string(b))
+		}
+
 		os.Exit(3)
 	}
 
-	ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
+	if ui.OutputFormat == ui.TextFormat {
+		ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
+	} else if ui.OutputFormat == ui.JSONIndentedFormat {
+		b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		fmt.Print(string(b))
+	} else {
+		b, _ := json.Marshal(resp)
+		fmt.Print(string(b))
+	}
 
 	return nil
 }
