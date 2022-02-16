@@ -125,6 +125,9 @@ const (
 	// should be done using SSL secured communications.
 	TablesServerDatabaseSSLMode = PrivilegedKeyPrefix + "server.database.ssl"
 
+	// The URL path for the tables database functionality.
+	TablesServerEmptyFilter = PrivilegedKeyPrefix + "server.database.empty.filter"
+
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = PrivilegedKeyPrefix + "server.token.key"
 
@@ -243,6 +246,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	RestClientErrorSetting:          true,
 	LogRetainCountSetting:           true,
 	RuntimePanicsSetting:            true,
+	TablesServerEmptyFilter:         true,
 }
 
 const (

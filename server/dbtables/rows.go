@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
@@ -44,10 +45,20 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
+		defer db.Close()
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
+		}
+
+		if where := filterList(r.URL); where == "" {
+			if !settings.GetBool(defs.TablesServerEmptyFilter) {
+				util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
+
+				return
+			}
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
@@ -126,6 +137,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
+		defer db.Close()
+
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
@@ -308,6 +321,8 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
+		defer db.Close()
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
@@ -406,6 +421,14 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
+	if where := filterList(r.URL); where == "" {
+		if !settings.GetBool(defs.TablesServerEmptyFilter) {
+			util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
+
+			return
+		}
+	}
+
 	if useAbstract(r) {
 		UpdateAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 
@@ -420,6 +443,8 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
+		defer db.Close()
+
 		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 

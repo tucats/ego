@@ -41,6 +41,7 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.InsecureServerSetting:        defs.False,
 		defs.RestClientErrorSetting:       defs.True,
 		defs.LogRetainCountSetting:        "3",
+		defs.TablesServerEmptyFilter:      "false",
 	}
 
 	// See if there is a value for each on of these. If no
