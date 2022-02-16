@@ -62,7 +62,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
-		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 			return
@@ -342,7 +342,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 
 		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
-		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
 			return
@@ -521,7 +521,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		// Start a transaction to ensure atomicity of the entire update
 		tx, _ := db.Begin()
 
-		// Loop over the row set doing the insert
+		// Loop over the row set doing the update
 		for _, data := range rowSet.Rows {
 			hasRowID := false
 
@@ -544,8 +544,10 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
 			q, values := formUpdateQuery(r.URL, user, data)
-			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 				util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
+
+				_ = tx.Rollback()
 
 				return
 			}
@@ -558,6 +560,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				count = count + int(rowsAffected)
 			} else {
 				util.ErrorResponse(w, sessionID, err.Error(), http.StatusConflict)
+
 				_ = tx.Rollback()
 
 				return
@@ -595,7 +598,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 }
 
 func filterErrorMessage(q string) string {
-	if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
+	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 		msg := q[p+len(syntaxErrorPrefix):]
 		if p := strings.Index(msg, defs.RowIDName); p > 0 {
 			msg = msg[:p]

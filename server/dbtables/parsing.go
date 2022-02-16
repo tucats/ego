@@ -484,12 +484,6 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 
 	where := filterList(u)
 
-	if filterCount == 0 && where == "" {
-		if !settings.GetBool(defs.TablesServerEmptyFilter) {
-			return syntaxErrorPrefix + "operation invalid with empty filter", nil
-		}
-	}
-
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
 	if id, found := items[defs.RowIDName]; found {
@@ -501,6 +495,10 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 				where = where + " " + defs.RowIDName + " = '" + idString + "'"
 			}
 		}
+	}
+
+	if where == "" && !settings.GetBool(defs.TablesServerEmptyFilter) {
+		return syntaxErrorPrefix + "operation invalid with empty filter", nil
 	}
 
 	// If we have a filter string now, add it to the query.
