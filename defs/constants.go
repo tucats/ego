@@ -128,6 +128,9 @@ const (
 	// The URL path for the tables database functionality.
 	TablesServerEmptyFilter = PrivilegedKeyPrefix + "server.database.empty.filter"
 
+	// The URL path for the tables database functionality.
+	TablesServerNoRowsError = PrivilegedKeyPrefix + "server.database.empty.rowset.error"
+
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = PrivilegedKeyPrefix + "server.token.key"
 
@@ -247,6 +250,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	LogRetainCountSetting:           true,
 	RuntimePanicsSetting:            true,
 	TablesServerEmptyFilter:         true,
+	TablesServerNoRowsError:         true,
 }
 
 const (

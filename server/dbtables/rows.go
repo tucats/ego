@@ -74,6 +74,12 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
 
+			if rowCount == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
+
+				return
+			}
+
 			resp := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      int(rowCount),
@@ -249,6 +255,12 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		if err == nil {
+			if count == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
+
+				return
+			}
+
 			result := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      count,
@@ -421,14 +433,6 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
-	if where := filterList(r.URL); where == "" {
-		if !settings.GetBool(defs.TablesServerEmptyFilter) {
-			util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
-
-			return
-		}
-	}
-
 	if useAbstract(r) {
 		UpdateAbstractRows(user, isAdmin, tableName, sessionID, w, r)
 
@@ -568,6 +572,12 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	}
 
 	if errors.Nil(err) {
+		if count == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+			util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
+
+			return
+		}
+
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      count,

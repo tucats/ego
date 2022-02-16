@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -482,6 +483,12 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	}
 
 	where := filterList(u)
+
+	if filterCount == 0 && where == "" {
+		if !settings.GetBool(defs.TablesServerEmptyFilter) {
+			return syntaxErrorPrefix + "operation invalid with empty filter", nil
+		}
+	}
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
