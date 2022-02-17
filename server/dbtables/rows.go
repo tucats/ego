@@ -54,7 +54,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		if where := filterList(r.URL); where == "" {
-			if !settings.GetBool(defs.TablesServerEmptyFilter) {
+			if settings.GetBool(defs.TablesServerEmptyFilterError) {
 				util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
 
 				return
@@ -74,7 +74,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		if err == nil {
 			rowCount, _ := rows.RowsAffected()
 
-			if rowCount == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+			if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
 				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 
 				return
@@ -255,7 +255,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		if err == nil {
-			if count == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+			if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
 				util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 
 				return
@@ -575,7 +575,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	}
 
 	if errors.Nil(err) {
-		if count == 0 && settings.GetBool(defs.TablesServerNoRowsError) {
+		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
 			util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 
 			return

@@ -126,10 +126,10 @@ const (
 	TablesServerDatabaseSSLMode = PrivilegedKeyPrefix + "server.database.ssl"
 
 	// The URL path for the tables database functionality.
-	TablesServerEmptyFilter = PrivilegedKeyPrefix + "server.database.empty.filter.error"
+	TablesServerEmptyFilterError = PrivilegedKeyPrefix + "server.database.empty.filter.error"
 
 	// The URL path for the tables database functionality.
-	TablesServerNoRowsError = PrivilegedKeyPrefix + "server.database.empty.rowset.error"
+	TablesServerEmptyRowsetError = PrivilegedKeyPrefix + "server.database.empty.rowset.error"
 
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = PrivilegedKeyPrefix + "server.token.key"
@@ -249,8 +249,8 @@ var ValidSettings map[string]bool = map[string]bool{
 	RestClientErrorSetting:          true,
 	LogRetainCountSetting:           true,
 	RuntimePanicsSetting:            true,
-	TablesServerEmptyFilter:         true,
-	TablesServerNoRowsError:         true,
+	TablesServerEmptyFilterError:         true,
+	TablesServerEmptyRowsetError:         true,
 }
 
 const (

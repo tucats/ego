@@ -497,7 +497,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		}
 	}
 
-	if where == "" && !settings.GetBool(defs.TablesServerEmptyFilter) {
+	if where == "" && settings.GetBool(defs.TablesServerEmptyFilterError) {
 		return syntaxErrorPrefix + "operation invalid with empty filter", nil
 	}
 
