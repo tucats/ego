@@ -126,7 +126,7 @@ const (
 	TablesServerDatabaseSSLMode = PrivilegedKeyPrefix + "server.database.ssl"
 
 	// The URL path for the tables database functionality.
-	TablesServerEmptyFilter = PrivilegedKeyPrefix + "server.database.empty.filter"
+	TablesServerEmptyFilter = PrivilegedKeyPrefix + "server.database.empty.filter.error"
 
 	// The URL path for the tables database functionality.
 	TablesServerNoRowsError = PrivilegedKeyPrefix + "server.database.empty.rowset.error"
