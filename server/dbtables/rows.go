@@ -90,6 +90,10 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
 
+			if ui.LoggerIsActive(ui.RestLogger) {
+				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			}
+
 			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
 
 			return
@@ -271,6 +275,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
 
+			if ui.LoggerIsActive(ui.RestLogger) {
+				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			}
+
 			err = tx.Commit()
 			if err == nil {
 				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows", sessionID, count)
@@ -401,12 +409,19 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 			Count:      len(result),
 		}
 
+		status := http.StatusOK
+
+		w.WriteHeader(status)
 		w.Header().Add("Content-Type", defs.RowSetMediaType)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns, status %d", sessionID, rowCount, columnCount, status)
+
+		if ui.LoggerIsActive(ui.RestLogger) {
+			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+		}
 	}
 
 	return err

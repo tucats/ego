@@ -788,7 +788,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			return errors.New(err)
 		}
 
-		ui.Debug(ui.RestLogger, "Payload:\n%s", string(b))
+		ui.Debug(ui.RestLogger, "Request payload:\n%s", string(b))
 
 		r.SetBody(b)
 	}
@@ -844,7 +844,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			if errors.Nil(err) && ui.LoggerIsActive(ui.RestLogger) {
 				responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-				ui.Debug(ui.RestLogger, "Response:\n%s", string(responseBytes))
+				ui.Debug(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
 			}
 
 			if err == nil && status != http.StatusOK {
