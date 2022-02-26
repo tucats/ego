@@ -91,7 +91,7 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		result[i] = key
 	}
 
-	return result, nil
+	return datatypes.NewArrayFromArray(datatypes.StringType, result), nil
 }
 
 // Length implements the len() function.
