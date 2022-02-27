@@ -186,5 +186,7 @@ func makeTime(t *time.Time) interface{} {
 	r := datatypes.NewStruct(*timeType)
 	_ = r.Set("time", t)
 
+	r.SetReadonly(true)
+
 	return r
 }

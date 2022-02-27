@@ -60,11 +60,12 @@ fi
 
 if [ "$1" == "-i" ]; then
 
-   CHANGES=$(git status --porcelain)
-   if [ "$CHANGES" != "" ]; then
-      echo "You have uncommitted changes."
-      exit 1
-   fi
+#
+#   CHANGES=$(git status --porcelain)
+#   if [ "$CHANGES" != "" ]; then
+#      echo "You have uncommitted changes."
+#      exit 1
+#   fi
 
 BASE=$(echo $BUILDVER | cut -f1 -d- )
 BUILD=$(echo $BUILDVER | cut -f2 -d- )
@@ -83,6 +84,6 @@ if [ "$1" == "-bin" ]; then
    cp ego ~/bin/
 fi 
 
-if [ "$1" == "-i" ]; then
-   git commit -a -m "increment build version"
-fi
+# if [ "$1" == "-i" ]; then
+#  git commit -a -m "increment build version"
+# fi
