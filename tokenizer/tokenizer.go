@@ -158,6 +158,26 @@ func New(src string) *Tokenizer {
 	return &t
 }
 
+// Remainder returns the rest of the source, as initially presented to the
+// tokenizer, from the current token position. This allows the caller to get
+// "the rest" of a command line or other element as needed. If the token
+// position is invalid (i.e. past end-of-tokens, for example) then an empty
+// string is returned.
+func (t *Tokenizer) Remainder() string {
+	if t.TokenP < 0 || t.TokenP >= len(t.Pos) {
+		return ""
+	}
+
+	p := t.Pos[t.TokenP] - 1
+	s := t.GetSource()
+
+	if p < 0 || p >= len(s) {
+		return ""
+	}
+
+	return strings.TrimSuffix(s[p:], "\n")
+}
+
 // PositionString reports the position of the current
 // token in terms of line and column information.
 func (t *Tokenizer) PositionString() string {

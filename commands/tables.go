@@ -293,46 +293,16 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
-		kind := defs.Any
-		value := t.Next()
+		value := t.Remainder()
 
-		if t.IsNext(":") {
-			kind = strings.ToLower(value)
-			value = t.Next()
-		}
-
-		switch kind {
-		case "string":
-			payload[column] = value
-
-		case "boolean", "bool":
-			if strings.EqualFold(value, defs.True) {
-				payload[column] = true
-			} else {
-				payload[column] = false
-			}
-
-		case "int", "integer":
-			i, err := strconv.Atoi(value)
-			if err != nil {
-				return errors.New(errors.ErrInvalidInteger).Context(value)
-			}
-
+		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
+			payload[column] = true
+		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
+			payload[column] = false
+		} else if i, err := strconv.Atoi(value); err == nil {
 			payload[column] = i
-
-		case defs.Any:
-			fallthrough
-
-		default:
-			if strings.EqualFold(value, defs.True) {
-				payload[column] = true
-			} else if strings.EqualFold(value, defs.False) {
-				payload[column] = false
-			} else if i, err := strconv.Atoi(value); err == nil {
-				payload[column] = i
-			} else {
-				payload[column] = value
-			}
+		} else {
+			payload[column] = value
 		}
 	}
 
@@ -489,46 +459,16 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
-		kind := defs.Any
-		value := t.Next()
+		value := t.Remainder()
 
-		if t.IsNext(":") {
-			kind = strings.ToLower(value)
-			value = t.Next()
-		}
-
-		switch kind {
-		case "string":
-			payload[column] = value
-
-		case "boolean", "bool":
-			if strings.EqualFold(value, defs.True) {
-				payload[column] = true
-			} else {
-				payload[column] = false
-			}
-
-		case "int", "integer":
-			i, err := strconv.Atoi(value)
-			if err != nil {
-				return errors.New(errors.ErrInvalidInteger).Context(value)
-			}
-
+		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
+			payload[column] = true
+		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
+			payload[column] = false
+		} else if i, err := strconv.Atoi(value); err == nil {
 			payload[column] = i
-
-		case defs.Any:
-			fallthrough
-
-		default:
-			if strings.EqualFold(value, defs.True) {
-				payload[column] = true
-			} else if strings.EqualFold(value, defs.False) {
-				payload[column] = false
-			} else if i, err := strconv.Atoi(value); err == nil {
-				payload[column] = i
-			} else {
-				payload[column] = value
-			}
+		} else {
+			payload[column] = value
 		}
 	}
 

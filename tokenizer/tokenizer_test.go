@@ -158,3 +158,34 @@ func TestIsSymbol(t *testing.T) {
 		})
 	}
 }
+
+func TestTokenizer_Remainder(t *testing.T) {
+	tests := []struct {
+		name  string
+		count int
+		want  string
+	}{
+		{
+			name:  "value=1/2/3",
+			count: 2,
+			want:  "1/2/3",
+		},
+		{
+			name:  "value= 1/2/3",
+			count: 1,
+			want:  "= 1/2/3",
+		},
+		// TODO: Add test cases.
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := New(tt.name)
+			tr.Set(tt.count)
+
+			if got := tr.Remainder(); got != tt.want {
+				t.Errorf("Tokenizer.Remainder() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
