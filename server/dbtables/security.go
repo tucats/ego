@@ -21,6 +21,30 @@ const (
 	updateOperation = "update"
 )
 
+// Given a list of permission strings, indicate if they are all valid.
+func validPermissions(perms []string) bool {
+	for _, perm := range perms {
+		// Strip off the grant/revoke flag if present
+		if perm[:1] == "+" {
+			perm = perm[1:]
+		} else if perm[:1] == "-" {
+			perm = perm[1:]
+		}
+
+		// The resulting permission name must match one of the permitted names.
+		if !util.InList(strings.ToLower(perm),
+			readOperation,
+			deleteOperation,
+			adminOperation,
+			updateOperation,
+		) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // ReadPermissions reads the permissions data for a specific table. This operation requires either ownership
 // of the table or admin privileges. The response is a Permission object for the given user and table.
 func ReadPermissions(user string, hasAdminPermission bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
@@ -46,7 +70,7 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 	reply.Schema = parts[0]
 	reply.Table = parts[1]
 
-	rows, err := db.Query(permissionsSelectQuery, user, table)
+	rows, err := db.Query(permissionsSelectQuery, stripQuotes(user), stripQuotes(table))
 	if err != nil {
 		defer rows.Close()
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions field: %v", sessionID, err)
@@ -60,11 +84,17 @@ func ReadPermissions(user string, hasAdminPermission bool, tableName string, ses
 	for rows.Next() {
 		permissionString := ""
 		_ = rows.Scan(&permissionString)
-		ui.Debug(ui.TableLogger, "[%d] Read permissions field: %v", sessionID, permissionString)
+		ui.Debug(ui.TableLogger, "[%d] Permissions list for user %s, table %s: %v", sessionID,
+			stripQuotes(user), stripQuotes(table), permissionString)
 
 		for _, perm := range strings.Split(strings.ToLower(permissionString), ",") {
 			permissionsMap[strings.TrimSpace(perm)] = true
 		}
+	}
+
+	if len(permissionsMap) == 0 {
+		ui.Debug(ui.TableLogger, "[%d] No matching permissions entries for user %s, tabale %s", sessionID,
+			stripQuotes(user), stripQuotes(table))
 	}
 
 	reply.Permissions = make([]string, 0)
@@ -177,6 +207,14 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 	err = json.NewDecoder(r.Body).Decode(&permissionsList)
 	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	sort.Strings(permissionsList)
+
+	if !validPermissions(permissionsList) {
+		util.ErrorResponse(w, sessionID, fmt.Sprintf("invalid permissions list: %s", permissionsList), http.StatusBadRequest)
 
 		return
 	}
@@ -298,7 +336,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 func RemoveTablePermissions(sessionID int32, db *sql.DB, table string) bool {
 	_, _ = db.Exec(permissionsCreateTableQuery)
 
-	result, err := db.Exec(permissionsDeleteAllQuery, table)
+	result, err := db.Exec(permissionsDeleteAllQuery, stripQuotes(table))
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error deleting permissions: %v", sessionID, err)
 
@@ -377,6 +415,8 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	// Decompose the permissions list
 	permissionNames := strings.Split(permissions, ",")
 	tableName, _ := fullName(user, table)
+
+	sort.Strings(permissionNames)
 
 	ui.Debug(ui.TableLogger, "[%d] Attempting to set %s permissions for %s to %s", sessionID, user, tableName, permissionNames)
 
