@@ -272,7 +272,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 		}
 	}
 
-	if !auth && ui.LoggerIsActive(ui.TableLogger) {
+	if ui.LoggerIsActive(ui.TableLogger) {
 		operationsList := ""
 
 		for i, operation := range operations {
@@ -283,7 +283,11 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 			operationsList = operationsList + strings.ToLower(operation)
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] %s:%s does not have %s permission", sessionID, user, table, operationsList)
+		if !auth {
+			ui.Debug(ui.TableLogger, "[%d] %s:%s does not have %s permission", sessionID, user, table, operationsList)
+		} else {
+			ui.Debug(ui.TableLogger, "[%d] user %s has %s permission for table %s", sessionID, user, operationsList, table)
+		}
 	}
 
 	return auth

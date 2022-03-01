@@ -343,7 +343,11 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 	if err == nil && db != nil {
 		defer db.Close()
 
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
+		if isAdmin {
+			ui.Debug(ui.TableLogger, "[%d] Table authorization skipped because user \"%s\" has root privileges", sessionID, user)
+		}
+
+		if !isAdmin && !Authorized(sessionID, nil, user, tableName, readOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
