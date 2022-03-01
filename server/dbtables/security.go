@@ -275,9 +275,12 @@ func DeletePermissions(user string, hasAdminPermission bool, tableName string, s
 // The permissions string for the table and user is read, if it exists,
 // must contain the given permission.
 func Authorized(sessionID int32, db *sql.DB, user string, table string, operations ...string) bool {
-	_, _ = db.Exec(permissionsCreateTableQuery)
+	_, err := db.Exec(permissionsCreateTableQuery)
+	if err != nil {
+		ui.Debug(ui.TableLogger, "[%d] Error in permissions table create: %v", sessionID, err)
+	}
 
-	rows, err := db.Query(permissionsSelectQuery, user, table)
+	rows, err := db.Query(permissionsSelectQuery, stripQuotes(user), stripQuotes(table))
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)
 
@@ -322,9 +325,9 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 		}
 
 		if !auth {
-			ui.Debug(ui.TableLogger, "[%d] %s:%s does not have %s permission", sessionID, user, table, operationsList)
+			ui.Debug(ui.TableLogger, "[%d] User %s does not have %s permission for table %s", sessionID, user, operationsList, table)
 		} else {
-			ui.Debug(ui.TableLogger, "[%d] user %s has %s permission for table %s", sessionID, user, operationsList, table)
+			ui.Debug(ui.TableLogger, "[%d] User %s has %s permission for table %s", sessionID, user, operationsList, table)
 		}
 	}
 

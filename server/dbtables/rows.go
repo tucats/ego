@@ -47,7 +47,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if err == nil && db != nil {
 		defer db.Close()
 
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, deleteOperation) {
+		if !isAdmin && Authorized(sessionID, db, user, tableName, deleteOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
@@ -151,7 +151,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
+		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have insert permission", http.StatusForbidden)
 
 			return
@@ -347,7 +347,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 			ui.Debug(ui.TableLogger, "[%d] Table authorization skipped because user \"%s\" has root privileges", sessionID, user)
 		}
 
-		if !isAdmin && !Authorized(sessionID, nil, user, tableName, readOperation) {
+		if !isAdmin && !Authorized(sessionID, db, user, tableName, readOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
@@ -468,7 +468,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if err == nil && db != nil {
 		defer db.Close()
 
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
+		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 
 			return
