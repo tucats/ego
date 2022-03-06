@@ -246,8 +246,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 					sort.Strings(expectedList)
 					sort.Strings(providedList)
 
-					msg := fmt.Sprintf("Error evaluating table column \"%s\", expected one of %v but received payload with  %v",
-						column.Name, expectedList, providedList)
+					msg := fmt.Sprintf("Error evaluating table columns; expected %v but received payload with %v",
+						strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
 					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
