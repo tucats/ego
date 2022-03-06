@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -232,8 +233,16 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			for _, column := range columns {
 				v, ok := row[column.Name]
 				if !ok {
-					msg := fmt.Sprintf("invalid column \"%s\" in request payload, expected one of %v",
-						column.Name, row)
+					providedList := make([]string, 0)
+					for k := range row {
+						providedList = append(providedList, k)
+					}
+
+					sort.Strings(providedList)
+
+					msg := fmt.Sprintf("Error evaluating table column \"%s\", expected one of %v but received payload with  %v",
+						column.Name, columns, providedList)
+
 					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 					return
