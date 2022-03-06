@@ -233,15 +233,21 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			for _, column := range columns {
 				v, ok := row[column.Name]
 				if !ok {
+					expectedList := make([]string, 0)
+					for _, k := range columns {
+						expectedList = append(expectedList, k.Name)
+					}
+
 					providedList := make([]string, 0)
 					for k := range row {
 						providedList = append(providedList, k)
 					}
 
+					sort.Strings(expectedList)
 					sort.Strings(providedList)
 
 					msg := fmt.Sprintf("Error evaluating table column \"%s\", expected one of %v but received payload with  %v",
-						column.Name, columns, providedList)
+						column.Name, expectedList, providedList)
 
 					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
