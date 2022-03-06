@@ -280,6 +280,8 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 		ui.Debug(ui.TableLogger, "[%d] Error in permissions table create: %v", sessionID, err)
 	}
 
+	table, _ = fullName(user, table)
+
 	rows, err := db.Query(permissionsSelectQuery, stripQuotes(user), stripQuotes(table))
 	if err != nil {
 		ui.Debug(ui.TableLogger, "[%d] Error reading permissions: %v", sessionID, err)

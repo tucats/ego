@@ -244,8 +244,8 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Since it's not a row operation, it must be a table-level operation, which is
 	// only permitted for root users or those with "table_admin" privilege
-	if !hasAdminPermission {
-		msg := "User does not have permission to admin tables"
+	if !hasAdminPermission && !hasUpdatePermission && !hasReadPermission {
+		msg := "User does not have permission to access tables"
 		util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
 
 		return
@@ -253,15 +253,43 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
+		if !hasAdminPermission && !hasReadPermission {
+			msg := "User does not have permission to read tables"
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+
+			return
+		}
+
 		dbtables.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPut:
+		if !hasAdminPermission && !hasUpdatePermission {
+			msg := "User does not have permission to create tables"
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+
+			return
+		}
+
 		dbtables.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodDelete:
+		if !hasAdminPermission && !hasUpdatePermission {
+			msg := "User does not have permission to delete tables"
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+
+			return
+		}
+
 		dbtables.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPatch:
+		if !hasAdminPermission && !hasUpdatePermission {
+			msg := "User does not have permission to alter tables"
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+
+			return
+		}
+
 		alterTable(user, tableName, sessionID, w, r)
 
 	default:

@@ -3,6 +3,7 @@ package dbtables
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -231,7 +232,9 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			for _, column := range columns {
 				v, ok := row[column.Name]
 				if !ok {
-					util.ErrorResponse(w, sessionID, "Invalid column in request payload: "+column.Name, http.StatusBadRequest)
+					msg := fmt.Sprintf("invalid column \"%s\" in request payload, expected one of %v",
+						column.Name, row)
+					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 					return
 				}

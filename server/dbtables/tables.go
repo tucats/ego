@@ -92,7 +92,9 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, updateOperation) {
+		tableName, _ = fullName(user, tableName)
+
+		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have update permission", http.StatusForbidden)
 
 			return
@@ -153,6 +155,10 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
+
+			if ui.LoggerIsActive(ui.RestLogger) {
+				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			}
 
 			ui.Debug(ui.ServerLogger, "[%d] table created", sessionID)
 
@@ -236,7 +242,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		tableName, _ = fullName(user, tableName)
 
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, readOperation) {
+		if !isAdmin && Authorized(sessionID, db, user, tableName, readOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
@@ -331,6 +337,10 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
+
+			if ui.LoggerIsActive(ui.RestLogger) {
+				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			}
 
 			return
 		}
@@ -427,7 +437,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
-		if !isAdmin && Authorized(sessionID, nil, user, tableName, adminOperation) {
+		if !isAdmin && Authorized(sessionID, db, user, tableName, adminOperation) {
 			util.ErrorResponse(w, sessionID, "User does not have read permission", http.StatusForbidden)
 
 			return
@@ -602,6 +612,10 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 				b, _ := json.MarshalIndent(resp, "", "  ")
 				_, _ = w.Write(b)
+
+				if ui.LoggerIsActive(ui.RestLogger) {
+					ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				}
 
 				return
 			}
