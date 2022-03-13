@@ -44,6 +44,6 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 	_, _ = w.Write(b)
 
 	if ui.LoggerIsActive(ui.RestLogger) {
-		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
+		ui.Debug(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
 	}
 }
