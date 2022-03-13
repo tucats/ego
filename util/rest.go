@@ -37,7 +37,7 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 
 	b, _ := json.MarshalIndent(response, "", "  ")
 
-	ui.Debug(ui.ServerLogger, "[%d] %s; %d", sessionID, msg, status)
+	ui.Debug(ui.ServerLogger, "[%d] error, %s; %d", sessionID, msg, status)
 
 	w.Header().Add("Content-Type", defs.ErrorMediaType)
 	w.WriteHeader(status)

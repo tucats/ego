@@ -96,19 +96,18 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
-			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows ", sessionID, rowCount)
+			status := http.StatusOK
+			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, status)
 
 			return
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
 	if !errors.Nil(err) {
-		ui.Debug(ui.ServerLogger, "[%d] Error deleting from table, %v", sessionID, err)
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -196,10 +195,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+				ui.Debug(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
+			ui.Debug(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// If we're showing our payload in the log, do that now
@@ -299,7 +298,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 			err = tx.Commit()
 			if err == nil {
-				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows", sessionID, count)
+				status := http.StatusOK
+				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows; %d", sessionID, count, status)
 
 				return
 			}
@@ -439,7 +439,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns, status %d", sessionID, rowCount, columnCount, status)
+		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
 
 		if ui.LoggerIsActive(ui.RestLogger) {
 			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
@@ -525,7 +525,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+		if ui.LoggerIsActive(ui.RestLogger) {
+			ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+		}
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
 		rowSet := defs.DBRowSet{
@@ -546,10 +548,10 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+				ui.Debug(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
+			ui.Debug(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// Anything in the data map that is on the exclude list is removed
@@ -623,12 +625,19 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			Count:      count,
 		}
 
+		status := http.StatusOK
+		w.WriteHeader(status)
+
 		w.Header().Add("Content-Type", defs.RowCountMediaType)
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
+		if ui.LoggerIsActive(ui.RestLogger) {
+			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] Updated %d rows; %d", sessionID, count, status)
 	} else {
 		util.ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
