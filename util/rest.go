@@ -42,4 +42,8 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 	w.Header().Add("Content-Type", defs.ErrorMediaType)
 	w.WriteHeader(status)
 	_, _ = w.Write(b)
+
+	if ui.LoggerIsActive(ui.RestLogger) {
+		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
+	}
 }
