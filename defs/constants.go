@@ -138,6 +138,10 @@ const (
 	// considered expired. Examples are "15m" or "24h".
 	ServerTokenExpirationSetting = PrivilegedKeyPrefix + "server.token.expiration"
 
+	// A string indicating the default logging to be assigned to a server that is
+	// started without an explicit -d setting.
+	ServerDefaultLogSetting = PrivilegedKeyPrefix + "server.default.logging"
+
 	// How many old logs do we maintain by default when in server mode?
 	LogRetainCountSetting = PrivilegedKeyPrefix + "server.retain.log.count"
 
@@ -249,8 +253,9 @@ var ValidSettings map[string]bool = map[string]bool{
 	RestClientErrorSetting:          true,
 	LogRetainCountSetting:           true,
 	RuntimePanicsSetting:            true,
-	TablesServerEmptyFilterError:         true,
-	TablesServerEmptyRowsetError:         true,
+	TablesServerEmptyFilterError:    true,
+	TablesServerEmptyRowsetError:    true,
+	ServerDefaultLogSetting:         true,
 }
 
 const (

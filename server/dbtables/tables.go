@@ -81,7 +81,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 						_, _ = w.Write(b)
 
 						if ui.LoggerIsActive(ui.RestLogger) {
-							ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+							ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 						}
 
 						return

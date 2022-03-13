@@ -39,20 +39,14 @@ func Start(c *cli.Context) *errors.EgoError {
 	isInsecure := false
 
 	for _, v := range os.Args {
-		detached := false
-
 		if v == "-k" || v == "--not-secure" {
 			isInsecure = true
 		}
 
 		if v == "start" {
-			v = "run"
-			detached = true
-		}
-
-		args = append(args, v)
-		if detached {
-			args = append(args, "--is-detached")
+			args = append(args, "run", "--is-detached")
+		} else {
+			args = append(args, v)
 		}
 	}
 
@@ -68,6 +62,7 @@ func Start(c *cli.Context) *errors.EgoError {
 	hasSessionID := false
 	logNameArg := 0
 	userDatabaseArg := 0
+	loggingNamesArg := 0
 
 	for i, v := range args {
 		// Is there a specific session ID already assigned?
@@ -76,6 +71,11 @@ func Start(c *cli.Context) *errors.EgoError {
 			hasSessionID = true
 
 			break
+		}
+
+		// Is there a debug log identified?
+		if v == "--debug" || v == "-d" {
+			loggingNamesArg = i + 1
 		}
 
 		// Is there a file of user authentication data specified?
@@ -93,6 +93,18 @@ func Start(c *cli.Context) *errors.EgoError {
 	// just generated.
 	if !hasSessionID {
 		args = append(args, "--session-uuid", logID.String())
+	}
+
+	// If there wasn't a debug flag, consider adding one if there is a
+	// default in the configuration.
+	if loggingNamesArg == 0 {
+		if defaultNames := settings.Get(defs.ServerDefaultLogSetting); defaultNames != "" {
+			newArgs := make([]string, 3)
+			newArgs[0] = args[0]
+			newArgs[1] = "-d"
+			newArgs[2] = defaultNames
+			args = append(newArgs, args[1:]...)
+		}
 	}
 
 	// If there was a user database file (not database URL), update it to
