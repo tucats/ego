@@ -80,13 +80,25 @@ func LogRequestCounts() {
 // entry every ten minutes indicating the current memory allocation, the total memory ever
 // allocated, the system memory, and the number of times the garbage-collector has run.
 func LogMemoryStatistics() {
-	var m xruntime.MemStats
+	var previousStats xruntime.MemStats
 
 	for {
 		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-		xruntime.ReadMemStats(&m)
-		ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
-			bToMb(m.Alloc), bToMb(m.TotalAlloc), bToMb(m.Sys), m.NumGC)
+		var currentStats xruntime.MemStats
+
+		xruntime.ReadMemStats(&currentStats)
+
+		// If any of the values have changed since last time, put out the memory report. This is meant to keep the
+		// log quiet when the server is idle for an extended period of time.
+		if (currentStats.Alloc != previousStats.Alloc) ||
+			(currentStats.TotalAlloc != previousStats.TotalAlloc) ||
+			(currentStats.Sys != previousStats.Sys) ||
+			(currentStats.NumGC != previousStats.NumGC) {
+			ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
+				bToMb(currentStats.Alloc), bToMb(currentStats.TotalAlloc), bToMb(currentStats.Sys), currentStats.NumGC)
+		}
+
+		previousStats = currentStats
 
 		// Generate this report in the log every ten minutes.
 		time.Sleep(10 * time.Minute)
