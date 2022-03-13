@@ -514,21 +514,24 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				nameParts := strings.Split(stripQuotes(name), ",")
 				for _, part := range nameParts {
 					if part != "" {
-						// make sure the column name is actually valid
+						// make sure the column name is actually valid. We assume the row ID name
+						// is always valid.
 						found := false
 
-						for _, column := range columns {
-							if part == column.Name {
-								found = true
+						if part != defs.RowIDName {
+							for _, column := range columns {
+								if part == column.Name {
+									found = true
 
-								break
+									break
+								}
 							}
-						}
 
-						if !found {
-							util.ErrorResponse(w, sessionID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
+							if !found {
+								util.ErrorResponse(w, sessionID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
 
-							return
+								return
+							}
 						}
 
 						// Valid name, so it can be removed from the exclude list.
