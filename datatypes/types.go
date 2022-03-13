@@ -44,6 +44,12 @@ const (
 	TypeKind // something defined by a type statement
 )
 
+const (
+	StringTypeName = "string"
+	BoolTypeName   = "bool"
+	IntTypeName    = "int"
+)
+
 type Type struct {
 	name      string
 	pkg       string

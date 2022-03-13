@@ -32,7 +32,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   "string",
+		defs.UserParameterName:   datatypes.StringTypeName,
 	}); !errors.Nil(invalid) {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -124,8 +124,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.UserParameterName:     "string",
-		defs.AbstractParameterName: "bool",
+		defs.UserParameterName:     datatypes.StringTypeName,
+		defs.AbstractParameterName: datatypes.BoolTypeName,
 	}); !errors.Nil(invalid) {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -332,13 +332,13 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
-		defs.StartParameterName:    "int",
-		defs.LimitParameterName:    "int",
+		defs.StartParameterName:    datatypes.IntTypeName,
+		defs.LimitParameterName:    datatypes.IntTypeName,
 		defs.ColumnParameterName:   "list",
 		defs.SortParameterName:     "list",
-		defs.AbstractParameterName: "bool",
+		defs.AbstractParameterName: datatypes.BoolTypeName,
 		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     "string",
+		defs.UserParameterName:     datatypes.StringTypeName,
 	}); !errors.Nil(invalid) {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -461,9 +461,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     "string",
-		defs.ColumnParameterName:   "string",
-		defs.AbstractParameterName: "bool",
+		defs.UserParameterName:     datatypes.StringTypeName,
+		defs.ColumnParameterName:   datatypes.StringTypeName,
+		defs.AbstractParameterName: datatypes.BoolTypeName,
 	}); !errors.Nil(invalid) {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -514,6 +514,24 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				nameParts := strings.Split(stripQuotes(name), ",")
 				for _, part := range nameParts {
 					if part != "" {
+						// make sure the column name is actually valid
+						found := false
+
+						for _, column := range columns {
+							if part == column.Name {
+								found = true
+
+								break
+							}
+						}
+
+						if !found {
+							util.ErrorResponse(w, sessionID, "invalid COLUMN rest parameter: "+part, http.StatusBadRequest)
+
+							return
+						}
+
+						// Valid name, so it can be removed from the exclude list.
 						excludeList[part] = false
 					}
 				}

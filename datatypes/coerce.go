@@ -339,7 +339,7 @@ func CoerceType(v interface{}, typeName string) interface{} {
 	case "int32":
 		return Coerce(v, int32(0))
 
-	case "int":
+	case IntTypeName:
 		return Coerce(v, int(0))
 
 	case "int64":
@@ -351,10 +351,10 @@ func CoerceType(v interface{}, typeName string) interface{} {
 	case "float64":
 		return Coerce(v, float64(0))
 
-	case "string":
+	case StringTypeName:
 		return Coerce(v, "")
 
-	case "bool":
+	case BoolTypeName:
 		return Coerce(v, true)
 
 	default:
