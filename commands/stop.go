@@ -21,7 +21,11 @@ func Stop(c *cli.Context) *errors.EgoError {
 		if e2 == nil {
 			e2 = proc.Kill()
 			if e2 == nil {
-				ui.Say("Server (pid %d) stopped", status.PID)
+				if ui.OutputFormat == ui.TextFormat {
+					ui.Say("Server (pid %d) stopped", status.PID)
+				} else {
+					commandOutput(status)
+				}
 			}
 		}
 	}

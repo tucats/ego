@@ -38,19 +38,10 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 		return errors.New(err)
 	}
 
-	switch ui.OutputFormat {
-	case ui.JSONFormat:
-		b, _ := json.Marshal(cacheStatus)
-
-		fmt.Println(string(b))
-
-	case ui.JSONIndentedFormat:
-		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-		fmt.Println(string(b))
-
-	case ui.TextFormat:
+	if ui.OutputFormat == ui.TextFormat {
 		ui.Say("Server cache size updated")
+	} else {
+		commandOutput(cacheStatus)
 	}
 
 	return nil
@@ -99,16 +90,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 		return err
 	}
 
-	switch ui.OutputFormat {
-	case ui.JSONIndentedFormat:
-		b, _ := json.MarshalIndent(cacheStatus, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		fmt.Println(string(b))
-
-	case ui.JSONFormat:
-		b, _ := json.Marshal(cacheStatus)
-		fmt.Println(string(b))
-
-	case ui.TextFormat:
+	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("Server Cache, hostname %s, ID %s\n", cacheStatus.Hostname, cacheStatus.ID)
 
 		if cacheStatus.Count > 0 {
@@ -147,6 +129,8 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 		default:
 			fmt.Printf("  There are %d service items in cache. The maximum cache size is %d items\n", cacheStatus.Count, cacheStatus.Limit)
 		}
+	} else {
+		commandOutput(cacheStatus)
 	}
 
 	return nil

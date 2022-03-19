@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -133,19 +132,12 @@ func Logging(c *cli.Context) *errors.EgoError {
 			return err
 		}
 
-		switch ui.OutputFormat {
-		case ui.TextFormat:
+		if ui.OutputFormat == ui.TextFormat {
 			for _, line := range lines.Lines {
 				fmt.Println(line)
 			}
-
-		case ui.JSONFormat:
-			b, _ := json.Marshal(lines)
-			fmt.Println(string(b))
-
-		case ui.JSONIndentedFormat:
-			b, _ := json.MarshalIndent(lines, "", "  ")
-			fmt.Println(string(b))
+		} else {
+			commandOutput(lines)
 		}
 
 		return nil
@@ -156,8 +148,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	switch ui.OutputFormat {
-	case ui.TextFormat:
+	if ui.OutputFormat == ui.TextFormat {
 		if fileOnly {
 			ui.Say("%s", response.Filename)
 		} else {
@@ -183,21 +174,11 @@ func Logging(c *cli.Context) *errors.EgoError {
 				}
 			}
 		}
-
-	case ui.JSONFormat:
+	} else {
 		if fileOnly {
-			ui.Say("\"%s\"", response.Filename)
+			commandOutput(response.Filename)
 		} else {
-			b, _ := json.Marshal(response)
-			ui.Say(string(b))
-		}
-
-	case ui.JSONIndentedFormat:
-		if fileOnly {
-			ui.Say("\"%s\"", response.Filename)
-		} else {
-			b, _ := json.MarshalIndent(response, "", "   ")
-			ui.Say(string(b))
+			commandOutput(response)
 		}
 	}
 

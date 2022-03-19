@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -42,12 +40,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("User %s added", user)
 		} else {
-			var b []byte
-
-			b, err = json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
+			commandOutput(resp)
 		}
 	}
 
@@ -73,12 +66,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("User %s deleted", user)
 		} else {
-			var b []byte
-
-			b, err = json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
+			commandOutput(resp)
 		}
 	}
 
@@ -93,8 +81,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 		return errors.New(err)
 	}
 
-	switch ui.OutputFormat {
-	case ui.TextFormat:
+	if ui.OutputFormat == ui.TextFormat {
 		t, _ := tables.New([]string{"User", "ID", "Permissions"})
 
 		for _, u := range ud.Items {
@@ -117,14 +104,8 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 
 		_ = t.SortRows(0, true)
 		_ = t.Print(ui.TextFormat)
-
-	case ui.JSONFormat:
-		b, _ := json.Marshal(ud)
-		fmt.Printf("%s\n", string(b))
-
-	case ui.JSONIndentedFormat:
-		b, _ := json.MarshalIndent(ud, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		fmt.Printf("%s\n", string(b))
+	} else {
+		commandOutput(ud)
 	}
 
 	return errors.New(err)

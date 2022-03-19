@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -70,20 +69,9 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 				t.Print(ui.OutputFormat)
 			}
-		} else if ui.OutputFormat == ui.JSONIndentedFormat {
-			var b []byte
 
-			b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
 		} else {
-			var b []byte
-
-			b, err := json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
+			commandOutput(resp)
 		}
 	}
 
@@ -108,20 +96,8 @@ func TableShow(c *cli.Context) *errors.EgoError {
 			}
 
 			t.Print(ui.OutputFormat)
-		} else if ui.OutputFormat == ui.JSONIndentedFormat {
-			var b []byte
-
-			b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
 		} else {
-			var b []byte
-
-			b, err := json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
+			commandOutput(resp)
 		}
 	}
 
@@ -241,20 +217,8 @@ func printRowSet(resp defs.DBRowSet, showRowID bool) *errors.EgoError {
 		}
 
 		t.Print(ui.OutputFormat)
-	} else if ui.OutputFormat == ui.JSONIndentedFormat {
-		var b []byte
-
-		b, err := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		if errors.Nil(err) {
-			fmt.Printf("%s\n", string(b))
-		}
 	} else {
-		var b []byte
-
-		b, err := json.Marshal(resp)
-		if errors.Nil(err) {
-			fmt.Printf("%s\n", string(b))
-		}
+		commandOutput(resp)
 	}
 
 	return nil
@@ -528,12 +492,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 
 			ui.Say("%d rows deleted", resp.Count)
 		} else {
-			var b []byte
-
-			b, err := json.Marshal(resp)
-			if errors.Nil(err) {
-				fmt.Printf("%s\n", string(b))
-			}
+			commandOutput(resp)
 		}
 	}
 
@@ -723,8 +682,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if errors.Nil(err) {
-		switch ui.OutputFormat {
-		case ui.TextFormat:
+		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{"User", "Schema", "Table", "Permissions"})
 			for _, permission := range permissions.Permissions {
 				_ = t.AddRowItems(permission.User,
@@ -735,10 +693,10 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 			}
 
 			t.Print(ui.TextFormat)
-		case ui.JSONFormat:
-			b, _ := json.MarshalIndent(permissions, "", "  ")
-			fmt.Printf("%s\n", string(b))
+		} else {
+			commandOutput(permissions)
 		}
+
 	}
 
 	return err
@@ -776,8 +734,7 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 }
 
 func printPermissionObject(result defs.PermissionObject) {
-	switch ui.OutputFormat {
-	case ui.TextFormat:
+	if ui.OutputFormat == ui.TextFormat {
 		plural := "s"
 		verb := "are"
 
@@ -798,10 +755,8 @@ func printPermissionObject(result defs.PermissionObject) {
 			verb,
 			strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		)
-
-	case ui.JSONFormat:
-		b, _ := json.MarshalIndent(result, "", "  ")
-		fmt.Printf("%s\n", b)
+	} else {
+		commandOutput(result)
 	}
 }
 

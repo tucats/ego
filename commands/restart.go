@@ -23,7 +23,8 @@ func Restart(c *cli.Context) *errors.EgoError {
 		proc, e2 = os.FindProcess(status.PID)
 		if e2 == nil {
 			e2 = proc.Kill()
-			if e2 == nil {
+			// If successful, and in text mode, report the stop to the console.
+			if e2 == nil && ui.OutputFormat == ui.TextFormat {
 				ui.Say("Server (pid %d) stopped", status.PID)
 			}
 		}
@@ -69,7 +70,12 @@ func Restart(c *cli.Context) *errors.EgoError {
 			status.Args = args
 			err = server.WritePidFile(c, *status)
 
-			ui.Say("Server re-started as process %d", pid)
+			if ui.OutputFormat == ui.TextFormat {
+				ui.Say("Server started as process %d", pid)
+			} else {
+				serverState, _ := server.ReadPidFile(c)
+				commandOutput(serverState)
+			}
 		} else {
 			_ = server.RemovePidFile(c)
 		}

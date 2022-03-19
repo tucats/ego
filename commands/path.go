@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,7 +35,7 @@ func PathAction(c *cli.Context) *errors.EgoError {
 		p = strings.TrimSuffix(p, "ego")
 	}
 
-	fmt.Println(p)
+	commandOutput(p)
 
 	return nil
 }
