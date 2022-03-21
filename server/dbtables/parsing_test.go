@@ -94,6 +94,11 @@ func Test_filterList(t *testing.T) {
 		want string
 	}{
 		{
+			name: "compound list",
+			arg:  "https://localhost:8500/tables/data?filter=and(EQ(a,1),EQ(b,2),EQ(c,3))",
+			want: ` WHERE "a" = 1 AND "b" = 2 AND "c" = 3`,
+		},
+		{
 			name: "filter list",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\"),eq(age,55)",
 			want: " WHERE \"name\" = 'Tom' AND \"age\" = 55",

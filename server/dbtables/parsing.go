@@ -173,14 +173,24 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 		term, _ := filterClause(tokens)
 		result.WriteString(prefix + " " + term)
 	} else {
+		termCount := 0
 		term, _ := filterClause(tokens)
-		result.WriteString(term + " ")
-		result.WriteString(infix + " ")
-		if !tokens.IsNext(",") {
-			return "", errors.New(errors.ErrInvalidList)
+
+		for {
+			termCount++
+			result.WriteString(term)
+			if !tokens.IsNext(",") {
+				if termCount < 2 {
+					return "", errors.New(errors.ErrInvalidList)
+				}
+
+				break
+			}
+
+			result.WriteString(" " + infix + " ")
+
+			term, _ = filterClause(tokens)
 		}
-		term, _ = filterClause(tokens)
-		result.WriteString(term)
 	}
 
 	if !tokens.IsNext(")") {
