@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -34,6 +35,10 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 		Message:    msg,
 		Status:     status,
 	}
+
+	// Remove noise from postgres errors.
+	msg = strings.TrimPrefix(msg, "pq: ")
+	msg = strings.Replace(msg, " pq: ", "", 1)
 
 	b, _ := json.MarshalIndent(response, "", "  ")
 
