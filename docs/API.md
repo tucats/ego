@@ -887,10 +887,18 @@ are:
 | AND      | AND(EQ(id,1),EQ(id,2)) | Both operands must be true |
 | OR       | OR(EQ(id,1),EQ(id,2)) | Either operands must be true |
 | NOT      | NOT(EQ(id,101)) | Match rows where the operand expression is not true |
+| HAS      | HAS(foo, 'YES', 'NO') | Match rows where character column `foo` contains "YES" or "NO" |
 
 &nbsp;
 
-Note that in these examples, the value being tested is an integer. You can also specify a string value 
+The AND() and OR() operators can contain a list of two or more values. If you specify multiple values, then
+in the case of AND() the filter is active if _all_ of the sub-expressions are true and in the case of OR()
+the filter is active if _any_ of teh sub-expressions are true. For the HAS() operator, the first item must
+be the column name and this is followed by one or more substrings that might be found in the column name;
+the filter is true if _any_ of the values are present in the column string value. The HAS() operation is
+case-sensitive.
+
+Note that in these examples, the value usually being tested is an integer. You can also specify a string value 
 in double quotes, or a floating point value (such as 123.45).
 
 &nbsp;

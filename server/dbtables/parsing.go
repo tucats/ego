@@ -142,6 +142,40 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 	prefix := ""
 	infix := ""
+	listAllowed := false
+
+	// Contains is wierd
+	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS") {
+		term, e := filterClause(tokens)
+		if !errors.Nil(e) {
+			return "", e
+		}
+		valueCount := 0
+
+		for tokens.IsNext(",") {
+			if valueCount > 0 {
+				result.WriteString(" AND ")
+			}
+			valueCount++
+
+			value, e := filterClause(tokens)
+			if !errors.Nil(e) {
+				return "", e
+			}
+			// position('evil' in description) > 0
+			result.WriteString("POSITION(")
+			result.WriteString(value)
+			result.WriteString(" IN ")
+			result.WriteString(term)
+			result.WriteString(") > 0")
+		}
+
+		if !tokens.IsNext(")") {
+			return "", errors.New(errors.ErrMissingParenthesis)
+		}
+
+		return result.String(), nil
+	}
 
 	switch strings.ToUpper(operator) {
 	case "EQ":
@@ -161,9 +195,11 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 	case "AND":
 		infix = "AND"
+		listAllowed = true
 
 	case "OR":
 		infix = "OR"
+		listAllowed = true
 
 	case "NOT":
 		prefix = "NOT"
@@ -181,6 +217,9 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 			result.WriteString(term)
 			if !tokens.IsNext(",") {
 				if termCount < 2 {
+					return "", errors.New(errors.ErrInvalidList)
+				}
+				if termCount > 2 && !listAllowed {
 					return "", errors.New(errors.ErrInvalidList)
 				}
 
