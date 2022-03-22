@@ -144,17 +144,18 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	infix := ""
 	listAllowed := false
 
-	// Contains is wierd
+	// Contains is weird, so handle it separately.
 	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS") {
 		term, e := filterClause(tokens)
 		if !errors.Nil(e) {
 			return "", e
 		}
+
 		valueCount := 0
 
 		for tokens.IsNext(",") {
 			if valueCount > 0 {
-				result.WriteString(" AND ")
+				result.WriteString(" OR ")
 			}
 			valueCount++
 
@@ -162,7 +163,9 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 			if !errors.Nil(e) {
 				return "", e
 			}
-			// position('evil' in description) > 0
+
+			// Building a string like:
+			//    position('evil' in classification) > 0
 			result.WriteString("POSITION(")
 			result.WriteString(value)
 			result.WriteString(" IN ")
@@ -177,6 +180,7 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 		return result.String(), nil
 	}
 
+	// Handle regular old monadic and diadic operators as a group.
 	switch strings.ToUpper(operator) {
 	case "EQ":
 		infix = "="
@@ -203,6 +207,9 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 	case "NOT":
 		prefix = "NOT"
+
+	default:
+		return "", errors.New(errors.ErrUnexpectedToken).Context(operator)
 	}
 
 	if prefix != "" {
