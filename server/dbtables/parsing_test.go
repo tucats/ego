@@ -12,6 +12,11 @@ func Test_formWhereClause(t *testing.T) {
 		want    string
 	}{
 		{
+			name:    "bogus expression",
+			filters: []string{"faux(name,\"string\")"},
+			want:    "SYNTAX-ERROR:unexpected token: faux",
+		},
+		{
 			name:    "nested expression",
 			filters: []string{"or(eq(name,\"Tom\"),eq(name,\"Mary\"))"},
 			want:    "\"name\" = 'Tom' OR \"name\" = 'Mary'",
