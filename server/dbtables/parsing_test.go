@@ -99,8 +99,13 @@ func Test_filterList(t *testing.T) {
 		want string
 	}{
 		{
-			name: "compound list",
-			arg:  "https://localhost:8500/tables/data?filter=has(foo, 'abc', 'def')",
+			name: "compound contains list",
+			arg:  "https://localhost:8500/tables/data?filter=contains(foo, 'abc', 'def')",
+			want: ` WHERE POSITION('abc' IN "foo") > 0 OR POSITION('def' IN "foo") > 0`,
+		},
+		{
+			name: "compound hasall list",
+			arg:  "https://localhost:8500/tables/data?filter=hasall(foo, 'abc', 'def')",
 			want: ` WHERE POSITION('abc' IN "foo") > 0 AND POSITION('def' IN "foo") > 0`,
 		},
 		{

@@ -144,8 +144,14 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	infix := ""
 	listAllowed := false
 
-	// Contains is weird, so handle it separately.
-	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS") {
+	// Contains is weird, so handle it separately. Note that we pay attention to the *ALL form
+	// as meaning all the cases must be true, versus the default of any of the cases are true.
+	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS", "HASANY", "CONTAINSALL", "HASALL") {
+		conjunction := " OR "
+		if util.InList(strings.ToUpper(operator), "CONTAINSALL", "HASALL") {
+			conjunction = " AND "
+		}
+
 		term, e := filterClause(tokens)
 		if !errors.Nil(e) {
 			return "", e
@@ -155,7 +161,7 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 		for tokens.IsNext(",") {
 			if valueCount > 0 {
-				result.WriteString(" OR ")
+				result.WriteString(conjunction)
 			}
 			valueCount++
 
