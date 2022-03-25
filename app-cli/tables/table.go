@@ -1,6 +1,9 @@
 package tables
 
-import "github.com/tucats/ego/errors"
+import (
+	"github.com/tucats/ego/errors"
+	"golang.org/x/term"
+)
 
 const (
 	// AlignmentLeft aligns the column to the left.
@@ -28,6 +31,8 @@ type Table struct {
 	columnCount    int
 	rowCount       int
 	orderBy        int
+	terminalWidth  int
+	terminalHeight int
 	ascending      bool
 	showUnderlines bool
 	showHeadings   bool
@@ -61,6 +66,18 @@ func New(headings []string) (*Table, *errors.EgoError) {
 		t.columns[n] = h
 		t.alignment[n] = AlignmentLeft
 		t.columnOrder[n] = n
+	}
+
+	// For pagination, if there is a terminal with width and height,
+	// add that to the table definition. Zero values mean no pagination
+	// or column folding will be done.
+	if term.IsTerminal(0) {
+		width, height, err := term.GetSize(0)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		t.terminalWidth = width
+		t.terminalHeight = height
 	}
 
 	return t, nil

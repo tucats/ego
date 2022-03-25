@@ -175,6 +175,178 @@ func (t *Table) FormatJSON() string {
 	return buffer.String()
 }
 
+func (t *Table) SetPagination(height, width int) {
+	if height >= 0 {
+		t.terminalHeight = height
+	}
+
+	if width >= 0 {
+		t.terminalWidth = width
+	}
+}
+
+// paginateText will output a table with column folding and pagination
+func (t *Table) paginateText() []string {
+	headers := make([]strings.Builder, 0)
+	headerCount := 0
+
+	columnMap := make([]int, len(t.columnOrder))
+	headerIndex := 0
+	columnIndex := 0
+	headers = make([]strings.Builder, 1)
+
+	for i, n := range t.columnOrder {
+		w := t.maxWidth[n]
+
+		if headers[headerIndex].Len()+len(t.spacing)+w > t.terminalWidth {
+			headerIndex++
+			headerCount++
+
+			if t.showUnderlines && t.showHeadings {
+				headers = append(headers, strings.Builder{})
+
+				columnIndexes := t.columnOrder[columnIndex:i]
+
+				for _, h := range columnIndexes {
+					for pad := 0; pad < t.maxWidth[h]; pad++ {
+						headers[headerIndex].WriteRune('=')
+					}
+
+					headers[headerIndex].WriteString(t.spacing)
+				}
+				columnIndex = i
+				headerIndex++
+			}
+
+			if t.showHeadings {
+				headers = append(headers, strings.Builder{})
+			}
+		}
+
+		columnMap[i] = headerCount
+
+		if t.showHeadings {
+			headers[headerIndex].WriteString(AlignText(t.columns[n], t.maxWidth[n], t.alignment[n]))
+			headers[headerIndex].WriteString(t.spacing)
+		}
+	}
+
+	// If we're outputting underlines, then we have to set up the final row of
+	// underlines from the last set of headers.
+	if t.showHeadings && t.showUnderlines {
+		headers = append(headers, strings.Builder{})
+		headerIndex++
+
+		columnIndexes := t.columnOrder[columnIndex:]
+		for _, h := range columnIndexes {
+			for pad := 0; pad < t.maxWidth[h]; pad++ {
+				headers[headerIndex].WriteRune('=')
+			}
+
+			headers[headerIndex].WriteString(t.spacing)
+		}
+	}
+
+	// @tomcole
+	// Need to have created a map that shows, for each column number, which
+	// pagelet it gets added to. This map is used below to put the parts of
+	// each row in the correct pagelet.
+
+	rowLimit := t.rowLimit
+	headerCount++
+
+	pageletSize := (t.terminalHeight - len(headers)) / headerCount
+	pageletCount := headerCount
+
+	pagelets := make([][]string, pageletCount)
+	for i := range pagelets {
+		pagelets[i] = make([]string, pageletSize)
+	}
+
+	var e *expressions.Expression
+
+	if t.where != "" {
+		e = expressions.New().WithText(t.where)
+
+		if ui.LoggerIsActive(ui.ByteCodeLogger) {
+			e.Disasm()
+		}
+	}
+
+	if rowLimit < 0 {
+		rowLimit = t.terminalHeight
+	}
+
+	// Now select rows.
+	for rx, r := range t.rows {
+		if rx < t.startingRow {
+			continue
+		}
+
+		if rx >= t.startingRow+rowLimit {
+			break
+		}
+
+		if e != nil {
+			// Load up the symbol tables with column values and the row number.
+			symbols := symbols.NewSymbolTable("rowset")
+			_ = symbols.SetAlways("_row_", rx+1)
+
+			for i, n := range t.columns {
+				_ = symbols.SetAlways(strings.ToLower(n), r[i])
+			}
+
+			v, err := e.Eval(symbols)
+			if !errors.Nil(err) {
+				return []string{fmt.Sprintf("*** where clause error: %s", err.Error())}
+			}
+
+			if !datatypes.GetBool(v) {
+				continue
+			}
+		}
+
+		// Loop over the elements of the row. Generate pre- or post-spacing as
+		// appropriate for the requested alignment, and any intra-column spacing.
+		// @tomcole doesn't yet handle index or row numbers!
+		for cx, n := range t.columnOrder {
+			lx := rx % pageletSize
+			px := columnMap[cx]
+
+			text := AlignText(r[n], t.maxWidth[n], t.alignment[n]) + t.spacing
+			pagelets[px][lx] = pagelets[px][lx] + text
+		}
+
+	}
+
+	// reassemble into a page buffer.
+	output := []string{}
+	for px, p := range pagelets {
+
+		// Get the header (and optionally, underline) for this pagelet
+		hx := px
+		if t.showUnderlines {
+			hx = hx * 2
+		}
+
+		output = append(output, headers[hx].String())
+		if t.showUnderlines {
+			output = append(output, headers[hx+1].String())
+		}
+
+		// Add the rows for this pagelet
+		for _, r := range p {
+			if r != "" {
+				output = append(output, r)
+			}
+		}
+		output = append(output, "")
+
+	}
+
+	return output
+}
+
 // FormatText will output a table using current rows and format specifications.
 func (t *Table) FormatText() []string {
 	var e *expressions.Expression
@@ -182,6 +354,10 @@ func (t *Table) FormatText() []string {
 	var buffer strings.Builder
 
 	var rowLimit = t.rowLimit
+
+	if (t.terminalHeight > 0) || (t.terminalWidth > 0) {
+		return t.paginateText()
+	}
 
 	ui.Debug(ui.AppLogger, "Print column order: %v", t.columnOrder)
 

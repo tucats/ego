@@ -55,7 +55,7 @@ func ShowHelp(c *Context) {
 		if g.ExpectedParameterCount < 1 {
 			parmDesc = "[" + parmDesc + "]"
 		}
-		
+
 		composedCommand = composedCommand + " " + parmDesc
 	} else if e == 1 {
 		composedCommand = composedCommand + " [parameter]"
@@ -82,6 +82,7 @@ func ShowHelp(c *Context) {
 	tc, _ := tables.New([]string{"subcommand", "description"})
 
 	tc.ShowHeadings(false)
+	tc.SetPagination(0, 0)
 
 	_ = tc.SetIndent(helpIndent)
 	_ = tc.SetSpacing(helpSpacing)
@@ -111,6 +112,7 @@ func ShowHelp(c *Context) {
 	tc, _ = tables.New([]string{"Parameter"})
 
 	tc.ShowHeadings(false)
+	tc.SetPagination(0, 0)
 
 	_ = tc.SetIndent(helpIndent)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
@@ -136,6 +138,7 @@ func ShowHelp(c *Context) {
 	to, _ := tables.New([]string{"option", "description"})
 
 	to.ShowHeadings(false)
+	to.SetPagination(0, 0)
 
 	_ = to.SetIndent(helpIndent)
 	_ = to.SetSpacing(helpSpacing)

@@ -3,6 +3,7 @@ package tables
 import (
 	"testing"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
 
@@ -146,4 +147,42 @@ func TestAlignText(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTable_paginateText(t *testing.T) {
+
+	t.Run("header test", func(t *testing.T) {
+
+		tb, _ := New([]string{
+			"First",
+			"Last",
+			"Address",
+			"Description",
+			"Relation",
+		})
+
+		tb.SetPagination(20, 50)
+
+		tb.AddRowItems(
+			"Tom",
+			"Stephanofphalosfis",
+			"100 North Wakualewaka Lake Drive, Primrose NC 28391",
+			"Software inventor",
+			"Self",
+		)
+
+		tb.AddRowItems(
+			"Donna",
+			"Wilson",
+			"100 Main St, Primrose NC 28391",
+			"iPhone Developer",
+			"Sister",
+		)
+
+		_ = tb.Print(ui.TextFormat)
+		//if !errors.Nil(e) {
+		//  t.Error(e)
+		//}
+
+	})
 }
