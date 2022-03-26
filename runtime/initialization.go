@@ -27,13 +27,12 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.EgoPathSetting:                egopath,
 		defs.AutoImportSetting:             defs.True,
 		defs.CaseNormalizedSetting:         defs.False,
-		defs.StaticTypesSetting:            "dynamic",
+		defs.StaticTypesSetting:            defs.Dynamic,
 		defs.OutputFormatSetting:           ui.TextFormat,
 		defs.ExtensionsEnabledSetting:      defs.False,
 		defs.UseReadline:                   defs.True,
 		defs.ServerTokenExpirationSetting:  "24h",
 		defs.ServerTokenKeySetting:         strings.ReplaceAll(uuid.New().String()+uuid.New().String(), "-", ""),
-		defs.ExitOnBlankSetting:            defs.False,
 		defs.ThrowUncheckedErrorsSetting:   defs.True,
 		defs.FullStackTraceSetting:         defs.False,
 		defs.LogTimestampFormat:            "2006-01-02 15:04:05",
@@ -41,9 +40,9 @@ func InitProfileDefaults() *errors.EgoError {
 		defs.InsecureServerSetting:         defs.False,
 		defs.RestClientErrorSetting:        defs.True,
 		defs.LogRetainCountSetting:         "3",
-		defs.TablesServerEmptyFilterError:  "true",
-		defs.TablesServerEmptyRowsetError:  "true",
-		defs.TableServerPartialInsertError: "true",
+		defs.TablesServerEmptyFilterError:  defs.True,
+		defs.TablesServerEmptyRowsetError:  defs.True,
+		defs.TableServerPartialInsertError: defs.True,
 	}
 
 	// See if there is a value for each on of these. If no

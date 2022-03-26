@@ -210,9 +210,11 @@ const (
 )
 
 const (
-	True  = "true"
-	False = "false"
-	Any   = "any"
+	True    = "true"
+	False   = "false"
+	Any     = "any"
+	Static  = "static"
+	Dynamic = "dynamic"
 )
 
 const (

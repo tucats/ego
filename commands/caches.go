@@ -104,6 +104,8 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 
 			_ = t.SortRows(0, true)
 			_ = t.SetIndent(2)
+			t.SetPagination(0, 0)
+
 			t.Print(ui.TextFormat)
 			fmt.Printf("\n")
 		}

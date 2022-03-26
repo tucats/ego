@@ -103,6 +103,8 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 		}
 
 		_ = t.SortRows(0, true)
+		t.SetPagination(0, 0)
+		
 		_ = t.Print(ui.TextFormat)
 	} else {
 		commandOutput(ud)

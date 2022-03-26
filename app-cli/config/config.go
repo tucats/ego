@@ -106,6 +106,9 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 		_ = t.AddRowItems(k, v)
 	}
 
+	// Pagination makes no sense in this context.
+	t.SetPagination(0, 0)
+
 	_ = t.SetOrderBy("key")
 	t.ShowUnderlines(false)
 	t.Print(ui.TextFormat)
@@ -120,6 +123,9 @@ func ListAction(c *cli.Context) *errors.EgoError {
 	for k, v := range settings.Configurations {
 		_ = t.AddRowItems(k, v.Description)
 	}
+
+	// Pagination makes no sense here.
+	t.SetPagination(0, 0)
 
 	_ = t.SetOrderBy("name")
 	t.ShowUnderlines(false)
