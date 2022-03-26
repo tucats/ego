@@ -1,33 +1,34 @@
 // Test program for accessing a local gremlin system.
+func main() {
+	url := "ws://localhost:8182/gremlin"
+	g := 0
 
-url := "ws://localhost:8182/gremlin"
-g := 0
+	try {
+		g = gremlin.New(url)
+	} catch {
+		fmt.Println( "Unable to connect to Gremlin server:", _error )
+		util.Exit(1)
+	}
 
-try {
-	g = gremlin.New(url)
-} catch {
-	fmt.Println( "Unable to connect to Gremlin server:", _error )
-	util.Exit(1)
+	fmt.Println("Loading data into Gremlin database")
+
+	// Create some vertices in the database. Note that not all of them have the same
+	// properties; any vertex missing a property will be considered to have a null value
+	// for that property in the result set.
+	g.Query( `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
+	g.Query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
+	g.Query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
+	g.Query( `g.addV("test1").property("name", "Bob").property("rate", 10.3).property("temp", true)`)
+	g.Query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
+
+	// Run a query and coerce the result into a normalized table format
+	query := `g.V().hasLabel("test1").order().by("name").valueMap()`
+	data := g.QueryMap(query)
+
+	// Generate formatted output, which is an array of strings which we print to the console
+	fmt.Println(string(table(data)))
+
+	// Clean up all our nodes
+	g.Query( `g.V().hasLabel("test1").drop()`)
+	g.Close()
 }
-
-fmt.Println("Loading data into Gremlin database")
-
-// Create some vertices in the database. Note that not all of them have the same
-// properties; any vertex missing a property will be considered to have a null value
-// for that property in the result set.
-g.Query( `g.addV("test1").property("name", "Tom").property("rate", 18.75)`)
-g.Query( `g.addV("test1").property("name", "Mary").property("rate", 77.75)`)
-g.Query( `g.addV("test1").property("name", "Sue").property("rate", 10)`)
-g.Query( `g.addV("test1").property("name", "Bob").property("rate", 10.3).property("temp", true)`)
-g.Query( `g.addV("test1").property("name", "Sam").property("rate", 10).property("id", UUID.fromString("c1c20377-968c-4ca1-a18d-7329f24028b3") )`)
-
-// Run a query and coerce the result into a normalized table format
-query := `g.V().hasLabel("test1").order().by("name").valueMap()`
-data := g.QueryMap(query)
-
-// Generate formatted output, which is an array of strings which we print to the console
-fmt.Println(string(table(data)))
-
-// Clean up all our nodes
-g.Query( `g.V().hasLabel("test1").drop()`)
-g.Close()
