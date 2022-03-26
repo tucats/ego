@@ -231,7 +231,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		for _, row := range rowSet.Rows {
 			for _, column := range columns {
 				v, ok := row[column.Name]
-				if !ok {
+				if !ok && settings.GetBool(defs.TableServerPartialInsertError) {
 					expectedList := make([]string, 0)
 					for _, k := range columns {
 						expectedList = append(expectedList, k.Name)
@@ -245,8 +245,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 					sort.Strings(expectedList)
 					sort.Strings(providedList)
 
-					msg := fmt.Sprintf("Error evaluating table columns; expected %v but received payload with %v",
-						strings.Join(expectedList, ","), strings.Join(providedList, ","))
+					msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
+						column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
 
 					util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
