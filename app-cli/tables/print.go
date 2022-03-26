@@ -195,6 +195,16 @@ func (t *Table) paginateText() []string {
 	columnIndex := 0
 	headers = make([]strings.Builder, 1)
 
+	// @tomcole this is a hack to turn off vertical pagination until it
+	// is working correctly.
+	savedTerminalHeight := t.terminalHeight
+	defer func() {
+		t.terminalHeight = savedTerminalHeight
+	}()
+
+	// Temporarily set to a ridiculously huge number
+	t.terminalHeight = 9999999
+
 	for i, n := range t.columnOrder {
 		w := t.maxWidth[n]
 
@@ -277,6 +287,8 @@ func (t *Table) paginateText() []string {
 		rowLimit = t.terminalHeight
 	}
 
+	output := []string{}
+
 	// Now select rows.
 	for rx, r := range t.rows {
 		if rx < t.startingRow {
@@ -311,16 +323,50 @@ func (t *Table) paginateText() []string {
 		// @tomcole doesn't yet handle index or row numbers!
 		for cx, n := range t.columnOrder {
 			lx := rx % pageletSize
-			px := columnMap[cx]
+			px := columnMap[cx] % pageletSize
 
 			text := AlignText(r[n], t.maxWidth[n], t.alignment[n]) + t.spacing
 			pagelets[px][lx] = pagelets[px][lx] + text
 		}
 
+		if rx >= pageletSize {
+			// We've hit the end of a page, so move into the output buffer.
+			for px, p := range pagelets {
+
+				// Get the header (and optionally, underline) for this pagelet
+				hx := px
+				if t.showUnderlines {
+					hx = hx * 2
+				}
+
+				output = append(output, headers[hx].String())
+				if t.showUnderlines {
+					output = append(output, headers[hx+1].String())
+				}
+
+				// Add the rows for this pagelet
+				for _, r := range p {
+					if r != "" {
+						output = append(output, r)
+					}
+				}
+
+				// Add a blank between pagelets
+				output = append(output, "")
+
+			}
+
+			for px := 0; px < len(pagelets); px++ {
+				p := pagelets[px]
+				for lx := 0; lx < len(p); lx++ {
+					p[lx] = ""
+				}
+				pagelets[px] = p
+			}
+		}
 	}
 
 	// reassemble into a page buffer.
-	output := []string{}
 	for px, p := range pagelets {
 
 		// Get the header (and optionally, underline) for this pagelet
@@ -340,8 +386,9 @@ func (t *Table) paginateText() []string {
 				output = append(output, r)
 			}
 		}
-		output = append(output, "")
 
+		// Add a blank between pagelets
+		output = append(output, "")
 	}
 
 	return output

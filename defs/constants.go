@@ -131,6 +131,9 @@ const (
 	// The URL path for the tables database functionality.
 	TablesServerEmptyRowsetError = PrivilegedKeyPrefix + "server.database.empty.rowset.error"
 
+	// If true, the insert of a row _must_ specify all values in the table.
+	TableServerPartialInsertError = PrivilegedKeyPrefix + "server.database.partial.insert.error"
+
 	// The key string used to encrypt authentication tokens.
 	ServerTokenKeySetting = PrivilegedKeyPrefix + "server.token.key"
 
@@ -256,6 +259,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TablesServerEmptyFilterError:    true,
 	TablesServerEmptyRowsetError:    true,
 	ServerDefaultLogSetting:         true,
+	TableServerPartialInsertError:   true,
 }
 
 const (
