@@ -1889,7 +1889,7 @@ has the following members:
 
 ### io.ReadFile(filename)
 
-The `ReadFile` function reads input from a file. If the filename is a "." then the
+The `ReadFile` function reads input from a file. If the filename is "." then the
 function reads a single line of text from stdin (the console or a pipe). Otherwise,
 the filename must be the absolute or relative path to a file in the file system, and
 its' entire contents are returned as a single string value.
@@ -1903,7 +1903,7 @@ an array of strings based on the line breaks if you wish.
 
 ### io.WriteFile(filename, string)
 
-The `WriteFile()` function write a string value to a file. If the file does not
+The `WriteFile()` function writes a string value to a file. If the file does not
 exist, it is created. If the file previously existed, the contents are over-written
 by the new file.
 
@@ -1941,9 +1941,9 @@ from the standard `Marshal` function in that it provides indentation automatical
 the JSON string more readable.
 
     a := { name: "Tom", age: 44 }
-    s := json.Marshal(a)
+    s := json.MarshalIndented(a)
 
-This results in `s` containing the value
+This results in `s` containing the string value
 
     {
         "name" : "Tom",
