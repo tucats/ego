@@ -4,7 +4,8 @@
 {
     h := []string{"Name", "Age", "Title"}
     t := tables.New(h)
-
+    t.Pagination(0,0)
+    
     t.AddRow("Tom", "53", "Dad")
     t.AddRow([]string{"Mary", "47", "Mom"}...)
 

@@ -2,6 +2,7 @@
 {
 
     t := tables.New("Name", "Age")
+    t.Pagination(0,0)
     
     t.AddRow("Tom", 51)
     t.AddRow("Mary", 48)

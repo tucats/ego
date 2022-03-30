@@ -18,13 +18,14 @@ func initTableTypeDef() {
 		t, _ := compiler.CompileTypeSpec(tableTypeSpec)
 
 		t.DefineFunctions(map[string]interface{}{
-			"AddRow": TableAddRow,
-			"Close":  TableClose,
-			"Sort":   TableSort,
-			"Print":  TablePrint,
-			"Format": TableFormat,
-			"Align":  TableAlign,
-			"String": TableString,
+			"AddRow":     TableAddRow,
+			"Close":      TableClose,
+			"Sort":       TableSort,
+			"Print":      TablePrint,
+			"Format":     TableFormat,
+			"Align":      TableAlign,
+			"String":     TableString,
+			"Pagination": TablePagination,
 		})
 
 		tableTypeDef = &t
@@ -119,6 +120,27 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	this := getThisStruct(s)
 	this.SetAlways(tableFieldName, nil)
+
+	return true, err
+}
+
+// TableClose closes the table handle, and releases any memory resources
+// being held by the table.
+func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+
+	if len(args) != 2 {
+		return nil, errors.New(errors.ErrInvalidVariableArguments)
+	}
+
+	h := datatypes.GetInt(args[0])
+	w := datatypes.GetInt(args[1])
+
+	t, err := getTable(s)
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	t.SetPagination(h, w)
 
 	return true, err
 }
