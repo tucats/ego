@@ -360,14 +360,11 @@ one argument is given, the result is the JSON for that specific argument. If
 more than one argument is given, the result is always encoded as a JSON array
 where each element matches a parameter to the call.
 
-### json.MarshalIndented()
-Returns a string containing the JSON representation of the arguments. If only
-one argument is given, the result is the JSON for that specific argument. If
-more than one argument is given, the result is always encoded as a JSON array
-where each element matches a parameter to the call.
-
-This function differs from `json.Marshal` in the the resulting string contains
-newline and indentation spaces to make the string more human-readable.
+### json.MarshalIndent(v, prefix, indent)
+Returns a string containing the JSON representation of the `v` arguement. The
+caller must also specify a string for the `prefix` that appears at the start
+of each line of the formatted JSON output, and a `indent` value that is the
+string used to indent nested JSON objects.
 
 ### json.UnMarhsal()
 This accepts a string that must contain a syntactically valid JSON expression,

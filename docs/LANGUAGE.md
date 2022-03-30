@@ -1932,16 +1932,16 @@ This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". Thi
 be passed as the body of a rest request, for example, to send an instance of this structure
 to the REST service.
 
-### json.MarshalIndented(v)
+### json.MarshalIndent(v, prefix, indent)
 
 The `MarshalIndented` function converts a value into a JSON string expression, which is the
-function result. Note that unlike its _Go_ counterpart, the `json` package automatically
-converts the value expression to a string as the result. The `MarshalIndent` function differs
-from the standard `Marshal` function in that it provides indentation automatically to make
-the JSON string more readable.
+function result. You must also supply a `prefix` and `indent` string. These are used as a prefix before each line of output in the resulting formatted JSON, as well as the indent spacing value for nested items. These are both interpreted as strings, and the most common use is to specify a string with the required number of blanks for each part.
+
+Note that unlike its _Go_ counterpart, the `json` package automatically
+converts the value expression to a string as the function result. 
 
     a := { name: "Tom", age: 44 }
-    s := json.MarshalIndented(a)
+    s := json.MarshalIndent(a, "", "   ")
 
 This results in `s` containing the string value
 
@@ -2129,7 +2129,7 @@ variable. If the variable does not exist, the function always returns an empty s
 
     func main() int {
 
-        shell := os.Getenv("SHELL")
+        shell := os.Getenv("SHELL")ego
         fmt.Println("You are running the ", shell, " shell program")
 
         return 0

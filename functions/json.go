@@ -155,30 +155,11 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 // EncodeFormatted writes a  JSON string from arbitrary data.
 func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	if len(args) == 1 {
-		jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), "", "  ")
 
-		return string(jsonBuffer), errors.New(err)
-	}
+	prefix := datatypes.GetString(args[1])
+	indent := datatypes.GetString(args[2])
 
-	var b strings.Builder
+	jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), prefix, indent)
 
-	b.WriteString("[")
-
-	for n, v := range args {
-		if n > 0 {
-			b.WriteString(", ")
-		}
-
-		jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(v), "", "  ")
-		if !errors.Nil(err) {
-			return "", errors.New(err)
-		}
-
-		b.WriteString(string(jsonBuffer))
-	}
-
-	b.WriteString("]")
-
-	return b.String(), nil
+	return string(jsonBuffer), errors.New(err)
 }

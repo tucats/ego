@@ -3,7 +3,7 @@
 
 {
     anon := {age:55, name:"Tom"}
-    s := json.MarshalIndented(anon)
+    s := json.MarshalIndent(anon, "", "  ")
 
     // This test is sensitive to formatting.
     @assert s == 
