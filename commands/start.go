@@ -191,7 +191,7 @@ func Start(c *cli.Context) *errors.EgoError {
 			ui.Say("Server started as process %d", pid)
 		} else {
 			serverState, _ := server.ReadPidFile(c)
-			commandOutput(serverState)
+			_ = commandOutput(serverState)
 		}
 	} else {
 		// If things did not go well starting the process, make sure the

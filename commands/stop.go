@@ -24,7 +24,7 @@ func Stop(c *cli.Context) *errors.EgoError {
 				if ui.OutputFormat == ui.TextFormat {
 					ui.Say("Server (pid %d) stopped", status.PID)
 				} else {
-					commandOutput(status)
+					_ = commandOutput(status)
 				}
 			}
 		}

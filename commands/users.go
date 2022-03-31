@@ -40,7 +40,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("User %s added", user)
 		} else {
-			commandOutput(resp)
+			_ = commandOutput(resp)
 		}
 	}
 
@@ -66,7 +66,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("User %s deleted", user)
 		} else {
-			commandOutput(resp)
+			_ = commandOutput(resp)
 		}
 	}
 
@@ -104,10 +104,10 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 
 		_ = t.SortRows(0, true)
 		t.SetPagination(0, 0)
-		
+
 		_ = t.Print(ui.TextFormat)
 	} else {
-		commandOutput(ud)
+		_ = commandOutput(ud)
 	}
 
 	return errors.New(err)

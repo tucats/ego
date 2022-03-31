@@ -92,7 +92,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
 		} else {
-			commandOutput(defs.RestStatusResponse{Status: 500, Message: err.Error()})
+			_ = commandOutput(defs.RestStatusResponse{Status: 500, Message: err.Error()})
 		}
 
 		os.Exit(3)
@@ -101,7 +101,7 @@ func remoteStatus(addr string) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
 	} else {
-		commandOutput(resp)
+		_ = commandOutput(resp)
 	}
 
 	return nil

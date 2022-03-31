@@ -62,6 +62,20 @@ var TableGrammar = []cli.Option{
 				Description: "Filename of SQL command text",
 				OptionType:  cli.StringType,
 			},
+			{
+				LongName:    "row-ids",
+				ShortName:   "i",
+				Aliases:     []string{"ids"},
+				Description: "Include the row UUID in the output",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "row-numbers",
+				ShortName:   "n",
+				Aliases:     []string{"ids"},
+				Description: "Include the row number in the output",
+				OptionType:  cli.BooleanType,
+			},
 		},
 	},
 	{
@@ -176,6 +190,13 @@ var TableGrammar = []cli.Option{
 				ShortName:   "i",
 				Aliases:     []string{"ids"},
 				Description: "Include the row UUID column in the output",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "row-numbers",
+				ShortName:   "n",
+				Aliases:     []string{"ids"},
+				Description: "Include the row number in the output",
 				OptionType:  cli.BooleanType,
 			},
 			{

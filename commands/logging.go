@@ -137,7 +137,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 				fmt.Println(line)
 			}
 		} else {
-			commandOutput(lines)
+			_ = commandOutput(lines)
 		}
 
 		return nil
@@ -178,9 +178,9 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	} else {
 		if fileOnly {
-			commandOutput(response.Filename)
+			_ = commandOutput(response.Filename)
 		} else {
-			commandOutput(response)
+			_ = commandOutput(response)
 		}
 	}
 

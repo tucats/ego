@@ -74,7 +74,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 				ui.Say("Server started as process %d", pid)
 			} else {
 				serverState, _ := server.ReadPidFile(c)
-				commandOutput(serverState)
+				_ = commandOutput(serverState)
 			}
 		} else {
 			_ = server.RemovePidFile(c)

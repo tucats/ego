@@ -16,7 +16,6 @@ import (
 // standard or indented formats.
 func commandOutput(thing ...interface{}) *errors.EgoError {
 	switch ui.OutputFormat {
-
 	case ui.TextFormat:
 		var msg string
 
@@ -28,6 +27,7 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 		}
 
 		ui.Say(msg)
+
 		return nil
 
 	case ui.JSONFormat:
@@ -41,6 +41,7 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 		}
 
 		ui.Say("%s", string(b))
+
 		return nil
 
 	case ui.JSONIndentedFormat:
@@ -54,10 +55,10 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 		}
 
 		ui.Say("%s", string(b))
+
 		return nil
 
 	default:
 		return errors.New(errors.ErrInvalidOutputFormat)
 	}
-
 }

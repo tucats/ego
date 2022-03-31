@@ -69,9 +69,8 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 				t.Print(ui.OutputFormat)
 			}
-
 		} else {
-			commandOutput(resp)
+			_ = commandOutput(resp)
 		}
 	}
 
@@ -97,7 +96,7 @@ func TableShow(c *cli.Context) *errors.EgoError {
 
 			t.Print(ui.OutputFormat)
 		} else {
-			commandOutput(resp)
+			_ = commandOutput(resp)
 		}
 	}
 
@@ -174,13 +173,13 @@ func TableContents(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if errors.Nil(err) {
-		err = printRowSet(resp, c.Boolean("row-ids"))
+		err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 	}
 
 	return errors.New(err)
 }
 
-func printRowSet(resp defs.DBRowSet, showRowID bool) *errors.EgoError {
+func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("No rows in query")
@@ -201,6 +200,7 @@ func printRowSet(resp defs.DBRowSet, showRowID bool) *errors.EgoError {
 		sort.Strings(keys)
 
 		t, _ := tables.New(keys)
+		t.ShowRowNumbers(showRowNumber)
 
 		for _, row := range resp.Rows {
 			values := make([]interface{}, 0)
@@ -218,7 +218,7 @@ func printRowSet(resp defs.DBRowSet, showRowID bool) *errors.EgoError {
 
 		t.Print(ui.OutputFormat)
 	} else {
-		commandOutput(resp)
+		_ = commandOutput(resp)
 	}
 
 	return nil
@@ -492,7 +492,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 
 			ui.Say("%d rows deleted", resp.Count)
 		} else {
-			commandOutput(resp)
+			_ = commandOutput(resp)
 		}
 	}
 
@@ -603,6 +603,8 @@ func makeFilter(filters []string) string {
 func TableSQL(c *cli.Context) *errors.EgoError {
 	var sql string
 
+	showRowNumbers := c.Boolean("row-numbers")
+
 	for i := 0; i < 999; i++ {
 		sqlItem := c.GetParameter(i)
 		if sqlItem == "" {
@@ -650,7 +652,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 			return err
 		}
 
-		_ = printRowSet(rows, true)
+		_ = printRowSet(rows, true, showRowNumbers)
 	} else {
 		resp := defs.DBRowCount{}
 
@@ -694,9 +696,8 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 
 			t.Print(ui.TextFormat)
 		} else {
-			commandOutput(permissions)
+			_ = commandOutput(permissions)
 		}
-
 	}
 
 	return err
@@ -756,7 +757,7 @@ func printPermissionObject(result defs.PermissionObject) {
 			strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		)
 	} else {
-		commandOutput(result)
+		_ = commandOutput(result)
 	}
 }
 

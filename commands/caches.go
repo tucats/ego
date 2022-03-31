@@ -41,7 +41,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		ui.Say("Server cache size updated")
 	} else {
-		commandOutput(cacheStatus)
+		_ = commandOutput(cacheStatus)
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 			fmt.Printf("  There are %d service items in cache. The maximum cache size is %d items\n", cacheStatus.Count, cacheStatus.Limit)
 		}
 	} else {
-		commandOutput(cacheStatus)
+		_ = commandOutput(cacheStatus)
 	}
 
 	return nil

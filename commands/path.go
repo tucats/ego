@@ -35,7 +35,7 @@ func PathAction(c *cli.Context) *errors.EgoError {
 		p = strings.TrimSuffix(p, "ego")
 	}
 
-	commandOutput(p)
+	_ = commandOutput(p)
 
 	return nil
 }
