@@ -76,6 +76,7 @@ func New(headings []string) (*Table, *errors.EgoError) {
 		if err != nil {
 			return nil, errors.New(err)
 		}
+
 		t.terminalWidth = width
 		t.terminalHeight = height
 	}

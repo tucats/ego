@@ -150,9 +150,7 @@ func TestAlignText(t *testing.T) {
 }
 
 func TestTable_paginateText(t *testing.T) {
-
 	t.Run("header test", func(t *testing.T) {
-
 		tb, _ := New([]string{
 			"First",
 			"Last",
@@ -162,8 +160,9 @@ func TestTable_paginateText(t *testing.T) {
 		})
 
 		tb.SetPagination(20, 50)
+		tb.ShowRowNumbers(true)
 
-		tb.AddRowItems(
+		_ = tb.AddRowItems(
 			"Tom",
 			"Stephanofphalosfis",
 			"100 North Wakualewaka Lake Drive, Primrose NC 28391",
@@ -171,7 +170,7 @@ func TestTable_paginateText(t *testing.T) {
 			"Self",
 		)
 
-		tb.AddRowItems(
+		_ = tb.AddRowItems(
 			"Donna",
 			"Wilson",
 			"100 Main St, Primrose NC 28391",
@@ -181,8 +180,7 @@ func TestTable_paginateText(t *testing.T) {
 
 		_ = tb.Print(ui.TextFormat)
 		//if !errors.Nil(e) {
-		//  t.Error(e)
+		//	t.Error(e)
 		//}
-
 	})
 }

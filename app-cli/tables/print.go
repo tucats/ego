@@ -185,10 +185,20 @@ func (t *Table) SetPagination(height, width int) {
 	}
 }
 
-// paginateText will output a table with column folding and pagination
+// paginateText will output a table with column folding and pagination.
 func (t *Table) paginateText() []string {
-	headers := make([]strings.Builder, 0)
+	var headers []strings.Builder
+
 	headerCount := 0
+	rowCount := len(t.rows)
+
+	if t.startingRow > 0 {
+		rowCount = rowCount - t.startingRow
+	}
+
+	if t.rowLimit > 0 {
+		rowCount = rowCount - (len(t.rows) - t.rowLimit)
+	}
 
 	columnMap := make([]int, len(t.columnOrder))
 	headerIndex := 0
@@ -205,10 +215,26 @@ func (t *Table) paginateText() []string {
 	// Temporarily set to a ridiculously huge number
 	t.terminalHeight = 9999999
 
+	// Do we need to include the Row header first?
+	availableWidth := t.terminalWidth
+	rowNumberWidth := 0
+
+	if t.showRowNumbers {
+		rowNumberWidth = len(fmt.Sprintf("%d", len(t.rows)))
+		if rowNumberWidth < 3 {
+			rowNumberWidth = 3
+		}
+
+		availableWidth = availableWidth - (rowNumberWidth + len(t.spacing))
+	}
+
+	first := true
+
+	// Build the headings map.
 	for i, n := range t.columnOrder {
 		w := t.maxWidth[n]
 
-		if headers[headerIndex].Len()+len(t.spacing)+w > t.terminalWidth {
+		if headers[headerIndex].Len()+len(t.spacing)+w > availableWidth {
 			headerIndex++
 			headerCount++
 
@@ -217,6 +243,14 @@ func (t *Table) paginateText() []string {
 
 				columnIndexes := t.columnOrder[columnIndex:i]
 
+				if rowNumberWidth > 0 {
+					for pad := 0; pad < rowNumberWidth; pad++ {
+						headers[headerIndex].WriteRune('=')
+					}
+
+					headers[headerIndex].WriteString(t.spacing)
+				}
+
 				for _, h := range columnIndexes {
 					for pad := 0; pad < t.maxWidth[h]; pad++ {
 						headers[headerIndex].WriteRune('=')
@@ -224,18 +258,40 @@ func (t *Table) paginateText() []string {
 
 					headers[headerIndex].WriteString(t.spacing)
 				}
+
 				columnIndex = i
 				headerIndex++
 			}
 
 			if t.showHeadings {
 				headers = append(headers, strings.Builder{})
+				if rowNumberWidth > 0 {
+					headers[headerIndex].WriteString("Row")
+
+					for pad := 0; pad < rowNumberWidth-3; pad++ {
+						headers[headerIndex].WriteRune(' ')
+					}
+
+					headers[headerIndex].WriteString(t.spacing)
+				}
 			}
 		}
 
 		columnMap[i] = headerCount
 
 		if t.showHeadings {
+			if first && rowNumberWidth > 0 {
+				headers[headerIndex].WriteString("Row")
+
+				for pad := 0; pad < rowNumberWidth-3; pad++ {
+					headers[headerIndex].WriteRune(' ')
+				}
+
+				headers[headerIndex].WriteString(t.spacing)
+			}
+
+			first = false
+
 			headers[headerIndex].WriteString(AlignText(t.columns[n], t.maxWidth[n], t.alignment[n]))
 			headers[headerIndex].WriteString(t.spacing)
 		}
@@ -247,6 +303,14 @@ func (t *Table) paginateText() []string {
 		headers = append(headers, strings.Builder{})
 		headerIndex++
 
+		if rowNumberWidth > 0 {
+			for pad := 0; pad < rowNumberWidth; pad++ {
+				headers[headerIndex].WriteRune('=')
+			}
+
+			headers[headerIndex].WriteString(t.spacing)
+		}
+
 		columnIndexes := t.columnOrder[columnIndex:]
 		for _, h := range columnIndexes {
 			for pad := 0; pad < t.maxWidth[h]; pad++ {
@@ -257,20 +321,26 @@ func (t *Table) paginateText() []string {
 		}
 	}
 
-	// @tomcole
-	// Need to have created a map that shows, for each column number, which
-	// pagelet it gets added to. This map is used below to put the parts of
-	// each row in the correct pagelet.
-
 	rowLimit := t.rowLimit
 	headerCount++
 
-	pageletSize := (t.terminalHeight - len(headers)) / headerCount
+	pageletSize := rowCount
 	pageletCount := headerCount
 
 	pagelets := make([][]string, pageletCount)
 	for i := range pagelets {
 		pagelets[i] = make([]string, pageletSize)
+
+		if rowNumberWidth > 0 {
+			for j := 1; j <= pageletSize; j++ {
+				rowString := fmt.Sprintf("%d", j)
+				for n := 0; n <= rowNumberWidth-len(rowString); n++ {
+					rowString = " " + rowString
+				}
+
+				pagelets[i][j-1] = rowString + t.spacing
+			}
+		}
 	}
 
 	var e *expressions.Expression
@@ -320,55 +390,16 @@ func (t *Table) paginateText() []string {
 
 		// Loop over the elements of the row. Generate pre- or post-spacing as
 		// appropriate for the requested alignment, and any intra-column spacing.
-		// @tomcole doesn't yet handle index or row numbers!
 		for cx, n := range t.columnOrder {
-			lx := rx % pageletSize
-			px := columnMap[cx] % pageletSize
+			px := columnMap[cx] % pageletCount
 
 			text := AlignText(r[n], t.maxWidth[n], t.alignment[n]) + t.spacing
-			pagelets[px][lx] = pagelets[px][lx] + text
-		}
-
-		if rx >= pageletSize {
-			// We've hit the end of a page, so move into the output buffer.
-			for px, p := range pagelets {
-
-				// Get the header (and optionally, underline) for this pagelet
-				hx := px
-				if t.showUnderlines {
-					hx = hx * 2
-				}
-
-				output = append(output, headers[hx].String())
-				if t.showUnderlines {
-					output = append(output, headers[hx+1].String())
-				}
-
-				// Add the rows for this pagelet
-				for _, r := range p {
-					if r != "" {
-						output = append(output, r)
-					}
-				}
-
-				// Add a blank between pagelets
-				output = append(output, "")
-
-			}
-
-			for px := 0; px < len(pagelets); px++ {
-				p := pagelets[px]
-				for lx := 0; lx < len(p); lx++ {
-					p[lx] = ""
-				}
-				pagelets[px] = p
-			}
+			pagelets[px][rx] = pagelets[px][rx] + text
 		}
 	}
 
 	// reassemble into a page buffer.
 	for px, p := range pagelets {
-
 		// Get the header (and optionally, underline) for this pagelet
 		hx := px
 		if t.showUnderlines {
