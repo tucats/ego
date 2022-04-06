@@ -1,0 +1,24 @@
+[
+    {
+        "opcode": "insert",
+        "table": "x6",
+        "data": {
+            "address": "123 Elm St",
+            "description" : "tx row",
+            "first": "Elmer",
+            "last": "Fudd",
+            "role": "tester"
+        }
+    },
+    {
+        "opcode": "insert",
+        "table": "x6",
+        "data": {
+            "address": "125 Elm St",
+            "description" : "tx row",
+            "first": "Daffy",
+            "last": "Duck",
+            "role": "tester"
+        }
+    }
+]

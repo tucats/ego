@@ -213,7 +213,8 @@ func (t *Table) paginateText() []string {
 	}()
 
 	// Temporarily set to a ridiculously huge number
-	t.terminalHeight = 9999999
+	// t.terminalHeight = 9999999
+	fmt.Printf("DEBUG: terminal height is %d lines\n", t.terminalHeight)
 
 	// Do we need to include the Row header first?
 	availableWidth := t.terminalWidth
@@ -397,6 +398,21 @@ func (t *Table) paginateText() []string {
 			pagelets[px][rx] = pagelets[px][rx] + text
 		}
 	}
+
+	// Calculate how many lines are in each pagelet print block. Make sure that if this
+	// goes to just a single row, turn off pagination entirely for this output because the
+	// display is just too darn small.
+	printBlockSize := ((t.terminalHeight - (headerCount * pageletCount)) / pageletCount) - 1
+	if printBlockSize <= headerCount {
+		printBlockSize = rowCount
+	}
+
+	ui.Debug(ui.AppLogger, "There are %d pagelets", pageletCount)
+	ui.Debug(ui.AppLogger, "There are %d lines in each pagelet", pageletSize)
+	ui.Debug(ui.AppLogger, "Each print block is %d lines", printBlockSize)
+
+	// @tomcole need to rethink this loop. Really probably needs to scan by
+	// lines count in a pagelet, and then append into the output as needed.
 
 	// reassemble into a page buffer.
 	for px, p := range pagelets {

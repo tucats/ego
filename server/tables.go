@@ -162,6 +162,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/permissions")
 	}
+	if !valid {
+		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/transaction")
+	}
 
 	if !valid || !datatypes.GetBool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
@@ -173,6 +176,29 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := datatypes.GetString(urlParts["table"])
 	rows := datatypes.GetBool(urlParts["rows"])
 	perms := datatypes.GetBool(urlParts["permissions"])
+	transaction := strings.EqualFold(tableName, "@transaction")
+
+	if transaction {
+		if r.Method != http.MethodPost {
+			msg := fmt.Sprintf("Unsupported transaction method %s", r.Method)
+
+			util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+
+			return
+		}
+
+		if !hasUpdatePermission {
+			msg := fmt.Sprintf("User %s does not have permission to modify tables", user)
+
+			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
+
+			return
+		}
+
+		dbtables.Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
+
+		return
+	}
 
 	if tableName == "" && r.Method != http.MethodGet {
 		msg := unsupportedMethodMessage
