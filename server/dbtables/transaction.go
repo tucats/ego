@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"sort"
 	"strings"
 
@@ -20,10 +19,10 @@ import (
 
 // This defines a single operation performed as part of a transaction
 type TxOperation struct {
-	Opcode string            `json:"opcode"`
-	Table  string            `json:"table"`
-	Filter string            `json:"filter"`
-	Data   map[string]string `json:"data"`
+	Opcode string                 `json:"opcode"`
+	Table  string                 `json:"table"`
+	Filter string                 `json:"filter"`
+	Data   map[string]interface{} `json:"data"`
 }
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
@@ -103,13 +102,13 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 				opErr = txUpdate(w, r, sessionID, user, db, task)
 
 			case "DELETE":
-				opErr = txDelete(w, r, sessionID, user, db, task)
+				opErr = txDelete(w, r, sessionID, user, tx, task)
 
 			case "INSERT":
-				opErr = txInsert(w, r, sessionID, user, db, task)
+				opErr = txInsert(w, r, sessionID, user, db, tx, task)
 
 			case "DROP":
-				opErr = txDelete(w, r, sessionID, user, db, task)
+				opErr = txDrop(w, r, sessionID, user, db, task)
 			}
 
 			if !errors.Nil(opErr) {
@@ -143,15 +142,55 @@ func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 	return errors.NewMessage("transaction UPDATE not supported")
 }
 
-func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, task TxOperation) error {
-	return errors.NewMessage("transaction DELETE not supported")
+func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user string, tx *sql.Tx, task TxOperation) error {
+
+	tableName, _ := fullName(user, task.Table)
+
+	ui.Debug(ui.ServerLogger, "[%d] transaction task to delete rows from table %s", sessionID, tableName)
+
+	if p := parameterString(r); p != "" {
+		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+	}
+
+	if where := filterList([]string{task.Filter}); where == "" {
+		if settings.GetBool(defs.TablesServerEmptyFilterError) {
+			return errors.NewMessage("operation invalid with empty filter")
+		}
+	}
+
+	q := formSelectorDeleteQuery(r.URL, []string{task.Filter}, "", tableName, user, deleteVerb)
+	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
+		return errors.NewMessage(filterErrorMessage(q))
+	}
+
+	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+
+	rows, err := tx.Exec(q)
+	if err == nil {
+		rowCount, _ := rows.RowsAffected()
+		if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
+			return errors.NewMessage("no matching rows")
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, 200)
+
+		return nil
+	}
+
+	return err
 }
 
 func txDrop(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, task TxOperation) error {
-	return errors.NewMessage("transaction DROP not supported")
+
+	table, _ := fullName(user, task.Table)
+
+	q := "DROP TABLE " + table
+	_, err := db.Exec(q)
+
+	return err
 }
 
-func txInsert(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, task TxOperation) error {
+func txInsert(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation) error {
 	// Get the column metadata for the table we're insert into, so we can validate column info.
 	tableName, _ := fullName(user, task.Table)
 
@@ -200,19 +239,10 @@ func txInsert(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 		}
 	}
 
-	rowInfo := map[string]interface{}{}
-	for k, v := range task.Data {
-		rowInfo[k] = v
-	}
-
-	// We have to make a fake URL here to re-use the query generator
-	fakeURLString := fmt.Sprintf("http://localhost:8080/tables/%s/rows", task.Table)
-	fakeURL, _ := url.Parse(fakeURLString)
-
-	q, values := formInsertQuery(fakeURL, user, rowInfo)
+	q, values := formInsertQuery(task.Table, user, task.Data)
 	ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 
-	_, e := db.Exec(q, values...)
+	_, e := tx.Exec(q, values...)
 	if e != nil {
 		return errors.NewMessage("error inserting row; " + e.Error())
 	}

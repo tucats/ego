@@ -222,7 +222,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 			return
 		}
 
-		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
+		q := formSelectorDeleteQuery(r.URL, filtersFromURL(r.URL), columnsFromURL(r.URL), tableName, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
 			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 

@@ -71,12 +71,12 @@ func Test_columnList(t *testing.T) {
 		},
 		{
 			name: "multiple columns",
-			arg:  "https://localhost:8500/tables/data?column=name&column=age",
+			arg:  "https://localhost:8500/tables/data?columns=name&columns=age",
 			want: "\"name\",\"age\"",
 		},
 		{
 			name: "column list",
-			arg:  "https://localhost:8500/tables/data?column=name,age",
+			arg:  "https://localhost:8500/tables/data?columns=name,age",
 			want: "\"name\",\"age\"",
 		},
 
@@ -85,7 +85,8 @@ func Test_columnList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := columnList(u); got != tt.want {
+			list := columnsFromURL(u)
+			if got := columnList(list); got != tt.want {
 				t.Errorf("columnList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -139,7 +140,9 @@ func Test_filterList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := filterList(u); got != tt.want {
+			f := filtersFromURL(u)
+
+			if got := filterList(f); got != tt.want {
 				t.Errorf("filterList() = %v, want %v", got, tt.want)
 			}
 		})
@@ -227,7 +230,11 @@ func Test_formQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
-			if got := formSelectorDeleteQuery(u, "admin", selectVerb); got != tt.want {
+			c := columnsFromURL(u)
+			n, _ := tableNameFromURL(u)
+			f := filtersFromURL(u)
+
+			if got := formSelectorDeleteQuery(u, f, c, n, "admin", selectVerb); got != tt.want {
 				t.Errorf("formQuery() = %v, want %v", got, tt.want)
 			}
 		})

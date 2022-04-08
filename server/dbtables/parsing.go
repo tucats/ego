@@ -252,32 +252,46 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	return result.String(), nil
 }
 
-func columnList(u *url.URL) string {
+func columnsFromURL(u *url.URL) string {
+	parms := u.Query()
+	result := strings.Builder{}
+
+	for parm, values := range parms {
+		if parm == defs.ColumnParameterName {
+			for _, name := range values {
+
+				if result.Len() > 0 {
+					result.WriteRune(',')
+				}
+
+				result.WriteString(name)
+			}
+
+		}
+	}
+
+	return result.String()
+}
+
+func columnList(columnsParameter string) string {
 	var result strings.Builder
 
-	if u == nil {
+	if columnsParameter == "" {
 		return "*"
 	}
 
-	values := u.Query()
-	for k, v := range values {
-		if keywordMatch(k, "column", defs.ColumnParameterName) {
-			for _, name := range v {
-				names := strings.Split(name, ",")
+	names := strings.Split(columnsParameter, ",")
 
-				for _, name := range names {
-					if len(name) == 0 {
-						continue
-					}
-
-					if result.Len() > 0 {
-						result.WriteRune(',')
-					}
-
-					result.WriteString("\"" + name + "\"")
-				}
-			}
+	for _, name := range names {
+		if len(name) == 0 {
+			continue
 		}
+
+		if result.Len() > 0 {
+			result.WriteRune(',')
+		}
+
+		result.WriteString("\"" + name + "\"")
 	}
 
 	if result.Len() == 0 {
@@ -309,31 +323,29 @@ func fullName(user, table string) (string, bool) {
 	return table, wasFullyQualified
 }
 
-func filterList(u *url.URL) string {
-	var result strings.Builder
+func filtersFromURL(u *url.URL) []string {
+	result := make([]string, 0)
 
-	if u == nil {
-		return ""
-	}
-
-	values := u.Query()
-	for k, v := range values {
-		if strings.EqualFold(k, defs.FilterParameterName) {
-			clause := formWhereClause(v)
-
-			if result.Len() > 0 {
-				result.WriteString(" AND ")
+	q := u.Query()
+	for param, values := range q {
+		if strings.EqualFold(param, defs.FilterParameterName) {
+			for _, value := range values {
+				result = append(result, value)
 			}
-
-			result.WriteString(clause)
 		}
 	}
 
-	if result.Len() == 0 {
+	return result
+}
+
+func filterList(filters []string) string {
+	if len(filters) == 0 {
 		return ""
 	}
 
-	return " WHERE " + result.String()
+	clause := formWhereClause(filters)
+
+	return " WHERE " + clause
 }
 
 // With a default user name string, and the current URL, determine if the
@@ -442,36 +454,22 @@ func sortList(u *url.URL) string {
 	return result.String()
 }
 
-func formSelectorDeleteQuery(u *url.URL, user string, verb string) string {
+func formSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string) string {
 	var result strings.Builder
-
-	if u == nil {
-		return ""
-	}
-
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
-	if !ok {
-		return ""
-	}
-
-	tableItem, ok := parts["name"]
-	if !ok {
-		return ""
-	}
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table, _ := fullName(user, datatypes.GetString(tableItem))
+	table, _ = fullName(user, table)
 
 	result.WriteString(verb + " ")
 
 	if verb == selectVerb {
-		result.WriteString(columnList(u))
+		result.WriteString(columnList(columns))
 	}
 
 	result.WriteString(" FROM " + table)
 
-	if where := filterList(u); where != "" {
+	if where := filterList(filter); where != "" {
 		result.WriteString(where)
 	}
 
@@ -544,7 +542,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	where := filterList(u)
+	where := filterList(filtersFromURL(u))
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
@@ -571,30 +569,15 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	return result.String(), values
 }
 
-func formInsertQuery(u *url.URL, user string, items map[string]interface{}) (string, []interface{}) {
-	if u == nil {
-		return "", nil
-	}
-
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
-	if !ok {
-		return "", nil
-	}
-
-	tableItem, ok := parts["name"]
-	if !ok {
-		return "", nil
-	}
-
-	// Get the table name.
-	table, _ := fullName(user, datatypes.GetString(tableItem))
-
+func formInsertQuery(table string, user string, items map[string]interface{}) (string, []interface{}) {
 	var result strings.Builder
+
+	fullyQualifiedName, _ := fullName(user, table)
 
 	result.WriteString(insertVerb)
 	result.WriteString(" INTO ")
 
-	result.WriteString(table)
+	result.WriteString(fullyQualifiedName)
 
 	keys := util.InterfaceMapKeys(items)
 	values := make([]interface{}, len(items))
@@ -742,4 +725,25 @@ func keywordMatch(k string, list ...string) bool {
 	}
 
 	return false
+}
+
+func tableNameFromRequest(r *http.Request) (string, *errors.EgoError) {
+	u, _ := url.Parse(r.URL.Path)
+
+	return tableNameFromURL(u)
+}
+
+func tableNameFromURL(u *url.URL) (string, *errors.EgoError) {
+
+	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	if !ok {
+		return "", errors.NewMessage("Invalid URL").Context(u.Path)
+	}
+
+	tableItem, ok := parts["name"]
+	if !ok {
+		return "", errors.NewMessage("Missing table name in URL").Context(u.Path)
+	}
+
+	return datatypes.GetString(tableItem), nil
 }

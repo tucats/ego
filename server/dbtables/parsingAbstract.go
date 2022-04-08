@@ -61,7 +61,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	where := filterList(u)
+	where := filterList(filtersFromURL(u))
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.

@@ -55,7 +55,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		if where := filterList(r.URL); where == "" {
+		if where := filterList(filtersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
 				util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
 
@@ -63,7 +63,10 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 		}
 
-		q := formSelectorDeleteQuery(r.URL, user, deleteVerb)
+		columns := columnsFromURL(r.URL)
+		filters := filtersFromURL(r.URL)
+
+		q := formSelectorDeleteQuery(r.URL, filters, columns, tableName, user, deleteVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
@@ -261,7 +264,14 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				}
 			}
 
-			q, values := formInsertQuery(r.URL, user, row)
+			tableName, e := tableNameFromRequest(r)
+			if !errors.Nil(e) {
+				util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+
+				return
+			}
+
+			q, values := formInsertQuery(tableName, user, row)
 			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 
 			_, err := db.Exec(q, values...)
@@ -371,7 +381,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 			return
 		}
 
-		q := formSelectorDeleteQuery(r.URL, user, selectVerb)
+		q := formSelectorDeleteQuery(r.URL, filtersFromURL(r.URL), columnsFromURL(r.URL), tableName, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 			util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 

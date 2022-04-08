@@ -20,5 +20,10 @@
             "last": "Duck",
             "role": "tester"
         }
+    },
+    {
+        "opcode": "delete",
+        "table":"x6",
+        "filter":"EQ(description,'tx row')"
     }
 ]
