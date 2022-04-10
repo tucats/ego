@@ -433,7 +433,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isJSON {
-		w.Header()["Content-Type"] = []string{defs.JSONMediaType}
+		w.Header().Add("Content-Type", defs.JSONMediaType)
 	}
 
 	w.WriteHeader(status)

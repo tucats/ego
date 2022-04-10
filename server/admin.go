@@ -173,8 +173,8 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			if errors.Nil(err) {
-				w.WriteHeader(http.StatusOK)
 				w.Header().Add("Content-Type", defs.UserMediaType)
+				w.WriteHeader(http.StatusOK)
 
 				msg, _ := json.Marshal(response)
 				_, _ = w.Write(msg)

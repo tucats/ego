@@ -443,8 +443,8 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 		status := http.StatusOK
 
-		w.WriteHeader(status)
 		w.Header().Add("Content-Type", defs.RowSetMediaType)
+		w.WriteHeader(status)
 
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
@@ -657,9 +657,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		status := http.StatusOK
-		w.WriteHeader(status)
 
 		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.WriteHeader(status)
 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)

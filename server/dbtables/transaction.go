@@ -144,8 +144,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		ui.Debug(ui.TableLogger, "[%d] %s",
 			sessionID,
 			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
-		w.WriteHeader(http.StatusOK)
+
 		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.WriteHeader(http.StatusOK)
 		w.Write(b)
 
 		return
