@@ -21,7 +21,7 @@ import (
 type TxOperation struct {
 	Opcode  string                 `json:"operation"`
 	Table   string                 `json:"table"`
-	Filters []string               `json:"filter,omitempty"`
+	Filters []string               `json:"filters,omitempty"`
 	Columns []string               `json:"columns,omitempty"`
 	Data    map[string]interface{} `json:"data,omitempty"`
 }
@@ -81,6 +81,8 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	}
 
 	// Access the database and execute the transaction operations
+	rowsAffected := 0
+
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
 		defer db.Close()
@@ -100,10 +102,14 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 			switch strings.ToUpper(task.Opcode) {
 			case "UPDATE":
-				opErr = txUpdate(w, r, sessionID, user, db, tx, task)
+				count := 0
+				count, opErr = txUpdate(w, r, sessionID, user, db, tx, task)
+				rowsAffected += count
 
 			case "DELETE":
-				opErr = txDelete(w, r, sessionID, user, tx, task)
+				count := 0
+				count, opErr = txDelete(w, r, sessionID, user, tx, task)
+				rowsAffected += count
 
 			case "INSERT":
 				opErr = txInsert(w, r, sessionID, user, db, tx, task)
@@ -129,24 +135,31 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			return
 		}
 
-		msg := fmt.Sprintf("completed %d operations in transaction", len(tasks))
+		r := defs.DBRowCount{
+			ServerInfo: util.MakeServerInfo(sessionID),
+			Count:      rowsAffected,
+		}
+		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-		ui.Debug(ui.TableLogger, "[%d] %s", sessionID, msg)
-		w.WriteHeader(200)
-		w.Write([]byte(msg))
+		ui.Debug(ui.TableLogger, "[%d] %s",
+			sessionID,
+			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.Write(b)
 
 		return
 	}
 }
 
-func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation) error {
+func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation) (int, error) {
 	tableName, _ := fullName(user, task.Table)
 
 	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
 	if !errors.Nil(err) {
 		msg := "Unable to read table metadata, " + err.Error()
 
-		return errors.NewMessage(msg)
+		return 0, errors.NewMessage(msg)
 	}
 
 	// Make sure none of the columns in the update are non-existant
@@ -163,7 +176,7 @@ func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 		if !valid {
 			msg := "insert task refernces non-existant column: " + k
 
-			return errors.NewMessage(msg)
+			return 0, errors.NewMessage(msg)
 		}
 	}
 
@@ -184,7 +197,7 @@ func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 			if !valid {
 				msg := "insert task references non-existant column: " + name
 
-				return errors.NewMessage(msg)
+				return 0, errors.NewMessage(msg)
 			}
 		}
 
@@ -255,19 +268,19 @@ func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 	if filter := whereClause(task.Filters); filter != "" {
 		result.WriteString(filter)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return errors.NewMessage("update without filter is not allowed")
+		ui.Debug(ui.ServerLogger, "DEBUG: filters = %v", task.Filters)
+		return 0, errors.NewMessage("update without filter is not allowed")
 	}
 
-	q := result.String()
+	ui.Debug(ui.TableLogger, "[%d] Query: ", sessionID, result.String())
 
-	ui.Debug(ui.TableLogger, "[%d] Query: ", sessionID, q)
+	queryResult, updateErr := tx.Exec(result.String(), values...)
+	count, _ := queryResult.RowsAffected()
 
-	_, updateErr := tx.Exec(q, values...)
-
-	return errors.New(updateErr)
+	return int(count), errors.New(updateErr)
 }
 
-func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user string, tx *sql.Tx, task TxOperation) error {
+func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user string, tx *sql.Tx, task TxOperation) (int, error) {
 
 	tableName, _ := fullName(user, task.Table)
 
@@ -279,13 +292,13 @@ func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 
 	if where := whereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
-			return errors.NewMessage("operation invalid with empty filter")
+			return 0, errors.NewMessage("operation invalid with empty filter")
 		}
 	}
 
 	q := formSelectorDeleteQuery(r.URL, task.Filters, "", tableName, user, deleteVerb)
 	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-		return errors.NewMessage(filterErrorMessage(q))
+		return 0, errors.NewMessage(filterErrorMessage(q))
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
@@ -294,15 +307,17 @@ func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 	if err == nil {
 		rowCount, _ := rows.RowsAffected()
 		if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return errors.NewMessage("no matching rows")
+			return 0, errors.NewMessage("no matching rows")
 		}
 
 		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, 200)
 
-		return nil
+		count, _ := rows.RowsAffected()
+
+		return int(count), nil
 	}
 
-	return err
+	return 0, err
 }
 
 func txDrop(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, task TxOperation) error {

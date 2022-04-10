@@ -912,17 +912,8 @@ the inserts succeed but the upddate fails (perhaps there is a syntax error in th
 no inserts or updates will occur.  If any error occurs, the resulting message indicates how many
 tasks were processed before the error was encountered, and what the error was.
 
-
-For example, here is a request payload that joins two tables and returns a result. Because
-this is a SQL `select` statement, the _Ego_ server knows to reeturn a rowset as the result.
-Otherwise, it returns a rowcount as the result.
-
-    "select people.name, surname.name 
-         from \"mary\".\"people\" 
-         join \"mary\".\"surname\"
-            on people.id == surname.id"
-
-Note that the string must be properly escaped as a JSON string.
+A successful transaction will return a rowcount object, which has a field "count" which contains
+the number of rows affected by _all_ the transactions processed.
 
 &nbsp;
 
