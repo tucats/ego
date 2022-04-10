@@ -595,6 +595,7 @@ This section covers APIs to:
 * [Create a new table](#createtable)
 * [Show the column names and types for a table](#metadata)
 * [Delete an entire table](#deletetable)
+* [Execute multiple row operations as a transatction](#tx)
 * [Execute arbitrary SQL statements on the server](#sql)
 
 All tables operations return either a rowset or a rowcount response. A rowset contains an array of
@@ -609,6 +610,11 @@ of the operation, which is normally 200 for a successful operation. A value othe
 something happened with the request that may not be the desired result, so an additional field
 `message` contains the text of any error message genrated (for example, attempting to read a 
 table column that doesn't exist, or not having permissions for the requested operation).
+
+It is recommended that you read the API on the "rows" endpoints before attempting to use the
+transaction function, as each task in the transaction is generally the same as an individual
+row operation, and there is detailed documentation in the rows API for things like filter
+specifications, etc.
 
 &nbsp;
 &nbsp;
