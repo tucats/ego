@@ -595,8 +595,9 @@ This section covers APIs to:
 * [Create a new table](#createtable)
 * [Show the column names and types for a table](#metadata)
 * [Delete an entire table](#deletetable)
-* [Execute multiple row operations as a transatction](#tx)
 * [Execute arbitrary SQL statements on the server](#sql)
+* [Execute multiple row operations as a transaction](#tx)
+* [Data Chaining in Transactions](#chaining)
 
 All tables operations return either a rowset or a rowcount response. A rowset contains an array of
 structure definitions where each column in the row is the field name, and the value of the column
@@ -934,6 +935,59 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
+### Data Chaining in Transactions <a name="chaining">
+There are two additional task types that can be executed as part of a transaction. These
+are intended to allow a single transaction to read data from one table and use the values
+from that read in subsequent operations. For example, a read of a customer UUID value could
+then be used to specify the proper filter for that UUID in a subsequent update operation.
+
+Chaining is done by first setting symbolic substitution values (either by a SELECT task
+that reads from a table, or a SYMBOLS task that explicitly sets values). Once the symbol
+values are set, they can be referenced in filters, column lists, or data values.
+
+Here is a simple transaction that reads a value from one table, and inserts it into a
+second table:
+
+
+    [
+        {
+            "operation": "select",
+            "table": "table1",
+            "columns": [
+                "customer"
+            ],
+            "filters": [
+                "EQ(key,1)"
+            ]
+        },
+        {
+            "operation": "insert",
+            "table": "table2",
+            "data": {
+                "key": 10101,
+                "recipient": "{{customer}}"
+            }
+        }
+    ]
+
+The first task is a "SELECT" operation that reads from a table. The select operation 
+will _only_ ever read a single row; there is an implied limit of `1` on the query 
+that reads the table. Because there can only ever be one row, sorting of the result 
+is not needed (or even possible).
+
+If the "columns" array is not given, then a symbol is set for each column in the row
+retrieved. In this example above, only the "customer" column will be read from the 
+first table.
+
+The second task is an insert into a different table. Note how the value in the "data"
+object specifies "{{customer}}" for the object value for the column "recipient". The
+use of a string with double-braces around a name is the indicator that the value is
+not the string, but instead is the symbol value "customer" that was read in a 
+previous task. The effect of this is that the "INSERT" task will store the value
+for customer from the first table in the "recipient" column of the second table.
+
+&nbsp;
+&nbsp;
 
 ## Rows API <a name="rows"></a>
 

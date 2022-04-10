@@ -1,37 +1,20 @@
 [
     {
-        "operation": "insert",
-        "table": "x6",
-        "data": {
-            "address": "123 Elm St",
-            "description" : "tx row",
-            "first": "Elmer",
-            "last": "Fudd",
-            "role": "tester"
-        }
-    },
-    {
-        "operation": "insert",
-        "table": "x6",
-        "data": {
-            "address": "125 Elm St",
-            "description" : "tx row",
-            "first": "Daffy",
-            "last": "Duck",
-            "role": "tester"
-        }
-    },
-    {
-        "operation": "update",
-        "table":"x6",
-        "filters":[
-            "EQ(description,'tx row')"
-        ],
+        "operation": "select",
+        "table": "table1",
         "columns": [
-            "address"
+            "value"
         ],
+        "filters": [
+            "EQ(key,1)"
+        ]
+    },
+    {
+        "operation": "insert",
+        "table": "table2",
         "data": {
-            "address":"666 Scary Drive"
+            "key": 10101,
+            "value": "{{value}}"
         }
     }
 ]
