@@ -71,7 +71,7 @@ func queryParameters(source string, args map[string]string) string {
 	return result
 }
 
-func formWhereClause(filters []string) string {
+func formWhereExpressions(filters []string) string {
 	var result strings.Builder
 
 	for i, clause := range filters {
@@ -323,6 +323,9 @@ func fullName(user, table string) (string, bool) {
 	return table, wasFullyQualified
 }
 
+// filtersFromURL extracts the filter parameters from the
+// urL, and creates an array of strings for each filter
+// expression found.
 func filtersFromURL(u *url.URL) []string {
 	result := make([]string, 0)
 
@@ -338,12 +341,14 @@ func filtersFromURL(u *url.URL) []string {
 	return result
 }
 
-func filterList(filters []string) string {
+// whereClause accepts a list of filter parameters, and converts them
+// to a SQL WHERE clause (including the 'WHERE' token).
+func whereClause(filters []string) string {
 	if len(filters) == 0 {
 		return ""
 	}
 
-	clause := formWhereClause(filters)
+	clause := formWhereExpressions(filters)
 
 	return " WHERE " + clause
 }
@@ -469,7 +474,7 @@ func formSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 
 	result.WriteString(" FROM " + table)
 
-	if where := filterList(filter); where != "" {
+	if where := whereClause(filter); where != "" {
 		result.WriteString(where)
 	}
 
@@ -542,7 +547,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		result.WriteString(fmt.Sprintf(" = $%d", filterCount))
 	}
 
-	where := filterList(filtersFromURL(u))
+	where := whereClause(filtersFromURL(u))
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.

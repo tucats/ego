@@ -826,6 +826,118 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
+
+### PUT /tables/@transaction  <a name="tx"></a>
+
+This operation allows you to specify an _atomic_ list of operations that must all be
+successfully performed for the change to occur. That is, it specifies a list of
+update or delete operations to arbitrary tables, and the changes will be made _only_
+if all the changes can be made successfully. This allows the caller to create a
+_transaction_ of multiple operations. Other users of the same table will only ever
+see the state of the database before the transaction, or after it is entirely complete.
+No other user of the database will see a partial version of the update while it is in
+progress. This is particularly helpful if the client logic requires updates or deletes
+to multiple tables to reflect a single logical operation, and all the operations must
+happen together.
+
+The payload for a transaction is an array of tasks. Each task has the following
+members:
+
+| Task Item   | Description |
+| ----------- | ------------|
+| operation   | The operation to be performed for this particular task. Can be "DELETE", "INSERT", or "UPDATE" |
+| table       | The name of the table on which to perform the operation. |
+| filters     | If filters are used for this operation, this is an array of filter specificiations |
+| columns     | If subset of the data is to be used, this is an array of the column names to be affected |
+| data        | A representation of a single row, where the object field name is the column name and teh object field value is the column value. |
+
+If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
+impplicity joined to the others by an AND() operation, so that all the filters specifiec must be true for the filter
+to match a row. For operations that do not specify a filter (such as "INSERT"), the `filters` list can be empty. 
+For operations are intended to use all the fields of the "data" element, the `columns` list can be empty. 
+For "DELETE" or "DROP" operations, the `data` element can be empty or omitted from the payload.
+
+Here is a sample payload with three transactions:
+
+    [
+        {
+            "operation": "insert",
+            "table": "x6",
+            "data": {
+                "address": "123 Elm St",
+                "description" : "tx row",
+                "first": "Elmer",
+                "last": "Fudd",
+                "role": "tester"
+            }
+        },
+        {
+            "operation": "insert",
+            "table": "x6",
+            "data": {
+                "address": "125 Elm St",
+                "description" : "tx row",
+                "first": "Daffy",
+                "last": "Duck",
+                "role": "tester"
+            }
+        },
+        {
+            "operation": "update",
+            "table":"x6",
+            "filters":[
+                "EQ(description,'tx row')"
+            ],
+            "columns": [
+                "address"
+            ],
+            "data": {
+                "address":"666 Scary Drive"
+                "description" : "tx row",
+                "first": "Daffy",
+                "last": "Duck",
+                "role": "tester"
+            }
+        }
+    ]
+
+
+The first and second tasks insert new data into the table "x6". The third task updates the address
+of any row that matches the filter of a "description" field equal to "tx row". Note that the third
+task also explicitly specifies a `columns` list. This means that even though the `data` item contains
+many fields, the only field that will be updated is "address" from the data object.
+
+If the insert fails (perhaps due to a constraint violation, etc.) then no data will be inserted. If
+the inserts succeed but the upddate fails (perhaps there is a syntax error in the filter list), then
+no inserts or updates will occur.  If any error occurs, the resulting message indicates how many
+tasks were processed before the error was encountered, and what the error was.
+
+
+For example, here is a request payload that joins two tables and returns a result. Because
+this is a SQL `select` statement, the _Ego_ server knows to reeturn a rowset as the result.
+Otherwise, it returns a rowcount as the result.
+
+    "select people.name, surname.name 
+         from \"mary\".\"people\" 
+         join \"mary\".\"surname\"
+            on people.id == surname.id"
+
+Note that the string must be properly escaped as a JSON string.
+
+&nbsp;
+
+In the event that the REST call returns a non-success status code, the response payload
+will contain the following diagnostic fields as a JSON payload:
+
+| Field     | Description |
+|:--------- |:----------- |
+| status    | The HTTP status message (integer other than 200) |
+| msg       | A string with the text of the status message |
+
+&nbsp;
+&nbsp;
+
+
 ## Rows API <a name="rows"></a>
 
 This section covers API functions to

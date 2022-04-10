@@ -1,6 +1,6 @@
 [
     {
-        "opcode": "insert",
+        "operation": "insert",
         "table": "x6",
         "data": {
             "address": "123 Elm St",
@@ -11,7 +11,7 @@
         }
     },
     {
-        "opcode": "insert",
+        "operation": "insert",
         "table": "x6",
         "data": {
             "address": "125 Elm St",
@@ -22,8 +22,16 @@
         }
     },
     {
-        "opcode": "delete",
+        "operation": "update",
         "table":"x6",
-        "filter":"EQ(description,'tx row')"
+        "filters":[
+            "EQ(description,'tx row')"
+        ],
+        "columns": [
+            "address"
+        ],
+        "data": {
+            "address":"666 Scary Drive"
+        }
     }
 ]

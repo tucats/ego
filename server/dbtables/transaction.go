@@ -19,10 +19,11 @@ import (
 
 // This defines a single operation performed as part of a transaction
 type TxOperation struct {
-	Opcode string                 `json:"opcode"`
-	Table  string                 `json:"table"`
-	Filter string                 `json:"filter"`
-	Data   map[string]interface{} `json:"data"`
+	Opcode  string                 `json:"operation"`
+	Table   string                 `json:"table"`
+	Filters []string               `json:"filter,omitempty"`
+	Columns []string               `json:"columns,omitempty"`
+	Data    map[string]interface{} `json:"data,omitempty"`
 }
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
@@ -99,7 +100,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 			switch strings.ToUpper(task.Opcode) {
 			case "UPDATE":
-				opErr = txUpdate(w, r, sessionID, user, db, task)
+				opErr = txUpdate(w, r, sessionID, user, db, tx, task)
 
 			case "DELETE":
 				opErr = txDelete(w, r, sessionID, user, tx, task)
@@ -138,8 +139,132 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	}
 }
 
-func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, task TxOperation) error {
-	return errors.NewMessage("transaction UPDATE not supported")
+func txUpdate(w http.ResponseWriter, r *http.Request, sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation) error {
+	tableName, _ := fullName(user, task.Table)
+
+	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
+	if !errors.Nil(err) {
+		msg := "Unable to read table metadata, " + err.Error()
+
+		return errors.NewMessage(msg)
+	}
+
+	// Make sure none of the columns in the update are non-existant
+	for k := range task.Data {
+		valid := false
+		for _, column := range validColumns {
+			if column.Name == k {
+				valid = true
+
+				break
+			}
+		}
+
+		if !valid {
+			msg := "insert task refernces non-existant column: " + k
+
+			return errors.NewMessage(msg)
+		}
+	}
+
+	// Is there columns list for this task that should be used to determine
+	// which parts of the payload to use?
+	if len(task.Columns) > 0 {
+		// Make sure none of the columns in the columns are non-existant
+		for _, name := range task.Columns {
+			valid := false
+			for _, k := range validColumns {
+				if name == k.Name {
+					valid = true
+
+					break
+				}
+			}
+
+			if !valid {
+				msg := "insert task references non-existant column: " + name
+
+				return errors.NewMessage(msg)
+			}
+		}
+
+		// The columns list is valid, so use it to thin out the task payload
+		keepList := map[string]bool{}
+
+		for k := range task.Data {
+			keepList[k] = false
+		}
+
+		for _, columnName := range task.Columns {
+			keepList[columnName] = true
+		}
+
+		for k, keep := range keepList {
+			if !keep {
+				delete(task.Data, k)
+			}
+		}
+	}
+
+	// Form the update query. We start with a list of the keys to update
+	// in a predictable order
+	var result strings.Builder
+
+	var values []interface{}
+
+	var keys []string
+
+	for key := range task.Data {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	result.WriteString("UPDATE ")
+	result.WriteString(tableName)
+
+	// Loop over the item names and add SET clauses for each one. We always
+	// ignore the rowid value because you cannot update it on an UPDATE call;
+	// it is only set on an insert.
+	columnPosition := 0
+
+	for _, key := range keys {
+		if key == defs.RowIDName {
+			continue
+		}
+
+		// Add the value to the list of values that will be passed to the Exec()
+		// function later. These must be in the same order that the column names
+		// are specified in the query text.
+		values = append(values, task.Data[key])
+
+		if columnPosition == 0 {
+			result.WriteString(" SET ")
+		} else {
+			result.WriteString(", ")
+		}
+
+		columnPosition++
+
+		result.WriteString("\"" + key + "\"")
+		result.WriteString(fmt.Sprintf(" = $%d", columnPosition))
+	}
+
+	// If there is a filter, then add that as well. And fail if there
+	// isn't a filter but must be
+	if filter := whereClause(task.Filters); filter != "" {
+		result.WriteString(filter)
+	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
+		return errors.NewMessage("update without filter is not allowed")
+	}
+
+	q := result.String()
+
+	ui.Debug(ui.TableLogger, "[%d] Query: ", sessionID, q)
+
+	_, updateErr := tx.Exec(q, values...)
+
+	return errors.New(updateErr)
 }
 
 func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user string, tx *sql.Tx, task TxOperation) error {
@@ -152,13 +277,13 @@ func txDelete(w http.ResponseWriter, r *http.Request, sessionID int32, user stri
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	if where := filterList([]string{task.Filter}); where == "" {
+	if where := whereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
 			return errors.NewMessage("operation invalid with empty filter")
 		}
 	}
 
-	q := formSelectorDeleteQuery(r.URL, []string{task.Filter}, "", tableName, user, deleteVerb)
+	q := formSelectorDeleteQuery(r.URL, task.Filters, "", tableName, user, deleteVerb)
 	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 		return errors.NewMessage(filterErrorMessage(q))
 	}

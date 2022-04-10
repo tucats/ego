@@ -55,7 +55,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		if where := filterList(filtersFromURL(r.URL)); where == "" {
+		if where := whereClause(filtersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
 				util.ErrorResponse(w, sessionID, "operation invalid with empty filter", http.StatusBadRequest)
 

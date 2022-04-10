@@ -46,7 +46,7 @@ func Test_formWhereClause(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formWhereClause(tt.filters); got != tt.want {
+			if got := formWhereExpressions(tt.filters); got != tt.want {
 				t.Errorf("formWhereClause() = %v, want %v", got, tt.want)
 			}
 		})
@@ -142,7 +142,7 @@ func Test_filterList(t *testing.T) {
 			u, _ := url.Parse(tt.arg)
 			f := filtersFromURL(u)
 
-			if got := filterList(f); got != tt.want {
+			if got := whereClause(f); got != tt.want {
 				t.Errorf("filterList() = %v, want %v", got, tt.want)
 			}
 		})
