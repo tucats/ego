@@ -42,7 +42,7 @@ on the given port number, where `n` is an integer value for a publically availab
 number.
 
 | Subcommand      | Description |
-|-----------------| ------------|
+|:----------------|:------------|
 | start           | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
 | stop            | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
 | restart         | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
@@ -239,7 +239,7 @@ data type, with the following fields:
 
 
 | Name           | Type    | Description                                              |
-|----------------|---------|----------------------------------------------------------|
+|:---------------|---------|:---------------------------------------------------------|
 | Authentication | string  | The kind of authentication, "none", "basic", or "token"  |
 | Body           | string  | The request body if this was a POST operation            |
 | Endpoint       | string  | The endpoint for this request                            |
@@ -256,7 +256,7 @@ is used to send responses back to the caller. This item has no fields, but does 
 you can call.
 
 | Name        | Parameter  | Description |
-|-------------|------------|-------------|
+|:------------|:-----------|:------------|
 | WriteStatus | integer    | Set the HTTP response status code |
 | Write       | string     | Add the string to the response body |
 | WriteJSON   | any        | Add a JSON representation of the paraemter to the body |
@@ -274,7 +274,7 @@ authentication to be performed. This should be at the start of the service code;
 is not authenticated then the rest of the services does not run.  Valid types are:
 
 | Type       | Description |
-| ---------- | ----------- |
+|:-----------|:------------|
 | any        | User can be authenticated by username or token |
 | token      | User must be authenticated by token only |
 | user       | User must be authenticated with username/password only |
@@ -314,7 +314,7 @@ generally used to support writing services for administrative or privileged func
 a service that updates a password probably would use all of the following functions.
 
 | Function | Description | 
-|----------|-------------|
+|:---------|:------------|
 | u := getuser(name) | Get the user data for a given user
 | call setuser(u) | Update or create a user with the given user data
 | f := authenticated(user,pass) | Boolean if the username and password are valid
