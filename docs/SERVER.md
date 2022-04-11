@@ -197,16 +197,17 @@ The REST server can be easily controlled by persistent items in the current prof
 which are set with the `ego config set` command or via program operation using the
 `profile` package.
 
-| item | description |
-| ---- | ----------- |
-| ego.logon.defaultuser       | A string value of "user:pass" describing the default credential to apply when there is no user database |
-| ego.logon.userdata          | the path to the JSON file or database containing the user data |
-| ego.server.default.logging  | A list of the default loggers to start when running a server |
-| ego.server.insecure         | Set to true if SSL validation is to be disabled |
-| ego.server.piddir           | The location in the local file system where the PID file is stored |
+| Configuration Item           | Description |
+|------------------------------|-------------|
+| ego.logon.defaultuser        | A string value of "user:pass" describing the default credential to apply when there is no user database |
+| ego.logon.userdata           | the path to the JSON file or database containing the user data |
+| ego.server.default.logging   | A list of the default loggers to start when running a server |
+| ego.server.insecure          | Set to true if SSL validation is to be disabled |
+| ego.server.piddir            | The location in the local file system where the PID file is stored |
 | ego.server.reetain.log.count | The number of previous log files to retain when starting a new server instance |
-| ego.server.token.expiration | the default duration a token is considered valid. The default is "15m" for 15 minutes |
-| ego.server.token.key        | A string used to encrypt tokens. This can be any string value |
+| ego.server.token.expiration  | the default duration a token is considered valid. The default is "15m" for 15 minutes |
+| ego.server.token.key         | A string used to encrypt tokens. This can be any string value |
+
 &nbsp; 
 &nbsp;
 
