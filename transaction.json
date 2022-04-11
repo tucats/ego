@@ -1,5 +1,11 @@
 [
     {
+        "operation":"symbols",
+        "data": {
+            "name": "key"
+        }
+    },
+    {
         "operation": "select",
         "table": "table1",
         "columns": [
@@ -13,8 +19,15 @@
         "operation": "insert",
         "table": "table2",
         "data": {
-            "key": 10101,
+            "{{name}}": 10101,
             "value": "{{value}}"
         }
+    },
+    {
+        "operation": "delete",
+        "table": "table2",
+        "filters": [
+            "EQ(value,{{value}})"
+        ]
     }
 ]

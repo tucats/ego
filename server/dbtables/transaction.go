@@ -21,7 +21,7 @@ import (
 // This defines a single operation performed as part of a transaction
 type TxOperation struct {
 	Opcode  string                 `json:"operation"`
-	Table   string                 `json:"table"`
+	Table   string                 `json:"table,omitempty"`
 	Filters []string               `json:"filters,omitempty"`
 	Columns []string               `json:"columns,omitempty"`
 	Data    map[string]interface{} `json:"data,omitempty"`
@@ -30,6 +30,15 @@ type TxOperation struct {
 type symbolTable struct {
 	Symbols map[string]interface{}
 }
+
+const (
+	symbolsOpcode = "symbols"
+	insertOpcode  = "insert"
+	deleteOpcode  = "delete"
+	updateOpcode  = "update"
+	dropOpCode    = "drop"
+	selectOpcode  = "select"
+)
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
@@ -75,8 +84,8 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	}
 
 	for n, task := range tasks {
-		opcode := strings.ToUpper(task.Opcode)
-		if !util.InList(opcode, "DELETE", "UPDATE", "INSERT", "DROP", "SYMBOLS", "SELECT") {
+		opcode := strings.ToLower(task.Opcode)
+		if !util.InList(opcode, deleteOpcode, updateOpcode, insertOpcode, dropOpCode, symbolsOpcode, selectOpcode) {
 			msg := fmt.Sprintf("transaction operation %d has invalid opcode: %s",
 				n, opcode)
 			util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
@@ -104,31 +113,38 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			var opErr error
 
 			tableName, _ := fullName(user, task.Table)
-			ui.Debug(ui.TableLogger, "[%d] operation %s on table %s", sessionID, task.Opcode, tableName)
 
-			switch strings.ToUpper(task.Opcode) {
-			case "SYMBOLS":
+			if ui.LoggerIsActive(ui.TableLogger) {
+				if strings.EqualFold(symbolsOpcode, task.Opcode) {
+					ui.Debug(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
+				} else {
+					ui.Debug(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
+				}
+			}
+
+			switch strings.ToLower(task.Opcode) {
+			case symbolsOpcode:
 				opErr = txSymbols(sessionID, task, &symbols)
 
-			case "SELECT":
+			case selectOpcode:
 				opErr = txSelect(sessionID, user, db, tx, task, &symbols)
 
-			case "UPDATE":
+			case updateOpcode:
 				count := 0
 				count, opErr = txUpdate(sessionID, user, db, tx, task, &symbols)
 				rowsAffected += count
 
-			case "DELETE":
+			case deleteOpcode:
 				count := 0
 				count, opErr = txDelete(sessionID, user, tx, task, &symbols)
 				rowsAffected += count
 
-			case "INSERT":
+			case insertOpcode:
 				opErr = txInsert(sessionID, user, db, tx, task, &symbols)
 				rowsAffected++
 
-			case "DROP":
-				opErr = txDrop(sessionID, user, db, task)
+			case dropOpCode:
+				opErr = txDrop(sessionID, user, db, task, &symbols)
 			}
 
 			if !errors.Nil(opErr) {
@@ -168,6 +184,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
 func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) *errors.EgoError {
+	applySymbolsToTask(sessionID, &task, symbols)
 
 	if len(task.Filters) > 0 {
 		return errors.NewMessage("filters not supported for SYMBOLS task")
@@ -195,17 +212,14 @@ func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) *errors.
 		msg.WriteString(datatypes.GetString(value))
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", msg.String())
+	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
 
 	return nil
 }
 
 func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) error {
-	tableName, _ := fullName(user, task.Table)
-
 	applySymbolsToTask(sessionID, &task, syms)
-
-	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
+	tableName, _ := fullName(user, task.Table)
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
@@ -257,8 +271,11 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 				rowptrs[i] = &row[i]
 			}
 
+			// Get the next row values. Note we only incorporate them into the symbol
+			// table on the first row (rowCount of zero), the rest are ignored. An error
+			// will be thrown later.
 			err = rows.Scan(rowptrs...)
-			if err == nil {
+			if err == nil && rowCount == 0 {
 				msg := strings.Builder{}
 				for i, v := range row {
 					syms.Symbols[columnNames[i]] = v
@@ -278,16 +295,21 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 			}
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		if rowCount > 1 {
+			err = errors.NewMessage("SELECT task did not return a unique row")
+			ui.Debug(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
+
+		} else {
+			ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		}
 	}
 
 	return err
 }
 
 func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, error) {
-	tableName, _ := fullName(user, task.Table)
-
 	applySymbolsToTask(sessionID, &task, syms)
+	tableName, _ := fullName(user, task.Table)
 
 	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
 	if !errors.Nil(err) {
@@ -406,7 +428,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return 0, errors.NewMessage("update without filter is not allowed")
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Query: ", sessionID, result.String())
+	ui.Debug(ui.TableLogger, "[%d] Exec: ", sessionID, result.String())
 
 	queryResult, updateErr := tx.Exec(result.String(), values...)
 	count, _ := queryResult.RowsAffected()
@@ -416,11 +438,11 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, error) {
 	applySymbolsToTask(sessionID, &task, syms)
-
 	tableName, _ := fullName(user, task.Table)
 
-	ui.Debug(ui.ServerLogger, "[%d] transaction task to delete rows from table %s", sessionID, tableName)
-
+	if len(task.Columns) > 0 {
+		return 0, errors.NewMessage("columns not supported for DELETE task")
+	}
 	if where := whereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
 			return 0, errors.NewMessage("operation invalid with empty filter")
@@ -453,9 +475,17 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 	return 0, err
 }
 
-func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation) error {
-
+func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *symbolTable) error {
+	applySymbolsToTask(sessionID, &task, syms)
 	table, _ := fullName(user, task.Table)
+
+	if len(task.Filters) > 0 {
+		return errors.NewMessage("filters not supported for DROP task")
+	}
+
+	if len(task.Columns) > 0 {
+		return errors.NewMessage("columns not supported for DROP task")
+	}
 
 	q := "DROP TABLE " + table
 	_, err := db.Exec(q)
@@ -466,19 +496,20 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation) error {
 func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) error {
 	applySymbolsToTask(sessionID, &task, syms)
 
+	if len(task.Filters) > 0 {
+		return errors.NewMessage("filters not supported for INSERT task")
+	}
+
+	if len(task.Columns) > 0 {
+		return errors.NewMessage("columns not supported for INSERT task")
+	}
+
 	// Get the column metadata for the table we're insert into, so we can validate column info.
 	tableName, _ := fullName(user, task.Table)
 
 	columns, err := getColumnInfo(db, user, tableName, sessionID)
 	if !errors.Nil(err) {
 		return errors.NewMessage("unable to read table metadata; " + err.Error())
-	}
-
-	// If we're showing our payload in the log, do that now
-	if ui.LoggerIsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(task.Data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
-		ui.Debug(ui.RestLogger, "[%d] INSERT task payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 	}
 
 	// It's a new row, so assign a UUID now. This overrides any previous item in the payload
@@ -510,63 +541,19 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		if keywordMatch(column.Type, "time", "date", "timestamp") {
 			text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-			ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
+			ui.Debug(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
 		}
 	}
 
 	q, values := formInsertQuery(task.Table, user, task.Data)
-	ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
+	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
 
 	_, e := tx.Exec(q, values...)
 	if e != nil {
 		return errors.NewMessage("error inserting row; " + e.Error())
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] successful INSERT to %s", sessionID, tableName)
+	ui.Debug(ui.TableLogger, "[%d] Successful INSERT to %s", sessionID, tableName)
 
 	return nil
-}
-
-// If the item passed is a string of the form {{name}} then the symbol with
-// the matching name is substituted for this value, if found.
-func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable) interface{} {
-	if symbols == nil || symbols.Symbols == nil {
-		return input
-	}
-
-	stringRepresentation := datatypes.GetString(input)
-	if strings.HasPrefix(stringRepresentation, "{{") && strings.HasSuffix(stringRepresentation, "}}") {
-		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, "}}"), "{{")
-
-		if value, ok := symbols.Symbols[key]; ok {
-			input = value
-			ui.Debug(ui.TableLogger, "[%d] symbol substitution, %s = %v", sessionID, key, value)
-		} else {
-			input = "No symbol: " + key
-		}
-	}
-
-	return input
-}
-
-func applySymbolsToTask(sessionID int32, task *TxOperation, syms *symbolTable) {
-	// Process any substittions to filters, column names, or data values
-	if syms != nil && len(syms.Symbols) > 0 {
-		for n := 0; n < len(task.Filters); n++ {
-			task.Filters[n] = datatypes.GetString(applySymbolsToItem(sessionID, task.Filters[n], syms))
-		}
-
-		for n := 0; n < len(task.Columns); n++ {
-			task.Columns[n] = datatypes.GetString(applySymbolsToItem(sessionID, task.Columns[n], syms))
-		}
-
-		keys := make([]string, 0)
-		for key := range task.Data {
-			keys = append(keys, key)
-		}
-
-		for _, key := range keys {
-			task.Data[key] = applySymbolsToItem(sessionID, task.Data[key], syms)
-		}
-	}
 }
