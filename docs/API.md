@@ -965,7 +965,7 @@ second table:
             "table": "table2",
             "data": {
                 "key": 10101,
-                "recipient": "{{customer}}"
+                "recipient": "\{{customer}}"
             }
         }
     ]
@@ -980,7 +980,7 @@ retrieved. In this example above, only the "customer" column will be read from t
 first table.
 
 The second task is an insert into a different table. Note how the value in the "data"
-object specifies "{{customer}}" for the object value for the column "recipient". The
+object specifies "\{{customer}}" for the object value for the column "recipient". The
 use of a string with double-braces around a name is the indicator that the value is
 not the string, but instead is the symbol value "customer" that was read in a 
 previous task. The effect of this is that the "INSERT" task will store the value
