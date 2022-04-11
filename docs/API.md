@@ -77,7 +77,7 @@ the credentials store.
 The resulting JSON payload is an object with the following fields:
 
 | Field     | Description |
-| :-------- |:----------- |
+|:--------- |:----------- |
 | server    | The server information object for this response. |
 | expires   | A string containing the timestamp of when the token expires |
 | token     | A variable-length string containing the token text itself. |
@@ -124,8 +124,8 @@ secure. The request body must contain the following two fields:
 
 &nbsp;
 
-| Field     | Description |
-| :-------- |:----------- |
+| Field      | Description |
+| :--------  |:----------- |
 | username   | A string containing username of the credentials |
 | password   | A string containing password of the credentials |
 
@@ -364,7 +364,7 @@ Here is an example response payload from this request:
             "DB": false,
             "DEBUG": false,
             "INFO": false,
-            "REST": false,
+            "REST": true,
             "SERVER": true,
             "SYMBOLS": false,
             "TABLES": true,
@@ -853,12 +853,12 @@ The payload for a transaction is an array of tasks. Each task has the following
 members:
 
 | Task Item   | Description |
-| ----------- | ------------|
+|:----------- |:------------|
 | operation   | The operation to be performed for this particular task. Can be "DELETE", "INSERT", or "UPDATE" |
 | table       | The name of the table on which to perform the operation. |
 | filters     | If filters are used for this operation, this is an array of filter specificiations |
 | columns     | If subset of the data is to be used, this is an array of the column names to be affected |
-| data        | A representation of a single row, where the object field name is the column name and teh object field value is the column value. |
+| data        | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
 impplicity joined to the others by an AND() operation, so that all the filters specifiec must be true for the filter
@@ -1063,7 +1063,7 @@ are:
 
 The AND() and OR() operators can contain a list of two or more values. If you specify multiple values, then
 in the case of AND() the filter is active if _all_ of the sub-expressions are true and in the case of OR()
-the filter is active if _any_ of teh sub-expressions are true. 
+the filter is active if _any_ of the sub-expressions are true. 
 
 For the HAS() operator, the first item must be the column name and this is followed by one or more 
 substrings that might be found in the column name; the filter is true if _any_ of the values are 

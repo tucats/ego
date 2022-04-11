@@ -110,8 +110,6 @@ Typically, once you have decided where to place the _Ego_ directories, use the
 it is available anytime the `ego` command is run. You can use the `ego config show`
 command to display the current profile values.
 
-
-
 &nbsp; 
 &nbsp;
 ## Logging
@@ -148,8 +146,8 @@ by information about the runtime stack (not shown here for brevity).
 By default, no logging is enabled except for running in server mode, which 
 automatically enables SERVER logging.
 
-| Logger | Description |
-|--------| ------------|
+| Logger   | Description |
+|:---------|:------------|
 | AUTH     | Shows authentication operations when _Ego_ used as a REST server         |
 | BYTECODE | Shows disassemby of the pseudo-instructions that execute _Ego_ programs  |
 | CLI      | Logs information about command line processing for the _Ego_ application |

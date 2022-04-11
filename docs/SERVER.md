@@ -251,7 +251,7 @@ data type, with the following fields:
 | Username       | string  | If authenitcated, the username of the requestor          |
 
 ## Response Parameter <a name="#response"></a>
-The second paraameter of teh service's `handler()` function must be of type `Response` and
+The second paraameter of the service's `handler()` function must be of type `Response` and
 is used to send responses back to the caller. This item has no fields, but does have methods
 you can call.
 
@@ -283,7 +283,7 @@ is not authenticated then the rest of the services does not run.  Valid types ar
 
 &nbsp;
 &nbsp;
-
+{% raw %}
 ### @json {}
 The body of the code in the `{}` are executed if the current request supports JSON as the
 result type. If the caller does not accept JSON, then the body is not executed.
@@ -295,7 +295,7 @@ result type. If the caller does not accept text, then the body is not executed.
 ### @url "/pattern"
 The given pattern is applied to the current URL. The pattern can include literal values
 or symbols enclosed in `{{` and `}}` characters. The part of the URL represented by those
-symbols will be stored in a local variable of teh given name. For example,
+symbols will be stored in a local variable of the given name. For example,
 
     @url "/catalog/{{item}}/names"
 
@@ -392,3 +392,5 @@ the lib/services directory.
             }
         }
     }
+
+{% endraw }

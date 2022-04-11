@@ -83,6 +83,7 @@
 
 &nbsp;
 &nbsp;
+{% raw %}
 
 # Introduction to _Ego_ Language <a name="intro"></a>
 
@@ -142,7 +143,7 @@ listed here.
 &nbsp;
 
 |   Type     | Example  |    Range              | Description  |
-| ---------- | -------- | --------------------- | -------------|
+|:---------- |:-------- |:--------------------- |:-------------|
 | `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
 | `bool`     | true     | true, false           | A Boolean value that is either true or false |
 | `byte`     | 5        | 0-255                 | An 8-bit unsigned integer |
@@ -444,7 +445,7 @@ The _Ego_ language is, by default, a case-sensitive language, such
 &nbsp;
 
 | Name      | Description |
-| --------- | ----------- |
+|:--------- |:----------- |
 | a123      | Valid name |
 | user_name | Valid name |
 | A123      | Valid name, different than `a123`|
@@ -554,7 +555,7 @@ a struct, values of a type, or index into an array.
 &nbsp;
 
 | Operator | Example  | Description |
-| -------- | -------- | ----------- |
+|:-------- |:-------- |:----------- |
 | .        | emp.age  | Find the member named `age` in the struct named `emp` |
 | []       | items[5] | Find the value at index 5 of the array named `items` |
 | {}       | emp{}    | Create an instance of a struct of the type `emp` |
@@ -572,7 +573,7 @@ on the single value given.
 &nbsp;
 
 | Operator | Example | Description |
-| -------- | ------- | ----------- |
+| -------- | ------- |:----------- |
 |  -       | -temp   | Calculate the negative of the value in `temp` |
 | !        | !active | Calculate the boolean NOT of the value in `active` |
 
@@ -584,7 +585,7 @@ precedes the operator and one of which follows the operator.
 &nbsp;
 
 | Operator | Example | Description |
-| -------- | ------- | ----------- |
+| -------- | ------- |:----------- |
 |  +       | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
 | -        | a-b     | Calculate the difference of the integer or floating-point values |
 | *        | a*b     | Calculate the product of the numeric value, or the OR of two boolean values |
@@ -616,7 +617,7 @@ describing the relationship between the two values.
 &nbsp;
 
 | Operator | Example    | Description |
-| -------- | ---------- | ----------- |
+|:--------:|:---------- |:----------- |
 |  ==      | a == b     | True if `a` is equal to `b` |
 |  !=      | a != b     | True if `a` is not equal to `b` |
 |  &gt;    | a &gt; b   | True if `a` is less than `b` |
@@ -660,7 +661,7 @@ a single value.
 &nbsp;
 
 | Function  | Example               | Description |
-| :-------- | :-------------------- | ----------- |
+| :-------- | :-------------------- |:----------- |
 | append()  | append(list, 5, 6, 7) | Append the items together into an array. |
 | close()   | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
 | delete()  | delete(emp, "Name")   | Remove the named field from a map, or a delete a dynamic struct member |
@@ -685,13 +686,13 @@ For base types, the following are available:
 
 &nbsp;
 
-| Function | Example               | Description |
-| -------- | --------------------- | ----------- |
-| bool()   | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
-| float32()  | float32(33)      | Convert the value to a float32, in this case `33.0` |
-| float64()  | float64(33)      | Convert the value to a float64, in this case `33.0` |
-| int()    | int(78.3)      | Convert the value to an integer, in this case `78` |
-| string() | string(true)   | Convert the argument to a string value, in this case `true` |
+| Function   | Example               | Description |
+|:---------- |:--------------------- |:----------- |
+| bool()     | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
+| float32()  | float32(33)           | Convert the value to a float32, in this case `33.0` |
+| float64()  | float64(33)           | Convert the value to a float64, in this case `33.0` |
+| int()      | int(78.3)             | Convert the value to an integer, in this case `78` |
+| string()   | string(true)          | Convert the argument to a string value, in this case `true` |
 
 &nbsp;
 
@@ -705,7 +706,7 @@ the function:
 &nbsp;
 
 | Function | Example               | Description |
-| -------- | --------------------- | ----------- |
+|:-------- |:--------------------- |:----------- |
 | []bool() | []bool([1, 5, 0])| Convert the array to a []bool array. |
 | []int()  | []int([1, 5.5, 0])| Convert the array to a []int array. If the parameter is a string, then the string is converted to an array of ints representing each rune in the string. |
 | []interface{}() | []interface{}([true, 5, "string"])| Convert the array to a []interface{} array where there are no static types for the array. |
@@ -826,7 +827,7 @@ the program, but are used to identify each line of the code.
 
 Instead of having the `if` statement advance to the next statement
 if the condition is not true, a second _basic block_ can be defined
-that has the statements to execute if teh condition is false. That
+that has the statements to execute if the condition is false. That
 is, the result of the expression will result in one or the other of
 two basic blocks being executed.
 
@@ -1517,9 +1518,9 @@ Ego provides several data types used to synchronize execution of competing
 threads, and to assist in managing access to resources in a predictable
 way if needed.
 
-| Datatype | Description |
-|----------|-------------|
-| sync.Mutex | A simple mutual exclusion lock for serializing access to a resource |
+| Datatype       | Description |
+|:---------------|:------------|
+| sync.Mutex     | A simple mutual exclusion lock for serializing access to a resource |
 | sync.WaitGroup | A way to launch a varying number of go routines and wait for them to complete |
 
 See the detailed descriptions in the later sections on the `sync` package
@@ -1677,16 +1678,16 @@ call using the handle:
 
 &nbsp;
 
-| Function | Description |
-|----------|-------------|
-| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
-| d.Commit() | Commit the active transaction
-| d.Rollback() | Roll back the active transaction
-| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set.
-| d.Query(q, [, args...]) | Execute a query and return a row set object
-| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected.
-| d.Close() | Terminate the connection to the database and free up resources.
-| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array.
+| Function                           | Description |
+|:-----------------------------------|:------------|
+| d.Begin()                          | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time
+| d.Commit()                         | Commit the active transaction
+| d.Rollback()                       | Roll back the active transaction
+| d.QueryResult(q [, args...])       | Execute a query string with optional arguments. The result is the entire query result set.
+| d.Query(q, [, args...])            | Execute a query and return a row set object
+| d.Execute(q [, args...])           | Execute a statement with optional arguments. The result is the number of rows affected.
+| d.Close()                          | Terminate the connection to the database and free up resources.
+| d.AsStruct(b)                      | If true, results are returned as array of struct instead of array of array.
 
 &nbsp;
 
@@ -1696,10 +1697,10 @@ without filling up memory with the entire result set at once.
 
 &nbsp;
 
-| Function | Description |
-|----------|-------------|
-| r.Next() | Prepare the next row for reading. Returns false if there are no more rows
-| r.Scan() | Read the next row and create either a struct or an array of the row data
+| Function  | Description |
+|:=---------|:------------|
+| r.Next()  | Prepare the next row for reading. Returns false if there are no more rows
+| r.Scan()  | Read the next row and create either a struct or an array of the row data
 | r.Close() | End reading rows and release any resources consumed by the rowset read.
 
 &nbsp;
@@ -1838,7 +1839,7 @@ does not already exist. The mode variable can be one of the following values
 &nbsp;
 
 | Mode   | Description |
-|:------:| ----------- |
+|:------:|:å----------- |
 | append | The file must exist, and is opened for writing. All new data is written to the end of the file. |
 | create | The file is created (any previous contents are lost) and available for writing. |
 | read   | The file must already exist, and is opened for reading only |
@@ -1854,7 +1855,7 @@ operation. The file handle functions are:
 &nbsp;
 
 | Function            | Description |
-| ------------------- | ----------- |
+|:------------------- |:----------- |
 | Close()             | Close the file, after which the file object can no longer be used. |
 | ReadString()        | Read a line of text from the file and return it as a string |
 | WriteString(string) | Write a string to the output file and add a newline |
@@ -1878,7 +1879,7 @@ has the following members:
 &nbsp;
 
 | Field     | Type   | Description |
-| --------- | ------ | ----------- |
+|:--------- |:------:|:----------- |
 | directory | bool   | true if the entry is a subdirectory, else false if it is a file |
 | mode      | string | Unix-style mode string for permissions for the file |
 | modified  | string | Timestamp of the last time the file was modified |
@@ -2222,15 +2223,15 @@ by the parser include:
 
 &nbsp;
 
-| Field | Description |
-| ----- | ----------- |
-| urlScheme | the URL scheme, such as "http" or "https" |
-| urlHost | the URL host, such as "abc.com" |
-| urlPort | the URL port string, if it was given |
+| Field       | Description |
+|:----------- |:----------- |
+| urlScheme   | the URL scheme, such as "http" or "https" |
+| urlHost     | the URL host, such as "abc.com" |
+| urlPort     | the URL port string, if it was given |
 | urlUsername | The username from the URL, if given |
 | urlPassword | The password from the URL, if given |
-| urlPath | The raw path string from the URL |
-| urlQuery | A map[string][]string for each query parameter specified |
+| urlPath     | The raw path string from the URL |
+| urlQuery    | A map[string][]string for each query parameter specified |
 
 &nbsp;
 
@@ -2251,16 +2252,16 @@ functions would become available:
 
 &nbsp;
 
-| Function | Description |
-|----------|-------------|
-| r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post()
-| r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
+| Function             | Description |
+|:---------------------|:------------|
+| r.Base(url)          | Specify a "base URL" that is put in front of the url used in get() or post()
+| r.Get(url)           | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
 | r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
-| r.Delete(url) | DELETE to the named URL
-| r.Media("type") | Specify the media/content type of the exchange
-| r.Verify(b) | Enable or disable TLS server certificate validation
-| r.Auth(u,p) | Establish BasicAuth with the given username and password strings
-| r.Token(t) | Establish Bearer token auth with the given token value
+| r.Delete(url)        | DELETE to the named URL
+| r.Media("type")      | Specify the media/content type of the exchange
+| r.Verify(b)          | Enable or disable TLS server certificate validation
+| r.Auth(u,p)          | Establish BasicAuth with the given username and password strings
+| r.Token(t)           | Establish Bearer token auth with the given token value
 
 &nbsp;
 
@@ -2904,12 +2905,12 @@ a new `time.Time` variable type, which has a set of functions that can be perfor
 on it.
 
 | Function     | Example                    | Description                                                     |
-|--------------|---------|------------------------------------------------------------------------------------|
+|:-------------|:---------------------------|:----------------------------------------------------------------|
 | Add          | n := t.Add(nt)             | Add one time value to another.                                  |
 | Format       | f := t.Format("Mon Jan 2") | Format the time value according to the reference time.          |
 | SleepUntil   | t.SleepUntil()             | Pause execution until the time arrives.                         |
 | String       | f := t.String()            | Convert the time value to a standard string representation.     |
-| Sub          | n := t.Sub(start)            Subtract a a time value from another.                           |
+| Sub          | n := t.Sub(start)          | Subtract a a time value from another.                           |
 
 A note about the `Format()` operator. The format string must be comprised of elements
 from the reference time, which is a specific date value "Mon Jan 2 15:04:05 -0700 MST 2006".
@@ -2995,8 +2996,8 @@ The list of values are:
 
 &nbsp;
 
-| Mode | Description |
-| ---- | ----------- |
+| Mode        | Description |
+|:----------- |:----------- |
 | interactive | The `ego` program was run with no program name, accepting console input |
 | server      | The program is running under control of an _Ego_ rest server as a service |
 | test        | The program is running using the `ego test` integration test command |
@@ -3219,6 +3220,7 @@ This results in the string "Greetings, Tom" being printed on the
 stdout console. Note that `hello` becomes a global variable in the program, and
 is a pointer to the template that was previously compiled. This
 global value can only be used with template functions.
+{% endraw %}
 
 ## @type static|dynamic <a name="at-type"></a>
 
