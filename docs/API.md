@@ -20,6 +20,8 @@
 &nbsp;
 &nbsp;
 
+{% raw %}
+
 # Introduction <a name="intro"></a>
 This document describes the REST Application Programming Interfaces (APIs) 
 supported by an _Ego_ server instance. This covers how to authenticate to the 
@@ -1516,5 +1518,6 @@ will case the web brower presenting the HTML to make a second call to the _Ego_
 web server to retrieve the image from the assets directory on the web server.
 
 
+{% endraw %}
 
 
