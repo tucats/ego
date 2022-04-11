@@ -937,6 +937,8 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
+{% raw %}
+
 ### Data Chaining in Transactions <a name="chaining">
 There are two additional task types that can be executed as part of a transaction. These
 are intended to allow a single transaction to read data from one table and use the values
@@ -967,7 +969,7 @@ second table:
             "table": "table2",
             "data": {
                 "key": 10101,
-                "recipient": "\{{customer}}"
+                "recipient": "{{customer}}"
             }
         }
     ]
@@ -982,11 +984,13 @@ retrieved. In this example above, only the "customer" column will be read from t
 first table.
 
 The second task is an insert into a different table. Note how the value in the "data"
-object specifies "\{{customer}}" for the object value for the column "recipient". The
+object specifies "{{customer}}" for the object value for the column "recipient". The
 use of a string with double-braces around a name is the indicator that the value is
 not the string, but instead is the symbol value "customer" that was read in a 
 previous task. The effect of this is that the "INSERT" task will store the value
 for customer from the first table in the "recipient" column of the second table.
+
+{% endraw %}
 
 &nbsp;
 &nbsp;
@@ -1401,6 +1405,7 @@ You can see examples of this by examining the /services/admin/memory endpoint.
 
 ## Example Service Code
 Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
+{% raw %}
 
 
     import "http"
