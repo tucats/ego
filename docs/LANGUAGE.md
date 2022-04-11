@@ -142,7 +142,7 @@ listed here.
 
 &nbsp;
 
-|   Type     | Example  |    Range              | Description  |
+| Type       | Example  | Range                 | Description  |
 |:-----------|:---------|:----------------------|:-------------|
 | `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
 | `bool`     | true     | true, false           | A Boolean value that is either true or false |
