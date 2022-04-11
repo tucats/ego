@@ -198,7 +198,7 @@ which are set with the `ego config set` command or via program operation using t
 `profile` package.
 
 | Configuration Item           | Description |
-|------------------------------|-------------|
+|:-----------------------------|:------------|
 | ego.logon.defaultuser        | A string value of "user:pass" describing the default credential to apply when there is no user database |
 | ego.logon.userdata           | the path to the JSON file or database containing the user data |
 | ego.server.default.logging   | A list of the default loggers to start when running a server |
