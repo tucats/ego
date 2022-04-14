@@ -296,7 +296,7 @@ is a boolean that indicates if the item was found or not.
 
 In this example, `found` will be true if there was a value in the map for
 the key value `105`, and the value of the map item (a string in this case)
-will be stoerd in `emp`. If there was no value in the map for the given key,
+will be stored in `emp`. If there was no value in the map for the given key,
 `found` will be set to false, and `emp` will be nil. (Note that this is
 slightly different than traditional Go, where the result would be the zero
 value for the type, i.e. an empty string in this case).
@@ -1694,14 +1694,13 @@ call using the handle:
 When you use the Query() call it returns a rowset object. This object can be used to step through the
 result set a row at a time. This allows the underlying driver to manage buffers and large result sets
 without filling up memory with the entire result set at once.
-
 &nbsp;
 
 | Function  | Description |
-|:=---------|:------------|
-| r.Next()  | Prepare the next row for reading. Returns false if there are no more rows
-| r.Scan()  | Read the next row and create either a struct or an array of the row data
-| r.Close() | End reading rows and release any resources consumed by the rowset read.
+|:----------|:------------|
+| r.Next()  | Prepare the next row for reading. Returns false if there are no more rows |
+| r.Scan()  | Read the next row and create either a struct or an array of the row data  |
+| r.Close() | End reading rows and release any resources consumed by the rowset read.   |
 
 &nbsp;
 &nbsp;
@@ -1777,7 +1776,7 @@ characters (" ", etc) are ignored.  The supported format values are:
 &nbsp;
 
 | Format | Description |
-|:------:| ----- |
+|:------:|:----------- |
 | %t | Boolean defs.True or defs.False value |
 | %f | Floating point value |
 | %d | Integer value |
@@ -1839,7 +1838,7 @@ does not already exist. The mode variable can be one of the following values
 &nbsp;
 
 | Mode   | Description |
-|:------:|:å----------- |
+|:------:|:----------- |
 | append | The file must exist, and is opened for writing. All new data is written to the end of the file. |
 | create | The file is created (any previous contents are lost) and available for writing. |
 | read   | The file must already exist, and is opened for reading only |
@@ -2254,14 +2253,14 @@ functions would become available:
 
 | Function             | Description |
 |:---------------------|:------------|
-| r.Base(url)          | Specify a "base URL" that is put in front of the url used in get() or post()
-| r.Get(url)           | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value
-| r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request
-| r.Delete(url)        | DELETE to the named URL
-| r.Media("type")      | Specify the media/content type of the exchange
-| r.Verify(b)          | Enable or disable TLS server certificate validation
-| r.Auth(u,p)          | Establish BasicAuth with the given username and password strings
-| r.Token(t)           | Establish Bearer token auth with the given token value
+| r.Base(url)          | Specify a "base URL" that is put in front of the url used in get() or post() |
+| r.Get(url)           | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value |
+| r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request |
+| r.Delete(url)        | DELETE to the named URL |
+| r.Media("type")      | Specify the media/content type of the exchange |
+| r.Verify(b)          | Enable or disable TLS server certificate validation |
+| r.Auth(u,p)          | Establish BasicAuth with the given username and password strings |
+| r.Token(t)           | Establish Bearer token auth with the given token value |
 
 &nbsp;
 
