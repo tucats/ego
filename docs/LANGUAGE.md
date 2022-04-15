@@ -586,10 +586,11 @@ precedes the operator and one of which follows the operator.
 
 | Operator | Example | Description |
 | -------- | ------- |:----------- |
-|  +       | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
+| +        | a+b     | Calculate the sum of numeric values, the AND of two boolean values, or concatenate strings |
 | -        | a-b     | Calculate the difference of the integer or floating-point values |
 | *        | a*b     | Calculate the product of the numeric value, or the OR of two boolean values |
 | /        | a/b     | Calculate the division of the numeric values |
+| %        | a%b     | Calculate the remainder of the division operation |
 | ^        | 2^n     | Calculate `2` to the power `n` |
 
 &nbsp;
@@ -598,6 +599,9 @@ For division, integer values will result in the integer value of
 the division, so `10/3` will result in `3` as the expression value.
 A floating point value retains the fractional value of the conversion,
 so `10.0/3.0` results in `3.333333333` as the result.
+
+The modulo operator is only valid on integer types, and the divisor
+cannot be zero.
 
 Expressions can be combined together, and follow normal mathematical
 order of precedence (multiplication and division are done before
@@ -617,7 +621,7 @@ describing the relationship between the two values.
 &nbsp;
 
 | Operator | Example    | Description |
-|:--------:|:---------- |:----------- |
+|:--------:|:----------:|:----------- |
 |  ==      | a == b     | True if `a` is equal to `b` |
 |  !=      | a != b     | True if `a` is not equal to `b` |
 |  &gt;    | a &gt; b   | True if `a` is less than `b` |

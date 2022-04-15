@@ -457,6 +457,63 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
+// moduloByteCode bytecode instruction processor.
+func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
+	if c.stackPointer < 1 {
+		return c.newError(errors.ErrStackUnderflow)
+	}
+
+	v2, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	v1, err := c.Pop()
+	if !errors.Nil(err) {
+		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.newError(errors.ErrInvalidType)
+	}
+
+	v1, v2 = datatypes.Normalize(v1, v2)
+
+	switch v1.(type) {
+	case byte:
+		if v2.(byte) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(byte) % v2.(byte))
+
+	case int32:
+		if v2.(int32) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(int32) % v2.(int32))
+
+	case int:
+		if v2.(int) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(int) % v2.(int))
+
+	case int64:
+		if v2.(int64) == 0 {
+			return c.newError(errors.ErrDivisionByZero)
+		}
+
+		return c.stackPush(v1.(int64) % v2.(int64))
+
+	default:
+		return c.newError(errors.ErrInvalidType)
+	}
+}
+
 func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {

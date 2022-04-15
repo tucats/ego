@@ -61,6 +61,7 @@ const (
 	MakeMap
 	Member
 	ModeCheck
+	Modulo
 	Mul
 	Negate
 	Newline
@@ -163,6 +164,7 @@ var instructionNames = map[OpcodeID]string{
 	MakeMap:            "MakeMap",
 	Member:             "Member",
 	ModeCheck:          "ModeCheck",
+	Modulo:             "Modulo",
 	Negate:             "Negate",
 	Newline:            "Newline",
 	NotEqual:           "NotEqual",
@@ -253,6 +255,7 @@ func initializeDispatch() {
 			MakeMap:            makeMapByteCode,
 			Member:             memberByteCode,
 			ModeCheck:          modeCheckBytecode,
+			Modulo:             moduloByteCode,
 			Mul:                multiplyByteCode,
 			Negate:             negateByteCode,
 			Newline:            newlineByteCode,

@@ -107,7 +107,7 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 	return nil
 }
 
-// multDivide compiles an expression containing "*", "^", "|", or "/" operators.
+// multDivide compiles an expression containing "*", "^", "|", "%" or "/" operators.
 func (c *Compiler) multDivide() *errors.EgoError {
 	err := c.unary()
 	if !errors.Nil(err) {
@@ -130,7 +130,7 @@ func (c *Compiler) multDivide() *errors.EgoError {
 			continue
 		}
 
-		if c.t.AnyNext("^", "*", "/", "&") {
+		if c.t.AnyNext("^", "*", "/", "&", "%") {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.newError(errors.ErrMissingTerm)
 			}
@@ -152,6 +152,9 @@ func (c *Compiler) multDivide() *errors.EgoError {
 
 			case "&":
 				c.b.Emit(bc.BitAnd)
+
+			case "%":
+				c.b.Emit(bc.Modulo)
 			}
 		} else {
 			parsing = false
