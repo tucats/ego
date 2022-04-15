@@ -428,7 +428,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return 0, errors.NewMessage("update without filter is not allowed")
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Exec: ", sessionID, result.String())
+	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, result.String())
 
 	queryResult, updateErr := tx.Exec(result.String(), values...)
 	count, _ := queryResult.RowsAffected()
