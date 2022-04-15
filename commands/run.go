@@ -139,7 +139,23 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				fmt.Printf("%s\n", banner)
 			}
 
-			text = runtime.ReadConsoleText(prompt)
+			// If this is the first time through this loop, interactive is still
+			// false, but we know we're going to use user input. So this first
+			// time through, make the text just be an empty string. This will
+			// force the run loop to compile the empty string, which will process
+			// all the uuto-imports. In this way, the use of -d TRACE on the
+			// command line will handle all the import processing BEFORE the
+			// first prompt, so the tracing after the prompt is just for the
+			// statement(s) typed in at the prompt.
+			//
+			// If we already know we're interaactive, this isn't the first time
+			// through the loop, and we just prompt the user for statements.
+			if interactive == false {
+				text = ""
+			} else {
+				text = runtime.ReadConsoleText(prompt)
+			}
+
 			interactive = true
 		} else {
 			wasCommandLine = true // It is a pipe, so no prompting for more!
