@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 )
@@ -28,13 +29,9 @@ func main() {
 		app.SetBuildTime(BuildTime)
 	}
 
-	// If there aren't any arguments, default to "run".
-	args := os.Args
-	if len(args) == 1 {
-		args = append(args, "run")
-	}
+	app.SetDefaultAction(commands.RunAction)
 
-	err := app.Run(EgoGrammar, args)
+	err := app.Run(EgoGrammar, os.Args)
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.

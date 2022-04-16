@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "run with options but no verb",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}", 
+            "debugAdapter": "dlv-dap",
+            "args": ["-d", "cli"]
+        },    
+        {
             "name": "start server",
             "type": "go",
             "request": "launch",

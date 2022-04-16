@@ -303,6 +303,23 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			err = c.Action(c)
 		} else {
+			// Is there a parent action taht we should use as a default?
+			ctx := c
+
+			for ctx.Action == nil {
+				if ctx.Parent != nil {
+					ctx = ctx.Parent
+				} else {
+					break
+				}
+			}
+
+			if ctx.Action != nil {
+				ui.Debug(ui.CLILogger, "Invoking parent command action")
+
+				return ctx.Action(c)
+			}
+
 			ui.Debug(ui.CLILogger, "No command action was ever specified during parsing")
 			ShowHelp(c)
 		}
