@@ -214,7 +214,7 @@ func (t *Table) paginateText() []string {
 
 	// Temporarily set to a ridiculously huge number
 	// t.terminalHeight = 9999999
-	fmt.Printf("DEBUG: terminal height is %d lines\n", t.terminalHeight)
+	ui.Debug(ui.DebugLogger, "terminal height is %d lines\n", t.terminalHeight)
 
 	// Do we need to include the Row header first?
 	availableWidth := t.terminalWidth
