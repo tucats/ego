@@ -147,6 +147,11 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 					subContext := *c
 					subContext.Parent = c
 
+					// Zero out any action that was set by default, since the subgrammar now
+					// controls the action to be used.
+					c.Action = nil
+					subContext.Action = nil
+
 					if entry.Value != nil {
 						subContext.Grammar = entry.Value.([]Option)
 					} else {
@@ -303,23 +308,6 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			err = c.Action(c)
 		} else {
-			// Is there a parent action taht we should use as a default?
-			ctx := c
-
-			for ctx.Action == nil {
-				if ctx.Parent != nil {
-					ctx = ctx.Parent
-				} else {
-					break
-				}
-			}
-
-			if ctx.Action != nil {
-				ui.Debug(ui.CLILogger, "Invoking parent command action")
-
-				return ctx.Action(c)
-			}
-
 			ui.Debug(ui.CLILogger, "No command action was ever specified during parsing")
 			ShowHelp(c)
 		}
