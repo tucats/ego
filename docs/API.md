@@ -836,7 +836,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 
-### PUT /tables/@transaction  <a name="tx"></a>
+### POST /tables/@transaction  <a name="tx"></a>
 
 This operation allows you to specify an _atomic_ list of operations that must all be
 successfully performed for the change to occur. That is, it specifies a list of
@@ -1079,9 +1079,6 @@ The final step is to use each of these symbol names in an `insert` operation, wh
 adds a new row to table2 that has columns named "sender" and "recipient" and has
 the values of the respective "customer" columns, now represented as two different
 substitution symbols.
-
-
-{% endraw %}
 
 &nbsp;
 &nbsp;
@@ -1496,7 +1493,6 @@ You can see examples of this by examining the /services/admin/memory endpoint.
 
 ## Example Service Code
 Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
-{% raw %}
 
 
     import "http"
