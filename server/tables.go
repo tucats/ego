@@ -48,6 +48,28 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// and set up state variables accordingly.
 	var authenticatedCredentials bool
 
+	if ui.LoggerIsActive(ui.DebugLogger) {
+		ui.Debug(ui.DebugLogger, "[%d] >>> inbound request received!", sessionID)
+		ui.Debug(ui.DebugLogger, "[%d] %s %s from %s (%d bytes of content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
+
+		headerMsg := strings.Builder{}
+		for k, v := range r.Header {
+			for _, i := range v {
+				headerMsg.WriteString("   ")
+				headerMsg.WriteString(k)
+				headerMsg.WriteString(": ")
+				headerMsg.WriteString(i)
+				headerMsg.WriteString("\n")
+			}
+		}
+
+		ui.Debug(ui.DebugLogger, "[%d] Received headers:\n%s",
+			sessionID,
+			util.SessionLog(sessionID,
+				strings.TrimSuffix(headerMsg.String(), "\n"),
+			))
+	}
+
 	user := ""
 	pass := ""
 	auth := r.Header.Get("Authorization")
@@ -55,28 +77,8 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if auth == "" {
 		// No authentication credentials provided
 		authenticatedCredentials = false
+		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 
-		if ui.LoggerIsActive(ui.AuthLogger) {
-			ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
-
-			// Because this is may be an unexpected result, let's dump the headers now.
-			headerMsg := strings.Builder{}
-			for k, v := range r.Header {
-				for _, i := range v {
-					headerMsg.WriteString("   ")
-					headerMsg.WriteString(k)
-					headerMsg.WriteString(": ")
-					headerMsg.WriteString(i)
-					headerMsg.WriteString("\n")
-				}
-			}
-
-			ui.Debug(ui.AuthLogger, "[%d] Received headers:\n%s",
-				sessionID,
-				util.SessionLog(sessionID,
-					strings.TrimSuffix(headerMsg.String(), "\n"),
-				))
-		}
 	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
