@@ -152,6 +152,11 @@ const (
 	// How many old logs do we maintain by default when in server mode?
 	LogRetainCountSetting = PrivilegedKeyPrefix + "server.retain.log.count"
 
+	// Default allocation factor to set on symbol table create/expand
+	// operations. Larger numbers are more efficient for larger symbol
+	// tables, but too large a number wastes time and memory.
+	SymbolTableAllocationSetting = PrivilegedKeyPrefix + "runtime.symbol.allocation"
+
 	// If true, functions that return multiple values including an
 	// error that do not assign that error to a value will result in
 	// the error being thrown.
@@ -202,7 +207,7 @@ const (
 	DisassembleOption     = "disassemble"
 	FullSymbolScopeOption = "full-symbol-scope"
 	StaticTypesOption     = "static-types"
-	SymbolTableSizeOption = "symbol-table-size"
+	SymbolTableSizeOption = "symbol-allocation"
 )
 
 // Agent identifiers for REST calls, which indicate the role of the client.
@@ -266,6 +271,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TablesServerEmptyRowsetError:    true,
 	ServerDefaultLogSetting:         true,
 	TableServerPartialInsertError:   true,
+	SymbolTableAllocationSetting:    true,
 }
 
 const (

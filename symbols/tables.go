@@ -7,10 +7,16 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// SymbolAllocationSize is the number of symbols that can be added
-// to a table at a given scope. Exported because it can be set by a
-// caller prior to constructing a symbol table.
-var SymbolAllocationSize = 64
+// SymbolAllocationSize is the number of symbols that are allocated
+// in each bin of a symbol table. Allocation within a bin is faster
+// than creating a new bin, so this value should reflect the most
+// common maximum size of a symbol table. Note that symbol tables are
+// created for each basic block, so the idea value may be smaller than
+// the number of symbols in a program. Exported because it can be set
+// by a caller prior to constructing a symbol table. For example,both
+// the RUN and SERVER RUN commands have command line options to set
+// this value.
+var SymbolAllocationSize = 32
 
 // No symbol table allocation extent will be smaller than this size.
 // Exported because it is referenced by CLI handlers.

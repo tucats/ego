@@ -32,6 +32,23 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	server.StartTime = time.Now().Format(time.UnixDate)
 
+	// Get the allocation factor for symbols from the configuration.
+	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
+	if symAllocFactor > 0 {
+		symbols.SymbolAllocationSize = symAllocFactor
+	}
+
+	// If it was specified on the command line, override it.
+
+	if c.WasFound(defs.SymbolTableSizeOption) {
+		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
+	}
+
+	// Ensure that the value isn't too small
+	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
+	}
+
 	// Do we have a server log retention policy? If so, set that up
 	// before we start logging things.
 	if !c.WasFound("keep-logs") {
@@ -76,7 +93,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	server.Version = c.Version
 
-	debugPath, _ := c.String("debug")
+	debugPath, _ := c.String("debug-endpoint")
 	if len(debugPath) > 0 {
 		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}

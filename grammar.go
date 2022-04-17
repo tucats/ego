@@ -466,13 +466,15 @@ var ServerGrammar = []cli.Option{
 		Description: "Run the rest server",
 		OptionType:  cli.Subcommand,
 		Action:      commands.RunServer,
-		// Run and Start share a grammar, but Run has additional option
-		Value: append(ServerRunGrammar, cli.Option{
-			LongName:    "debug",
-			ShortName:   "d",
-			Description: "Service endpoint to debug",
-			OptionType:  cli.StringType,
-		}),
+		// Run and Start share a grammar, but Run has additional options
+		Value: append(ServerRunGrammar, []cli.Option{
+			{
+				LongName:    "debug-endpoint",
+				ShortName:   "d",
+				Description: "Service endpoint to debug",
+				OptionType:  cli.StringType,
+			},
+		}...),
 	},
 	{
 		LongName:    "restart",
@@ -590,6 +592,11 @@ var ServerRunGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "symbol-allocation",
+		Description: "Allocation size (in symbols) when expanding storage for a symbol table ",
+		OptionType:  cli.IntType,
+	},
+	{
 		LongName:            "static-types",
 		Description:         "Enforce static typing on program execution",
 		OptionType:          cli.BooleanType,
@@ -679,8 +686,8 @@ var RunGrammar = []cli.Option{
 		Private:     true,
 	},
 	{
-		LongName:    "symbol-table-size",
-		Description: "Maximum number of symbols at any given scope",
+		LongName:    "symbol-allocation",
+		Description: "Allocation size (in symbols) when expanding storage for a symbol table",
 		OptionType:  cli.IntType,
 	},
 	{

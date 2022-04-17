@@ -60,11 +60,21 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	var comp *compiler.Compiler
 
+	// Get the allocation factor for symbols from the configuration.
+	symAllocFactor := settings.GetInt(defs.SymbolTableAllocationSetting)
+	if symAllocFactor > 0 {
+		symbols.SymbolAllocationSize = symAllocFactor
+	}
+
+	// If it was specified on the command line, override it.
+
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
-		if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
-			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
-		}
+	}
+
+	// Ensure that the value isn't too small
+	if symbols.SymbolAllocationSize < symbols.MinSymbolAllocationSize {
+		symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 	}
 
 	autoImport := settings.GetBool(defs.AutoImportSetting)
