@@ -608,6 +608,17 @@ func logRequest(r *http.Request, sessionID int32) {
 		headerMsg := strings.Builder{}
 		for k, v := range r.Header {
 			for _, i := range v {
+
+				// A bit of a hack, but if this is the Authorization header, only show
+				// the first token in the value (Bearer, Basic, etc).
+
+				if strings.EqualFold(k, "Authorization") {
+					f := strings.Fields(i)
+					if len(f) > 0 {
+						i = f[0] + " <hidden value>"
+					}
+				}
+
 				headerMsg.WriteString("   ")
 				headerMsg.WriteString(k)
 				headerMsg.WriteString(": ")
