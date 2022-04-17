@@ -1,0 +1,23 @@
+
+@test "functions: nested function scope"
+
+// This test ensures that the nested function inner() is defined
+// in the scope of the function outer(), such that a different
+// variable named inner in the outermost scope is not affected.
+{
+   inner := "bar"
+
+   func outer() int {
+
+      func inner() int {
+         return 21
+      }
+
+      return inner()*2
+   }
+
+   @assert T.Equal(inner, "bar", "overloaded value")
+   @assert T.Equal(outer(), 42, "function result")
+}
+
+@pass
