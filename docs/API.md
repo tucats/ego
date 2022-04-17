@@ -940,14 +940,32 @@ will contain the following diagnostic fields as a JSON payload:
 {% raw %}
 
 ### Data Chaining in Transactions <a name="chaining">
-There are two additional task types that can be executed as part of a transaction. These
-are intended to allow a single transaction to read data from one table and use the values
-from that read in subsequent operations. For example, a read of a customer UUID value could
-then be used to specify the proper filter for that UUID in a subsequent update operation.
 
-Chaining is done by first setting symbolic substitution values (either by a SELECT task
-that reads from a table, or a SYMBOLS task that explicitly sets values). Once the symbol
-values are set, they can be referenced in filters, column lists, or data values.
+There are two additional task types that can be executed as part of a transaction. These
+are"
+
+&nbsp;
+
+| Operation | Description |
+|:--------- |:----------- |
+| select    | select a row from a table and store the column values in the substitution dictionary for this transaction. |
+| symbol    | Specify a value for an item that is stored in the substitition dictionary for this transaction. |
+
+&nbsp;
+
+There is a _substition dictionary_ for each transaction REST API call. This ia a set
+of key/value pairs. The key is always a name, and the value is any data type. The key
+name can be specified enclosed in braces to substitute in that value in the operation.
+
+For example, a read of a customer UUID value could then be used to specify the proper 
+filter for that UUID in a subsequent update operation.
+
+Chaining is done by first setting substitution values (either by a `select` task
+that reads from a table, or a `symbols` task that sets values to either a constant or
+another item in the substitution dictionary). Once the dictionary values are set, 
+they can be referenced in filters, column lists, or data values. The dictionary
+values are persisted while the entire transaction runs, and then are discareded when
+the REST call completes.
 
 Here is a simple transaction that reads a value from one table, and inserts it into a
 second table:
@@ -968,7 +986,7 @@ second table:
             "operation": "insert",
             "table": "table2",
             "data": {
-                "key": 10101,
+                "sender": "toby"",
                 "recipient": "{{customer}}"
             }
         }
@@ -983,12 +1001,87 @@ If the "columns" array is not given, then a symbol is set for each column in the
 retrieved. In this example above, only the "customer" column will be read from the 
 first table.
 
-The second task is an insert into a different table. Note how the value in the "data"
-object specifies "{{customer}}" for the object value for the column "recipient". The
-use of a string with double-braces around a name is the indicator that the value is
-not the string, but instead is the symbol value "customer" that was read in a 
-previous task. The effect of this is that the "INSERT" task will store the value
-for customer from the first table in the "recipient" column of the second table.
+The second task is an insert into a different table. This table has two columns, "sender"
+and "recipient", so a value is specified for each column in the new row that is being
+inserted. Note how the value in the "data" object specifies "{{customer}}" for the object
+value for the column "recipient". The use of a string with double-braces around a name 
+is the indicator that the value is not the string, but instead is the symbol value
+"customer" that was read in a previous task. The effect of this is that the "INSERT" 
+task will store the value for customer from the first table in the "recipient" column 
+of the second table.
+
+You might want a case where you read the same table twice, with different filters, and
+need to keep both values that were read by the `select` operation. You can do this with
+a special transation type of `symbol`. Here is an example transaction that uses the
+`symbol` operation:
+
+
+    [
+        {
+            "operation": "select",
+            "table": "table1",
+            "columns": [
+                "customer"
+            ],
+            "filters": [
+                "EQ(key,1)"
+            ]
+        },
+        {
+            "operation": "symbol",
+            "data" : {
+                "sending_customer" : "{{customer}}"
+            }
+        },
+        {
+            "operation": "select",
+            "table": "table1",
+            "columns": [
+                "customer"
+            ],
+            "filters": [
+                "EQ(key,2)"
+            ]
+        },
+        {
+            "operation": "symbol",
+            "data" : {
+                "receiving_customer" : "{{customer}}"
+            }
+        },
+        {
+            "operation": "insert",
+            "table": "table2",
+            "data": {
+                "sender": "{{sending_customer}}",
+                "recipient": "{{receiving_customer}}"
+            }
+        }
+    ]
+
+&nbsp;
+
+In this (contrived) example, there are two separate `select` operations done on the same
+table, but with different key values. The first `select` is looking for a row where "key=1"
+and the second `select` is looking for a row where "key=2". These are specifed using the
+`filters` item in the transaction operation.
+
+After the first `select`, there is a `symbol` operation. This moves the value from the
+"customer" value that was retrieved in the first `select` into a new symbol, named
+"sending_customer". 
+
+The second `select` operation is performed, using the different value for "key". This 
+again sets the value of "{{customer}}" to the value in the row for the column named
+"customer". After this `select`, a second `symbol` operation is performed to move the
+value of "{{customer}}" into a new value, which is named "receiving_customer". In
+this way, two separate rows were read from the same table (with differnt filters)
+and the value for the "customer" column was stored in two different symbol names.
+
+The final step is to use each of these symbol names in an `insert` operation, which 
+adds a new row to table2 that has columns named "sender" and "recipient" and has
+the values of the respective "customer" columns, now represented as two different
+substitution symbols.
+
 
 {% endraw %}
 
