@@ -23,6 +23,7 @@ import (
 // security risk surface, this mode is not enabled by default.
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
+	logRequest(r, sessionID)
 
 	CountRequest(CodeRequestCounter)
 

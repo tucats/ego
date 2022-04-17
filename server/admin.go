@@ -28,6 +28,8 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
 
+	logRequest(r, sessionID)
+
 	CountRequest(AdminRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
@@ -52,6 +54,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
 
+	logRequest(r, sessionID)
+
 	CountRequest(AdminRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
@@ -72,6 +76,8 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	requestor := r.RemoteAddr
+
+	logRequest(r, sessionID)
 
 	CountRequest(AdminRequestCounter)
 
@@ -559,5 +565,61 @@ func logHeaders(r *http.Request, sessionID int32) {
 
 			ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 		}
+	}
+}
+
+// Debugging tool that dumps interesting things about a request. Only outputs
+// when DEBUG logging is enabled.
+func logRequest(r *http.Request, sessionID int32) {
+	if ui.LoggerIsActive(ui.RestLogger) {
+		ui.Debug(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
+		ui.Debug(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
+
+		queryParameters := r.URL.Query()
+		parmMsg := strings.Builder{}
+
+		for k, v := range queryParameters {
+			parmMsg.WriteString("  ")
+			parmMsg.WriteString(k)
+			parmMsg.WriteString(" is ")
+
+			valueMsg := ""
+			for n, value := range v {
+				if n == 1 {
+					valueMsg = "[" + valueMsg + ", "
+				} else if n > 1 {
+					valueMsg = valueMsg + ", "
+				}
+				valueMsg = valueMsg + value
+			}
+
+			if len(v) > 1 {
+				valueMsg = valueMsg + "]"
+			}
+
+			parmMsg.WriteString(valueMsg)
+		}
+
+		if parmMsg.Len() > 0 {
+			ui.Debug(ui.RestLogger, "[%d] Query parameters:\n%s", sessionID,
+				util.SessionLog(sessionID, strings.TrimSuffix(parmMsg.String(), "\n")))
+		}
+
+		headerMsg := strings.Builder{}
+		for k, v := range r.Header {
+			for _, i := range v {
+				headerMsg.WriteString("   ")
+				headerMsg.WriteString(k)
+				headerMsg.WriteString(": ")
+				headerMsg.WriteString(i)
+				headerMsg.WriteString("\n")
+			}
+		}
+
+		ui.Debug(ui.RestLogger, "[%d] Received headers:\n%s",
+			sessionID,
+			util.SessionLog(sessionID,
+				strings.TrimSuffix(headerMsg.String(), "\n"),
+			))
 	}
 }

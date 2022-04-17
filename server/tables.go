@@ -30,6 +30,8 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
 
+	logRequest(r, sessionID)
+
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
 	parameterStruct := map[string]interface{}{}
@@ -47,28 +49,6 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// token in the header. If found, validate the username:password or the token string,
 	// and set up state variables accordingly.
 	var authenticatedCredentials bool
-
-	if ui.LoggerIsActive(ui.DebugLogger) {
-		ui.Debug(ui.DebugLogger, "[%d] >>> inbound request received!", sessionID)
-		ui.Debug(ui.DebugLogger, "[%d] %s %s from %s (%d bytes of content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
-
-		headerMsg := strings.Builder{}
-		for k, v := range r.Header {
-			for _, i := range v {
-				headerMsg.WriteString("   ")
-				headerMsg.WriteString(k)
-				headerMsg.WriteString(": ")
-				headerMsg.WriteString(i)
-				headerMsg.WriteString("\n")
-			}
-		}
-
-		ui.Debug(ui.DebugLogger, "[%d] Received headers:\n%s",
-			sessionID,
-			util.SessionLog(sessionID,
-				strings.TrimSuffix(headerMsg.String(), "\n"),
-			))
-	}
 
 	user := ""
 	pass := ""

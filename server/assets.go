@@ -146,6 +146,8 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := atomic.AddInt32(&nextSessionID, 1)
 	path := r.URL.Path
 
+	logRequest(r, sessionID)
+
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// We dont permit index requests

@@ -72,6 +72,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	requestor := r.RemoteAddr
 
+	logRequest(r, sessionID)
 	CountRequest(ServiceRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
