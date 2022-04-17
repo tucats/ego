@@ -60,7 +60,7 @@ func (c *Compiler) logicalAnd() *errors.EgoError {
 		return err
 	}
 
-	for c.t.IsNext("&&") {
+	for c.t.AnyNext("&&", "and") {
 		// Handle short-circuit from boolean
 		c.b.Emit(bytecode.Dup)
 
@@ -85,7 +85,7 @@ func (c *Compiler) logicalOr() *errors.EgoError {
 		return err
 	}
 
-	for c.t.IsNext("||") {
+	for c.t.AnyNext("||", "or") {
 		// Handle short-circuit from boolean
 		c.b.Emit(bytecode.Dup)
 
