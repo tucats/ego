@@ -20,6 +20,10 @@ const LibPathName = "lib"
 // is written.
 const EgoLogEnv = "EGO_LOG"
 
+// The environment variable that contains the name(s) of the loggers that
+// are to be enabled by default at startup (before command line processing).
+const EgoDefaultLogging = "EGO_DEFAULT_LOGGING"
+
 // The file extension for Ego programs".
 const EgoFilenameExtension = ".ego"
 

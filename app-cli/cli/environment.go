@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
@@ -35,6 +36,9 @@ func (c *Context) ResolveEnvironmentVariables() *errors.EgoError {
 
 				case IntType:
 					c.Grammar[found].Value, _ = strconv.Atoi(value)
+
+				case StringListType:
+					c.Grammar[found].Value = strings.Split(value, ",")
 
 				default:
 					c.Grammar[found].Value = value

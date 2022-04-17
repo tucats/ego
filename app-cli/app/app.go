@@ -6,11 +6,14 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -127,5 +130,34 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 	platform.SetReadonly(true)
 	_ = symbols.RootSymbolTable.SetAlways("_platform", platform)
 
+	if err := SetDefaultLoggers(); !errors.Nil(err) {
+		return err
+	}
+
 	return runFromContext(app.Context)
+}
+
+// Enable the loggers that are set using the EGO_DEFAULT_LOOGGERS
+// environment variable.
+func SetDefaultLoggers() *errors.EgoError {
+	logList := os.Getenv(defs.EgoDefaultLogging)
+	if strings.TrimSpace(logList) == "" {
+		return nil
+	}
+
+	loggers := strings.Split(logList, ",")
+
+	for _, loggerName := range loggers {
+		trimmedName := strings.TrimSpace(loggerName)
+		if trimmedName != "" {
+			logger := ui.Logger(trimmedName)
+			if logger < 0 {
+				return errors.New(errors.ErrInvalidLoggerName).Context(trimmedName)
+			}
+
+			ui.SetLogger(logger, true)
+		}
+	}
+
+	return nil
 }

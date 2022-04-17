@@ -48,12 +48,15 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 
 	if specified {
 		for _, v := range loggers {
-			logger := ui.Logger(v)
-			if logger < 0 {
-				return errors.New(errors.ErrInvalidLoggerName).Context(v)
-			}
+			name := strings.TrimSpace(v)
+			if name != "" {
+				logger := ui.Logger(name)
+				if logger < 0 {
+					return errors.New(errors.ErrInvalidLoggerName).Context(name)
+				}
 
-			ui.SetLogger(logger, true)
+				ui.SetLogger(logger, true)
+			}
 		}
 	}
 
