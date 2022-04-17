@@ -2974,6 +2974,16 @@ executing for the given duration.
 The `util` package contains miscellaneous utility functions that may be convenient
 for developers writing _Ego_ programs.
 
+### util.SetLogger()
+
+The `SetLogger()` function enables or disables specific loggers at runtime. This can be used
+to turn on tracing when in interactive mode, for example.
+
+    oldSetting := util.SetLogger("trace", true)
+
+The value of `oldSetting` is a boolean that describes the previous state of this logger, which
+allows a program to set a logger back to it's original state if desired.
+
 ### util.Memory()
 
 The `Memory()` function returns a strutcure summarying current user memory consumption,
