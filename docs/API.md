@@ -937,8 +937,6 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-{% raw %}
-
 ### Data Chaining in Transactions <a name="chaining">
 
 There are two additional task types that can be executed as part of a transaction. These
@@ -1617,5 +1615,3 @@ web server to retrieve the image from the assets directory on the web server.
 
 
 {% endraw %}
-
-
