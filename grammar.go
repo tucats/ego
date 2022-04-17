@@ -517,7 +517,7 @@ var ServerStopGrammar = []cli.Option{
 	},
 }
 
-// ServerStateGrammar  is a common sub-grammar for specifying a port and/or UUID.
+// ServerStateGrammar  is a common sub-grammar for specifying a port.
 var ServerStateGrammar = []cli.Option{
 	{
 		LongName:            "port",
@@ -525,11 +525,6 @@ var ServerStateGrammar = []cli.Option{
 		OptionType:          cli.IntType,
 		Description:         "Specify port number of server",
 		EnvironmentVariable: "EGO_PORT",
-	},
-	{
-		LongName:    "session-uuid",
-		Description: "Sets the optional session UUID value",
-		OptionType:  cli.UUIDType,
 	},
 }
 
