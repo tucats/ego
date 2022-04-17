@@ -101,7 +101,8 @@ func Logon(c *cli.Context) *errors.EgoError {
 	req.Body = defs.Credentials{Username: user, Password: pass}
 
 	if ui.LoggerIsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(req.Body, "", "  ")
+		// Use a fake password payload for the REST logging so we don't expose the password
+		b, _ := json.MarshalIndent(defs.Credentials{Username: user, Password: "********"}, "", "  ")
 		ui.Debug(ui.RestLogger, "REST Request:\n%s", string(b))
 	}
 
