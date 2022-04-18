@@ -1,11 +1,4 @@
 
-     _
-    | |       __ _   _ __     __ _   _   _    __ _    __ _    ___
-    | |      / _` | | '_ \   / _` | | | | |  / _` |  / _` |  / _ \
-    | |___  | (_| | | | | | | (_| | | |_| | | (_| | | (_| | |  __/
-    |_____|  \__,_| |_| |_|  \__, |  \__,_|  \__,_|  \__, |  \___|
-                              |___/                   |___/
-
 # Table of Contents
 
 1. [Introduction](#intro)
@@ -71,8 +64,8 @@
    1. [@error](#at-error)
    2. [@global](#at-global)
    3. [@localization](#at-localization)
-   3. [@template](#at-template)
-   4. [@type](#at-type)
+   5. [@template](#at-template)
+   6. [@type](#at-type)
 
 1. [Testing](#testing)
    1. [The `test` command](#at-test)
@@ -84,6 +77,13 @@
 &nbsp;
 &nbsp;
 {% raw %}
+
+     _
+    | |       __ _   _ __     __ _   _   _    __ _    __ _    ___
+    | |      / _` | | '_ \   / _` | | | | |  / _` |  / _` |  / _ \
+    | |___  | (_| | | | | | | (_| | | |_| | | (_| | | (_| | |  __/
+    |_____|  \__,_| |_| |_|  \__, |  \__,_|  \__,_|  \__, |  \___|
+                              |___/                   |___/
 
 # Introduction to _Ego_ Language <a name="intro"></a>
 
@@ -155,7 +155,7 @@ listed here.
 | `string`   | "Andrew" | any                   | A string value, consisting of a varying number of Unicode characters |
 | `chan`     |  chan    | any                   | A channel, used to communicate values between threads |
 
-_Note that the numeric range values shown are approximate._ 
+_Note that the numeric range values shown are approximate._
 
 &nbsp;
 
@@ -163,7 +163,7 @@ A value expressed in an _Ego_ program has an implied type. The
 language processor will attempt to determine the type of the value.
 For Boolean values, the value can only be `true` or `false`. For
 numeric types, the language differentiates between integer and floating
-point values. The value `1573` will be interpreted as an int value because 
+point values. The value `1573` will be interpreted as an int value because
 it has no exponent or factional part, but `-153.35` will be
 interpreted as a float64 value because it has a decimal point and a
 fractional value. A string value enclosed in double quotes (") cannot
@@ -197,7 +197,7 @@ For example, the value at position 0 is the integer `123` and the
 value at position 1 is the string `"Fred"`.
 
 These kinds of arrays are _anonymous_ arrays, in that they have no
-specific type for the values. You can also specify a type for the 
+specific type for the values. You can also specify a type for the
 array using a typed array constant. For example,
 
     a := []int{101, 102, 103}
@@ -249,7 +249,6 @@ an empty _anonymous_ struct,
 The empty anonymous structure can have fields added to it just by
 naming them, and they are created as needed.
 
-
 ## Maps<a name="maps"></a>
 
 A `map` in the _Ego_ language functions the same as it does in Go. A
@@ -257,7 +256,7 @@ map is declared as having a key type and a value type, and a hashmap
 is constructed based on that information. You can set a value in the
 map and you can fetch a value from the map.
 
-You can create create a map by setting a value to an empty map constant. 
+You can create create a map by setting a value to an empty map constant.
 For example,
 
     staff := map[int]string{}
@@ -307,7 +306,6 @@ You can delete a member from a map using the delete() function, such as:
 
 This is delete an entry from the map `staff` with a key value of `103`. If
 the member does not exist, no error is thrown.
-
 
 ## Pointers<a name="pointers"></a>
 
@@ -781,7 +779,7 @@ The general nature of a conditional `if` statement is
          <statements>
      }
 
-The `else` clause is optional, as described below. Even when there 
+The `else` clause is optional, as described below. Even when there
 is only a single statement in the block, a basic block is used for
 readability.
 
@@ -792,7 +790,6 @@ Consider the following example code:
         fmt.Println("Not paid enough!")     (3)
     }                                       (4)
     total = total + salary                  (5)
-
 
 This introduces a number of new elements to a program, so let's go
 over them line-by-line. The numbers is parenthesis are not part of
@@ -1041,7 +1038,7 @@ Use the `func` statement to declare a function. The function must
 have a name, optionally a list of parameter values that are passed
 to the function, and a return type that indicates what the function
 is expected to return. This is followed by the function body described
-as a basic block. When the function is called, this block 
+as a basic block. When the function is called, this block
 is executed, with the function arguments all available as local
 variables.  For example,
 
@@ -1307,11 +1304,11 @@ receiver, if it sets them it is changing a copy of the instance
 that only exists while the function is executing, and the
 values in the `foo` instance are not changed.
 
-By using the "*" as in the `SetName` example, the receiver `e`
+By using the `*` as in the `SetName` example, the receiver `e`
 isn't a copy of the instance, it is the actual instance. So
 changes made to the receiver `e` will actually be made in the
 instance variable `foo`. An easy way to remember this is that,
-without the "*", the receiver does not change the instance that
+without the `*`, the receiver does not change the instance that
 makes the call, but with the "*" then changes will affect
 the instance that makes the call.
 
@@ -1411,7 +1408,7 @@ divide-by-zero error. When this happens, the remainder of the statements
 
 You can optionally specify the name of a variable that will be created within
 the catch block that contains the actual error encountered. Do this by
-adding the name in parenthesis before the catch block. 
+adding the name in parenthesis before the catch block.
 
     x := 0
     try {
@@ -1420,7 +1417,8 @@ adding the name in parenthesis before the catch block.
         fmt.Println("unexpected error, ", e)
     }
 
-This can be used in the `catch` block if it needs handle more than one possible error, for example.
+This can be used in the `catch` block if it needs handle more than one
+possible error, for example.
 
 ## Conditional expression error handling
 
@@ -1809,7 +1807,6 @@ contents. The value is not printed to the console as part of this operation.
 The io package supports input/output operations using native files in the file system
 of the computer running _Ego_.
 
-
 ### io.DirList(path)
 
 The `DirList` function produces a string containing a human-formatted directory
@@ -1939,10 +1936,13 @@ to the REST service.
 ### json.MarshalIndent(v, prefix, indent)
 
 The `MarshalIndented` function converts a value into a JSON string expression, which is the
-function result. You must also supply a `prefix` and `indent` string. These are used as a prefix before each line of output in the resulting formatted JSON, as well as the indent spacing value for nested items. These are both interpreted as strings, and the most common use is to specify a string with the required number of blanks for each part.
+function result. You must also supply a `prefix` and `indent` string. These are used as a
+prefix before each line of output in the resulting formatted JSON, as well as the indent
+spacing value for nested items. These are both interpreted as strings, and the most common
+use is to specify a string with the required number of blanks for each part.
 
 Note that unlike its _Go_ counterpart, the `json` package automatically
-converts the value expression to a string as the function result. 
+converts the value expression to a string as the function result.
 
     a := { name: "Tom", age: 44 }
     s := json.MarshalIndent(a, "", "   ")
@@ -1956,10 +1956,10 @@ This results in `s` containing the string value
 
 ### json.UnMarshal(string)
 
-Given a JSON string expression, this creates the equivalent JSON object value. 
-This may be a scalar type (such as int, string, or float64) or it may be an 
-array or structure, or a combination of them. You do not have to provide a 
-model of the data type; the `UnMarshal` function creates one dynamically. 
+Given a JSON string expression, this creates the equivalent JSON object value.
+This may be a scalar type (such as int, string, or float64) or it may be an
+array or structure, or a combination of them. You do not have to provide a
+model of the data type; the `UnMarshal` function creates one dynamically.
 This means you are not guaranteed that the resulting structure has all the
 fields you might be expecting.
 
@@ -2931,43 +2931,46 @@ result.
     ...
     elapsed := time.Now().Sub(now)
 
-In this case, the code first captures the current time and stores it in the variable `now`. It then does some other
-work for the program, and when done we want to find out the elapsed time. The value of `elapsed` is a duration string
-that indicates how much time passed between the `now` value and the current time. For example, this could be a
-value such as "5s" for five seconds of time passing.
+In this case, the code first captures the current time and stores it in the variable `now`.
+It then does some other work for the program, and when done we want to find out the elapsed
+time. The value of `elapsed` is a duration string that indicates how much time passed between
+the `now` value and the current time. For example, this could be a value such as "5s" for 
+five seconds of time passing.
 
 ### time.Parse(string, model)
 
-This converts a text representation of a time into a time value. The first parameter is the text to convert,
-and the second parameter is the "model" which describes the format in which the value is parsed. This uses the
-same specific date values from thee `time.reference` time.
+This converts a text representation of a time into a time value. The first parameter is the
+text to convert, and the second parameter is the "model" which describes the format in which
+the value is parsed. This uses the same specific date values from thee `time.reference` time.
 
     s := "12/7/1960 15:30"
     m := "1/2/2006 15:04"
     t := time.Parse(s, m)
 
-The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the model showed a month
-of 1 (for January) but was still using the specific values from the reference time. The slashes are not part of
-the reference time, so they must exist in the same locations in the string to be converted and will be skipped.
+The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the
+model showed a month of 1 (for January) but was still using the specific values from the
+reference time. The slashes are not part of the reference time, so they must exist in the
+same locations in the string to be converted and will be skipped.
 
-IF there is an error in parsing, the value of `t` will be `nil`. You can find out what the exact error is by
-allowing the `time.Parse()` function to return two values:
+IF there is an error in parsing, the value of `t` will be `nil`. You can find the exact
+error by allowing the `time.Parse()` function to return two values:
 
     t, e := time.Parse(s, m)
 
-If the value of `t` is `nil` then the value of `e` will be the error code that reflects the parsing error. If
-the call is made with only one return value specified, then the error is discarded.
+If the value of `t` is `nil` then the value of `e` will be the error code that reflects the
+parsing error. If the call is made with only one return value specified, then the error is
+discarded.
 
 ### time.Sleep(duration)
 
-The `Sleep()` function of thee `time` package will sleep for the specified amount of time. The duration
-is expressed as a string. For example,
+The `Sleep()` function of thee `time` package will sleep for the specified amount of time.
+The duration is expressed as a string. For example,
 
     time.Sleep("10s")
 
-This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include fractional values. While
-the system is sleeping, go routines will continue to run but the current program (or go routine) will stop
-executing for the given duration.
+This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include
+fractional values. While the system is sleeping, go routines will continue to run but
+the current program (or go routine) will stop executing for the given duration.
 
 ## util <a name="util"></a>
 
@@ -2976,13 +2979,13 @@ for developers writing _Ego_ programs.
 
 ### util.SetLogger()
 
-The `SetLogger()` function enables or disables specific loggers at runtime. This can be used
-to turn on tracing when in interactive mode, for example.
+The `SetLogger()` function enables or disables specific loggers at runtime. This can be
+used to turn on tracing when in interactive mode, for example.
 
     oldSetting := util.SetLogger("trace", true)
 
-The value of `oldSetting` is a boolean that describes the previous state of this logger, which
-allows a program to set a logger back to it's original state if desired.
+The value of `oldSetting` is a boolean that describes the previous state of this logger,
+which allows a program to set a logger back to it's original state if desired.
 
 ### util.Memory()
 
@@ -2994,13 +2997,14 @@ memory for Ego has been run.
     ego> fmt.Println(util.Memory())
     { current: 0.9879989624023438, gc: 0, system: 68.58106994628906, time: "Thu Apr 22 2021 10:07:36 EDT", total: 0.9879989624023438 }
 
-
-The result of the function is always a structure. The `current` and `system` values are expressed in megabytes; so
-in the above example, the current memory consumption by the system on behalf of Ego is 68MB and the user memory
-consumed by Ego on behalf of the user is just under 1MB. The value of `total` is the total amount of memory
-ever allocated by Ego; this number will rise throughout the life of the program, but each time the memory
-reclaimation thread (garbage collector) runs, it will reclaim unused memory and reude the `current` value
-accordingly. You can use the `gc` field as a count of the number of times the garbage collector has run.
+The result of the function is always a structure. The `current` and `system` values
+are expressed in megabytes; so in the above example, the current memory consumption
+by the system on behalf of Ego is 68MB and the user memory consumed by Ego on behalf
+of the user is just under 1MB. The value of `total` is the total amount of memory
+ever allocated by Ego; this number will rise throughout the life of the program, but
+each time the memory reclaimation thread (garbage collector) runs, it will reclaim
+unused memory and reude the `current` value accordingly. You can use the `gc` field
+as a count of the number of times the garbage collector has run.
 
 ### util.Mode()
 
@@ -3170,6 +3174,7 @@ with the value of the given expression. If you do not specify an expression,
 the variable is created as an empty-string.
 
 ## @localization <a name="at-localization"></a>
+
 The `@localization` directive defines localized string properties for any
 supported language in the current Ego program. The directive stores data in
 the localization properties dictionary, which can be accessed using the
@@ -3178,7 +3183,6 @@ with a field for each language. Within each language is are fields for
 each message property. The property name is the field name (which can be
 in double quotes if it is not a valid identifier) and the value is the
 loacalized string.
-
 
     @localization {
         "en": {
@@ -3201,7 +3205,7 @@ loacalized string.
     }
 
 There can be only on `@localization` specification in a given program.
-It can appear before or after the functions in the program (it is 
+It can appear before or after the functions in the program (it is
 processed during compilation).
 
 Use the `i18n.T()` function to get the localized string value. In the

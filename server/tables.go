@@ -57,8 +57,8 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if auth == "" {
 		// No authentication credentials provided
 		authenticatedCredentials = false
-		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 
+		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -164,6 +164,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/permissions")
 	}
+
 	if !valid {
 		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/transaction")
 	}

@@ -1,9 +1,3 @@
-     ____    _____   ____    _____        _      ____    ___
-    |  _ \  | ____| / ___|  |_   _|      / \    |  _ \  |_ _|  ___
-    | |_) | |  _|   \___ \    | |       / _ \   | |_) |  | |  / __|
-    |  _ <  | |___   ___) |   | |      / ___ \  |  __/   | |  \__ \
-    |_| \_\ |_____| |____/    |_|     /_/   \_\ |_|     |___| |___/
-
 
 # Table of Contents
 
@@ -18,15 +12,23 @@
 5. [Services](#services)
 
 &nbsp;
+
+     ____    _____   ____    _____        _      ____    ___
+    |  _ \  | ____| / ___|  |_   _|      / \    |  _ \  |_ _|  ___
+    | |_) | |  _|   \___ \    | |       / _ \   | |_) |  | |  / __|
+    |  _ <  | |___   ___) |   | |      / ___ \  |  __/   | |  \__ \
+    |_| \_\ |_____| |____/    |_|     /_/   \_\ |_|     |___| |___/
+
 &nbsp;
 
 {% raw %}
 
 # Introduction <a name="intro"></a>
-This document describes the REST Application Programming Interfaces (APIs) 
-supported by an _Ego_ server instance. This covers how to authenticate to the 
-server, administration functions that can be performed by a suitably 
-privileged user, APIs for directly accessing database tables and their data, 
+
+This document describes the REST Application Programming Interfaces (APIs)
+supported by an _Ego_ server instance. This covers how to authenticate to the
+server, administration functions that can be performed by a suitably
+privileged user, APIs for directly accessing database tables and their data,
 and APIs for accessing user-written services (implemented as _Ego_ programs)
 
 All REST API responses should return a server information object as a field in
@@ -40,7 +42,7 @@ the payload named "server". This contains the following informmation:
 | session   | The session correlator for the server (matches request log entries). |
 
 The server name can be used to locate where the log files are found. The server id
-helps identify when a server is restarted, as it is assigned a new UUID each time 
+helps identify when a server is restarted, as it is assigned a new UUID each time
 and this information is in the server log. Finally, each logging entry from a
 REST client session includes a session number. This integer value can be used to
 find the specific log entries for this request.
@@ -49,28 +51,30 @@ find the specific log entries for this request.
 &nbsp;
 
 # Authentication <a name="auth"></a>
+
 Other than determining if a server is running or not, all operations performed
 against an Ego server must be done with an authenticated user. The normal pattern
 for this is for the client to "log in" the user, and receive an encrypted token
 in return. This token can be presented to any other API to authenticate the user
 for the functions of that API.
 
-To authenticate, you can use a "GET" or a "POST method to the endpoint "/services/admin/logon". 
+To authenticate, you can use a "GET" or a "POST method to the endpoint "/services/admin/logon".
 
 ## GET /services/admin/logon
+
 Use GET when you wish to use Basic authentication in the HTTP header to send the
 username and password for logon. The request must:
 
-* Use BASIC authentication to pass the username and password to the service. 
+* Use BASIC authentication to pass the username and password to the service.
 * Specify that the reply type accepted is "application/json"
 
-The rest status will either be a status of 403 indicating that the credentials 
+The rest status will either be a status of 403 indicating that the credentials
 are invalid, or 200 indicating that the credentials were valid.
 
-The response payload is a JSON object with the resulting secure token if 
-the credntials were valid. The credentials must match the username and 
-password stored in the _Ego_ server credentials data store; you can use 
-`ego` CLI commands to view and modify this store, as well as `/admin` 
+The response payload is a JSON object with the resulting secure token if
+the credntials were valid. The credentials must match the username and
+password stored in the _Ego_ server credentials data store; you can use
+`ego` CLI commands to view and modify this store, as well as `/admin`
 endpoints described below to read, update, or delete entries in
 the credentials store.
 
@@ -101,8 +105,8 @@ Here is an example response payload:
 &nbsp;
 
 It is the responsibility of the application to extract the `token` field from
-the resulting payload and store it away to use for subsequent REST API 
-operations. When using this token, it should be used as a Bearer token in 
+the resulting payload and store it away to use for subsequent REST API
+operations. When using this token, it should be used as a Bearer token in
 subsequent REST operations as the `Authentication: Bearer` header.
 
 A less secure mechanism can be used to authenticate, by providing username
@@ -116,6 +120,7 @@ support may be removed, requiring a `Bearer` token authentication.
 &nbsp;
 
 ## POST /services/admin/logon
+
 Alternatively, if you do not want to use an authentication header in this initial
 communication, you can use a "POST" method to the same endpoint with a JSON
 payload with an object containing two field. For TLS/SSL-based communication, this
@@ -129,25 +134,24 @@ secure. The request body must contain the following two fields:
 | username   | A string containing username of the credentials |
 | password   | A string containing password of the credentials |
 
-Here is an example request payload for the logon operation, with a string for 
+Here is an example request payload for the logon operation, with a string for
 the username and a string for the password:
 
     {
         "username": "joesmith",
         "password": "3h97q-k35Z5"
     }
-    
 
 &nbsp;
 
-The REST call will result in either be a status of 403 indicating that 
-the credentials are invalid, or 200 indicating that the credentials were 
+The REST call will result in either be a status of 403 indicating that
+the credentials are invalid, or 200 indicating that the credentials were
 valid.
 
-The response payload is a JSON object with the resulting secure token if 
-the credntials were valid. The credentials must match the username and 
-password stored in the _Ego_ server credentials data store; you can use 
-`ego` CLI commands to view and modify this store, as well as `/admin` 
+The response payload is a JSON object with the resulting secure token if
+the credntials were valid. The credentials must match the username and
+password stored in the _Ego_ server credentials data store; you can use
+`ego` CLI commands to view and modify this store, as well as `/admin`
 endpoints described below to read, update, or delete entries in
 the credentials store.
 
@@ -178,8 +182,8 @@ Here is an example response payload:
 &nbsp;
 
 It is the responsibility of the application to extract the `token` field from
-the resulting payload and store it away to use for subsequent REST API 
-operations. When using this token, it should be used as a Bearer token in 
+the resulting payload and store it away to use for subsequent REST API
+operations. When using this token, it should be used as a Bearer token in
 subsequent REST operations as the `Authentication: Bearer` header.
 
 A less secure mechanism can be used to authenticate, by providing username
@@ -192,8 +196,8 @@ support may be removed, requiring a `Bearer` token authentication.
 &nbsp;
 &nbsp;
 
-
 # Administrative Functions <a name="admin"></a>
+
 Administrative functions are REST APIS used to support managing the REST server, including the
 status and state of the server, the database of valid user credentials and permissions, and support
 for caching and logging functions on the server.
@@ -208,6 +212,7 @@ for caching and logging functions on the server.
 &nbsp;
 
 ## Heartbeat <a name="heartbeat"></a>
+
 The `heartbeat` endpoint is the simplest and fasted way to determine if an Ego server
 is running and responding to requests. It does not require authentication of any kind,
 and returns a 200 success code if the server is available. Any other return code
@@ -219,6 +224,7 @@ This endpoint only supports the GET method, and returns no response body.
 &nbsp;
 
 ## Caches <a name="caches"></a>
+
 The _Ego_ server maintains caches to make repeated use of the server more efficient
 by saving operations in memory instead of having to re-load and re-compile services,
 reload assets, etc.
@@ -236,13 +242,13 @@ results of the compile to execute the service again on behalf of the client.
 When the service cannot be found in the cache, it is loaded from disk and compiled
 before it can be executed. The service just compiled is placed in the cache. If the
 cache is too large (based on the limit on the number of items the server is configured
-to allow) the oldest (least recently used) item in the cache is discarded before 
+to allow) the oldest (least recently used) item in the cache is discarded before
 storing the newly-compiled service in the cache. For example, if the cache limit is
 set to 10, then the cache will contain the ten most-recently used services. The
 premise is that the cache should be set large enough to hold the most commonly used
 services, so they are available for most users most of the time without recompiling.
 
-Similarly, an "asset" cache is managed by the server. When a REST call is made to 
+Similarly, an "asset" cache is managed by the server. When a REST call is made to
 the server to the `/asset` endpoint, the remainder of the path represents the location
 in the _Ego_ server's disk storage where assets are found. When a request is made for
 an item, the server first checks to see if it is in memory already, and if so will
@@ -264,7 +270,9 @@ disk to satisfy asset requests.
 
 &nbsp;
 &nbsp;
+
 ### GET /admin/caches
+
 This gets information about the caching status in the server. This API requires that
 the user have "admin" privileges. The result is a JSON payload with the following
 fields:
@@ -295,6 +303,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ### DELETE /admin/caches
+
 The `DELETE` REST method tells the _Ego_ server to flush the caches; i.e. all the
 copies of service compilations and asset objects are deleted from memory. Subsequent
 REST calls will require that the server reload the item(s) from the disk store and
@@ -303,7 +312,9 @@ also then store them in the cache for future use.
 You must have "admin" privileges to execute this REST call.
 &nbsp;
 &nbsp;
+
 ### PUT /admin/caches
+
 You can set the size of the caches using the `PUT` method. The JSON payload for
 this operation is a structure with one or both of the following fields:
 
@@ -330,15 +341,17 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ## Loggers <a name="loggers"></a>
+
 You can use the loggers endpoint to get information about the current state of logging on the
 server, enable or disable specific loggers, and retrive the text of the log.
 &nbsp;
 &nbsp;
 
 ### GET /admin/loggers
+
 This retrieves the current state of logging on the server. The response is a JSON payload
 that indicates the host name where the server is running, it's unique instance UUID, the
-name of the text file on the server where the log is being written, and an structure 
+name of the text file on the server where the log is being written, and an structure
 that indicates if each logger is enabled or disabled.
 
 This service requires authentication with credentials for a user with administrative
@@ -430,6 +443,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ### PUT /admin/loggers
+
 This call is used to modify the state of logging on the server. The payload must contain
 the `loggers` structure that tells which loggers are to change state. Note that any logger
 not mentioned in the payload does not have it's state changed.
@@ -465,6 +479,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ## Users <a name="users"></a>
+
 The users interface allows an administrative user to create and delete user credentials, set
 user passwords, and update the permissions list for a given user.
 
@@ -551,8 +566,9 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ## Assets <a name="heartbeat"></a>
+
 The _Ego_ server has the ability to serve up arbitrary file contents to a REST caller. These
-are referred to as "assets" and are typically things like image files, javascript payloads, 
+are referred to as "assets" and are typically things like image files, javascript payloads,
 etc. that are created by the administrator of an instance of an _Ego_ web server, to support
 services written in _Ego_.
 
@@ -572,10 +588,10 @@ an asset in HTML for a graphical image.
 
      <!-- The asset must have a root path of /assets to be located properly --> 
      <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
-     
 
 &nbsp;
-&nbsp; 
+&nbsp;
+
 # Tables <a name="tables"> </a>
 
 The _Ego_ server includes a REST API for communicating with a PostgreSQL database configured
@@ -593,6 +609,7 @@ This API is divided into two sets,
 ## Table API <a name="tablesapi"></a>
 
 This section covers APIs to:
+
 * [List existing tables](#listtables)
 * [Create a new table](#createtable)
 * [Show the column names and types for a table](#metadata)
@@ -605,13 +622,13 @@ All tables operations return either a rowset or a rowcount response. A rowset co
 structure definitions where each column in the row is the field name, and the value of the column
 in that row is the field value. There will be one object for each column in the requested table
 query. A rowcount contains a struct withi a field called "count" which is the number of rows that
-are affected by the operation performed. For update or delete operations, this is the number of 
+are affected by the operation performed. For update or delete operations, this is the number of
 rows that were updated or deleted. This value is zero for other operations (like deleting a table).
 
 Finally, rowsets and rowcounts will also include a `status` field which is the HTTP status
 of the operation, which is normally 200 for a successful operation. A value other than 200 means
 something happened with the request that may not be the desired result, so an additional field
-`message` contains the text of any error message genrated (for example, attempting to read a 
+`message` contains the text of any error message genrated (for example, attempting to read a
 table column that doesn't exist, or not having permissions for the requested operation).
 
 It is recommended that you read the API on the "rows" endpoints before attempting to use the
@@ -621,6 +638,7 @@ specifications, etc.
 
 &nbsp;
 &nbsp;
+
 ### GET /tables <a name="listtables"></a>
 
 A GET call to the /tables endpoint will return a list of the tables. This is a JSON payload
@@ -647,7 +665,6 @@ count. When `rowcounts` is set to false, then the row count is always zero.
 The result of the call is an object with two fields, `count` and `tables`. The `count`
 is the number of tables returned in this REST call. The `tables` are an array of table
 objects, with the following fields:
-
 
 | Parameter | Type  | Description |
 |:--------- |:----- |:----------- |
@@ -708,7 +725,6 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-
 ### PUT /tables/_table_  <a name="createtable"></a>
 
 A PUT to a named table will create the table. The payload must be a JSON specification that
@@ -729,9 +745,8 @@ The valid types that you can specify in the array of column structure definition
 
 &nbsp;
 
-
 The request payload must be a JSON representation of the columns to be created. As an
-example, this payload creates a table with three columns. 
+example, this payload creates a table with three columns.
 
     {
         "columns": [
@@ -835,7 +850,6 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-
 ### POST /tables/@transaction  <a name="tx"></a>
 
 This operation allows you to specify an _atomic_ list of operations that must all be
@@ -862,8 +876,8 @@ members:
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
 impplicity joined to the others by an AND() operation, so that all the filters specifiec must be true for the filter
-to match a row. For operations that do not specify a filter (such as "INSERT"), the `filters` list can be empty. 
-For operations are intended to use all the fields of the "data" element, the `columns` list can be empty. 
+to match a row. For operations that do not specify a filter (such as "INSERT"), the `filters` list can be empty.
+For operations are intended to use all the fields of the "data" element, the `columns` list can be empty.
 For "DELETE" or "DROP" operations, the `data` element can be empty or omitted from the payload.
 
 Here is a sample payload with three transactions:
@@ -910,7 +924,6 @@ Here is a sample payload with three transactions:
         }
     ]
 
-
 The first and second tasks insert new data into the table "x6". The third task updates the address
 of any row that matches the filter of a "description" field equal to "tx row". Note that the third
 task also explicitly specifies a `columns` list. This means that even though the `data` item contains
@@ -955,19 +968,18 @@ There is a _substition dictionary_ for each transaction REST API call. This ia a
 of key/value pairs. The key is always a name, and the value is any data type. The key
 name can be specified enclosed in braces to substitute in that value in the operation.
 
-For example, a read of a customer UUID value could then be used to specify the proper 
+For example, a read of a customer UUID value could then be used to specify the proper
 filter for that UUID in a subsequent update operation.
 
 Chaining is done by first setting substitution values (either by a `select` task
 that reads from a table, or a `symbols` task that sets values to either a constant or
-another item in the substitution dictionary). Once the dictionary values are set, 
+another item in the substitution dictionary). Once the dictionary values are set,
 they can be referenced in filters, column lists, or data values. The dictionary
 values are persisted while the entire transaction runs, and then are discareded when
 the REST call completes.
 
 Here is a simple transaction that reads a value from one table, and inserts it into a
 second table:
-
 
     [
         {
@@ -990,29 +1002,28 @@ second table:
         }
     ]
 
-The first task is a "SELECT" operation that reads from a table. The select operation 
-will _only_ ever read a single row; there is an implied limit of `1` on the query 
-that reads the table. Because there can only ever be one row, sorting of the result 
+The first task is a "SELECT" operation that reads from a table. The select operation
+will _only_ ever read a single row; there is an implied limit of `1` on the query
+that reads the table. Because there can only ever be one row, sorting of the result
 is not needed (or even possible).
 
 If the "columns" array is not given, then a symbol is set for each column in the row
-retrieved. In this example above, only the "customer" column will be read from the 
+retrieved. In this example above, only the "customer" column will be read from the
 first table.
 
 The second task is an insert into a different table. This table has two columns, "sender"
 and "recipient", so a value is specified for each column in the new row that is being
 inserted. Note how the value in the "data" object specifies "{{customer}}" for the object
-value for the column "recipient". The use of a string with double-braces around a name 
+value for the column "recipient". The use of a string with double-braces around a name
 is the indicator that the value is not the string, but instead is the symbol value
-"customer" that was read in a previous task. The effect of this is that the "INSERT" 
-task will store the value for customer from the first table in the "recipient" column 
+"customer" that was read in a previous task. The effect of this is that the "INSERT"
+task will store the value for customer from the first table in the "recipient" column
 of the second table.
 
 You might want a case where you read the same table twice, with different filters, and
 need to keep both values that were read by the `select` operation. You can do this with
 a special transation type of `symbol`. Here is an example transaction that uses the
 `symbol` operation:
-
 
     [
         {
@@ -1066,16 +1077,16 @@ and the second `select` is looking for a row where "key=2". These are specifed u
 
 After the first `select`, there is a `symbol` operation. This moves the value from the
 "customer" value that was retrieved in the first `select` into a new symbol, named
-"sending_customer". 
+"sending_customer".
 
-The second `select` operation is performed, using the different value for "key". This 
+The second `select` operation is performed, using the different value for "key". This
 again sets the value of "{{customer}}" to the value in the row for the column named
 "customer". After this `select`, a second `symbol` operation is performed to move the
 value of "{{customer}}" into a new value, which is named "receiving_customer". In
 this way, two separate rows were read from the same table (with differnt filters)
 and the value for the "customer" column was stored in two different symbol names.
 
-The final step is to use each of these symbol names in an `insert` operation, which 
+The final step is to use each of these symbol names in an `insert` operation, which
 adds a new row to table2 that has columns named "sender" and "recipient" and has
 the values of the respective "customer" columns, now represented as two different
 substitution symbols.
@@ -1086,6 +1097,7 @@ substitution symbols.
 ## Rows API <a name="rows"></a>
 
 This section covers API functions to
+
 * [Read rows from a table](#readrows)
 * [Insert new rows into a table](#insertrows)
 * [Update existing rows in a table](#updaterows)
@@ -1105,7 +1117,7 @@ are returned, in an unpredictable order. The result is a JSON payload containing
 of structures, each of which is a set of fields for each column name, and the value of that
 field in that row.
 
-The Rows API supports the following parameters on the URL that affect the result set. 
+The Rows API supports the following parameters on the URL that affect the result set.
 Additional information about the parameters follows this table:
 
 | Parameter | Example                | Description |
@@ -1119,7 +1131,7 @@ Additional information about the parameters follows this table:
 &nbsp;
 
 You can specify the sort order of the results set by naming one or more columns on which the
-data is sorted before it is retuned to you. Use the `sort` parameter, with a value which is 
+data is sorted before it is retuned to you. Use the `sort` parameter, with a value which is
 a comma-separated list of columns. The first column named is the primary sort key, the second
 column (if any) is the secondary sort key, etc. You can prefix the column name with a tilde ("~")
 character to make the sort order descending instead of ascending.
@@ -1127,7 +1139,7 @@ character to make the sort order descending instead of ascending.
 You can specify the columns that are to be returned using the `columns` parameter, with a value
 that is a comma-separate list of column names. Only those columns are returned in the payload.
 
-You can filter the rows returned using the `filter` parameter, which contains a filter 
+You can filter the rows returned using the `filter` parameter, which contains a filter
 expression. This consists of an operator, followed by one or two operands in parenthesis. The
 operands can themselves be filter expressions to create complex expressions. The operators
 are:
@@ -1151,15 +1163,15 @@ are:
 
 The AND() and OR() operators can contain a list of two or more values. If you specify multiple values, then
 in the case of AND() the filter is active if _all_ of the sub-expressions are true and in the case of OR()
-the filter is active if _any_ of the sub-expressions are true. 
+the filter is active if _any_ of the sub-expressions are true.
 
-For the HAS() operator, the first item must be the column name and this is followed by one or more 
-substrings that might be found in the column name; the filter is true if _any_ of the values are 
-present in the column string value. For HASALL(), the parameters are the same as HAS() but the 
-condition is true only if _all_ of the values represented are found in the column string. The HAS() 
+For the HAS() operator, the first item must be the column name and this is followed by one or more
+substrings that might be found in the column name; the filter is true if _any_ of the values are
+present in the column string value. For HASALL(), the parameters are the same as HAS() but the
+condition is true only if _all_ of the values represented are found in the column string. The HAS()
 and HASALL() operations are case-sensitive.
 
-Note that in these examples, the value usually being tested is an integer. You can also specify a string value 
+Note that in these examples, the value usually being tested is an integer. You can also specify a string value
 in double quotes, or a floating point value (such as 123.45).
 
 &nbsp;
@@ -1204,7 +1216,6 @@ identifier for each row in the database.
 
 &nbsp;
 
-
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 
@@ -1216,10 +1227,10 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 &nbsp;
 
-
 ### PUT /tables/_table_/rows <a name="insertrows"></a>
-The PUT method inserts new rows into the table. The payload is either a row 
-descriptor which is a JSON object describing the values of each column in 
+
+The PUT method inserts new rows into the table. The payload is either a row
+descriptor which is a JSON object describing the values of each column in
 the row to be added, or a rowset which consists of an object with an array
 of row descriptors. The latter allows an insert of multiple rows at one time.
 If a column is not specified in the body of the request, the corresponding
@@ -1245,9 +1256,9 @@ new row for account number 103 wtih name "Susan".
 If the row is successfully inserted, the result is a JSON object with a single field,
 `count` which should contain the number 1. _In the future, it will be possible to
 insert multiple rows in a single call, in which case this value will reflect the number
-of rows inserted._
+of rows inserted.
 
-You can also send a list of rows that are to be inserted using a rowset. Here is a 
+You can also send a list of rows that are to be inserted using a rowset. Here is a
 sample payload that inserts three rows as a single operation:
 &nbsp;
 
@@ -1283,6 +1294,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ### PATCH /tables/_table_/rows <a name="updaterows"></a>
+
 The PATCH method updates existing rows in the table. The payload is a row descriptor (the same
 as the PUT method) but does not have to specify all the values in the row. Only the values
 specified in the request body are updated; the other values are left unchanged.
@@ -1301,14 +1313,14 @@ example). If `columns` is not specified, then all fields in the request payload 
 
 &nbsp;
 
-If a `_row_id_` field exists in the row representation, then *only* the matching row
-in the table with that exact ID will be update. If not specified, all rows will be updated 
+If a `_row_id_` field exists in the row representation, then _only_ the matching row
+in the table with that exact ID will be update. If not specified, all rows will be updated
 using the same value. In addition to a `_row_id_` you can use the `filter`
-option to select specific rows that are to be updated. You can reference the column values 
-if they are sufficiently unique. 
+option to select specific rows that are to be updated. You can reference the column values
+if they are sufficiently unique.
 
 A common usage is to perform a GET operation on the row(s) you wish to update so you have
-a rowset with all the IDs alreaady in them. You can then update the value(s) you wish in 
+a rowset with all the IDs alreaady in them. You can then update the value(s) you wish in
 the rowset, and then pass the rowset back for the PATCH operation to update the values. The
 presence of the `_row_id_` column in the rowset guarantees that only the rows in the rowset
 are updaed, and you may not need any further filtering. Note that in this case, you can still
@@ -1374,7 +1386,6 @@ specify the `filter` parameter to indicate which row(s) are to be deleted from t
 table. The `filter` parameter contains a filter expression, of the same form as the GET
 operation.
 
-
 &nbsp;
 
 In the event that the REST call returns a non-success status code, the response payload
@@ -1389,6 +1400,7 @@ will contain the following diagnostic fields as a JSON payload:
 &nbsp;
 
 ## Permissions
+
 A permissions table is managed by the _Ego_ server that controls whether a given use can read,
 update, or delete a given table.  By default, a user can only set these attributes on tables
 that they own. An administrator (a user account with "root" privilege) can change the attributes
@@ -1485,15 +1497,15 @@ functions of an _Ego_ web server.
 | assets       | Contains any static resources that are served via the /assets endpoint, such as images |
 | templates    | Contains static template files (usually) HTML that are used by services. |
 
-You can see examples of this by examining the /services/admin/memory endpoint. 
+You can see examples of this by examining the /services/admin/memory endpoint.
 
 * The code that is loaded and run is in the admin/memory.ego file. This is the primary endpoint name.
 * The code uses a template located in the /templates directory that forms the HTML component of the result
 * The template includes references to read a PNG image from the /assets directory in forming the web page
 
 ## Example Service Code
-Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
 
+Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
 
     import "http"
 
@@ -1536,14 +1548,14 @@ is replaced with the value of `pageData.Total` from the supplied data structure)
 ## Example Template File
 
 The template contains the actual HTML text that will be sent back as the response to
-the query (via `resp.WriteTemplate()` in the service code). 
+the query (via `resp.WriteTemplate()` in the service code).
 
-The template contains
-both static text, and substitution operators, which are identified by being enclosed
-in double-braces, such as `{{.Total}}` which is a substutiton operator for a field
-named `Total` in the data structure supplied with the template. This allows the
-template to contain the design/formatting code needed to present the desired page,
-while variable values can be injected as part of the template processing.
+The template contains both static text, and substitution operators, which are
+identified by being enclosed in double-braces, such as `{{.Total}}` which is a
+substutiton operator for a field named `Total` in the data structure supplied
+with the template. This allows the template to contain the design/formatting
+code needed to present the desired page, while variable values can be injected
+as part of the template processing.
 
 Here is the associated template file, located in lib/services/templates/memory.html:
 
@@ -1600,14 +1612,12 @@ Here is the associated template file, located in lib/services/templates/memory.h
         </body>
     </html>
 
-
 Note the references to substitution operators throughout the page, showing where the
 text of the service data structure items are injected into the HTML page that is
 sent back to the caller.
 
-Also note that there is a reference to an image via an img src="..." tag. This 
+Also note that there is a reference to an image via an img src="..." tag. This
 will case the web brower presenting the HTML to make a second call to the _Ego_
 web server to retrieve the image from the assets directory on the web server.
-
 
 {% endraw %}

@@ -160,7 +160,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			//
 			// If we already know we're interaactive, this isn't the first time
 			// through the loop, and we just prompt the user for statements.
-			if interactive == false {
+			if !interactive {
 				text = ""
 			} else {
 				text = runtime.ReadConsoleText(prompt)

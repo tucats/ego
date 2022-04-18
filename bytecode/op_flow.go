@@ -522,8 +522,8 @@ func (c *Context) inPackageSymbolTable(name string) bool {
 }
 
 func waitByteCode(c *Context, i interface{}) *errors.EgoError {
-	if wg, ok := i.(sync.WaitGroup); ok {
-		wg.Wait()
+	if _, ok := i.(*sync.WaitGroup); ok {
+		i.(*sync.WaitGroup).Wait()
 	} else {
 		waitGroup.Wait()
 	}

@@ -1,3 +1,4 @@
+# Ego Table Services
 
      _____           _       _
     |_   _|   __ _  | |__   | |   ___   ___
@@ -5,12 +6,8 @@
       | |   | (_| | | |_) | | | |  __/ \__ \
       |_|    \__,_| |_.__/  |_|  \___| |___/
 
-
-
-# Ego Table Services
-
 The _Ego_ server can be used as a REST-based database, with standard database
-operations like insert, update, delete that are ACID-compliant database 
+operations like insert, update, delete that are ACID-compliant database
 operations. Additionally, the _Ego_ command line interface has a set of
 commands (the `tables` commands) that support accessing the database from
 a shell environment.
@@ -45,11 +42,9 @@ Additionally, there should always be a schema of admin, which contains data
 needed for the security checks done on behalf of an Ego user.  This should
 always include a table named `privileges` which contains three string columns.
 
-   
     create table admin.privileges(username char varying, 
                                   tablename char varying,
                                   permissions char varying);
-
 
 The columns serve the following functions:
 
@@ -59,7 +54,7 @@ The columns serve the following functions:
 | tablename   | The database table for which permissions are granted |
 | permissions | A comma-separated list of the permissions (read,update,delete) |
 
-An _Ego_ user with the `root` privilege always has permission to do anything to 
+An _Ego_ user with the `root` privilege always has permission to do anything to
 the database backend. Other users must have an entry in the `privileges` table
 for their username and the name of the database they want to access, and a string
 value containing the allowed permissions.
@@ -79,7 +74,7 @@ validate permissions.
 &nbsp;
 &nbsp;
 
-# Commands
+## Commands
 
 The `tables` command set is used to manipulate database tables from a shell by an interactive
 user. All commands start with `ego tables` following by the subcommands:
@@ -103,7 +98,8 @@ user. All commands start with `ego tables` following by the subcommands:
 The following sections detail each command.
 &nbsp;
 
-## create
+### create
+
 The `create` command creates a new table, specified as the first parameter of the
 command line. This must be followed by one or more column specifications. A column
 specification consists of the column name, a `:` (colon) character, and the _Ego_
@@ -118,7 +114,6 @@ data type for that column.  The valid types that you can specify for a table are
 | float64 | Double precision floating point value |
 | bool    | Boolean value (can only be `true` or `false`)
 
-
 Additionally, you can specify supported attributes of
 the column separated by commas after the type name.
 
@@ -132,7 +127,6 @@ the column separated by commas after the type name.
 If the column specification contains spaces, the entire column
 specification must be in quotes. For example,
 
-    
     ego table create employees id:int first:string "last:string, unique, nullable"
 
 This creates a new table with three user-defined columns. The third specification is
@@ -141,7 +135,8 @@ the quotes by removing the space characters from the specification.
 
 &nbsp;
 
-## list
+### list
+
 The `list` command lists all tables that the current user has access to. Note that there
 may be tables in the database that are not included in the list, if the user does not have
 admin privilege and there is not a corresponding entry in the permissions table for that
@@ -164,7 +159,8 @@ the `--no-row-counts` option on the `list` command.
 
 &nbsp;
 
-## show-table
+### show-table
+
 The `show-table` command is used to display the column information for a given table.
 You must specify the name of the table as the command parameter. The output
 includes the column name, type, size, and whether it is allowed to contain
@@ -185,7 +181,8 @@ to have null values, and the `tablename` and `username` columns must be unique.
 
 &nbsp;
 
-## read
+### read
+
 The `read` command (which can also be expressed as `contents` or `select`) reads
 rows from a table and displays the values on the console. You must specify the name
 of the table as the command parameter.
@@ -235,7 +232,7 @@ This limites the output to only rows where the `id` column is less than the valu
     ===    ====    
     101    Tom     
 
-The filters are comma-separated items, where each filter must be enclosed in quotes. There 
+The filters are comma-separated items, where each filter must be enclosed in quotes. There
 cannot be a space outside the quotes in the filter expression, including after the comma.
 
 Finally, you can choose to only display specific column(s) in the output, using the `--column`
@@ -251,7 +248,8 @@ in the order specified in the `--column` option.
 
 &nbsp;
 
-## insert
+### insert
+
 The `insert` command adds a single row to the specified table. The first parameter must be
 the name of the table, and this is followed by one or more column value specifications.
 For example,
@@ -267,9 +265,10 @@ first column in your command that is not in the named table.
 
 &nbsp;
 
-## update
-The `update` command modifies columns in rows of the specified table. The first 
-parameter must be the name of the table, and this is followed by one or more column 
+### update
+
+The `update` command modifies columns in rows of the specified table. The first
+parameter must be the name of the table, and this is followed by one or more column
 value specifications. For example,
 
     user@Macbook ~ % ./ego table update simple name="Suzy"
@@ -279,7 +278,7 @@ the table. A more common case it to update a specific row or set of rows using
 an optional `--filter` command line option.
 
     user@Macbook ~ % ./ego table update simple name="Suzy" --filter 'id=101'
- 
+
 This variation will only update row(s) that also have a value of `101` for the `id`
 column. Note that other columns in the row not named in the command are unchanged
 by this operation.
@@ -292,21 +291,22 @@ first column in your command that is not in the named table.
 
 &nbsp;
 
-## delete
-The `delete` command deletes rows from the specified table. The first 
+### delete
+
+The `delete` command deletes rows from the specified table. The first
 parameter must be the name of the table. For example,
 
     user@Macbook ~ % ./ego table delete simple 
 
-This will delete every row in the table. A more common case it to delete a specific 
+This will delete every row in the table. A more common case it to delete a specific
 row or set of rows using an optional `--filter` command line option.
 
     user@Macbook ~ % ./ego table delete simple --filter 'id=101'
- 
+
 This variation will only delete row(s) that have a value of `101` for the `id`
 column.  The command will report how many rows were deleted in the table if the command is
 successful. You cannot delete rows from a table that you do not have administrator privileges
-or `delete` privilege for that table. 
+or `delete` privilege for that table.
 
 &nbsp;
 &nbsp;

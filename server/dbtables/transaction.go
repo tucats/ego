@@ -18,7 +18,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// This defines a single operation performed as part of a transaction
+// This defines a single operation performed as part of a transaction.
 type TxOperation struct {
 	Opcode  string                 `json:"operation"`
 	Table   string                 `json:"table,omitempty"`
@@ -62,6 +62,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 	// Validate the transaction payload.
 	tasks := []TxOperation{}
+
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {
 		util.ErrorResponse(w, sessionID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
@@ -78,7 +79,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	if len(tasks) == 0 {
 		ui.Debug(ui.ServerLogger, "[%d] no tasks in transaction", sessionID)
 		w.WriteHeader(200)
-		w.Write([]byte("no tasks in transaction"))
+		_, _ = w.Write([]byte("no tasks in transaction"))
 
 		return
 	}
@@ -176,7 +177,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		w.Header().Add("Content-Type", defs.RowCountMediaType)
 		w.WriteHeader(http.StatusOK)
-		w.Write(b)
+		_, _ = w.Write(b)
 
 		return
 	}
@@ -218,26 +219,23 @@ func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) *errors.
 }
 
 func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) error {
+	var err error
+
 	applySymbolsToTask(sessionID, &task, syms)
 	tableName, _ := fullName(user, task.Table)
 
-	db, err := OpenDB(sessionID, user, "")
-	if err == nil && db != nil {
-		defer db.Close()
+	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
 
-		fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
+	q := formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
+	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
+		return errors.NewMessage(filterErrorMessage(q))
+	}
 
-		q := formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
-		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-			return errors.NewMessage(filterErrorMessage(q))
-		}
+	ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
-		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
-
-		err = readTxRowData(db, tx, q, sessionID, syms)
-		if err == nil {
-			return nil
-		}
+	err = readTxRowData(db, tx, q, sessionID, syms)
+	if err == nil {
+		return nil
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
@@ -277,6 +275,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 			err = rows.Scan(rowptrs...)
 			if err == nil && rowCount == 0 {
 				msg := strings.Builder{}
+
 				for i, v := range row {
 					syms.Symbols[columnNames[i]] = v
 
@@ -297,8 +296,8 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 
 		if rowCount > 1 {
 			err = errors.NewMessage("SELECT task did not return a unique row")
-			ui.Debug(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
 
+			ui.Debug(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
 		} else {
 			ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 		}
@@ -318,9 +317,10 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return 0, errors.NewMessage(msg)
 	}
 
-	// Make sure none of the columns in the update are non-existant
+	// Make sure none of the columns in the update are non-existent
 	for k := range task.Data {
 		valid := false
+
 		for _, column := range validColumns {
 			if column.Name == k {
 				valid = true
@@ -330,7 +330,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		}
 
 		if !valid {
-			msg := "insert task refernces non-existant column: " + k
+			msg := "insert task references non-existent column: " + k
 
 			return 0, errors.NewMessage(msg)
 		}
@@ -339,9 +339,10 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	// Is there columns list for this task that should be used to determine
 	// which parts of the payload to use?
 	if len(task.Columns) > 0 {
-		// Make sure none of the columns in the columns are non-existant
+		// Make sure none of the columns in the columns are non-existent
 		for _, name := range task.Columns {
 			valid := false
+
 			for _, k := range validColumns {
 				if name == k.Name {
 					valid = true
@@ -351,7 +352,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 			}
 
 			if !valid {
-				msg := "insert task references non-existant column: " + name
+				msg := "insert task references non-existent column: " + name
 
 				return 0, errors.NewMessage(msg)
 			}
@@ -425,6 +426,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		result.WriteString(filter)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
 		ui.Debug(ui.ServerLogger, "DEBUG: filters = %v", task.Filters)
+
 		return 0, errors.NewMessage("update without filter is not allowed")
 	}
 
@@ -443,6 +445,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 	if len(task.Columns) > 0 {
 		return 0, errors.NewMessage("columns not supported for DELETE task")
 	}
+
 	if where := whereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
 			return 0, errors.NewMessage("operation invalid with empty filter")
@@ -534,6 +537,7 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 			msg := fmt.Sprintf("Payload did not include data for \"%s\"; expected %v but payload contained %v",
 				column.Name, strings.Join(expectedList, ","), strings.Join(providedList, ","))
+
 			return errors.NewMessage(msg)
 		}
 

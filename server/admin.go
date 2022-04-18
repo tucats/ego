@@ -19,7 +19,9 @@ import (
 )
 
 const (
-	SuccessMessage = "Success"
+	successMessage     = "Success"
+	forwardedForHeader = "X-Forwarded-For"
+	contentTypeHeader  = "Content-Type"
 )
 
 // UserHandler is the rest handler for /admin/user endpoint
@@ -32,7 +34,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 	CountRequest(AdminRequestCounter)
 
-	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
+	if forward := r.Header.Get(forwardedForHeader); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
 	}
@@ -58,7 +60,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 	CountRequest(AdminRequestCounter)
 
-	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
+	if forward := r.Header.Get(forwardedForHeader); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
 	}
@@ -81,7 +83,7 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 
 	CountRequest(AdminRequestCounter)
 
-	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
+	if forward := r.Header.Get(forwardedForHeader); forward != "" {
 		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
 	}
@@ -179,7 +181,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			}
 
 			if errors.Nil(err) {
-				w.Header().Add("Content-Type", defs.UserMediaType)
+				w.Header().Add(contentTypeHeader, defs.UserMediaType)
 				w.WriteHeader(http.StatusOK)
 
 				msg, _ := json.Marshal(response)
@@ -217,7 +219,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			if errors.Nil(err) {
 				b, _ := json.Marshal(response)
 
-				w.Header().Add("Content-Type", defs.UserMediaType)
+				w.Header().Add(contentTypeHeader, defs.UserMediaType)
 				_, _ = w.Write(b)
 
 				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
@@ -230,7 +232,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			// If it's a single user, do that.
 			if name != "" {
 				status := http.StatusOK
-				msg := SuccessMessage
+				msg := successMessage
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
@@ -240,7 +242,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				}
 
 				ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
-				w.Header().Add("Content-Type", defs.UserMediaType)
+				w.Header().Add(contentTypeHeader, defs.UserMediaType)
 
 				result := u
 				b, _ := json.Marshal(result)
@@ -268,7 +270,7 @@ func userHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			b, _ := json.Marshal(result)
 
-			w.Header().Add("Content-Type", defs.UsersMediaType)
+			w.Header().Add(contentTypeHeader, defs.UsersMediaType)
 			_, _ = w.Write(b)
 
 			ui.Debug(ui.ServerLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
@@ -325,7 +327,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			}
 		}
 
-		w.Header().Add("Content-Type", defs.CacheMediaType)
+		w.Header().Add(contentTypeHeader, defs.CacheMediaType)
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -353,7 +355,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			result.Items = append(result.Items, defs.CachedItem{Name: k, LastUsed: v.lastUsed, Count: v.count})
 		}
 
-		w.Header().Add("Content-Type", defs.CacheMediaType)
+		w.Header().Add(contentTypeHeader, defs.CacheMediaType)
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -377,7 +379,7 @@ func cachesHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 			AssetCount: GetAssetCacheCount(),
 		}
 
-		w.Header().Add("Content-Type", defs.CacheMediaType)
+		w.Header().Add(contentTypeHeader, defs.CacheMediaType)
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
@@ -507,7 +509,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
 		}
 
-		w.Header().Add("Content-Type", defs.LogStatusMediaType)
+		w.Header().Add(contentTypeHeader, defs.LogStatusMediaType)
 
 		b, _ := json.Marshal(response)
 		_, _ = w.Write(b)
@@ -541,7 +543,7 @@ func loggingHandler(sessionID int32, w http.ResponseWriter, r *http.Request) int
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      count}
 
-		w.Header().Add("Content-Type", defs.RowCountMediaType)
+		w.Header().Add(contentTypeHeader, defs.RowCountMediaType)
 
 		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
@@ -584,12 +586,14 @@ func logRequest(r *http.Request, sessionID int32) {
 			parmMsg.WriteString(" is ")
 
 			valueMsg := ""
+
 			for n, value := range v {
 				if n == 1 {
 					valueMsg = "[" + valueMsg + ", "
 				} else if n > 1 {
 					valueMsg = valueMsg + ", "
 				}
+
 				valueMsg = valueMsg + value
 			}
 
@@ -606,12 +610,11 @@ func logRequest(r *http.Request, sessionID int32) {
 		}
 
 		headerMsg := strings.Builder{}
+
 		for k, v := range r.Header {
 			for _, i := range v {
-
 				// A bit of a hack, but if this is the Authorization header, only show
 				// the first token in the value (Bearer, Basic, etc).
-
 				if strings.EqualFold(k, "Authorization") {
 					f := strings.Fields(i)
 					if len(f) > 0 {

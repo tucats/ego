@@ -127,7 +127,6 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // TableClose closes the table handle, and releases any memory resources
 // being held by the table.
 func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-
 	if len(args) != 2 {
 		return nil, errors.New(errors.ErrInvalidVariableArguments)
 	}

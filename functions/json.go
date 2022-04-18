@@ -155,7 +155,6 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 // EncodeFormatted writes a  JSON string from arbitrary data.
 func EncodeFormatted(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-
 	prefix := datatypes.GetString(args[1])
 	indent := datatypes.GetString(args[2])
 
