@@ -11,7 +11,7 @@ import (
 
 // SetLogger implements the util.SetLogger() function. This sets a logger to
 // be enabled or disabled, and returns the previous state of the logger. It is
-// an error to specify a non-existant logger name. Logger names are not case
+// an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
 func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	name := strings.TrimSpace(datatypes.GetString(args[0]))

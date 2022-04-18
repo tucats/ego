@@ -259,14 +259,12 @@ func columnsFromURL(u *url.URL) string {
 	for parm, values := range parms {
 		if parm == defs.ColumnParameterName {
 			for _, name := range values {
-
 				if result.Len() > 0 {
 					result.WriteRune(',')
 				}
 
 				result.WriteString(name)
 			}
-
 		}
 	}
 
@@ -332,9 +330,7 @@ func filtersFromURL(u *url.URL) []string {
 	q := u.Query()
 	for param, values := range q {
 		if strings.EqualFold(param, defs.FilterParameterName) {
-			for _, value := range values {
-				result = append(result, value)
-			}
+			result = append(result, values...)
 		}
 	}
 
@@ -739,7 +735,6 @@ func tableNameFromRequest(r *http.Request) (string, *errors.EgoError) {
 }
 
 func tableNameFromURL(u *url.URL) (string, *errors.EgoError) {
-
 	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return "", errors.NewMessage("Invalid URL").Context(u.Path)

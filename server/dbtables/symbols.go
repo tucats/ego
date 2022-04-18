@@ -19,7 +19,6 @@ const (
 func applySymbolsToTask(sessionID int32, task *TxOperation, syms *symbolTable) {
 	// Process any substittions to filters, column names, or data values
 	if syms != nil && len(syms.Symbols) > 0 {
-
 		// Allow substitutions in the table name
 		task.Table = applySymbolsToString(sessionID, task.Table, syms, "Table name")
 
