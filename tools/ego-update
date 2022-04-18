@@ -1,0 +1,32 @@
+#/bin/bash
+#
+# Script to pull updated versions of the Ego code (if
+# available), build a version, and place it in the 
+# ~/bin/ directory
+CWD=`pwd`
+echo Updating from `ego -v`
+
+cd `ego path`
+
+# Preflight -- make sure neither directory has uncommitted
+# changes that would screw up the automated pull
+ git checkout -- go.mod go.sum
+
+ CHANGES=$(git status --porcelain)
+   if [ "$CHANGES" != "" ]; then
+      echo "You have uncommitted changes in ego."
+      exit 1
+   fi
+
+git pull
+go get
+./tools/build
+if [ -f "~/bin/ego" ]; then
+  rm ~/bin/ego
+fi
+
+rm ~/bin/ego
+cp ego ~/bin/
+~/bin/ego version
+
+cd $CWD
