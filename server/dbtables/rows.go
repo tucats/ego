@@ -684,7 +684,7 @@ func filterErrorMessage(q string) string {
 		return "filter error: " + msg
 	}
 
-	return q
+	return strings.TrimPrefix(q, "pq: ")
 }
 
 func useAbstract(r *http.Request) bool {

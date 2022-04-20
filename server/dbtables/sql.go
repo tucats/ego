@@ -115,7 +115,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 
 			err = readRowDataTx(tx, statement, sessionID, w)
 			if err != nil {
-				util.ErrorResponse(w, sessionID, "Error reading SQL query; "+err.Error(), http.StatusInternalServerError)
+				util.ErrorResponse(w, sessionID, "Error reading SQL query; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 
 				return
 			}
@@ -151,7 +151,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 			}
 
 			if !errors.Nil(err) {
-				_ = tx.Rollback()
+				break
 			}
 		}
 	}
@@ -159,14 +159,23 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	if err != nil {
 		_ = tx.Rollback()
 
-		util.ErrorResponse(w, sessionID, "Error in SQL execute; "+err.Error(), http.StatusInternalServerError)
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+
+		if strings.Contains(err.Error(), "constraint") {
+			status = http.StatusConflict
+		}
+
+		util.ErrorResponse(w, sessionID, "Error in SQL execute; "+filterErrorMessage(err.Error()), status)
 	} else {
 		err = tx.Commit()
 
 		if err != nil {
 			_ = tx.Rollback()
 
-			util.ErrorResponse(w, sessionID, "Error committing transaction; "+err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, sessionID, "Error committing transaction; "+filterErrorMessage(err.Error()), http.StatusInternalServerError)
 		}
 	}
 }
