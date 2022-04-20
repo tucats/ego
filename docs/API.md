@@ -839,6 +839,22 @@ Note that the string must be properly escaped as a JSON string.
 
 &nbsp;
 
+You can execute multiple statements in a single operation by formatting the payload as
+an array of strings. For example,
+
+    [
+        "delete from people where name='Jones'",
+        "insert into people(name) values ('Smith')"
+    ]
+
+This executes both statements in order, as a transaction. That is, every statement
+in the operation must succeed for any of the statements to take effect. If any 
+statement fails, the error reponse describes the failing statement.  When using
+a transaction of more than one statement, if a SELECT statement is included it must
+be the last statement in the array.
+
+&nbsp;
+
 In the event that the REST call returns a non-success status code, the response payload
 will contain the following diagnostic fields as a JSON payload:
 

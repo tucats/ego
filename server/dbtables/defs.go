@@ -44,7 +44,7 @@ const (
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
 
-	sqlPseudoTable         = "@sql"
+	SQLPseudoTable         = "@sql"
 	permissionsPseudoTable = "@permissions"
 
 	syntaxErrorPrefix = "SYNTAX-ERROR:"

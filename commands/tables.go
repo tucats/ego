@@ -642,12 +642,12 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	sql = strings.TrimSpace(sql)
+	sqlPayload := []string{strings.TrimSpace(sql)}
 
-	if strings.HasPrefix(strings.ToLower(sql), "select ") {
+	if strings.Contains(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &rows, defs.TableAgent, defs.RowSetMediaType)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if !errors.Nil(err) {
 			return err
 		}
@@ -656,7 +656,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sql, &resp, defs.TableAgent, defs.RowCountMediaType)
+		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if !errors.Nil(err) {
 			return err
 		}

@@ -234,7 +234,8 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
-	status := http.StatusOK
+
+	var status int
 
 	status, err = readTxRowData(db, tx, q, sessionID, syms)
 	if err == nil {
@@ -439,6 +440,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, result.String())
 
 	status := http.StatusOK
+
 	var count int64 = 0
 
 	queryResult, updateErr := tx.Exec(result.String(), values...)
@@ -507,6 +509,7 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *sy
 
 	q := "DROP TABLE " + table
 	_, err := db.Exec(q)
+
 	status := http.StatusOK
 	if !errors.Nil(err) {
 		status = http.StatusInternalServerError

@@ -23,7 +23,7 @@ const UnexpectedNilPointerError = "Unexpected nil database object pointer"
 func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.RowCountMediaType}); !errors.Nil(e) {
+	if e := util.AcceptedMediaType(r, []string{defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType}); !errors.Nil(e) {
 		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
@@ -41,61 +41,6 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 	db, err := OpenDB(sessionID, user, "")
 
 	if err == nil && db != nil {
-		// Special case; if the table name is @SQL then the payload is processed as a simple
-		// SQL  statement and not a table creation.
-		if strings.EqualFold(tableName, sqlPseudoTable) {
-			if !isAdmin {
-				util.ErrorResponse(w, sessionID, "No privilege for direct SQL execution", http.StatusForbidden)
-
-				return
-			}
-
-			var statementText string
-
-			err := json.NewDecoder(r.Body).Decode(&statementText)
-			if err == nil {
-				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statementText)), "select ") {
-					ui.Debug(ui.TableLogger, "[%d] SQL query: %s", sessionID, statementText)
-
-					err = readRowData(db, statementText, sessionID, w)
-					if err != nil {
-						util.ErrorResponse(w, sessionID, "Error reading SQL query; "+err.Error(), http.StatusInternalServerError)
-
-						return
-					}
-				} else {
-					var rows sql.Result
-
-					ui.Debug(ui.TableLogger, "[%d] SQL execute: %s", sessionID, statementText)
-
-					rows, err = db.Exec(statementText)
-					if err == nil {
-						count, _ := rows.RowsAffected()
-						reply := defs.DBRowCount{
-							ServerInfo: util.MakeServerInfo(sessionID),
-							Count:      int(count),
-						}
-						w.Header().Add("Content-Type", defs.RowCountMediaType)
-
-						b, _ := json.MarshalIndent(reply, "", "  ")
-						_, _ = w.Write(b)
-
-						if ui.LoggerIsActive(ui.RestLogger) {
-							ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
-						}
-
-						return
-					}
-				}
-			}
-
-			if err != nil {
-				util.ErrorResponse(w, sessionID, "Error in SQL execute; "+err.Error(), http.StatusInternalServerError)
-			}
-
-			return
-		}
-
 		tableName, _ = fullName(user, tableName)
 
 		if !isAdmin && Authorized(sessionID, db, user, tableName, updateOperation) {

@@ -53,6 +53,7 @@ const (
 	HTMLMediaType = "application/html"
 
 	EgoMediaType            = "application/vnd.ego."
+	SQLStatementsMediaType  = EgoMediaType + "sql+json"
 	RowSetMediaType         = EgoMediaType + "rows+json"
 	AbstractRowSetMediaType = EgoMediaType + "rows.abstract+json"
 	RowCountMediaType       = EgoMediaType + "rowcount+json"

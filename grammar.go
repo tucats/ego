@@ -8,6 +8,12 @@ import (
 // EgoGrammar handles the command line options.
 var EgoGrammar = []cli.Option{
 	{
+		LongName:    "sql",
+		Description: "Execute SQL in the database server",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TableSQL,
+	},
+	{
 		LongName:    "table",
 		Aliases:     []string{"tables", "db", "database"},
 		Description: "Operate on database tables",

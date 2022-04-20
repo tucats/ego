@@ -291,7 +291,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		dbtables.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
-	case http.MethodPut:
+	case http.MethodPut, http.MethodPost:
 		if !hasAdminPermission && !hasUpdatePermission {
 			msg := "User does not have permission to create tables"
 			util.ErrorResponse(w, sessionID, msg, http.StatusForbidden)
@@ -299,7 +299,13 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dbtables.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
+		// If the table is the SQL pseudo-table name, then dispatch to the
+		// SQL statement handler. Otherwise, it's a table create operation.
+		if strings.EqualFold(tableName, dbtables.SQLPseudoTable) {
+			dbtables.SQLTransaction(r, w, sessionID, user)
+		} else {
+			dbtables.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
+		}
 
 	case http.MethodDelete:
 		if !hasAdminPermission && !hasUpdatePermission {

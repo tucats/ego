@@ -34,16 +34,16 @@ type MultiValueReturn struct {
 	Value []interface{}
 }
 
-// any is a constant that defines that a function can have as many arguments
+// Any is a constant that defines that a function can have as many arguments
 // as desired.
-const any = math.MaxInt32
+const Any = math.MaxInt32
 
 // FunctionDictionary is the dictionary of functions. As functions are determined
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"$cast":               {Min: 2, Max: 2, F: InternalCast},
-	"append":              {Min: 2, Max: any, F: Append},
+	"append":              {Min: 2, Max: Any, F: Append},
 	"close":               {Min: 1, Max: 1, F: CloseAny},
 	"delete":              {Min: 1, Max: 2, F: Delete, FullScope: true},
 	"error":               {Min: 1, Max: 1, F: Signal},
@@ -64,18 +64,18 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"cipher.Random":       {Min: 0, Max: 1, F: CipherRandom},
 	"cipher.Token":        {Min: 1, Max: 2, F: Extract},
 	"cipher.Validate":     {Min: 1, Max: 2, F: Validate},
-	"errors.New":          {Min: 1, Max: any, F: Signal},
+	"errors.New":          {Min: 1, Max: Any, F: Signal},
 	"filepath.Abs":        {Min: 1, Max: 1, F: PathAbs},
 	"filepath.Base":       {Min: 1, Max: 1, F: PathBase},
 	"filepath.Clean":      {Min: 1, Max: 1, F: PathClean},
 	"filepath.Dir":        {Min: 1, Max: 1, F: PathDir},
 	"filepath.Ext":        {Min: 1, Max: 1, F: PathExt},
-	"filepath.Join":       {Min: 1, Max: any, F: PathJoin},
-	"fmt.Print":           {Min: 1, Max: any, F: Print},
-	"fmt.Printf":          {Min: 1, Max: any, F: Printf, ErrReturn: true},
-	"fmt.Println":         {Min: 0, Max: any, F: Println},
-	"fmt.Sprintf":         {Min: 1, Max: any, F: Sprintf},
-	"fmt.Sscanf":          {Min: 3, Max: any, F: Sscanf, ErrReturn: true},
+	"filepath.Join":       {Min: 1, Max: Any, F: PathJoin},
+	"fmt.Print":           {Min: 1, Max: Any, F: Print},
+	"fmt.Printf":          {Min: 1, Max: Any, F: Printf, ErrReturn: true},
+	"fmt.Println":         {Min: 0, Max: Any, F: Println},
+	"fmt.Sprintf":         {Min: 1, Max: Any, F: Sprintf},
+	"fmt.Sscanf":          {Min: 3, Max: Any, F: Sscanf, ErrReturn: true},
 	"http.__empty":        {F: stubFunction},
 	"i18n.Language":       {F: i18nLanguage},
 	"i18n.T":              {Min: 1, Max: 3, F: i18nT},
@@ -85,16 +85,16 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"io.ReadFile":         {Min: 1, Max: 1, F: ReadFile, ErrReturn: true},
 	"io.WriteFile":        {Min: 2, Max: 2, F: WriteFile, ErrReturn: true},
 	"json.Unmarshal":      {Min: 1, Max: 2, F: Decode, ErrReturn: true},
-	"json.Marshal":        {Min: 1, Max: any, F: Encode, ErrReturn: true},
+	"json.Marshal":        {Min: 1, Max: Any, F: Encode, ErrReturn: true},
 	"json.MarshalIndent":  {Min: 3, Max: 3, F: EncodeFormatted, ErrReturn: true},
 	"math.Abs":            {Min: 1, Max: 1, F: Abs},
 	"math.Log":            {Min: 1, Max: 1, F: Log},
-	"math.Max":            {Min: 1, Max: any, F: Max},
-	"math.Min":            {Min: 1, Max: any, F: Min},
+	"math.Max":            {Min: 1, Max: Any, F: Max},
+	"math.Min":            {Min: 1, Max: Any, F: Min},
 	"math.Normalize":      {Min: 2, Max: 2, F: Normalize},
 	"math.Random":         {Min: 1, Max: 1, F: Random},
 	"math.Sqrt":           {Min: 1, Max: 1, F: Sqrt},
-	"math.Sum":            {Min: 1, Max: any, F: Sum},
+	"math.Sum":            {Min: 1, Max: Any, F: Sum},
 	"os.Args":             {Min: 0, Max: 0, F: GetArgs, FullScope: true},
 	"os.Exit":             {Min: 0, Max: 1, F: Exit},
 	"os.Getenv":           {Min: 1, Max: 1, F: GetEnv},
@@ -115,7 +115,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.ContainsAny": {Min: 2, Max: 2, F: ContainsAny},
 	"strings.EqualFold":   {Min: 2, Max: 2, F: EqualFold},
 	"strings.Fields":      {Min: 1, Max: 1, F: Fields},
-	"strings.Format":      {Min: 0, Max: any, F: Format},
+	"strings.Format":      {Min: 0, Max: Any, F: Format},
 	"strings.Index":       {Min: 2, Max: 2, F: Index},
 	"strings.Ints":        {Min: 1, Max: 1, F: Ints},
 	"strings.Join":        {Min: 2, Max: 2, F: Join},
@@ -124,7 +124,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"strings.ToLower":     {Min: 1, Max: 1, F: Lower},
 	"strings.Right":       {Min: 2, Max: 2, F: Right},
 	"strings.Split":       {Min: 1, Max: 2, F: Split},
-	"strings.String":      {Min: 1, Max: any, F: ToString},
+	"strings.String":      {Min: 1, Max: Any, F: ToString},
 	"strings.Substring":   {Min: 3, Max: 3, F: Substring},
 	"strings.Template":    {Min: 1, Max: 2, F: Template, ErrReturn: true},
 	"strings.Tokenize":    {Min: 1, Max: 1, F: Tokenize},
