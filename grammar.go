@@ -8,10 +8,35 @@ import (
 // EgoGrammar handles the command line options.
 var EgoGrammar = []cli.Option{
 	{
-		LongName:    "sql",
-		Description: "Execute SQL in the database server",
-		OptionType:  cli.Subcommand,
-		Action:      commands.TableSQL,
+		LongName:             "sql",
+		Description:          "Execute SQL in the database server",
+		OptionType:           cli.Subcommand,
+		Action:               commands.TableSQL,
+		ParametersExpected:   -99,
+		ParameterDescription: "sql-text",
+		Value: []cli.Option{
+			{
+				LongName:    "sql-file",
+				ShortName:   "f",
+				Aliases:     []string{"file"},
+				Description: "Filename of SQL command text",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "row-ids",
+				ShortName:   "i",
+				Aliases:     []string{"ids"},
+				Description: "Include the row UUID in any output",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "row-numbers",
+				ShortName:   "n",
+				Aliases:     []string{"row-number", "row"},
+				Description: "Include the row number in any output",
+				OptionType:  cli.BooleanType,
+			},
+		},
 	},
 	{
 		LongName:    "table",
@@ -78,7 +103,7 @@ var TableGrammar = []cli.Option{
 			{
 				LongName:    "row-numbers",
 				ShortName:   "n",
-				Aliases:     []string{"ids"},
+				Aliases:     []string{"row-number", "row"},
 				Description: "Include the row number in the output",
 				OptionType:  cli.BooleanType,
 			},
@@ -201,7 +226,7 @@ var TableGrammar = []cli.Option{
 			{
 				LongName:    "row-numbers",
 				ShortName:   "n",
-				Aliases:     []string{"ids"},
+				Aliases:     []string{"row-number", "row"},
 				Description: "Include the row number in the output",
 				OptionType:  cli.BooleanType,
 			},
