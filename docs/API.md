@@ -1053,7 +1053,7 @@ a special transation type of `symbol`. Here is an example transaction that uses 
             ]
         },
         {
-            "operation": "symbol",
+            "operation": "symbols",
             "data" : {
                 "sending_customer" : "{{customer}}"
             }
@@ -1069,7 +1069,7 @@ a special transation type of `symbol`. Here is an example transaction that uses 
             ]
         },
         {
-            "operation": "symbol",
+            "operation": "symbols",
             "data" : {
                 "receiving_customer" : "{{customer}}"
             }

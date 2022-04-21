@@ -97,6 +97,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 	// Access the database and execute the transaction operations
 	rowsAffected := 0
+	httpStatus := http.StatusOK
 	symbols := symbolTable{Symbols: map[string]interface{}{}}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -122,8 +123,6 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					ui.Debug(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
 				}
 			}
-
-			httpStatus := http.StatusOK
 
 			switch strings.ToLower(task.Opcode) {
 			case symbolsOpcode:
@@ -162,7 +161,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		err = tx.Commit()
 		if err != nil {
-			util.ErrorResponse(w, sessionID, "transaction commit error; "+err.Error(), http.StatusInternalServerError)
+			util.ErrorResponse(w, sessionID, "transaction commit error; "+err.Error(), httpStatus)
 
 			return
 		}
@@ -514,7 +513,7 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *sy
 	if !errors.Nil(err) {
 		status = http.StatusInternalServerError
 
-		if strings.Contains(err.Error(), "no such") {
+		if strings.Contains(err.Error(), "no such") || strings.Contains(err.Error(), "not found") {
 			status = http.StatusNotFound
 		}
 	}
