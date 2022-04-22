@@ -479,14 +479,9 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 
 	rows, err := tx.Exec(q)
 	if err == nil {
-		rowCount, _ := rows.RowsAffected()
-		if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return 0, http.StatusNotFound, errors.NewMessage("no matching rows")
-		}
-
-		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, 200)
-
 		count, _ := rows.RowsAffected()
+
+		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
 
 		return int(count), http.StatusOK, nil
 	}
