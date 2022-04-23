@@ -888,6 +888,7 @@ members:
 | table       | The name of the table on which to perform the operation. |
 | filters     | If filters are used for this operation, this is an array of filter specificiations |
 | columns     | If subset of the data is to be used, this is an array of the column names to be affected |
+| emptyError  | A boolean that indicates that the transaction fails if the step does not find or modify any rows |
 | data        | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
@@ -895,6 +896,13 @@ impplicity joined to the others by an AND() operation, so that all the filters s
 to match a row. For operations that do not specify a filter (such as "INSERT"), the `filters` list can be empty.
 For operations are intended to use all the fields of the "data" element, the `columns` list can be empty.
 For "DELETE" or "DROP" operations, the `data` element can be empty or omitted from the payload.
+
+The `emptyError` boolean value is only used for specific operations: "SELECT", "DELETE", or "UPDATE". By default, if
+a task for one of these steps does not find any rows (for example, the "DELETE" has a filter that does not match any
+rows), then the transaction continues. However, if the `emptyError` flag in the transaction task is set to true,
+then if no rows are read ("SELECT" operation) or modified ("DELETE" or "UPDATE") then the transaction is stopped
+with an HTTP 404 ("not found") error. This allows the caller to determine if a transaction is intended to
+proceed if the given task did not have any effect.
 
 Here is a sample payload with three transactions:
 
@@ -930,6 +938,7 @@ Here is a sample payload with three transactions:
             "columns": [
                 "address"
             ],
+            "emptyError": true,
             "data": {
                 "address":"666 Scary Drive"
                 "description" : "tx row",
@@ -949,6 +958,10 @@ If the insert fails (perhaps due to a constraint violation, etc.) then no data w
 the inserts succeed but the upddate fails (perhaps there is a syntax error in the filter list), then
 no inserts or updates will occur.  If any error occurs, the resulting message indicates how many
 tasks were processed before the error was encountered, and what the error was.
+
+Note that the third task set the `emptyError` property to true. In this case, the transaction
+would fail (and no inserts or updates would have occurred) if the filter expression did not
+resolve to at least one row.
 
 A successful transaction will return a rowcount object, which has a field "count" which contains
 the number of rows affected by _all_ the transactions processed.

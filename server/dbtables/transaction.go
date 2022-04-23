@@ -20,11 +20,12 @@ import (
 
 // This defines a single operation performed as part of a transaction.
 type TxOperation struct {
-	Opcode  string                 `json:"operation"`
-	Table   string                 `json:"table,omitempty"`
-	Filters []string               `json:"filters,omitempty"`
-	Columns []string               `json:"columns,omitempty"`
-	Data    map[string]interface{} `json:"data,omitempty"`
+	Opcode     string                 `json:"operation"`
+	Table      string                 `json:"table,omitempty"`
+	Filters    []string               `json:"filters,omitempty"`
+	Columns    []string               `json:"columns,omitempty"`
+	EmptyError bool                   `json:"emptyError,omitempty"`
+	Data       map[string]interface{} `json:"data,omitempty"`
 }
 
 type symbolTable struct {
@@ -236,7 +237,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 	var status int
 
-	status, err = readTxRowData(db, tx, q, sessionID, syms)
+	status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
 		return status, nil
 	}
@@ -246,7 +247,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	return status, err
 }
 
-func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable) (int, error) {
+func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, error) {
 	var rows *sql.Rows
 
 	var err error
@@ -298,7 +299,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 			}
 		}
 
-		if rowCount == 0 {
+		if rowCount == 0 && emptyResultError {
 			status = http.StatusNotFound
 			err = errors.NewMessage("SELECT task did not return any row data")
 		} else if rowCount > 1 {
@@ -445,6 +446,10 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	queryResult, updateErr := tx.Exec(result.String(), values...)
 	if updateErr == nil {
 		count, _ = queryResult.RowsAffected()
+		if count == 0 && task.EmptyError {
+			status = http.StatusNotFound
+			updateErr = errors.NewMessage("update did not modify any rows")
+		}
 	} else {
 		if strings.Contains(updateErr.Error(), "constraint") {
 			status = http.StatusConflict
@@ -480,6 +485,10 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 	rows, err := tx.Exec(q)
 	if err == nil {
 		count, _ := rows.RowsAffected()
+
+		if count == 0 && task.EmptyError {
+			return 0, http.StatusNotFound, errors.NewMessage("delete did not modify any rows")
+		}
 
 		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
 
