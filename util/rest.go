@@ -36,6 +36,10 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 		Status:     status,
 	}
 
+	if status < 100 || status >= 600 {
+		status = http.StatusInternalServerError
+	}
+
 	// Remove noise from postgres errors.
 	msg = strings.TrimPrefix(msg, "pq: ")
 	msg = strings.Replace(msg, " pq: ", "", 1)
