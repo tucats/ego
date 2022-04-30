@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
 )
@@ -477,6 +478,14 @@ var ServerGrammar = []cli.Option{
 		ParametersExpected:   -1,
 		ParameterDescription: "address:port",
 		Action:               commands.Logging,
+	},
+	{
+		LongName:    "logon",
+		Aliases:     []string{"login"},
+		OptionType:  cli.Subcommand,
+		Description: "Log on to a remote server",
+		Action:      app.Logon,
+		Value:       app.LogonGrammar,
 	},
 	{
 		LongName:    "users",
