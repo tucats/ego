@@ -19,17 +19,17 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "nested expression",
 			filters: []string{"or(eq(name,\"Tom\"),eq(name,\"Mary\"))"},
-			want:    "\"name\" = 'Tom' OR \"name\" = 'Mary'",
+			want:    "((\"name\" = 'Tom') OR (\"name\" = 'Mary'))",
 		},
 		{
 			name:    "string constant",
 			filters: []string{"eq(name,\"Tom\")"},
-			want:    "\"name\" = 'Tom'",
+			want:    "(\"name\" = 'Tom')",
 		},
 		{
 			name:    "simple equality",
 			filters: []string{"eq(age,55)"},
-			want:    "\"age\" = 55",
+			want:    "(\"age\" = 55)",
 		},
 		{
 			name:    "unary not",
@@ -39,7 +39,7 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "simple list",
 			filters: []string{"lt(age,18)", "gt(age,65)"},
-			want:    "\"age\" < 18 AND \"age\" > 65",
+			want:    "(\"age\" < 18) AND (\"age\" > 65)",
 		},
 
 		// TODO: Add test cases.

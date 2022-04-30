@@ -432,6 +432,11 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	// If there is a filter, then add that as well. And fail if there
 	// isn't a filter but must be
 	if filter := whereClause(task.Filters); filter != "" {
+		if p := strings.Index(filter, syntaxErrorPrefix); p >= 0 {
+
+			return 0, 0, errors.NewMessage(filterErrorMessage(filter))
+		}
+
 		result.WriteString(filter)
 	} else if settings.GetBool(defs.TablesServerEmptyFilterError) {
 		return 0, http.StatusBadRequest, errors.NewMessage("update without filter is not allowed")

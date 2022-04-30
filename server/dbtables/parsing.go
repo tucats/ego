@@ -224,7 +224,7 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	} else {
 		termCount := 0
 		term, _ := filterClause(tokens)
-
+		result.WriteString("(")
 		for {
 			termCount++
 			result.WriteString(term)
@@ -243,6 +243,8 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 			term, _ = filterClause(tokens)
 		}
+
+		result.WriteString(")")
 	}
 
 	if !tokens.IsNext(")") {
