@@ -310,6 +310,11 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 		} else {
 			ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 		}
+	} else {
+		status = http.StatusBadRequest
+		if strings.Contains(strings.ToLower(err.Error()), "does not exist") {
+			status = http.StatusNotFound
+		}
 	}
 
 	return status, err
@@ -455,6 +460,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 			updateErr = errors.NewMessage("update did not modify any rows")
 		}
 	} else {
+		status = http.StatusBadRequest
 		if strings.Contains(updateErr.Error(), "constraint") {
 			status = http.StatusConflict
 		}
