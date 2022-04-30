@@ -433,7 +433,6 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	// isn't a filter but must be
 	if filter := whereClause(task.Filters); filter != "" {
 		if p := strings.Index(filter, syntaxErrorPrefix); p >= 0 {
-
 			return 0, 0, errors.NewMessage(filterErrorMessage(filter))
 		}
 
