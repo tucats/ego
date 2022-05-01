@@ -73,7 +73,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+		ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 		rows, err := db.Exec(q)
 		if err == nil {
@@ -272,7 +272,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 
 			q, values := formInsertQuery(tableName, user, row)
-			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
+			ui.Debug(ui.SQLLogger, "[%d] Insert exec: %s", sessionID, q)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -388,7 +388,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 			return
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		err = readRowData(db, q, sessionID, w)
 		if err == nil {
@@ -622,7 +622,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				return
 			}
 
-			ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+			ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 			counts, err := db.Exec(q, values...)
 			if err == nil {

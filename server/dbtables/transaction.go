@@ -233,7 +233,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+	ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 	var status int
 
@@ -446,7 +446,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return 0, http.StatusBadRequest, errors.NewMessage("update without filter is not allowed")
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, result.String())
+	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
 
 	status := http.StatusOK
 
@@ -490,7 +490,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 		return 0, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 	rows, err := tx.Exec(q)
 	if err == nil {

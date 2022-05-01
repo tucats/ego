@@ -71,7 +71,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		if ui.LoggerIsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-			ui.Debug(ui.RestLogger, "[%d] SQL statements:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.Debug(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
 
@@ -111,7 +111,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		}
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			ui.Debug(ui.TableLogger, "[%d] SQL query: %s", sessionID, statement)
+			ui.Debug(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
 
 			err = readRowDataTx(tx, statement, sessionID, w)
 			if err != nil {
@@ -122,7 +122,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		} else {
 			var rows sql.Result
 
-			ui.Debug(ui.TableLogger, "[%d] SQL execute: %s", sessionID, statement)
+			ui.Debug(ui.SQLLogger, "[%d] SQL exec: %s", sessionID, statement)
 
 			rows, err = tx.Exec(statement)
 			if err == nil {

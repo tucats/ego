@@ -58,6 +58,7 @@ const (
 	InfoLogger
 	RestLogger
 	ServerLogger
+	SQLLogger
 	SymbolLogger
 	TableLogger
 	TraceLogger
@@ -81,6 +82,7 @@ var loggers []logger = []logger{
 	{"INFO", false},
 	{"REST", false},
 	{"SERVER", false},
+	{"SQL", false},
 	{"SYMBOLS", false},
 	{"TABLES", false},
 	{"TRACE", false},

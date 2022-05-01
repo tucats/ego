@@ -87,7 +87,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Create table with query: %s", sessionID, q)
+		ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 		counts, err := db.Exec(q)
 		if err == nil {
@@ -202,7 +202,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"table": tableName,
 		})
 
-		ui.Debug(ui.DebugLogger, "[%d] Read unique with query string: \n%s", sessionID, util.SessionLog(sessionID, q))
+		ui.Debug(ui.SQLLogger, "[%d] Read unique query: \n%s", sessionID, util.SessionLog(sessionID, q))
 
 		rows, err := db.Query(q)
 		if err != nil {
@@ -233,7 +233,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"quote": "",
 		})
 
-		ui.Debug(ui.DebugLogger, "[%d] Read nullable with query string: \n%s", sessionID, util.SessionLog(sessionID, q))
+		ui.Debug(ui.SQLLogger, "[%d] Read nullable query: %s", sessionID, util.SessionLog(sessionID, q))
 
 		nrows, err := db.Query(q)
 		if err != nil {
@@ -320,7 +320,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 		"table": name,
 	})
 
-	ui.Debug(ui.TableLogger, "[%d] Reading table metadata with query %s", sessionID, q)
+	ui.Debug(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -396,8 +396,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 			"table": tableName,
 		})
 
-		ui.Debug(ui.ServerLogger, "[%d] attempting to delete table %s", sessionID, tableName)
-		ui.Debug(ui.TableLogger, "[%d]    with query %s", sessionID, q)
+		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		_, err = db.Exec(q)
 		if err == nil {
@@ -469,7 +468,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 		}
 
 		ui.Debug(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
-		ui.Debug(ui.TableLogger, "[%d]    with query %s", sessionID, q)
+		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		rows, err = db.Query(q)
 		if err == nil {
@@ -493,7 +492,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
 				columnQuery := "SELECT * FROM \"" + user + "\".\"" + name + "\" WHERE 1=0"
-				ui.Debug(ui.TableLogger, "[%d] Reading columns metadata with query %s", sessionID, columnQuery)
+				ui.Debug(ui.SQLLogger, "[%d] Columns metadata query: %s", sessionID, columnQuery)
 
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
@@ -523,7 +522,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 						"table":  name,
 					})
 
-					ui.Debug(ui.TableLogger, "[%d] Reading row count with query %s", sessionID, q)
+					ui.Debug(ui.SQLLogger, "[%d] Row count query: %s", sessionID, q)
 
 					result, e2 := db.Query(q)
 					if !errors.Nil(e2) {
