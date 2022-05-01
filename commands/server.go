@@ -277,7 +277,7 @@ func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 // Resolve a name that may not be fully qualified, and make it the default
 // application host name. This is used by commands that allow a host name
 // specification as part of the command (login, or server logging, etc.).
-func ResolveServerName(name string) *errors.EgoError {
+func ResolveServerName(name string) (string, *errors.EgoError) {
 	hasScheme := true
 
 	normalizedName := strings.ToLower(name)
@@ -289,7 +289,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return errors.New(err)
+		return "", errors.New(err)
 	}
 
 	port := url.Port()
@@ -304,7 +304,7 @@ func ResolveServerName(name string) *errors.EgoError {
 	if hasScheme {
 		settings.SetDefault("ego.application.server", name)
 
-		return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
+		return name, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	}
 
 	// No scheme, so let's try https. If no port supplied, assume the default port.
@@ -314,7 +314,7 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 	if errors.Nil(err) {
-		return nil
+		return normalizedName, nil
 	}
 
 	// Nope. Same deal with http scheme.
@@ -322,5 +322,5 @@ func ResolveServerName(name string) *errors.EgoError {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	return runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
+	return normalizedName, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
 }

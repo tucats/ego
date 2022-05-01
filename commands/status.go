@@ -65,7 +65,8 @@ func Status(c *cli.Context) *errors.EgoError {
 func remoteStatus(addr string) *errors.EgoError {
 	resp := defs.RemoteStatusResponse{}
 
-	if err := ResolveServerName(addr); !errors.Nil(err) {
+	name, err := ResolveServerName(addr)
+	if !errors.Nil(err) {
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			if ui.OutputFormat == ui.TextFormat {
 				fmt.Println("DOWN")
@@ -88,7 +89,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		return err
 	}
 
-	err := runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.AdminAgent)
+	err = runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.AdminAgent)
 	if !errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
@@ -100,7 +101,7 @@ func remoteStatus(addr string) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		ui.Say("UP (Ego %s, pid %d, host %s, session %s) since %s, %s", resp.Version, resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
+		ui.Say("UP (Ego %s, pid %d, host %s, session %s) since %s, %s", resp.Version, resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, name)
 	} else {
 		_ = commandOutput(resp)
 	}

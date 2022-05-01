@@ -35,7 +35,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	err := ResolveServerName(addr)
+	_, err := ResolveServerName(addr)
 	if !errors.Nil(err) {
 		return err
 	}
