@@ -113,6 +113,23 @@ func LoggerName(class int) string {
 	return loggers[class].name
 }
 
+// Return a comma-separated list of the active loggers.
+func ActiveLoggers() string {
+	result := strings.Builder{}
+
+	for _, logger := range loggers {
+		if logger.active {
+			if result.Len() > 0 {
+				result.WriteRune(',')
+			}
+
+			result.WriteString(logger.name)
+		}
+	}
+
+	return result.String()
+}
+
 // For a given logger name, find the class ID.
 func Logger(loggerName string) int {
 	for id, logger := range loggers {

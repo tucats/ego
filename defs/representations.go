@@ -16,6 +16,7 @@ type ServerInfo struct {
 // The payload for the status check "/up" endpoint.
 type RemoteStatusResponse struct {
 	ServerInfo `json:"server"`
+	Version    string `json:"version"`
 	Pid        int    `json:"pid"`
 	Since      string `json:"since"`
 }
@@ -152,6 +153,7 @@ type UserCollection struct {
 // of this information is the contents of the pid file.
 type ServerStatus struct {
 	ServerInfo `json:"server"`
+	Version    string    `json:"version"`
 	PID        int       `json:"pid"`
 	Started    time.Time `json:"started"`
 	LogID      uuid.UUID `json:"logID"`

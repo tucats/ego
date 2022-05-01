@@ -99,6 +99,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	ui.Debug(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
+	ui.Debug(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {

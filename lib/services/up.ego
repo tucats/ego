@@ -13,13 +13,13 @@ func handler( req http.Request, resp http.Response) {
     }
 
     @text {
-        msg := fmt.Sprintf("UP (pid %d, hostname %s, instance %s) since %s", _pid, os.Hostname(), _server_instance, _start_time)
+        msg := fmt.Sprintf("UP (Ego %s, pid %d, hostname %s, instance %s) since %s", _version, _pid, os.Hostname(), _server_instance, _start_time)
         resp.Write(msg)
     }
 
     @json {
         // Note that this should change as API versions changes
-        msg := {server:serverInfo, pid:_pid, since: _start_time}
+        msg := {server:serverInfo, version: _version, pid:_pid, since: _start_time}
         resp.Write(msg)
     }
 }

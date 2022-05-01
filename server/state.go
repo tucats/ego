@@ -72,7 +72,7 @@ func DefineLibHandlers(root, subpath string) *errors.EgoError {
 		}
 
 		path = path + "/"
-		ui.Debug(ui.ServerLogger, "Defining endpoint %s", path)
+		ui.Debug(ui.ServerLogger, "  Endpoint %s", path)
 		http.HandleFunc(path, ServiceHandler)
 	}
 
@@ -111,7 +111,7 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 	if errors.Nil(err) {
 		err = json.Unmarshal(b, &status)
 		status.ServerInfo = util.MakeServerInfo(0)
-		status.Version = defs.APIVersion
+		status.ServerInfo.Version = defs.APIVersion
 	}
 
 	return &status, errors.New(err)
@@ -123,7 +123,9 @@ func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
 func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 	fn := getPidFileName(c)
 	status.Started = time.Now()
-	status.Version = defs.APIVersion
+	status.ServerInfo.Version = defs.APIVersion
+	status.Version = c.FindGlobal().Version
+
 	b, _ := json.MarshalIndent(status, "", "  ")
 
 	err := ioutil.WriteFile(fn, b, 0600)

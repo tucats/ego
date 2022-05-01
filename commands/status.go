@@ -31,7 +31,8 @@ func Status(c *cli.Context) *errors.EgoError {
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
-			msg = fmt.Sprintf("UP (pid %d, host %s, session %s) since %s, LOCAL",
+			msg = fmt.Sprintf("UP (Ego %s, pid %d, host %s, session %s) since %s",
+				status.Version,
 				status.PID,
 				status.Hostname,
 				status.LogID,
@@ -99,7 +100,7 @@ func remoteStatus(addr string) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		ui.Say("UP (pid %d, host %s, session %s) since %s, %s", resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
+		ui.Say("UP (Ego %s, pid %d, host %s, session %s) since %s, %s", resp.Version, resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, addr)
 	} else {
 		_ = commandOutput(resp)
 	}
