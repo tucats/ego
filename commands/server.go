@@ -278,6 +278,16 @@ func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 // application host name. This is used by commands that allow a host name
 // specification as part of the command (login, or server logging, etc.).
 func ResolveServerName(name string) (string, *errors.EgoError) {
+	if name == "." {
+		name = settings.Get(defs.ApplicationServerSetting)
+		if name == "" {
+			name = settings.Get(defs.LogonServerSetting)
+		}
+		if name == "" {
+			name = "localhost"
+		}
+	}
+
 	hasScheme := true
 
 	normalizedName := strings.ToLower(name)
