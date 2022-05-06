@@ -15,8 +15,16 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/expressions"
+	syms "github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+type TXError struct {
+	Condition string `json:"condition"`
+	Status    int    `json:"status"`
+	Message   string `json:"msg"`
+}
 
 // This defines a single operation performed as part of a transaction.
 type TxOperation struct {
@@ -26,6 +34,7 @@ type TxOperation struct {
 	Columns    []string               `json:"columns,omitempty"`
 	EmptyError bool                   `json:"emptyError,omitempty"`
 	Data       map[string]interface{} `json:"data,omitempty"`
+	Errors     []TXError              `json:"errors,omitempty"`
 }
 
 type symbolTable struct {
@@ -130,7 +139,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 				httpStatus, opErr = txSymbols(sessionID, task, &symbols)
 
 			case selectOpcode:
-				httpStatus, opErr = txSelect(sessionID, user, db, tx, task, &symbols)
+				count := 0
+				count, httpStatus, opErr = txSelect(sessionID, user, db, tx, task, &symbols)
+				rowsAffected += count
 
 			case updateOpcode:
 				count := 0
@@ -148,6 +159,58 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 			case dropOpCode:
 				httpStatus, opErr = txDrop(sessionID, user, db, task, &symbols)
+			}
+
+			// See if there are any error triggers we need to look at.
+			if task.Errors != nil {
+				for errorNumber, errorCondition := range task.Errors {
+					// Evaluation the condition. Skip if it it's empty.
+					if strings.TrimSpace(errorCondition.Condition) == "" {
+						continue
+					}
+
+					// Convert from filter syntax to Ego syntax.
+					condition := formCondition(errorCondition.Condition)
+
+					ui.Debug(ui.TableLogger, "[%d] Evaluate error condition: %s", sessionID, condition)
+
+					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
+					// being managed for this transaction.
+					evalSymbols := syms.NewRootSymbolTable("transaction task condition")
+
+					for k, v := range symbols.Symbols {
+						evalSymbols.SetAlways(k, v)
+					}
+
+					evalSymbols.SetAlways("_rows_", rowsAffected)
+
+					result, err := expressions.New().WithText(condition).Eval(evalSymbols)
+					if !errors.Nil(err) {
+						msg := fmt.Sprintf("Invalid error condition in task %d, %v", n+1, err.Error())
+
+						util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
+
+						return
+					}
+
+					if datatypes.GetBool(result) {
+						_ = tx.Rollback()
+						msg := fmt.Sprintf("Error condition %d aborts transaction at operation %d", errorNumber+1, n+1)
+						httpStatus = http.StatusInternalServerError
+
+						if errorCondition.Status > 0 {
+							httpStatus = errorCondition.Status
+						}
+
+						if errorCondition.Message != "" {
+							msg = errorCondition.Message
+						}
+
+						util.ErrorResponse(w, sessionID, msg, httpStatus)
+
+						return
+					}
+				}
 			}
 
 			if !errors.Nil(opErr) {
@@ -220,34 +283,36 @@ func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) (int, *e
 	return http.StatusOK, nil
 }
 
-func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, error) {
+func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, error) {
 	var err error
 
 	applySymbolsToTask(sessionID, &task, syms)
+
 	tableName, _ := fullName(user, task.Table)
+	count := 0
 
 	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
 
 	q := formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
 	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-		return http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
+		return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}
 
 	ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 	var status int
 
-	status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
+	count, status, err = readTxRowData(db, tx, q, sessionID, syms, task.EmptyError)
 	if err == nil {
-		return status, nil
+		return count, status, nil
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return status, err
+	return 0, status, err
 }
 
-func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, error) {
+func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var rows *sql.Rows
 
 	var err error
@@ -317,7 +382,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 		}
 	}
 
-	return status, err
+	return rowCount, status, err
 }
 
 func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, error) {

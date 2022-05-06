@@ -1,0 +1,19 @@
+[
+    {
+        "operation": "select",
+        "table": "table1",
+        "columns": [
+            "value"
+        ],
+        "errors": [
+            {
+                "condition": "EQ(_rows_,0)",
+                "status": 414,
+                "msg": "Bad number of rows affeccted"
+            }
+        ],
+        "filters": [
+            "EQ(key,33)"
+        ]
+    }
+]

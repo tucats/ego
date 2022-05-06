@@ -16,6 +16,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
+const (
+	SQLDialect = 0
+	EgoDialect = 1
+)
+
 // @tomcole probably need to dump this entirely and work on variadic substitution arguments in query!
 func sqlEscape(source string) string {
 	var result strings.Builder
@@ -85,7 +90,7 @@ func formWhereExpressions(filters []string) string {
 		}
 
 		for {
-			clause, err := filterClause(tokens)
+			clause, err := filterClause(tokens, SQLDialect)
 			if err != nil {
 				return syntaxErrorPrefix + err.Error()
 			}
@@ -103,7 +108,33 @@ func formWhereExpressions(filters []string) string {
 	return result.String()
 }
 
-func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
+func formCondition(condition string) string {
+	var result strings.Builder
+
+	tokens := tokenizer.New(condition)
+	if tokens.AtEnd() {
+		return ""
+	}
+
+	for {
+		clause, err := filterClause(tokens, EgoDialect)
+		if err != nil {
+			return syntaxErrorPrefix + err.Error()
+		}
+
+		result.WriteString(clause)
+
+		if !tokens.IsNext(",") {
+			break
+		}
+
+		result.WriteString(" && ")
+	}
+
+	return result.String()
+}
+
+func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	var result strings.Builder
 
 	operator := tokens.Next()
@@ -130,10 +161,15 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 		operator = sqlEscape(operator)
 
 		if isString {
-			operator = "'" + operator + "'"
+			switch dialect {
+			case SQLDialect:
+				operator = "'" + operator + "'"
+			case EgoDialect:
+				operator = "\"" + operator + "\""
+			}
 		}
 
-		if isName {
+		if isName && dialect == SQLDialect {
 			operator = "\"" + operator + "\""
 		}
 
@@ -147,12 +183,27 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	// Contains is weird, so handle it separately. Note that we pay attention to the *ALL form
 	// as meaning all the cases must be true, versus the default of any of the cases are true.
 	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS", "HASANY", "CONTAINSALL", "HASALL") {
-		conjunction := " OR "
-		if util.InList(strings.ToUpper(operator), "CONTAINSALL", "HASALL") {
-			conjunction = " AND "
+		var conjunction string
+
+		switch dialect {
+		case SQLDialect:
+			conjunction = " OR "
+
+		case EgoDialect:
+			conjunction = " || "
 		}
 
-		term, e := filterClause(tokens)
+		if util.InList(strings.ToUpper(operator), "CONTAINSALL", "HASALL") {
+			switch dialect {
+			case SQLDialect:
+				conjunction = " AND "
+
+			case EgoDialect:
+				conjunction = " && "
+			}
+		}
+
+		term, e := filterClause(tokens, dialect)
 		if !errors.Nil(e) {
 			return "", e
 		}
@@ -165,18 +216,28 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 			}
 			valueCount++
 
-			value, e := filterClause(tokens)
+			value, e := filterClause(tokens, dialect)
 			if !errors.Nil(e) {
 				return "", e
 			}
 
-			// Building a string like:
-			//    position('evil' in classification) > 0
-			result.WriteString("POSITION(")
-			result.WriteString(value)
-			result.WriteString(" IN ")
-			result.WriteString(term)
-			result.WriteString(") > 0")
+			switch dialect {
+			case SQLDialect:
+				// Building a string like:
+				//    position('evil' in classification) > 0
+				result.WriteString("POSITION(")
+				result.WriteString(value)
+				result.WriteString(" IN ")
+				result.WriteString(term)
+				result.WriteString(") > 0")
+
+			case EgoDialect:
+				result.WriteString("strings.Index(")
+				result.WriteString(term)
+				result.WriteString(",")
+				result.WriteString(value)
+				result.WriteString(") >= 0 ")
+			}
 		}
 
 		if !tokens.IsNext(")") {
@@ -189,7 +250,13 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 	// Handle regular old monadic and diadic operators as a group.
 	switch strings.ToUpper(operator) {
 	case "EQ":
-		infix = "="
+		switch dialect {
+		case SQLDialect:
+			infix = "="
+
+		case EgoDialect:
+			infix = "=="
+		}
 
 	case "LT":
 		infix = "<"
@@ -204,26 +271,45 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 		infix = ">="
 
 	case "AND":
-		infix = "AND"
+		switch dialect {
+		case SQLDialect:
+			infix = " AND "
+
+		case EgoDialect:
+			infix = "&&"
+		}
+
 		listAllowed = true
 
 	case "OR":
-		infix = "OR"
+		switch dialect {
+		case SQLDialect:
+			infix = " OR "
+
+		case EgoDialect:
+			infix = "||"
+		}
 		listAllowed = true
 
 	case "NOT":
-		prefix = "NOT"
+		switch dialect {
+		case SQLDialect:
+			prefix = " NOT "
+
+		case EgoDialect:
+			prefix = " !"
+		}
 
 	default:
 		return "", errors.New(errors.ErrUnexpectedToken).Context(operator)
 	}
 
 	if prefix != "" {
-		term, _ := filterClause(tokens)
+		term, _ := filterClause(tokens, dialect)
 		result.WriteString(prefix + " " + term)
 	} else {
 		termCount := 0
-		term, _ := filterClause(tokens)
+		term, _ := filterClause(tokens, dialect)
 		result.WriteString("(")
 		for {
 			termCount++
@@ -241,7 +327,7 @@ func filterClause(tokens *tokenizer.Tokenizer) (string, error) {
 
 			result.WriteString(" " + infix + " ")
 
-			term, _ = filterClause(tokens)
+			term, _ = filterClause(tokens, dialect)
 		}
 
 		result.WriteString(")")

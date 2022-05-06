@@ -272,3 +272,37 @@ func Test_fullName(t *testing.T) {
 		})
 	}
 }
+
+func Test_formCondition(t *testing.T) {
+
+	tests := []struct {
+		name      string
+		condition string
+		want      string
+	}{
+		{
+			name:      "simple equality",
+			condition: "EQ(rows,3)",
+			want:      "(rows == 3)",
+		},
+		{
+			name:      "Nested booleans",
+			condition: `AND(EQ(rows,3),EQ(name, "Tom"))`,
+			want:      `((rows == 3) && (name == "Tom"))`,
+		},
+		{
+			name:      "contains",
+			condition: `CONTAINS(name,"Tom")`,
+			want:      `strings.Index(name,"Tom") >= 0 `,
+		},
+		// TODO: Add test cases.
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formCondition(tt.condition); got != tt.want {
+				t.Errorf("formCondition() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
