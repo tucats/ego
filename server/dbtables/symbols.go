@@ -17,7 +17,7 @@ const (
 
 // For a given task, apply the symbols to the various fields and data values
 // in the task.
-func applySymbolsToTask(sessionID int32, task *TxOperation, syms *symbolTable) *errors.EgoError {
+func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) *errors.EgoError {
 	var err *errors.EgoError
 
 	// Process any substittions to filters, column names, or data values
@@ -85,7 +85,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, syms *symbolTable) *
 
 	if ui.LoggerIsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		ui.Debug(ui.RestLogger, "[%d] Transaction task payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+		ui.Debug(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
 	}
 
 	return nil

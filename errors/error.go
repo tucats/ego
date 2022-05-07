@@ -150,7 +150,7 @@ func (e *EgoError) Error() string {
 	var b strings.Builder
 
 	if e == nil || e.err == nil {
-		panic("format of a nil error; needs to use errors.Nil() to test")
+		return ""
 	}
 
 	predicate := false
