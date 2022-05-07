@@ -250,7 +250,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
 func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) (int, *errors.EgoError) {
-	applySymbolsToTask(sessionID, &task, symbols)
+	if e := applySymbolsToTask(sessionID, &task, symbols); !errors.Nil(e) {
+		return http.StatusBadRequest, e
+	}
 
 	if len(task.Filters) > 0 {
 		return http.StatusBadRequest, errors.NewMessage("filters not supported for SYMBOLS task")
@@ -283,10 +285,12 @@ func txSymbols(sessionID int32, task TxOperation, symbols *symbolTable) (int, *e
 	return http.StatusOK, nil
 }
 
-func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, error) {
+func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, *errors.EgoError) {
 	var err error
 
-	applySymbolsToTask(sessionID, &task, syms)
+	if e := applySymbolsToTask(sessionID, &task, syms); !errors.Nil(e) {
+		return 0, http.StatusBadRequest, e
+	}
 
 	tableName, _ := fullName(user, task.Table)
 	count := 0
@@ -309,10 +313,10 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return 0, status, err
+	return 0, status, errors.New(err)
 }
 
-func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
+func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, *errors.EgoError) {
 	var rows *sql.Rows
 
 	var err error
@@ -382,11 +386,14 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 		}
 	}
 
-	return rowCount, status, err
+	return rowCount, status, errors.New(err)
 }
 
-func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, error) {
-	applySymbolsToTask(sessionID, &task, syms)
+func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, *errors.EgoError) {
+	if e := applySymbolsToTask(sessionID, &task, syms); !errors.Nil(e) {
+		return 0, http.StatusBadRequest, e
+	}
+
 	tableName, _ := fullName(user, task.Table)
 
 	validColumns, err := getColumnInfo(db, user, tableName, sessionID)
@@ -534,8 +541,11 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	return int(count), status, errors.New(updateErr)
 }
 
-func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, error) {
-	applySymbolsToTask(sessionID, &task, syms)
+func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, int, *errors.EgoError) {
+	if e := applySymbolsToTask(sessionID, &task, syms); !errors.Nil(e) {
+		return 0, http.StatusBadRequest, e
+	}
+
 	tableName, _ := fullName(user, task.Table)
 
 	if len(task.Columns) > 0 {
@@ -570,11 +580,14 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, syms *
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, err
+	return 0, http.StatusBadRequest, errors.New(err)
 }
 
-func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *symbolTable) (int, error) {
-	applySymbolsToTask(sessionID, &task, syms)
+func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *symbolTable) (int, *errors.EgoError) {
+	if e := applySymbolsToTask(sessionID, &task, syms); !errors.Nil(e) {
+		return http.StatusBadRequest, e
+	}
+
 	table, _ := fullName(user, task.Table)
 
 	if len(task.Filters) > 0 {
@@ -597,11 +610,13 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, syms *sy
 		}
 	}
 
-	return status, err
+	return status, errors.New(err)
 }
 
-func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, error) {
-	applySymbolsToTask(sessionID, &task, syms)
+func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, syms *symbolTable) (int, *errors.EgoError) {
+	if e := applySymbolsToTask(sessionID, &task, syms); !errors.Nil(e) {
+		return http.StatusBadRequest, e
+	}
 
 	if len(task.Filters) > 0 {
 		return http.StatusBadRequest, errors.NewMessage("filters not supported for INSERT task")
