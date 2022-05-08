@@ -159,8 +159,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 				httpStatus, opErr = txDrop(sessionID, user, db, task, n+1, &symbols)
 			}
 
-			// See if there are any error triggers we need to look at.
-			if task.Errors != nil {
+			// See if there are any error triggers we need to look at, assuming what
+			// has already been done was successful.
+			if errors.Nil(opErr) && task.Errors != nil {
 				for errorNumber, errorCondition := range task.Errors {
 					// Evaluation the condition. Skip if it it's empty.
 					if strings.TrimSpace(errorCondition.Condition) == "" {
