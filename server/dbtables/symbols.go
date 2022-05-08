@@ -106,7 +106,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 			input = value
 			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
-			return "", errors.New(errors.ErrNotFound).Context(key)
+			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)
 		}
 	}
 
@@ -142,10 +142,10 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 	if p1 >= 0 && p2 >= 0 {
 		if p1 < p2 {
 			key := input[p1+2 : p2]
-			return "", errors.New(errors.ErrNotFound).Context(key)
+			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)
 		}
 
-		return "", errors.New(errors.ErrNotFound)
+		return "", errors.New(errors.ErrNoSuchTXSymbol)
 	}
 
 	return input, nil
