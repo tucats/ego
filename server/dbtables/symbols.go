@@ -145,7 +145,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 			key = input[p1+2 : p2]
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\" in string: %v", sessionID, label, key, input)
+		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
 
 		if key != "" {
 			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)

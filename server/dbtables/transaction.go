@@ -195,6 +195,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 					if datatypes.GetBool(result) {
 						_ = tx.Rollback()
+
+						ui.Debug(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
+
 						msg := fmt.Sprintf("Error condition %d aborts transaction at operation %d", errorNumber+1, n+1)
 						httpStatus = http.StatusInternalServerError
 
@@ -215,6 +218,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 			if !errors.Nil(opErr) {
 				_ = tx.Rollback()
+
 				msg := fmt.Sprintf("transaction rollback at operation %d; %s", n+1, opErr.Error())
 
 				util.ErrorResponse(w, sessionID, msg, httpStatus)
