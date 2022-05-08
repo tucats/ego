@@ -101,12 +101,12 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 		e2 = svc.WriteUser(user)
 
 		if errors.Nil(e2) {
-			ui.Debug(ui.DBLogger, "Default database credential %s created", user.Name)
+			ui.Debug(ui.AuthLogger, "Default database credential %s created", user.Name)
 		}
 	}
 
 	if errors.Nil(e2) {
-		ui.Debug(ui.DBLogger, "Database credential store %s", svc.constr)
+		ui.Debug(ui.AuthLogger, "Database credential store %s", svc.constr)
 	} else {
 		ui.Debug(ui.ServerLogger, "Database error: %v", e2)
 	}
@@ -196,7 +196,7 @@ func (pg *DatabaseService) ReadUser(name string) (defs.User, *errors.EgoError) {
 	}
 
 	if !found {
-		ui.Debug(ui.InfoLogger, "No database record for %s", name)
+		ui.Debug(ui.AuthLogger, "No database record for %s", name)
 		err = errors.New(errors.ErrNoSuchUser).Context(name)
 	}
 
@@ -234,7 +234,7 @@ func (pg *DatabaseService) WriteUser(user defs.User) *errors.EgoError {
 
 		err = errors.New(dberr)
 	} else {
-		ui.Debug(ui.DBLogger, "User %s %s database", user.Name, action)
+		ui.Debug(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
 
 	return err
@@ -250,9 +250,9 @@ func (pg *DatabaseService) DeleteUser(name string) *errors.EgoError {
 		err = errors.New(dberr)
 	} else {
 		if count, _ := r.RowsAffected(); count > 0 {
-			ui.Debug(ui.DBLogger, "Deleted user %s from database", name)
+			ui.Debug(ui.AuthLogger, "Deleted user %s from database", name)
 		} else {
-			ui.Debug(ui.DBLogger, "No user %s in database", name)
+			ui.Debug(ui.AuthLogger, "No user %s in database", name)
 		}
 	}
 
@@ -273,7 +273,7 @@ func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
 		_, dberr := pg.db.Exec(createTableQueryString)
 
 		if dberr == nil {
-			ui.Debug(ui.DBLogger, "Created empty credentials table")
+			ui.Debug(ui.AuthLogger, "Created empty credentials table")
 		} else {
 			ui.Debug(ui.ServerLogger, "error creating table: %v", dberr)
 		}

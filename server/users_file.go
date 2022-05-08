@@ -44,7 +44,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 				return svc, errors.New(err)
 			}
 
-			ui.Debug(ui.ServerLogger, "Using file-system credential store with %d items", len(svc.data))
+			ui.Debug(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.data))
 		}
 	}
 
@@ -59,7 +59,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 		}
 		svc.dirty = true
 
-		ui.Debug(ui.ServerLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
+		ui.Debug(ui.AuthLogger, "Using default credentials %s:%s", defaultUser, defaultPassword)
 	}
 
 	return svc, nil
@@ -86,9 +86,9 @@ func (f *FileService) WriteUser(user defs.User) *errors.EgoError {
 	f.dirty = true
 
 	if found {
-		ui.Debug(ui.InfoLogger, "Updated user %s", user.Name)
+		ui.Debug(ui.AuthLogger, "Updated user %s", user.Name)
 	} else {
-		ui.Debug(ui.InfoLogger, "Created user %s", user.Name)
+		ui.Debug(ui.AuthLogger, "Created user %s", user.Name)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (f *FileService) DeleteUser(name string) *errors.EgoError {
 		delete(f.data, u.Name)
 		f.dirty = true
 
-		ui.Debug(ui.InfoLogger, "Deleted user %s", u.Name)
+		ui.Debug(ui.AuthLogger, "Deleted user %s", u.Name)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (f *FileService) Flush() *errors.EgoError {
 	if err == nil {
 		f.dirty = false
 
-		ui.Debug(ui.InfoLogger, "Rewrote file-system credential store")
+		ui.Debug(ui.AuthLogger, "Rewrote file-system credential store")
 	}
 
 	return errors.New(err)

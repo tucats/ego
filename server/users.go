@@ -56,7 +56,11 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	var err *errors.EgoError
 
-	ui.Debug(ui.ServerLogger, "Using database definition %s", userDatabaseFile)
+	if !ui.LoggerIsActive(ui.AuthLogger) {
+		ui.Debug(ui.ServerLogger, "Initializing credentials and authorizations")
+	} else {
+		ui.Debug(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)
+	}
 
 	service, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
 
@@ -131,7 +135,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 			return err
 		}
 
-		ui.Debug(ui.InfoLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
+		ui.Debug(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
 		return errors.New(errors.ErrNoSuchUser).Context(user)
 	}
@@ -150,7 +154,7 @@ func getPermission(user, privilege string) bool {
 		return (pn >= 0)
 	}
 
-	ui.Debug(ui.InfoLogger, "User %s does not have %s privilege", user, privilege)
+	ui.Debug(ui.AuthLogger, "User %s does not have %s privilege", user, privilege)
 
 	return false
 }
