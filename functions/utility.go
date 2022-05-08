@@ -36,12 +36,17 @@ func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	var err *errors.EgoError
 
+	if len(args) != 2 {
+		return nil, errors.New(errors.ErrArgumentCount).In("Set()")
+	}
+
 	key := datatypes.GetString(args[0])
+	isEgoSetting := strings.HasPrefix(key, "ego.")
 
 	// Quick check here. The key must already exist if it's one of the
 	// "system" settings. That is, you can't create an ego.* setting that
 	// doesn't exist yet, for example
-	if strings.HasPrefix(key, "ego.") {
+	if isEgoSetting {
 		if !settings.Exists(key) {
 			return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 		}
@@ -70,15 +75,20 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		settings.Set(key, value)
 	}
 
+	// Ego settings can only be updated in the in-memory copy, not in the persisted data.
+	if isEgoSetting {
+		return err, nil
+	}
+
+	// Otherwise, store the value back to the file system.
 	return err, settings.Save()
 }
 
-// ProfileDelete implements the profile.delete() function.
+// ProfileDelete implements the profile.delete() function. This just calls
+// the set operation with an empty value, which results in a delete operatinon.
+// The consolidates the persmission checking, etc. in the Set routine only.
 func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	key := datatypes.GetString(args[0])
-	_ = settings.Delete(key)
-
-	return nil, nil
+	return ProfileSet(symbols, []interface{}{args[0], ""})
 }
 
 // ProfileKeys implements the profile.keys() function.

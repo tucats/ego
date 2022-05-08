@@ -20,6 +20,11 @@ const (
 func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) *errors.EgoError {
 	var err *errors.EgoError
 
+	if ui.LoggerIsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.Debug(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
+	}
+
 	// Process any substittions to filters, column names, or data values
 	if syms != nil && len(syms.Symbols) > 0 {
 		// Allow substitutions in the table name
@@ -83,11 +88,6 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 		}
 	}
 
-	if ui.LoggerIsActive(ui.RestLogger) {
-		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		ui.Debug(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
-	}
-
 	return nil
 }
 
@@ -140,8 +140,14 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 	p1 := strings.Index(input, symbolPrefix)
 	p2 := strings.Index(input, symbolSuffix)
 	if p1 >= 0 && p2 >= 0 {
+		key := ""
 		if p1 < p2 {
-			key := input[p1+2 : p2]
+			key = input[p1+2 : p2]
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\" in string: %v", sessionID, label, key, input)
+
+		if key != "" {
 			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)
 		}
 
