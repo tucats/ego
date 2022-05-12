@@ -19,7 +19,7 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "nested expression",
 			filters: []string{"or(eq(name,\"Tom\"),eq(name,\"Mary\"))"},
-			want:    "((\"name\" = 'Tom') OR (\"name\" = 'Mary'))",
+			want:    "((\"name\" = 'Tom')  OR  (\"name\" = 'Mary'))",
 		},
 		{
 			name:    "string constant",
@@ -34,7 +34,7 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "unary not",
 			filters: []string{"not(age)"},
-			want:    "NOT \"age\"",
+			want:    " NOT  \"age\"",
 		},
 		{
 			name:    "simple list",
@@ -112,12 +112,12 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "compound list",
 			arg:  "https://localhost:8500/tables/data?filter=and(EQ(a,1),EQ(b,2),EQ(c,3))",
-			want: ` WHERE "a" = 1 AND "b" = 2 AND "c" = 3`,
+			want: ` WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
 		},
 		{
 			name: "filter list",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\"),eq(age,55)",
-			want: " WHERE \"name\" = 'Tom' AND \"age\" = 55",
+			want: " WHERE (\"name\" = 'Tom') AND (\"age\" = 55)",
 		},
 		{
 			name: "no filter",
@@ -127,12 +127,12 @@ func Test_filterList(t *testing.T) {
 		{
 			name: "one filter",
 			arg:  "https://localhost:8500/tables/data?filter=eq(age,55)",
-			want: " WHERE \"age\" = 55",
+			want: " WHERE (\"age\" = 55)",
 		},
 		{
 			name: "multiple filters",
 			arg:  "https://localhost:8500/tables/data?filter=eq(name,\"Tom\")&filter=eq(name,\"Mary\")",
-			want: " WHERE \"name\" = 'Tom' AND \"name\" = 'Mary'",
+			want: " WHERE (\"name\" = 'Tom') AND (\"name\" = 'Mary')",
 		},
 
 		// TODO: Add test cases.
@@ -222,7 +222,7 @@ func Test_formQuery(t *testing.T) {
 		{
 			name: "column, filter, and sort specification",
 			arg:  "https://localhost:8500/tables/data?order=age&columns=name,age&filter=GE(age,18)",
-			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE \"age\" >= 18 ORDER BY \"age\"",
+			want: "SELECT \"name\",\"age\" FROM \"admin\".\"data\" WHERE (\"age\" >= 18) ORDER BY \"age\"",
 		},
 
 		// TODO: Add test cases.
