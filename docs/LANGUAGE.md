@@ -501,6 +501,37 @@ if it finds it, the value "Mary" is assigned to it. If the variable
 does not exist at this scope, but does in an outer scope level, then
 the variable at the outer scope is updated.
 
+Note that _Ego_ allows a shortcut for a specific assignment statement
+that adds or subtracts the constant `1` from a value.
+
+      i = i + 1
+      i++
+
+These statements have the identical function. They require that the
+variable `i` already exist, and a value of 1 is added to `i`. The
+same thing can be done using the `--` operator to subtract one from
+a value. This is commonly used in `for` loops, discussed later. 
+
+If _Ego_ language extensions are enabled, the `++` and `--` operators
+can be used in an expression value. For example, consider this code:
+
+      i := 10
+      j := 5 + i++
+
+This has the effect of setting `j` to the value 15, and setting `i`
+to the value 11. That is, the increment operation `++` is performed
+on the variable `i` after it'se value is read in the addition
+operation that sets the value of `j`.
+
+      t := i
+      i = i + 1
+      j := 5 + t
+
+The above code has the same effect as the second statement in the
+auto-increment expression value above. Using the auto-increment
+(or decrement) operation prevents the need to store the pre-increment
+value in a temporary variable, and reduces code clutter.
+
 You can also create a variable using the `var` statement, which is
 followed by a comma-separated list of names and finally a type value.
 The variables are all created and set to the given type, with an
@@ -890,7 +921,7 @@ You can create a `for` loop that explicitly specifies an expression
 that defines the starting value, ending condition, and how the value
 changes with each iteration of a loop. For example,
 
-     for i := 0; i < 10; i = i + 1 {
+     for i := 0; i < 10; i++ {
          fmt.Println(i)
      }
 
@@ -901,7 +932,14 @@ clause describes the condition that must be true for the loop body
 to be executed. This is evaluated before the loop body is run each
 time. The third clause is the statement that modifies the index
 value _after_ the body of the loop is run but _before_ the  next
-evaluation of the clause that determines if the loop continues.
+evaluation of the clause that determines if the loop continues. In
+this example, we could have used 
+
+     for i := 0; i < 10; i = i + 1 {
+         fmt.Println(i)
+     }
+
+but the use of the increment operator `++` is cleaner to read.
 
 The variable `i` in the above example is scoped to the `for`
 statement and it's loop body. That is, after this loop runs, the
