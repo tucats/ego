@@ -267,11 +267,14 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 			autoMode = bytecode.Sub
 		}
 
-		if autoMode != bytecode.Load {
+		// If language extensions are supported and this is an auto-increment
+		// or decrement operation, do it now. The modification is applied after
+		// the value is read; i.e. the atom is the pre-modified value.
+		if c.extensionsEnabled && (autoMode != bytecode.Load) {
 			c.b.Emit(bytecode.Load, t)
+			c.b.Emit(bytecode.Dup)
 			c.b.Emit(bytecode.Push, 1)
 			c.b.Emit(autoMode)
-			c.b.Emit(bytecode.Dup)
 			c.b.Emit(bytecode.Store, t)
 			c.t.Advance(2)
 		} else {
