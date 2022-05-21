@@ -39,6 +39,16 @@ func (c *Compiler) isAssignmentTarget() bool {
 			return true
 		}
 
+		// Is this an auto increment?
+		if c.t.Peek(i) == "++" {
+			return true
+		}
+
+		// Is this an auto decrement?
+		if c.t.Peek(i) == "--" {
+			return true
+		}
+
 		if tokenizer.IsReserved(t, c.extensionsEnabled) {
 			return false
 		}
@@ -69,6 +79,8 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 	for {
 		name := c.t.Next()
 		if !tokenizer.IsSymbol(name) {
+			c.t.Set(savedPosition)
+
 			return nil, c.newError(errors.ErrInvalidSymbolName, name)
 		}
 

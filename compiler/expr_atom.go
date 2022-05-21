@@ -256,8 +256,28 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 	// Is it just a symbol needing a load?
 	if tokenizer.IsSymbol(t) {
-		c.b.Emit(bytecode.Load, t)
-		c.t.Advance(1)
+		// Check for auto-increment or decrement
+		autoMode := bytecode.Load
+
+		if c.t.Peek(2) == "++" {
+			autoMode = bytecode.Add
+		}
+
+		if c.t.Peek(2) == "--" {
+			autoMode = bytecode.Sub
+		}
+
+		if autoMode != bytecode.Load {
+			c.b.Emit(bytecode.Load, t)
+			c.b.Emit(bytecode.Push, 1)
+			c.b.Emit(autoMode)
+			c.b.Emit(bytecode.Dup)
+			c.b.Emit(bytecode.Store, t)
+			c.t.Advance(2)
+		} else {
+			c.b.Emit(bytecode.Load, t)
+			c.t.Advance(1)
+		}
 
 		return nil
 	}

@@ -10,6 +10,17 @@
     @assert T.Equal(s, 15);
 }
 
+// Simple for loop with explicit terms. Calculate the
+// sum of values from 1..5 using auto-increment
+{
+    s := 0
+    for n := 1; n <= 5; n++ {
+        s = s + n
+    }
+    @assert T.Equal(s, 15);
+}
+
+
 // Use range to scan over a heterogenous list. This should work even when
 // static-types are enabled, as the value of 'j' is reinitialized each time
 // through the loop and can therefore accept different value types.  Note that

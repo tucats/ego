@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -323,13 +324,39 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		return err
 	}
 
-	if !c.t.IsNext("=") {
-		return c.newError(errors.ErrMissingEqual)
+	// Check for increment or decrement operators
+	autoMode := bytecode.Load
+
+	if c.t.Peek(1) == "++" {
+		autoMode = bytecode.Add
 	}
 
-	incrementCode, err := c.Expression()
-	if !errors.Nil(err) {
-		return err
+	if c.t.Peek(1) == "--" {
+		autoMode = bytecode.Add
+	}
+
+	var incrementCode *bytecode.ByteCode
+
+	// If increment mode was used, then the increment is just to add (or subtract)
+	// 1 from the value.
+	if autoMode != bytecode.Load {
+		t := datatypes.GetString(incrementStore.GetInstruction(0).Operand)
+		incrementCode = bytecode.New("auto")
+
+		incrementCode.Emit(bytecode.Load, t)
+		incrementCode.Emit(bytecode.Push, 1)
+		incrementCode.Emit(autoMode)
+		c.t.Advance(1)
+	} else {
+		// Not auto-increment/decrement, so must be a legit assignment and expression
+		if !c.t.IsNext("=") {
+			return c.newError(errors.ErrMissingEqual)
+		}
+
+		incrementCode, err = c.Expression()
+		if !errors.Nil(err) {
+			return err
+		}
 	}
 
 	// Top of loop body starts here
