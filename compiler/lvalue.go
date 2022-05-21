@@ -35,7 +35,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 	// is a valid/correct lvalue. We also stop searching at some point.
 	for i := 2; i < 100; i = i + 1 {
 		t := c.t.Peek(i)
-		if util.InList(t, ":=", "=", "<-") {
+		if util.InList(t, ":=", "=", "<-", "+=", "-=", "*=", "/=") {
 			return true
 		}
 

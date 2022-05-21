@@ -257,7 +257,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	// Is it just a symbol needing a load?
 	if tokenizer.IsSymbol(t) {
 		// Check for auto-increment or decrement
-		autoMode := bytecode.Load
+		autoMode := bytecode.NoOperation
 
 		if c.t.Peek(2) == "++" {
 			autoMode = bytecode.Add
@@ -270,7 +270,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		// If language extensions are supported and this is an auto-increment
 		// or decrement operation, do it now. The modification is applied after
 		// the value is read; i.e. the atom is the pre-modified value.
-		if c.extensionsEnabled && (autoMode != bytecode.Load) {
+		if c.extensionsEnabled && (autoMode != bytecode.NoOperation) {
 			c.b.Emit(bytecode.Load, t)
 			c.b.Emit(bytecode.Dup)
 			c.b.Emit(bytecode.Push, 1)

@@ -38,6 +38,22 @@ type crushedToken struct {
 // This is the table of tokens that are "crushed" into a single token.
 var crushedTokens = []crushedToken{
 	{
+		source: []string{"+", "="},
+		result: "+=",
+	},
+	{
+		source: []string{"-", "="},
+		result: "-=",
+	},
+	{
+		source: []string{"*", "="},
+		result: "*=",
+	},
+	{
+		source: []string{"/", "="},
+		result: "/=",
+	},
+	{
 		source: []string{"+", "+"},
 		result: "++",
 	},

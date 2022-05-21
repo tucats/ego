@@ -502,7 +502,7 @@ does not exist at this scope, but does in an outer scope level, then
 the variable at the outer scope is updated.
 
 Note that _Ego_ allows a shortcut for a specific assignment statement
-that adds or subtracts the constant `1` from a value.
+that adds or subtracts the constant `1` from a value. For exampe,
 
       i = i + 1
       i++
@@ -531,6 +531,20 @@ The above code has the same effect as the second statement in the
 auto-increment expression value above. Using the auto-increment
 (or decrement) operation prevents the need to store the pre-increment
 value in a temporary variable, and reduces code clutter.
+
+_Ego_ also supports implied operators in the assignment, using the
+assignment operators `+=`, `-=`, `*=`, and `/=`. Each of these 
+performs an assignment that includes the given operation (addition,
+subtraction, multiplication, or division) of the value following
+the `=` character. For example,
+
+     i := 10
+     i += 5
+
+The use of the `+=` operator requires that the value to the left of
+the assignment already exists. In this example, the value of i has
+the constant value 5 added to it.  This is the same as `i = i + 5`
+but is easier to read.
 
 You can also create a variable using the `var` statement, which is
 followed by a comma-separated list of names and finally a type value.
@@ -949,7 +963,7 @@ the `:=` operator) in the scope of the loop. You can use a simple
  index value available after the loop body ends.
 
     var i int
-    for i = 0; i < 10; i = i + 1 {
+    for i = 0; i < 10; i++{
         fmt.Println(i)
     }
     fmt.Println("The final value of i is ", i)

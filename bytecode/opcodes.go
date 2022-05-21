@@ -65,6 +65,7 @@ const (
 	Mul
 	Negate
 	Newline
+	NoOperation
 	NotEqual
 	Or
 	Panic
@@ -167,6 +168,7 @@ var instructionNames = map[OpcodeID]string{
 	Modulo:             "Modulo",
 	Negate:             "Negate",
 	Newline:            "Newline",
+	NoOperation:        "NoOperation",
 	NotEqual:           "NotEqual",
 	Or:                 "Or",
 	Panic:              "Panic",
@@ -259,6 +261,7 @@ func initializeDispatch() {
 			Mul:                multiplyByteCode,
 			Negate:             negateByteCode,
 			Newline:            newlineByteCode,
+			NoOperation:        nil,
 			NotEqual:           notEqualByteCode,
 			Or:                 orByteCode,
 			Panic:              panicByteCode,

@@ -9,13 +9,15 @@ import (
 
 // compileAssignment compiles an assignment statement.
 func (c *Compiler) compileAssignment() *errors.EgoError {
+	start := c.t.Mark()
+
 	storeLValue, err := c.assignmentTarget()
 	if !errors.Nil(err) {
 		return err
 	}
 
 	// Check for auto-increment or decrement
-	autoMode := bytecode.Load
+	autoMode := bytecode.NoOperation
 
 	if c.t.Peek(1) == "++" {
 		autoMode = bytecode.Add
@@ -25,7 +27,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 		autoMode = bytecode.Sub
 	}
 
-	if autoMode != bytecode.Load {
+	if autoMode != bytecode.NoOperation {
 		t := datatypes.GetString(storeLValue.GetInstruction(0).Operand)
 
 		c.b.Emit(bytecode.Load, t)
@@ -39,12 +41,53 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	}
 
 	// Not auto-anything, so verify that this is a legit assignment
-	if !c.t.AnyNext(":=", "=", "<-") {
+	if !c.t.AnyNext(":=", "=", "<-", "+=", "-=", "*=", "/=") {
 		return c.newError(errors.ErrMissingAssignment)
 	}
 
 	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
+	}
+
+	// Handle implicit operators
+	mode := bytecode.NoOperation
+
+	switch c.t.Peek(0) {
+	case "+=":
+		mode = bytecode.Add
+
+	case "-=":
+		mode = bytecode.Sub
+
+	case "*=":
+		mode = bytecode.Mul
+
+	case "/=":
+		mode = bytecode.Div
+	}
+
+	if mode != bytecode.NoOperation {
+		c.t.Set(start)
+		e1, err := c.Expression()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		if !c.t.AnyNext("+=", "-=", "*=", "/=") {
+			return errors.New(errors.ErrMissingAssignment)
+		}
+
+		e2, err := c.Expression()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Append(e1)
+		c.b.Append(e2)
+		c.b.Emit(mode)
+		c.b.Append(storeLValue)
+
+		return nil
 	}
 
 	// If this is a construct like   x := <-ch   skip over the :=
