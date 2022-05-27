@@ -283,6 +283,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 		if name == "" {
 			name = settings.Get(defs.LogonServerSetting)
 		}
+		
 		if name == "" {
 			name = "localhost"
 		}

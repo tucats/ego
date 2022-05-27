@@ -31,7 +31,7 @@ func initializeType() {
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	t := time.Now()
 
-	return makeTime(&t), nil
+	return MakeTime(&t), nil
 }
 
 // TimeParse time.Parse().
@@ -48,7 +48,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		return nil, errors.New(err)
 	}
 
-	return makeTime(&t), nil
+	return MakeTime(&t), nil
 }
 
 // TimeAdd implements time.duration().
@@ -63,7 +63,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		if errors.Nil(err) {
 			t2 := t.Add(d)
 
-			return makeTime(&t2), nil
+			return MakeTime(&t2), nil
 		}
 	}
 
@@ -180,7 +180,7 @@ func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
 }
 
 // Make a time object with the given time value.
-func makeTime(t *time.Time) interface{} {
+func MakeTime(t *time.Time) interface{} {
 	initializeType()
 
 	r := datatypes.NewStruct(*timeType)

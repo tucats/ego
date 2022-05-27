@@ -9,12 +9,14 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -68,9 +70,19 @@ func (app *App) SetCopyright(s string) *App {
 	return app
 }
 
+// Set the build time for the app. If the build time is formatted as a valid
+// build time, it is encoded as an Ego time.Time value and stored in _buildtime.
+// If it is not a valid build time, the string value is stored as-is in the
+// _buildtime global variable.
 func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
-	_ = symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
+
+	t, e := time.Parse("20060102150405", s)
+	if errors.Nil(e) {
+		_ = symbols.RootSymbolTable.SetAlways("_buildtime", functions.MakeTime(&t))
+	} else {
+		_ = symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
+	}
 
 	return app
 }

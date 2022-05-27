@@ -274,7 +274,6 @@ func Test_fullName(t *testing.T) {
 }
 
 func Test_formCondition(t *testing.T) {
-
 	tests := []struct {
 		name      string
 		condition string

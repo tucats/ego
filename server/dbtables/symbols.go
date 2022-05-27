@@ -58,6 +58,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 		// Allow subtitutions of the key names as well as the values
 		for _, key := range keys {
 			oldKey := key
+
 			newKey, err := applySymbolsToString(sessionID, key, syms, "Column name")
 			if !errors.Nil(err) {
 				return err
@@ -139,6 +140,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 	// See if there are unprocessed symbols still in the string
 	p1 := strings.Index(input, symbolPrefix)
 	p2 := strings.Index(input, symbolSuffix)
+	
 	if p1 >= 0 && p2 >= 0 {
 		key := ""
 		if p1 < p2 {

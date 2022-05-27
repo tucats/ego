@@ -68,6 +68,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 
 	if mode != bytecode.NoOperation {
 		c.t.Set(start)
+		
 		e1, err := c.Expression()
 		if !errors.Nil(err) {
 			return err
