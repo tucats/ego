@@ -93,11 +93,6 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			return err
 		}
 
-		// Handle special cases.
-		if strings.TrimSpace(text) == QuitCommand {
-			break
-		}
-
 		// Tokenize the input
 		t := tokenizer.New(text)
 

@@ -23,13 +23,12 @@ var Copyright = "(C) Copyright Tom Cole 2020, 2021, 2022"
 func main() {
 	app := app.New("ego: execute code in the Ego language").
 		SetVersion(parseVersion(BuildVersion)).
-		SetCopyright(Copyright)
+		SetCopyright(Copyright).
+		SetDefaultAction(commands.RunAction)
 
 	if BuildTime > "" {
 		app.SetBuildTime(BuildTime)
 	}
-
-	app.SetDefaultAction(commands.RunAction)
 
 	err := app.Run(EgoGrammar, os.Args)
 

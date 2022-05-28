@@ -6,7 +6,9 @@ import (
 	"github.com/tucats/ego/commands"
 )
 
-// EgoGrammar handles the command line options.
+// EgoGrammar handles the command line options. There is an entry here for
+// each subcommand specific to Ego (not those that are supplied by the
+// app-cli framework).
 var EgoGrammar = []cli.Option{
 	{
 		LongName:             "sql",
@@ -15,29 +17,7 @@ var EgoGrammar = []cli.Option{
 		Action:               commands.TableSQL,
 		ParametersExpected:   -99,
 		ParameterDescription: "sql-text",
-		Value: []cli.Option{
-			{
-				LongName:    "sql-file",
-				ShortName:   "f",
-				Aliases:     []string{"file"},
-				Description: "Filename of SQL command text",
-				OptionType:  cli.StringType,
-			},
-			{
-				LongName:    "row-ids",
-				ShortName:   "i",
-				Aliases:     []string{"ids"},
-				Description: "Include the row UUID in any output",
-				OptionType:  cli.BooleanType,
-			},
-			{
-				LongName:    "row-numbers",
-				ShortName:   "n",
-				Aliases:     []string{"row-number", "row"},
-				Description: "Include the row number in any output",
-				OptionType:  cli.BooleanType,
-			},
-		},
+		Value:                SQLGrammar,
 	},
 	{
 		LongName:    "table",
@@ -78,6 +58,32 @@ var EgoGrammar = []cli.Option{
 	},
 }
 
+// SQLGrammar specifies the command line options for the "sql" Ego command.
+var SQLGrammar = []cli.Option{
+	{
+		LongName:    "sql-file",
+		ShortName:   "f",
+		Aliases:     []string{"file"},
+		Description: "Filename of SQL command text",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "row-ids",
+		ShortName:   "i",
+		Aliases:     []string{"ids"},
+		Description: "Include the row UUID in any output",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "row-numbers",
+		ShortName:   "n",
+		Aliases:     []string{"row-number", "row"},
+		Description: "Include the row number in any output",
+		OptionType:  cli.BooleanType,
+	},
+}
+
+// TableGrammar specifies the command line options for the "tables" Ego command.
 var TableGrammar = []cli.Option{
 	{
 		LongName:             "sql",

@@ -22,15 +22,6 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Reserved symbol names used for configuration.
-const (
-	ConfigDisassemble = "disassemble"
-	ConfigTrace       = "trace"
-)
-
-// QuitCommand is the command that exits console input.
-const QuitCommand = "%quit"
-
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) *errors.EgoError {
 	if logFile, found := c.String("log"); found {
@@ -67,7 +58,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	}
 
 	// If it was specified on the command line, override it.
-
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 	}
@@ -91,7 +81,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
-	exitOnBlankLine := settings.GetBool(defs.ExitOnBlankSetting)
 	interactive := false
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
@@ -143,11 +132,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
 
-			if exitOnBlankLine {
-				fmt.Printf("%s\nEnter a blank line to exit\n", banner)
-			} else {
-				fmt.Printf("%s\n", banner)
-			}
+			fmt.Printf("%s\n", banner)
 
 			// If this is the first time through this loop, interactive is still
 			// false, but we know we're going to use user input. So this first
@@ -186,15 +171,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	exitValue := 0
 
 	for {
-		// Handle special cases.
-		if strings.TrimSpace(text) == QuitCommand {
-			break
-		}
-
-		if exitOnBlankLine && len(strings.TrimSpace(text)) == 0 {
-			break
-		}
-
 		if len(text) > 8 && text[:8] == "%include" {
 			fileName := strings.TrimSpace(text[8:])
 
@@ -267,7 +243,6 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// Compile the token stream. Allow the EXIT command only if we are in "run" mode interactively
-
 		if comp == nil {
 			comp = compiler.New("run").WithNormalization(settings.GetBool(defs.CaseNormalizedSetting)).ExitEnabled(interactive)
 
@@ -294,15 +269,16 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				b.Disasm()
 			}
 
-			// Run the compiled code
-			ctx := bytecode.NewContext(symbolTable, b).SetDebug(debug)
+			// Run the compiled code from a new context, configured with the symbol table,
+			// token stream, and scope/debug settings.
+			ctx := bytecode.NewContext(symbolTable, b).
+				SetDebug(debug).
+				SetTokenizer(t).
+				SetFullSymbolScope(fullScope)
 
 			if ctx.Tracing() {
 				ui.SetLogger(ui.DebugLogger, true)
 			}
-
-			ctx.SetTokenizer(t)
-			ctx.SetFullSymbolScope(fullScope)
 
 			// If we run under control of the debugger, do that, else just run the context.
 			if debug {
@@ -360,10 +336,6 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	if c.Boolean("trace") {
 		ui.SetLogger(ui.TraceLogger, true)
 	}
-
-	// Add local funcion(s) that extend the Ego function set.
-	_ = symbolTable.SetAlways("eval", runtime.Eval)
-	_ = symbolTable.SetAlways("prompt", runtime.Prompt)
 
 	// Add the runtime builtins and the function library builtins
 	runtime.AddBuiltinPackages(symbolTable)

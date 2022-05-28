@@ -69,6 +69,24 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		FullScope: true,
 		F:         FormatSymbols,
 	})
+
+	_ = functions.AddFunction(s, functions.FunctionDefinition{
+		Name:      "Prompt",
+		Pkg:       "io",
+		Min:       0,
+		Max:       1,
+		FullScope: true,
+		F:         Prompt,
+	})
+
+	_ = functions.AddFunction(s, functions.FunctionDefinition{
+		Name:      "Eval",
+		Pkg:       "util",
+		Min:       1,
+		Max:       1,
+		FullScope: true,
+		F:         Eval,
+	})
 }
 
 // Prompt implements the prompt() function, which uses the console

@@ -96,8 +96,10 @@ func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Co
 	return app.Run(grammar, args)
 }
 
-func (app *App) SetDefaultAction(f func(c *cli.Context) *errors.EgoError) {
+func (app *App) SetDefaultAction(f func(c *cli.Context) *errors.EgoError) *App {
 	app.Action = f
+
+	return app
 }
 
 // Run runs a grammar given a set of arguments in the current
