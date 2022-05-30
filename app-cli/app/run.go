@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/config"
 	"github.com/tucats/ego/app-cli/settings"
@@ -87,15 +89,23 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 		},
 	}
 
-	// Add the user-provided grammar
+	// Add the user-provided grammar.
 	grammar = append(grammar, context.Grammar...)
 
 	// Load the active profile, if any from the profile for this application.
 	_ = settings.Load(context.AppName, "default")
 
+	context.Grammar = grammar
+
+	// If we are to dump the grammar (a diagnostic function) do that,
+	// then just pack it in and go home.
+	if os.Getenv("EGO_DUMP_GRAMMAR") != "" {
+		cli.DumpGrammar(context)
+		os.Exit(0)
+	}
+
 	// Parse the grammar and call the actions (essentially, execute
 	// the function of the CLI)
-	context.Grammar = grammar
 	err := context.Parse()
 
 	// If no errors, then write out an updated profile as needed.
