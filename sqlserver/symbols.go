@@ -49,6 +49,12 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 			}
 		}
 
+		// Allow substitutions in the sql command
+		task.Sql, err = applySymbolsToString(sessionID, task.Sql, syms, "SQL statement")
+		if !errors.Nil(err) {
+			return err
+		}
+
 		// Make a list of the keys we will scan in the data object
 		keys := make([]string, 0)
 		for key := range task.Data {
@@ -77,7 +83,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 		}
 	}
 
-	// Allow subtitutions of the key names as well as the values
+	// Allow subtitutions of the condition tests as well as the values
 	for n := 0; n < len(task.Errors); n++ {
 		newConditionString, err := applySymbolsToString(sessionID, task.Errors[n].Condition, syms, "Condition")
 		if !errors.Nil(err) {

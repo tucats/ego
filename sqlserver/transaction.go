@@ -35,6 +35,7 @@ type TxOperation struct {
 	EmptyError bool                   `json:"emptyError,omitempty"`
 	Data       map[string]interface{} `json:"data,omitempty"`
 	Errors     []TXError              `json:"errors,omitempty"`
+	Sql        string                 `json:"sql,omitempty"`
 }
 
 type symbolTable struct {
@@ -48,6 +49,10 @@ const (
 	updateOpcode  = "update"
 	dropOpCode    = "drop"
 	selectOpcode  = "select"
+	rowsOpcode    = "readrows"
+	sqlOpcode     = "sql"
+
+	resultSetSymbolName = "$$RESULT$$SET$$"
 )
 
 // DeleteRows deletes rows from a table. If no filter is provided, then all rows are
@@ -95,8 +100,24 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	}
 
 	for n, task := range tasks {
+		// Is the opcode missing, but there's a SQL string? If so, assume a "sql" operation
+		if task.Opcode == "" && task.Sql != "" {
+			tasks[n].Opcode = "sql"
+			task = tasks[n]
+		}
+
+		// Validate that the opcode is legit...
 		opcode := strings.ToLower(task.Opcode)
-		if !util.InList(opcode, deleteOpcode, updateOpcode, insertOpcode, dropOpCode, symbolsOpcode, selectOpcode) {
+		if !util.InList(opcode,
+			deleteOpcode,
+			updateOpcode,
+			insertOpcode,
+			dropOpCode,
+			symbolsOpcode,
+			selectOpcode,
+			rowsOpcode,
+			sqlOpcode,
+		) {
 			msg := fmt.Sprintf("transaction operation %d has invalid opcode: %s",
 				n, opcode)
 			util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
@@ -135,12 +156,28 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 				}
 			}
 
+			// IF this is a SQL opcode that is a select operation, convert it to
+			// a rows opcode
+			if strings.EqualFold(task.Opcode, sqlOpcode) {
+				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(task.Sql)), "select ") {
+					task.Opcode = rowsOpcode
+				}
+			}
+
 			switch strings.ToLower(task.Opcode) {
+			case sqlOpcode:
+				count, httpStatus, opErr = txSql(sessionID, user, tx, task, n+1, &symbols)
+				rowsAffected += count
+
 			case symbolsOpcode:
 				httpStatus, opErr = txSymbols(sessionID, task, n+1, &symbols)
 
 			case selectOpcode:
 				count, httpStatus, opErr = txSelect(sessionID, user, db, tx, task, n+1, &symbols)
+				rowsAffected += count
+
+			case rowsOpcode:
+				count, httpStatus, opErr = txRows(sessionID, user, db, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case updateOpcode:
@@ -234,6 +271,32 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			return
 		}
 
+		// Was there a result set in the symbol table? If so, we're returning
+		// a rowset type.
+
+		if result, ok := symbols.Symbols[resultSetSymbolName]; ok {
+			if rows, ok := result.([]map[string]interface{}); ok {
+				r := defs.DBRowSet{
+					ServerInfo: util.MakeServerInfo(sessionID),
+					Rows:       rows,
+					Count:      len(rows),
+				}
+
+				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+
+				ui.Debug(ui.TableLogger, "[%d] %s",
+					sessionID,
+					fmt.Sprintf("completed %d operations in transaction, updated %d rows, returning %d rows",
+						len(tasks), rowsAffected, len(rows)))
+
+				w.Header().Add("Content-Type", defs.RowSetMediaType)
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(b)
+
+				return
+			}
+		}
+
 		r := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      rowsAffected,
@@ -288,6 +351,95 @@ func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) 
 	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
 
 	return http.StatusOK, nil
+}
+
+func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, *errors.EgoError) {
+	var err error
+
+	if e := applySymbolsToTask(sessionID, &task, id, syms); !errors.Nil(e) {
+		return 0, http.StatusBadRequest, e
+	}
+
+	tableName, _ := fullName(user, task.Table)
+	count := 0
+
+	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
+
+	q := task.Sql
+	if q == "" {
+		q = formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
+		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
+			return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
+		}
+	}
+
+	ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+
+	var status int
+
+	count, status, err = readTxRowResultSet(db, tx, q, sessionID, syms, task.EmptyError)
+	if errors.Nil(err) {
+		return count, status, nil
+	}
+
+	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+
+	return 0, status, errors.New(err)
+}
+
+func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, *errors.EgoError) {
+	// If the symbol table doesn't exist, create it. If it does, delete any
+	// previous result set (to quote the Highlander, "there can be only one.")
+	if syms == nil || len(syms.Symbols) == 0 {
+		*syms = symbolTable{Symbols: map[string]interface{}{}}
+	} else {
+		delete(syms.Symbols, resultSetSymbolName)
+	}
+
+	var rows *sql.Rows
+
+	var err error
+
+	result := []map[string]interface{}{}
+	rowCount := 0
+	status := http.StatusOK
+
+	rows, err = tx.Query(q)
+	if err == nil {
+		defer rows.Close()
+
+		columnNames, _ := rows.Columns()
+		columnCount := len(columnNames)
+
+		for rows.Next() {
+			row := make([]interface{}, columnCount)
+			rowptrs := make([]interface{}, columnCount)
+
+			for i := range row {
+				rowptrs[i] = &row[i]
+			}
+
+			err = rows.Scan(rowptrs...)
+			if err == nil {
+				newRow := map[string]interface{}{}
+				for i, v := range row {
+					newRow[columnNames[i]] = v
+				}
+
+				result = append(result, newRow)
+				rowCount++
+			}
+		}
+
+		syms.Symbols[resultSetSymbolName] = result
+
+		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
+
+	} else {
+		status = http.StatusBadRequest
+	}
+
+	return rowCount, status, errors.New(err)
 }
 
 func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, *errors.EgoError) {
@@ -581,6 +733,47 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int
 		}
 
 		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
+
+		return int(count), http.StatusOK, nil
+	}
+
+	return 0, http.StatusBadRequest, errors.New(err)
+}
+
+func txSql(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, *errors.EgoError) {
+	if e := applySymbolsToTask(sessionID, &task, id, syms); !errors.Nil(e) {
+		return 0, http.StatusBadRequest, e
+	}
+
+	if len(task.Columns) > 0 {
+		return 0, http.StatusBadRequest, errors.NewMessage("columns not supported for SQL task")
+	}
+
+	if len(task.Filters) > 0 {
+		return 0, http.StatusBadRequest, errors.NewMessage("filters not supported for SQL task")
+	}
+
+	if len(strings.TrimSpace(task.Sql)) == 0 {
+		return 0, http.StatusBadRequest, errors.NewMessage("missing SQL command for SQL task")
+	}
+
+	if len(strings.TrimSpace(task.Table)) != 0 {
+		return 0, http.StatusBadRequest, errors.NewMessage("table name not supported for SQL task")
+	}
+
+	q := task.Sql
+
+	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+
+	rows, err := tx.Exec(q)
+	if err == nil {
+		count, _ := rows.RowsAffected()
+
+		if count == 0 && task.EmptyError {
+			return 0, http.StatusNotFound, errors.NewMessage("sql did not modify any rows")
+		}
+
+		ui.Debug(ui.TableLogger, "[%d] Affeccted %d rows; %d", sessionID, count, 200)
 
 		return int(count), http.StatusOK, nil
 	}
