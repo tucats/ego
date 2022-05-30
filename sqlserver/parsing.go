@@ -1,4 +1,4 @@
-package dbtables
+package sqlserver
 
 import (
 	"fmt"
@@ -289,7 +289,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		case EgoDialect:
 			infix = "||"
 		}
-		
+
 		listAllowed = true
 
 	case "NOT":

@@ -1,4 +1,4 @@
-package dbtables
+package sqlserver
 
 import (
 	"database/sql"

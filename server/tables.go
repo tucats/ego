@@ -10,7 +10,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/server/dbtables"
+	"github.com/tucats/ego/sqlserver"
 	"github.com/tucats/ego/util"
 )
 
@@ -198,7 +198,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dbtables.Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
+		sqlserver.Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
 
 		return
 	}
@@ -211,7 +211,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tableName == "" {
-		dbtables.ListTables(user, hasAdminPermission, sessionID, w, r)
+		sqlserver.ListTables(user, hasAdminPermission, sessionID, w, r)
 
 		return
 	}
@@ -227,16 +227,16 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch r.Method {
 		case http.MethodGet:
-			dbtables.ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
-			dbtables.InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			dbtables.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPatch:
-			dbtables.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
 			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
@@ -256,13 +256,13 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch r.Method {
 		case http.MethodGet:
-			dbtables.ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
-			dbtables.GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			dbtables.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
 			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
@@ -289,7 +289,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dbtables.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		sqlserver.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPut, http.MethodPost:
 		if !hasAdminPermission && !hasUpdatePermission {
@@ -301,10 +301,10 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If the table is the SQL pseudo-table name, then dispatch to the
 		// SQL statement handler. Otherwise, it's a table create operation.
-		if strings.EqualFold(tableName, dbtables.SQLPseudoTable) {
-			dbtables.SQLTransaction(r, w, sessionID, user)
+		if strings.EqualFold(tableName, sqlserver.SQLPseudoTable) {
+			sqlserver.SQLTransaction(r, w, sessionID, user)
 		} else {
-			dbtables.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
+			sqlserver.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
 		}
 
 	case http.MethodDelete:
@@ -315,7 +315,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dbtables.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		sqlserver.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPatch:
 		if !hasAdminPermission && !hasUpdatePermission {
