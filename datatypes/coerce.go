@@ -33,19 +33,19 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return value
 
 		case int:
-			return byte(value)
+			return byte(value & 0xff)
 
 		case int32:
-			return byte(value)
+			return byte(value & 0xff)
 
 		case int64:
-			return byte(value)
+			return byte(value & 0xff)
 
 		case float32:
-			return byte(value)
+			return byte(int64(value) & 0xff)
 
 		case float64:
-			return byte(value)
+			return byte(int64(value) & 0xff)
 
 		case string:
 			if value == "" {
@@ -57,7 +57,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 				return nil
 			}
 
-			return byte(st)
+			return byte(st & 0xff)
 		}
 
 	case int32:

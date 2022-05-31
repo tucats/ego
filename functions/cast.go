@@ -304,7 +304,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(rune(datatypes.GetInt(ch)))
+				r.WriteRune(rune(datatypes.GetInt32(ch)))
 			}
 
 			return r.String(), nil

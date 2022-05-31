@@ -28,7 +28,7 @@ func GetString(v interface{}) string {
 func GetByte(v interface{}) byte {
 	i := GetInt(v)
 
-	return byte(i)
+	return byte(i & 0xff)
 }
 
 func GetInt32(v interface{}) int32 {
