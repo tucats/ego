@@ -879,17 +879,32 @@ progress. This is particularly helpful if the client logic requires updates or d
 to multiple tables to reflect a single logical operation, and all the operations must
 happen together.
 
+The following task operations can be performed as part of a transaction:
+
+| Operation | Description |
+|:--------- |:----------- |
+| delete    | Delete rows from a table. Specify filters to indicate which rows. |
+| insert    | Insert a row into a table. Specify values for each column. |
+| readrows  | Read multiple rows from a table, return as transaction result.  |
+| select    | Read a single row from a table, set symbol values.  |
+| symbols   | Set symbol values for this transaction.  |
+| sql       | Execute arbitrary native SQL statement.  |
+| update    | Update one or more rows with new values. Specify filters to indicate which rows. |
+
+&nbsp;
+
 The payload for a transaction is an array of tasks. Each task has the following
 members:
 
 | Task Item   | Description |
 |:----------- |:------------|
-| operation   | The operation to be performed for this particular task. Can be "DELETE", "INSERT", or "UPDATE" |
-| table       | The name of the table on which to perform the operation. |
+| operation   | The operation to be performed for this particular task. |
+| table       | The name of the table on which to perform the operation. Not specified for SQL or READROWS operations. |
 | filters     | If filters are used for this operation, this is an array of filter specificiations |
 | columns     | If subset of the data is to be used, this is an array of the column names to be affected |
 | emptyError  | A boolean that indicates that the transaction fails if the step does not find or modify any rows |
 | data        | A representation of a single row, where the object field name is the column name and the object field value is the column value. |
+| sql         | Optional native SQL string used for "readrows" and "sql" operations only. |
 
 If the operation requires multiple filters, those can be individually specified in the `filters` array; each filter is
 impplicity joined to the others by an AND() operation, so that all the filters specifiec must be true for the filter

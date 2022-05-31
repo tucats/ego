@@ -149,7 +149,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			tableName, _ := fullName(user, task.Table)
 
 			if ui.LoggerIsActive(ui.TableLogger) {
-				if strings.EqualFold(symbolsOpcode, task.Opcode) {
+				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
 					ui.Debug(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
 				} else {
 					ui.Debug(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
@@ -286,7 +286,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 				ui.Debug(ui.TableLogger, "[%d] %s",
 					sessionID,
-					fmt.Sprintf("completed %d operations in transaction, updated %d rows, returning %d rows",
+					fmt.Sprintf("completed %d operations in transaction, updated and/or read %d rows, returning %d rows",
 						len(tasks), rowsAffected, len(rows)))
 
 				w.Header().Add("Content-Type", defs.RowSetMediaType)

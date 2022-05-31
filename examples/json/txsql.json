@@ -1,0 +1,19 @@
+[
+    {
+        "sql": "select * from admin.x2",
+        "errors": [
+            {
+                "condition": "EQ(_rows_,0)",
+                "status": 414,
+                "msg": "Bad number of rows read"
+            }
+        ]
+    },
+    {
+        "operation": "insert",
+        "table": "x2",
+        "data": {
+            "stamp": "1960-12-07T00:00:00Z"
+        }
+    }
+]
