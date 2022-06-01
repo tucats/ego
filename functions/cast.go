@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"math"
 	"reflect"
 	"strings"
 	"sync"
@@ -281,7 +282,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(int32(datatypes.GetInt(ch)))
+				r.WriteRune(rune(datatypes.GetInt(ch)))
 			}
 		} else {
 			str := datatypes.FormatUnquoted(source)
@@ -304,7 +305,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(rune(datatypes.GetInt32(ch)))
+				r.WriteRune(datatypes.GetInt32(ch))
 			}
 
 			return r.String(), nil
@@ -317,9 +318,9 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			v, _ := actual.Get(i)
 
 			if elementKind.IsType(datatypes.ByteType) {
-				_ = r.Set(i, byte(datatypes.GetInt(v)))
+				_ = r.Set(i, byte(datatypes.GetInt(v))&math.MaxInt8)
 			} else if elementKind.IsType(datatypes.Int32Type) {
-				_ = r.Set(i, int32(datatypes.GetInt(v)))
+				_ = r.Set(i, int32(datatypes.GetInt(v))&math.MaxInt8)
 			} else if elementKind.IsType(datatypes.IntType) {
 				_ = r.Set(i, datatypes.GetInt(v))
 			} else if elementKind.IsType(datatypes.Float64Type) {

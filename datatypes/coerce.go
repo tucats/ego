@@ -2,6 +2,7 @@ package datatypes
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -33,19 +34,19 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return value
 
 		case int:
-			return byte(value & 0xff)
+			return byte(value & math.MaxInt8)
 
 		case int32:
-			return byte(value & 0xff)
+			return byte(value & math.MaxInt8)
 
 		case int64:
-			return byte(value & 0xff)
+			return byte(value & math.MaxInt8)
 
 		case float32:
-			return byte(int64(value) & 0xff)
+			return byte(int64(value) & math.MaxInt8)
 
 		case float64:
-			return byte(int64(value) & 0xff)
+			return byte(int64(value) & math.MaxInt8)
 
 		case string:
 			if value == "" {
@@ -57,7 +58,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 				return nil
 			}
 
-			return byte(st & 0xff)
+			return byte(st & math.MaxInt8)
 		}
 
 	case int32:
@@ -73,10 +74,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return int32(0)
 
 		case int:
-			return int32(value)
+			return int32(value & math.MaxInt32)
 
 		case int64:
-			return int32(value)
+			return int32(value & math.MaxInt32)
 
 		case int32:
 			return value
@@ -100,7 +101,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 				return nil
 			}
 
-			return int32(st)
+			return int32(st & math.MaxInt32)
 		}
 
 	case int64:

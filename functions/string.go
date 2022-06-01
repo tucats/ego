@@ -236,7 +236,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			b.WriteRune(a)
 
 		case int:
-			b.WriteRune(rune(int32(a)))
+			b.WriteRune(rune(a))
 
 		default:
 			return nil, errors.New(errors.ErrArgumentCount).In("String()")

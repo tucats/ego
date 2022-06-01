@@ -2,6 +2,7 @@ package datatypes
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -28,7 +29,7 @@ func GetString(v interface{}) string {
 func GetByte(v interface{}) byte {
 	i := GetInt(v)
 
-	return byte(i & 0xff)
+	return byte(i & math.MaxInt8)
 }
 
 func GetInt32(v interface{}) int32 {

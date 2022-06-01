@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,7 +84,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	if len(args) > 2 {
-		mask = os.FileMode(datatypes.GetInt(args[2]))
+		mask = os.FileMode(datatypes.GetInt(args[2]) & math.MaxInt8)
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)

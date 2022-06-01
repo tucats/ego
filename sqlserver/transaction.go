@@ -796,8 +796,8 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, id int, 
 		return http.StatusBadRequest, errors.NewMessage("columns not supported for DROP task")
 	}
 
-	q := "DROP TABLE " + table
-	_, err := db.Exec(q)
+	q := "DROP TABLE ?"
+	_, err := db.Exec(q, table)
 
 	status := http.StatusOK
 	if !errors.Nil(err) {
