@@ -86,7 +86,6 @@ func DumpGrammar(ctx *Context) {
 }
 
 func dumpGrammarLevel(ctx *Context, level int) {
-
 	prefix := strings.Repeat("  ", level)
 
 	fmt.Printf("%s  {\n", prefix)
@@ -99,10 +98,12 @@ func dumpGrammarLevel(ctx *Context, level int) {
 	p(level+1, "Command", ctx.Command)
 	p(level+1, "Grammar", ctx.Grammar)
 	p(level+1, "Parameters", ctx.Parameters)
+
 	if level > 0 {
 		p(level+1, "Action", ctx.Action)
 		p(level+1, "Args", ctx.Args)
 	}
+
 	p(level+1, "ParameterDescription", ctx.ParameterDescription)
 	p(level+1, "ParameterCount", ctx.ParameterCount)
 	p(level+1, "ExpectedParameterCount", ctx.ExpectedParameterCount)
@@ -142,7 +143,7 @@ func p(level int, label string, value interface{}) {
 	case nil:
 
 	case []string:
-		if v != nil && len(v) > 0 {
+		if len(v) > 0 {
 			a := strings.Builder{}
 
 			a.WriteString("[]string{ ")
@@ -151,6 +152,7 @@ func p(level int, label string, value interface{}) {
 				if n > 0 {
 					a.WriteString(", ")
 				}
+
 				a.WriteRune('"')
 				a.WriteString(i)
 				a.WriteRune('"')
@@ -186,11 +188,13 @@ func p(level int, label string, value interface{}) {
 		}
 
 	case []Option:
-		if v != nil && len(v) > 0 {
+		if len(v) > 0 {
 			fmt.Printf("%s  %s []Option{\n", prefix, pad(label))
+
 			for n, option := range v {
 				dumpOption(level+1, option, n < len(v))
 			}
+			
 			fmt.Printf("%s  },\n", prefix)
 		}
 
