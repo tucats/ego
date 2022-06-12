@@ -50,7 +50,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 		}
 
 		// Allow substitutions in the sql command
-		task.Sql, err = applySymbolsToString(sessionID, task.Sql, syms, "SQL statement")
+		task.SQL, err = applySymbolsToString(sessionID, task.SQL, syms, "SQL statement")
 		if !errors.Nil(err) {
 			return err
 		}

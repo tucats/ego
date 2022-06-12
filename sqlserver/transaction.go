@@ -35,7 +35,7 @@ type TxOperation struct {
 	EmptyError bool                   `json:"emptyError,omitempty"`
 	Data       map[string]interface{} `json:"data,omitempty"`
 	Errors     []TXError              `json:"errors,omitempty"`
-	Sql        string                 `json:"sql,omitempty"`
+	SQL        string                 `json:"sql,omitempty"`
 }
 
 type symbolTable struct {
@@ -101,7 +101,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 	for n, task := range tasks {
 		// Is the opcode missing, but there's a SQL string? If so, assume a "sql" operation
-		if task.Opcode == "" && task.Sql != "" {
+		if task.Opcode == "" && task.SQL != "" {
 			tasks[n].Opcode = "sql"
 			task = tasks[n]
 		}
@@ -159,14 +159,14 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			// IF this is a SQL opcode that is a select operation, convert it to
 			// a rows opcode
 			if strings.EqualFold(task.Opcode, sqlOpcode) {
-				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(task.Sql)), "select ") {
+				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(task.SQL)), "select ") {
 					task.Opcode = rowsOpcode
 				}
 			}
 
 			switch strings.ToLower(task.Opcode) {
 			case sqlOpcode:
-				count, httpStatus, opErr = txSql(sessionID, user, tx, task, n+1, &symbols)
+				count, httpStatus, opErr = txSQL(sessionID, user, tx, task, n+1, &symbols)
 				rowsAffected += count
 
 			case symbolsOpcode:
@@ -365,7 +365,7 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperati
 
 	fakeURL, _ := url.Parse("http://localhost:8080/tables/" + task.Table + "/rows?limit=1")
 
-	q := task.Sql
+	q := task.SQL
 	if q == "" {
 		q = formSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), tableName, user, selectVerb)
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
@@ -434,7 +434,6 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms 
 		syms.Symbols[resultSetSymbolName] = result
 
 		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
-
 	} else {
 		status = http.StatusBadRequest
 	}
@@ -740,7 +739,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int
 	return 0, http.StatusBadRequest, errors.New(err)
 }
 
-func txSql(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, *errors.EgoError) {
+func txSQL(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, *errors.EgoError) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); !errors.Nil(e) {
 		return 0, http.StatusBadRequest, e
 	}
@@ -753,7 +752,7 @@ func txSql(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, s
 		return 0, http.StatusBadRequest, errors.NewMessage("filters not supported for SQL task")
 	}
 
-	if len(strings.TrimSpace(task.Sql)) == 0 {
+	if len(strings.TrimSpace(task.SQL)) == 0 {
 		return 0, http.StatusBadRequest, errors.NewMessage("missing SQL command for SQL task")
 	}
 
@@ -761,7 +760,7 @@ func txSql(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, s
 		return 0, http.StatusBadRequest, errors.NewMessage("table name not supported for SQL task")
 	}
 
-	q := task.Sql
+	q := task.SQL
 
 	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
