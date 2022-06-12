@@ -38,6 +38,12 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 						dataType := datatypes.TypeOf(t)
 						if dataType.IsType(datatypes.IntType) {
 							_, ok = v.(int)
+						} else if dataType.IsType(datatypes.Int32Type) {
+							_, ok = v.(int32)
+						} else if dataType.IsType(datatypes.Int64Type) {
+							_, ok = v.(int64)
+						} else if dataType.IsType(datatypes.ByteType) {
+							_, ok = v.(byte)
 						} else if dataType.IsType(datatypes.BoolType) {
 							_, ok = v.(bool)
 						} else if dataType.IsType(datatypes.StringType) {
@@ -76,6 +82,16 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 				if t.IsType(datatypes.IntType) {
 					v = datatypes.GetInt(v)
+				} else if t.IsType(datatypes.Int32Type) {
+					v = datatypes.GetInt32(v)
+				} else if t.IsType(datatypes.Int64Type) {
+					v = datatypes.GetInt64(v)
+				} else if t.IsType(datatypes.ByteType) {
+					v = datatypes.GetByte(v)
+				} else if t.IsType(datatypes.Float32Type) {
+					v = datatypes.GetFloat32(v)
+				} else if t.IsType(datatypes.Float32Type) {
+					v = datatypes.GetFloat32(v)
 				} else if t.IsType(datatypes.Float32Type) {
 					v = datatypes.GetFloat32(v)
 				} else if t.IsType(datatypes.Float64Type) {

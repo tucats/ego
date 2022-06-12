@@ -1,0 +1,69 @@
+@test "datamodel: type coercions"
+
+{
+
+    func f_byte( x interface{} ) byte  {
+       return x
+    }
+
+    @assert type(f_byte(int(42))) == "byte"
+    @assert type(f_byte(int32(42))) == "byte"
+    @assert type(f_byte(int64(42))) == "byte"
+    @assert type(f_byte(float32(42))) == "byte"
+    @assert type(f_byte(float64(42))) == "byte"
+
+
+    func f_int( x interface{} ) int  {
+       return x
+    }
+
+    @assert type(f_int(int(42))) == "int"
+    @assert type(f_int(int32(42))) == "int"
+    @assert type(f_int(int64(42))) == "int"
+    @assert type(f_int(float32(42))) == "int"
+    @assert type(f_int(float64(42))) == "int"
+
+    func f_int32( x interface{} ) int32  {
+       return x
+    }
+    
+    @assert type(f_int32(int(42))) == "int32"
+    @assert type(f_int32(int32(42))) == "int32"
+    @assert type(f_int32(int64(42))) == "int32"
+    @assert type(f_int32(float32(42))) == "int32"
+    @assert type(f_int32(float64(42))) == "int32"
+
+    func f_int64( x interface{} ) int64  {
+       return x
+    }
+    
+    @assert type(f_int64(int(42))) == "int64"
+    @assert type(f_int64(int32(42))) == "int64"
+    @assert type(f_int64(int64(42))) == "int64"
+    @assert type(f_int64(float32(42))) == "int64"
+    @assert type(f_int64(float64(42))) == "int64"
+
+    func f_float32( x interface{} ) float32  {
+       return x
+    }
+    
+    @assert type(f_float32(int(42))) == "float32"
+    @assert type(f_float32(int32(42))) == "float32"
+    @assert type(f_float32(int64(42))) == "float32"
+    @assert type(f_float32(float32(42))) == "float32"
+    @assert type(f_float32(float64(42))) == "float32"
+
+    func f_float64( x interface{} ) float64  {
+       return x
+    }
+    
+    @assert type(f_float64(int(42))) == "float64"
+    @assert type(f_float64(int32(42))) == "float64"
+    @assert type(f_float64(int64(42))) == "float64"
+    @assert type(f_float64(float32(42))) == "float64"
+    @assert type(f_float64(float64(42))) == "float64"
+
+
+}
+
+@pass
