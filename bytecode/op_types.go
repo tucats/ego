@@ -144,10 +144,16 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	} else if t.IsType(datatypes.IntType) {
 		v = datatypes.GetInt(v)
+	} else if t.IsType(datatypes.Int32Type) {
+		v = datatypes.GetInt32(v)
+	} else if t.IsType(datatypes.Int64Type) {
+		v = datatypes.GetInt64(v)
 	} else if t.IsType(datatypes.Float64Type) {
 		v = datatypes.GetFloat64(v)
 	} else if t.IsType(datatypes.Float32Type) {
 		v = datatypes.GetFloat32(v)
+	} else if t.IsType(datatypes.ByteType) {
+		v = datatypes.GetByte(v)
 	} else if t.IsType(datatypes.BoolType) {
 		v = datatypes.GetBool(v)
 	} else if t.IsType(datatypes.StringType) {
