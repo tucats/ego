@@ -10,7 +10,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	server "github.com/tucats/ego/server/server"
+	server "github.com/tucats/ego/http/server"
 )
 
 // Registered handler for the /assets path. Ensure the path name is relative by removing

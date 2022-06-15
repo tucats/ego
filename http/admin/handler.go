@@ -7,8 +7,8 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	auth "github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
+	auth "github.com/tucats/ego/http/auth"
+	"github.com/tucats/ego/http/server"
 )
 
 const (

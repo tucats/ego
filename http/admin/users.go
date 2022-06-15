@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	auth "github.com/tucats/ego/server/auth"
+	auth "github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )

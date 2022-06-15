@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/assets"
-	"github.com/tucats/ego/server/services"
+	"github.com/tucats/ego/http/assets"
+	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/util"
 )
 

@@ -10,8 +10,8 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/server/auth"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/http/auth"
+	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/util"
 )
 

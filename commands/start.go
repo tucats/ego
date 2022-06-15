@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/http/server"
 )
 
 // Detach starts the sever as a detached process.

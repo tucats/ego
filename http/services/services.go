@@ -25,9 +25,9 @@ import (
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	auth "github.com/tucats/ego/http/auth"
+	server "github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/runtime"
-	auth "github.com/tucats/ego/server/auth"
-	server "github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
