@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -22,10 +23,10 @@ import (
 // as the payload, compiles and runs it. Because this is a major
 // security risk surface, this mode is not enabled by default.
 func CodeHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := atomic.AddInt32(&nextSessionID, 1)
-	logRequest(r, sessionID)
+	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
+	server.LogRequest(r, sessionID)
 
-	CountRequest(CodeRequestCounter)
+	server.CountRequest(server.CodeRequestCounter)
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")

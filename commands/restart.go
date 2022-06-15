@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
-	server "github.com/tucats/ego/server"
+	"github.com/tucats/ego/server/server"
 )
 
 // Restart stops and then starts a server, using the information

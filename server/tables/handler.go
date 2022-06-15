@@ -1,4 +1,4 @@
-package server
+package tables
 
 import (
 	"fmt"
@@ -10,7 +10,8 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/sqlserver"
+	"github.com/tucats/ego/server/auth"
+	"github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/util"
 )
 
@@ -25,12 +26,12 @@ const (
 )
 
 func TablesHandler(w http.ResponseWriter, r *http.Request) {
-	CountRequest(TableRequestCounter)
+	server.CountRequest(server.TableRequestCounter)
 
-	sessionID := atomic.AddInt32(&nextSessionID, 1)
+	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	path := r.URL.Path
 
-	logRequest(r, sessionID)
+	server.LogRequest(r, sessionID)
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
@@ -52,19 +53,19 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := ""
 	pass := ""
-	auth := r.Header.Get("Authorization")
+	authorization := r.Header.Get("Authorization")
 
-	if auth == "" {
+	if authorization == "" {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
 		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
-	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
+	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
-		token := strings.TrimSpace(auth[len(defs.AuthScheme):])
-		authenticatedCredentials = validateToken(token)
-		user = tokenUser(token)
+		token := strings.TrimSpace(authorization[len(defs.AuthScheme):])
+		authenticatedCredentials = auth.ValidateToken(token)
+		user = auth.TokenUser(token)
 
 		// If doing INFO logging, make a neutered version of the token showing
 		// only the first few bytes of the token string.
@@ -76,7 +77,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 			valid := ", invalid credential"
 			if authenticatedCredentials {
-				if getPermission(user, rootPrivileges) {
+				if auth.GetPermission(user, rootPrivileges) {
 					valid = ", root privilege user"
 				} else {
 					valid = ", normal user"
@@ -95,12 +96,12 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			ui.Debug(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
 		} else {
-			authenticatedCredentials = validatePassword(user, pass)
+			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
 
 		valid := ", invalid credential"
 		if authenticatedCredentials {
-			if getPermission(user, rootPrivileges) {
+			if auth.GetPermission(user, rootPrivileges) {
 				valid = ", root privilege user"
 			} else {
 				valid = ", normal user"
@@ -130,17 +131,17 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	// 4. A user with tables permission can do any table operation
 	// 5. A user with root permission can do any table operation
 
-	hasReadPermission := getPermission(user, tableAccessPrivilege)
-	hasAdminPermission := getPermission(user, tableAdminPrivilege)
-	hasUpdatePermission := getPermission(user, tableUpdatePrivilege)
+	hasReadPermission := auth.GetPermission(user, tableAccessPrivilege)
+	hasAdminPermission := auth.GetPermission(user, tableAdminPrivilege)
+	hasUpdatePermission := auth.GetPermission(user, tableUpdatePrivilege)
 
 	if !hasReadPermission {
-		hasReadPermission = getPermission(user, rootPrivileges)
+		hasReadPermission = auth.GetPermission(user, rootPrivileges)
 		if hasReadPermission {
 			hasAdminPermission = true
 			hasUpdatePermission = true
 		} else {
-			hasReadPermission = getPermission(user, tablesPrivileges)
+			hasReadPermission = auth.GetPermission(user, tablesPrivileges)
 			if hasReadPermission {
 				hasAdminPermission = true
 				hasUpdatePermission = true
@@ -198,7 +199,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sqlserver.Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
+		Transaction(user, hasAdminPermission || hasUpdatePermission, sessionID, w, r)
 
 		return
 	}
@@ -211,7 +212,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tableName == "" {
-		sqlserver.ListTables(user, hasAdminPermission, sessionID, w, r)
+		ListTables(user, hasAdminPermission, sessionID, w, r)
 
 		return
 	}
@@ -227,16 +228,16 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch r.Method {
 		case http.MethodGet:
-			sqlserver.ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			ReadRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
-			sqlserver.InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			InsertRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			sqlserver.DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			DeleteRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPatch:
-			sqlserver.UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
+			UpdateRows(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
 			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
@@ -256,13 +257,13 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch r.Method {
 		case http.MethodGet:
-			sqlserver.ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			ReadPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodPut:
-			sqlserver.GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			GrantPermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		case http.MethodDelete:
-			sqlserver.DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
+			DeletePermissions(user, hasAdminPermission, tableName, sessionID, w, r)
 
 		default:
 			util.ErrorResponse(w, sessionID, unsupportedMethodMessage, http.StatusMethodNotAllowed)
@@ -289,7 +290,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sqlserver.ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		ReadTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPut, http.MethodPost:
 		if !hasAdminPermission && !hasUpdatePermission {
@@ -301,10 +302,10 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If the table is the SQL pseudo-table name, then dispatch to the
 		// SQL statement handler. Otherwise, it's a table create operation.
-		if strings.EqualFold(tableName, sqlserver.SQLPseudoTable) {
-			sqlserver.SQLTransaction(r, w, sessionID, user)
+		if strings.EqualFold(tableName, SQLPseudoTable) {
+			SQLTransaction(r, w, sessionID, user)
 		} else {
-			sqlserver.TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
+			TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)
 		}
 
 	case http.MethodDelete:
@@ -315,7 +316,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sqlserver.DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
+		DeleteTable(user, hasAdminPermission, tableName, sessionID, w, r)
 
 	case http.MethodPatch:
 		if !hasAdminPermission && !hasUpdatePermission {

@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
-	"github.com/tucats/ego/server"
+	"github.com/tucats/ego/server/server"
 )
 
 // Status displays the status of a running server if it exists.

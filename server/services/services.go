@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"bytes"
@@ -26,19 +26,21 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
+	auth "github.com/tucats/ego/server/auth"
+	server "github.com/tucats/ego/server/server"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
 // Define a cache. This keeps a copy of the compiler and the bytecode
 // used to represent each service compilation.
-type cachedCompilationUnit struct {
-	age   time.Time
+type CachedCompilationUnit struct {
+	Age   time.Time
 	c     *compiler.Compiler
 	b     *bytecode.ByteCode
 	t     *tokenizer.Tokenizer
 	s     *symbols.SymbolTable
-	count int
+	Count int
 }
 
 const (
@@ -47,11 +49,8 @@ const (
 	CredentialNormalMessage  = ", normal user"
 )
 
-var StartTime string
-var Version string
-var serviceCache = map[string]cachedCompilationUnit{}
-var cacheMutex sync.Mutex
-var nextSessionID int32
+var ServiceCache = map[string]CachedCompilationUnit{}
+var ServiceCacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
@@ -61,19 +60,19 @@ var MaxCachedEntries = -1
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
-	cacheMutex.Lock()
+	ServiceCacheMutex.Lock()
 	if MaxCachedEntries < 0 {
 		txt := settings.Get(defs.MaxCacheSizeSetting)
 		MaxCachedEntries, _ = strconv.Atoi(txt)
 	}
-	cacheMutex.Unlock()
+	ServiceCacheMutex.Unlock()
 
-	sessionID := atomic.AddInt32(&nextSessionID, 1)
+	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	requestor := r.RemoteAddr
 
-	logRequest(r, sessionID)
-	CountRequest(ServiceRequestCounter)
+	server.LogRequest(r, sessionID)
+	server.CountRequest(server.ServiceRequestCounter)
 
 	if forward := r.Header.Get("X-Forwarded-For"); forward != "" {
 		addrs := strings.Split(forward, ",")
@@ -104,8 +103,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_session", int(sessionID))
 	_ = symbolTable.SetAlways("_method", r.Method)
 	_ = symbolTable.SetAlways("__exec_mode", "server")
-	_ = symbolTable.SetAlways("_version", Version)
-	_ = symbolTable.SetAlways("_start_time", StartTime)
+	_ = symbolTable.SetAlways("_version", server.Version)
+	_ = symbolTable.SetAlways("_start_time", server.StartTime)
 	_ = symbolTable.SetAlways("_requestor", requestor)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
@@ -128,11 +127,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Setup additional builtins and supporting values needed for REST service execution
 	_ = symbolTable.SetAlways("eval", runtime.Eval)
-	_ = symbolTable.SetAlways("authenticated", Authenticated)
-	_ = symbolTable.SetAlways("permission", Permission)
-	_ = symbolTable.SetAlways("setuser", SetUser)
-	_ = symbolTable.SetAlways("getuser", GetUser)
-	_ = symbolTable.SetAlways("deleteuser", DeleteUser)
+	_ = symbolTable.SetAlways("authenticated", auth.Authenticated)
+	_ = symbolTable.SetAlways("permission", auth.Permission)
+	_ = symbolTable.SetAlways("setuser", auth.SetUser)
+	_ = symbolTable.SetAlways("getuser", auth.GetUser)
+	_ = symbolTable.SetAlways("deleteuser", auth.DeleteUser)
 	_ = symbolTable.SetAlways("_rest_response", nil)
 	runtime.AddBuiltinPackages(symbolTable)
 
@@ -206,25 +205,25 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	var tokens *tokenizer.Tokenizer
 
 	// Is this endpoint already in the cache of compiled services?
-	cacheMutex.Lock()
-	if cachedItem, ok := serviceCache[endpoint]; ok {
+	ServiceCacheMutex.Lock()
+	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		symbolTable.GetPackages(cachedItem.s)
 		compilerInstance = cachedItem.c.Clone(true)
 		compilerInstance.AddPackageToSymbols(symbolTable)
 
 		serviceCode = cachedItem.b
 		tokens = cachedItem.t
-		cachedItem.age = time.Now()
-		cachedItem.count++
-		serviceCache[endpoint] = cachedItem
+		cachedItem.Age = time.Now()
+		cachedItem.Count++
+		ServiceCache[endpoint] = cachedItem
 
 		ui.Debug(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
-		cacheMutex.Unlock()
+		ServiceCacheMutex.Unlock()
 	} else {
-		bytes, err := ioutil.ReadFile(filepath.Join(PathRoot, endpoint+defs.EgoFilenameExtension))
+		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
 		if !errors.Nil(err) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
-			cacheMutex.Unlock()
+			ServiceCacheMutex.Unlock()
 
 			return
 		}
@@ -251,7 +250,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if !errors.Nil(err) {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
-			cacheMutex.Unlock()
+			ServiceCacheMutex.Unlock()
 
 			return
 		}
@@ -262,7 +261,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)
 		}
 
-		cacheMutex.Unlock()
+		ServiceCacheMutex.Unlock()
 	}
 
 	if !errors.Nil(err) {
@@ -282,19 +281,19 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_token", "")
 	_ = symbolTable.SetAlways("_token_valid", false)
 
-	auth := r.Header.Get("Authorization")
+	authorization := r.Header.Get("Authorization")
 
 	// If there are no authentication credentials provided, but the method is PUT with a payload
 	// containing credentials, use them.
 
-	if auth == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+	if authorization == "" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		credentials := defs.Credentials{}
 
 		err := json.NewDecoder(r.Body).Decode(&credentials)
 		if errors.Nil(err) && credentials.Username != "" && credentials.Password != "" {
 			// Create the authorization header from the payload
-			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
-			r.Header.Set("Authorization", auth)
+			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
+			r.Header.Set("Authorization", authorization)
 			ui.Debug(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
 		} else {
 			ui.Debug(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
@@ -303,19 +302,19 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// If there was no autheorization item, or the credentials payload was incorrectly formed,
 	// we don't really have any credentials to use.
-	if auth == "" {
+	if authorization == "" {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
 		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
-	} else if strings.HasPrefix(strings.ToLower(auth), defs.AuthScheme) {
+	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
-		token := strings.TrimSpace(auth[len(defs.AuthScheme):])
-		authenticatedCredentials = validateToken(token)
+		token := strings.TrimSpace(authorization[len(defs.AuthScheme):])
+		authenticatedCredentials = auth.ValidateToken(token)
 		_ = symbolTable.SetAlways("_token", token)
 		_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
-		user = tokenUser(token)
+		user = auth.TokenUser(token)
 
 		// If doing INFO logging, make a neutered version of the token showing
 		// only the first few bytes of the token string.
@@ -327,7 +326,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 			valid := CredentialInvalidMessage
 			if authenticatedCredentials {
-				if getPermission(user, "root") {
+				if auth.GetPermission(user, "root") {
 					valid = CredentialAdminMessage
 				} else {
 					valid = CredentialNormalMessage
@@ -346,7 +345,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			ui.Debug(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
 		} else {
-			authenticatedCredentials = validatePassword(user, pass)
+			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
 
 		_ = symbolTable.SetAlways("_token", "")
@@ -354,7 +353,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		valid := CredentialInvalidMessage
 		if authenticatedCredentials {
-			if getPermission(user, "root") {
+			if auth.GetPermission(user, "root") {
 				valid = CredentialAdminMessage
 			} else {
 				valid = CredentialNormalMessage
@@ -370,7 +369,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	_ = symbolTable.SetAlways("_password", pass)
 	_ = symbolTable.SetAlways("_authenticated", authenticatedCredentials)
 	_ = symbolTable.SetAlways("_rest_status", http.StatusOK)
-	_ = symbolTable.SetAlways("_superuser", authenticatedCredentials && getPermission(user, "root"))
+	_ = symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
 
 	// Get the body of the request as a string
 	byteBuffer := new(bytes.Buffer)
@@ -403,9 +402,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if !errors.Nil(err) {
-		cacheMutex.Lock()
-		delete(serviceCache, endpoint)
-		cacheMutex.Unlock()
+		ServiceCacheMutex.Lock()
+		delete(ServiceCache, endpoint)
+		ServiceCacheMutex.Unlock()
 	}
 
 	// Determine the status of the REST call by looking for the
@@ -416,7 +415,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
 		status = datatypes.GetInt(statusValue)
 		if status == http.StatusUnauthorized {
-			w.Header().Set("WWW-Authenticate", `Basic realm="`+Realm+`", charset="UTF-8"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
 		}
 	}
 
@@ -470,13 +469,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in
 	// the cache, give our current set to the cached item.
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
+	ServiceCacheMutex.Lock()
+	defer ServiceCacheMutex.Unlock()
 
-	if cachedItem, ok := serviceCache[endpoint]; ok && cachedItem.s == nil {
+	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
 		count := cachedItem.s.GetPackages(symbolTable)
-		serviceCache[endpoint] = cachedItem
+		ServiceCache[endpoint] = cachedItem
 
 		ui.Debug(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
@@ -516,30 +515,30 @@ func findPath(sessionID int32, urlPath string) string {
 func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
 	ui.Debug(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
 
-	serviceCache[endpoint] = cachedCompilationUnit{
-		age:   time.Now(),
+	ServiceCache[endpoint] = CachedCompilationUnit{
+		Age:   time.Now(),
 		c:     comp,
 		b:     code,
 		t:     tokens,
 		s:     nil, // Will be filled in at the end of successful execution.
-		count: 0,
+		Count: 0,
 	}
 
 	// Is the cache too large? If so, throw out the oldest
 	// item from the cache.
-	for len(serviceCache) > MaxCachedEntries {
+	for len(ServiceCache) > MaxCachedEntries {
 		key := ""
 		oldestAge := 0.0
 
-		for k, v := range serviceCache {
-			thisAge := time.Since(v.age).Seconds()
+		for k, v := range ServiceCache {
+			thisAge := time.Since(v.Age).Seconds()
 			if thisAge > oldestAge {
 				key = k
 				oldestAge = thisAge
 			}
 		}
 
-		delete(serviceCache, key)
+		delete(ServiceCache, key)
 		ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
 	}
 }

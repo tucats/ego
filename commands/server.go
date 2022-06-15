@@ -17,7 +17,12 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/runtime"
-	"github.com/tucats/ego/server"
+	admin "github.com/tucats/ego/server/admin"
+	assets "github.com/tucats/ego/server/assets"
+	"github.com/tucats/ego/server/auth"
+	server "github.com/tucats/ego/server/server"
+	"github.com/tucats/ego/server/services"
+	"github.com/tucats/ego/server/tables"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -103,20 +108,20 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
-		http.HandleFunc(defs.CodePath, server.CodeHandler)
+		http.HandleFunc(defs.CodePath, services.CodeHandler)
 
 		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
-	http.HandleFunc(defs.AssetsPath, server.AssetsHandler)
-	http.HandleFunc(defs.AdminUsersPath, server.UserHandler)
-	http.HandleFunc(defs.AdminCachesPath, server.CachesHandler)
-	http.HandleFunc(defs.AdminLoggersPath, server.LoggingHandler)
+	http.HandleFunc(defs.AssetsPath, assets.AssetsHandler)
+	http.HandleFunc(defs.AdminUsersPath, admin.UserHandler)
+	http.HandleFunc(defs.AdminCachesPath, admin.CachesHandler)
+	http.HandleFunc(defs.AdminLoggersPath, admin.LoggingHandler)
 	http.HandleFunc(defs.AdminHeartbeatPath, HeartbeatHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
 
-	http.HandleFunc(defs.TablesPath, server.TablesHandler)
+	http.HandleFunc(defs.TablesPath, tables.TablesHandler)
 	ui.Debug(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Set up tracing for the server, and enable the logger if
@@ -149,14 +154,14 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	// Load the user database (if requested)
-	if err := server.LoadUserDatabase(c); !errors.Nil(err) {
+	if err := auth.LoadUserDatabase(c); !errors.Nil(err) {
 		return err
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
 	_ = symbols.RootSymbolTable.SetAlways("__paths", []string{})
 
-	err := server.DefineLibHandlers(server.PathRoot, "/services")
+	err := services.DefineLibHandlers(server.PathRoot, "/services")
 	if !errors.Nil(err) {
 		return err
 	}
@@ -190,7 +195,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	// If there is a maximum size to the cache of compiled service programs,
 	// set it now.
 	if c.WasFound("cache-size") {
-		server.MaxCachedEntries, _ = c.Integer("cache-size")
+		services.MaxCachedEntries, _ = c.Integer("cache-size")
 	}
 
 	if c.WasFound("static-types") {
@@ -283,7 +288,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 		if name == "" {
 			name = settings.Get(defs.LogonServerSetting)
 		}
-		
+
 		if name == "" {
 			name = "localhost"
 		}

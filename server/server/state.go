@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -15,69 +13,28 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
 
+// PathRoot contains the root of the URL (the host information and the context
+// root, if any).
 var PathRoot string
+
+// Realm contains the text name of the security realm used for password challenges.
 var Realm string
 
-// DefineLibHandlers starts at a root location and a subpath, and recursively scans
-// the directorie(s) found to identify defs.EgoExtension programs that can be defined as
-// available service endpoints.
-func DefineLibHandlers(root, subpath string) *errors.EgoError {
-	paths := make([]string, 0)
+// StartTime is the starting time the server was launched.
+var StartTime string
 
-	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
-	if !errors.Nil(err) {
-		return errors.New(err)
-	}
+// Version is a local copy of the application version string value, that can be
+// injected into HTTP request headers and log messages.
+var Version string
 
-	for _, f := range fids {
-		fullname := f.Name()
-		if !f.IsDir() && path.Ext(fullname) != defs.EgoFilenameExtension {
-			continue
-		}
-
-		slash := strings.LastIndex(fullname, "/")
-		if slash > 0 {
-			fullname = fullname[:slash]
-		}
-
-		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
-
-		if !f.IsDir() {
-			paths = append(paths, path.Join(subpath, fullname))
-		} else {
-			newpath := filepath.Join(subpath, fullname)
-
-			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
-
-			err := DefineLibHandlers(root, newpath)
-			if !errors.Nil(err) {
-				return err
-			}
-		}
-	}
-
-	for _, path := range paths {
-		if pathList, ok := symbols.RootSymbolTable.Get("__paths"); ok {
-			if px, ok := pathList.([]string); ok {
-				px = append(px, path)
-				_ = symbols.RootSymbolTable.SetAlways("__paths", px)
-			}
-		}
-
-		path = path + "/"
-		ui.Debug(ui.ServerLogger, "  Endpoint %s", path)
-		http.HandleFunc(path, ServiceHandler)
-	}
-
-	return nil
-}
+// NextSessionID indicates the sequence number of requests, and is updated
+// atomically by any handler that is activted from the HTTP mux.
+var NextSessionID int32
 
 // IsRunning determines, for a given process id (pid), is that process
 // actually running? On Windows systems, the FindProcess() will always

@@ -1,4 +1,4 @@
-package server
+package auth
 
 import (
 	"crypto/sha256"
@@ -24,7 +24,7 @@ type UserIOService interface {
 	Flush() *errors.EgoError
 }
 
-var service UserIOService
+var AuthService UserIOService
 
 var userDatabaseFile = ""
 
@@ -62,7 +62,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 		ui.Debug(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)
 	}
 
-	service, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
+	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
 
 	// If there is a --superuser specified on the command line, or in the persistent profile data,
 	// mark that user as having ROOT privileges
@@ -87,12 +87,12 @@ func defineCredentialService(path, user, password string) (UserIOService, *error
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
 
 	if isDatabaseURL(path) {
-		service, err = NewDatabaseService(path, user, password)
+		AuthService, err = NewDatabaseService(path, user, password)
 	} else {
-		service, err = NewFileService(path, user, password)
+		AuthService, err = NewFileService(path, user, password)
 	}
 
-	return service, err
+	return AuthService, err
 }
 
 // setPermission sets a given permission string to true for a given user. Returns an error
@@ -102,7 +102,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 
 	privname := strings.ToLower(privilege)
 
-	if u, err := service.ReadUser(user); errors.Nil(err) {
+	if u, err := AuthService.ReadUser(user); errors.Nil(err) {
 		if u.Permissions == nil {
 			u.Permissions = []string{"logon"}
 		}
@@ -125,12 +125,12 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 			}
 		}
 
-		err = service.WriteUser(u)
+		err = AuthService.WriteUser(u)
 		if !errors.Nil(err) {
 			return err
 		}
 
-		err = service.Flush()
+		err = AuthService.Flush()
 		if !errors.Nil(err) {
 			return err
 		}
@@ -143,12 +143,12 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 	return err
 }
 
-// getPermission returns a boolean indicating if the given username and privilege are valid and
+// GetPermission returns a boolean indicating if the given username and privilege are valid and
 // set. If the username or privilege does not exist, then the reply is always false.
-func getPermission(user, privilege string) bool {
+func GetPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 
-	if u, ok := service.ReadUser(user); errors.Nil(ok) {
+	if u, ok := AuthService.ReadUser(user); errors.Nil(ok) {
 		pn := findPermission(u, privname)
 
 		return (pn >= 0)
@@ -172,12 +172,12 @@ func findPermission(u defs.User, perm string) int {
 	return -1
 }
 
-// validatePassword checks a username and password against the database and
+// ValidatePassword checks a username and password against the database and
 // returns true if the user exists and the password is valid.
-func validatePassword(user, pass string) bool {
+func ValidatePassword(user, pass string) bool {
 	ok := false
 
-	if u, userExists := service.ReadUser(user); errors.Nil(userExists) {
+	if u, userExists := AuthService.ReadUser(user); errors.Nil(userExists) {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
@@ -237,7 +237,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 
 	// If the user exists and the password matches then valid.
-	return validatePassword(user, pass), nil
+	return ValidatePassword(user, pass), nil
 }
 
 // Permission implements the Permission(user,priv) function. It returns
@@ -253,7 +253,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	priv = strings.ToUpper(datatypes.GetString(args[1]))
 
 	// If the user exists and the privilege exists, return it's status
-	return getPermission(user, priv), nil
+	return GetPermission(user, priv), nil
 }
 
 // SetUser implements the SetUser() function. For the super user, this function
@@ -285,7 +285,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			name = strings.ToLower(datatypes.GetString(n))
 		}
 
-		r, ok := service.ReadUser(name)
+		r, ok := AuthService.ReadUser(name)
 		if !errors.Nil(ok) {
 			r = defs.User{
 				Name:        name,
@@ -313,9 +313,9 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			}
 		}
 
-		err = service.WriteUser(r)
+		err = AuthService.WriteUser(r)
 		if err == nil {
-			err = service.Flush()
+			err = AuthService.Flush()
 		}
 	}
 
@@ -344,13 +344,13 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
-	if _, ok := service.ReadUser(name); errors.Nil(ok) {
-		err := service.DeleteUser(name)
+	if _, ok := AuthService.ReadUser(name); errors.Nil(ok) {
+		err := AuthService.DeleteUser(name)
 		if !errors.Nil(err) {
 			return false, err
 		}
 
-		return true, service.Flush()
+		return true, AuthService.Flush()
 	}
 
 	return false, nil
@@ -367,7 +367,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
-	t, ok := service.ReadUser(name)
+	t, ok := AuthService.ReadUser(name)
 	if !errors.Nil(ok) {
 		return r, nil
 	}
@@ -379,7 +379,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	_, _ = r.Set("name", name)
 	_, _ = r.Set("permissions", permArray)
-	_, _ = r.Set("superuser", getPermission(name, "root"))
+	_, _ = r.Set("superuser", GetPermission(name, "root"))
 
 	return r, nil
 }
@@ -387,7 +387,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // validateToken is a helper function that calls the builtin cipher.validate(). The
 // optional second argument (true) tells the function to generate an error state for
 // the various ways the token was considered invalid.
-func validateToken(t string) bool {
+func ValidateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
 	if !errors.Nil(err) {
 		ui.Debug(ui.AuthLogger, "Token validation error: "+err.Error())
@@ -396,9 +396,9 @@ func validateToken(t string) bool {
 	return v.(bool)
 }
 
-// tokenUser is a helper function that calls the builtin cipher.token() and returns
+// TokenUser is a helper function that calls the builtin cipher.token() and returns
 // the user field.
-func tokenUser(t string) string {
+func TokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if datatypes.GetBool(v) {
 		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)

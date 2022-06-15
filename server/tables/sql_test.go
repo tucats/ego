@@ -1,4 +1,4 @@
-package sqlserver
+package tables
 
 import (
 	"reflect"
