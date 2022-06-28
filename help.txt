@@ -1,0 +1,33 @@
+# This is the text of the help function, which is available in
+# interactive console Ego mode.  Each section starts with ".topic" 
+# folllowed by the topic path, where each topic is separated by
+# dots. Topic names are always lower-case.
+#
+# When the user selects a topic, it is located in the file
+# and the help for that is printed. If there are additional sub-
+# topics they are also printed out as "additional topics" in the
+# help output.
+#
+# If you issue the "help" command wih no argument, it assumes
+# the topic is "introduction". If you use "help topics" it causes
+# the top-level topics to be listed.
+#
+.topic introduction
+
+Ego is a scripting language based on the Go language. It features
+extensions to Go such as dynamic types and try/catch constructs.
+
+Use the command "help topics" to get a list of all top-level help
+topics available.
+
+.topic introduction.author
+
+Ego is written and maintained by Tom Cole, tomcole@mac.com
+
+.topic introduction.source
+
+The source can be found on GitHub
+
+.topic legal
+
+There are legal things here.
