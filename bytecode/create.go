@@ -41,10 +41,24 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 		baseType = datatypes.GetType(v)
 	}
 
+	isInt := baseType.IsIntegerType()
+	isFloat := baseType.IsFloatType()
+
 	a := datatypes.NewArray(baseType, count)
 
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
+
+			t := datatypes.GetType(v)
+
+			// If we are initializing any integer or float array, coerce the
+			// value to the correct type as long as the value is also an integer
+			// or float type. This lets initializers of []int32{} be expressed as
+			// default int constant values, etc.
+			if (isInt && t.IsIntegerType()) || (isFloat && t.IsFloatType()) {
+				v = baseType.Coerce(v)
+			}
+
 			err = a.Set(count-i-1, v)
 			if err != nil {
 				return err

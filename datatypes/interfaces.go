@@ -9,7 +9,9 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// For a given type interface, unwrap it.
+// GetType returns the Type of a given interface object. If the value is a type
+// or a pointer to a type, return that Type. If the interface isn't a type, but
+// is a scalar value, return the Type of the value.
 func GetType(v interface{}) Type {
 	if t, ok := v.(Type); ok {
 		return t
@@ -19,25 +21,54 @@ func GetType(v interface{}) Type {
 		return *t
 	}
 
+	// If it's a value object, return it's type.
+	switch v.(type) {
+	case bool:
+		return BoolType
+
+	case int32:
+		return Int32Type
+
+	case int:
+		return IntType
+
+	case int64:
+		return Int64Type
+
+	case float32:
+		return Float32Type
+
+	case float64:
+		return Float64Type
+
+	case string:
+		return StringType
+	}
+
+	// Who knows what the heck this is...
 	return UndefinedType
 }
 
+// GetString retrieves the string value of the argument, converting if needed.
 func GetString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// GetByte retrieves the byte value of the argument, converting if needed.
 func GetByte(v interface{}) byte {
 	i := GetInt(v)
 
 	return byte(i & math.MaxInt8)
 }
 
+// GetInt32 retrieves the int32 value of the argument, converting if needed.
 func GetInt32(v interface{}) int32 {
 	i := GetInt(v)
 
 	return int32(i)
 }
 
+// GetInt retrieves the int value of the argument, converting if needed.
 func GetInt(v interface{}) int {
 	result := 0
 
@@ -72,6 +103,7 @@ func GetInt(v interface{}) int {
 	return result
 }
 
+// GetInt64 retrieves the int64 value of the argument, converting if needed.
 func GetInt64(v interface{}) int64 {
 	var result int64
 
@@ -106,6 +138,7 @@ func GetInt64(v interface{}) int64 {
 	return result
 }
 
+// GetFloat64 retrieves the float64 value of the argument, converting if needed.
 func GetFloat64(v interface{}) float64 {
 	var result float64
 
@@ -137,12 +170,14 @@ func GetFloat64(v interface{}) float64 {
 	return result
 }
 
+// GetFloat32 retrieves the float32 value of the argument, converting if needed.
 func GetFloat32(v interface{}) float32 {
 	f := GetFloat64(v)
 
 	return float32(f)
 }
 
+// GetString retrieves the boolean value of the argument, converting if needed.
 func GetBool(v interface{}) bool {
 	switch actual := v.(type) {
 	case byte, int32, int, int64:
@@ -165,6 +200,9 @@ func GetBool(v interface{}) bool {
 	return false
 }
 
+// DeepCopy creates a new copy of the interface. This includes recursively copying
+// any member elements of arrays, maps, or structures. This cannot be used on a
+// pointer value.
 func DeepCopy(v interface{}) interface{} {
 	if v == nil {
 		return nil

@@ -166,7 +166,8 @@ func (t Type) String() string {
 }
 
 // For a given type, return it's kind (i.e. int, string, etc.). This
-// is mostly used for parsing, and for switch statements.
+// is mostly used for parsing, and for switch statements based on
+// Ego data types.
 func (t Type) Kind() int {
 	return t.kind
 }
@@ -176,15 +177,18 @@ func (t Type) IsPointer() bool {
 	return t.kind == PointerKind
 }
 
+// IsIntegerType returns true if the type represents any of the integer
+// types. This is used to relax type checking for array initializers,
+// for example.
 func (t Type) IsIntegerType() bool {
-	if t.IsType(ByteType) ||
-		t.IsType(Int32Type) ||
-		t.IsType(IntType) ||
-		t.IsType(Int64Type) {
-		return true
-	}
+	return t.IsType(ByteType) || t.IsType(IntType) || t.IsType(Int32Type) || t.IsType(Int64Type)
+}
 
-	return false
+// IsFloatType returns true if the type represents any of the floating
+// point types. This is used to relax type checking for array initializers,
+// for example.
+func (t Type) IsFloatType() bool {
+	return t.IsType(Float32Type) || t.IsType(Float64Type)
 }
 
 // Return true if this type is the same as the provided type.
@@ -273,7 +277,7 @@ func (t Type) IsTypeDefinition() bool {
 }
 
 // Define a function for a type, that can be used as a receiver
-// function for this type.
+// function.
 func (t *Type) DefineFunction(name string, value interface{}) {
 	if t.functions == nil {
 		t.functions = map[string]interface{}{}
@@ -635,11 +639,9 @@ func (t Type) Reflect() *EgoStruct {
 }
 
 func UserType(packageName, typeName string) Type {
-	t := Type{
+	return Type{
 		kind: TypeKind,
 		name: typeName,
 		pkg:  packageName,
 	}
-
-	return t
 }
