@@ -289,7 +289,8 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 func (a *EgoArray) Sort() *errors.EgoError {
 	var err *errors.EgoError
 
-	if a.valueType.IsType(StringType) {
+	switch a.valueType.kind {
+	case StringType.kind:
 		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
 			stringArray[i] = GetString(v)
@@ -300,29 +301,56 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		for i, v := range stringArray {
 			a.data[i] = v
 		}
-	} else if a.valueType.IsType(IntType) {
-		values := make([]int, a.Len())
+
+	case IntType.kind, ByteType.kind, Int32Type.kind, Int64Type.kind:
+		integerArray := make([]int64, a.Len())
 		for i, v := range a.data {
-			values[i] = GetInt(v)
+			integerArray[i] = GetInt64(v)
 		}
 
-		sort.Ints(values)
+		sort.Slice(integerArray, func(i, j int) bool { return integerArray[i] < integerArray[j] })
 
-		for i, v := range values {
-			a.data[i] = v
+		for i, v := range integerArray {
+			switch a.valueType.kind {
+			case ByteType.kind:
+				a.data[i] = byte(v)
+
+			case IntType.kind:
+				a.data[i] = int(v)
+
+			case Int32Type.kind:
+				a.data[i] = int32(v)
+
+			case Int64Type.kind:
+				a.data[i] = int64(v)
+
+			default:
+				return errors.New(errors.ErrInvalidType).Context("sort")
+			}
 		}
-	} else if a.valueType.IsType(Float64Type) {
-		values := make([]float64, a.Len())
+
+	case Float32Type.kind, Float64Type.kind:
+		floatArray := make([]float64, a.Len())
 		for i, v := range a.data {
-			values[i] = GetFloat64(v)
+			floatArray[i] = GetFloat64(v)
 		}
 
-		sort.Float64s(values)
+		sort.Float64s(floatArray)
 
-		for i, v := range values {
-			a.data[i] = v
+		for i, v := range floatArray {
+			switch a.valueType.kind {
+			case Float32Type.kind:
+				a.data[i] = float32(v)
+
+			case Float64Type.kind:
+				a.data[i] = float64(v)
+
+			default:
+				return errors.New(errors.ErrInvalidType).Context("sort")
+			}
 		}
-	} else {
+
+	default:
 		err = errors.New(errors.ErrInvalidArgType)
 	}
 
