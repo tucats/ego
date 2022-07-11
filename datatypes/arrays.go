@@ -13,15 +13,15 @@ import (
 // EgoArray is the representation in native code of an Ego array. This includes
 // an array of interfaces that contain the actual data items, a base type (which
 // may be InterfaceType if the array is untypted) and a counting semaphore used
-// to track if the array should be considered writable or not
+// to track if the array should be considered writable or not.
 type EgoArray struct {
 	data      []interface{}
 	valueType Type
 	immutable int
 }
 
-// Create a new emtpy array of the given type and size. The values of the array
-// members are all initialized to nil
+// Create a new empty array of the given type and size. The values of the array
+// members are all initialized to nil.
 func NewArray(valueType Type, size int) *EgoArray {
 	m := &EgoArray{
 		data:      make([]interface{}, size),
@@ -73,7 +73,7 @@ func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 }
 
 // BaseArray returns the underlying native array that contains the individual
-// array members. This is needed for things like sort.Slice()
+// array members. This is needed for things like sort.Slice().
 func (a *EgoArray) BaseArray() []interface{} {
 	return a.data
 }
@@ -361,7 +361,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 				a.data[i] = int32(v)
 
 			case Int64Type.kind:
-				a.data[i] = int64(v)
+				a.data[i] = v
 
 			default:
 				return errors.New(errors.ErrInvalidType).Context("sort")
@@ -382,7 +382,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 				a.data[i] = float32(v)
 
 			case Float64Type.kind:
-				a.data[i] = float64(v)
+				a.data[i] = v
 
 			default:
 				return errors.New(errors.ErrInvalidType).Context("sort")

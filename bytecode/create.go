@@ -48,7 +48,6 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
-
 			t := datatypes.GetType(v)
 
 			// If we are initializing any integer or float array, coerce the

@@ -188,10 +188,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		// If we are processing interactive console commands, and help is aenabled, and this is a
 		// "help" command, handle that specially.
 		if interactive && settings.GetBool(defs.ExtensionsEnabledSetting) && len(text) >= 4 && (text == "help\n" || text[:5] == "help ") {
+			text = ""
 			keys := strings.Split(strings.ToLower(text), " ")
 
 			help(keys)
-			text = ""
 
 			continue
 		}

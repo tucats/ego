@@ -10,12 +10,6 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-type helpTopic struct {
-	name      string
-	subTopics []helpTopic
-	text      []string
-}
-
 func help(keys []string) {
 	if len(keys) == 1 {
 		keys = []string{"introduction"}
@@ -53,6 +47,7 @@ func printHelp(keys []string) {
 		topic = ""
 		heading = "Help topics:"
 	}
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#") {
 			continue
@@ -67,7 +62,7 @@ func printHelp(keys []string) {
 			if strings.HasPrefix(line, ".topic "+topic) {
 				// If it is a sub=topic and we are doing the top-level topics
 				// listing, then skip this entry.
-				if topic == "" && strings.Index(line[1:], ".") >= 0 {
+				if topic == "" && strings.Contains(line[1:], ".") {
 					continue
 				}
 

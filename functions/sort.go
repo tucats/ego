@@ -160,7 +160,6 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	v1 := array[0]
 
 	switch v1.(type) {
-
 	case byte:
 		intArray := make([]byte, 0)
 
