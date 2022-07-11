@@ -11,11 +11,10 @@ var nameMutex sync.Mutex
 // Threadsafe name generator.
 func GenerateName() string {
 	nameMutex.Lock()
+	defer nameMutex.Unlock()
 
 	nameSequenceNumber++
 	n := nameSequenceNumber
-
-	nameMutex.Unlock()
 
 	return fmt.Sprintf("$%d", n)
 }

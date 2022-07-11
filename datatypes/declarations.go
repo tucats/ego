@@ -12,8 +12,8 @@ type TypeDeclaration struct {
 var interfaceModel interface{}
 var byteModel byte = 0
 var int32Model int32 = 0
-var intModel = int(0)
-var int64Model = int64(0)
+var intModel int = 0
+var int64Model int64 = 0
 var float64Model float64 = 0.0
 var float32Model float32 = 0.0
 var boolModel = false
@@ -61,42 +61,42 @@ var TypeDeclarations = []TypeDeclaration{
 		ChanType,
 	},
 	{
-		[]string{"[", "]", "byte"},
+		[]string{"[", "]", ByteTypeName},
 		NewArray(ByteType, 0),
 		Array(ByteType),
 	},
 	{
-		[]string{"[", "]", "int32"},
+		[]string{"[", "]", Int32TypeName},
 		NewArray(Int32Type, 0),
 		Array(Int32Type),
 	},
 	{
-		[]string{"[", "]", "int"},
+		[]string{"[", "]", IntTypeName},
 		NewArray(IntType, 0),
 		Array(IntType),
 	},
 	{
-		[]string{"[", "]", "int64"},
+		[]string{"[", "]", Int64TypeName},
 		NewArray(Int64Type, 0),
 		Array(Int64Type),
 	},
 	{
-		[]string{"[", "]", "bool"},
+		[]string{"[", "]", BoolTypeName},
 		NewArray(BoolType, 0),
 		Array(BoolType),
 	},
 	{
-		[]string{"[", "]", "float64"},
+		[]string{"[", "]", Float64TypeName},
 		NewArray(Float64Type, 0),
 		Array(Float64Type),
 	},
 	{
-		[]string{"[", "]", "float32"},
+		[]string{"[", "]", Float32TypeName},
 		NewArray(Float32Type, 0),
 		Array(Float32Type),
 	},
 	{
-		[]string{"[", "]", "string"},
+		[]string{"[", "]", StringTypeName},
 		NewArray(StringType, 0),
 		Array(StringType),
 	},
@@ -106,42 +106,42 @@ var TypeDeclarations = []TypeDeclaration{
 		Array(InterfaceType),
 	},
 	{
-		[]string{"bool"},
+		[]string{BoolTypeName},
 		boolModel,
 		BoolType,
 	},
 	{
-		[]string{"byte"},
+		[]string{ByteTypeName},
 		byteModel,
 		ByteType,
 	},
 	{
-		[]string{"int32"},
+		[]string{Int32TypeName},
 		int32Model,
 		Int32Type,
 	},
 	{
-		[]string{"int"},
+		[]string{IntTypeName},
 		intModel,
 		IntType,
 	},
 	{
-		[]string{"int64"},
+		[]string{Int64TypeName},
 		int64Model,
 		Int64Type,
 	},
 	{
-		[]string{"float64"},
+		[]string{Float64TypeName},
 		float64Model,
 		Float64Type,
 	},
 	{
-		[]string{"float32"},
+		[]string{Float32TypeName},
 		float32Model,
 		Float32Type,
 	},
 	{
-		[]string{"string"},
+		[]string{StringTypeName},
 		stringModel,
 		StringType,
 	},
@@ -151,42 +151,42 @@ var TypeDeclarations = []TypeDeclaration{
 		InterfaceType,
 	},
 	{
-		[]string{"*", "bool"},
+		[]string{"*", BoolTypeName},
 		&boolInterface,
 		Pointer(BoolType),
 	},
 	{
-		[]string{"*", "int32"},
+		[]string{"*", Int32TypeName},
 		&int32Interface,
 		Pointer(Int32Type),
 	},
 	{
-		[]string{"*", "byte"},
+		[]string{"*", ByteTypeName},
 		&byteInterface,
 		Pointer(ByteType),
 	},
 	{
-		[]string{"*", "int"},
+		[]string{"*", IntTypeName},
 		&intInterface,
 		Pointer(IntType),
 	},
 	{
-		[]string{"*", "int64"},
+		[]string{"*", Int64TypeName},
 		&int64Interface,
 		Pointer(Int64Type),
 	},
 	{
-		[]string{"*", "float64"},
+		[]string{"*", Float64TypeName},
 		&float64Interface,
 		Pointer(Float64Type),
 	},
 	{
-		[]string{"*", "float32"},
+		[]string{"*", Float32TypeName},
 		&float32Interface,
 		Pointer(Float32Type),
 	},
 	{
-		[]string{"*", "string"},
+		[]string{"*", StringTypeName},
 		&stringInterface,
 		Pointer(StringType),
 	},

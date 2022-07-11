@@ -26,14 +26,12 @@ type EgoMap struct {
 // use datatypes.InterfaceType for a type value, which means any type is accepted. The
 // result is an initialized map that you can begin to store or read values from.
 func NewMap(keyType Type, valueType Type) *EgoMap {
-	m := &EgoMap{
+	return &EgoMap{
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,
 		valueType: valueType,
 		immutable: 0,
 	}
-
-	return m
 }
 
 // ValueType returns the integer description of the declared key type for
@@ -236,6 +234,7 @@ func (m *EgoMap) String() string {
 	return b.String()
 }
 
+// Type returns a type descriptor for the current map.
 func (m EgoMap) Type() Type {
 	return Type{
 		name:      "map",
@@ -331,7 +330,5 @@ func (m EgoMap) MarshalJSON() ([]byte, error) {
 
 	b.WriteString("}")
 
-	buff := b.String()
-
-	return []byte(buff), nil
+	return []byte(b.String()), nil
 }

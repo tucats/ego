@@ -3,6 +3,7 @@ package datatypes
 import (
 	"bytes"
 	"encoding/gob"
+	"math/bits"
 )
 
 func RealSizeOf(v interface{}) int {
@@ -16,7 +17,7 @@ func RealSizeOf(v interface{}) int {
 	case int32:
 		size = 4
 	case int:
-		size = 4
+		size = bits.UintSize
 	case int64:
 		size = 8
 	case float32:

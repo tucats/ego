@@ -777,7 +777,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 func mapColumnType(native string) string {
 	types := map[string]string{
 		datatypes.StringTypeName: "CHAR VARYING",
-		"int32":                  "INT32",
+		datatypes.Int32TypeName:  "INT32",
 		datatypes.IntTypeName:    "INT",
 		datatypes.BoolTypeName:   "BOOLEAN",
 		"boolean":                "BOOLEAN",

@@ -10,12 +10,18 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// EgoArray is the representation in native code of an Ego array. This includes
+// an array of interfaces that contain the actual data items, a base type (which
+// may be InterfaceType if the array is untypted) and a counting semaphore used
+// to track if the array should be considered writable or not
 type EgoArray struct {
 	data      []interface{}
 	valueType Type
 	immutable int
 }
 
+// Create a new emtpy array of the given type and size. The values of the array
+// members are all initialized to nil
 func NewArray(valueType Type, size int) *EgoArray {
 	m := &EgoArray{
 		data:      make([]interface{}, size),
@@ -56,6 +62,8 @@ func (a *EgoArray) Make(size int) *EgoArray {
 	return m
 }
 
+// DeepEqual is a recursive compare with another Ego array. The recursive
+// compare is performed on each member of the array.
 func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 	if a.valueType.IsType(InterfaceType) || b.valueType.IsType(InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
@@ -64,14 +72,20 @@ func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 	return reflect.DeepEqual(a, b)
 }
 
+// BaseArray returns the underlying native array that contains the individual
+// array members. This is needed for things like sort.Slice()
 func (a *EgoArray) BaseArray() []interface{} {
 	return a.data
 }
 
+// ValueType returns the base type of the array.
 func (a *EgoArray) ValueType() Type {
 	return a.valueType
 }
 
+// Validate checks that all the members of the array are of a given
+// type. This is used to validate anonymous arrays for use as a typed
+// array.
 func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 	if kind.IsType(InterfaceType) {
 		return nil
@@ -86,6 +100,11 @@ func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 	return nil
 }
 
+// Immutable sets or clears the flag that marks the array as immutable. When
+// an array is marked as immutable, it cannot be modified (but can be deleted
+// in it's entirety). Note that this function actually uses a semaphore to
+// track the state, so there must bre an exact match of calls to Immutable(false)
+// as there were to Immutable(true) to allow modifiations to the array.
 func (a *EgoArray) Immutable(b bool) {
 	if b {
 		a.immutable++
@@ -94,6 +113,8 @@ func (a *EgoArray) Immutable(b bool) {
 	}
 }
 
+// Get retrieves a member of the array. If the array index is out-of-bounds
+// for the array size, an error is returned.
 func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
@@ -103,10 +124,16 @@ func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 	return a.data[index], nil
 }
 
+// Len returns the length of the array.
 func (a *EgoArray) Len() int {
 	return len(a.data)
 }
 
+// SetType can be called once on an anonymous array (whose members are
+// all abstract interfaces). This sets the base type of the array to the
+// given type. If the array already has a base type, you cannot set a new
+// one. This (along with the Validate() function) can be used to convert
+// an anonymous array to a typed array.
 func (a *EgoArray) SetType(i Type) *errors.EgoError {
 	if a.valueType.IsType(InterfaceType) {
 		a.valueType = i
@@ -133,6 +160,10 @@ func (a *EgoArray) SetSize(size int) {
 	}
 }
 
+// Set stores a value in the array. The array must not be set to immutable.
+// The array index must be within the size of the array. If the array is a
+// typed array, the type must match the array type. The value can handle
+// conversion of integer and float types to fit the target array base type.
 func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	v := value
 
@@ -202,12 +233,12 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
 	a.data[index] = value
 }
 
-// Generate a type string for this array.
+// Generate a type description string for this array.
 func (a *EgoArray) TypeString() string {
 	return fmt.Sprintf("[]%s", a.valueType.String())
 }
 
-// Make a string representation of the array suitable for human reading.
+// Make a string representation of the array suitable for display.
 func (a *EgoArray) String() string {
 	var b strings.Builder
 
@@ -249,6 +280,10 @@ func (a *EgoArray) Append(i interface{}) {
 	}
 }
 
+// getInt is a helper function that is used to retrieve an int value from
+// an abstract interface, regardless of the interface type. It returns -1
+// for any interface type that can't be converted to an int value. This is
+// used to retrieve array index parameters.
 func getInt(i interface{}) int {
 	switch v := i.(type) {
 	case byte:
@@ -286,6 +321,10 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 	return nil
 }
 
+// Sort will sort the array into ascending order. It uses either native
+// sort functions or the native sort.Slice function to do the sort. This
+// can only be performed on an array of scalar types (no structs, arrays,
+// or maps).
 func (a *EgoArray) Sort() *errors.EgoError {
 	var err *errors.EgoError
 
@@ -357,6 +396,8 @@ func (a *EgoArray) Sort() *errors.EgoError {
 	return err
 }
 
+// MarshalJSON converts the array representation to valid JSON and returns
+// the data as a byte array.
 func (a EgoArray) MarshalJSON() ([]byte, error) {
 	b := strings.Builder{}
 	b.WriteString("[")
@@ -376,7 +417,5 @@ func (a EgoArray) MarshalJSON() ([]byte, error) {
 
 	b.WriteString("]")
 
-	buff := b.String()
-
-	return []byte(buff), nil
+	return []byte(b.String()), nil
 }

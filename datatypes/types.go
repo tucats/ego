@@ -45,9 +45,19 @@ const (
 )
 
 const (
-	StringTypeName = "string"
-	BoolTypeName   = "bool"
-	IntTypeName    = "int"
+	StringTypeName  = "string"
+	BoolTypeName    = "bool"
+	ByteTypeName    = "byte"
+	IntTypeName     = "int"
+	Int32TypeName   = "int32"
+	Int64TypeName   = "int64"
+	Float32TypeName = "float32"
+	Float64TypeName = "float64"
+)
+
+const (
+	True  = "true"
+	False = "false"
 )
 
 type Type struct {

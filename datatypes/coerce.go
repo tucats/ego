@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -260,10 +259,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		switch value := v.(type) {
 		case bool:
 			if value {
-				return defs.True
+				return True
 			}
 
-			return defs.False
+			return False
 
 		case byte, int, int32, int64:
 			return fmt.Sprintf("%v", GetInt64(v))
@@ -297,9 +296,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 		case string:
 			switch strings.TrimSpace(strings.ToLower(vv)) {
-			case defs.True:
+			case True:
 				return true
-			case defs.False:
+			case False:
 				return false
 			default:
 				return false
@@ -337,19 +336,19 @@ func CoerceType(v interface{}, typeName string) interface{} {
 	case "byte":
 		return Coerce(v, byte(0))
 
-	case "int32":
+	case Int32TypeName:
 		return Coerce(v, int32(0))
 
 	case IntTypeName:
 		return Coerce(v, int(0))
 
-	case "int64":
+	case Int64TypeName:
 		return Coerce(v, int64(0))
 
-	case "float32":
+	case Float32TypeName:
 		return Coerce(v, float32(0))
 
-	case "float64":
+	case Float64TypeName:
 		return Coerce(v, float64(0))
 
 	case StringTypeName:

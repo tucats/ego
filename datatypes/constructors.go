@@ -30,56 +30,56 @@ var ErrorType = Type{
 }
 
 var BoolType = Type{
-	name:      "bool",
+	name:      BoolTypeName,
 	kind:      BoolKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var ByteType = Type{
-	name:      "byte",
+	name:      ByteTypeName,
 	kind:      ByteKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var Int32Type = Type{
-	name:      "int32",
+	name:      Int32TypeName,
 	kind:      Int32Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var IntType = Type{
-	name:      "int",
+	name:      IntTypeName,
 	kind:      IntKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var Int64Type = Type{
-	name:      "int64",
+	name:      Int64TypeName,
 	kind:      Int64Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var Float64Type = Type{
-	name:      "float64",
+	name:      Float64TypeName,
 	kind:      Float64Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var Float32Type = Type{
-	name:      "float32",
+	name:      Float32TypeName,
 	kind:      Float32Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var StringType = Type{
-	name:      "string",
+	name:      StringTypeName,
 	kind:      StringKind,
 	keyType:   nil,
 	valueType: nil,

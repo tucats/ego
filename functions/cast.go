@@ -70,7 +70,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		case "byte":
 			return byte(0), nil
 
-		case "int32":
+		case datatypes.Int32TypeName:
 			return int32(0), nil
 
 		case "int":

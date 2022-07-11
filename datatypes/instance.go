@@ -9,19 +9,13 @@ import (
 func InstanceOfType(t Type) interface{} {
 	switch t.kind {
 	case StructKind:
-		m := NewStruct(t)
-
-		return m
+		return NewStruct(t)
 
 	case MapKind:
-		m := NewMap(*t.keyType, *t.valueType)
-
-		return m
+		return NewMap(*t.keyType, *t.valueType)
 
 	case ArrayKind:
-		m := NewArray(t, 0)
-
-		return m
+		return NewArray(t, 0)
 
 	case TypeKind:
 		return t.InstanceOf(nil)

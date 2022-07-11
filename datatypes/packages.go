@@ -19,7 +19,6 @@ type EgoPackage struct {
 // This mutex protects ALL packages. This serializes package operations across all threads. This
 // should only materially affect parallel compilation operations, which will become slightly more
 // synchronous.
-
 var packageLock sync.RWMutex
 
 // NewPackage creates a new, empty package definition.

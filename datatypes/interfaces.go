@@ -211,18 +211,25 @@ func DeepCopy(v interface{}) interface{} {
 	switch actual := v.(type) {
 	case bool:
 		return actual
+
 	case byte:
 		return actual
+
 	case int32:
 		return actual
+
 	case int:
 		return actual
+
 	case int64:
 		return actual
+
 	case float32:
 		return actual
+
 	case float64:
 		return actual
+
 	case string:
 		return actual
 
@@ -259,7 +266,7 @@ func DeepCopy(v interface{}) interface{} {
 		return result
 
 	default:
-		return nil // Unsupported type, like pointers
+		return nil // Unsupported type, (for example, pointers)
 	}
 }
 

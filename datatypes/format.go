@@ -14,8 +14,7 @@ import (
 	"gopkg.in/resty.v1"
 )
 
-// FormatUnquoted formats a value but does not
-// put quotes on strings.
+// FormatUnquoted formats a value but does not put quotes on strings.
 func FormatUnquoted(arg interface{}) string {
 	switch v := arg.(type) {
 	case string:
