@@ -3,7 +3,7 @@ func main() int {
    start := time.Now()
    count := 10
 
-   for i := 0; i < count; i = i + 1 {
+   for i := 0; i < count; i++ {
       x := math.Factor(1234567890)
    }
 

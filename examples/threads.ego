@@ -9,22 +9,21 @@
         wg.Done()                                          
     }
     
-    func main() int {
+    func main() {
         var wg sync.WaitGroup                              
         
         start := time.Now()
         threadCount := 20
-        for i := 1; i <= threadCount; i = i + 1 {
-            wg.Add(1)                                     
-            go thread(i, &wg)                           
-        }
+        for i := 1; i <= threadCount; i++ {
+            wg.Add(1)
+            go thread(i, &wg)        }
         
         time.Sleep("1s")
         fmt.Printf("\nAll threads launched.\n\n")
         
-        wg.Wait()                                       
+        wg.Wait()
         
         elapsed := time.Since(start)
         
-        fmt.Println("\n All done, real time ", elapsed)
+        fmt.Println("\nAll done, real time ", elapsed)
     }

@@ -2,7 +2,7 @@
 func client(ch chan, count int ) {
 
    status := 200
-   for i := 0; i < count; i = i + 1 {
+   for i := 0; i < count; i++{
       r := rest.New("admin", "password").Media("text").Base("http://localhost:8080")
       r.Get("/services/factor/10")
       if r.status != 200 {
@@ -17,7 +17,7 @@ func main() int {
    clients := 300
    ch := make(chan, clients)
 
-   for i := 0; i < clients; i = i + 1 {
+   for i := 0; i < clients; i++ {
       go client(ch, 10)
    }
 

@@ -27,11 +27,11 @@
        return x
     }
     
-    @assert type(f_int32(int(42))) == datatypes.Int32TypeName
-    @assert type(f_int32(int32(42))) == datatypes.Int32TypeName
-    @assert type(f_int32(int64(42))) == datatypes.Int32TypeName
-    @assert type(f_int32(float32(42))) == datatypes.Int32TypeName
-    @assert type(f_int32(float64(42))) == datatypes.Int32TypeName
+    @assert type(f_int32(int(42))) == "int32"
+    @assert type(f_int32(int32(42))) == "int32"
+    @assert type(f_int32(int64(42))) == "int32"
+    @assert type(f_int32(float32(42))) == "int32"
+    @assert type(f_int32(float64(42))) == "int32"
 
     func f_int64( x interface{} ) int64  {
        return x
