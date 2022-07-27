@@ -113,37 +113,10 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		// DELETE A USER
 		case http.MethodDelete:
-			u, exists := auth.AuthService.ReadUser(name)
-			if !errors.Nil(exists) {
-				msg := fmt.Sprintf("No username entry for '%s'", name)
-
-				util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
-
-				return http.StatusNotFound
-			}
-
 			// Clear the password for the return response object
-			u.Password = ""
-			response := u
-
-			v, err := auth.DeleteUser(s, []interface{}{u.Name})
-			if !errors.Nil(err) || !datatypes.GetBool(v) {
-				msg := fmt.Sprintf("No username entry for '%s'", u.Name)
-
-				util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
-
-				return http.StatusNotFound
-			}
-
-			if errors.Nil(err) {
-				b, _ := json.Marshal(response)
-
-				w.Header().Add(contentTypeHeader, defs.UserMediaType)
-				_, _ = w.Write(b)
-
-				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
-
-				return http.StatusOK
+			shouldReturn, returnValue := deleteUserMethod(name, w, sessionID, s)
+			if shouldReturn {
+				return returnValue
 			}
 
 		// GET A COLLECTION OR A SPECIFIC USER
@@ -203,4 +176,39 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	ui.Debug(ui.ServerLogger, "[%d] 500 Internal server error %v", sessionID, err)
 
 	return http.StatusInternalServerError
+}
+
+func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *symbols.SymbolTable) (bool, int) {
+	u, exists := auth.AuthService.ReadUser(name)
+	if !errors.Nil(exists) {
+		msg := fmt.Sprintf("No username entry for '%s'", name)
+
+		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+
+		return true, http.StatusNotFound
+	}
+
+	u.Password = ""
+	response := u
+
+	v, err := auth.DeleteUser(s, []interface{}{u.Name})
+	if !errors.Nil(err) || !datatypes.GetBool(v) {
+		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
+
+		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
+
+		return true, http.StatusNotFound
+	}
+
+	if errors.Nil(err) {
+		b, _ := json.Marshal(response)
+
+		w.Header().Add(contentTypeHeader, defs.UserMediaType)
+		_, _ = w.Write(b)
+
+		ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
+
+		return true, http.StatusOK
+	}
+	return false, 0
 }
