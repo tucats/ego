@@ -1,0 +1,25 @@
+// Print a formatted table of the active package list
+
+package util
+
+func DumpPackages() {
+   packages := util.Packages()
+   t := tables.New("Package", "Member")
+   
+   t.Pagination(0,0)
+   
+   for _, v := range packages {
+      p := v
+      m := members(util.Eval(v))
+      
+      for _, n := range m {
+         t.AddRow(p, n)
+         p = ""
+      }
+      
+      t.AddRow("","")
+   }
+   
+   t.Print()
+}
+
