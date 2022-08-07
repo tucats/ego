@@ -149,6 +149,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"util.SetLogger":      {Min: 2, Max: 2, F: SetLogger},
 	"util.Memory":         {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":           {Min: 0, Max: 0, F: GetMode, FullScope: true},
+	"util.Packages":       {Min: 0, Max: 0, F: Packages, FullScope: true},
 	"util.SymbolTable":    {Min: 0, Max: 1, F: CurrentSymbolTable, FullScope: true},
 	"uuid.New":            {Min: 0, Max: 0, F: UUIDNew},
 	"uuid.Nil":            {Min: 0, Max: 0, F: UUIDNil},

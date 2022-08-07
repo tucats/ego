@@ -405,3 +405,30 @@ func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}
 
 	return result.String(), nil
 }
+
+func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	packages := datatypes.NewArray(datatypes.StringType, 0)
+
+	for k := range s.Symbols {
+		if strings.HasPrefix(k, "__") {
+			continue
+		}
+
+		v, _ := s.Get(k)
+
+		if datatypes.TypeOf(v).Name() == k {
+			packages.Append(k)
+		}
+	}
+
+	if s.Parent != nil {
+		px, _ := Packages(s.Parent, args)
+		if pa, ok := px.(*datatypes.EgoArray); ok {
+			packages.Append(pa)
+		}
+	}
+
+	_ = packages.Sort()
+
+	return packages, nil
+}
