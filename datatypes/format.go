@@ -92,6 +92,11 @@ func Format(element interface{}) string {
 		b.WriteString("Pkg<")
 
 		for n, k := range keys {
+			// Skip over hidden values
+			if strings.HasPrefix(k, "__") {
+				continue
+			}
+
 			i, _ := v.Get(k)
 
 			if n > 0 {
