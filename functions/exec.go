@@ -34,7 +34,6 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err *
 	}
 
 	cmd := exec.Command(argStrings[0], argStrings[1:]...)
-
 	var out bytes.Buffer
 	cmd.Stdout = &out
 

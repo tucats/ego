@@ -30,6 +30,12 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	})
 	*/
 
+	_ = s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
+		"Command":               NewCommand,
+		datatypes.TypeMDKey:     datatypes.Package("exec"),
+		datatypes.ReadonlyMDKey: true,
+	}))
+
 	_ = s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,

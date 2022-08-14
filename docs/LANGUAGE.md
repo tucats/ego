@@ -44,6 +44,7 @@
    1. [The `import` statement](#import)
    1. [`cipher` package](#cipher)
    1. [`db` package](#db)
+   1. [`exec` package](#exec)
    1. [`fmt` package](#fmt)
    1. [`io` package](#io)
    1. [`json` package](#json)
@@ -1758,6 +1759,56 @@ without filling up memory with the entire result set at once.
 
 &nbsp;
 &nbsp;
+
+## exec <a name="exec"></a>
+The `exec` package is a subset of the Go package that supports executing a command as
+a subprocess of the current Ego program. This package allows the caller to create a
+new `exec.Cmd` object, and then use that object to optionally set arguments and
+stdin values for the command, execute the command, and then access the stdout values.
+
+The `exec.Cmd`  structure includes a field `Env` which is a string array for environment 
+variables which must all be strings of the form "name=value", and these are set in 
+the context of the process to be run. Additionally, the field `Stdin` is an optional
+string array -- if present, the string array is converted to a byte stream and becomes
+the stdin contents for the commadn to be executed.
+
+When the command completes, if it completed without error, the `Stdout` field of the
+command structure contains a string array which has the output of the command.
+
+For example,
+
+    func main() {
+
+        c := exec.Command("ls", "-l")
+        c.Run()
+
+        for _, line := range c.Stdout {
+            fmt.Println(line)
+        }
+    }
+
+This program creates an `exec.Cmd` object that invokes the "ls" command as its
+operation, with the argument "-l". Note that these are Unix-style commands; you
+would use Windows-style commands on a Windows-based deployment of _Ego_.  The
+program runs the command, and then prints out the lines of output stored in the
+`Stdout` field of the command structure.
+
+
+### exec.Command()
+
+The `Command()` function creates a new `Cmd` object and returns it to the caller.
+The call can include parameters, which are the name of the command to execute 
+followed by any optional argument strings that are passed to the program to be run.
+
+The resulting structure supports the `Run()` method. After an `exec.Cmd` object 
+is initialized, it can be run using its `Run()` method. This method returns an 
+error if the command does not complete successfully. If it does
+complete successfully, the `Stdout` array can be consulted to collect any output
+from the command as strings.
+
+&nbsp;
+&nbsp;
+
 
 ## fmt <a name="fmt"></a>
 
