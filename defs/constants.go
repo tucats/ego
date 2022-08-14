@@ -152,6 +152,10 @@ const (
 	// How many old logs do we maintain by default when in server mode?
 	LogRetainCountSetting = PrivilegedKeyPrefix + "server.retain.log.count"
 
+	// If true, the util.Exec() function can be executed to run an arbitrary
+	// native shell command. This defaults to being disabled.
+	ExecPermittedSetting = PrivilegedKeyPrefix + "runtime.exec"
+
 	// Default allocation factor to set on symbol table create/expand
 	// operations. Larger numbers are more efficient for larger symbol
 	// tables, but too large a number wastes time and memory.
@@ -272,6 +276,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerDefaultLogSetting:         true,
 	TableServerPartialInsertError:   true,
 	SymbolTableAllocationSetting:    true,
+	ExecPermittedSetting:            true,
 }
 
 const (
