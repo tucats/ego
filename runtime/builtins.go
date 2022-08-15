@@ -32,6 +32,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 
 	_ = s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
 		"Command":               NewCommand,
+		"LookPath":              LookPath,
 		datatypes.TypeMDKey:     datatypes.Package("exec"),
 		datatypes.ReadonlyMDKey: true,
 	}))

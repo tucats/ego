@@ -17,11 +17,12 @@ import (
 func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err *errors.EgoError) {
 	// Is this function authorized?
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation)
+		return nil, errors.New(errors.ErrNoPrivilegeForOperation).Context("Exec")
 	}
 
 	// Get the arguments as a string array
 	argStrings := make([]string, 0)
+
 	for _, arg := range args {
 		s := datatypes.GetString(arg)
 		argStrings = append(argStrings, s)
@@ -34,12 +35,12 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err *
 	}
 
 	cmd := exec.Command(argStrings[0], argStrings[1:]...)
+
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
 	if e := cmd.Run(); e != nil {
 		return nil, errors.New(e)
-
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

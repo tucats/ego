@@ -43,9 +43,7 @@ func (u *URLString) Path(format string, parts ...interface{}) *URLString {
 	substitutions := strings.Count(format, "%")
 
 	subs := make([]interface{}, substitutions)
-	for i, v := range parts[:substitutions] {
-		subs[i] = v
-	}
+	copy(subs, parts[:substitutions])
 
 	u.buffer.WriteString(fmt.Sprintf(format, subs...))
 

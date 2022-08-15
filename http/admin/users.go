@@ -210,5 +210,6 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 
 		return true, http.StatusOK
 	}
+
 	return false, 0
 }
