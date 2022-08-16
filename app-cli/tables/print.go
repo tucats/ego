@@ -7,11 +7,8 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/expressions"
-	"github.com/tucats/ego/symbols"
 )
 
 // Print will output a table using current rows and format specifications.
@@ -99,12 +96,6 @@ func (t *Table) String(format string) (string, *errors.EgoError) {
 func (t *Table) FormatJSON() string {
 	var buffer strings.Builder
 
-	var e *expressions.Expression
-
-	if t.where != "" {
-		e = expressions.New().WithText(t.where)
-	}
-
 	buffer.WriteRune('[')
 
 	firstRow := true
@@ -116,27 +107,6 @@ func (t *Table) FormatJSON() string {
 
 		if t.rowLimit > 0 && n >= t.startingRow+t.rowLimit {
 			break
-		}
-
-		if e != nil {
-			// Load up the symbol tables with column values and the row number.
-			symbols := symbols.NewSymbolTable("rowset")
-			_ = symbols.SetAlways("_row_", n+1)
-
-			for i, n := range t.columns {
-				_ = symbols.SetAlways(strings.ToLower(n), row[i])
-			}
-
-			v, err := e.Eval(symbols)
-			if !errors.Nil(err) {
-				buffer.WriteString(fmt.Sprintf("*** where clause error: %s", err.Error()))
-
-				break
-			}
-
-			if !datatypes.GetBool(v) {
-				continue
-			}
 		}
 
 		if !firstRow {
@@ -344,16 +314,6 @@ func (t *Table) paginateText() []string {
 		}
 	}
 
-	var e *expressions.Expression
-
-	if t.where != "" {
-		e = expressions.New().WithText(t.where)
-
-		if ui.LoggerIsActive(ui.ByteCodeLogger) {
-			e.Disasm()
-		}
-	}
-
 	if rowLimit < 0 {
 		rowLimit = t.terminalHeight
 	}
@@ -368,25 +328,6 @@ func (t *Table) paginateText() []string {
 
 		if rx >= t.startingRow+rowLimit {
 			break
-		}
-
-		if e != nil {
-			// Load up the symbol tables with column values and the row number.
-			symbols := symbols.NewSymbolTable("rowset")
-			_ = symbols.SetAlways("_row_", rx+1)
-
-			for i, n := range t.columns {
-				_ = symbols.SetAlways(strings.ToLower(n), r[i])
-			}
-
-			v, err := e.Eval(symbols)
-			if !errors.Nil(err) {
-				return []string{fmt.Sprintf("*** where clause error: %s", err.Error())}
-			}
-
-			if !datatypes.GetBool(v) {
-				continue
-			}
 		}
 
 		// Loop over the elements of the row. Generate pre- or post-spacing as
@@ -443,8 +384,6 @@ func (t *Table) paginateText() []string {
 
 // FormatText will output a table using current rows and format specifications.
 func (t *Table) FormatText() []string {
-	var e *expressions.Expression
-
 	var buffer strings.Builder
 
 	var rowLimit = t.rowLimit
@@ -456,14 +395,6 @@ func (t *Table) FormatText() []string {
 	ui.Debug(ui.AppLogger, "Print column order: %v", t.columnOrder)
 
 	output := make([]string, 0)
-
-	if t.where != "" {
-		e = expressions.New().WithText(t.where)
-
-		if ui.LoggerIsActive(ui.ByteCodeLogger) {
-			e.Disasm()
-		}
-	}
 
 	if rowLimit < 0 {
 		rowLimit = len(t.rows)
@@ -516,27 +447,6 @@ func (t *Table) FormatText() []string {
 
 		buffer.Reset()
 		buffer.WriteString(t.indent)
-
-		if e != nil {
-			// Load up the symbol tables with column values and the row number.
-			symbols := symbols.NewSymbolTable("rowset")
-			_ = symbols.SetAlways("_row_", i+1)
-
-			for i, n := range t.columns {
-				_ = symbols.SetAlways(strings.ToLower(n), r[i])
-			}
-
-			v, err := e.Eval(symbols)
-			if !errors.Nil(err) {
-				output = append(output, fmt.Sprintf("*** where clause error: %s", err.Error()))
-
-				break
-			}
-
-			if !datatypes.GetBool(v) {
-				continue
-			}
-		}
 
 		if t.showRowNumbers {
 			buffer.WriteString(fmt.Sprintf("%3d", i+1))

@@ -3,12 +3,14 @@ package bytecode
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"text/template"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/formats"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -32,7 +34,25 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
-		s := datatypes.FormatUnquoted(v)
+		s := ""
+
+		// If it's an array, print each element as a row in the output.
+		if vv, ok := v.(*datatypes.EgoArray); ok {
+			r := make([]string, vv.Len())
+			for n := 0; n < len(r); n++ {
+				vvv, _ := vv.Get(n)
+				r[n] = datatypes.GetString(vvv)
+			}
+			s = strings.Join(r, "\n")
+		} else if vv, ok := v.(datatypes.EgoPackage); ok {
+			s = formats.PackageAsString(&vv)
+		} else if vv, ok := v.(*datatypes.EgoStruct); ok {
+			s = formats.StructAsString(vv)
+		} else if vv, ok := v.(*datatypes.EgoMap); ok {
+			s = formats.MapAsString(vv)
+		} else {
+			s = datatypes.FormatUnquoted(v)
+		}
 
 		if c.output == nil {
 			fmt.Printf("%s", s)
