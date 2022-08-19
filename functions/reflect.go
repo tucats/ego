@@ -92,11 +92,19 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	// Is it an Ego array datatype?
 	if m, ok := args[0].(*datatypes.EgoArray); ok {
+		// What is the name of the base type value? This will always
+		// be an array of interface{} unless this is []byte in which
+		// case the native type is []byte as well.
+		btName := "[]interface{}"
+		if m.ValueType().Kind() == datatypes.ByteType.Kind() {
+			btName = "[]byte"
+		}
+
 		// Make a list of the visible member names
 		result := map[string]interface{}{
 			datatypes.SizeMDName:     m.Len(),
 			datatypes.TypeMDName:     m.TypeString(),
-			datatypes.BasetypeMDName: "[]interface{}",
+			datatypes.BasetypeMDName: btName,
 			"istype":                 false,
 		}
 

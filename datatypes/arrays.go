@@ -16,13 +16,25 @@ import (
 // to track if the array should be considered writable or not.
 type EgoArray struct {
 	data      []interface{}
+	bytes     []byte
 	valueType Type
 	immutable int
 }
 
 // Create a new empty array of the given type and size. The values of the array
-// members are all initialized to nil.
+// members are all initialized to nil. Note special case for []byte which is stored
+// natively so it can be used with native Go methods that expect a byte array.
 func NewArray(valueType Type, size int) *EgoArray {
+	if valueType.kind == ByteKind {
+		m := &EgoArray{
+			bytes:     make([]byte, size),
+			valueType: valueType,
+			immutable: 0,
+		}
+
+		return m
+	}
+
 	m := &EgoArray{
 		data:      make([]interface{}, size),
 		valueType: valueType,
@@ -33,8 +45,23 @@ func NewArray(valueType Type, size int) *EgoArray {
 }
 
 // NewArrayFromArray accepts a type and an array of interfaces, and constructs
-// an EgoArray that uses the source array as it's base array.
+// an EgoArray that uses the source array as it's base array. Note special
+// processing for []byte which results in a native Go []byte array.
 func NewArrayFromArray(valueType Type, source []interface{}) *EgoArray {
+	if valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind {
+		m := &EgoArray{
+			bytes:     make([]byte, len(source)),
+			valueType: valueType,
+			immutable: 0,
+		}
+
+		for n, v := range source {
+			m.bytes[n] = byte(GetInt(v))
+		}
+
+		return m
+	}
+
 	m := &EgoArray{
 		data:      source,
 		valueType: valueType,
@@ -45,8 +72,19 @@ func NewArrayFromArray(valueType Type, source []interface{}) *EgoArray {
 }
 
 // Make creates a new array patterned off of the type of the receiver array,
-// of the given size.
+// of the given size. Note special handling for []byte types which creates
+// a native Go array.
 func (a *EgoArray) Make(size int) *EgoArray {
+	if a.valueType.kind == ArrayKind && a.valueType.BaseType().kind == ByteKind {
+		m := &EgoArray{
+			bytes:     make([]byte, size),
+			valueType: a.valueType,
+			immutable: 0,
+		}
+
+		return m
+	}
+
 	m := &EgoArray{
 		data:      make([]interface{}, size),
 		valueType: a.valueType,
@@ -73,9 +111,21 @@ func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 }
 
 // BaseArray returns the underlying native array that contains the individual
-// array members. This is needed for things like sort.Slice().
+// array members. This is needed for things like sort.Slice(). Note that if its
+// a []byte type, we must convert the native Go array into an []interface{}
+// first...
 func (a *EgoArray) BaseArray() []interface{} {
-	return a.data
+	r := a.data
+
+	if a.valueType.kind == ByteKind {
+		r = make([]interface{}, len(a.bytes))
+
+		for index := range r {
+			r[index] = a.bytes[index]
+		}
+	}
+
+	return r
 }
 
 // ValueType returns the base type of the array.
@@ -91,9 +141,18 @@ func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 		return nil
 	}
 
-	for _, v := range a.data {
-		if !IsType(v, kind) {
+	// Special case for []byte, which requires an integer value. For
+	// all other array types, validate compatible type with existing
+	// array member
+	if a.valueType.Kind() == ByteType.kind {
+		if !kind.IsIntegerType() {
 			return errors.New(errors.ErrWrongArrayValueType)
+		}
+	} else {
+		for _, v := range a.data {
+			if !IsType(v, kind) {
+				return errors.New(errors.ErrWrongArrayValueType)
+			}
 		}
 	}
 
@@ -117,6 +176,15 @@ func (a *EgoArray) Immutable(b bool) {
 // for the array size, an error is returned.
 func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 	index := getInt(i)
+
+	if a.valueType.Kind() == ByteKind {
+		if index < 0 || index >= len(a.bytes) {
+			return nil, errors.New(errors.ErrArrayBounds)
+		}
+
+		return a.bytes[index], nil
+	}
+
 	if index < 0 || index >= len(a.data) {
 		return nil, errors.New(errors.ErrArrayBounds)
 	}
@@ -126,6 +194,10 @@ func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
 
 // Len returns the length of the array.
 func (a *EgoArray) Len() int {
+	if a.valueType.Kind() == ByteKind {
+		return len(a.bytes)
+	}
+
 	return len(a.data)
 }
 
@@ -152,7 +224,16 @@ func (a *EgoArray) SetSize(size int) {
 	}
 
 	// If we are making it smaller, just convert the array to a slice of itself.
-	// If we hae to expand it, append empty items to the array
+	// If we hae to expand it, append empty items to the array. Note that if the
+	// type is []byte, we operate on the native Go []byte array instead.
+	if a.valueType.Kind() == ByteKind {
+		if size < len(a.bytes) {
+			a.bytes = a.bytes[:size]
+		} else {
+			a.bytes = append(a.bytes, make([]byte, size-len(a.data))...)
+		}
+	}
+
 	if size < len(a.data) {
 		a.data = a.data[:size]
 	} else {
@@ -172,8 +253,17 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	}
 
 	index := getInt(i)
-	if index < 0 || index >= len(a.data) {
-		return errors.New(errors.ErrArrayBounds)
+
+	// If it's a []byte array, use the native byte array, else use
+	// the Ego array.
+	if a.valueType.Kind() == ByteType.Kind() {
+		if index < 0 || index >= len(a.bytes) {
+			return errors.New(errors.ErrArrayBounds)
+		}
+	} else {
+		if index < 0 || index >= len(a.data) {
+			return errors.New(errors.ErrArrayBounds)
+		}
 	}
 
 	// Address float64/int issues before testing the type.
@@ -207,12 +297,18 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 		}
 	}
 
-	// Now, ensure it's of the right type for this array.
-	if !IsBaseType(v, a.valueType) {
+	// Now, ensure it's of the right type for this array. As always, special case
+	// for []byte arrays.
+	if a.valueType.Kind() == ByteType.Kind() && !TypeOf(v).IsIntegerType() {
 		return errors.New(errors.ErrWrongArrayValueType)
 	}
 
-	a.data[index] = v
+	if a.valueType.Kind() == ByteKind {
+		i := GetInt32(value)
+		a.bytes[index] = byte(i)
+	} else {
+		a.data[index] = v
+	}
 
 	return nil
 }
@@ -230,7 +326,11 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
 		return
 	}
 
-	a.data[index] = value
+	if a.valueType.Kind() == ByteKind {
+		a.bytes[index] = byte(GetInt(value))
+	} else {
+		a.data[index] = value
+	}
 }
 
 // Generate a type description string for this array.
@@ -244,12 +344,22 @@ func (a *EgoArray) String() string {
 
 	b.WriteString("[")
 
-	for i, element := range a.data {
-		if i > 0 {
-			b.WriteString(", ")
-		}
+	if a.valueType.Kind() == ByteType.kind {
+		for i, element := range a.bytes {
+			if i > 0 {
+				b.WriteString(", ")
+			}
 
-		b.WriteString(Format(element))
+			b.WriteString(Format(element))
+		}
+	} else {
+		for i, element := range a.data {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+
+			b.WriteString(Format(element))
+		}
 	}
 
 	b.WriteString("]")
@@ -265,18 +375,35 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 		return nil, errors.New(errors.ErrArrayBounds)
 	}
 
+	// If it's a []byte we must build an Ego slide from the native bytes.
+	if a.valueType.Kind() == ByteType.kind {
+		slice := a.bytes[first:last]
+
+		r := make([]interface{}, len(slice))
+		for index := range r {
+			r[index] = slice[index]
+		}
+
+		return r, nil
+	}
+
 	return a.data[first:last], nil
 }
 
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
 func (a *EgoArray) Append(i interface{}) {
-	switch v := i.(type) {
-	case *EgoArray:
-		a.data = append(a.data, v.data...)
+	if a.valueType.Kind() == ByteType.kind {
+		v := byte(GetInt32(i))
+		a.bytes = append(a.bytes, v)
+	} else {
+		switch v := i.(type) {
+		case *EgoArray:
+			a.data = append(a.data, v.data...)
 
-	default:
-		a.data = append(a.data, v)
+		default:
+			a.data = append(a.data, v)
+		}
 	}
 }
 
@@ -316,7 +443,11 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 		return errors.New(errors.ErrImmutableArray)
 	}
 
-	a.data = append(a.data[:i], a.data[i+1:]...)
+	if a.valueType.Kind() == ByteType.kind {
+		a.bytes = append(a.bytes[:i], a.bytes[i+1:]...)
+	} else {
+		a.data = append(a.data[:i], a.data[i+1:]...)
+	}
 
 	return nil
 }
@@ -341,7 +472,15 @@ func (a *EgoArray) Sort() *errors.EgoError {
 			a.data[i] = v
 		}
 
-	case IntType.kind, ByteType.kind, Int32Type.kind, Int64Type.kind:
+	case ByteType.kind:
+		byteArray := make([]byte, len(a.bytes))
+
+		copy(byteArray, a.bytes)
+		sort.Slice(byteArray, func(i, j int) bool { return byteArray[i] < byteArray[j] })
+
+		a.bytes = byteArray
+
+	case IntType.kind, Int32Type.kind, Int64Type.kind:
 		integerArray := make([]int64, a.Len())
 		for i, v := range a.data {
 			integerArray[i] = GetInt64(v)
@@ -402,17 +541,27 @@ func (a EgoArray) MarshalJSON() ([]byte, error) {
 	b := strings.Builder{}
 	b.WriteString("[")
 
-	for k, v := range a.data {
-		if k > 0 {
-			b.WriteString(",")
-		}
+	if a.valueType.Kind() == ByteType.Kind() {
+		for k, v := range a.bytes {
+			if k > 0 {
+				b.WriteString(",")
+			}
 
-		jsonBytes, err := json.Marshal(v)
-		if err != nil {
-			return nil, errors.New(err)
+			b.WriteString(fmt.Sprintf("%v", v))
 		}
+	} else {
+		for k, v := range a.data {
+			if k > 0 {
+				b.WriteString(",")
+			}
 
-		b.WriteString(string(jsonBytes))
+			jsonBytes, err := json.Marshal(v)
+			if err != nil {
+				return nil, errors.New(err)
+			}
+
+			b.WriteString(string(jsonBytes))
+		}
 	}
 
 	b.WriteString("]")
