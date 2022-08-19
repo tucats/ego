@@ -19,7 +19,7 @@ func StructAsString(vv *datatypes.EgoStruct) string {
 		value, _ := vv.Get(keyString)
 		valueString := datatypes.GetString(value)
 
-		t.AddRowItems(keyString, valueString)
+		_ = t.AddRowItems(keyString, valueString)
 	}
 
 	r, _ := t.String("text")

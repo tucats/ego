@@ -24,7 +24,7 @@ func PackageAsString(vv *datatypes.EgoPackage) string {
 		value, _ := vv.Get(keyString)
 		valueString := datatypes.Format(value)
 
-		t.AddRow([]string{keyString, valueString})
+		_ = t.AddRow([]string{keyString, valueString})
 	}
 
 	r, _ := t.String("text")

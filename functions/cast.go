@@ -93,8 +93,12 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 	}
 
-	// If it's a WaitGroup, make a new one.
-	if _, ok := args[0].(sync.WaitGroup); ok {
+	// If it's a WaitGroup, make a new one. Note, have to use the switch statement
+	// form here to prevent Go from complaining that the interface{} is being copied.
+	// In reality, we don't care as we don't actually make a copy anyway but instead
+	// make a new waitgroup object.
+	switch args[0].(type) {
+	case sync.WaitGroup:
 		return datatypes.InstanceOfType(datatypes.WaitGroupType), nil
 	}
 
