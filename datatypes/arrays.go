@@ -256,7 +256,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 
 	// If it's a []byte array, use the native byte array, else use
 	// the Ego array.
-	if a.valueType.Kind() == ByteType.Kind() {
+	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
 			return errors.New(errors.ErrArrayBounds)
 		}
@@ -299,7 +299,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 
 	// Now, ensure it's of the right type for this array. As always, special case
 	// for []byte arrays.
-	if a.valueType.Kind() == ByteType.Kind() && !TypeOf(v).IsIntegerType() {
+	if a.valueType.Kind() == ByteKind && !TypeOf(v).IsIntegerType() {
 		return errors.New(errors.ErrWrongArrayValueType)
 	}
 
@@ -393,9 +393,21 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
 func (a *EgoArray) Append(i interface{}) {
-	if a.valueType.Kind() == ByteType.kind {
-		v := byte(GetInt32(i))
-		a.bytes = append(a.bytes, v)
+	if a.valueType.Kind() == ByteKind {
+		// If the value is already a byte array, then we just move it into our
+		// byte array.
+		if ba, ok := i.([]byte); ok {
+			if len(a.bytes) == 0 {
+				a.bytes = make([]byte, len(ba))
+				copy(a.bytes, ba)
+			} else {
+				a.bytes = append(a.bytes, ba...)
+			}
+		} else {
+			// Otherwise, append the value to the array...
+			v := byte(GetInt32(i))
+			a.bytes = append(a.bytes, v)
+		}
 	} else {
 		switch v := i.(type) {
 		case *EgoArray:
@@ -405,6 +417,12 @@ func (a *EgoArray) Append(i interface{}) {
 			a.data = append(a.data, v)
 		}
 	}
+}
+
+// GetBytes returns the native byte array for this array, or nil if this
+// is not a byte array.
+func (a *EgoArray) GetBytes() []byte {
+	return a.bytes
 }
 
 // getInt is a helper function that is used to retrieve an int value from
@@ -541,7 +559,7 @@ func (a EgoArray) MarshalJSON() ([]byte, error) {
 	b := strings.Builder{}
 	b.WriteString("[")
 
-	if a.valueType.Kind() == ByteType.Kind() {
+	if a.valueType.Kind() == ByteKind {
 		for k, v := range a.bytes {
 			if k > 0 {
 				b.WriteString(",")

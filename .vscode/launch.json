@@ -70,7 +70,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-d","compiler,symbols,trace", "run", "test.ego"]
+            "args": [ "run", "test.ego"]
         },
         {
             "name": "Debug test.ego",

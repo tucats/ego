@@ -28,16 +28,26 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, errors.New(err)
 	}
 
+	a := datatypes.NewArray(datatypes.ByteType, 0)
+	a.Append(content)
+
 	// Convert []byte to string
-	return string(content), nil
+	return a, nil
 }
 
 // WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	fileName := datatypes.GetString(args[0])
-	text := datatypes.GetString(args[1])
+	fileName := sandboxName(datatypes.GetString(args[0]))
 
-	fileName = sandboxName(fileName)
+	if a, ok := args[1].(*datatypes.EgoArray); ok {
+		if a.ValueType().Kind() == datatypes.ByteKind {
+			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
+
+			return a.Len(), errors.New(err)
+		}
+	}
+
+	text := datatypes.GetString(args[1])
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 
 	return len(text), errors.New(err)

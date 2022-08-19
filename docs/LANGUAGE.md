@@ -1996,27 +1996,44 @@ has the following members:
 The `ReadFile` function reads input from a file. If the filename is "." then the
 function reads a single line of text from stdin (the console or a pipe). Otherwise,
 the filename must be the absolute or relative path to a file in the file system, and
-its' entire contents are returned as a single string value.
+its' entire contents are returned as an array of bytes.
 
     fn := "mydata.txt"
     s := io.ReadFile(fn)
 
-The variable `s` will contain a string containing the entire contents of the input
-file, including with line breaks. You can use `strings.Split()` to convert this into
-an array of strings based on the line breaks if you wish.
+The variable `s` will contain a `[]byte` array containing the entire contents of the input
+file. You can convert this to a string (including line breaks) using the `string()` cast
+operation. You can then use `strings.Split()` to convert this into an array of strings 
+based on the line breaks if you wish.
+
+    fn := "mydata.txt"
+    b, err := io.ReadFile(fn)
+    a := strings.Split(string(b), "\n")
+
+After this code runs, `a` contains an array of strings, one for each line in the input
+file.
+
 
 ### io.WriteFile(filename, string)
 
-The `WriteFile()` function writes a string value to a file. If the file does not
-exist, it is created. If the file previously existed, the contents are over-written
-by the new file.
+The `WriteFile()` function writes an array of bytes or a string value to a file. If the
+file does not exist, it is created. If the file previously existed, the contents are 
+over-written by the new file.
 
     fn := "mydata.txt"
     s := io.ReadFile(fn)
     io.WriteFile("newdata.txt", s)
 
-This reads the contents of the "mydata.txt" file, and then writes it to the
-"newdata.txt" file, in its entirety.
+This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then 
+writes it to the "newdata.txt" file, in its entirety.  You can also just write a string
+value to the file, such as
+
+    fn := "mydata.txt"
+    s := []string{"This is line one", "This is line two"}
+    io.WriteFile("newdata.txt", strings.Join(s, "\n"))
+
+This results in the array of strings `s` being combined into a single string value wiht
+new-line characters, and the resulting string being written to the file.
 
 ## json <a name="json"></a>
 
