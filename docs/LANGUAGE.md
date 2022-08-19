@@ -2042,52 +2042,60 @@ as a string value, or convert a JSON string to a comparable _ego_ data value.
 
 ### json.Marshal(v)
 
-The `Marshal` function converts a value into a JSON string expression, which is the function
-result. Note that unlike its _Go_ counterpart, the `json` package automatically converts the
-value expression to a string as the result.
+The `Marshal` function converts a value into a JSON byte array, which is the function
+result. 
 
     a := { name: "Tom", age: 44 }
-    s := json.Marshal(a)
+    s := string(json.Marshal(a))
 
-This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This value can
-be passed as the body of a rest request, for example, to send an instance of this structure
-to the REST service.
+This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This is because
+the `Marshal` operation returns a byte array, and then `string()` is used to cast it to a
+string value.
 
 ### json.MarshalIndent(v, prefix, indent)
 
-The `MarshalIndented` function converts a value into a JSON string expression, which is the
+The `MarshalIndented` function converts a value into a JSON byte array, which is the
 function result. You must also supply a `prefix` and `indent` string. These are used as a
 prefix before each line of output in the resulting formatted JSON, as well as the indent
 spacing value for nested items. These are both interpreted as strings, and the most common
 use is to specify a string with the required number of blanks for each part.
 
-Note that unlike its _Go_ counterpart, the `json` package automatically
-converts the value expression to a string as the function result.
 
     a := { name: "Tom", age: 44 }
-    s := json.MarshalIndent(a, "", "   ")
+    s := string(json.MarshalIndent(a, "", "   "))
 
-This results in `s` containing the string value
+Because the resulting `[]byte` array is cast to a `string` value, the result in `s` is
+the string value
 
     {
         "name" : "Tom",
         "age" : 44
     }
 
-### json.UnMarshal(string)
+### json.Unmarshal([]byte, &value)
 
-Given a JSON string expression, this creates the equivalent JSON object value.
+Given a JSON byte array expression, this creates the equivalent JSON object value.
 This may be a scalar type (such as int, string, or float64) or it may be an
 array or structure, or a combination of them. You do not have to provide a
 model of the data type; the `UnMarshal` function creates one dynamically.
 This means you are not guaranteed that the resulting structure has all the
 fields you might be expecting.
 
-    a := json.UnMarshal(s) 
+    r := { age:0, name:""}
+    err := json.Unmarshal(s, &r) 
 
-If `s` contains the JSON expressions from the `Marshal` example above, the result is a
-structure { age: 44, name:"Tom"} in the variable `a`. You can use the `members()` function
-to examine if a structure contains a field you expected.
+If `s` contains the JSON byte array from the `Marshal` example above, the result is a
+structure { age: 44, name:"Tom"} in the variable `r`. You can use the `members()` function
+to examine if a structure contains a field you expected. Note that the Unmarshal function
+returns an error code as it's result; this will be nil if there are no errors found.
+
+You can optionally not pass the value to store the resulting decoded value as the second
+parameter. If only the byte array is passed, the function's return value is the decoded
+value.
+
+    r := json.Unarshal(s) 
+
+In this usage, if there is an error decoding the byte array in `s` then an error is thrown.
 
 ## math <a name="math"></a>
 

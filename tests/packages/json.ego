@@ -6,30 +6,30 @@
     s := json.MarshalIndent(anon, "", "  ")
 
     // This test is sensitive to formatting.
-    @assert s == 
+    @assert string(s) == 
 `{
   "age": 55,
   "name": "Tom"
 }`
 
     s = json.Marshal(anon)
-    @assert s == `{"age":55,"name":"Tom"}`
+    @assert string(s) == `{"age":55,"name":"Tom"}`
 
     // Verify that the unmarshal will overwrite existing values.
     anon.age = -1
     anon.name = "aka"
 
-    a2, e := json.Unmarshal(s, &anon)
+    e := json.Unmarshal(s, &anon)
     if e != nil {
         fmt.Println("Error: ", e)
     }
 
-    @assert a2 == {age:55, name:"Tom"}
+    @assert anon == {age:55, name:"Tom"}
 
     // Same string but restore as a map
     m := map[string]interface{}{}
 
-    a3, e := json.Unmarshal(s, &m)
+    e = json.Unmarshal(s, &m)
     if e != nil {
         fmt.Println("Error: ", e)
     }

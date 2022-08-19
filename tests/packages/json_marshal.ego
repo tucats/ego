@@ -4,16 +4,16 @@
     a.memory = {size:55}
 
     b := json.Marshal(a)
-    @assert b == `{"memory":{"size":55}}`
+    @assert string(b) == `{"memory":{"size":55}}`
 
     c := []string{"one", "two"}
     e := {test:c}
     d := json.Marshal(e)
-    @assert d == `{"test":["one","two"]}`
+    @assert string(d) == `{"test":["one","two"]}`
 
     m := map[int]int{ 5 :55, 4: 44}
     n := {test:m}
     nn := json.Marshal(n)
-    @assert nn == `{"test":{"4":44,"5":55}}`
+    @assert string(nn) == `{"test":{"4":44,"5":55}}`
 }
 @pass

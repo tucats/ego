@@ -28,11 +28,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return nil, errors.New(err)
 	}
 
-	a := datatypes.NewArray(datatypes.ByteType, 0)
-	a.Append(content)
-
-	// Convert []byte to string
-	return a, nil
+	return datatypes.NewArray(datatypes.ByteType, 0).Append(content), nil
 }
 
 // WriteFile writes a string to a file.

@@ -164,12 +164,14 @@ func (a *EgoArray) Validate(kind Type) *errors.EgoError {
 // in it's entirety). Note that this function actually uses a semaphore to
 // track the state, so there must bre an exact match of calls to Immutable(false)
 // as there were to Immutable(true) to allow modifiations to the array.
-func (a *EgoArray) Immutable(b bool) {
+func (a *EgoArray) Immutable(b bool) *EgoArray {
 	if b {
 		a.immutable++
 	} else {
 		a.immutable--
 	}
+
+	return a
 }
 
 // Get retrieves a member of the array. If the array index is out-of-bounds
@@ -218,7 +220,7 @@ func (a *EgoArray) SetType(i Type) *errors.EgoError {
 
 // Force the size of the array. Existing values are retained if the
 // array grows; existing values are truncated if the size is reduced.
-func (a *EgoArray) SetSize(size int) {
+func (a *EgoArray) SetSize(size int) *EgoArray {
 	if size < 0 {
 		size = 0
 	}
@@ -239,6 +241,8 @@ func (a *EgoArray) SetSize(size int) {
 	} else {
 		a.data = append(a.data, make([]interface{}, size-len(a.data))...)
 	}
+
+	return a
 }
 
 // Set stores a value in the array. The array must not be set to immutable.
@@ -316,14 +320,14 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 // Simplified Set() that does no type checking. Used internally to
 // load values into an array that is known to be of the correct
 // kind.
-func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
+func (a *EgoArray) SetAlways(i interface{}, value interface{}) *EgoArray {
 	if a.immutable > 0 {
-		return
+		return a
 	}
 
 	index := getInt(i)
 	if index < 0 || index >= len(a.data) {
-		return
+		return a
 	}
 
 	if a.valueType.Kind() == ByteKind {
@@ -331,6 +335,8 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) {
 	} else {
 		a.data[index] = value
 	}
+
+	return a
 }
 
 // Generate a type description string for this array.
@@ -392,7 +398,11 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
-func (a *EgoArray) Append(i interface{}) {
+func (a *EgoArray) Append(i interface{}) *EgoArray {
+	if i == nil {
+		return a
+	}
+
 	if a.valueType.Kind() == ByteKind {
 		// If the value is already a byte array, then we just move it into our
 		// byte array.
@@ -417,6 +427,8 @@ func (a *EgoArray) Append(i interface{}) {
 			a.data = append(a.data, v)
 		}
 	}
+
+	return a
 }
 
 // GetBytes returns the native byte array for this array, or nil if this
