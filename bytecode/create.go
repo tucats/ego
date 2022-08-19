@@ -16,9 +16,10 @@ import (
 // or the user creates a typed array constant like []int{}.
 //
 // Inputs:
-//    operand    - Count of array items to create
-//    stack+0    - the array count
-//    stack+n    - each array value in reverse order
+//
+//	operand    - Count of array items to create
+//	stack+0    - the array count
+//	stack+n    - each array value in reverse order
 //
 // If the operand is equal to 2, then the stack has an
 // initial value that is stored in each element of the
@@ -76,11 +77,12 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 // elements of the array all be the same type.
 //
 // Inputs:
-//    operand    - indicates size or size and type
 //
-//    stack+0    - first array element
-//    stack+1    - second array element
-//    stack+n    = nth array element
+//	operand    - indicates size or size and type
+//
+//	stack+0    - first array element
+//	stack+1    - second array element
+//	stack+n    = nth array element
 //
 // If the operand is an []interface{} array, it contains
 // the count as element zero, and the type code as element
@@ -146,13 +148,14 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 // names are they keys and the field value is the map value.
 //
 // Inputs:
-//    operand    - number of field name/values on stack
 //
-//    stack+0    - name of field 1
-//    stack+1    - value of field 1
-//    stack+2    = name of field 2
-//    stack+3    = value of field 2
-//    ....
+//	operand    - number of field name/values on stack
+//
+//	stack+0    - name of field 1
+//	stack+1    - value of field 1
+//	stack+2    = name of field 2
+//	stack+3    = value of field 2
+//	....
 //
 // Items on the stack are pulled off in pairs representing a
 // string containing the field name, and an arbitrary value.
@@ -205,8 +208,6 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	if model != nil {
 		switch model := model.(type) {
 		case *datatypes.EgoStruct:
-			model.IsReplica()
-
 			// Check all the fields in the new value to ensure they
 			// are valid.
 			for k := range m {

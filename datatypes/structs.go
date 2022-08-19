@@ -15,7 +15,6 @@ type EgoStruct struct {
 	static       bool
 	readonly     bool
 	strongTyping bool
-	replica      int
 	fields       map[string]interface{}
 }
 
@@ -107,12 +106,6 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 
 func (s *EgoStruct) GetType() Type {
 	return s.typeDef
-}
-
-func (s *EgoStruct) IsReplica() *EgoStruct {
-	s.replica++
-
-	return s
 }
 
 func (s *EgoStruct) SetTyping(b bool) *EgoStruct {
@@ -223,7 +216,6 @@ func (s EgoStruct) Copy() *EgoStruct {
 	result := NewStructFromMap(s.fields)
 	result.readonly = s.readonly
 	result.static = s.static
-	result.replica = s.replica + 1
 	result.strongTyping = s.strongTyping
 
 	return result
@@ -333,7 +325,6 @@ func (s EgoStruct) Reflect() *EgoStruct {
 	m["istype"] = false
 	m["native"] = true
 	m["members"] = s.FieldNamesArray()
-	m["replicas"] = s.replica
 	m["readonly"] = s.readonly
 	m["static"] = s.static
 

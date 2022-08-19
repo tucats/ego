@@ -207,7 +207,6 @@ func TestReflect(t *testing.T) {
 				"type":     "struct{age int, name string}",
 				"native":   true,
 				"readonly": false,
-				"replicas": 0,
 				"static":   true,
 				"istype":   false,
 				"members":  datatypes.NewArrayFromArray(datatypes.StringType, []interface{}{"age", "name"}),
