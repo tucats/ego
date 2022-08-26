@@ -10,6 +10,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	server "github.com/tucats/ego/http/server"
 )
 
@@ -49,13 +50,13 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		root := settings.Get("ego.runtime.path")
-		fn := filepath.Join(root, "lib/services", path)
+		fn := filepath.Join(root, defs.LibPathName, "services", path)
 
 		ui.Debug(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
-			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "lib/services"), "")
+			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, defs.LibPathName, "services"), "")
 
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 

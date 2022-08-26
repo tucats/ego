@@ -737,9 +737,12 @@ For base types, the following are available:
 | Function   | Example               | Description |
 |:---------- |:--------------------- |:----------- |
 | bool()     | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
-| float32()  | float32(33)           | Convert the value to a float32, in this case `33.0` |
-| float64()  | float64(33)           | Convert the value to a float64, in this case `33.0` |
+| byte()     | byte(65)              | Convert the value to an 8-bit integer |           
+| int32()    | int32(4096)           | Convert the value to an 32-bit integer |
 | int()      | int(78.3)             | Convert the value to an integer, in this case `78` |
+| int64()    | int64(2^20)           | Convert the value to a 64-bit integer, in this case `1125899906842624` |
+| float32()  | float32(33)           | Convert the value to a 32-bit floating value, in this case `33.0` |
+| float64()  | float64(33)           | Convert the value to a 64-bit floating value, in this case `33.0` |
 | string()   | string(true)          | Convert the argument to a string value, in this case `true` |
 
 &nbsp;
