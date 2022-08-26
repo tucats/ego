@@ -62,7 +62,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			if t.Peek(1) == ":" {
 				t.Advance(1)
 			} else {
-				name = c.GetModuleName()
+				name = "main"
 
 				t.Advance(-1)
 			}
