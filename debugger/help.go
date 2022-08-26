@@ -13,6 +13,8 @@ const defaultHelpIndent = 3
 var helpText = [][]string{
 	{"break at [n]", "Halt execution at a given line number"},
 	{"break when [e]", "Halt execution when expression is true"},
+	{"break load \"file\"", "Load breakpoints from named file"},
+	{"break save \"file\"", "Save breakpoint list to named file"},
 	{"continue", "Resume execution of the program"},
 	{"exit", "Exit the debugger"},
 	{"help", "display this help text"},

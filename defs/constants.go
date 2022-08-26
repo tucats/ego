@@ -12,7 +12,7 @@ const DefaultUserdataFileName = "sqlite3://users.db"
 // to be found.
 const EgoPathEnv = "EGO_PATH"
 
-// The subdirection in "EGO_PATH" where the .ego runtime files and assets
+// The subdirectory in "EGO_PATH" where the .ego runtime files and assets
 // are found.
 const LibPathName = "lib"
 
