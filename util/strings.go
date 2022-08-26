@@ -8,6 +8,15 @@ import (
 	"unicode"
 )
 
+// Unquote removes quotation marks from a string if present.
+func Unquote(s string) string {
+	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
+		s = strings.TrimPrefix(strings.TrimSuffix(s, "\""), "\"")
+	}
+
+	return s
+}
+
 // HasCapitalizedName returns true if the first rune/character of the
 // string is considered a capital letter in Unicode.
 func HasCapitalizedName(name string) bool {

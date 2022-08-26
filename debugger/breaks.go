@@ -1,7 +1,9 @@
 package debugger
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/tucats/ego/bytecode"
@@ -9,6 +11,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
+	"github.com/tucats/ego/util"
 )
 
 type breakPointType int
@@ -17,17 +20,19 @@ const (
 	BreakDisabled breakPointType = 0
 	BreakAlways   breakPointType = iota
 	BreakValue
+	defaultBreakpointFilename = "ego-breakpoints.json"
 )
 
 type breakPoint struct {
-	kind   breakPointType
-	module string
-	line   int
-	hit    int
+	Kind   breakPointType `json:"kind"`
+	Module string         `json:"module,omitempty"`
+	Line   int            `json:"line,omitempty"`
+	Text   string         `json:"text,omitempty"`
 	expr   *bytecode.ByteCode
-	text   string
+	hit    int
 }
 
+// This global variable maintains the list of breakpoints currently in effect.
 var breakPoints = []breakPoint{}
 
 func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
@@ -69,6 +74,55 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				err = errors.New(e2)
 			}
 
+		case "save":
+			name := util.Unquote(t.Next())
+			if name == "" || name == tokenizer.EndOfTokens {
+				name = defaultBreakpointFilename
+			}
+
+			fmt.Printf("Saving %d breakpoints\n", len(breakPoints))
+
+			b, e := json.MarshalIndent(breakPoints, "", "  ")
+			if e == nil {
+				e = ioutil.WriteFile(name, b, 0777)
+			}
+
+			err = errors.New(e)
+
+		case "load":
+			name := util.Unquote(t.Next())
+			if name == "" || name == tokenizer.EndOfTokens {
+				name = defaultBreakpointFilename
+			}
+
+			v := []breakPoint{}
+
+			b, e := ioutil.ReadFile(name)
+			if e == nil {
+				e = json.Unmarshal(b, &v)
+			}
+
+			if e == nil {
+				for n, bp := range v {
+					if bp.Kind == 2 {
+						ec := compiler.New("break expression").WithTokens(tokenizer.New(bp.Text))
+
+						bc, err := ec.Expression()
+						if errors.Nil(err) {
+							v[n].expr = bc
+						} else {
+							break
+						}
+					}
+				}
+
+				breakPoints = v
+
+				fmt.Printf("Loaded %d breakpoints\n", len(breakPoints))
+			}
+
+			err = errors.New(e)
+
 		default:
 			err = errors.New(errors.ErrInvalidBreakClause)
 		}
@@ -83,10 +137,10 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 
 func breakAtLine(module string, line int) *errors.EgoError {
 	b := breakPoint{
-		module: module,
-		line:   line,
+		Module: module,
+		Line:   line,
 		hit:    0,
-		kind:   BreakAlways,
+		Kind:   BreakAlways,
 	}
 	breakPoints = append(breakPoints, b)
 
@@ -97,11 +151,11 @@ func breakAtLine(module string, line int) *errors.EgoError {
 
 func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
 	b := breakPoint{
-		module: "expression",
+		Module: "expression",
 		hit:    0,
-		kind:   BreakValue,
+		Kind:   BreakValue,
 		expr:   expression,
-		text:   text,
+		Text:   text,
 	}
 	breakPoints = append(breakPoints, b)
 
@@ -121,12 +175,12 @@ func ShowBreaks() {
 }
 
 func FormatBreakpoint(b breakPoint) string {
-	switch b.kind {
+	switch b.Kind {
 	case BreakAlways:
-		return fmt.Sprintf("at %s:%d", b.module, b.line)
+		return fmt.Sprintf("at %s:%d", b.Module, b.Line)
 
 	case BreakValue:
-		return fmt.Sprintf("when %s", b.text)
+		return fmt.Sprintf("when %s", b.Text)
 
 	default:
 		return fmt.Sprintf("(undefined) %v", b)
@@ -141,7 +195,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 	prompt := false
 
 	for _, b := range breakPoints {
-		switch b.kind {
+		switch b.Kind {
 		case BreakValue:
 			// If we already hit this, don't do it again on each statement. Pass.
 			if b.hit > 0 {
@@ -178,13 +232,13 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 				}
 			}
 
-			msg = "Break when " + b.text
+			msg = "Break when " + b.Text
 
 		case BreakAlways:
 			line := c.GetLine()
 			module := c.GetModuleName()
 
-			if module == b.module && line == b.line {
+			if module == b.Module && line == b.Line {
 				prompt = true
 				text := c.GetTokenizer().GetLine(line)
 				msg = fmt.Sprintf("%s:\n\t%5d, %s", breakAt, line, text)
