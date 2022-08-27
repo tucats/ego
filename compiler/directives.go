@@ -31,6 +31,9 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "authenticated":
 		return c.authenticatedDirective()
 
+	case "entrypoint":
+		return c.entrypointDirective()
+
 	case "error":
 		return c.errorDirective()
 
@@ -54,9 +57,6 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 
 	case "log":
 		return c.logDirective()
-
-	case "entrypoint":
-		return c.entrypointDirective()
 
 	case "pass":
 		return c.TestPass()
@@ -101,6 +101,7 @@ func (c *Compiler) entrypointDirective() *errors.EgoError {
 	c.b.Emit(bytecode.Dup)
 	c.b.Emit(bytecode.StoreAlways, "__main")
 	c.b.Emit(bytecode.EntryPoint)
+	c.b.Emit(bytecode.AtLine, -1)
 	c.b.Emit(bytecode.Push, 0)
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")

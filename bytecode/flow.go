@@ -57,7 +57,7 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.symbols.SetAlways("__line", c.line)
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
 	// Are we in debug mode?
-	if c.line > 0 && c.debugging {
+	if c.line != 0 && c.debugging {
 		return errors.New(errors.ErrSignalDebugger)
 	}
 	// If we are tracing, put that out now.

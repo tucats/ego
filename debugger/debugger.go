@@ -50,10 +50,12 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 	line := c.GetLine()
 	text := ""
 
-	if tok := c.GetTokenizer(); tok != nil {
-		text = tok.GetLine(line)
-	} else {
-		fmt.Printf("No source available for debugging\n")
+	if line > 0 {
+		if tok := c.GetTokenizer(); tok != nil {
+			text = tok.GetLine(line)
+		} else {
+			fmt.Printf("No source available for debugging\n")
+		}
 	}
 
 	s := c.GetSymbols()
@@ -61,7 +63,15 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 	// Are we in single-step mode?
 	if c.SingleStep() {
-		fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, c.GetModuleName(), line, text)
+		// Big hack here. Let's change the text of the "@entrypoint" directive
+		// to be more easily read by the user when the debugger runs.
+		if line < 0 {
+			fmt.Println("Return from entrypoint")
+		} else if strings.HasPrefix(text, "@entrypoint ") {
+			fmt.Printf("Start program with call to entrypoint: %s()\n", strings.TrimPrefix(text, "@entrypoint "))
+		} else {
+			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, c.GetModuleName(), line, text)
+		}
 
 		prompt = true
 	} else {
