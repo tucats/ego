@@ -55,8 +55,8 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	case "log":
 		return c.logDirective()
 
-	case "main":
-		return c.mainDirective()
+	case "entrypoint":
+		return c.entrypointDirective()
 
 	case "pass":
 		return c.TestPass()
@@ -91,7 +91,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 }
 
 // Generate the call to the main program, and the the exit code.
-func (c *Compiler) mainDirective() *errors.EgoError {
+func (c *Compiler) entrypointDirective() *errors.EgoError {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == ";" {
 		mainName = "main"
