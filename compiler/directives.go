@@ -90,29 +90,21 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	}
 }
 
+// Generate the call to the main program, and the the exit code.
 func (c *Compiler) mainDirective() *errors.EgoError {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == ";" {
 		mainName = "main"
 	}
 
-	if mainName == "." {
-		c.b.Emit(bytecode.Load, "__main")
-		c.b.Emit(bytecode.EntryPoint)
-		c.b.Emit(bytecode.Push, 0)
-		c.b.Emit(bytecode.Load, "os")
-		c.b.Emit(bytecode.Member, "Exit")
-		c.b.Emit(bytecode.Call, 0)
-
-		return nil
-	}
-
-	if !tokenizer.IsSymbol(mainName) {
-		return c.newError(errors.ErrInvalidIdentifier)
-	}
-
 	c.b.Emit(bytecode.Push, mainName)
-	c.b.Emit(bytecode.StoreGlobal, "__main")
+	c.b.Emit(bytecode.Dup)
+	c.b.Emit(bytecode.StoreAlways, "__main")
+	c.b.Emit(bytecode.EntryPoint)
+	c.b.Emit(bytecode.Push, 0)
+	c.b.Emit(bytecode.Load, "os")
+	c.b.Emit(bytecode.Member, "Exit")
+	c.b.Emit(bytecode.Call, 0)
 
 	return nil
 }

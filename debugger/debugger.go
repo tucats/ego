@@ -72,7 +72,6 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		var tokens *tokenizer.Tokenizer
 
 		for {
-			// cmd := ""
 			cmd := getLine()
 			if len(strings.TrimSpace(cmd)) == 0 {
 				cmd = "step"

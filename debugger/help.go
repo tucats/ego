@@ -11,17 +11,19 @@ import (
 const defaultHelpIndent = 3
 
 var helpText = [][]string{
-	{"break at [n]", "Halt execution at a given line number"},
-	{"break when [e]", "Halt execution when expression is true"},
-	{"break load \"file\"", "Load breakpoints from named file"},
-	{"break save \"file\"", "Save breakpoint list to named file"},
+	{"break at <line>", "Halt execution at a given line number"},
+	{"break when <expression>", "Halt execution when expression is true"},
+	{"break clear at <line>", "Remove breakpoint for line number"},
+	{"break clear when <expression>", "Remove breakpoint for expression"},
+	{"break load [\"file\"]", "Load breakpoints from named file"},
+	{"break save [\"file\"]", "Save breakpoint list to named file"},
 	{"continue", "Resume execution of the program"},
 	{"exit", "Exit the debugger"},
 	{"help", "display this help text"},
 	{"print", "Print the value of an expression"},
-	{"set", "Set a variable to a value"},
+	{"set <variable> = <expression>", "Set a variable to a value"},
 	{"show breaks", "Display list of breakpoints"},
-	{"show calls [n]", "Display the call stack to the given depth"},
+	{"show calls [<count>]", "Display the call stack to the given depth"},
 	{"show symbols", "Display the current symbol table"},
 	{"show line", "Display the current program line"},
 	{"show scope", "Display nested call scope"},
@@ -39,7 +41,7 @@ func Help() *errors.EgoError {
 	}
 
 	if errors.Nil(err) {
-		fmt.Println("Commands:")
+		fmt.Println("Debugger commands:")
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)
 		_ = table.SetOrderBy("Command")
