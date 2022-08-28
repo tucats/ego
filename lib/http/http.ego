@@ -37,15 +37,15 @@ func (r *Response) WriteMessage(msg string) {
 
 func (r *Response) WriteJSON( i interface{}) {
 	msg := json.Marshal(i)
-	r.Write(msg)
+	r.Write(string(msg))
 }
 
 func (r *Response) WriteTemplate( fn string, i interface{}) {
-
     try {
-        // Load the page file as a template
+        // Load the page file as a template.
         fn := filepath.Join(profile.Get("ego.runtime.path"), fn)
-        @template mempage io.ReadFile(fn)
+        b := io.ReadFile(fn)
+        @template mempage string(b)
 
         // Render the page using the dynamic data, and return it as the response
         page := strings.Template(mempage, pageData)

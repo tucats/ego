@@ -143,9 +143,15 @@ func responseByteCode(c *Context, i interface{}) *errors.EgoError {
 	if isJSON {
 		_ = c.symbols.Root().SetAlways("_rest_response", v)
 	} else {
-		output := datatypes.FormatUnquoted(v)
+		if b, ok := v.(*datatypes.EgoArray); ok {
+			if bs := b.GetBytes(); bs != nil {
+				writeResponse(c, string(bs)+"\n")
 
-		writeResponse(c, output+"\n")
+				return nil
+			}
+		}
+
+		writeResponse(c, datatypes.FormatUnquoted(v)+"\n")
 	}
 
 	return nil

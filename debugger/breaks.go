@@ -57,6 +57,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				} else {
 					err = breakWhen(bc, text)
 				}
+
 				if !errors.Nil(err) {
 					return err
 				}
@@ -178,7 +179,6 @@ func clearBreakAtLine(module string, line int) {
 }
 
 func breakAtLine(module string, line int) *errors.EgoError {
-
 	for _, b := range breakPoints {
 		if b.Kind == BreakAlways && b.Line == line {
 			fmt.Println("Breakpoint already set")
@@ -201,7 +201,6 @@ func breakAtLine(module string, line int) *errors.EgoError {
 }
 
 func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
-
 	for _, b := range breakPoints {
 		if b.Kind == BreakValue && b.Text == text {
 			fmt.Println("Breakpoint already set")
