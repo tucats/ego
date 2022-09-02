@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/datatypes"
 )
 
-// MapAsString formats a map for printing as a table. The result is
+// StructAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
 func StructAsString(vv *datatypes.EgoStruct) string {
-	t, _ := tables.New([]string{"Field", "Value"})
+	t, _ := tables.New([]string{"Field", "Type", "Value"})
 	//t.ShowUnderlines(false).ShowHeadings(false)
 
 	keys := vv.FieldNames()
@@ -18,8 +18,9 @@ func StructAsString(vv *datatypes.EgoStruct) string {
 		keyString := datatypes.GetString(key)
 		value, _ := vv.Get(keyString)
 		valueString := datatypes.GetString(value)
+		typeString := datatypes.TypeOf(value).TypeString()
 
-		_ = t.AddRowItems(keyString, valueString)
+		_ = t.AddRowItems(keyString, typeString, valueString)
 	}
 
 	r, _ := t.String("text")
