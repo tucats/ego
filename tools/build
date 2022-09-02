@@ -13,6 +13,13 @@
 #          By default, uses the current build number
 #
 
+# Are we even in a build directory?
+if [[ ! -a buildver.txt ]]; then
+   echo "Not in a build directory"
+   exit 1
+fi
+
+
 BUILDVER=$(cat buildver.txt)
 BUILDTIME=$(date +"%Y%m%d%H%M%S")
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
