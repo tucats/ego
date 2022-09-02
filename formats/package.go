@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 )
 
-// MapAsString formats a map for printing as a table. The result is
+// PackageAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
 func PackageAsString(vv *datatypes.EgoPackage) string {
 	t, _ := tables.New([]string{"Member", "Value"})

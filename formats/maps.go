@@ -10,7 +10,7 @@ import (
 // MapAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
 func MapAsString(vv *datatypes.EgoMap) string {
-	t, _ := tables.New([]string{"Key", "Value"})
+	t, _ := tables.New([]string{"Key", "Type", "Value"})
 	//t.ShowUnderlines(false).ShowHeadings(false)
 
 	keys := vv.Keys()
@@ -18,8 +18,9 @@ func MapAsString(vv *datatypes.EgoMap) string {
 		keyString := datatypes.GetString(key)
 		value, _, _ := vv.Get(keyString)
 		valueString := datatypes.GetString(value)
+		typeString := datatypes.TypeOf(value).TypeString()
 
-		_ = t.AddRow([]string{keyString, valueString})
+		_ = t.AddRow([]string{keyString, typeString, valueString})
 	}
 
 	r, _ := t.String("text")
