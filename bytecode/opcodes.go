@@ -166,6 +166,7 @@ var instructionNames = map[OpcodeID]string{
 	Member:             "Member",
 	ModeCheck:          "ModeCheck",
 	Modulo:             "Modulo",
+	Mul:                "Mul",
 	Negate:             "Negate",
 	Newline:            "Newline",
 	NoOperation:        "NoOperation",
