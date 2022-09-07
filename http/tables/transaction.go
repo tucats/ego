@@ -273,7 +273,6 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		// Was there a result set in the symbol table? If so, we're returning
 		// a rowset type.
-
 		if result, ok := symbols.Symbols[resultSetSymbolName]; ok {
 			if rows, ok := result.([]map[string]interface{}); ok {
 				r := defs.DBRowSet{

@@ -26,6 +26,13 @@ func Test_splitSQLStatements(t *testing.T) {
 			},
 		},
 		{
+			name: "single statement with quoted semicolon",
+			sql:  `select * from "admin"."us;ers";`,
+			want: []string{
+				`select * from "admin" . "us;ers"`,
+			},
+		},
+		{
 			name: "multiple statements",
 			sql:  `select * from "admin"."users"; drop table "admin"."users"`,
 			want: []string{
