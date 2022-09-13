@@ -5,9 +5,7 @@ replace github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
 go 1.15
 
 require (
-	github.com/chzyer/logex v1.2.1 // indirect
 	github.com/chzyer/readline v1.5.1
-	github.com/chzyer/test v1.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/go-resty/resty v1.12.0
 	github.com/google/uuid v1.3.0
