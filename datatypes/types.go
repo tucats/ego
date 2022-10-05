@@ -504,6 +504,27 @@ func TypeOf(i interface{}) Type {
 // Ego datatype indicator.
 func IsType(v interface{}, t Type) bool {
 	if t.kind == InterfaceKind {
+		// If it is an empty interface (no methods) then it's always true
+		if len(t.functions) == 0 {
+			return true
+		}
+
+		// Search to see if the interface has all the functions available.
+		for m := range t.functions {
+			found := true
+			switch mv := v.(type) {
+			case *EgoStruct:
+				_, found = mv.Get(m)
+
+			case *Type:
+				_, found = mv.functions[m]
+			}
+
+			if !found {
+				return false
+			}
+		}
+
 		return true
 	}
 
@@ -628,11 +649,16 @@ func (t Type) Reflect() *EgoStruct {
 		r["name"] = t.name
 	}
 
-	if t.functions != nil && len(t.functions) > 0 {
-		functions := NewArray(StringType, len(t.functions))
+	functionList := t.functions
+	if t.valueType.kind == InterfaceKind {
+		functionList = t.valueType.functions
+	}
+
+	if len(functionList) > 0 {
+		functions := NewArray(StringType, len(functionList))
 
 		names := make([]string, 0)
-		for k := range t.functions {
+		for k := range functionList {
 			names = append(names, k)
 		}
 

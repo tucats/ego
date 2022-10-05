@@ -4,6 +4,17 @@ import (
 	"sync"
 )
 
+func NewInterfaceType() *Type {
+	t := &Type{
+		name:      "interface{}",
+		kind:      InterfaceKind,
+		functions: map[string]interface{}{},
+		valueType: &InterfaceType,
+	}
+
+	return t
+}
+
 // InstanceOfType accepts a kind type indicator, and returns the zero-value
 // model of that type. This only applies to base types.
 func InstanceOfType(t Type) interface{} {

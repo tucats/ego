@@ -51,6 +51,34 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 
 	// Is it a known complex type?
 
+	// Empty interface
+	if c.t.Peek(1) == "interface" && c.t.Peek(2) == "{}" {
+		c.t.Advance(2)
+
+		t := datatypes.InterfaceType
+
+		return t, nil
+	}
+
+	// Interfaces
+	if c.t.Peek(1) == "interface" && c.t.Peek(2) == "{" {
+		c.t.Advance(2)
+
+		t := datatypes.NewInterfaceType()
+
+		// Parse function declarations, add to the type object.
+		for !c.t.IsNext("}") {
+			f, err := c.compileFunctionDeclaration()
+			if !errors.Nil(err) {
+				return datatypes.UndefinedType, err
+			}
+
+			t.DefineFunction(f.Name, f)
+		}
+
+		return *t, nil
+	}
+
 	// Maps
 	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
 		c.t.Advance(2)

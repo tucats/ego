@@ -212,6 +212,86 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	return nil
 }
 
+// Helper function for defer in following code, that resets a saved
+// bytecode to the compiler.
+func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
+	*c.b = *saved
+}
+
+// compileFunctionDeclaration compiles a function declaration, which specifies
+// the parameter and return type of a function.
+func (c *Compiler) compileFunctionDeclaration() (*datatypes.FunctionDeclaration, *errors.EgoError) {
+	var err *errors.EgoError
+
+	// Can't have side effects added to current bytecode, so save that off and
+	// ensure we put it back when done.
+
+	savedBytecode := c.b
+	defer restoreByteCode(c, savedBytecode)
+
+	funcDef := datatypes.FunctionDeclaration{}
+
+	// Start with the function name,  which must be a valid
+	// symbol name.
+	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		return nil, c.newError(errors.ErrMissingFunctionName)
+	}
+
+	funcDef.Name, _, _, _, err = c.parseFunctionName()
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	// The function name must be followed by a parameter declaration. Currently
+	// we ignore these, but later will copy them into a proper function definition
+	// object when we have them.
+	paramList, _, err := c.parseParameterDeclaration()
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	funcDef.Parameters = make([]datatypes.FunctionParameter, len(paramList))
+	for i, p := range paramList {
+		funcDef.Parameters[i] = datatypes.FunctionParameter{
+			Name:     p.name,
+			ParmType: p.kind,
+		}
+	}
+
+	// Is there a list of return items (expressed as a parenthesis)?
+	hasReturnList := c.t.IsNext("(")
+
+	// Loop over the (possibly singular) return type specification. Currently
+	// we don't store this away, so it's discarded and we ignore any error. This
+	// should be done better, later on.
+	for {
+		theType, err := c.parseType(false)
+		if !errors.Nil(err) {
+			break
+		}
+
+		funcDef.ReturnTypes = append(funcDef.ReturnTypes, theType)
+
+		if c.t.Peek(1) != "," {
+			break
+		}
+
+		// If we got here, but never had a () around this list, it's an error
+		if !hasReturnList {
+			return nil, c.newError(errors.ErrInvalidReturnTypeList)
+		}
+
+		c.t.Advance(1)
+	}
+
+	// If the return types were expressed as a list, there must be a trailing paren.
+	if hasReturnList && !c.t.IsNext(")") {
+		return nil, c.newError(errors.ErrMissingParenthesis)
+	}
+
+	return &funcDef, nil
+}
+
 // Parse the function name clause, which can contain a receiver declaration
 // (including  the name of the "this" variable, it's type name, and whether it
 // is by value vs. by reference) as well as the actual function name itself.
