@@ -28,9 +28,11 @@ func (f FunctionDeclaration) String() string {
 		r.WriteString(p.ParmType.String())
 	}
 
-	r.WriteString(")")
+	r.WriteRune(')')
 
 	if len(f.ReturnTypes) > 0 {
+		r.WriteRune(' ')
+
 		if len(f.ReturnTypes) > 1 {
 			r.WriteRune('(')
 		}
