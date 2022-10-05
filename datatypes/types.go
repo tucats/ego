@@ -665,7 +665,12 @@ func (t Type) Reflect() *EgoStruct {
 		sort.Strings(names)
 
 		for i, k := range names {
-			_ = functions.Set(i, k)
+			fName := functionList[k]
+			if fdef, ok := fName.(FunctionDeclaration); ok {
+				fName = fdef.String()
+			}
+
+			_ = functions.Set(i, fName)
 		}
 
 		r["functions"] = functions

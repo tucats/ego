@@ -84,6 +84,12 @@ func Format(element interface{}) string {
 	case string:
 		return "\"" + v + "\""
 
+	case *FunctionDeclaration:
+		return v.String()
+
+	case FunctionDeclaration:
+		return v.String()
+
 	case EgoPackage:
 		var b strings.Builder
 
