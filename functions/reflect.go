@@ -40,12 +40,12 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			default:
 				e := reflect.ValueOf(v).Elem()
 
-				name, ok := e.Field(0).Interface().(string)
+				name, ok := e.FieldByName("Name").Interface().(string)
 				if !ok || len(name) == 0 {
 					name = "<anonymous>"
 				}
 
-				fd, _ := e.Field(3).Interface().(*datatypes.FunctionDeclaration)
+				fd, _ := e.FieldByName("Declaration").Interface().(*datatypes.FunctionDeclaration)
 
 				return datatypes.NewStructFromMap(map[string]interface{}{
 					datatypes.TypeMDName:     "func",
