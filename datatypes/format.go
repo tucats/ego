@@ -35,7 +35,7 @@ func Format(element interface{}) string {
 		return "T(" + v.String() + v.FunctionNameList() + ")"
 
 	case *Type:
-		return "T(" + v.String() + ")"
+		return "T(" + v.String() + v.FunctionNameList() + ")"
 
 	// Naked WaitGroup is a model for a type
 	case sync.WaitGroup:

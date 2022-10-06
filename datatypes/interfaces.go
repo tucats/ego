@@ -14,6 +14,10 @@ import (
 // is a scalar value, return the Type of the value.
 func GetType(v interface{}) Type {
 	if t, ok := v.(Type); ok {
+		if t.valueType != nil && t.valueType.kind == InterfaceKind {
+			t = *t.valueType
+		}
+
 		return t
 	}
 

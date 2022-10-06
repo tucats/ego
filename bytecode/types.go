@@ -71,8 +71,11 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 					v = errors.New(errors.ErrPanic).Context(v)
 				}
 
+				// Figure out the type. If it's a user type, get the underlying type unless we're
+				// testing against an interface (in which case we need the full type info to get the
+				// list of functions).
 				actualType := datatypes.TypeOf(v)
-				if actualType.Kind() == datatypes.TypeKind {
+				if actualType.Kind() == datatypes.TypeKind && t.Kind() != datatypes.InterfaceKind {
 					actualType = *actualType.BaseType()
 				}
 
@@ -100,6 +103,16 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 					v = datatypes.GetString(v)
 				} else if t.IsType(datatypes.BoolType) {
 					v = datatypes.GetBool(v)
+				}
+			} else {
+				// It is an interface type, if it's a non-empty interface
+				// verify the value against the interface entries.
+				if t.FunctionNameList() != "" {
+					if iv, ok := i.(datatypes.Type); ok {
+						if !t.ValidateFunctions(&iv) {
+							return c.newError(errors.ErrInvalidArgType)
+						}
+					}
 				}
 			}
 		}

@@ -374,7 +374,8 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 
 			// There must be a type declaration that follows. This returns a model which
 			// is the "zero value" for the declared type.
-			model, err := c.typeDeclaration()
+			theType, err := c.parseType(false)
+
 			if !errors.Nil(err) {
 				return nil, false, c.newError(err)
 			}
@@ -382,7 +383,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			if hasVarArgs {
 				p.kind = datatypes.VarArgsType
 			} else {
-				p.kind = datatypes.TypeOf(model)
+				p.kind = theType
 			}
 
 			parameters = append(parameters, p)

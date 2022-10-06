@@ -75,6 +75,25 @@ type Field struct {
 	Type Type
 }
 
+// ValidateFunctions compares the functions for a given type against
+// the functions for an associated interface definition.
+func (t Type) ValidateFunctions(i *Type) bool {
+	if i.kind != TypeKind || i.valueType == nil {
+		return false
+	}
+
+	m1 := t.functions
+	m2 := i.valueType.functions
+
+	for k := range m1 {
+		if _, ok := m2[k]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Return a string containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
 // empty string. The results are a comma-separated list of function
@@ -130,6 +149,31 @@ func (t Type) String() string {
 		}
 
 		return name + " " + t.valueType.String()
+
+	case InterfaceKind:
+		name := "interface{"
+
+		keys := []string{}
+
+		for k := range t.functions {
+			keys = append(keys, k)
+		}
+
+		for i, f := range keys {
+			if i > 0 {
+				name = name + ","
+			}
+
+			if fd, ok := t.functions[f].(*FunctionDeclaration); ok {
+				name = name + fd.String()
+			} else {
+				name = name + f
+			}
+		}
+
+		name = name + "}"
+
+		return name
 
 	case MapKind:
 		return "map[" + t.keyType.String() + "]" + t.valueType.String()
@@ -208,15 +252,20 @@ func (t Type) IsType(i Type) bool {
 		i = *i.valueType
 	}
 
-	if t.kind != i.kind {
-		return false
+	// Basic kind match. Note special case for interface matching
+	// a struct being allowed up to this point (we'll check the
+	// function list later).
+	if t.kind != TypeKind || i.kind != InterfaceKind {
+		if t.kind != i.kind {
+			return false
+		}
 	}
 
 	if t.keyType != nil && i.keyType == nil {
 		return false
 	}
 
-	if t.valueType != nil && i.valueType == nil {
+	if t.kind != InterfaceKind && t.valueType != nil && i.valueType == nil {
 		return false
 	}
 
@@ -226,7 +275,7 @@ func (t Type) IsType(i Type) bool {
 		}
 	}
 
-	if t.valueType != nil && i.valueType != nil {
+	if i.kind != InterfaceKind && t.valueType != nil && i.valueType != nil {
 		if !t.valueType.IsType(*i.valueType) {
 			return false
 		}
@@ -236,38 +285,51 @@ func (t Type) IsType(i Type) bool {
 	// structure fields to ensure they match in name, number,
 	// and types.
 	if t.kind == StructKind {
-		typeFields := t.FieldNames()
-		valueFields := i.FieldNames()
+		// Time to see if this is a check for interface matchups
+		if i.kind == InterfaceKind {
+			for fname := range i.functions {
+				fn := TypeOf(t).Function(fname)
 
-		if len(typeFields) != len(valueFields) {
-			return false
-		}
-
-		for _, fieldName := range typeFields {
-			typeFieldType := t.fields[fieldName]
-			if valueFieldType, found := i.fields[fieldName]; found {
-				// If either one is a type, find the underlying type(s)
-				for typeFieldType.kind == TypeKind {
-					typeFieldType = *typeFieldType.valueType
-				}
-
-				for valueFieldType.kind == TypeKind {
-					valueFieldType = *valueFieldType.valueType
-				}
-
-				// Special case of letting float64/int issues slide?
-				if (typeFieldType.kind == Float64Type.kind &&
-					valueFieldType.kind == IntType.kind) ||
-					(typeFieldType.kind == IntType.kind &&
-						valueFieldType.kind == Float64Type.kind) {
-					continue
-				}
-
-				if !typeFieldType.IsType(valueFieldType) {
+				if fn == nil {
 					return false
 				}
-			} else {
+			}
+
+			return true
+		} else {
+			typeFields := t.FieldNames()
+			valueFields := i.FieldNames()
+
+			if len(typeFields) != len(valueFields) {
 				return false
+			}
+
+			for _, fieldName := range typeFields {
+				typeFieldType := t.fields[fieldName]
+				if valueFieldType, found := i.fields[fieldName]; found {
+					// If either one is a type, find the underlying type(s)
+					for typeFieldType.kind == TypeKind {
+						typeFieldType = *typeFieldType.valueType
+					}
+
+					for valueFieldType.kind == TypeKind {
+						valueFieldType = *valueFieldType.valueType
+					}
+
+					// Special case of letting float64/int issues slide?
+					if (typeFieldType.kind == Float64Type.kind &&
+						valueFieldType.kind == IntType.kind) ||
+						(typeFieldType.kind == IntType.kind &&
+							valueFieldType.kind == Float64Type.kind) {
+						continue
+					}
+
+					if !typeFieldType.IsType(valueFieldType) {
+						return false
+					}
+				} else {
+					return false
+				}
 			}
 		}
 	}
