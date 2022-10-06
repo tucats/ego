@@ -45,10 +45,13 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 					name = "<anonymous>"
 				}
 
+				fd, _ := e.Field(3).Interface().(*datatypes.FunctionDeclaration)
+
 				return datatypes.NewStructFromMap(map[string]interface{}{
 					datatypes.TypeMDName:     "func",
 					datatypes.BasetypeMDName: "func " + name,
 					"istype":                 false,
+					"declaration":            fd.String(),
 				}), nil
 			}
 		}

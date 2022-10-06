@@ -1,6 +1,7 @@
 package datatypes
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -77,21 +78,35 @@ type Field struct {
 
 // ValidateFunctions compares the functions for a given type against
 // the functions for an associated interface definition.
-func (t Type) ValidateFunctions(i *Type) bool {
+func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 	if i.kind != TypeKind || i.valueType == nil {
-		return false
+		return errors.New(errors.ErrArgumentType)
 	}
 
 	m1 := t.functions
-	m2 := i.valueType.functions
+	m2 := i.functions
 
-	for k := range m1 {
-		if _, ok := m2[k]; !ok {
-			return false
+	for k, bc1 := range m1 {
+		f1, _ := bc1.(*FunctionDeclaration)
+		if f1 == nil {
+			return errors.New(errors.ErrMissingInterface).Context(k)
+		}
+
+		if bc2, ok := m2[k]; ok {
+			f2 := GetDeclaration(bc2)
+			if f2 == nil {
+				return errors.New(errors.ErrMissingInterface).Context(f1.String())
+			}
+
+			if f1.String() != f2.String() {
+				return errors.New(errors.ErrMissingInterface).Context(f1.String())
+			}
+		} else {
+			return errors.New(errors.ErrMissingInterface).Context(f1.String())
 		}
 	}
 
-	return true
+	return nil
 }
 
 // Return a string containing the list of receiver functions for
@@ -287,12 +302,16 @@ func (t Type) IsType(i Type) bool {
 	if t.kind == StructKind {
 		// Time to see if this is a check for interface matchups
 		if i.kind == InterfaceKind {
-			for fname := range i.functions {
+			for fname, bc := range i.functions {
 				fn := TypeOf(t).Function(fname)
 
 				if fn == nil {
 					return false
 				}
+
+				fd := GetDeclaration(bc)
+
+				fmt.Printf("Compare with %s\n", fd.String())
 			}
 
 			return true

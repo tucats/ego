@@ -86,7 +86,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				}
 
 				if !actualType.IsType(t) {
-					return c.newError(errors.ErrArgumentType).Context("IsType failed")
+					return c.newError(errors.ErrArgumentType)
 				}
 
 				if t.IsType(datatypes.IntType) {
@@ -114,10 +114,9 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				// It is an interface type, if it's a non-empty interface
 				// verify the value against the interface entries.
 				if t.FunctionNameList() != "" {
-					if iv, ok := i.(datatypes.Type); ok {
-						if !t.ValidateFunctions(&iv) {
-							return c.newError(errors.ErrInvalidArgType)
-						}
+					vt := datatypes.TypeOf(v)
+					if e := t.ValidateFunctions(&vt); !errors.Nil(e) {
+						return c.newError(e)
 					}
 				}
 			}

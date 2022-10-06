@@ -68,7 +68,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext("}") {
-			f, err := c.compileFunctionDeclaration()
+			f, err := c.parseFunctionDeclaration()
 			if !errors.Nil(err) {
 				return datatypes.UndefinedType, err
 			}

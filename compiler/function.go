@@ -27,6 +27,8 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	receiverType := ""
 	byValue := false
 
+	var fd *datatypes.FunctionDeclaration
+
 	// Increment the function depth for the time we're on this particular function,
 	// and decrement it when we are done.
 	c.functionDepth++
@@ -39,6 +41,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		if c.t.AnyNext(";", tokenizer.EndOfTokens) {
 			return c.newError(errors.ErrMissingFunctionName)
 		}
+
+		// First, let's try to parse the declaration component
+		savedPos := c.t.Mark()
+		fd, _ = c.parseFunctionDeclaration()
+
+		c.t.Set(savedPos)
 
 		functionName, thisName, receiverType, byValue, err = c.parseFunctionName()
 		if !errors.Nil(err) {
@@ -57,6 +65,10 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// Create a new bytecode object which will hold the function
 	// generated code.
 	b := bytecode.New(functionName)
+
+	// Store the function declaration metadata (if any) in the
+	// bytecode we're generating.
+	b.Declaration = fd
 
 	// If we know our source file, copy it to the new bytecode.
 	if c.SourceFile != "" {
@@ -218,9 +230,9 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 	*c.b = *saved
 }
 
-// compileFunctionDeclaration compiles a function declaration, which specifies
+// parseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) compileFunctionDeclaration() (*datatypes.FunctionDeclaration, *errors.EgoError) {
+func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *errors.EgoError) {
 	var err *errors.EgoError
 
 	// Can't have side effects added to current bytecode, so save that off and

@@ -40,6 +40,7 @@ type ByteCode struct {
 	Name         string
 	instructions []Instruction
 	emitPos      int
+	Declaration  *datatypes.FunctionDeclaration
 }
 
 // New generates and initializes a new bytecode.
