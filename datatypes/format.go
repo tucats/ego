@@ -35,7 +35,7 @@ func Format(element interface{}) string {
 		return "T(" + v.String() + v.FunctionNameList() + ")"
 
 	case *Type:
-		return "T(" + v.String() + v.FunctionNameList() + ")"
+		return "T(" + "*" + v.String() + v.FunctionNameList() + ")"
 
 	// Naked WaitGroup is a model for a type
 	case sync.WaitGroup:
@@ -50,8 +50,12 @@ func Format(element interface{}) string {
 	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
 	case *sync.Mutex:
 		return "sync.Mutex{}"
-	case *Channel:
+
+	case Channel:
 		return v.String()
+
+	case *Channel:
+		return "*" + v.String()
 
 	case error:
 		return fmt.Sprintf("%v", v)

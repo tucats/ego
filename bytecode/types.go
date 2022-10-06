@@ -75,12 +75,18 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				// testing against an interface (in which case we need the full type info to get the
 				// list of functions).
 				actualType := datatypes.TypeOf(v)
+
+				// *chan and chan will be considered valid matches
+				if actualType.Kind() == datatypes.PointerKind && actualType.BaseType().Kind() == datatypes.ChanKind {
+					actualType = *actualType.BaseType()
+				}
+
 				if actualType.Kind() == datatypes.TypeKind && t.Kind() != datatypes.InterfaceKind {
 					actualType = *actualType.BaseType()
 				}
 
 				if !actualType.IsType(t) {
-					return c.newError(errors.ErrArgumentType)
+					return c.newError(errors.ErrArgumentType).Context("IsType failed")
 				}
 
 				if t.IsType(datatypes.IntType) {
