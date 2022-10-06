@@ -19,16 +19,24 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	// If it's a builtin function, it's description will match the signature. If it's a
 	// match, find out it's name and return it as a builtin.
-	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, error) Value>" {
+	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, *errors.EgoError) Value>" {
 		name := runtime.FuncForPC(reflect.ValueOf(args[0]).Pointer()).Name()
 		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
-		return datatypes.NewStructFromMap(map[string]interface{}{
+		declaration := datatypes.GetBuiltinDeclaration(name)
+
+		values := map[string]interface{}{
 			datatypes.TypeMDName:     "builtin",
 			datatypes.BasetypeMDName: "builtin " + name,
 			"istype":                 false,
-		}), nil
+		}
+
+		if declaration != "" {
+			values["declaration"] = declaration
+		}
+
+		return datatypes.NewStructFromMap(values), nil
 	}
 
 	// If it's a bytecode.Bytecode pointer, use reflection to get the

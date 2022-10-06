@@ -18,6 +18,24 @@ type FunctionDeclaration struct {
 	ReturnTypes []Type
 }
 
+// dictionary is a descriptive dictionary that shows the declaration string for
+// built-in functions. These are used when you attempt to format a function
+// that is a builtin (as opposed to compiled) function.  Note that this data
+// MUST be kept in sync with the function definitions in the functions package.
+var dictionary = map[string]string{
+	"functions.Append": "append( any []interface{}, item... interface{}) []interface{}",
+	"functions.Length": "len(any interface{}) int",
+	"functions.Min":    "Min(item... interface{}) interface{}",
+	"functions.Max":    "Max(item... interface{}) interface{}",
+	"functions.Random": "Random(maximumValue int) int",
+	"functions.Sqrt":   "Sqrt(value float64) float64",
+	"functions.Sum":    "Sum(item... int) int",
+}
+
+func GetBuiltinDeclaration(name string) string {
+	return dictionary[name]
+}
+
 func (f FunctionDeclaration) String() string {
 	r := strings.Builder{}
 	r.WriteString(f.Name)

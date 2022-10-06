@@ -162,11 +162,15 @@ func Format(element interface{}) string {
 
 			name := fn.Name()
 			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "runtime.", 1)
-			name = strings.Replace(name, "github.com/tucats/ego/functions.", "builtin.", 1)
+			name = strings.Replace(name, "github.com/tucats/ego/functions.", "functions.", 1)
 			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 
 			if name == "" {
 				name = "<anon>"
+			}
+
+			if d := dictionary[name]; d != "" {
+				name = d
 			}
 
 			return name + "()"
