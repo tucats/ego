@@ -51,7 +51,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 					datatypes.TypeMDName:     "func",
 					datatypes.BasetypeMDName: "func " + name,
 					"istype":                 false,
-					"declaration":            fd.String(),
+					"declaration":            makeDeclaration(fd),
 				}), nil
 			}
 		}
@@ -229,4 +229,35 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	size := datatypes.RealSizeOf(args[0])
 
 	return size, nil
+}
+
+// makeDeclaration constructs a native data structure describing a function declaration.
+func makeDeclaration(fd *datatypes.FunctionDeclaration) *datatypes.EgoStruct {
+	parameterType := datatypes.TypeDefinition(datatypes.NoName, datatypes.StructType)
+	parameterType.DefineField("name", datatypes.StringType)
+	parameterType.DefineField("type", datatypes.StringType)
+
+	parameters := datatypes.NewArray(parameterType, len(fd.Parameters))
+
+	for n, i := range fd.Parameters {
+		parameter := datatypes.NewStruct(parameterType)
+		_ = parameter.Set("name", i.Name)
+		_ = parameter.Set("type", i.ParmType.Name())
+
+		_ = parameters.Set(n, parameter)
+	}
+
+	returnTypes := make([]interface{}, len(fd.ReturnTypes))
+
+	for i, t := range fd.ReturnTypes {
+		returnTypes[i] = t.TypeString()
+	}
+
+	declaration := make(map[string]interface{})
+
+	declaration["name"] = fd.Name
+	declaration["parameters"] = parameters
+	declaration["returns"] = datatypes.NewArrayFromArray(datatypes.StringType, returnTypes)
+
+	return datatypes.NewStructFromMap(declaration)
 }

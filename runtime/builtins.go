@@ -126,3 +126,16 @@ func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	return expressions.Evaluate(datatypes.GetString(args[0]), symbols)
 }
+
+func GetDeclaration(fname string) *datatypes.FunctionDeclaration {
+	if fname == "" {
+		return nil
+	}
+
+	fd, ok := functions.FunctionDictionary[fname]
+	if ok {
+		return fd.D
+	}
+
+	return nil
+}

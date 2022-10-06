@@ -24,6 +24,7 @@ type FunctionDefinition struct {
 	FullScope bool
 	F         interface{}
 	V         interface{}
+	D         *datatypes.FunctionDeclaration
 }
 
 // MultiValueReturn is a type used to return a list of values from a builtin
@@ -42,13 +43,29 @@ const Any = math.MaxInt32
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$cast":               {Min: 2, Max: 2, F: InternalCast},
-	"append":              {Min: 2, Max: Any, F: Append},
-	"close":               {Min: 1, Max: 1, F: CloseAny},
-	"delete":              {Min: 1, Max: 2, F: Delete, FullScope: true},
-	"error":               {Min: 1, Max: 1, F: Signal},
-	"index":               {Min: 2, Max: 2, F: Index},
-	"len":                 {Min: 1, Max: 1, F: Length},
+	"$cast":  {Min: 2, Max: 2, F: InternalCast},
+	"append": {Min: 2, Max: Any, F: Append},
+	"close":  {Min: 1, Max: 1, F: CloseAny},
+	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true},
+	"error":  {Min: 1, Max: 1, F: Signal},
+	"index":  {Min: 2, Max: 2, F: Index},
+	"len": {
+		Min: 1,
+		Max: 1,
+		D: &datatypes.FunctionDeclaration{
+			Name: "len",
+			Parameters: []datatypes.FunctionParameter{
+				{
+					Name:     "any",
+					ParmType: datatypes.InterfaceType,
+				},
+			},
+			ReturnTypes: []datatypes.Type{
+				datatypes.IntType,
+			},
+		},
+		F: Length,
+	},
 	"make":                {Min: 2, Max: 2, F: Make},
 	"members":             {Min: 1, Max: 1, F: Members},
 	"new":                 {Min: 1, Max: 1, F: New},

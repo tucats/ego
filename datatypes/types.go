@@ -57,8 +57,9 @@ const (
 )
 
 const (
-	True  = "true"
-	False = "false"
+	True   = "true"
+	False  = "false"
+	NoName = ""
 )
 
 type Type struct {
@@ -388,7 +389,12 @@ func (t *Type) DefineFunctions(functions map[string]interface{}) {
 // an error if the current type is not a structure, or if the field already
 // is defined.
 func (t *Type) DefineField(name string, ofType Type) *Type {
-	if t.kind != StructKind {
+	kind := t.kind
+	if kind == TypeKind {
+		kind = t.BaseType().kind
+	}
+
+	if kind != StructKind {
 		panic("attempt to define a field for a type that is not a struct")
 	}
 

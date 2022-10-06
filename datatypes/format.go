@@ -158,9 +158,12 @@ func Format(element interface{}) string {
 		// IF it's an internal function, show it's name. If it is a standard builtin from the
 		// function library, show the short form of the name.
 		if vv.Kind() == reflect.Func {
-			name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
+			fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())
+
+			name := fn.Name()
+			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "runtime.", 1)
+			name = strings.Replace(name, "github.com/tucats/ego/functions.", "builtin.", 1)
 			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
 
 			if name == "" {
 				name = "<anon>"
@@ -180,6 +183,11 @@ func Format(element interface{}) string {
 				name := fmt.Sprintf("%v", e.Field(0).Interface())
 				if name == "" {
 					name = "<anon>"
+				}
+
+				fd := GetDeclaration(v)
+				if fd != nil {
+					return fd.String()
 				}
 
 				return name + "()"
