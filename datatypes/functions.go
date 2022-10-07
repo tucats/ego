@@ -23,13 +23,30 @@ type FunctionDeclaration struct {
 // that is a builtin (as opposed to compiled) function.  Note that this data
 // MUST be kept in sync with the function definitions in the functions package.
 var dictionary = map[string]string{
-	"functions.Append": "append( any []interface{}, item... interface{}) []interface{}",
-	"functions.Length": "len(any interface{}) int",
-	"functions.Min":    "Min(item... interface{}) interface{}",
-	"functions.Max":    "Max(item... interface{}) interface{}",
-	"functions.Random": "Random(maximumValue int) int",
-	"functions.Sqrt":   "Sqrt(value float64) float64",
-	"functions.Sum":    "Sum(item... int) int",
+	"functions.Abs":          "Abs(any interface{}) interface{}",
+	"functions.Append":       "append( any []interface{}, item... interface{}) []interface{}",
+	"functions.CipherRandom": "Random(bits int) string",
+	"functions.CreateToken":  "Create(name, data string) string",
+	"functions.DecodeBase64": "Decode(encodedText string) string",
+	"functions.Decrypt":      "Decrypt(data string, key string) string",
+	"functions.EncodeBase64": "Encode(plainText string) string",
+	"functions.Encrypt":      "Encrypt(encryptedText string, key string) string",
+	"functions.Extract":      "Token(t string) struct{}",
+	"functions.Hash":         "Hash(data string) string",
+	"functions.Length":       "len(any interface{}) int",
+	"functions.Log":          "log(f float64) float64",
+	"functions.Min":          "Min(item... interface{}) interface{}",
+	"functions.Max":          "Max(item... interface{}) interface{}",
+	"functions.Normalize":    "Normalize(any1, any2 interface{}) interface{}",
+	"functions.Packages":     "Packages() []string",
+	"functions.Random":       "Random(maximumValue int) int",
+	"functions.Signal":       "New(msg string) error",
+	"functions.Sqrt":         "Sqrt(value float64) float64",
+	"functions.Sum":          "Sum(item... int) int",
+	"functions.Validate":     "Valicate(token string) bool",
+	"runtime.DBNew":          "New(connection string) *db",
+	"runtime.LookPath":       "LookPath(command string) string",
+	"runtime.NewCommand":     "Command(command string, args...string) Cmd",
 }
 
 func GetBuiltinDeclaration(name string) string {

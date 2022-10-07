@@ -171,9 +171,11 @@ func Format(element interface{}) string {
 
 			if d := dictionary[name]; d != "" {
 				name = d
+			} else {
+				name = name + "()"
 			}
 
-			return name + "()"
+			return name
 		}
 
 		// If it's a bytecode.Bytecode pointer, use reflection to get the
