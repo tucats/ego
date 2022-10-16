@@ -268,10 +268,10 @@ time just replaces the value of the map for that key.
 
 You can also initialize the map values using `{}` notation, as in:
 ```go
-	staff := map[int]string{101:"Jeff", 102:"Susan"}
+staff := map[int]string{101:"Jeff", 102:"Susan"}
 
-    staff[103] = "Buddy"
-    staff[104] = "Donna"
+staff[103] = "Buddy"
+staff[104] = "Donna"
 ```
 
 
