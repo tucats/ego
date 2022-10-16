@@ -130,10 +130,9 @@ The _Ego_ language supports a number of base types which express a
 single value of some type (string, integer, boolean, etc.). These base
 types can be members of complex types consisting of arrays (ordered
 lists), maps (dynamic types key/value pairs) and structs (field-name/value
-pairs). Additionally, the user can
-create types based on the base or complex types, such as a type
-describing a structure that records information about an employee;
-this type can be used to create instances of the structure, etc.
+pairs). Additionally, the user can create types based on the base or complex 
+types, such as a type describing a structure that records information 
+about an employee; this type can be used to create instances of the structure, etc.
 
 ## Base Types<a name="basetypes"></a>
 
@@ -268,11 +267,13 @@ contain only one key of a given value; setting the key value a second
 time just replaces the value of the map for that key.
 
 You can also initialize the map values using `{}` notation, as in:
-
-    staff := map[int]string{101:"Jeff", 102:"Susan"}
+```go
+	staff := map[int]string{101:"Jeff", 102:"Susan"}
 
     staff[103] = "Buddy"
     staff[104] = "Donna"
+```
+
 
 This adds members to the map. Note that the key  _must_ be an integer
 value, and the value _must_ be a string value because that's how the
