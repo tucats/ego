@@ -187,8 +187,10 @@ list of values separated by commas. The values may be any valid value
 (base, complex, or user types).  The values do not have to be of the
 same type. For example,
 
-    [ 101, 335, 153, 19, -55, 0 ]
-    [ 123, "Fred", true, 55.738]
+```go
+[ 101, 335, 153, 19, -55, 0 ]
+[ 123, "Fred", true, 55.738]
+```
 
 The first example is an array of integers. The value at position 0 is
 `101`. The value at position 1 is `335`, and so on.  The second
@@ -200,15 +202,19 @@ These kinds of arrays are _anonymous_ arrays, in that they have no
 specific type for the values. You can also specify a type for the
 array using a typed array constant. For example,
 
-    a := []int{101, 102, 103}
+```go
+a := []int{101, 102, 103}
+```
 
 In this example, an array is created that can only contain `int` values.
 If you specify a value in the array initialization list that is not an
 `int`, it is converted to an `int` before in is stored. You an then
 only store `int` values in the array going forward,
 
-    a[1] = 1325    // Succeeds
-    a[1] = 1325.0  // Failed, must be of type int
+```go
+a[1] = 1325    // Succeeds
+a[1] = 1325.0  // Failed, must be of type int
+```
 
 ## Structures<a name="structures"></a>
 
@@ -219,7 +225,9 @@ read or written in the struct based on the key name. Once a struct
 is created, it cannot have new keys added to it directly. A struct
 constant is indicated by braces, as in:
 
-    {  Name: "Tom", Age: 53 }
+```go
+{  Name: "Tom", Age: 53 }
+```
 
 This struct has two members, `Name` and `Age`. Note that the
 member names (the keys of the key/value pair) are case-sensitive.
@@ -233,18 +241,20 @@ unless static type checking is enabled.
 
 You cannot add new fields to this struct if you create a struct
 constant with fields already. That is, you cannot
-
-    a := { Name: "Bob" }
-    a.Age = 43
+```go
+a := { Name: "Bob" }
+a.Age = 43
+```
 
 The second line will generate an error because Age is not a member
 of the structure. There is one special case of an _anonymous_
 struct that can have fields added (or removed) dynamically. This is
 an empty _anonymous_ struct,
-
-    a := {}
-    a.Name = "Fred"
-    a.Gender = "M"
+```go
+a := {}
+a.Name = "Fred"
+a.Gender = "M"
+```
 
 The empty anonymous structure can have fields added to it just by
 naming them, and they are created as needed.
@@ -258,8 +268,9 @@ map and you can fetch a value from the map.
 
 You can create create a map by setting a value to an empty map constant.
 For example,
-
-    staff := map[int]string{}
+```go
+staff := map[int]string{}
+```
 
 This creates a map (stored in `staff`) that has an integer value as
 the key, and stores a string value for each unique key. A map can
@@ -281,9 +292,10 @@ map was declared. Unlike a variable, a map always has a static definition
 once it is created and cannot contain values of a different type.
 Attempting to store a boolean in the map results in a runtime error,
 for example.
-
-    id := 102
-    name := staff[id]
+```go
+id := 102
+name := staff[id]
+```
 
 This uses an integer variable to retrieve a value from the map. In this
 case, the value of `name` will be set to "Susan". If there is nothing
@@ -293,7 +305,9 @@ You can test for the existence of an item when you attempt to read it
 from the map. In this notation, the second value returned in the assignment
 is a boolean that indicates if the item was found or not.
 
-    emp, found := staff[105]
+```go
+emp, found := staff[105]
+```
 
 In this example, `found` will be true if there was a value in the map for
 the key value `105`, and the value of the map item (a string in this case)
@@ -304,7 +318,9 @@ value for the type, i.e. an empty string in this case).
 
 You can delete a member from a map using the delete() function, such as:
 
-     delete(staff, 103)
+```go
+delete(staff, 103)
+```
 
 This is delete an entry from the map `staff` with a key value of `103`. If
 the member does not exist, no error is thrown.
@@ -319,12 +335,15 @@ value of a parameter.
 No pointer arithmetic is permitted; a pointer can only be set as the
 address of another variable.
 
-    var x *int                      (1)
+```go
 
-    y := 42
-    x := &y                         (2)
+var x *int                      // (1)
 
-    fmt.Println(*x)                 (3)
+y := 42
+x := &y                         // (2)
+
+fmt.Println(*x)                 // (3)
+```
 
 In this example,
 
@@ -347,17 +366,19 @@ The above examples illustrate basic functions of a pointer, but the
 most common case is as a return value from a function or as a function
 parameter.
 
-    func hasPositive( x int ) *int {
-        if x >= 0 {
-            return &x
-        }
-        return nil
+```go
+func hasPositive( x int ) *int {
+    if x >= 0 {
+        return &x
     }
+    return nil
+}
 
-    v := hasPositive(55)
-    if v == nil {
-        fmt.Println("Not positive; no value returned")
+v := hasPositive(55)
+if v == nil {
+    fmt.Println("Not positive; no value returned")
     }
+```
 
 In this somewhat contrived example, the function `hasPositive` does not
 return an integer, it returns a pointer to an integer. The logic of the
@@ -368,13 +389,15 @@ returned from the function.
 As a final example, you can use pointers to allow a function to modify
 a value.
 
-    func setter( destination *int, source int) {
-        *destination = source
-    }
+```go
+func setter( destination *int, source int) {
+    *destination = source
+}
 
-    x := 55
-    setter(&x, 42)
-    fmt.Println(x)
+x := 55
+setter(&x, 42)
+fmt.Println(x)
+```
 
 In this example, the function `setter` is given the address of an integer
 and a value to store in that integer. Because the value is passed by
@@ -398,23 +421,29 @@ define a short-hand for a specific type, and then reference that type
 when creating a new variable of that type. The `type` statement is used
 to define the type. Here is an example:
 
-    type Employee struct {
-       Name    string
-       Age     int
-    }
+```go
+type Employee struct {
+    Name    string
+    Age     int
+}
+```
 
 This creates a new type called `Employee` which is a struct with
 two members, `Name` and `Age`. A variable created with this type
 will always be a struct, and will always contain these two members.
 You can then create a variable of this type using
 
-   e := Employee{}
+```go
+e := Employee{}
+```
 
 The `{}` indicates this is a type, and a new structure (of type
 `Employee`) is created and stored in the variable `e`.  You can
 initialize fields in the struct when you create it if you wish,
 
-   a := Employee{ Name: "Robin" }
+```go
+a := Employee{ Name: "Robin" }
+```
 
 In this example, a new Employee is created and the `Name` field is
 initialized to the string "Robin". The value `a` also contains a
@@ -491,8 +520,10 @@ the two assignment operators is that `:=` will create a new value in
 the current scope, while `=` will locate a value that already exists,
 and write a new value to it.
 
-      name := "Bob"
-      name = "Mary"
+```go
+name := "Bob"
+name = "Mary"
+```
 
 In this example, the first statement uses the `:=` operator, which
 causes the symbol `name` to be created, and then the string value "Bob"
@@ -506,8 +537,10 @@ the variable at the outer scope is updated.
 Note that _Ego_ allows a shortcut for a specific assignment statement
 that adds or subtracts the constant `1` from a value. For exampe,
 
-      i = i + 1
-      i++
+```go
+i = i + 1
+i++
+```
 
 These statements have the identical function. They require that the
 variable `i` already exist, and a value of 1 is added to `i`. The
@@ -517,17 +550,21 @@ a value. This is commonly used in `for` loops, discussed later.
 If _Ego_ language extensions are enabled, the `++` and `--` operators
 can be used in an expression value. For example, consider this code:
 
-      i := 10
-      j := 5 + i++
+```go
+i := 10
+j := 5 + i++
+```
 
 This has the effect of setting `j` to the value 15, and setting `i`
 to the value 11. That is, the increment operation `++` is performed
 on the variable `i` after it'se value is read in the addition
 operation that sets the value of `j`.
 
-      t := i
-      i = i + 1
-      j := 5 + t
+```go
+t := i
+i = i + 1
+j := 5 + t
+```
 
 The above code has the same effect as the second statement in the
 auto-increment expression value above. Using the auto-increment
@@ -540,8 +577,10 @@ performs an assignment that includes the given operation (addition,
 subtraction, multiplication, or division) of the value following
 the `=` character. For example,
 
-     i := 10
-     i += 5
+```go
+i := 10
+i += 5
+```
 
 The use of the `+=` operator requires that the value to the left of
 the assignment already exists. In this example, the value of i has
@@ -553,15 +592,19 @@ followed by a comma-separated list of names and finally a type value.
 The variables are all created and set to the given type, with an
 appropriate "zero value" for that type.
 
-      var first, last string
-      var e1 Employee{}
+```go
+var first, last string
+var e1 Employee{}
+```
 
 The second example creates a variable based on a user-defined type
 `Employee`.  The {} characters causes an instance of that type to be
 created and stored in the named variable `e1` in this example. The {}
 characters can contain field initializations for the type, such as
 
-      var e2 Employee{ Name: "Bob", Age: 55}
+ ```go
+var e2 Employee{ Name: "Bob", Age: 55}
+```
 
 The type of `e2` is `Employee` and it contains initialized values for
 the permitted fields for the type. If the initializer does not specify
@@ -576,12 +619,14 @@ name as a variable name. You can specify a single constant or a group
 of them; to specify more than one in a single statement enclose the
 list in parenthesis:
 
-    const answer = 42
+```go
+const answer = 42
 
-    const (
-        first = "a"
-        last = "z"
-    )
+const (
+    first = "a"
+    last = "z"
+)
+```
 
 This defines three constant values. Note that the value is set using an
 `=` character since a symbols is not actually being created.
@@ -789,8 +834,10 @@ identify the type of the array or channel to create.
 The first argument must be a data type specification, and the second argument
 is the size of the item (array elements or channel messages)
 
-    a := make([]int, 5)
-    b := make(chan, 10)
+```go
+a := make([]int, 5)
+b := make(chan, 10)
+```
 
 The first example creates an array of 5 elements, each of which is of type `int`,
 and initialized to the _zero value_ for the given type. This could have been
@@ -835,11 +882,13 @@ readability.
 
 Consider the following example code:
 
-    salary := hours * wage                  (1)
-    if salary < 100.0 {                     (2)
-        fmt.Println("Not paid enough!")     (3)
-    }                                       (4)
-    total = total + salary                  (5)
+ ```go
+salary := hours * wage                  // (1)
+if salary < 100.0 {                     // (2)
+    fmt.Println("Not paid enough!")     // (3)
+}                                       // (4)
+total = total + salary                  // (5)
+```
 
 This introduces a number of new elements to a program, so let's go
 over them line-by-line. The numbers is parenthesis are not part of
@@ -882,12 +931,14 @@ that has the statements to execute if the condition is false. That
 is, the result of the expression will result in one or the other of
 two basic blocks being executed.
 
-    salary := hours * wage
-    if salary < 100 {
-        scale = "small"
-    } else {
-        scale = "large"
-    }
+```go
+salary := hours * wage
+if salary < 100 {
+    scale = "small"
+} else {
+    scale = "large"
+}
+```
 
 In this example, after calculating a value for `salary`, it is
 compared to see if it is less than 100. If so, then the value
@@ -909,11 +960,13 @@ basic block that is executed as long as the condition is true.
 
 Here is an example
 
-    value := 0                  (1)
-    for value < 5 {             (2)
-        fmt.Println(value)      (3)
-        value = value + 1       (4)
-    }                           (5)
+```go
+value := 0                  // (1)
+for value < 5 {             // (2)
+    fmt.Println(value)      // (3)
+    value = value + 1       // (4)
+}                           // (5)
+```
 
 1. This line initializes variable `value` to an integer zero.
 2. The `for` statement specifies that as long as the `value`
@@ -940,9 +993,11 @@ You can create a `for` loop that explicitly specifies an expression
 that defines the starting value, ending condition, and how the value
 changes with each iteration of a loop. For example,
 
-     for i := 0; i < 10; i++ {
-         fmt.Println(i)
-     }
+```go
+for i := 0; i < 10; i++ {
+    fmt.Println(i)
+}
+```
 
 This loop will print the values `0` through `9` to the standard
 console. The index variable `i` is first initialized with the value
@@ -954,9 +1009,11 @@ value _after_ the body of the loop is run but _before_ the  next
 evaluation of the clause that determines if the loop continues. In
 this example, we could have used 
 
-     for i := 0; i < 10; i = i + 1 {
-         fmt.Println(i)
-     }
+```go
+for i := 0; i < 10; i = i + 1 {
+    fmt.Println(i)
+}
+```
 
 but the use of the increment operator `++` is cleaner to read.
 
@@ -967,11 +1024,13 @@ the `:=` operator) in the scope of the loop. You can use a simple
  assignment (`=`) of an existing variable if you want the updated
  index value available after the loop body ends.
 
-    var i int
-    for i = 0; i < 10; i++{
-        fmt.Println(i)
-    }
-    fmt.Println("The final value of i is ", i)
+```go
+var i int
+for i = 0; i < 10; i++{
+    fmt.Println(i)
+}
+fmt.Println("The final value of i is ", i)
+```
 
 This example uses a variable that already exists outside the scope
 of the `for` loop, so the value continues to exist after the loop
@@ -984,10 +1043,12 @@ You can create a loop that indexes over all the values in an array,
 in sequential order. The index value is the value of the array
 element. For example,
 
-     ids := [ 101, 143, 202, 17]
-     for i, j := range ids {
-        fmt.Println("Array member ", i, " is ", j)
-     }
+```go
+ids := [ 101, 143, 202, 17]
+for i, j := range ids {
+    fmt.Println("Array member ", i, " is ", j)
+}
+```
 
 This example will print a line for each value in the array, in the
 order they appear in the array.  During each iteration of the loop,
@@ -999,9 +1060,11 @@ array for each iteration of the loop.  You can also specify a
 second value, in which case the loop defines an index number as well
 as index value, as in:
 
-    for _, v := range ids {
-        fmt.Println(v)
-    }
+```go
+for _, v := range ids {
+    fmt.Println(v)
+}
+```
 
 In this example, for each iteration of the loop, the variable `v`
 will contain the actual values from the array for each iteration of
@@ -1009,9 +1072,11 @@ the loop body. By using the reserved name `_` for the index variable,
 the index value for each loop is not available.  Similarly, you can
 use the range to get all the index values of an array:
 
-    for i := range ids {
-        fmt.Println(v)
-    }
+```go
+for i := range ids {
+    fmt.Println(v)
+}
+```
 
 In this case, if the array `ids` has 5 values, then this will print
 the numbers 1 through 5. The value of the array can be accessed inside
@@ -1020,15 +1085,16 @@ the body of the loop as `ids[i]`.
 Similarly, you can use the `range` construct to step through the values
 of a map data type. For example,
 
-    inventory := map[string]int{}
-    inventory["wrenches"] = 5
-    inventory["pliers"] = 12
-    inventory["hammers"] = 2
+```go
+inventory := map[string]int{}
+inventory["wrenches"] = 5
+inventory["pliers"] = 12
+inventory["hammers"] = 2
 
-    for product, count := range inventory {
-        fmt.Println("There are ", count, " ", product, " in stock.")
-    }
-
+for product, count := range inventory {
+    fmt.Println("There are ", count, " ", product, " in stock.")
+}
+```
 When the loop runs, the value of `product` is set to each key in the
 map, and `count` is set to the value associated with that key. These
 variables exist only within the body of the loop. Note that if you
@@ -1036,11 +1102,13 @@ omit either one and use the `_` variable instead, that item (key or
 value) is not read from the map. You can use this to generate a list
 of the keys, for example:
 
-    names := []string{}
-    for name := range inventory {
-        names = names + name
-    }
-    fmt.Println("The products are all named", names)
+```go
+names := []string{}
+for name := range inventory {
+    names = names + name
+}
+fmt.Println("The products are all named", names)
+```
 
 This creates an array of string values, and stores the name of each
 key in the list by appending them.
@@ -1051,15 +1119,17 @@ Sometimes when running an loop, you may wish to change the flow of
 execution in the loop based on conditions unrelated to the index
 variable. For example, consider:
 
-    for i := 1; i < 10; i = i + 1 {
-        if i == 5 {                      (1)
-            continue                     (2)
-        }
-        if i == 7 {                      (3)
-            break                        (4)
-        }
-        fmt.Println("The value is ", i)  (5)
+```go
+for i := 1; i < 10; i = i + 1 {
+    if i == 5 {                      // (1)
+        continue                     // (2)
     }
+    if i == 7 {                      // (3)
+        break                        // (4)
+    }
+    fmt.Println("The value is ", i)  // (5)
+}
+```
 
 This loop will print the values 1, 2, 3, 4, and 6. Here's what
 each statement is doing:
@@ -1099,15 +1169,17 @@ as a basic block. When the function is called, this block
 is executed, with the function arguments all available as local
 variables.  For example,
 
-    func addValues( v1 float64, v2 float64) float64 {
-        x := v1 + v2
-        return x
-    }
+```go
+func addValues( v1 float64, v2 float64) float64 {
+    x := v1 + v2
+    return x
+}
 
-    // Calculate what a variable value (10.5) added to 3.8 is
-    a := 10.5
-    x := addValues(a, 3.8)
-    fmt.Println("The sum is ", x)
+// Calculate what a variable value (10.5) added to 3.8 is
+a := 10.5
+x := addValues(a, 3.8)
+fmt.Println("The sum is ", x)
+```
 
 In this example, the function `addValues` is created. It accepts two
 parameters; each is of type float64 in this example. The parameter
@@ -1119,8 +1191,9 @@ Parameter types and return type cause type _coercion_ to occur,
 where values are converted to the required type if they are not
 already the right value type. For example,
 
-    y := addValues("15", 2)
-
+```go
+y := addValues("15", 2)
+```
 Would result in `y` containing the floating point value 17.0.
 This is because the string value "15" would be converted to a
 float64 value, and the integer value 2 would be converted to a
@@ -1145,13 +1218,14 @@ returned. The `return` statement results in this expression being
 _coerced_ to the data type named in the `func` statement as the
 return value.  If the example above had a `string` result type,
 
-    func addValues( v1 float64, v2 float64) string {
-        x := v1 + v2
-        return x
-    }
+```go
+func addValues( v1 float64, v2 float64) string {
+    x := v1 + v2
+    return x
+}
 
-    y := addValues(true, 5)
-
+y := addValues(true, 5)
+```
 The resulting value  for `y` would be the string "6". This is
 because not only will the boolean `true` value and the integer
 5 be converted to floating point values, bue the result will
@@ -1163,13 +1237,15 @@ the result, the function is assumed not to return a result at
  function result, and if the `return` statement is the last
  statement then it is optional. For example,
 
-    func show( first string, last string) {
-        name := first + " " + last
-        fmt.Println("The name is ", name)
-    }
+```go
+func show( first string, last string) {
+    name := first + " " + last
+    fmt.Println("The name is ", name)
+}
 
-    show("Bob", "Smith")
-  
+show("Bob", "Smith")
+```
+
 This example will run the function `show` with the two string
 values, and print the formatted message "The name is Bob Smith".
 However, the function doesn't return a value (none specified
@@ -1191,16 +1267,18 @@ from, but always wants to execute the same block of code to
 clean up a function (for example, closing a file that had been
  opened).
 
-    func getName() bool {
-        f := io.Open("name")
-        defer io.Close(f)
+```go
+func getName() bool {
+    f := io.Open("name")
+    defer io.Close(f)
 
-        s := io.ReadLine(f)
-        if s == "" {
-            return false
-        }
-        return true
+    s := io.ReadLine(f)
+    if s == "" {
+        return false
     }
+    return true
+}
+```
 
 In this example, the function opens a file (the `io` package is
 discussed later). Because we have opened a file, we want to be
@@ -1227,7 +1305,9 @@ Note that `defer` statements are executed when the function comes
 
 Functions can be values themselves. For example, consider:
 
-    p := fmt.Println
+ ```go
+p := fmt.Println
+```
 
 This statement gets the value of the function `fmt.Println` and
 stores it in the variable p. From this point on, if you wanted
@@ -1235,16 +1315,21 @@ to call the package function that prints items to the console,
 instead of using `fmt.Println` you can use the variable `p` to
 invoke the function:
 
-    p("The answer is", x)
+```go
+p("The answer is", x)
+```
 
 This means that you can pass a function as a parameter to another
 function. Consider,
 
-    func show( fn interface{}, name string) {
-        fn("The name is ", name)
-    }
-    p := fmt.Println
-    show(p, "tom")
+```go
+func show( fn interface{}, name string) {
+    fn("The name is ", name)
+}
+
+p := fmt.Println
+show(p, "tom")
+```
 
 In this example, the `show` function has a first parameter that
 is a function, and a second parameter that is a string.  In the
@@ -1259,11 +1344,13 @@ You can even create a function literal value, which defines the
  body of the function, and either store it in a variable or pass
  it as a parameter. For example,
 
-    p := func(first string, last string) string {
-             return first + " " + last
-         }
+```go
+p := func(first string, last string) string {
+            return first + " " + last
+        }
 
-    name := p("Bob", "Smith")
+name := p("Bob", "Smith")
+```
 
 Note that when defined as a function literal, the `func` keyword
 is not followed by a function name, but instead contains the
@@ -1274,11 +1361,13 @@ that might be limited to the current _basic block_ of code.
 You can even define a function as a parameter to another
 function directly, as in:
 
-    func compare( fn interface{}, v1 interface{}, v2 interface) bool {
-        return fn(v1, v2)
-    }
+```go
+func compare( fn interface{}, v1 interface{}, v2 interface) bool {
+    return fn(v1, v2)
+}
 
-    x := compare( func(a1 bool, a2 bool) bool { return a1 == a2 }, true, false)
+x := compare( func(a1 bool, a2 bool) bool { return a1 == a2 }, true, false)
+```
 
 This somewhat artificial example shows a function named `compare`
 that has a first parameter that will be a function name, and two
@@ -1310,21 +1399,23 @@ function invocation without it being an explicit parameter. This
 also allows multiple functions of the same name to exist which
 just reference different types.  For example,
 
-    type Employee struct {                        (1)
-        first string
-        last  string
-        age   int
-    }
+```go
+type Employee struct {                        // (1)
+    first string
+    last  string
+    age   int
+}
 
-    func (e Employee) Name() string {             (2)
-        return e.first + " " e.last
-    }
+func (e Employee) Name() string {             // (2)
+    return e.first + " " e.last
+}
 
-    var foo Employee{                             (3)
-        first: "Bob", 
-        last: "Smith"}
-        
-    fmt.Println("The name is ", foo.Name())       (4)
+var foo Employee{                             // (3)
+    first: "Bob", 
+    last: "Smith"}
+    
+fmt.Println("The name is ", foo.Name())       // (4)
+```
 
 Let's take a look more closely at this example to see what's going
 on.
@@ -1348,10 +1439,12 @@ on.
 In the declaration line line (2) above, you could use an asterisk
 ("*") character before the receiver's type of `Employee`, as in:
 
-    func (e *Employee) SetName(f string, l string)  { 
-        e.first = f
-        e.last = l
-    }
+```go
+func (e *Employee) SetName(f string, l string)  { 
+    e.first = f
+    e.last = l
+}
+```
 
 This function can be used to set the names in the receiver
 variable. If the function was declared without the "*" marker,
@@ -1382,25 +1475,27 @@ the type.
 
 Note that types can be nested. Consider this example:
 
-    type EmpInfo struct {
-        First string
-        Last string
-        Age int
-    }
+```go
+type EmpInfo struct {
+    First string
+    Last string
+    Age int
+}
 
-    type Employee struct {
-        Info  EmpInfo
-        Manager bool
-    }
+type Employee struct {
+    Info  EmpInfo
+    Manager bool
+}
 
-    e := Employee{
-        Info: EmpInfo{
-            First: "Bob",
-            Last:  "Smith",
-            Age:   35,
-        },
-        Manager: false
-    }
+e := Employee{
+    Info: EmpInfo{
+        First: "Bob",
+        Last:  "Smith",
+        Age:   35,
+    },
+    Manager: false
+}
+```
 
 The type `Employee` contains within it an item `Info` which is
 of another type, `EmpInfo`. Note that when initializing the
@@ -1423,9 +1518,11 @@ are actually values of a data type called `error`. You can
 create a new error variable using the `error()` function,
 as in:
 
-    if v == 0 {
-        return error("invalid zero value")
-    }
+```go
+if v == 0 {
+    return error("invalid zero value")
+}
+```
 
 This code, executed in a function, would return a value
 of type `error` that, when printed, indicates the text
@@ -1450,13 +1547,15 @@ to execute the code in the `catch` clause of the statement.
 If there are no errors,  execution continues after the catch block.
 For example:
 
-    x := 0
-    try {
-        x = pay / hours
-    } catch {
-        print "Hours were zero!"
-    }
-    print "The result is ", x
+```go
+x := 0
+try {
+    x = pay / hours
+} catch {
+    print "Hours were zero!"
+}
+print "The result is ", x
+```
 
 If the value of `hours` is non-zero, the assignment statement will assign
 the dividend to `x`. However, if hours is zero it will trigger a panic
@@ -1467,12 +1566,14 @@ You can optionally specify the name of a variable that will be created within
 the catch block that contains the actual error encountered. Do this by
 adding the name in parenthesis before the catch block.
 
-    x := 0
-    try {
-        x = 125 / x
-    } catch (e) {
-        fmt.Println("unexpected error, ", e)
-    }
+```go
+x := 0
+try {
+    x = 125 / x
+} catch (e) {
+    fmt.Println("unexpected error, ", e)
+}
+```
 
 This can be used in the `catch` block if it needs handle more than one
 possible error, for example.
@@ -1483,13 +1584,15 @@ If you need to catch a possible error in an expression, you can
 use a short-form of the `try` and `catch` that works within an
 expression.  Consider the following example:
 
-    emp := { 
-        name: "Donna", 
-        age: 32,
-    }
-    
-    hours := 40
-    pay := emp.wage * hours
+```go
+emp := { 
+    name: "Donna", 
+    age: 32,
+}
+
+hours := 40
+pay := emp.wage * hours
+```
 
 This code will generate an error on the statement that attempts
 to reference the structure member `wage`, which does not exist.
@@ -1498,13 +1601,15 @@ operation that might result in an error (division by zero, perhaps)
 that you have a useful default for, use the conditional expression
 syntax:
 
-    emp := { 
-        name: "Donna", 
-        age: 32,
-    }
-    
-    hours := 40
-    pay := ?emp.wage : 25.0 * hours
+```go
+emp := { 
+    name: "Donna", 
+    age: 32,
+}
+
+hours := 40
+pay := ?emp.wage : 25.0 * hours
+```
 
 The "?" indicates that the following expression component (up to the ":")
 is wrapped in a try/catch block. If no error occurs, the expression is
@@ -1520,9 +1625,11 @@ You can cause a panic error to be signalled from within your
 code, which would optionally be caught by a try/catch block,
 using the @error directive:
 
-    if x == 0 {
-        @error "Invalid value for x"
-    }
+```go
+if x == 0 {
+    @error "Invalid value for x"
+}
+```
 
 When this code runs, if the value of `x` is zero, then a panic
 error is signalled with an error message of "Invalid value
@@ -1548,12 +1655,14 @@ go routines and the main program.
 
 Use the `go` statement to start a thread. Here is a very simple example:
 
-    func beepLater(duration string) {
-        time.Sleep(duration)
-        fmt.Println("BEEP!")
-    }
+```go
+func beepLater(duration string) {
+    time.Sleep(duration)
+    fmt.Println("BEEP!")
+}
 
-    go beepLater("1s")
+go beepLater("1s")
+```
 
 This example defines a function `beepLater` which is given a duration
 string expression. The function waits for that duration, and then prints
@@ -1591,16 +1700,18 @@ We address this synchronization issue (and also allow data to be
 passed _back_ from the go routine) using channels. Here's a modified
 version of the program:
 
-    func beepLater(duration string, c chan) {
-        time.Sleep(duration)
-        c <- "BEEP"
-    }
+```go
+func beepLater(duration string, c chan) {
+    time.Sleep(duration)
+    c <- "BEEP"
+}
 
-    var xc chan
-    go beepLater("1s", xc)
+var xc chan
+go beepLater("1s", xc)
 
-    m := <- xc
-    fmt.Println(m)
+m := <- xc
+fmt.Println(m)
+```
 
 In this example program, the main program defines a variable `cx` which
 is a _channel_ variable, of type `chan`. The duration and the channel
@@ -1624,17 +1735,20 @@ more channel write operations. The receiver can either know how
 many times to read the channel, or can use a `for...range` operation
 on the channel to simply keep receiving data until done.
 
-    func beepLater(count int, c chan) {
-        for i := 0; i < int; i = i + 1 {
-            c <- "Item " + string(i)
-        }
+```go
+func beepLater(count int, c chan) {
+    for i := 0; i < int; i = i + 1 {
+        c <- "Item " + string(i)
     }
-    var xc chan
-    go beepLater(5, xc)
+}
 
-    for msg := range xc {
-        fmt.Println("Received ", msg)
-    }
+var xc chan
+go beepLater(5, xc)
+
+for msg := range xc {
+    fmt.Println("Received ", msg)
+}
+```
 
 In this case, the caller of the goroutine includes a count of the
 number of messages to send, and that function sends that many
@@ -1669,9 +1783,11 @@ current compilation, compiles the named object (adding any function
 and constant definitions to the named package) and then resuming the
 in-progress compilation.
 
-    import factor
-    import "factor"
-    import "factor.ego"
+```go
+import factor
+import "factor"
+import "factor.ego"
+```
 
 All three of these have the same effect. The first assumes a file named
 "factor.ego" is found in the current directory. The second and third
@@ -1714,9 +1830,11 @@ default, the only provider supported is Postgres at this time.
 The result of the `db.New()` call is a database handle, which can be
 used to execute statements or return results from queries.
 
-     d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
-     r, e := d.QueryResult("select * from foo")
-     d.Close()
+```go
+d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
+r, e := d.QueryResult("select * from foo")
+d.Close()
+```
 
 This example will open a database connection with the specified URL,
 and perform a query that returns a result set. The result set is an
@@ -1726,8 +1844,10 @@ quite large with a query that has no filtering. You can specify
 parameters to the query as additional argument, which are then
 substituted into the query, as in:
 
-     age := 21
-     r, e := d.QueryResult("select member where age >= $1", age)
+```go
+age := 21
+r, e := d.QueryResult("select member where age >= $1", age)
+```
 
 The parameter value of `age` is injected into the query where the
 $1 string is found.
@@ -1781,15 +1901,17 @@ command structure contains a string array which has the output of the command.
 
 For example,
 
-    func main() {
+```go
+func main() {
 
-        c := exec.Command("ls", "-l")
-        c.Run()
+    c := exec.Command("ls", "-l")
+    c.Run()
 
-        for _, line := range c.Stdout {
-            fmt.Println(line)
-        }
+    for _, line := range c.Stdout {
+        fmt.Println(line)
     }
+}
+```
 
 This program creates an `exec.Cmd` object that invokes the "ls" command as its
 operation, with the argument "-l". Note that these are Unix-style commands; you
@@ -1830,9 +1952,11 @@ resulting string to the standard out. It returns the length in characters of the
 string written to the output, and an error which will be nil if no error occurred during
 format processing.
 
-    answer := 42
-    kind := "correct"
-    count, err := fmt.Printf("The %s answer is %d\n", kind, answer)
+```go
+answer := 42
+kind := "correct"
+count, err := fmt.Printf("The %s answer is %d\n", kind, answer)
+```
 
 In this example, the format string is processed, and the substitution format operators
 read parameters (in the order encountered) from the call. So the first operator `%s`
@@ -1849,8 +1973,10 @@ The `Println` function prints one or more items using the default format for the
 data type to the standard out, with a single space placed between them. The output
 is followed by a newline character. There are no formatting operations available.
 
-    answer := 42
-    fmt.Println("The answer is", answer)
+```go
+answer := 42
+fmt.Println("The answer is", answer)
+```
 
 This results in the string `"The answer is 42"` followed by a newline character being
 send to the output console.
@@ -1863,11 +1989,13 @@ specification, and the resulting values are written to the parameter variables.
 The function returns the number of items processed, and any error (such as invalid
 value for a given format).
 
-    var age int
-    var temp float64
+```go
+var age int
+var temp float64
 
-    data := "35 101.2"
-    fmt.Sscanf(data, "%d%f", &age, &temp)
+data := "35 101.2"
+fmt.Sscanf(data, "%d%f", &age, &temp)
+```
 
 The `%d` format specification causes an integer value to be parsed from the string.
 This is followed by a floating pointer number. These are stored in `age` and `temp`
@@ -1876,8 +2004,10 @@ respectively.
 Any non-format characters in the format string must be present in the input string
 exactly as shown.  For example,
 
-    data := "age 35 temp 101.2"
-    fmt.Sscanf(data, "age %d temp %f", &age, &temp)
+```go
+data := "age 35 temp 101.2"
+fmt.Sscanf(data, "age %d temp %f", &age, &temp)
+```
 
 Note that in both the data string and the format string, multiple white-space
 characters (" ", etc) are ignored.  The supported format values are:
@@ -1903,8 +2033,10 @@ the formatted string as it's result value, instead of printing it anywhere. This
 you use the formatting operations to construct a string value that includes other
 values in the string.
 
-    v := "foobar"
-    msg := fmt.Sprintf("Unrecognized value %s")
+```go
+v := "foobar"
+msg := fmt.Sprintf("Unrecognized value %s")
+```
 
 This creates a string named `msg` which contains "Unrecognized value foobar" as it's
 contents. The value is not printed to the console as part of this operation.
@@ -1925,8 +2057,10 @@ with line breaks, etc.
 The `Expand()` function produces an array of strings containing the absolute path
 names of all files found within the given path.
 
-   a := "/tmp"
-   fns := io.Expand(a)
+```go
+a := "/tmp"
+fns := io.Expand(a)
+```
 
 The value of `fns` is a []string and contains the names of each file found in the
 directory "/tmp".
@@ -1936,9 +2070,11 @@ directory "/tmp".
 The `Open()` function opens a file, and returns a file handle that can be used to
 perform specific operations on the file.
 
-    fn := "mydata.txt"
-    mode := "create"
-    f := io.Open(fn, mode)
+```go
+fn := "mydata.txt"
+mode := "create"
+f := io.Open(fn, mode)
+```
 
 This program opens a file named "mydata.txt" for output, and creates the file if it
 does not already exist. The mode variable can be one of the following values
@@ -1977,7 +2113,9 @@ The `ReadDir()` function profiles a list of all the files in a given directory
 path location. This is the form of an array of structures which describe each
 file.
 
-    a := io.ReadDir("/tmp")
+```go
+a := io.ReadDir("/tmp")
+```
 
 This will produce an array `a` containing information on each file in the "/tmp"
 directory. An empty array is returned if there are no files.  Each array structure
@@ -2002,17 +2140,21 @@ function reads a single line of text from stdin (the console or a pipe). Otherwi
 the filename must be the absolute or relative path to a file in the file system, and
 its' entire contents are returned as an array of bytes.
 
-    fn := "mydata.txt"
-    s := io.ReadFile(fn)
+```go
+fn := "mydata.txt"
+s := io.ReadFile(fn)
+```
 
 The variable `s` will contain a `[]byte` array containing the entire contents of the input
 file. You can convert this to a string (including line breaks) using the `string()` cast
 operation. You can then use `strings.Split()` to convert this into an array of strings 
 based on the line breaks if you wish.
 
-    fn := "mydata.txt"
-    b, err := io.ReadFile(fn)
-    a := strings.Split(string(b), "\n")
+```go
+fn := "mydata.txt"
+b, err := io.ReadFile(fn)
+a := strings.Split(string(b), "\n")
+```
 
 After this code runs, `a` contains an array of strings, one for each line in the input
 file.
@@ -2024,17 +2166,21 @@ The `WriteFile()` function writes an array of bytes or a string value to a file.
 file does not exist, it is created. If the file previously existed, the contents are 
 over-written by the new file.
 
-    fn := "mydata.txt"
-    s := io.ReadFile(fn)
-    io.WriteFile("newdata.txt", s)
+```go
+fn := "mydata.txt"
+s := io.ReadFile(fn)
+io.WriteFile("newdata.txt", s)
+```
 
 This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then 
 writes it to the "newdata.txt" file, in its entirety.  You can also just write a string
 value to the file, such as
 
-    fn := "mydata.txt"
-    s := []string{"This is line one", "This is line two"}
-    io.WriteFile("newdata.txt", strings.Join(s, "\n"))
+```go
+fn := "mydata.txt"
+s := []string{"This is line one", "This is line two"}
+io.WriteFile("newdata.txt", strings.Join(s, "\n"))
+```
 
 This results in the array of strings `s` being combined into a single string value wiht
 new-line characters, and the resulting string being written to the file.
@@ -2049,8 +2195,10 @@ as a string value, or convert a JSON string to a comparable _ego_ data value.
 The `Marshal` function converts a value into a JSON byte array, which is the function
 result. 
 
-    a := { name: "Tom", age: 44 }
-    s := string(json.Marshal(a))
+```go
+a := { name: "Tom", age: 44 }
+s := string(json.Marshal(a))
+```
 
 This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This is because
 the `Marshal` operation returns a byte array, and then `string()` is used to cast it to a
@@ -2064,17 +2212,20 @@ prefix before each line of output in the resulting formatted JSON, as well as th
 spacing value for nested items. These are both interpreted as strings, and the most common
 use is to specify a string with the required number of blanks for each part.
 
-
-    a := { name: "Tom", age: 44 }
-    s := string(json.MarshalIndent(a, "", "   "))
+```go
+a := { name: "Tom", age: 44 }
+s := string(json.MarshalIndent(a, "", "   "))
+```
 
 Because the resulting `[]byte` array is cast to a `string` value, the result in `s` is
 the string value
 
-    {
-        "name" : "Tom",
-        "age" : 44
-    }
+```json
+{
+    "name" : "Tom",
+    "age" : 44
+}
+```
 
 ### json.Unmarshal([]byte, &value)
 
@@ -2085,8 +2236,10 @@ model of the data type; the `UnMarshal` function creates one dynamically.
 This means you are not guaranteed that the resulting structure has all the
 fields you might be expecting.
 
-    r := { age:0, name:""}
-    err := json.Unmarshal(s, &r) 
+```go
+r := { age:0, name:""}
+err := json.Unmarshal(s, &r) 
+```
 
 If `s` contains the JSON byte array from the `Marshal` example above, the result is a
 structure { age: 44, name:"Tom"} in the variable `r`. You can use the `members()` function
@@ -2097,8 +2250,9 @@ You can optionally not pass the value to store the resulting decoded value as th
 parameter. If only the byte array is passed, the function's return value is the decoded
 value.
 
-    r := json.Unarshal(s) 
-
+```go
+r := json.Unarshal(s) 
+```
 In this usage, if there is an error decoding the byte array in `s` then an error is thrown.
 
 ## math <a name="math"></a>
@@ -2111,7 +2265,9 @@ function that are offered in the comparable _Go_ package, but will be expanded a
 
 For a given numeric value, return the absolute value of the number.
 
-    posInt := math.Abs(signedInt)
+```go
+posInt := math.Abs(signedInt)
+```
 
 In this example, `posInt` will always be a positive or zero value.
 
@@ -2122,8 +2278,10 @@ value. The array is always an array of integers. For a prime number, this will a
 return an array with two elements, one and the prime number. For all other numbers,
 it returns an array that contains one, the number, and all factors of the number.
 
-    a := math.Factor(11)
-    b := math.Factor(12)
+ ```go
+a := math.Factor(11)
+b := math.Factor(12)
+```
 
 For the first example, `a` contains [1, 11] because 11 is a prime number. The value of
 `b` contains [1, 2, 3, 4, 6, 12].
@@ -2132,7 +2290,9 @@ For the first example, `a` contains [1, 11] because 11 is a prime number. The va
 
 For a given floating point value `f`, return the natural logarithm of the value.
 
-   f := math.Log(2.1)
+```go
+f := math.Log(2.1)
+```
 
 The value of `f` is 0.7419373447293773.
 
@@ -2141,10 +2301,12 @@ The value of `f` is 0.7419373447293773.
 For an arbitrary list of numeric values, return the largest value in the list. The list
 can be sent as individual items, or as an array of items.
 
-    a := math.Max(n, 100)
-    
-    b := [1, 2, 6, 3, 0]
-    c := math.Max(b...)
+```go
+a := math.Max(n, 100)
+
+b := [1, 2, 6, 3, 0]
+c := math.Max(b...)
+```
 
 The value of `a` is the larger of the value of `n` and the value 100. This is comparable
 to _use the value of `n` but it must be at least 100_. The value of `c` will be 6. The
@@ -2156,10 +2318,12 @@ to the function, and the largest value in the array `b` is 6.
 For an arbitrary list of numeric values, return the smallest value in the list. The list
 can be sent as individual items, or as an array of items.
 
-    a := math.Min(n, 10)
-    
-    b := [1, 2, 6, 3, 0]
-    c := math.Min(b...)
+```go
+a := math.Min(n, 10)
+
+b := [1, 2, 6, 3, 0]
+c := math.Min(b...)
+```
 
 The value of `a` is the smaller of the value of `n` and the value 1. This is comparable
 to _use the value of `n` but it must be at no larger than 10_. The value of `c` will
@@ -2172,7 +2336,9 @@ The `Primes` function accepts a positive integer value and returns an array of a
 prime numbers less than that value. Note that this can take a very long time to compute
 for larger values.
 
-    a := math.Primes(10)
+```go
+a := math.Primes(10)
+```
 
 The array `a` will contain the integers [3, 5, 7]. The values '1' and '2' are not considered
 to be prime numbers.
@@ -2181,7 +2347,9 @@ to be prime numbers.
 
 Calculate the square root of the numeric value given.
 
-    a := math.Sqrt(2)
+```go
+a := math.Sqrt(2)
+```
 
 The value of `a` will be approximately 1.4142135623730951.
 
@@ -2190,10 +2358,12 @@ The value of `a` will be approximately 1.4142135623730951.
 The `Sum` function returns the arithmetic sum of all the numeric values. These can be
 passed as individual values or as an array.
 
-    a := math.Sum(n, 10)
+```go
+a := math.Sum(n, 10)
 
-    b := [5, 15, 25, 35]
-    c := math.Sum(b...)
+b := [5, 15, 25, 35]
+c := math.Sum(b...)
+```
 
 The value of `a` is the sum of `n` and 100, and is identical to the expression `a := n + 10`. The
 value of `c` is 80, which is the sum of all the values in the array. Note that the ellipsis "..."
@@ -2211,16 +2381,20 @@ shown here are for macOS (the "darwin" Go build).
 The `Args{}` function returns an array of the string command line arguments when an _Ego_
 program is run from the shell/command line.  Consider the following simple program:
 
-    func main() int {
-        fmt.Println(os.Args())
-    }
+```go
+func main() int {
+    fmt.Println(os.Args())
+}
+```
 
 This has a `main` function (the function that is always invoked with the `ego run` command).
 This gets the list of arguments via `os.Args()` and prints it to the standard output.  If
 this is placed in a file -- for example, "args.ego" -- then it can be run with a command
 line similar to:
 
+```bash
     tom$ ego run args.ego stuff I want
+```
 
 The "tom$" is the shell prompt; the remainder of the command is the command line entered. Note
 that after the name of the program file there are additional command line tokens. The main
@@ -2238,13 +2412,15 @@ and returns control to the shell/command line where it was invoked. If an option
 is given, it is an integer that becomes the system return code from the `ego run` command
 line.
 
-    main() int {
-        if true {
-            os.Exit(55)
-        }
-
-        return 0
+ ```go
+main() int {
+    if true {
+        os.Exit(55)
     }
+
+    return 0
+}
+```
 
 In this example, the condition is always true so the `os.Exit(55)` call is made. When the
 ego command completes, the shell return code ("$?" in most Linux/Unix shells, for example)
@@ -2263,13 +2439,15 @@ DOS-style environment variable from the CMD.EXE Windows shell.  The argument mus
 the name of the variable (case-sensitive) and the result is the value of the environment
 variable. If the variable does not exist, the function always returns an empty string.
 
-    func main() int {
+```go
+func main() int {
 
-        shell := os.Getenv("SHELL")ego
-        fmt.Println("You are running the ", shell, " shell program")
+    shell := os.Getenv("SHELL")ego
+    fmt.Println("You are running the ", shell, " shell program")
 
-        return 0
-    }
+    return 0
+}
+```
 
 Invoking this on a macOS or Linux system while running the "bash" shell will result in
 output similar to:
@@ -2280,8 +2458,10 @@ output similar to:
 
 The `Remove()` function deletes a file from the file system.
 
-    fn := "newdata.txt"
-    os.Remove(fn)
+```go
+fn := "newdata.txt"
+os.Remove(fn)
+```
 
 When this program runs, the physical file "newdata.txt" will have been deleted
 from the file system, assuming the current user has permission to delete the
@@ -2313,7 +2493,9 @@ value does not exist, there is no error.
 
 The `Get()` function retrieves the current value of a given setting by name. For example,
 
-   path := profile.Get("ego.runtime.path")
+```go
+path := profile.Get("ego.runtime.path")
+```
 
 In this case, the variable `path` is a string containing the file system location for the
 _Ego_ main path, where service functions, import libraries, and test programs are found.
@@ -2407,12 +2589,14 @@ was not json) or an actual object if the media type was json.
 
 Here's a simple example:
 
-    server := rest.New().Base("http://localhost:8080")
-    server.Get("/services/debug")
-     
-    if server.status == http.StatusOK {
-        print "Server session ID is ", server.response.session
-    }
+```go
+server := rest.New().Base("http://localhost:8080")
+server.Get("/services/debug")
+    
+if server.status == http.StatusOK {
+    print "Server session ID is ", server.response.session
+}
+```
 
 ## sort <a name="sort"></a>
 
@@ -2425,8 +2609,10 @@ or struct types, it cannot be sorted. The sort occurs "in place" in the array.
 The `Ints` function sorts an array of integers. Negative numbers sort before positive
 numbers.
 
-    a := []int{5, 3, 8, 0, -1}
-    sort.Ints(a)
+```go
+a := []int{5, 3, 8, 0, -1}
+sort.Ints(a)
+```
 
 After this code executes, the value of the array is [-1, 0, 3, 5, 8].
 
@@ -2435,8 +2621,10 @@ After this code executes, the value of the array is [-1, 0, 3, 5, 8].
 The `Floats` function sorts an array of floating point numbers. Negative
 numbers sort before positive numbers.
 
-    a := []float64{5.3, 3, 8.001, 0, -1.5}
-    sort.Floats(a)
+```go
+a := []float64{5.3, 3, 8.001, 0, -1.5}
+sort.Floats(a)
+```
 
 After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
 
@@ -2449,11 +2637,13 @@ supplying a function constant that is able to decide which of two items in
 the array is _less than_ the other.  Even though the examples could be more
 complex, here's an example using integer values:
 
-    a := []int{ 101, 5, 33, -55, 239, 3, 66}
+```go
+a := []int{ 101, 5, 33, -55, 239, 3, 66}
 
-    sort.Slice(a, func(i int, j int) bool {
-        return a[i] < a[j]
-    })
+sort.Slice(a, func(i int, j int) bool {
+    return a[i] < a[j]
+})
+```
 
 When this runs, the array `a` will be in sorted order. The function constant
 (the _comparison function_) is called by the `sort` package algorithm as many
@@ -2472,8 +2662,10 @@ constant in the string, so it has access to values outside the function
 The `Strings` function sorts an array of strings. An empty string sorts to
 the start of the list.
 
-    a := []string{"apple", "pear", "", "cherry"}
-    sort.Strings(a)
+```go
+a := []string{"apple", "pear", "", "cherry"}
+sort.Strings(a)
+```
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
 
@@ -2488,7 +2680,9 @@ characters, so some unicode characters can take more than one byte of storage.
 The `Chars` function returns an array of string values. Each value represents
 a single character for that position in the string.
 
-    runes := strings.Char("test")
+```go
+runes := strings.Char("test")
+```
 
 The value of `runes` is an string array with values ["t", "e", "s", "t"].
 If the string is an empty string, it results in an array of zero elements.
@@ -2499,7 +2693,9 @@ The `Compare` function compares two string values, and returns an integer contai
 -1 if the first string is less than the second, 0 if they are equal, or 1 if the
 second value is less than the first value.
 
-    fmt.Println(strings.Compare("peach", "apple"))
+```go
+fmt.Println(strings.Compare("peach", "apple"))
+```
 
 This will print the value 1 as the second value sorts higher in order than
 the first value.
@@ -2509,8 +2705,10 @@ the first value.
 The `Contains` function scans a string for a substring and returns a boolean
 value indicating if the substring exists in the string
 
-    a := strings.Contains("This is a test", "is a")
-    b := strings.Contains("This is a test", "isa")
+```go
+a := strings.Contains("This is a test", "is a")
+b := strings.Contains("This is a test", "isa")
+```
 
 In this example, `a` contains the value `true`, and `b` contains the value `false`.
 Note that the substring must match exactly, including whitespace, to be considered
@@ -2521,8 +2719,10 @@ a match.
 The `ContainsAny` function scans a string to see if instances of any of the
 characters from a substring appear in the string.
 
-    a := strings.ContainsAny("this is a test", "satx")
-    b := strings.ContainsAny("this is a test", "xyz")
+```go
+a := strings.ContainsAny("this is a test", "satx")
+b := strings.ContainsAny("this is a test", "xyz")
+```
 
 In this example, `a` is true because the string contains at least one of the
 characters in the substring (there are instances of "s", "a", and "t"). The
@@ -2534,8 +2734,10 @@ value of `b` is false because the string does not contain any instances of
 The `EqualFold` function compares two strings for equality, ignoring differences
 in case.
 
-    a := strings.EqualFold("symphony b", "Symphony B")
-    b := strings.EqualFold("åto", "Åto")
+```go
+a := strings.EqualFold("symphony b", "Symphony B")
+b := strings.EqualFold("åto", "Åto")
+```
 
 In both these examples, the result is `true`.
 
@@ -2544,8 +2746,10 @@ In both these examples, the result is `true`.
 The `Fields` function breaks a string down into individual strings based on
 whitespace characters.
 
-    s := "this is    a test"
-    b := strings.Fields(s)
+```go
+s := "this is    a test"
+b := strings.Fields(s)
+```
 
 The result is that `b` will contain the array ["this", "is", "a", "test"]
 
@@ -2555,8 +2759,10 @@ The `Join` function joins together an array of strings with a separator string.
 The separator is placed between items, but not at the start or end of the
 resulting string.
 
-    a := []string{ "usr", "local", "bin"}
-    b := strings.Join(a, "/")
+```go
+a := []string{ "usr", "local", "bin"}
+b := strings.Join(a, "/")
+```
 
 The result is that `b` contains a string "usr/local/bin". This function is most
 commonly used to create lists (with a "," for separator) or path names (using a
@@ -2582,7 +2788,9 @@ The `Ints` function returns an array of integer values. Each value represents
 the Unicode character for that position in the string, expressed as an integer
 value.
 
-    runes := strings.Ints("test")
+```go
+runes := strings.Ints("test")
+```
 
 The value of `runes` is an integer array with values [116, 101, 115, 116] which
 are the Unicode character values for the letters "t", "e", "s", and "t". If
@@ -2596,8 +2804,10 @@ the value of the count parameter is less than 1, an empty string is returned.
 If the count value is larger than the string length, then the entire string
 is returned.
 
-    name := "Bob Smith"
-    first := strings.Left(name, 3)
+```go
+name := "Bob Smith"
+first := strings.Left(name, 3)
+```
 
 In this example, the value of `first` will be "Bob".
 
@@ -2608,9 +2818,11 @@ is different than the builtin `len()` function which returns the length of a
 string in bytes. This difference is because a character can take up more than
 one byte.  For example,
 
-     str := "\u2813foo\u2813"
-     a := len(str)
-     b := strings.Length(str)
+```go
+str := "\u2813foo\u2813"
+a := len(str)
+b := strings.Length(str)
+```
 
 In this example, the value of `a` will be 9, which is the number of bytes stored
 in the string. But because the first and last characters are unicode characters
@@ -2624,8 +2836,10 @@ If the value of the count parameter is less than 1, an empty string is returned.
 If the count value is larger than the string length, then the entire string
 is returned.
 
-    name := "Bob Smith"
-    last := strings.Right(name, 5)
+```go
+name := "Bob Smith"
+last := strings.Right(name, 5)
+```
 
 In this example, the value of `last` will be "Smith".
 
@@ -2635,8 +2849,10 @@ The `Split()` function will split a string into an array of strings, based on a
 provided delimiter character. If the character is not present, then a newline
 is assumed as the delimiter character.
 
-    a := "This is\na test\nstring"
-    b := strings.Split(a)
+```go
+a := "This is\na test\nstring"
+b := strings.Split(a)
+```
 
 In this example, `b` will be an array of strings with three members, one for each
 line of the string:  ["This is", "a test", "string"]. If the string given was an
@@ -2645,8 +2861,10 @@ empty string, the result is an empty array.
 If you wish to use your own delimiter, you can supply that as the second parameter.
 For example,
 
-    a := "101, 553, 223, 59"
-    b := strings.Split(a, ", ")
+```go
+a := "101, 553, 223, 59"
+b := strings.Split(a, ", ")
+```
 
 This uses the string ", " as the delimiter. Note that this must exactly match, so
 the space is significant. The value of b will be "101", "553", "223", "59"].
@@ -2656,12 +2874,16 @@ the space is significant. The value of b will be "101", "553", "223", "59"].
 The `String()` function will construct a string from an array of numeric values or
 string values.
 
-    a := strings.String(115, 101, 116, 115)
+```go
+a := strings.String(115, 101, 116, 115)
+```
 
 This results in `a` containing the value "sets", where each integer value was used
 as a Unicode character specification to construct the string.
 
-    b := strings.String("this", "and", "that")
+```go
+b := strings.String("this", "and", "that")
+```
 
 You can also specify arguments that are string values (including individual
 characters) and they are concatenated together to make a string. In the above
@@ -2673,8 +2895,10 @@ The `Substring()` function extracts a portion of the string provided. The
 start position is the first character position to include (1-based), and
 the count is the number of characters to include in the result. For example,
 
-    name := "Abe Lincoln"
-    part := strings.Substring(name, 5, 4)
+```go
+name := "Abe Lincoln"
+part := strings.Substring(name, 5, 4)
+```
 
 This would result in `part` containing the string "Linc", representing the
 starting with the fifth character, and being four characters long.
@@ -2688,16 +2912,18 @@ template as it is processed. The structure's fields are used as substitution
 names in the template, and the field values is used in it's place in the
 string.
 
-    @template myNameIs `Hello, my name is {{.First}} {{.Last}}`
+```go
+@template myNameIs `Hello, my name is {{.First}} {{.Last}}`
 
-    person := { First: "Tom", Last: "Smith"}
-    label , err := strings.Template( myNameIs, person )
+person := { First: "Tom", Last: "Smith"}
+label , err := strings.Template( myNameIs, person )
 
-    if err != nil {
-        fmt.Println(err)
-    } else {
-        fmt.Println(label)
-    }
+if err != nil {
+    fmt.Println(err)
+} else {
+    fmt.Println(label)
+}
+```
 
 This program will print the string "Hello, my name is Tom Smith". The template
 substitutions `{{.First}}` and `{{.Last}}` extract the specified field names
@@ -2717,8 +2943,10 @@ The `ToLower()` function converts the characters of a string to the lowercase
 version of that character, if there is one. If there is no lowercase for a
 given character, the character is not affected in the result.
 
-    a := "Mazda626"
-    b := strings.ToLower(a)
+```go
+a := "Mazda626"
+b := strings.ToLower(a)
+```
 
 In this example, the value of `b` will be "mazda626".
 
@@ -2728,8 +2956,10 @@ The `ToUpper()` function converts the characters of a string to the uppercase
 version of that character, if there is one. If there is no uppercase value for a
 given character, the character is not affected in the result.
 
-    a := "Bang+Olafsen"
-    b := strings.ToUpper(a)
+```go
+a := "Bang+Olafsen"
+b := strings.ToUpper(a)
+```
 
 In this example, the value of `b` will be "BANG+OLAFSEN".
 
@@ -2739,8 +2969,10 @@ The `Tokenize()` function uses the built-in tokenizer to break
 a string into its tokens based on the _Ego_ language rules. The
 result is passed back as an array.
 
-    s := "x{} <- f(3, 4)"
-    t := strings.Tokenize(s)
+```go
+s := "x{} <- f(3, 4)"
+t := strings.Tokenize(s)
+```
 
 This results in `t` being a []string array, with contents ["x", "{}", "<-", "f", "(", "3", ",", "4", ")"].
 Note that {} is considered a single token in the language, as is &lt;- so they each occupy a single
@@ -2752,8 +2984,10 @@ The `Truncate()` function will truncate a string that is too long, and add
 the ellipsis ("...") character at the end to show that there is more information
 that was not included.
 
-    a := "highway bridge out of order"
-    msg := strings.Truncate(a, 10)
+```go
+a := "highway bridge out of order"
+msg := strings.Truncate(a, 10)
+```
 
 In this example, the value of `msg` is "highway...". This is to ensure that the
 resulting string is only ten characters long (the length specified as the second
@@ -2768,32 +3002,38 @@ where each part of the path could define a collection type, followed optionally 
 an instance identifier of a specific member of tht collection, etc.  Consider
 the following example:
 
-    p := "/services/proc/{{pid}}/memory"
-    u := "/services/proc/1553/memory"
+```go
+p := "/services/proc/{{pid}}/memory"
+u := "/services/proc/1553/memory"
 
-    m := strings.URLPattern(u,p)
+m := strings.URLPattern(u,p)
+```
 
 The `p` variable holds a pattern. It contains a number of segments of the URL, and
 for one of them, specifies the indicator for a substitution value. That is, in this
 part of the URL, any value is accepted and will be named "pid". The resulting
 map generated by the call looks like this:
 
-    {
-        "services" : true,
-        "proc": true,
-        "pid": "1553",
-        "memory": true,
-    }
+```json
+{
+    "services" : true,
+    "proc": true,
+    "pid": "1553",
+    "memory": true,
+}
+```
 
 For items that are constant segments of the URL, the map contains a boolean value
 indicating if it was found in the pattern. For the substitution operator(s) in the
 pattern, the map key is the name from the pattern, and the value is the value from
 the URL.  Note that this can be used to determine partial paths:
 
-    p := "/services/proc/{{pid}}/memory"
-    u := "/services/proc/"
+```go
+p := "/services/proc/{{pid}}/memory"
+u := "/services/proc/"
 
-    m := strings.URLPattern(u,p)
+m := strings.URLPattern(u,p)
+```
 
 In this case, the resulting map will have a "pid" member that is an empty string,
 and a "memory" value that is false, which indicates neither the substitution value
@@ -2802,31 +3042,37 @@ or the named field in the URL are present.
 You an specify a pattern that covers an entire hierarchy, and the return will
 indicate how much of the hierarchy was returned.
 
-    p := "/services/location/state/{{stateName}}/city/{{cityName}}
+```go
+p := "/services/location/state/{{stateName}}/city/{{cityName}}
+```
 
 If the supplied URL was `/services/location/state/nc/city/cary` then the map would
 be:
 
-    {
-        "services" : true,
-        "location" : true,
-        "state" : true,
-        "stateName" : "nc",
-        "city" : true,
-        "cityName" : "cary",
-    }
+```go
+{
+    "services" : true,
+    "location" : true,
+    "state" : true,
+    "stateName" : "nc",
+    "city" : true,
+    "cityName" : "cary",
+}
+```
 
 But, if the url provided only had `services/location/state/nc` then resulting map
 would be:
 
-    {
-        "services" : true,
-        "location" : true,
-        "state" : true,
-        "stateName" : "nc",
-        "city" : false,
-        "cityName" : "",
-    }
+```go
+{
+    "services" : true,
+    "location" : true,
+    "state" : true,
+    "stateName" : "nc",
+    "city" : false,
+    "cityName" : "",
+}
+```
 
 If the url did not include the state name field, that would be blank, which could
 tell the service that a GET on this URL was meant to return a list of the state
@@ -2846,23 +3092,25 @@ by a user, in which case any other thread's attempt to lock the item will
 result in that thread waiting until the mutex is unlocked by the first owner.
 Consider the following code:
 
-    var counter int
+```go
+var counter int
 
-    func worker(id int) {
-        counter = counter + 1
-        myCount := counter
-        fmt.Printf("thread %d, counter %d\n", id, myCount)
+func worker(id int) {
+    counter = counter + 1
+    myCount := counter
+    fmt.Printf("thread %d, counter %d\n", id, myCount)
+}
+
+func main() int {
+    workers := 5
+    for i := 0 ; i < workers; i = i + 1 {
+        go worker(i)
     }
 
-    func main() int {
-       workers := 5
-        for i := 0 ; i < workers; i = i + 1 {
-            go worker(i)
-        }
-
-        time.Sleep("1s")
-        return 0
-    }
+    time.Sleep("1s")
+    return 0
+}
+```
 
 As written above, the code will launch five go routines that will all do the same
 simple operation -- increment the counter and then print it's value at the time the
@@ -2884,26 +3132,28 @@ thread. In this case, the output of the count value might be more like this:
 To fix this, we use a mutex value to block access to the counter for each
 thread, so they are forced to take turns incrementing the counter.
 
-    var counter int
-    var mutex sync.Mutex
+```go
+var counter int
+var mutex sync.Mutex
 
-    func worker(id int) {
-        mutex.Lock()
-        counter = counter + 1
-        myCount := counter
-        mutex.Unlock()
-        fmt.Printf("thread %d, counter %d\n", id, myCount)
+func worker(id int) {
+    mutex.Lock()
+    counter = counter + 1
+    myCount := counter
+    mutex.Unlock()
+    fmt.Printf("thread %d, counter %d\n", id, myCount)
+}
+
+func main() int {
+    workers := 5
+    for i := 0 ; i < workers; i = i + 1 {
+        go worker(i)
     }
 
-    func main() int {
-       workers := 5
-        for i := 0 ; i < workers; i = i + 1 {
-            go worker(i)
-        }
-
-        time.Sleep("1s")
-        return 0
-    }
+    time.Sleep("1s")
+    return 0
+}
+```
 
 Now that there is a mutex protecting access to the counter, no matter what order the
 go routines run, the increment of the count value will always be sequential, resulting
@@ -2924,24 +3174,26 @@ routine starts and completions.
 
 Consider this example code:
 
-    func thread(id int, wg *sync.WaitGroup) {               [1]
-        fmt.Printf("Thread %d\n", id)
-        wg.Done()                                           [2]
+```go
+func thread(id int, wg *sync.WaitGroup) {               // [1]
+    fmt.Printf("Thread %d\n", id)
+    wg.Done()                                           // [2]
+}
+
+func main() int {
+    var wg sync.WaitGroup                               // [3]
+    
+    count := 5
+    for i := 1; i <= count; i = i + 1 {
+        wg.Add(1)                                       // [4]
+        go thread(i, &wg)                               // [5]
     }
     
-    func main() int {
-        var wg sync.WaitGroup                               [3]
-        
-        count := 5
-        for i := 1; i <= count; i = i + 1 {
-            wg.Add(1)                                       [4]
-            go thread(i, &wg)                               [5]
-        }
-        
-        wg.Wait()                                           [6]
-        
-        fmt.Println("all done")
-    }
+    wg.Wait()                                           // [6]
+    
+    fmt.Println("all done")
+}
+```
 
 This program launches five instances of a go routine thread, and waits for them
 to complete. This simplified example does not return a value from the threads, so
@@ -2960,7 +3212,9 @@ Here's a breakdown of important steps in this example:
 2. The `Done()` call is made by the go routine when it has completed all it's
    operations. This could also be implemented as
 
+```go
        defer wg.Done()
+```
 
     to ensure that it is always executed whenever the function exits.
 
@@ -3004,17 +3258,19 @@ as discrete arguments, or as an array of strings. The result is a TableHandle ob
 that can be used to insert data into the table structure, sort it, and format it for
 output.
 
-    t := tables.New(":Identity", "Age:", "Address")
-    
-    t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
-    t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
-    t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
-    
-    t.Sort( "Age", "Identity" )
-    
-    t.Format(true,false)
-    t.Print()
-    t.Close()
+```go
+t := tables.New(":Identity", "Age:", "Address")
+
+t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
+t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
+
+t.Sort( "Age", "Identity" )
+
+t.Format(true,false)
+t.Print()
+t.Close()
+```
 
 This sample program creates a table with three column headings. The use of the ":"
 character controls alignment for the column. If the colon is at the left or right
@@ -3075,9 +3331,11 @@ This converts a text representation of a time into a time value. The first param
 text to convert, and the second parameter is the "model" which describes the format in which
 the value is parsed. This uses the same specific date values from thee `time.reference` time.
 
-    s := "12/7/1960 15:30"
-    m := "1/2/2006 15:04"
-    t := time.Parse(s, m)
+```go
+s := "12/7/1960 15:30"
+m := "1/2/2006 15:04"
+t := time.Parse(s, m)
+```
 
 The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the
 model showed a month of 1 (for January) but was still using the specific values from the
@@ -3087,7 +3345,9 @@ same locations in the string to be converted and will be skipped.
 IF there is an error in parsing, the value of `t` will be `nil`. You can find the exact
 error by allowing the `time.Parse()` function to return two values:
 
-    t, e := time.Parse(s, m)
+```go
+t, e := time.Parse(s, m)
+```
 
 If the value of `t` is `nil` then the value of `e` will be the error code that reflects the
 parsing error. If the call is made with only one return value specified, then the error is
@@ -3098,7 +3358,9 @@ discarded.
 The `Sleep()` function of thee `time` package will sleep for the specified amount of time.
 The duration is expressed as a string. For example,
 
-    time.Sleep("10s")
+```go
+time.Sleep("10s")
+```
 
 This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include
 fractional values. While the system is sleeping, go routines will continue to run but
@@ -3114,7 +3376,9 @@ for developers writing _Ego_ programs.
 The `SetLogger()` function enables or disables specific loggers at runtime. This can be
 used to turn on tracing when in interactive mode, for example.
 
-    oldSetting := util.SetLogger("trace", true)
+```go
+oldSetting := util.SetLogger("trace", true)
+```
 
 The value of `oldSetting` is a boolean that describes the previous state of this logger,
 which allows a program to set a logger back to it's original state if desired.
@@ -3164,7 +3428,9 @@ the report includes the number of symbol table slots used out of the maximum
 allowed, and then a line for each symbol, showing it's name, type, and
 value.
 
-    fmt.Println(util.Symbols())
+```go
+fmt.Println(util.Symbols())
+```
 
 Note that symbols that are internal to the running of the program are
 not displayed; only symbols created by the user or for defined packages
@@ -3183,7 +3449,9 @@ where each group is separated by a hyphen. For example, "af315ffd-6c57-46b9-af62
 The `New()` function generates a new unique identifier value, and returns the result
 as a string.
 
-    id := uuid.New()
+```go
+id := uuid.New()
+```
 
 ### uuid.Nil()
 
@@ -3191,9 +3459,11 @@ The `Nil` function generates the _zero value_ for a UUID, which is a UUID that c
 entirely of zeroes. This value will never be generated by the `New()` function and will
 never match another UUID value.
 
-    if id == uuid.Nil() {
-        fmt.Println("id value was not set")
-    }
+```go
+if id == uuid.Nil() {
+    fmt.Println("id value was not set")
+}
+```
 
 ### uuid.Parse(string)
 
@@ -3202,7 +3472,9 @@ for string values received via REST API calls, etc. The `Parse()` function retur
 two value; the result of the parse and an error to indicate if the parse was
 successful.
 
-    id, err := uuid.Parse(uuidString)
+```go
+id, err := uuid.Parse(uuidString)
+```
 
 If the string variable `uuidString` contains a valid UUID specification, then it is
 stored in `id` (case normalized) and the `err` variable is nil. But if there was an
@@ -3222,29 +3494,33 @@ with a `package` statement as the first statement item, and then
 defines a type and a function that accepts a value of that type as
 the function receiver.
 
-    package employee
+```go
+package employee
 
-    type Employee struct {
-        id int
-        name string
-    }
+type Employee struct {
+    id int
+    name string
+}
 
-    func (e *Employee) SetName( s string ) {
-        e.name = s
-    }
+func (e *Employee) SetName( s string ) {
+    e.name = s
+}
+```
 
 The second file is "test.ego" and is the program that will use this package.
 It starts with an `import` statement, which causes the compilation to include
 the package definition within the named file "employee". You can specify the
 file extension of ".ego" but it is not necessary.
 
-    import "employee"
+```go
+import "employee"
 
-    e := employee.Employee{id:55}
+e := employee.Employee{id:55}
 
-    e.SetName("Frodo")
+e.SetName("Frodo")
 
-    fmt.Println("Value is ", e)
+fmt.Println("Value is ", e)
+```
 
 This program uses the package definitions. It creates an instance of an
 `Employee` from the `employee` package, and initializes one of the fields
@@ -3260,13 +3536,17 @@ Use the `package` statement to define a set of related functions in
 a package in the current source file. A give source file can only
 contain one package statement and it must be the first statement.
 
-    package factor
+```go
+package factor
+```
 
 This defines that all the functions and constants in this module will
 be defined in the `factor` package, and must be referenced with the
 `factor` prefix, as in
 
-    y := factor.intfact(55)
+```go
+y := factor.intfact(55)
+```
 
 This calls the function `intfact()` defined in the `factor` package.
 
@@ -3285,8 +3565,10 @@ You can generate a runtime error by adding in a `@error` directive,
 which is followed by a string expression that is used to formulate
 the error message text.
 
-    v = "unknown"
-    @error "unrecognized value: " + v
+```go
+v = "unknown"
+@error "unrecognized value: " + v
+```
 
 This will result in a runtime error being generated with the error text
 "unrecognized value: unknown". This error can be intercepted in a try/catch
@@ -3299,7 +3581,9 @@ ultimate parent of all other symbols). You cannot modify an existing
 readonly value, but you can create new readonly values, or values that
 can be changed by the user.
 
-    @global base "http://localhost:8080"
+```go
+@global base "http://localhost:8080"
+```
 
 This creates a variable named `base` that is in the root symbol table,
 with the value of the given expression. If you do not specify an expression,
@@ -3316,25 +3600,27 @@ each message property. The property name is the field name (which can be
 in double quotes if it is not a valid identifier) and the value is the
 loacalized string.
 
-    @localization {
-        "en": {
-            "hello.msg": "hello, {{.Name}}",
-            "goodby.msg": "goodbye"
-        },
-        "fr": {
-            "hello.msg": "bonjour, {{.Name}}",
-            "goodbye.msg": "au revoir"
-        },
-        "es": {
-            "hello.msg": "hola, {{.Name}}",
-            "goodbye.msg":"adios"
-        }
+```go
+@localization {
+    "en": {
+        "hello.msg": "hello, {{.Name}}",
+        "goodby.msg": "goodbye"
+    },
+    "fr": {
+        "hello.msg": "bonjour, {{.Name}}",
+        "goodbye.msg": "au revoir"
+    },
+    "es": {
+        "hello.msg": "hola, {{.Name}}",
+        "goodbye.msg":"adios"
     }
+}
 
-    func main{
-        m := i18n.T("hello.msg", {Name: "Tom"})
-        fmt.Println(m)
-    }
+func main{
+    m := i18n.T("hello.msg", {Name: "Tom"})
+    fmt.Println(m)
+}
+```
 
 There can be only on `@localization` specification in a given program.
 It can appear before or after the functions in the program (it is
@@ -3356,7 +3642,9 @@ to provde language-specific web results.
 You can store away a named Go template as inline code. The template
 can reference any other templates defined.
 
-    @template hello "Greetings, {{.Name}}"
+```go
+@template hello "Greetings, {{.Name}}"
+```
 
 The resulting templates are available to the template() function,
  whose first parameter is the template name and the second optional
