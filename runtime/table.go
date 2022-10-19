@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
@@ -12,8 +13,12 @@ import (
 )
 
 var tableTypeDef *datatypes.Type
+var tableTypeDefLock sync.Mutex
 
 func initTableTypeDef() {
+	tableTypeDefLock.Lock()
+	defer tableTypeDefLock.Unlock()
+
 	if tableTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(tableTypeSpec)
 

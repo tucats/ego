@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/compiler"
@@ -14,8 +15,12 @@ import (
 )
 
 var commandTypeDef *datatypes.Type
+var commandTypeDefLock sync.Mutex
 
 func initCommandTypeDef() {
+	commandTypeDefLock.Lock()
+	defer commandTypeDefLock.Unlock()
+
 	if commandTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(commandTypeSpec)
 

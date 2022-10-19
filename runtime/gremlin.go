@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/northwesternmutual/grammes"
 	"github.com/tucats/ego/compiler"
@@ -37,6 +38,7 @@ type GremlinColumn struct {
 }
 
 var gremlinType *datatypes.Type
+var gremlinTypeLock sync.Mutex
 
 var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 	reflect.Bool:          datatypes.BoolTypeName,
@@ -68,6 +70,9 @@ var typeMap map[reflect.Kind]string = map[reflect.Kind]string{
 }
 
 func initializeGremlinType() {
+	gremlinTypeLock.Lock()
+	defer gremlinTypeLock.Unlock()
+
 	if gremlinType == nil {
 		t, _ := compiler.CompileTypeSpec(gremlinTypeSpec)
 

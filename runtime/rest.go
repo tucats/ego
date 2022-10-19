@@ -9,6 +9,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-resty/resty"
@@ -97,6 +98,7 @@ const (
 )
 
 var restType *datatypes.Type
+var restTypeLock sync.Mutex
 
 func AllowInsecure(flag bool) {
 	allowInsecure = flag
@@ -109,6 +111,9 @@ func AllowInsecure(flag bool) {
 }
 
 func initializeRestType() {
+	restTypeLock.Lock()
+	defer restTypeLock.Unlock()
+
 	if restType == nil {
 		t, _ := compiler.CompileTypeSpec(restTypeSpec)
 

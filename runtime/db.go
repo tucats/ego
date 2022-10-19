@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
@@ -18,8 +19,12 @@ import (
 )
 
 var dbTypeDef *datatypes.Type
+var dbTypeDefLock sync.Mutex
 
 func initDBTypeDef() {
+	dbTypeDefLock.Lock()
+	defer dbTypeDefLock.Unlock()
+
 	if dbTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 

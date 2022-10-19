@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"database/sql"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
@@ -12,8 +13,12 @@ import (
 )
 
 var dbRowsTypeDef *datatypes.Type
+var dbRowsTypeDefLock sync.Mutex
 
 func initDBRowsTypeDef() {
+	dbRowsTypeDefLock.Lock()
+	defer dbRowsTypeDefLock.Unlock()
+
 	if dbRowsTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
 		t.DefineFunction("Next", rowsNext)
