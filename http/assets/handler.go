@@ -27,7 +27,6 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	server.LogRequest(r, sessionID)
-
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// We dont permit index requests
@@ -49,7 +48,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 			path = path[1:]
 		}
 
-		root := settings.Get("ego.runtime.path")
+		root := settings.Get(defs.EgoPathSetting)
 		fn := filepath.Join(root, defs.LibPathName, "services", path)
 
 		ui.Debug(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)

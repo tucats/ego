@@ -25,6 +25,9 @@ var heartbeatRequestCount int32
 var assetRequestCount int32
 var tableRequestCount int32
 
+// CountRequest provides thread-safe counting of classes of REST API calls,
+// which are periodically logged by Ego when running REST server mode. The
+// parameter must be the request classification.
 func CountRequest(kind int) {
 	switch kind {
 	case TableRequestCounter:

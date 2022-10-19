@@ -63,7 +63,7 @@ func ReadConsoleText(prompt string) string {
 	defer consoleLock.Unlock()
 
 	if consoleReader == nil {
-		historyFile := settings.Get("ego.console.history")
+		historyFile := settings.Get(defs.ConsoleHistorySetting)
 		if historyFile == "" {
 			homeDir, _ := os.UserHomeDir()
 			historyFile = filepath.Join(homeDir, settings.ProfileDirectory, "ego-commands.txt")
