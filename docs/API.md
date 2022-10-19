@@ -89,18 +89,19 @@ The resulting JSON payload is an object with the following fields:
 
 Here is an example response payload:
 &nbsp;
-
-    {
-      "server": {
-          "api": 1,
-          "name": "appserver.abc.com",
-          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-          "session": 151
-      },
-      "expires": "Fri Jan 21 13:12:25 EST 2022",
-      "identity": "joesmith",
-      "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
-    }
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 151
+    },
+    "expires": "Fri Jan 21 13:12:25 EST 2022",
+    "identity": "joesmith",
+    "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
+}
+```
 
 &nbsp;
 
@@ -136,11 +137,12 @@ secure. The request body must contain the following two fields:
 
 Here is an example request payload for the logon operation, with a string for
 the username and a string for the password:
-
-    {
-        "username": "joesmith",
-        "password": "3h97q-k35Z5"
-    }
+```json
+{
+    "username": "joesmith",
+    "password": "3h97q-k35Z5"
+}
+```
 
 &nbsp;
 
@@ -167,17 +169,19 @@ The resulting JSON payload is an object with the following fields:
 Here is an example response payload:
 &nbsp;
 
-    {
-      "server": {
-         "api": 1,
-         "name": payroll,
-         "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-         "session": 482
-      },
-      "expires": "Fri Jan 21 13:12:25 EST 2022",
-      "identity": "joesmith",
-      "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
-    }
+```json
+{
+    "server": {
+        "api": 1,
+        "name": payroll,
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 482
+    },
+    "expires": "Fri Jan 21 13:12:25 EST 2022",
+    "identity": "joesmith",
+    "token": "220de9776c7c517f84c1d4b94aadcb6e50849abed4eb6b26b9d16e3365e3a014b5fdefac5b107"
+}
+```
 
 &nbsp;
 
@@ -359,32 +363,33 @@ privileges.
 
 Here is an example response payload from this request:
 &nbsp;
-
-    {
-        "server": {
-            "api": 1,
-            "name": "appserver.abc.com",
-            "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-            "session": 6385
-        },
-        "file": "/Users/tom/ego/ego-server_2022-01-20-000000.log",
-        "loggers": {
-            "APP": false,
-            "AUTH": true,
-            "BYTECODE": false,
-            "CLI": false,
-            "COMPILER": false,
-            "DB": false,
-            "DEBUG": false,
-            "INFO": false,
-            "REST": true,
-            "SERVER": true,
-            "SYMBOLS": false,
-            "TABLES": true,
-            "TRACE": false,
-            "USER": false
-        }
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 6385
+    },
+    "file": "/Users/tom/ego/ego-server_2022-01-20-000000.log",
+    "loggers": {
+        "APP": false,
+        "AUTH": true,
+        "BYTECODE": false,
+        "CLI": false,
+        "COMPILER": false,
+        "DB": false,
+        "DEBUG": false,
+        "INFO": false,
+        "REST": true,
+        "SERVER": true,
+        "SYMBOLS": false,
+        "TABLES": true,
+        "TRACE": false,
+        "USER": false
     }
+}
+```
 
 &nbsp;
 
@@ -411,22 +416,23 @@ lines are returned, otherwise the result is limited to the last `n` lines of the
 
 Here is an example output with a `tail` value of 5:
 &nbsp;
-
-    {
-      "server": {
-          "api": 1,
-          "name": "appserver.abc.com",
-          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-          "session": 91103
-      },
-      "lines": [
-        "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
-        "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
-        "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
-        "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
-        "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
-      ]
-    }
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 91103
+    },
+    "lines": [
+    "[2022-01-20 13:20:18] 155   SERVER : [8] enable info(7) logger",
+    "[2022-01-20 13:20:39] 156   SERVER : Requests in last 60 seconds: admin(1)  service(6)  asset(4)  code(0)  heartbeat(4)  tables(8)",
+    "[2022-01-20 13:22:38] 157   SERVER : Memory: Allocated(   0.452mb) Total(   9.563mb) System(  14.253mb) GC(6) ",
+    "[2022-01-20 13:24:56] 158   SERVER : [9] GET /services/admin/log/ from [::1]:56303",
+    "[2022-01-20 13:24:56] 164   AUTH   : [9] Auth using token 254c9d366d..., user admin, root privilege user"
+    ]
+}
+```
 
 &nbsp;
 &nbsp;
@@ -456,13 +462,14 @@ Here is a sample request body, that enables the INFO logger and disables the TRA
 Note that the names of the loggers are not case-sensitive.
 
 &nbsp;
-
-    {
-    "loggers": {
-        "INFO": true,
-        "TRACE": false
-      }
+```json
+{
+"loggers": {
+    "INFO": true,
+    "TRACE": false
     }
+}
+```
 
 &nbsp;
 &nbsp;
@@ -516,34 +523,36 @@ has the following fields:
 Here is example output from a request to this endpoint:
 &nbsp;
 
-    {
-        "server": {
-            "api": 1,
-            "name": "appserver.abc.com",
-            "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-            "session": 155
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 155
+    },
+    "start": 0,
+    "count": 2,
+    "items": [
+        {
+            "name": "admin",
+            "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
+            "permissions": [
+                "root",
+                "logon"
+            ]
         },
-        "start": 0,
-        "count": 2,
-        "items": [
-            {
-                "name": "admin",
-                "id": "0b77ac93-44b3-4f43-b1d3-9fa0dc7a4039",
-                "permissions": [
-                    "root",
-                    "logon"
-                ]
-            },
-            {
-                "name": "iphoneUser",
-                "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
-                "permissions": [
-                    "logon",
-                    "table_create"
-                ]
-            }
-        ]
-    }
+        {
+            "name": "iphoneUser",
+            "id": "360565a1-f038-4478-88f3-abd9cc38d47f",
+            "permissions": [
+                "logon",
+                "table_create"
+            ]
+        }
+    ]
+}
+```
 
 &nbsp;
 
@@ -586,8 +595,10 @@ Note that when an asset is read, it is also cached in memory (see the documentat
 read in the service located at _EGO_PATH_/lib/services/templates/memory.html which references
 an asset in HTML for a graphical image.
 
+```html
      <!-- The asset must have a root path of /assets to be located properly --> 
      <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
+```
 
 &nbsp;
 &nbsp;
@@ -680,36 +691,37 @@ Here is an example of the result data when the call is made by the user "smith",
 available tables of info:
 
 &nbsp;
-
-    {
-      "server": {
-          "api": 1,
-          "name": "appserver.abc.com",
-          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-          "session": 44622
-      },
-      "tables": [
-            {
-                "name": "Accounts",
-                "schema": "smith",
-                "columns": 2,
-                "rows": 8
-            },
-            {
-                "name": "simple",
-                "schema": "smith",
-                "columns": 2,
-                "rows": 1053
-            },
-            {
-                "name": "test5",
-                "schema": "smith",
-                "columns": 1,
-                "rows": 23
-            }
-        ],
-        "count": 3
-    }
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 44622
+    },
+    "tables": [
+        {
+            "name": "Accounts",
+            "schema": "smith",
+            "columns": 2,
+            "rows": 8
+        },
+        {
+            "name": "simple",
+            "schema": "smith",
+            "columns": 2,
+            "rows": 1053
+        },
+        {
+            "name": "test5",
+            "schema": "smith",
+            "columns": 1,
+            "rows": 23
+        }
+    ],
+    "count": 3
+}
+```
 
 &nbsp;
 &nbsp;
@@ -747,25 +759,26 @@ The valid types that you can specify in the array of column structure definition
 
 The request payload must be a JSON representation of the columns to be created. As an
 example, this payload creates a table with three columns.
-
-    {
-        "columns": [
-            {
-                "name": "first",
-                "type": "string",
-                "nullable": true
-            },
-            {
-                "name": "id",
-                "type": "int",
-                "unique": true
-            },
-            {
-                "name": "last",
-                "type": "string"
-            }
-        ]
-    }
+```json
+{
+    "columns": [
+        {
+            "name": "first",
+            "type": "string",
+            "nullable": true
+        },
+        {
+            "name": "id",
+            "type": "int",
+            "unique": true
+        },
+        {
+            "name": "last",
+            "type": "string"
+        }
+    ]
+}
+```
 
 The first column is allowed to have a null value, and the second column must contain
 unique values.
@@ -842,10 +855,12 @@ Note that the string must be properly escaped as a JSON string.
 You can execute multiple statements in a single operation by formatting the payload as
 an array of strings. For example,
 
-    [
-        "delete from people where name='Jones'",
-        "insert into people(name) values ('Smith')"
-    ]
+```json
+[
+    "delete from people where name='Jones'",
+    "insert into people(name) values ('Smith')"
+]
+```
 
 This executes both statements in order, as a transaction. That is, every statement
 in the operation must succeed for any of the statements to take effect. If any 
@@ -920,49 +935,50 @@ with an HTTP 404 ("not found") error. This allows the caller to determine if a t
 proceed if the given task did not have any effect.
 
 Here is a sample payload with three transactions:
-
-    [
-        {
-            "operation": "insert",
-            "table": "x6",
-            "data": {
-                "address": "123 Elm St",
-                "description" : "tx row",
-                "first": "Elmer",
-                "last": "Fudd",
-                "role": "tester"
-            }
-        },
-        {
-            "operation": "insert",
-            "table": "x6",
-            "data": {
-                "address": "125 Elm St",
-                "description" : "tx row",
-                "first": "Daffy",
-                "last": "Duck",
-                "role": "tester"
-            }
-        },
-        {
-            "operation": "update",
-            "table":"x6",
-            "filters":[
-                "EQ(description,'tx row')"
-            ],
-            "columns": [
-                "address"
-            ],
-            "emptyError": true,
-            "data": {
-                "address":"666 Scary Drive"
-                "description" : "tx row",
-                "first": "Daffy",
-                "last": "Duck",
-                "role": "tester"
-            }
+```json
+[
+    {
+        "operation": "insert",
+        "table": "x6",
+        "data": {
+            "address": "123 Elm St",
+            "description" : "tx row",
+            "first": "Elmer",
+            "last": "Fudd",
+            "role": "tester"
         }
-    ]
+    },
+    {
+        "operation": "insert",
+        "table": "x6",
+        "data": {
+            "address": "125 Elm St",
+            "description" : "tx row",
+            "first": "Daffy",
+            "last": "Duck",
+            "role": "tester"
+        }
+    },
+    {
+        "operation": "update",
+        "table":"x6",
+        "filters":[
+            "EQ(description,'tx row')"
+        ],
+        "columns": [
+            "address"
+        ],
+        "emptyError": true,
+        "data": {
+            "address":"666 Scary Drive"
+            "description" : "tx row",
+            "first": "Daffy",
+            "last": "Duck",
+            "role": "tester"
+        }
+    }
+]
+```
 
 The first and second tasks insert new data into the table "x6". The third task updates the address
 of any row that matches the filter of a "description" field equal to "tx row". Note that the third
@@ -1025,26 +1041,28 @@ the REST call completes.
 Here is a simple transaction that reads a value from one table, and inserts it into a
 second table:
 
-    [
-        {
-            "operation": "select",
-            "table": "table1",
-            "columns": [
-                "customer"
-            ],
-            "filters": [
-                "EQ(key,1)"
-            ]
-        },
-        {
-            "operation": "insert",
-            "table": "table2",
-            "data": {
-                "sender": "toby"",
-                "recipient": "{{customer}}"
-            }
+```json
+[
+    {
+        "operation": "select",
+        "table": "table1",
+        "columns": [
+            "customer"
+        ],
+        "filters": [
+            "EQ(key,1)"
+        ]
+    },
+    {
+        "operation": "insert",
+        "table": "table2",
+        "data": {
+            "sender": "toby"",
+            "recipient": "{{customer}}"
         }
-    ]
+    }
+]
+```
 
 The first task is a "SELECT" operation that reads from a table. The select operation
 will _only_ ever read a single row; there is an implied limit of `1` on the query
@@ -1069,48 +1087,50 @@ need to keep both values that were read by the `select` operation. You can do th
 a special transation type of `symbol`. Here is an example transaction that uses the
 `symbol` operation:
 
-    [
-        {
-            "operation": "select",
-            "table": "table1",
-            "columns": [
-                "customer"
-            ],
-            "filters": [
-                "EQ(key,1)"
-            ]
-        },
-        {
-            "operation": "symbols",
-            "data" : {
-                "sending_customer" : "{{customer}}"
-            }
-        },
-        {
-            "operation": "select",
-            "table": "table1",
-            "columns": [
-                "customer"
-            ],
-            "filters": [
-                "EQ(key,2)"
-            ]
-        },
-        {
-            "operation": "symbols",
-            "data" : {
-                "receiving_customer" : "{{customer}}"
-            }
-        },
-        {
-            "operation": "insert",
-            "table": "table2",
-            "data": {
-                "sender": "{{sending_customer}}",
-                "recipient": "{{receiving_customer}}"
-            }
+```json
+[
+    {
+        "operation": "select",
+        "table": "table1",
+        "columns": [
+            "customer"
+        ],
+        "filters": [
+            "EQ(key,1)"
+        ]
+    },
+    {
+        "operation": "symbols",
+        "data" : {
+            "sending_customer" : "{{customer}}"
         }
-    ]
+    },
+    {
+        "operation": "select",
+        "table": "table1",
+        "columns": [
+            "customer"
+        ],
+        "filters": [
+            "EQ(key,2)"
+        ]
+    },
+    {
+        "operation": "symbols",
+        "data" : {
+            "receiving_customer" : "{{customer}}"
+        }
+    },
+    {
+        "operation": "insert",
+        "table": "table2",
+        "data": {
+            "sender": "{{sending_customer}}",
+            "recipient": "{{receiving_customer}}"
+        }
+    }
+]
+```
 
 &nbsp;
 
@@ -1236,27 +1256,29 @@ identifier for each row in the database.
 
 &nbsp;
 
+```json
+{
+    "server": {
+        "api": 1,
+        "name": "appserver.abc.com",
+        "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
+        "session": 1525
+    },
+    "rows": [
     {
-      "server": {
-          "api": 1,
-          "name": "appserver.abc.com",
-          "id": "2ef21c8f-cc4f-4a83-9e62-b7b7561c64ce",
-          "session": 1525
-      },
-      "rows": [
-        {
-            "Name": "Tom",
-            "Number": 101,
-            "_row_id_": "76d3e219-1015-49c8-9e77-decb750ad13e"
-        },
-        {
-            "Name": "Mary",
-            "Number": 102,
-            "_row_id_": "a974019e-f9e7-4554-adb4-2004b6f65c03"
-        }
-      ],
-    "count": 2
+        "Name": "Tom",
+        "Number": 101,
+        "_row_id_": "76d3e219-1015-49c8-9e77-decb750ad13e"
+    },
+    {
+        "Name": "Mary",
+        "Number": 102,
+        "_row_id_": "a974019e-f9e7-4554-adb4-2004b6f65c03"
     }
+    ],
+"count": 2
+}
+```
 
 &nbsp;
 
@@ -1289,11 +1311,12 @@ Here is an example payload that can be sent to the server to insert a single
 new row for account number 103 wtih name "Susan".
 
 &nbsp;
-
-    {
-        "Name": "Susan",
-        "Number": 103
-    }
+```json
+{
+    "Name": "Susan",
+    "Number": 103
+}
+```
 
 &nbsp;
 
@@ -1305,24 +1328,25 @@ of rows inserted.
 You can also send a list of rows that are to be inserted using a rowset. Here is a
 sample payload that inserts three rows as a single operation:
 &nbsp;
-
+```json
+{
+    "rows" :[
     {
-      "rows" :[
-        {
-            "Name": "Susan",
-            "Number": 103
-        },
-        {
-            "Name": "Timmy",
-            "Number": 104
-        },
-        {
-            "Name": "Mike",
-            "Number": 105
-        }
-      ],
-      "count": 3
+        "Name": "Susan",
+        "Number": 103
+    },
+    {
+        "Name": "Timmy",
+        "Number": 104
+    },
+    {
+        "Name": "Mike",
+        "Number": 105
     }
+    ],
+    "count": 3
+}
+```
 
 &nbsp;
 
@@ -1380,9 +1404,11 @@ only one row in the table has the given account number of 101.
 
 &nbsp;
 
-    {
-        "Name": "Bob",
-    },
+```json
+{
+    "Name": "Bob",
+},
+```
 
 &nbsp;
 
@@ -1551,31 +1577,31 @@ You can see examples of this by examining the /services/admin/memory endpoint.
 
 Here is the full _Ego_ code for the /services/admin/memory service, found in the "memory.ego" file:
 
-    import "http"
+```go
+import "http"
 
-    func mb(f float64) string {
-        return fmt.Sprintf("%3.2fmb", f)
+func mb(f float64) string {
+    return fmt.Sprintf("%3.2fmb", f)
+}
+
+func handler( req http.Request, resp http.Response ) {
+    // Prepare the data to be used by the page.
+    m := util.Memory()
+    pageData := { 
+        Allocated: mb(m.current),
+        Total: mb(m.total),
+        System: mb(m.system),
+        GC: m.gc,
+        ID: _server_instance,
+        Date: time.Now().String(),
+        Host: os.Hostname(),
     }
 
-    func handler( req http.Request, resp http.Response ) {
-
-        // Prepare the data to be used by the page.
-        m := util.Memory()
-        pageData := { 
-            Allocated: mb(m.current),
-            Total: mb(m.total),
-            System: mb(m.system),
-            GC: m.gc,
-            ID: _server_instance,
-            Date: time.Now().String(),
-            Host: os.Hostname(),
-        }
-
-        // Given a path to the template asset, write the page using the
-        // dynamically generated data
-        resp.WriteTemplate("lib/services/templates/memory.html", pageData)
-
-    }
+    // Given a path to the template asset, write the page using the
+    // dynamically generated data
+    resp.WriteTemplate("lib/services/templates/memory.html", pageData)
+}
+```
 
 The service always calls the `handler` entrypoint, and always passes in the request
 and response objects. The services uses the built-in `util.Memory()` function to get
@@ -1603,58 +1629,60 @@ as part of the template processing.
 
 Here is the associated template file, located in lib/services/templates/memory.html:
 
-    <!DOCTYPE html>
-    <!-- Demo web page dynamically rendered by a service. -->
-    <html>
-        <head>
-            <title>Ego Memory ({{.Host}})</title>
-            <style>
-                table,
-                td,
-                th {
-                    border: none;
-                    width: 400px;
-                    border-collapse: collapse;
-                }
-            </style>
-        </head>
+```html
+<!DOCTYPE html>
+<!-- Demo web page dynamically rendered by a service. -->
+<html>
+    <head>
+        <title>Ego Memory ({{.Host}})</title>
+        <style>
+            table,
+            td,
+            th {
+                border: none;
+                width: 400px;
+                border-collapse: collapse;
+            }
+        </style>
+    </head>
 
-        <body>
-            <table style="border: none;width: 440px;border-collapse:collapse">
+    <body>
+        <table style="border: none;width: 440px;border-collapse:collapse">
+            <tr>
+                <td>
+                    <!-- The asset must have a root path of /assets to be located properly -->
+                    <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
+                </td>
+                <td>
+                    <h1>&nbsp;&nbsp; Memory Statistics</h1>
+                </td>
+            </tr>
+        </table>
+        <br> <br>{{.Date}}
+        <p>
+            <table>
                 <tr>
-                    <td>
-                        <!-- The asset must have a root path of /assets to be located properly -->
-                        <img src="/assets/logo.png" alt="Ego logo" style="width:300px;height:150px;">
-                    </td>
-                    <td>
-                        <h1>&nbsp;&nbsp; Memory Statistics</h1>
-                    </td>
+                    <td>Currently allocated</td>
+                    <td style="text-align: right">{{.Allocated}}</td>
+                </tr>
+                <tr>
+                    <td>Total allocated</td>
+                    <td style="text-align: right">{{.Total}}</td>
+                </tr>
+                <tr>
+                    <td>System memory</td>
+                    <td style="text-align: right">{{.System}}</td>
+                </tr>
+                <tr>
+                    <td>Garbage collections</td>
+                    <td style="text-align: right">{{.GC}}</td>
                 </tr>
             </table>
-            <br> <br>{{.Date}}
-            <p>
-                <table>
-                    <tr>
-                        <td>Currently allocated</td>
-                        <td style="text-align: right">{{.Allocated}}</td>
-                    </tr>
-                    <tr>
-                        <td>Total allocated</td>
-                        <td style="text-align: right">{{.Total}}</td>
-                    </tr>
-                    <tr>
-                        <td>System memory</td>
-                        <td style="text-align: right">{{.System}}</td>
-                    </tr>
-                    <tr>
-                        <td>Garbage collections</td>
-                        <td style="text-align: right">{{.GC}}</td>
-                    </tr>
-                </table>
-                <br> Server {{.Host}}, session {{.ID}}
-                <br>
-        </body>
-    </html>
+            <br> Server {{.Host}}, session {{.ID}}
+            <br>
+    </body>
+</html>
+```
 
 Note the references to substitution operators throughout the page, showing where the
 text of the service data structure items are injected into the HTML page that is

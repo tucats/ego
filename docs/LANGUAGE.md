@@ -377,7 +377,7 @@ func hasPositive( x int ) *int {
 v := hasPositive(55)
 if v == nil {
     fmt.Println("Not positive; no value returned")
-    }
+}
 ```
 
 In this somewhat contrived example, the function `hasPositive` does not
@@ -887,6 +887,7 @@ salary := hours * wage                  // (1)
 if salary < 100.0 {                     // (2)
     fmt.Println("Not paid enough!")     // (3)
 }                                       // (4)
+
 total = total + salary                  // (5)
 ```
 
@@ -1029,6 +1030,7 @@ var i int
 for i = 0; i < 10; i++{
     fmt.Println(i)
 }
+
 fmt.Println("The final value of i is ", i)
 ```
 
@@ -1107,6 +1109,7 @@ names := []string{}
 for name := range inventory {
     names = names + name
 }
+
 fmt.Println("The products are all named", names)
 ```
 
@@ -1124,9 +1127,11 @@ for i := 1; i < 10; i = i + 1 {
     if i == 5 {                      // (1)
         continue                     // (2)
     }
+
     if i == 7 {                      // (3)
         break                        // (4)
     }
+
     fmt.Println("The value is ", i)  // (5)
 }
 ```
@@ -1172,6 +1177,7 @@ variables.  For example,
 ```go
 func addValues( v1 float64, v2 float64) float64 {
     x := v1 + v2
+
     return x
 }
 
@@ -1221,6 +1227,7 @@ return value.  If the example above had a `string` result type,
 ```go
 func addValues( v1 float64, v2 float64) string {
     x := v1 + v2
+
     return x
 }
 
@@ -1240,6 +1247,7 @@ the result, the function is assumed not to return a result at
 ```go
 func show( first string, last string) {
     name := first + " " + last
+
     fmt.Println("The name is ", name)
 }
 
@@ -1270,12 +1278,14 @@ clean up a function (for example, closing a file that had been
 ```go
 func getName() bool {
     f := io.Open("name")
+
     defer io.Close(f)
 
     s := io.ReadLine(f)
     if s == "" {
         return false
     }
+
     return true
 }
 ```
@@ -1552,9 +1562,10 @@ x := 0
 try {
     x = pay / hours
 } catch {
-    print "Hours were zero!"
+    fmt.Println("Hours were zero!")
 }
-print "The result is ", x
+
+fmt.Println("The result is ", x)
 ```
 
 If the value of `hours` is non-zero, the assignment statement will assign
@@ -1710,6 +1721,7 @@ var xc chan
 go beepLater("1s", xc)
 
 m := <- xc
+
 fmt.Println(m)
 ```
 
@@ -1832,7 +1844,9 @@ used to execute statements or return results from queries.
 
 ```go
 d := db.New("postgres://root:secrets@localhost:5432/defaultdb?sslmode=disable")
+
 r, e := d.QueryResult("select * from foo")
+
 d.Close()
 ```
 
@@ -1903,7 +1917,6 @@ For example,
 
 ```go
 func main() {
-
     c := exec.Command("ls", "-l")
     c.Run()
 
@@ -1975,6 +1988,7 @@ is followed by a newline character. There are no formatting operations available
 
 ```go
 answer := 42
+
 fmt.Println("The answer is", answer)
 ```
 
@@ -1994,6 +2008,7 @@ var age int
 var temp float64
 
 data := "35 101.2"
+
 fmt.Sscanf(data, "%d%f", &age, &temp)
 ```
 
@@ -2006,6 +2021,7 @@ exactly as shown.  For example,
 
 ```go
 data := "age 35 temp 101.2"
+
 fmt.Sscanf(data, "age %d temp %f", &age, &temp)
 ```
 
@@ -2169,6 +2185,7 @@ over-written by the new file.
 ```go
 fn := "mydata.txt"
 s := io.ReadFile(fn)
+
 io.WriteFile("newdata.txt", s)
 ```
 
@@ -2179,6 +2196,7 @@ value to the file, such as
 ```go
 fn := "mydata.txt"
 s := []string{"This is line one", "This is line two"}
+
 io.WriteFile("newdata.txt", strings.Join(s, "\n"))
 ```
 
@@ -2441,8 +2459,8 @@ variable. If the variable does not exist, the function always returns an empty s
 
 ```go
 func main() int {
-
     shell := os.Getenv("SHELL")ego
+
     fmt.Println("You are running the ", shell, " shell program")
 
     return 0
@@ -2460,6 +2478,7 @@ The `Remove()` function deletes a file from the file system.
 
 ```go
 fn := "newdata.txt"
+
 os.Remove(fn)
 ```
 
@@ -2591,10 +2610,11 @@ Here's a simple example:
 
 ```go
 server := rest.New().Base("http://localhost:8080")
+
 server.Get("/services/debug")
     
 if server.status == http.StatusOK {
-    print "Server session ID is ", server.response.session
+    fmt.Println("Server session ID is ", server.response.session)
 }
 ```
 
@@ -2611,6 +2631,7 @@ numbers.
 
 ```go
 a := []int{5, 3, 8, 0, -1}
+
 sort.Ints(a)
 ```
 
@@ -2623,6 +2644,7 @@ numbers sort before positive numbers.
 
 ```go
 a := []float64{5.3, 3, 8.001, 0, -1.5}
+
 sort.Floats(a)
 ```
 
@@ -2664,6 +2686,7 @@ the start of the list.
 
 ```go
 a := []string{"apple", "pear", "", "cherry"}
+
 sort.Strings(a)
 ```
 
@@ -3098,16 +3121,19 @@ var counter int
 func worker(id int) {
     counter = counter + 1
     myCount := counter
+
     fmt.Printf("thread %d, counter %d\n", id, myCount)
 }
 
 func main() int {
     workers := 5
+
     for i := 0 ; i < workers; i = i + 1 {
         go worker(i)
     }
 
     time.Sleep("1s")
+
     return 0
 }
 ```
@@ -3138,19 +3164,23 @@ var mutex sync.Mutex
 
 func worker(id int) {
     mutex.Lock()
+
     counter = counter + 1
     myCount := counter
+    
     mutex.Unlock()
     fmt.Printf("thread %d, counter %d\n", id, myCount)
 }
 
 func main() int {
     workers := 5
+
     for i := 0 ; i < workers; i = i + 1 {
         go worker(i)
     }
 
     time.Sleep("1s")
+
     return 0
 }
 ```
@@ -3213,7 +3243,7 @@ Here's a breakdown of important steps in this example:
    operations. This could also be implemented as
 
 ```go
-       defer wg.Done()
+defer wg.Done()
 ```
 
     to ensure that it is always executed whenever the function exits.
@@ -3567,6 +3597,7 @@ the error message text.
 
 ```go
 v = "unknown"
+
 @error "unrecognized value: " + v
 ```
 
@@ -3618,6 +3649,7 @@ loacalized string.
 
 func main{
     m := i18n.T("hello.msg", {Name: "Tom"})
+    
     fmt.Println(m)
 }
 ```
