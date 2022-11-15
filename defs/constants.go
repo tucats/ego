@@ -55,7 +55,7 @@ const (
 	// ConsoleHistorySetting is the name of the readline console history
 	// file. This contains a line of text for each command previously read
 	// using readline. If not specified in the profile, a default is used.
-	ConsoleHistorySetting = PrivilegedKeyPrefix + "ego.console.history"
+	ConsoleHistorySetting = PrivilegedKeyPrefix + "console.history"
 
 	// If true, the script language includes language
 	// extensions such as print, call, try/catch.
