@@ -198,7 +198,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	if c.t.Peek(2) == "(" {
 		mark := c.t.Mark()
 
-		if typeSpec, err := c.parseType(true); err == nil {
+		if typeSpec, err := c.parseType("", true); err == nil {
 			if c.t.IsNext("(") { // Skip the parentheses
 				b, err := c.Expression()
 				if err == nil {
@@ -232,7 +232,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	if c.t.Peek(2) != "(" {
 		marker := c.t.Mark()
 
-		if typeSpec, err := c.parseType(true); err == nil {
+		if typeSpec, err := c.parseType("", true); err == nil {
 			// Is there an initial value for the type?
 			if c.t.Peek(1) == "{" {
 				err = c.compileInitializer(typeSpec)

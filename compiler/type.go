@@ -29,7 +29,7 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 
 // Parses a token stream for a generic type declaration.
 func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
-	theType, err := c.parseType(false)
+	theType, err := c.parseType("", false)
 	if !errors.Nil(err) {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
 		}
 	}
 
-	t, err := typeCompiler.parseType(true)
+	t, err := typeCompiler.parseType("", true)
 	if errors.Nil(err) && name != "" {
 		t = datatypes.TypeDefinition(name, t)
 	}

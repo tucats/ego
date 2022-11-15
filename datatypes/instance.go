@@ -4,9 +4,13 @@ import (
 	"sync"
 )
 
-func NewInterfaceType() *Type {
+func NewInterfaceType(name string) *Type {
+	if name == "" {
+		name = "interface{}"
+	}
+
 	t := &Type{
-		name:      "interface{}",
+		name:      name,
 		kind:      InterfaceKind,
 		functions: make(map[string]interface{}),
 		valueType: &InterfaceType,
