@@ -325,7 +325,7 @@ func (t Type) IsType(i Type) bool {
 	if t.kind == StructKind {
 		// Time to see if this is a check for interface matchups
 		if i.kind == InterfaceKind {
-			for fname, bc := range i.functions {
+			for fname := range i.functions {
 				fn := TypeOf(t).Function(fname)
 
 				if fn == nil {
