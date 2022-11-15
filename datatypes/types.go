@@ -1,7 +1,6 @@
 package datatypes
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -63,13 +62,14 @@ const (
 )
 
 type Type struct {
-	name      string
-	pkg       string
-	kind      int
-	fields    map[string]Type
-	functions map[string]interface{}
-	keyType   *Type
-	valueType *Type
+	name       string
+	pkg        string
+	kind       int
+	fields     map[string]Type
+	functions  map[string]interface{}
+	implements map[string]bool
+	keyType    *Type
+	valueType  *Type
 }
 
 type Field struct {
@@ -77,11 +77,24 @@ type Field struct {
 	Type Type
 }
 
+var validationLock sync.Mutex
+
 // ValidateFunctions compares the functions for a given type against
 // the functions for an associated interface definition.
 func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 	if i.kind != TypeKind || i.valueType == nil {
 		return errors.New(errors.ErrArgumentType)
+	}
+
+	// Sadly, multple threads using the same type could have a collision in
+	// the map object, so serialize this check.
+	validationLock.Lock()
+	defer validationLock.Unlock()
+
+	// Have we already checked this type once before? If so, use the cached
+	// value if it previously was valid.
+	if i.implements[t.name] {
+		return nil
 	}
 
 	m1 := t.functions
@@ -106,6 +119,15 @@ func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 			return errors.New(errors.ErrMissingInterface).Context(f1.String())
 		}
 	}
+
+	// First time checking this type object, let's record that we validated
+	// it against the interface type. Make a new map if needed, and set the
+	// cache value.
+	if i.implements == nil {
+		i.implements = map[string]bool{}
+	}
+
+	i.implements[t.name] = true
 
 	return nil
 }
@@ -309,10 +331,6 @@ func (t Type) IsType(i Type) bool {
 				if fn == nil {
 					return false
 				}
-
-				fd := GetDeclaration(bc)
-
-				fmt.Printf("Compare with %s\n", fd.String())
 			}
 
 			return true

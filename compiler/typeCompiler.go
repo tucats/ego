@@ -22,7 +22,7 @@ func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) 
 		return datatypes.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
 	}
 
-	baseType, err := c.parseType(false)
+	baseType, err := c.parseType(name, false)
 	if err != nil {
 		return datatypes.UndefinedType, err
 	}
@@ -33,15 +33,14 @@ func (c *Compiler) typeCompiler(name string) (datatypes.Type, *errors.EgoError) 
 	return typeInfo, nil
 }
 
-func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) {
+func (c *Compiler) parseType(name string, anonymous bool) (datatypes.Type, *errors.EgoError) {
 	found := false
-	name := ""
 
 	if !anonymous {
 		// Is it a previously defined type?
-		name = c.t.Peek(1)
-		if tokenizer.IsSymbol(name) {
-			if t, ok := c.Types[name]; ok {
+		typeName := c.t.Peek(1)
+		if tokenizer.IsSymbol(typeName) {
+			if t, ok := c.Types[typeName]; ok {
 				c.t.Advance(1)
 
 				return t, nil
@@ -64,7 +63,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 	if c.t.Peek(1) == "interface" && c.t.Peek(2) == "{" {
 		c.t.Advance(2)
 
-		t := datatypes.NewInterfaceType()
+		t := datatypes.NewInterfaceType(name)
 
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext("}") {
@@ -83,7 +82,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
 		c.t.Advance(2)
 
-		keyType, err := c.parseType(false)
+		keyType, err := c.parseType("", false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}
@@ -92,7 +91,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 			return datatypes.UndefinedType, c.newError(errors.ErrMissingBracket)
 		}
 
-		valueType, err := c.parseType(false)
+		valueType, err := c.parseType("", false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}
@@ -146,7 +145,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 			}
 
 			// Nope, parse a type.
-			fieldType, err := c.parseType(false)
+			fieldType, err := c.parseType("", false)
 			if err != nil {
 				return datatypes.UndefinedType, err
 			}
@@ -163,7 +162,7 @@ func (c *Compiler) parseType(anonymous bool) (datatypes.Type, *errors.EgoError) 
 	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
 		c.t.Advance(2)
 
-		valueType, err := c.parseType(false)
+		valueType, err := c.parseType("", false)
 		if err != nil {
 			return datatypes.UndefinedType, err
 		}

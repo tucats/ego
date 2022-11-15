@@ -277,7 +277,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	// we don't store this away, so it's discarded and we ignore any error. This
 	// should be done better, later on.
 	for {
-		theType, err := c.parseType(false)
+		theType, err := c.parseType("", false)
 		if !errors.Nil(err) {
 			break
 		}
@@ -386,7 +386,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 
 			// There must be a type declaration that follows. This returns a model which
 			// is the "zero value" for the declared type.
-			theType, err := c.parseType(false)
+			theType, err := c.parseType("", false)
 
 			if !errors.Nil(err) {
 				return nil, false, c.newError(err)
