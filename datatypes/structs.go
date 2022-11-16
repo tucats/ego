@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -170,6 +171,12 @@ func (s EgoStruct) ToMap() map[string]interface{} {
 // Store a value in the structure under the given name. This ignores type safety,
 // static, or readonly attributes, so be VERY sure the value is the right type!
 func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
+	if s == nil {
+		ui.Log(ui.InfoLogger, "Fatal error - null struct pointer in SetAlways")
+
+		return s
+	}
+
 	s.fields[name] = value
 
 	return s

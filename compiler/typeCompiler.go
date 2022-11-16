@@ -144,13 +144,30 @@ func (c *Compiler) parseType(name string, anonymous bool) (datatypes.Type, *erro
 				continue
 			}
 
-			// Nope, parse a type.
+			// Nope, parse a type. This can include multiple field names, all
+			// separated by commas before the actual type definition. So scoop
+			// up the names first, and then use each one on the list against
+			// the type definition.
+			fieldNames := make([]string, 1)
+			fieldNames[0] = name
+
+			for c.t.IsNext(",") {
+				nextField := c.t.Next()
+				if !tokenizer.IsSymbol(nextField) {
+					return datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
+				}
+
+				fieldNames = append(fieldNames, nextField)
+			}
+
 			fieldType, err := c.parseType("", false)
 			if err != nil {
 				return datatypes.UndefinedType, err
 			}
 
-			t.DefineField(name, fieldType)
+			for _, fieldName := range fieldNames {
+				t.DefineField(fieldName, fieldType)
+			}
 
 			c.t.IsNext(",")
 		}

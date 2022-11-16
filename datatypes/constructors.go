@@ -18,11 +18,10 @@ var StructType = Type{
 }
 
 var InterfaceType = Type{
-	name:       "interface{}",
-	kind:       InterfaceKind,
-	keyType:    nil,
-	valueType:  nil,
-	implements: map[string]bool{},
+	name:      "interface{}",
+	kind:      InterfaceKind,
+	keyType:   nil,
+	valueType: nil,
 }
 
 var ErrorType = Type{
@@ -144,10 +143,9 @@ func Map(key, value Type) Type {
 // can later add additional fields using the AddField method.
 func Structure(fields ...Field) Type {
 	t := Type{
-		name:       "struct",
-		kind:       StructKind,
-		fields:     map[string]Type{},
-		implements: map[string]bool{},
+		name:   "struct",
+		kind:   StructKind,
+		fields: map[string]Type{},
 	}
 
 	for _, field := range fields {

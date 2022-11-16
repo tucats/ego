@@ -62,20 +62,21 @@ const (
 )
 
 type Type struct {
-	name       string
-	pkg        string
-	kind       int
-	fields     map[string]Type
-	functions  map[string]interface{}
-	implements map[string]bool
-	keyType    *Type
-	valueType  *Type
+	name      string
+	pkg       string
+	kind      int
+	fields    map[string]Type
+	functions map[string]interface{}
+	keyType   *Type
+	valueType *Type
 }
 
 type Field struct {
 	Name string
 	Type Type
 }
+
+var implements map[string]bool
 
 var validationLock sync.Mutex
 
@@ -93,7 +94,7 @@ func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 
 	// Have we already checked this type once before? If so, use the cached
 	// value if it previously was valid.
-	if i.implements[t.name] {
+	if implements[t.name+"::"+i.name] {
 		return nil
 	}
 
@@ -123,11 +124,11 @@ func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 	// First time checking this type object, let's record that we validated
 	// it against the interface type. Make a new map if needed, and set the
 	// cache value.
-	if i.implements == nil {
-		i.implements = map[string]bool{}
+	if implements == nil {
+		implements = map[string]bool{}
 	}
 
-	i.implements[t.name] = true
+	implements[t.name+"::"+i.name] = true
 
 	return nil
 }

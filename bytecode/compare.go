@@ -10,8 +10,9 @@ import (
 // equalByteCode implements the Equal opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
@@ -107,8 +108,9 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 // notEqualByteCode implements the NotEqual opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
@@ -189,8 +191,9 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 // greaterThanByteCode implements the GreaterThan opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
@@ -248,11 +251,13 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // greaterThanOrEqualByteCode implements the GreaterThanOrEqual
-//  opcode
+//
+//	opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
@@ -312,8 +317,9 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 // lessThanByteCode implements the LessThan opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
@@ -376,8 +382,9 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 // opcode
 //
 // Inputs:
-//    stack+0    - The item to be compared
-//    stack+1    - The item to compare to
+//
+//	stack+0    - The item to be compared
+//	stack+1    - The item to compare to
 //
 // The top two values are popped from the stack,
 // and a type-specific test for equality is done.
