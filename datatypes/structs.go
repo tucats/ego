@@ -20,7 +20,7 @@ type EgoStruct struct {
 }
 
 func NewStruct(t Type) *EgoStruct {
-	// IF this is a user type, get the base type.
+	// If this is a user type, get the base type.
 	typeName := ""
 	baseType := t
 
@@ -42,7 +42,7 @@ func NewStruct(t Type) *EgoStruct {
 
 	// If there are fields defined, this is static.
 	static := true
-	if baseType.fields == nil || len(baseType.fields) == 0 {
+	if len(baseType.fields) == 0 {
 		static = false
 	}
 

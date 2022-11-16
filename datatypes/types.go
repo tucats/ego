@@ -76,6 +76,11 @@ type Field struct {
 	Type Type
 }
 
+// This map caches whether a given type implements a given interface.
+// Initially this is not known, but after the first validation, the
+// result is stored here to accelerate any subsequent evaluations.
+// The cache consists of a map for each type::interface pair, and
+// a mutex to ensure serialized access to this cache.
 var implements map[string]bool
 
 var validationLock sync.Mutex
@@ -274,14 +279,18 @@ func (t Type) IsPointer() bool {
 // types. This is used to relax type checking for array initializers,
 // for example.
 func (t Type) IsIntegerType() bool {
-	return t.IsType(ByteType) || t.IsType(IntType) || t.IsType(Int32Type) || t.IsType(Int64Type)
+	kind := t.kind
+
+	return kind == ByteKind || kind == IntKind || kind == Int32Kind || kind == Int64Kind
 }
 
 // IsFloatType returns true if the type represents any of the floating
 // point types. This is used to relax type checking for array initializers,
 // for example.
 func (t Type) IsFloatType() bool {
-	return t.IsType(Float32Type) || t.IsType(Float64Type)
+	kind := t.kind
+
+	return kind == Float32Kind || kind == Float64Kind
 }
 
 // Return true if this type is the same as the provided type.
