@@ -509,6 +509,76 @@ func (t Type) Name() string {
 	return t.name
 }
 
+// Return the kind of the type passed in. All pointers are reported
+// as a pointer type, without the pointer designation.
+
+func KindOf(i interface{}) int {
+	switch v := i.(type) {
+	case *interface{}, **sync.WaitGroup, **sync.Mutex, *string:
+		return PointerKind
+
+	case *bool, *int, *int32, *byte, *int64:
+		return PointerKind
+
+	case *float32, *float64:
+		return PointerKind
+
+	case *sync.WaitGroup:
+		return WaitGroupKind
+
+	case *sync.Mutex:
+		return MutexKind
+
+	case bool:
+		return BoolKind
+
+	case byte:
+		return ByteKind
+
+	case int32:
+		return Int32Kind
+
+	case int:
+		return IntKind
+
+	case int64:
+		return Int64Kind
+
+	case float32:
+		return Float32Kind
+
+	case float64:
+		return Float64Kind
+
+	case string:
+		return StringKind
+
+	case EgoPackage:
+		if t, ok := GetMetadata(v, TypeMDKey); ok {
+			if t, ok := t.(Type); ok {
+				return t.kind
+			}
+		}
+
+		return UndefinedKind
+
+	case *EgoPackage:
+		return PackageKind
+
+	case *EgoMap:
+		return MapKind
+
+	case *EgoStruct:
+		return StructKind
+
+	case *Channel:
+		return PointerKind
+
+	default:
+		return InterfaceKind
+	}
+}
+
 // TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns the associated type specification, such as datatypes.intKind
 // or datatypes.stringKind.

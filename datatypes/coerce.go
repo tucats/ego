@@ -314,14 +314,14 @@ func Coerce(v interface{}, model interface{}) interface{} {
 // Normalize accepts two different values and promotes them to
 // the most compatable format.
 func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
-	t1 := TypeOf(v1).Kind()
-	t2 := TypeOf(v2).Kind()
+	kind1 := KindOf(v1)
+	kind2 := KindOf(v2)
 
-	if t1 == t2 {
+	if kind1 == kind2 {
 		return v1, v2
 	}
 
-	if t1 < t2 {
+	if kind1 < kind2 {
 		v1 = Coerce(v1, v2)
 	} else {
 		v2 = Coerce(v2, v1)
