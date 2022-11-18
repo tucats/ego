@@ -15,7 +15,7 @@ var timeType *datatypes.Type
 func initializeType() {
 	if timeType == nil {
 		structType := datatypes.Structure()
-		structType.DefineField("time", datatypes.InterfaceType)
+		structType.DefineField("time", &datatypes.InterfaceType)
 
 		t := datatypes.TypeDefinition("time.Time", structType)
 		t.DefineFunction("Add", TimeAdd)
@@ -23,7 +23,7 @@ func initializeType() {
 		t.DefineFunction("SleepUntil", TimeSleep)
 		t.DefineFunction("String", TimeString)
 		t.DefineFunction("Sub", TimeSub)
-		timeType = &t
+		timeType = t
 	}
 }
 
@@ -183,7 +183,7 @@ func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
 func MakeTime(t *time.Time) interface{} {
 	initializeType()
 
-	r := datatypes.NewStruct(*timeType)
+	r := datatypes.NewStruct(timeType)
 	_ = r.Set("time", t)
 
 	r.SetReadonly(true)

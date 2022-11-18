@@ -68,7 +68,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
 		case http.MethodPost:
-			args := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+			args := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 			_, _ = args.Set("name", u.Name)
 			_, _ = args.Set("password", u.Password)
 

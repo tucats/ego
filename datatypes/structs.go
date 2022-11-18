@@ -11,7 +11,7 @@ import (
 )
 
 type EgoStruct struct {
-	typeDef      Type
+	typeDef      *Type
 	typeName     string
 	static       bool
 	readonly     bool
@@ -19,7 +19,7 @@ type EgoStruct struct {
 	fields       map[string]interface{}
 }
 
-func NewStruct(t Type) *EgoStruct {
+func NewStruct(t *Type) *EgoStruct {
 	// If this is a user type, get the base type.
 	typeName := ""
 	baseType := t
@@ -29,7 +29,7 @@ func NewStruct(t Type) *EgoStruct {
 
 		// If there are receiver functions in the type definition,
 		// make them part of this structure as well.
-		baseType = *baseType.BaseType()
+		baseType = baseType.BaseType()
 		if baseType.functions == nil {
 			baseType.functions = t.functions
 		}
@@ -105,7 +105,7 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	return &result
 }
 
-func (s *EgoStruct) GetType() Type {
+func (s *EgoStruct) GetType() *Type {
 	return s.typeDef
 }
 
@@ -129,7 +129,7 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 
 // This is used only by the unit testing to explicitly set the type
 // of a structure. It changes no data, only updates the type value.
-func (s *EgoStruct) AsType(t Type) *EgoStruct {
+func (s *EgoStruct) AsType(t *Type) *EgoStruct {
 	s.typeDef = t
 	s.typeName = t.name
 
@@ -250,7 +250,7 @@ func (s EgoStruct) FieldNamesArray() *EgoArray {
 		keyValues[i] = v
 	}
 
-	return NewArrayFromArray(StringType, keyValues)
+	return NewArrayFromArray(&StringType, keyValues)
 }
 
 func (s EgoStruct) TypeString() string {
@@ -326,7 +326,7 @@ func (s EgoStruct) Reflect() *EgoStruct {
 			}
 		}
 
-		m["methods"] = NewArrayFromArray(StringType, names)
+		m["methods"] = NewArrayFromArray(&StringType, names)
 	}
 
 	m["istype"] = false

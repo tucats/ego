@@ -120,19 +120,19 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 	platformType := datatypes.Structure(
 		datatypes.Field{
 			Name: "os",
-			Type: datatypes.StringType,
+			Type: &datatypes.StringType,
 		},
 		datatypes.Field{
 			Name: "arch",
-			Type: datatypes.StringType,
+			Type: &datatypes.StringType,
 		},
 		datatypes.Field{
 			Name: "go",
-			Type: datatypes.StringType,
+			Type: &datatypes.StringType,
 		},
 		datatypes.Field{
 			Name: "cpus",
-			Type: datatypes.IntType,
+			Type: &datatypes.IntType,
 		},
 	)
 

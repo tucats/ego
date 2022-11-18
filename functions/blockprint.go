@@ -34,7 +34,7 @@ func BlockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 func BlockFonts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	initFonts()
 
-	result := datatypes.NewArray(datatypes.StringType, len(fontSet))
+	result := datatypes.NewArray(&datatypes.StringType, len(fontSet))
 
 	for idx, name := range fontSet {
 		_ = result.Set(idx, name)

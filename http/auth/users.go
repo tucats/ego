@@ -364,7 +364,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return nil, errors.New(errors.ErrArgumentCount)
 	}
 
-	r := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	r := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
 	t, ok := AuthService.ReadUser(name)
@@ -372,7 +372,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return r, nil
 	}
 
-	permArray := datatypes.NewArray(datatypes.StringType, len(t.Permissions))
+	permArray := datatypes.NewArray(&datatypes.StringType, len(t.Permissions))
 	for i, perm := range t.Permissions {
 		permArray.SetAlways(i, perm)
 	}

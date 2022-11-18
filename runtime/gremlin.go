@@ -83,7 +83,7 @@ func initializeGremlinType() {
 			"AsJSON":   AsJSON,
 		})
 
-		gremlinType = &t
+		gremlinType = t
 	}
 }
 
@@ -120,7 +120,7 @@ func GremlinOpen(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 
 	initializeGremlinType()
 
-	r := datatypes.NewStruct(*gremlinType)
+	r := datatypes.NewStruct(gremlinType)
 
 	_ = r.Set(clientFieldName, client)
 	r.SetReadonly(true)

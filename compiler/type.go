@@ -37,7 +37,7 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 	return datatypes.InstanceOfType(theType), nil
 }
 
-func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
+func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 	if c.t.Peek(1) == "*" {
 		c.t.Advance(1)
 		t, err := c.parseTypeSpec()
@@ -57,14 +57,14 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 
 		keyType, err := c.parseTypeSpec()
 		if err != nil {
-			return datatypes.UndefinedType, err
+			return &datatypes.UndefinedType, err
 		}
 
 		c.t.IsNext("]")
 
 		valueType, err := c.parseTypeSpec()
 		if err != nil {
-			return datatypes.UndefinedType, err
+			return &datatypes.UndefinedType, err
 		}
 
 		return datatypes.Map(keyType, valueType), nil
@@ -95,7 +95,7 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 		return typeDef, nil
 	}
 
-	return datatypes.UndefinedType, nil
+	return &datatypes.UndefinedType, nil
 }
 
 // Given a string expression of a type specification, compile it asn return the
@@ -104,7 +104,7 @@ func (c *Compiler) parseTypeSpec() (datatypes.Type, *errors.EgoError) {
 //
 // If the string starts with the keyword `type` followed by a type name, then
 // the resulting value is a type definition of the given name.
-func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
+func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 	typeCompiler := New("type compiler")
 	typeCompiler.t = tokenizer.New(source)
 	name := ""
@@ -113,13 +113,13 @@ func CompileTypeSpec(source string) (datatypes.Type, *errors.EgoError) {
 	if typeCompiler.t.IsNext("type") {
 		name = typeCompiler.t.Next()
 		if !tokenizer.IsSymbol(name) {
-			return datatypes.Type{}, errors.New(errors.ErrInvalidSymbolName).Context(name)
+			return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name)
 		}
 
 		if typeCompiler.t.IsNext(".") {
 			name2 := typeCompiler.t.Next()
 			if !tokenizer.IsSymbol(name2) {
-				return datatypes.Type{}, errors.New(errors.ErrInvalidSymbolName).Context(name2)
+				return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name2)
 			}
 
 			name = name + "." + name2

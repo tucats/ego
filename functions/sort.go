@@ -11,7 +11,7 @@ import (
 // SortStrings implements the sort.Strings function.
 func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.StringType) {
+		if array.ValueType().IsType(&datatypes.StringType) {
 			err := array.Sort()
 
 			return array, err
@@ -26,7 +26,7 @@ func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // SortBytes implements the sort.Bytes function.
 func SortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.ByteType) {
+		if array.ValueType().IsType(&datatypes.ByteType) {
 			err := array.Sort()
 
 			return array, err
@@ -41,7 +41,7 @@ func SortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // SortInts implements the sort.Ints function.
 func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.IntType) {
+		if array.ValueType().IsType(&datatypes.IntType) {
 			err := array.Sort()
 
 			return array, err
@@ -56,7 +56,7 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // SortInt32s implements the sort.Int32s function.
 func SortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.Int32Type) {
+		if array.ValueType().IsType(&datatypes.Int32Type) {
 			err := array.Sort()
 
 			return array, err
@@ -71,7 +71,7 @@ func SortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // SortInt64s implements the sort.Int64s function.
 func SortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.Int64Type) {
+		if array.ValueType().IsType(&datatypes.Int64Type) {
 			err := array.Sort()
 
 			return array, err
@@ -86,7 +86,7 @@ func SortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // SortFloats implements the sort.Floats function.
 func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.Float64Type) {
+		if array.ValueType().IsType(&datatypes.Float64Type) {
 			err := array.Sort()
 
 			return array, err
@@ -101,7 +101,7 @@ func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // SortFloat32s implements the sort.Float32s function.
 func SortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.Float32Type) {
+		if array.ValueType().IsType(&datatypes.Float32Type) {
 			err := array.Sort()
 
 			return array, err
@@ -116,7 +116,7 @@ func SortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // SortFloat64s implements the sort.Float64s function.
 func SortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if array, ok := args[0].(*datatypes.EgoArray); ok {
-		if array.ValueType().IsType(datatypes.Float64Type) {
+		if array.ValueType().IsType(&datatypes.Float64Type) {
 			err := array.Sort()
 
 			return array, err
@@ -169,7 +169,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := datatypes.NewArray(datatypes.ByteType, len(array))
+		resultArray := datatypes.NewArray(&datatypes.ByteType, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -186,7 +186,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Ints(intArray)
 
-		resultArray := datatypes.NewArray(datatypes.IntType, len(array))
+		resultArray := datatypes.NewArray(&datatypes.IntType, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -203,7 +203,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := datatypes.NewArray(datatypes.Int32Type, len(array))
+		resultArray := datatypes.NewArray(&datatypes.Int32Type, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -220,7 +220,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := datatypes.NewArray(datatypes.Int64Type, len(array))
+		resultArray := datatypes.NewArray(&datatypes.Int64Type, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -237,7 +237,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Slice(floatArray, func(i, j int) bool { return floatArray[i] < floatArray[j] })
 
-		resultArray := datatypes.NewArray(datatypes.Float64Type, len(array))
+		resultArray := datatypes.NewArray(&datatypes.Float64Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)
@@ -254,7 +254,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Float64s(floatArray)
 
-		resultArray := datatypes.NewArray(datatypes.Float64Type, len(array))
+		resultArray := datatypes.NewArray(&datatypes.Float64Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)
@@ -271,7 +271,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 		sort.Strings(stringArray)
 
-		resultArray := datatypes.NewArray(datatypes.StringType, len(array))
+		resultArray := datatypes.NewArray(&datatypes.StringType, len(array))
 
 		for n, i := range stringArray {
 			_ = resultArray.Set(n, i)

@@ -9,7 +9,7 @@ import (
 
 // Compile an initializer, given a type definition. This can be a literal
 // initializer in braces or a simple value.
-func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
+func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 	if !c.t.IsNext("{") {
 		// It's not an initializer constant, but it could still be an expression. Try the
 		// top-level expression compiler.
@@ -18,7 +18,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 
 	base := t
 	if t.IsTypeDefinition() {
-		base = *t.BaseType()
+		base = t.BaseType()
 	}
 
 	switch base.Kind() {
@@ -86,7 +86,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 
 			// Note we compile the value using ourselves, to allow for nested
 			// type specifications.
-			err = c.compileInitializer(*base.BaseType())
+			err = c.compileInitializer(base.BaseType())
 			if !errors.Nil(err) {
 				return err
 			}
@@ -113,7 +113,7 @@ func (c *Compiler) compileInitializer(t datatypes.Type) *errors.EgoError {
 
 		for !c.t.IsNext("}") {
 			// Values separated by commas.
-			err := c.compileInitializer(*base.BaseType())
+			err := c.compileInitializer(base.BaseType())
 			if !errors.Nil(err) {
 				return err
 			}

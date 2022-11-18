@@ -36,21 +36,21 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				} else {
 					if t, ok := i.(int); ok {
 						dataType := datatypes.TypeOf(t)
-						if dataType.IsType(datatypes.IntType) {
+						if dataType.IsType(&datatypes.IntType) {
 							_, ok = v.(int)
-						} else if dataType.IsType(datatypes.Int32Type) {
+						} else if dataType.IsType(&datatypes.Int32Type) {
 							_, ok = v.(int32)
-						} else if dataType.IsType(datatypes.Int64Type) {
+						} else if dataType.IsType(&datatypes.Int64Type) {
 							_, ok = v.(int64)
-						} else if dataType.IsType(datatypes.ByteType) {
+						} else if dataType.IsType(&datatypes.ByteType) {
 							_, ok = v.(byte)
-						} else if dataType.IsType(datatypes.BoolType) {
+						} else if dataType.IsType(&datatypes.BoolType) {
 							_, ok = v.(bool)
-						} else if dataType.IsType(datatypes.StringType) {
+						} else if dataType.IsType(&datatypes.StringType) {
 							_, ok = v.(string)
-						} else if dataType.IsType(datatypes.Float32Type) {
+						} else if dataType.IsType(&datatypes.Float32Type) {
 							_, ok = v.(float32)
-						} else if dataType.IsType(datatypes.Float64Type) {
+						} else if dataType.IsType(&datatypes.Float64Type) {
 							_, ok = v.(float64)
 						} else {
 							ok = true
@@ -66,8 +66,8 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 			t := datatypes.GetType(i)
 
 			// If it's not interface type, check it out...
-			if !t.IsType(datatypes.InterfaceType) {
-				if t.IsType(datatypes.ErrorType) {
+			if !t.IsType(&datatypes.InterfaceType) {
+				if t.IsType(&datatypes.ErrorType) {
 					v = errors.New(errors.ErrPanic).Context(v)
 				}
 
@@ -78,36 +78,36 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 				// *chan and chan will be considered valid matches
 				if actualType.Kind() == datatypes.PointerKind && actualType.BaseType().Kind() == datatypes.ChanKind {
-					actualType = *actualType.BaseType()
+					actualType = actualType.BaseType()
 				}
 
 				if actualType.Kind() == datatypes.TypeKind && t.Kind() != datatypes.InterfaceKind {
-					actualType = *actualType.BaseType()
+					actualType = actualType.BaseType()
 				}
 
 				if !actualType.IsType(t) {
 					return c.newError(errors.ErrArgumentType)
 				}
 
-				if t.IsType(datatypes.IntType) {
+				if t.IsType(&datatypes.IntType) {
 					v = datatypes.GetInt(v)
-				} else if t.IsType(datatypes.Int32Type) {
+				} else if t.IsType(&datatypes.Int32Type) {
 					v = datatypes.GetInt32(v)
-				} else if t.IsType(datatypes.Int64Type) {
+				} else if t.IsType(&datatypes.Int64Type) {
 					v = datatypes.GetInt64(v)
-				} else if t.IsType(datatypes.ByteType) {
+				} else if t.IsType(&datatypes.ByteType) {
 					v = datatypes.GetByte(v)
-				} else if t.IsType(datatypes.Float32Type) {
+				} else if t.IsType(&datatypes.Float32Type) {
 					v = datatypes.GetFloat32(v)
-				} else if t.IsType(datatypes.Float32Type) {
+				} else if t.IsType(&datatypes.Float32Type) {
 					v = datatypes.GetFloat32(v)
-				} else if t.IsType(datatypes.Float32Type) {
+				} else if t.IsType(&datatypes.Float32Type) {
 					v = datatypes.GetFloat32(v)
-				} else if t.IsType(datatypes.Float64Type) {
+				} else if t.IsType(&datatypes.Float64Type) {
 					v = datatypes.GetFloat64(v)
-				} else if t.IsType(datatypes.StringType) {
+				} else if t.IsType(&datatypes.StringType) {
 					v = datatypes.GetString(v)
-				} else if t.IsType(datatypes.BoolType) {
+				} else if t.IsType(&datatypes.BoolType) {
 					v = datatypes.GetBool(v)
 				}
 			} else {
@@ -115,7 +115,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				// verify the value against the interface entries.
 				if t.FunctionNameList() != "" {
 					vt := datatypes.TypeOf(v)
-					if e := t.ValidateFunctions(&vt); !errors.Nil(e) {
+					if e := t.ValidateFunctions(vt); !errors.Nil(e) {
 						return c.newError(e)
 					}
 				}
@@ -174,25 +174,25 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v = vv
-	} else if t.IsType(datatypes.ErrorType) {
+	} else if t.IsType(&datatypes.ErrorType) {
 
-	} else if t.IsType(datatypes.IntType) {
+	} else if t.IsType(&datatypes.IntType) {
 		v = datatypes.GetInt(v)
-	} else if t.IsType(datatypes.Int32Type) {
+	} else if t.IsType(&datatypes.Int32Type) {
 		v = datatypes.GetInt32(v)
-	} else if t.IsType(datatypes.Int64Type) {
+	} else if t.IsType(&datatypes.Int64Type) {
 		v = datatypes.GetInt64(v)
-	} else if t.IsType(datatypes.Float64Type) {
+	} else if t.IsType(&datatypes.Float64Type) {
 		v = datatypes.GetFloat64(v)
-	} else if t.IsType(datatypes.Float32Type) {
+	} else if t.IsType(&datatypes.Float32Type) {
 		v = datatypes.GetFloat32(v)
-	} else if t.IsType(datatypes.ByteType) {
+	} else if t.IsType(&datatypes.ByteType) {
 		v = datatypes.GetByte(v)
-	} else if t.IsType(datatypes.BoolType) {
+	} else if t.IsType(&datatypes.BoolType) {
 		v = datatypes.GetBool(v)
-	} else if t.IsType(datatypes.StringType) {
+	} else if t.IsType(&datatypes.StringType) {
 		v = datatypes.GetString(v)
-	} else if t.IsType(datatypes.InterfaceType) || t.IsUndefined() {
+	} else if t.IsType(&datatypes.InterfaceType) || t.IsUndefined() {
 		// No work to do here.
 	} else {
 		var base []interface{}
@@ -203,7 +203,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 			base = v.([]interface{})
 		}
 
-		elementType := *t.BaseType()
+		elementType := t.BaseType()
 		array := datatypes.NewArray(elementType, len(base))
 		model := datatypes.InstanceOfType(elementType)
 
@@ -219,7 +219,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func (b ByteCode) NeedsCoerce(kind datatypes.Type) bool {
+func (b ByteCode) NeedsCoerce(kind *datatypes.Type) bool {
 	// If there are no instructions before this, no coerce is appropriate.
 	pos := b.Mark()
 	if pos == 0 {

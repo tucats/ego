@@ -21,12 +21,13 @@ type Range struct {
 // rangeInitByteCode implements the RangeInit opcode
 //
 // Inputs:
-//    operand    - an array of two strings containing
-//                 the names of the index and value
-//                 variables.
-//    stack+0    - The item to be "ranged" is stored
-//                 on the stack. This can be a map,
-//                 an array, a structure, or a channel
+//
+//	operand    - an array of two strings containing
+//	             the names of the index and value
+//	             variables.
+//	stack+0    - The item to be "ranged" is stored
+//	             on the stack. This can be a map,
+//	             an array, a structure, or a channel
 //
 // The RangeInit opcode sets up the runtime context for
 // a for..range operation. The index and value variables
@@ -104,21 +105,22 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 // rangeNextByteCode implements the RangeNext opcode
 //
 // Inputs:
-//    operand    - The bytecode address to branch to
-//                 when the range is exhausted.
+//
+//	operand    - The bytecode address to branch to
+//	             when the range is exhausted.
 //
 // The RangeNext opcode fetches the top of the range
 // stack from the runtime context, and evaluates the
 // type of the item being ranged. For each type, the
 // operations are similar:
 //
-// 1. Determine if the index is already outside the
-//    range, in which case the branch is taken. The
-//    topmost item on the range stack is discarded.
+//  1. Determine if the index is already outside the
+//     range, in which case the branch is taken. The
+//     topmost item on the range stack is discarded.
 //
-// 2. The range is incremented and value is read.
-//    The value (map member, array index, channel)
-//    is stored in the value variable. The index
+//  2. The range is incremented and value is read.
+//     The value (map member, array index, channel)
+//     is stored in the value variable. The index
 //     number is also stored in the index variable.
 func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError

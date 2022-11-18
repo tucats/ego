@@ -9,13 +9,13 @@ import (
 
 type FunctionParameter struct {
 	Name     string
-	ParmType Type
+	ParmType *Type
 }
 
 type FunctionDeclaration struct {
 	Name        string
 	Parameters  []FunctionParameter
-	ReturnTypes []Type
+	ReturnTypes []*Type
 }
 
 // dictionary is a descriptive dictionary that shows the declaration string for

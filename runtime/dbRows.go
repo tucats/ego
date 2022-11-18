@@ -26,7 +26,7 @@ func initDBRowsTypeDef() {
 		t.DefineFunction("Close", rowsClose)
 		t.DefineFunction("Headings", rowsHeadings)
 
-		dbRowsTypeDef = &t
+		dbRowsTypeDef = t
 	}
 }
 
@@ -63,7 +63,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 
 	initDBRowsTypeDef()
 
-	result := datatypes.NewStruct(*dbRowsTypeDef)
+	result := datatypes.NewStruct(dbRowsTypeDef)
 	result.SetAlways(rowsFieldName, rows)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(dbFieldName, this)
@@ -148,5 +148,5 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		return functions.MultiValueReturn{Value: []interface{}{datatypes.NewMapFromMap(rowMap), nil}}, nil
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewArrayFromArray(datatypes.InterfaceType, rowValues), nil}}, nil
+	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewArrayFromArray(&datatypes.InterfaceType, rowValues), nil}}, nil
 }

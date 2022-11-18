@@ -84,7 +84,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		// Sort the member list and forge it into an Ego array
-		members := datatypes.NewArrayFromArray(datatypes.StringType, util.MakeSortedArray(memberList))
+		members := datatypes.NewArrayFromArray(&datatypes.StringType, util.MakeSortedArray(memberList))
 
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members
@@ -172,6 +172,9 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case *datatypes.EgoStruct:
 		return v.TypeString(), nil
 
+	case datatypes.EgoStruct:
+		return v.TypeString(), nil
+
 	case nil:
 		return "nil", nil
 
@@ -182,6 +185,18 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		return "chan", nil
 
 	case datatypes.Type:
+		typeName := v.String()
+
+		space := strings.Index(typeName, " ")
+		if space > 0 {
+			typeName = typeName[space+1:]
+		}
+
+		fmt.Println("DEBUG: dead code")
+
+		return "type " + typeName, nil
+
+	case *datatypes.Type:
 		typeName := v.String()
 
 		space := strings.Index(typeName, " ")
@@ -241,9 +256,9 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 // makeDeclaration constructs a native data structure describing a function declaration.
 func makeDeclaration(fd *datatypes.FunctionDeclaration) *datatypes.EgoStruct {
-	parameterType := datatypes.TypeDefinition(datatypes.NoName, datatypes.StructType)
-	parameterType.DefineField("name", datatypes.StringType)
-	parameterType.DefineField("type", datatypes.StringType)
+	parameterType := datatypes.TypeDefinition(datatypes.NoName, &datatypes.StructType)
+	parameterType.DefineField("name", &datatypes.StringType)
+	parameterType.DefineField("type", &datatypes.StringType)
 
 	parameters := datatypes.NewArray(parameterType, len(fd.Parameters))
 
@@ -265,7 +280,7 @@ func makeDeclaration(fd *datatypes.FunctionDeclaration) *datatypes.EgoStruct {
 
 	declaration["name"] = fd.Name
 	declaration["parameters"] = parameters
-	declaration["returns"] = datatypes.NewArrayFromArray(datatypes.StringType, returnTypes)
+	declaration["returns"] = datatypes.NewArrayFromArray(&datatypes.StringType, returnTypes)
 
 	return datatypes.NewStructFromMap(declaration)
 }

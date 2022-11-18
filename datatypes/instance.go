@@ -21,13 +21,13 @@ func NewInterfaceType(name string) *Type {
 
 // InstanceOfType accepts a kind type indicator, and returns the zero-value
 // model of that type. This only applies to base types.
-func InstanceOfType(t Type) interface{} {
+func InstanceOfType(t *Type) interface{} {
 	switch t.kind {
 	case StructKind:
 		return NewStruct(t)
 
 	case MapKind:
-		return NewMap(*t.keyType, *t.valueType)
+		return NewMap(t.keyType, t.valueType)
 
 	case ArrayKind:
 		return NewArray(t, 0)
@@ -76,17 +76,17 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 			superType = &StructType
 		}
 
-		return NewStruct(*superType)
+		return NewStruct(superType)
 	}
 
 	if t.kind == ArrayKind {
-		result := NewArray(*t.valueType, 0)
+		result := NewArray(t.valueType, 0)
 
 		return result
 	}
 
 	if t.kind == MapKind {
-		result := NewMap(*t.keyType, *t.valueType)
+		result := NewMap(t.keyType, t.valueType)
 
 		return result
 	}
@@ -97,5 +97,5 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 		return &result
 	}
 
-	return InstanceOfType(t)
+	return InstanceOfType(&t)
 }

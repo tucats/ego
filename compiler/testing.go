@@ -21,7 +21,7 @@ func initTestType() {
 		t := datatypes.TypeDefinition("Testing",
 			datatypes.Structure(datatypes.Field{
 				Name: "description",
-				Type: datatypes.StringType,
+				Type: &datatypes.StringType,
 			}))
 
 		// Define the type receiver functions
@@ -35,7 +35,7 @@ func initTestType() {
 		t.DefineFunction("Equal", TestEqual)
 		t.DefineFunction("NotEqual", TestNotEqual)
 
-		testType = &t
+		testType = t
 	}
 }
 
@@ -52,7 +52,7 @@ func (c *Compiler) testDirective() *errors.EgoError {
 	// the data field.
 	initTestType()
 
-	test := datatypes.NewStruct(*testType)
+	test := datatypes.NewStruct(testType)
 	test.SetAlways("description", testDescription)
 
 	padSize := 50 - len(testDescription)
@@ -257,6 +257,10 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	if len(args) == 3 {
 		return []interface{}{b, datatypes.GetString(args[2])}, nil
+	}
+
+	if !b {
+		fmt.Printf("DEBUG: args[0] = %v\n       args[1] = %v\n", args[0], args[1])
 	}
 
 	return b, nil

@@ -26,7 +26,7 @@ const (
 
 // For a given struct type, set it's type value in the metadata. If the
 // item is not a struct map then do no work.
-func SetType(m EgoPackage, t Type) {
+func SetType(m EgoPackage, t *Type) {
 	SetMetadata(m, TypeMDKey, t)
 }
 

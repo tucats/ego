@@ -182,7 +182,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.StringType, count)
+	r := datatypes.NewArray(&datatypes.StringType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, string(ch))
@@ -206,7 +206,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(datatypes.IntType, count)
+	r := datatypes.NewArray(&datatypes.IntType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, int(ch))
@@ -345,7 +345,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	}
 
 	// We need to store the result in a native Ego array.
-	r := datatypes.NewArray(datatypes.StringType, len(v))
+	r := datatypes.NewArray(&datatypes.StringType, len(v))
 
 	for i, n := range v {
 		err := r.Set(i, n)
@@ -362,7 +362,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	src := datatypes.GetString(args[0])
 	t := tokenizer.New(src)
 
-	r := datatypes.NewArray(datatypes.StringType, len(t.Tokens))
+	r := datatypes.NewArray(&datatypes.StringType, len(t.Tokens))
 
 	var err *errors.EgoError
 
@@ -379,7 +379,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	result := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	result := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 
 	patternMap, match := ParseURLPattern(datatypes.GetString(args[0]), datatypes.GetString(args[1]))
 	if !match {
@@ -402,16 +402,17 @@ func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 //
 // If the pattern is
 //
-//   "/services/debug/processes/{{ID}}"
+//	"/services/debug/processes/{{ID}}"
 //
 // and the url is
 //
-//   /services/debug/processses/1653
+//	/services/debug/processses/1653
 //
 // Then the result map will be
-//    map[string]interface{} {
-//             "ID" : 1653
-//    }
+//
+//	map[string]interface{} {
+//	         "ID" : 1653
+//	}
 func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 	urlParts := strings.Split(url, "/")
 	patternParts := strings.Split(pattern, "/")
@@ -511,7 +512,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	fields := strings.Fields(a)
 
-	result := datatypes.NewArray(datatypes.StringType, len(fields))
+	result := datatypes.NewArray(&datatypes.StringType, len(fields))
 
 	for idx, f := range fields {
 		_ = result.Set(idx, f)

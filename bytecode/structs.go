@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/tucats/ego/datatypes"
@@ -176,6 +177,10 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := destination.(type) {
 	case datatypes.Type:
+		fmt.Println("DEBUG: dead code")
+		a.DefineFunction(datatypes.GetString(index), v)
+
+	case *datatypes.Type:
 		a.DefineFunction(datatypes.GetString(index), v)
 
 	case *datatypes.EgoMap:

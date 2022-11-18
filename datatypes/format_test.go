@@ -15,7 +15,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "struct type",
-			arg:  TypeDefinition("bang", StructType),
+			arg:  TypeDefinition("bang", &StructType),
 			want: "T(bang struct)",
 		},
 		{
@@ -25,12 +25,12 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "array",
-			arg:  NewArrayFromArray(IntType, []interface{}{1, 2, 3}),
+			arg:  NewArrayFromArray(&IntType, []interface{}{1, 2, 3}),
 			want: "[1, 2, 3]",
 		},
 		{
 			name: "array type",
-			arg:  Array(IntType),
+			arg:  Array(&IntType),
 			want: "T([]int)",
 		},
 

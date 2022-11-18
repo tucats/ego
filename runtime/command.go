@@ -29,7 +29,7 @@ func initCommandTypeDef() {
 			"Run":    CommandRun,
 		})
 
-		commandTypeDef = &t
+		commandTypeDef = t
 	}
 }
 
@@ -42,7 +42,7 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	// Let's build the Ego instance of exec.Cmd
-	result := datatypes.NewStruct(*commandTypeDef)
+	result := datatypes.NewStruct(commandTypeDef)
 
 	strArray := make([]string, len(args))
 	for n, v := range args {
@@ -56,7 +56,7 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	_ = result.Set("Path", cmd.Path)
 
 	// Also store away the native argument list as an Ego array
-	a := datatypes.NewArray(datatypes.StringType, len(cmd.Args))
+	a := datatypes.NewArray(&datatypes.StringType, len(cmd.Args))
 	for n, v := range cmd.Args {
 		_ = a.Set(n, v)
 	}
@@ -159,7 +159,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		resultArray[n] = v
 	}
 
-	result := datatypes.NewArrayFromArray(datatypes.StringType, resultArray)
+	result := datatypes.NewArrayFromArray(&datatypes.StringType, resultArray)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return nil, nil
@@ -245,7 +245,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		resultArray[n] = v
 	}
 
-	result := datatypes.NewArrayFromArray(datatypes.StringType, resultArray)
+	result := datatypes.NewArrayFromArray(&datatypes.StringType, resultArray)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return result, nil

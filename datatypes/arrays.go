@@ -17,14 +17,14 @@ import (
 type EgoArray struct {
 	data      []interface{}
 	bytes     []byte
-	valueType Type
+	valueType *Type
 	immutable int
 }
 
 // Create a new empty array of the given type and size. The values of the array
 // members are all initialized to nil. Note special case for []byte which is stored
 // natively so it can be used with native Go methods that expect a byte array.
-func NewArray(valueType Type, size int) *EgoArray {
+func NewArray(valueType *Type, size int) *EgoArray {
 	if valueType.kind == ByteKind {
 		m := &EgoArray{
 			bytes:     make([]byte, size),
@@ -47,7 +47,7 @@ func NewArray(valueType Type, size int) *EgoArray {
 // NewArrayFromArray accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.
-func NewArrayFromArray(valueType Type, source []interface{}) *EgoArray {
+func NewArrayFromArray(valueType *Type, source []interface{}) *EgoArray {
 	if valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind {
 		m := &EgoArray{
 			bytes:     make([]byte, len(source)),
@@ -103,7 +103,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 // DeepEqual is a recursive compare with another Ego array. The recursive
 // compare is performed on each member of the array.
 func (a *EgoArray) DeepEqual(b *EgoArray) bool {
-	if a.valueType.IsType(InterfaceType) || b.valueType.IsType(InterfaceType) {
+	if a.valueType.IsType(&InterfaceType) || b.valueType.IsType(&InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
 	}
 
@@ -129,15 +129,15 @@ func (a *EgoArray) BaseArray() []interface{} {
 }
 
 // ValueType returns the base type of the array.
-func (a *EgoArray) ValueType() Type {
+func (a *EgoArray) ValueType() *Type {
 	return a.valueType
 }
 
 // Validate checks that all the members of the array are of a given
 // type. This is used to validate anonymous arrays for use as a typed
 // array.
-func (a *EgoArray) Validate(kind Type) *errors.EgoError {
-	if kind.IsType(InterfaceType) {
+func (a *EgoArray) Validate(kind *Type) *errors.EgoError {
+	if kind.IsType(&InterfaceType) {
 		return nil
 	}
 
@@ -208,8 +208,8 @@ func (a *EgoArray) Len() int {
 // given type. If the array already has a base type, you cannot set a new
 // one. This (along with the Validate() function) can be used to convert
 // an anonymous array to a typed array.
-func (a *EgoArray) SetType(i Type) *errors.EgoError {
-	if a.valueType.IsType(InterfaceType) {
+func (a *EgoArray) SetType(i *Type) *errors.EgoError {
+	if a.valueType.IsType(&InterfaceType) {
 		a.valueType = i
 
 		return nil

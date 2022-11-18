@@ -65,7 +65,7 @@ type Type struct {
 	name      string
 	pkg       string
 	kind      int
-	fields    map[string]Type
+	fields    map[string]*Type
 	functions map[string]interface{}
 	keyType   *Type
 	valueType *Type
@@ -73,7 +73,7 @@ type Type struct {
 
 type Field struct {
 	Name string
-	Type Type
+	Type *Type
 }
 
 // This map caches whether a given type implements a given interface.
@@ -294,10 +294,10 @@ func (t Type) IsFloatType() bool {
 }
 
 // Return true if this type is the same as the provided type.
-func (t Type) IsType(i Type) bool {
+func (t Type) IsType(i *Type) bool {
 	// If one of these is just a type wrapper, we can compare the underlying type.
 	if i.kind == TypeKind {
-		i = *i.valueType
+		i = i.valueType
 	}
 
 	// Basic kind match. Note special case for interface matching
@@ -318,13 +318,13 @@ func (t Type) IsType(i Type) bool {
 	}
 
 	if t.keyType != nil && i.keyType != nil {
-		if !t.keyType.IsType(*i.keyType) {
+		if !t.keyType.IsType(i.keyType) {
 			return false
 		}
 	}
 
 	if i.kind != InterfaceKind && t.valueType != nil && i.valueType != nil {
-		if !t.valueType.IsType(*i.valueType) {
+		if !t.valueType.IsType(i.valueType) {
 			return false
 		}
 	}
@@ -357,11 +357,11 @@ func (t Type) IsType(i Type) bool {
 				if valueFieldType, found := i.fields[fieldName]; found {
 					// If either one is a type, find the underlying type(s)
 					for typeFieldType.kind == TypeKind {
-						typeFieldType = *typeFieldType.valueType
+						typeFieldType = typeFieldType.valueType
 					}
 
 					for valueFieldType.kind == TypeKind {
-						valueFieldType = *valueFieldType.valueType
+						valueFieldType = valueFieldType.valueType
 					}
 
 					// Special case of letting float64/int issues slide?
@@ -416,7 +416,7 @@ func (t *Type) DefineFunctions(functions map[string]interface{}) {
 // For a given type, add a new field of the given name and type. Returns
 // an error if the current type is not a structure, or if the field already
 // is defined.
-func (t *Type) DefineField(name string, ofType Type) *Type {
+func (t *Type) DefineField(name string, ofType *Type) *Type {
 	kind := t.kind
 	if kind == TypeKind {
 		kind = t.BaseType().kind
@@ -427,7 +427,7 @@ func (t *Type) DefineField(name string, ofType Type) *Type {
 	}
 
 	if t.fields == nil {
-		t.fields = map[string]Type{}
+		t.fields = map[string]*Type{}
 	} else {
 		if _, found := t.fields[name]; found {
 			panic("attempt to define a duplicate field for a type")
@@ -458,18 +458,18 @@ func (t Type) FieldNames() []string {
 
 // Retrieve the type of a field by name. The current type must
 // be a structure type, and the field name must exist.
-func (t Type) Field(name string) (Type, *errors.EgoError) {
+func (t Type) Field(name string) (*Type, *errors.EgoError) {
 	if t.kind != StructKind {
-		return UndefinedType, errors.New(errors.ErrInvalidStruct)
+		return &UndefinedType, errors.New(errors.ErrInvalidStruct)
 	}
 
 	if t.fields == nil {
-		return UndefinedType, errors.New(errors.ErrInvalidField)
+		return &UndefinedType, errors.New(errors.ErrInvalidField)
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return UndefinedType, errors.New(errors.ErrInvalidField)
+		return &UndefinedType, errors.New(errors.ErrInvalidField)
 	}
 
 	return ofType, nil
@@ -591,7 +591,7 @@ func KindOf(i interface{}) int {
 // TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns the associated type specification, such as datatypes.intKind
 // or datatypes.stringKind.
-func TypeOf(i interface{}) Type {
+func TypeOf(i interface{}) *Type {
 	switch v := i.(type) {
 	case *interface{}:
 		baseType := TypeOf(*v)
@@ -599,73 +599,73 @@ func TypeOf(i interface{}) Type {
 		return Pointer(baseType)
 
 	case *sync.WaitGroup:
-		return WaitGroupType
+		return &WaitGroupType
 
 	case **sync.WaitGroup:
-		return Pointer(WaitGroupType)
+		return Pointer(&WaitGroupType)
 
 	case *sync.Mutex:
-		return MutexType
+		return &MutexType
 
 	case **sync.Mutex:
-		return Pointer(MutexType)
+		return Pointer(&MutexType)
 
 	case bool:
-		return BoolType
+		return &BoolType
 
 	case byte:
-		return ByteType
+		return &ByteType
 
 	case int32:
-		return Int32Type
+		return &Int32Type
 
 	case int:
-		return IntType
+		return &IntType
 
 	case int64:
-		return Int64Type
+		return &Int64Type
 
 	case float32:
-		return Float32Type
+		return &Float32Type
 
 	case float64:
-		return Float64Type
+		return &Float64Type
 
 	case string:
-		return StringType
+		return &StringType
 
 	case EgoPackage:
 		if t, ok := GetMetadata(v, TypeMDKey); ok {
-			if t, ok := t.(Type); ok {
+			if t, ok := t.(*Type); ok {
 				return t
 			}
 		}
 
-		return UndefinedType
+		return &UndefinedType
 
 	case *byte:
-		return Pointer(ByteType)
+		return Pointer(&ByteType)
 
 	case *int32:
-		return Pointer(Int32Type)
+		return Pointer(&Int32Type)
 
 	case *int:
-		return Pointer(IntType)
+		return Pointer(&IntType)
 
 	case *int64:
-		return Pointer(Int64Type)
+		return Pointer(&Int64Type)
 
 	case *float32:
-		return Pointer(Float32Type)
+		return Pointer(&Float32Type)
 
 	case *float64:
-		return Pointer(Float64Type)
+		return Pointer(&Float64Type)
 
 	case *string:
-		return Pointer(StringType)
+		return Pointer(&StringType)
 
 	case *bool:
-		return Pointer(BoolType)
+		return Pointer(&BoolType)
 
 	case *EgoPackage:
 		return Pointer(TypeOf(*v))
@@ -677,17 +677,17 @@ func TypeOf(i interface{}) Type {
 		return v.typeDef
 
 	case *Channel:
-		return Pointer(ChanType)
+		return Pointer(&ChanType)
 
 	default:
-		return InterfaceType
+		return &InterfaceType
 	}
 }
 
 // IsType accepts an arbitrary value that is either an Ego or native data
 // value, and a type specification, and indicates if it is of the provided
 // Ego datatype indicator.
-func IsType(v interface{}, t Type) bool {
+func IsType(v interface{}, t *Type) bool {
 	if t.kind == InterfaceKind {
 		// If it is an empty interface (no methods) then it's always true
 		if len(t.functions) == 0 {
@@ -720,10 +720,10 @@ func IsType(v interface{}, t Type) bool {
 // away any type definition layers and compares the value type to the ultimate
 // base type.  If the type passed in is already a base type, this is no different
 // than calling IsType() directly.
-func IsBaseType(v interface{}, t Type) bool {
+func IsBaseType(v interface{}, t *Type) bool {
 	valid := IsType(v, t)
 	if !valid && t.IsTypeDefinition() {
-		valid = IsBaseType(v, *t.valueType)
+		valid = IsBaseType(v, t.valueType)
 	}
 
 	return valid
@@ -731,19 +731,19 @@ func IsBaseType(v interface{}, t Type) bool {
 
 // For a given interface pointer, unwrap the pointer and return the type it
 // actually points to.
-func TypeOfPointer(v interface{}) Type {
+func TypeOfPointer(v interface{}) *Type {
 	if p, ok := v.(Type); ok {
 		if p.kind != PointerKind || p.valueType == nil {
-			return UndefinedType
+			return &UndefinedType
 		}
 
-		return *p.valueType
+		return p.valueType
 	}
 
 	// Is this a pointer to an actual native interface?
 	p, ok := v.(*interface{})
 	if !ok {
-		return UndefinedType
+		return &UndefinedType
 	}
 
 	actual := *p
@@ -840,7 +840,7 @@ func (t Type) Reflect() *EgoStruct {
 	}
 
 	if len(functionList) > 0 {
-		functions := NewArray(StringType, len(functionList))
+		functions := NewArray(&StringType, len(functionList))
 
 		names := make([]string, 0)
 		for k := range functionList {

@@ -112,62 +112,62 @@ var VarArgsType = Type{
 }
 
 // Construct a type that is an array of the given type.
-func Array(t Type) Type {
-	return Type{
+func Array(t *Type) *Type {
+	return &Type{
 		name:      "[]",
 		kind:      ArrayKind,
-		valueType: &t,
+		valueType: t,
 	}
 }
 
 // Construct a type that is a pointer to the given type.
-func Pointer(t Type) Type {
-	return Type{
+func Pointer(t *Type) *Type {
+	return &Type{
 		name:      "*",
 		kind:      PointerKind,
-		valueType: &t,
+		valueType: t,
 	}
 }
 
 // Construct a type that is a map, specifying the key and value types.
-func Map(key, value Type) Type {
-	return Type{
+func Map(key, value *Type) *Type {
+	return &Type{
 		name:      "map",
 		kind:      MapKind,
-		keyType:   &key,
-		valueType: &value,
+		keyType:   key,
+		valueType: value,
 	}
 }
 
 // Construct a structure type, with optional field definitions. You
 // can later add additional fields using the AddField method.
-func Structure(fields ...Field) Type {
+func Structure(fields ...Field) *Type {
 	t := Type{
 		name:   "struct",
 		kind:   StructKind,
-		fields: map[string]Type{},
+		fields: map[string]*Type{},
 	}
 
 	for _, field := range fields {
 		t.DefineField(field.Name, field.Type)
 	}
 
-	return t
+	return &t
 }
 
 // Create a type that is a named type definition, with the
 // given type name and base type.
-func TypeDefinition(name string, base Type) Type {
-	return Type{
+func TypeDefinition(name string, base *Type) *Type {
+	return &Type{
 		name:      name,
 		kind:      TypeKind,
-		valueType: &base,
+		valueType: base,
 	}
 }
 
 // Construct a type for a package of the given name.
-func Package(name string) Type {
-	return Type{
+func Package(name string) *Type {
+	return &Type{
 		name:      name,
 		kind:      PackageKind,
 		valueType: &StructType,

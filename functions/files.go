@@ -29,10 +29,10 @@ var fileType *datatypes.Type
 func initializeFileType() {
 	if fileType == nil {
 		structType := datatypes.Structure()
-		structType.DefineField(fileFieldName, datatypes.InterfaceType).
-			DefineField(validFieldName, datatypes.BoolType).
-			DefineField(nameFieldName, datatypes.StringType).
-			DefineField(modeFieldName, datatypes.StringType)
+		structType.DefineField(fileFieldName, &datatypes.InterfaceType).
+			DefineField(validFieldName, &datatypes.BoolType).
+			DefineField(nameFieldName, &datatypes.StringType).
+			DefineField(modeFieldName, &datatypes.StringType)
 
 		t := datatypes.TypeDefinition("io.File", structType)
 
@@ -43,7 +43,7 @@ func initializeFileType() {
 		t.DefineFunction("WriteAt", WriteAt)
 		t.DefineFunction("String", AsString)
 
-		fileType = &t
+		fileType = t
 	}
 }
 
@@ -94,7 +94,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	initializeFileType()
 
-	fobj := datatypes.NewStruct(*fileType)
+	fobj := datatypes.NewStruct(fileType)
 	fobj.SetReadonly(true)
 	fobj.SetAlways(fileFieldName, f)
 	fobj.SetAlways(validFieldName, true)

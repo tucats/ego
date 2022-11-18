@@ -16,8 +16,8 @@ import (
 // should be considered immutable (such as during a for...range loop).
 type EgoMap struct {
 	data      map[interface{}]interface{}
-	keyType   Type
-	valueType Type
+	keyType   *Type
+	valueType *Type
 	immutable int
 }
 
@@ -25,7 +25,7 @@ type EgoMap struct {
 // key and value types (such as datatypes.StringType or datatypes.FloatType). You can also
 // use datatypes.InterfaceType for a type value, which means any type is accepted. The
 // result is an initialized map that you can begin to store or read values from.
-func NewMap(keyType Type, valueType Type) *EgoMap {
+func NewMap(keyType, valueType *Type) *EgoMap {
 	return &EgoMap{
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,
@@ -36,13 +36,13 @@ func NewMap(keyType Type, valueType Type) *EgoMap {
 
 // ValueType returns the integer description of the declared key type for
 // this map.
-func (m *EgoMap) KeyType() Type {
+func (m *EgoMap) KeyType() *Type {
 	return m.keyType
 }
 
 // ValueType returns the integer description of the declared value type for
 // this map.
-func (m *EgoMap) ValueType() Type {
+func (m *EgoMap) ValueType() *Type {
 	return m.valueType
 }
 
@@ -99,7 +99,7 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
 func (m *EgoMap) Keys() []interface{} {
-	if m.keyType.IsType(StringType) {
+	if m.keyType.IsType(&StringType) {
 		idx := 0
 		array := make([]string, len(m.data))
 
@@ -117,7 +117,7 @@ func (m *EgoMap) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(IntType) {
+	} else if m.keyType.IsType(&IntType) {
 		idx := 0
 		array := make([]int, len(m.data))
 
@@ -135,7 +135,7 @@ func (m *EgoMap) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(Float64Type) {
+	} else if m.keyType.IsType(&Float64Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -153,7 +153,7 @@ func (m *EgoMap) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(Float32Type) {
+	} else if m.keyType.IsType(&Float32Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -235,12 +235,12 @@ func (m *EgoMap) String() string {
 }
 
 // Type returns a type descriptor for the current map.
-func (m EgoMap) Type() Type {
-	return Type{
+func (m EgoMap) Type() *Type {
+	return &Type{
 		name:      "map",
 		kind:      MapKind,
-		keyType:   &m.keyType,
-		valueType: &m.valueType,
+		keyType:   m.keyType,
+		valueType: m.valueType,
 	}
 }
 
@@ -248,7 +248,7 @@ func (m EgoMap) Type() Type {
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
 func NewMapFromMap(sourceMap interface{}) *EgoMap {
-	valueType := InterfaceType
+	valueType := &InterfaceType
 	keyType := InterfaceType
 
 	valueKind := reflect.TypeOf(sourceMap).Elem().Kind()
@@ -256,25 +256,25 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 
 	switch valueKind {
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		valueType = IntType
+		valueType = &IntType
 
 	case reflect.Float64:
-		valueType = Float64Type
+		valueType = &Float64Type
 
 	case reflect.Float32:
-		valueType = Float32Type
+		valueType = &Float32Type
 
 	case reflect.Bool:
-		valueType = BoolType
+		valueType = &BoolType
 
 	case reflect.String:
-		valueType = StringType
+		valueType = &StringType
 
 	case reflect.Map:
-		valueType = Map(InterfaceType, InterfaceType)
+		valueType = Map(&InterfaceType, &InterfaceType)
 
 	case reflect.Array:
-		valueType = Array(InterfaceType)
+		valueType = Array(&InterfaceType)
 	}
 
 	switch keyKind {
@@ -294,7 +294,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		keyType = StringType
 	}
 
-	result := NewMap(keyType, valueType)
+	result := NewMap(&keyType, valueType)
 	val := reflect.ValueOf(sourceMap)
 
 	for _, key := range val.MapKeys() {

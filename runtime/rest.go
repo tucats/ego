@@ -131,7 +131,7 @@ func initializeRestType() {
 			"Status": RestStatusMessage,
 		})
 
-		restType = &t
+		restType = t
 	}
 }
 
@@ -155,7 +155,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	initializeRestType()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: allowInsecure})
 
-	r := datatypes.NewStruct(*restType)
+	r := datatypes.NewStruct(restType)
 
 	_ = r.Set(clientFieldName, client)
 	_ = r.Set(mediaTypeFieldName, defs.JSONMediaType)
@@ -262,7 +262,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 				values[i] = j
 			}
 
-			query[key] = datatypes.NewArrayFromArray(datatypes.StringType, values)
+			query[key] = datatypes.NewArrayFromArray(&datatypes.StringType, values)
 		}
 
 		urlParts[urlQueryElmeent] = datatypes.NewMapFromMap(query)
@@ -484,7 +484,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			jsonResponse = datatypes.NewMapFromMap(actual)
 
 		case []interface{}:
-			jsonResponse = datatypes.NewArrayFromArray(datatypes.InterfaceType, actual)
+			jsonResponse = datatypes.NewArrayFromArray(&datatypes.InterfaceType, actual)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -501,10 +501,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // of structs.
 func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray {
 	cookies := r.Cookies()
-	result := datatypes.NewArray(datatypes.InterfaceType, len(cookies))
+	result := datatypes.NewArray(&datatypes.InterfaceType, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+		cookie := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 
 		_, _ = cookie.Set("expires", v.Expires.String())
 		_, _ = cookie.Set("name", v.Name)
@@ -520,7 +520,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
 func headerMap(response *resty.Response) *datatypes.EgoMap {
-	headers := datatypes.NewMap(datatypes.StringType, datatypes.InterfaceType)
+	headers := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 
 	for k, v := range response.Header() {
 		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))

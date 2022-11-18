@@ -37,7 +37,7 @@ func initDBTypeDef() {
 		t.DefineFunction("Close", DBClose)
 		t.DefineFunction("AsStruct", DataBaseAsStruct)
 
-		dbTypeDef = &t
+		dbTypeDef = t
 	}
 }
 
@@ -75,7 +75,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 
-	result := datatypes.NewStruct(*dbTypeDef)
+	result := datatypes.NewStruct(dbTypeDef)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(constrFieldName, connStr)
 	result.SetAlways(asStructFieldName, false)
@@ -279,7 +279,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	// Need to convert the results from a slice to an actual array
 	this.SetAlways(rowCountFieldName, size)
-	r := datatypes.NewArray(datatypes.InterfaceType, size)
+	r := datatypes.NewArray(&datatypes.InterfaceType, size)
 
 	if asStruct {
 		for i, v := range mapResult {

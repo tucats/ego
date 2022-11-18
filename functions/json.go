@@ -31,7 +31,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		if m, ok := v.(map[string]interface{}); ok {
 			v = datatypes.NewMapFromMap(m)
 		} else if a, ok := v.([]interface{}); ok {
-			v = datatypes.NewArrayFromArray(datatypes.InterfaceType, a)
+			v = datatypes.NewArrayFromArray(&datatypes.InterfaceType, a)
 		}
 
 		return v, errors.New(err)
@@ -149,7 +149,7 @@ func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(datatypes.Sanitize(args[0]))
 
-		return datatypes.NewArray(datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
+		return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
 	}
 
 	var b strings.Builder
@@ -172,7 +172,7 @@ func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	b.WriteString("]")
 	jsonBuffer := []byte(b.String())
 
-	return datatypes.NewArray(datatypes.ByteType, 0).Append(jsonBuffer), nil
+	return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), nil
 }
 
 // JSONMarshalIndent writes a  JSON string from arbitrary data.
@@ -182,5 +182,5 @@ func JSONMarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{},
 
 	jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), prefix, indent)
 
-	return datatypes.NewArray(datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
+	return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
 }

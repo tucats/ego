@@ -64,6 +64,10 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		return typeValue.InstanceOf(&typeValue), nil
 	}
 
+	if typeValue, ok := args[0].(*datatypes.Type); ok {
+		return typeValue.InstanceOf(typeValue), nil
+	}
+
 	// Is the type an string? If so it's a type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
@@ -99,14 +103,14 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// make a new waitgroup object.
 	switch args[0].(type) {
 	case sync.WaitGroup:
-		return datatypes.InstanceOfType(datatypes.WaitGroupType), nil
+		return datatypes.InstanceOfType(&datatypes.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
 	// cast attempt will yield a warning on invalid mutex copy operation.
 	switch args[0].(type) {
 	case sync.Mutex:
-		return datatypes.InstanceOfType(datatypes.MutexType), nil
+		return datatypes.InstanceOfType(&datatypes.MutexType), nil
 	}
 
 	// If it's a channel, just return the value
@@ -276,10 +280,10 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	source := args[0]
 	if len(args) > 2 {
-		source = datatypes.NewArrayFromArray(datatypes.InterfaceType, args[:len(args)-1])
+		source = datatypes.NewArrayFromArray(&datatypes.InterfaceType, args[:len(args)-1])
 	}
 
-	if kind.IsType(datatypes.StringType) {
+	if kind.IsType(&datatypes.StringType) {
 		r := strings.Builder{}
 
 		// If the source is an array of integers, treat them as runes to re-assemble.
@@ -303,8 +307,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return actual, nil
 		}
 
-		if kind.IsType(datatypes.StringType) &&
-			(actual.ValueType().IsIntegerType() || actual.ValueType().IsType(datatypes.InterfaceType)) {
+		if kind.IsType(&datatypes.StringType) &&
+			(actual.ValueType().IsIntegerType() || actual.ValueType().IsType(&datatypes.InterfaceType)) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {
@@ -316,24 +320,24 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		}
 
 		elementKind := *kind.BaseType()
-		r := datatypes.NewArray(*kind.BaseType(), actual.Len())
+		r := datatypes.NewArray(kind.BaseType(), actual.Len())
 
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
-			if elementKind.IsType(datatypes.ByteType) {
+			if elementKind.IsType(&datatypes.ByteType) {
 				_ = r.Set(i, byte(datatypes.GetInt(v)&math.MaxInt8))
-			} else if elementKind.IsType(datatypes.Int32Type) {
+			} else if elementKind.IsType(&datatypes.Int32Type) {
 				_ = r.Set(i, int32(datatypes.GetInt(v)&math.MaxInt8))
-			} else if elementKind.IsType(datatypes.IntType) {
+			} else if elementKind.IsType(&datatypes.IntType) {
 				_ = r.Set(i, datatypes.GetInt(v))
-			} else if elementKind.IsType(datatypes.Float64Type) {
+			} else if elementKind.IsType(&datatypes.Float64Type) {
 				_ = r.Set(i, datatypes.GetFloat64(v))
-			} else if elementKind.IsType(datatypes.Float32Type) {
+			} else if elementKind.IsType(&datatypes.Float32Type) {
 				_ = r.Set(i, datatypes.GetFloat32(v))
-			} else if elementKind.IsType(datatypes.StringType) {
+			} else if elementKind.IsType(&datatypes.StringType) {
 				_ = r.Set(i, datatypes.GetString(v))
-			} else if elementKind.IsType(datatypes.BoolType) {
+			} else if elementKind.IsType(&datatypes.BoolType) {
 				_ = r.Set(i, datatypes.GetBool(v))
 			} else {
 				return nil, errors.New(errors.ErrInvalidType)
@@ -343,8 +347,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return r, nil
 
 	case string:
-		if kind.IsType(datatypes.Array(datatypes.IntType)) {
-			r := datatypes.NewArray(datatypes.IntType, 0)
+		if kind.IsType(datatypes.Array(&datatypes.IntType)) {
+			r := datatypes.NewArray(&datatypes.IntType, 0)
 
 			for _, rune := range actual {
 				r.Append(int(rune))
@@ -357,8 +361,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 	default:
 		if kind.IsArray() {
-			r := datatypes.NewArray(*kind.BaseType(), 1)
-			value := datatypes.Coerce(source, datatypes.InstanceOfType(*kind.BaseType()))
+			r := datatypes.NewArray(kind.BaseType(), 1)
+			value := datatypes.Coerce(source, datatypes.InstanceOfType(kind.BaseType()))
 			_ = r.Set(0, value)
 
 			return r, nil

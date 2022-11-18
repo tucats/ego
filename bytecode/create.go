@@ -34,7 +34,7 @@ import (
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
 func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
-	var baseType datatypes.Type
+	var baseType *datatypes.Type
 
 	count := datatypes.GetInt(i)
 
@@ -98,17 +98,17 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	var count int
 
-	var kind datatypes.Type
+	var kind *datatypes.Type
 
 	if args, ok := i.([]interface{}); ok {
 		count = datatypes.GetInt(args[0])
 		kind = datatypes.GetType(args[1])
 	} else {
 		count = datatypes.GetInt(i)
-		kind = datatypes.Array(datatypes.InterfaceType)
+		kind = datatypes.Array(&datatypes.InterfaceType)
 	}
 
-	array := datatypes.NewArray(*kind.BaseType(), count)
+	array := datatypes.NewArray(kind.BaseType(), count)
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
@@ -170,7 +170,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := datatypes.GetInt(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
-	typeInfo := datatypes.StructType
+	typeInfo := &datatypes.StructType
 	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and
@@ -193,9 +193,9 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
 		if name == datatypes.TypeMDKey {
-			if t, ok := value.(datatypes.Type); ok {
+			if t, ok := value.(*datatypes.Type); ok {
 				typeInfo = t
-				model = t.InstanceOf(&t)
+				model = t.InstanceOf(t)
 				typeName = t.Name()
 			} else {
 				panic(fmt.Sprintf("DEBUG: Unexpected type value: %v\n", value))

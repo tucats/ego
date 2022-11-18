@@ -17,7 +17,7 @@ import (
 type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)
 
 type NativeFunctionDef struct {
-	Kind datatypes.Type
+	Kind *datatypes.Type
 	Name string
 	F    NativeFunction
 }
@@ -29,52 +29,52 @@ type NativeFunctionDef struct {
 // index is into a natively implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: &datatypes.WaitGroupType,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: &datatypes.WaitGroupType,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.WaitGroupType,
+		Kind: &datatypes.WaitGroupType,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.Pointer(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(&datatypes.WaitGroupType),
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: datatypes.Pointer(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(&datatypes.WaitGroupType),
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: datatypes.Pointer(datatypes.WaitGroupType),
+		Kind: datatypes.Pointer(&datatypes.WaitGroupType),
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: datatypes.MutexType,
+		Kind: &datatypes.MutexType,
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.MutexType,
+		Kind: &datatypes.MutexType,
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
 	{
-		Kind: datatypes.Pointer(datatypes.MutexType),
+		Kind: datatypes.Pointer(&datatypes.MutexType),
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: datatypes.Pointer(datatypes.MutexType),
+		Kind: datatypes.Pointer(&datatypes.MutexType),
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
@@ -82,7 +82,7 @@ var NativeFunctionMap = []NativeFunctionDef{
 
 // For a given datatype and name, see if there is a native function that
 // supports this operation.  If so, return it's function pointer.
-func FindNativeFunction(kind datatypes.Type, name string) NativeFunction {
+func FindNativeFunction(kind *datatypes.Type, name string) NativeFunction {
 	for _, f := range NativeFunctionMap {
 		if f.Kind.IsType(kind) && f.Name == name {
 			return f.F

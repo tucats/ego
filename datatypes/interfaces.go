@@ -12,45 +12,45 @@ import (
 // GetType returns the Type of a given interface object. If the value is a type
 // or a pointer to a type, return that Type. If the interface isn't a type, but
 // is a scalar value, return the Type of the value.
-func GetType(v interface{}) Type {
+func GetType(v interface{}) *Type {
 	if t, ok := v.(Type); ok {
 		if t.valueType != nil && t.valueType.kind == InterfaceKind {
 			t = *t.valueType
 		}
 
-		return t
+		return &t
 	}
 
 	if t, ok := v.(*Type); ok {
-		return *t
+		return t
 	}
 
 	// If it's a value object, return it's type.
 	switch v.(type) {
 	case bool:
-		return BoolType
+		return &BoolType
 
 	case int32:
-		return Int32Type
+		return &Int32Type
 
 	case int:
-		return IntType
+		return &IntType
 
 	case int64:
-		return Int64Type
+		return &Int64Type
 
 	case float32:
-		return Float32Type
+		return &Float32Type
 
 	case float64:
-		return Float64Type
+		return &Float64Type
 
 	case string:
-		return StringType
+		return &StringType
 	}
 
 	// Who knows what the heck this is...
-	return UndefinedType
+	return &UndefinedType
 }
 
 // GetString retrieves the string value of the argument, converting if needed.

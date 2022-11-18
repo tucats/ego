@@ -8,10 +8,11 @@ import (
 // storeByteCode implements the Store opcode
 //
 // Inputs:
-//    operand    - The name of the variable in which
-//				   the top of stack is stored.
-//    stack+0    - The item to be "stored" is read
-//                 on the stack.
+//
+//	   operand    - The name of the variable in which
+//					   the top of stack is stored.
+//	   stack+0    - The item to be "stored" is read
+//	                on the stack.
 //
 // The value to be stored is popped from the stack. The
 // variable name and value are used to do a type check
@@ -50,10 +51,10 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
-		case *datatypes.EgoMap:
+		case datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case *datatypes.EgoStruct:
+		case datatypes.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -140,10 +141,10 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
-		case *datatypes.EgoMap:
+		case datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case *datatypes.EgoStruct:
+		case datatypes.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -190,13 +191,13 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		d := datatypes.Coerce(src, "")
 		*actual = d.(string)
 
-	case **datatypes.EgoArray:
-		*actual, ok = src.(*datatypes.EgoArray)
+	case *datatypes.EgoArray:
+		*actual, ok = src.(datatypes.EgoArray)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
-	case **datatypes.EgoMap:
-		*actual, ok = src.(*datatypes.EgoMap)
+	case *datatypes.EgoMap:
+		*actual, ok = src.(datatypes.EgoMap)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
@@ -233,10 +234,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == "_" {
 		switch a := v.(type) {
-		case *datatypes.EgoMap:
+		case datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case *datatypes.EgoStruct:
+		case datatypes.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -277,7 +278,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	empty := true
 
 	if m, ok := v.(*datatypes.EgoMap); ok {
-		if !m.KeyType().IsType(datatypes.StringType) {
+		if !m.KeyType().IsType(&datatypes.StringType) {
 			err = c.newError(errors.ErrInvalidStruct)
 		} else {
 			keys := m.Keys()

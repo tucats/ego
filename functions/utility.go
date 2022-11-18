@@ -99,7 +99,7 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		result[i] = key
 	}
 
-	return datatypes.NewArrayFromArray(datatypes.StringType, result), nil
+	return datatypes.NewArrayFromArray(&datatypes.StringType, result), nil
 }
 
 // Length implements the len() function.
@@ -176,7 +176,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
-		keys := datatypes.NewArray(datatypes.StringType, 0)
+		keys := datatypes.NewArray(&datatypes.StringType, 0)
 		keyList := v.Keys()
 
 		for i, v := range keyList {
@@ -191,7 +191,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		return v.FieldNamesArray(), nil
 
 	case datatypes.EgoPackage:
-		keys := datatypes.NewArray(datatypes.StringType, 0)
+		keys := datatypes.NewArray(&datatypes.StringType, 0)
 
 		for _, k := range v.Keys() {
 			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
@@ -245,11 +245,11 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	result := make([]interface{}, 0)
-	kind := datatypes.InterfaceType
+	kind := &datatypes.InterfaceType
 
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
-			if !kind.IsType(datatypes.InterfaceType) {
+			if !kind.IsType(&datatypes.InterfaceType) {
 				if err := array.Validate(kind); !errors.Nil(err) {
 					return nil, err
 				}
@@ -257,13 +257,13 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 			result = append(result, array.BaseArray()...)
 
-			if kind.IsType(datatypes.InterfaceType) {
+			if kind.IsType(&datatypes.InterfaceType) {
 				kind = array.ValueType()
 			}
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
-			if !kind.IsType(datatypes.InterfaceType) && !datatypes.TypeOf(j).IsType(kind) {
+			if !kind.IsType(&datatypes.InterfaceType) && !datatypes.TypeOf(j).IsType(kind) {
 				return nil, errors.New(errors.ErrWrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
@@ -313,7 +313,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	r, found := s.Get("__cli_args")
 	if !found {
-		r = datatypes.NewArray(datatypes.StringType, 0)
+		r = datatypes.NewArray(&datatypes.StringType, 0)
 	}
 
 	return r, nil
@@ -407,7 +407,7 @@ func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}
 }
 
 func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	packages := datatypes.NewArray(datatypes.StringType, 0)
+	packages := datatypes.NewArray(&datatypes.StringType, 0)
 
 	for k := range s.Symbols {
 		if strings.HasPrefix(k, "__") {

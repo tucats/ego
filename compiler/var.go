@@ -74,7 +74,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 
 	// We got a defined type, so emit the model and store it
 	// in each symbol
-	model := kind.InstanceOf(&kind) // datatypes.InstanceOfType(kind)
+	model := kind.InstanceOf(kind) // datatypes.InstanceOfType(kind)
 
 	for _, name := range names {
 		c.b.Emit(bytecode.Push, model)

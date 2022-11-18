@@ -231,6 +231,17 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		return err
 
+	case *datatypes.Type:
+		// Calls to a type are really an attempt to cast the value.
+		args = append(args, af)
+
+		v, err := functions.InternalCast(c.symbols, args)
+		if errors.Nil(err) {
+			err = c.stackPush(v)
+		}
+
+		return err
+
 	case *ByteCode:
 		// Find the top of this scope level (typically)
 		parentTable := c.symbols
@@ -265,7 +276,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		// Recode the argument list as a native array
-		_ = c.symbolSetAlways("__args", datatypes.NewArrayFromArray(datatypes.InterfaceType, args))
+		_ = c.symbolSetAlways("__args", datatypes.NewArrayFromArray(&datatypes.InterfaceType, args))
 
 	case functions.NativeFunction:
 		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
