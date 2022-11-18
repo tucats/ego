@@ -69,6 +69,7 @@ type Type struct {
 	functions map[string]interface{}
 	keyType   *Type
 	valueType *Type
+	flag      bool
 }
 
 type Field struct {
@@ -138,12 +139,26 @@ func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 	return nil
 }
 
+// Return a flag indicating if the given type includes function
+// definitions.
+func (t Type) HasFunctions() bool {
+	if t.kind == TypeKind {
+		t = *t.valueType
+	}
+
+	return len(t.functions) > 0
+}
+
 // Return a string containing the list of receiver functions for
 // this type. If there are no functions defined, it returns an
 // empty string. The results are a comma-separated list of function
 // names plus "()".
 func (t Type) FunctionNameList() string {
-	if t.functions == nil || len(t.functions) == 0 {
+	if t.kind == TypeKind {
+		t = *t.valueType
+	}
+
+	if len(t.functions) == 0 {
 		return ""
 	}
 
@@ -298,6 +313,10 @@ func (t Type) IsType(i *Type) bool {
 	// If one of these is just a type wrapper, we can compare the underlying type.
 	if i.kind == TypeKind {
 		i = i.valueType
+	}
+
+	if t.kind == TypeKind {
+		t = *t.valueType
 	}
 
 	// Basic kind match. Note special case for interface matching
