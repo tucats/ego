@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -30,7 +32,22 @@ func main() {
 		app.SetBuildTime(BuildTime)
 	}
 
-	err := app.Run(EgoGrammar, os.Args)
+	// Hack. If the second argument is a filename ending in ".ego"
+	// then assume it was mean to be a "run" command.
+	args := os.Args
+	if filepath.Ext(args[1]) == defs.EgoFilenameExtension {
+		args = make([]string, 0)
+
+		for i, arg := range os.Args {
+			if i == 1 {
+				args = append(args, "run")
+			}
+
+			args = append(args, arg)
+		}
+	}
+
+	err := app.Run(EgoGrammar, args)
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
