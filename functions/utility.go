@@ -249,7 +249,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
-			if !kind.IsKind(datatypes.InterfaceKind) {
+			if !kind.IsInterface() {
 				if err := array.Validate(kind); !errors.Nil(err) {
 					return nil, err
 				}
@@ -257,13 +257,13 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 			result = append(result, array.BaseArray()...)
 
-			if kind.IsKind(datatypes.InterfaceKind) {
+			if kind.IsInterface() {
 				kind = array.ValueType()
 			}
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
-			if !kind.IsKind(datatypes.InterfaceKind) && !datatypes.TypeOf(j).IsType(kind) {
+			if !kind.IsInterface() && !datatypes.TypeOf(j).IsType(kind) {
 				return nil, errors.New(errors.ErrWrongArrayValueType).In("append()")
 			}
 			result = append(result, j)

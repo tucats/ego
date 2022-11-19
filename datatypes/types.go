@@ -69,7 +69,6 @@ type Type struct {
 	functions map[string]interface{}
 	keyType   *Type
 	valueType *Type
-	flag      bool
 }
 
 type Field struct {
@@ -294,6 +293,19 @@ func (t Type) IsKind(k int) bool {
 // Return true if this type is a pointer to something.
 func (t Type) IsPointer() bool {
 	return t.kind == PointerKind
+}
+
+// Determine if the type is an interface. This could be
+// a simple interface object ("interface{}") or a type
+// that specifies an interface.
+func (t Type) IsInterface() bool {
+	// Is it a straightforward interface?
+	if t.Kind() == InterfaceKind {
+		return true
+	}
+
+	// Is it a user type with a basetype that is an interface?
+	return t.Kind() == TypeKind && t.valueType != nil && t.valueType.Kind() == InterfaceKind
 }
 
 // IsIntegerType returns true if the type represents any of the integer

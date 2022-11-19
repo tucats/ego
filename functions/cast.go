@@ -308,7 +308,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		}
 
 		if kind.IsKind(datatypes.StringKind) &&
-			(actual.ValueType().IsIntegerType() || actual.ValueType().IsKind(datatypes.InterfaceKind)) {
+			(actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {
@@ -326,15 +326,14 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			v, _ := actual.Get(i)
 
 			switch elementKind.Kind() {
-
 			case datatypes.BoolKind:
 				_ = r.Set(i, datatypes.GetBool(v))
 
 			case datatypes.ByteKind:
-				_ = r.Set(i, byte(datatypes.GetByte(v)))
+				_ = r.Set(i, datatypes.GetByte(v))
 
 			case datatypes.Int32Kind:
-				_ = r.Set(i, int32(datatypes.GetInt32(v)))
+				_ = r.Set(i, datatypes.GetInt32(v))
 
 			case datatypes.IntKind:
 				_ = r.Set(i, datatypes.GetInt(v))

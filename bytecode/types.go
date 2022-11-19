@@ -73,7 +73,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 		} else {
 			t := datatypes.GetType(i)
 			// If it's not interface type, check it out...
-			if t.Kind() != datatypes.InterfaceKind {
+			if !t.IsInterface() {
 				if t.IsKind(datatypes.ErrorKind) {
 					v = errors.New(errors.ErrPanic).Context(v)
 				}
@@ -88,7 +88,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 					actualType = actualType.BaseType()
 				}
 
-				if actualType.Kind() == datatypes.TypeKind && t.Kind() != datatypes.InterfaceKind {
+				if actualType.Kind() == datatypes.TypeKind && !t.IsInterface() {
 					actualType = actualType.BaseType()
 				}
 
@@ -121,7 +121,6 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				case datatypes.StringKind:
 					v = datatypes.GetString(v)
 				}
-
 			} else {
 				// It is an interface type, if it's a non-empty interface
 				// verify the value against the interface entries.
