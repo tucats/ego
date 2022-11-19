@@ -82,8 +82,8 @@ var TypeDeclarations = []TypeDeclaration{
 	},
 	{
 		[]string{"[", "]", BoolTypeName},
-		NewArray(&BoolType, 0),
-		Array(&BoolType),
+		NewArray(BoolType, 0),
+		Array(BoolType),
 	},
 	{
 		[]string{"[", "]", Float64TypeName},
@@ -108,7 +108,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{BoolTypeName},
 		boolModel,
-		&BoolType,
+		BoolType,
 	},
 	{
 		[]string{ByteTypeName},
@@ -153,7 +153,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", BoolTypeName},
 		&boolInterface,
-		Pointer(&BoolType),
+		Pointer(BoolType),
 	},
 	{
 		[]string{"*", Int32TypeName},

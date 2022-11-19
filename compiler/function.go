@@ -106,7 +106,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		// is this the end of the fixed list? If so, emit the instruction that scoops
 		// up the remaining arguments and stores them as an array value.  Otherwise,
 		// generate code to extract the argument value by index number.
-		if p.kind.IsType(&datatypes.VarArgsType) {
+		if p.kind.IsKind(datatypes.VarArgsKind) {
 			b.Emit(bytecode.GetVarArgs, n)
 		} else {
 			b.Emit(bytecode.Load, "__args")
@@ -115,7 +115,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 
 		// If this argument is not interface{} or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
-		if !p.kind.IsUndefined() && !p.kind.IsType(&datatypes.VarArgsType) {
+		if !p.kind.IsUndefined() && !p.kind.IsKind(datatypes.VarArgsKind) {
 			b.Emit(bytecode.RequiredType, p.kind)
 		}
 		// Generate code to store the value on top of the stack into the local

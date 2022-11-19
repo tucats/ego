@@ -283,7 +283,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		source = datatypes.NewArrayFromArray(&datatypes.InterfaceType, args[:len(args)-1])
 	}
 
-	if kind.IsType(&datatypes.StringType) {
+	if kind.IsKind(datatypes.StringKind) {
 		r := strings.Builder{}
 
 		// If the source is an array of integers, treat them as runes to re-assemble.
@@ -307,8 +307,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return actual, nil
 		}
 
-		if kind.IsType(&datatypes.StringType) &&
-			(actual.ValueType().IsIntegerType() || actual.ValueType().IsType(&datatypes.InterfaceType)) {
+		if kind.IsKind(datatypes.StringKind) &&
+			(actual.ValueType().IsIntegerType() || actual.ValueType().IsKind(datatypes.InterfaceKind)) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {
@@ -325,21 +325,33 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
-			if elementKind.IsType(&datatypes.ByteType) {
-				_ = r.Set(i, byte(datatypes.GetInt(v)&math.MaxInt8))
-			} else if elementKind.IsType(&datatypes.Int32Type) {
-				_ = r.Set(i, int32(datatypes.GetInt(v)&math.MaxInt8))
-			} else if elementKind.IsType(&datatypes.IntType) {
-				_ = r.Set(i, datatypes.GetInt(v))
-			} else if elementKind.IsType(&datatypes.Float64Type) {
-				_ = r.Set(i, datatypes.GetFloat64(v))
-			} else if elementKind.IsType(&datatypes.Float32Type) {
-				_ = r.Set(i, datatypes.GetFloat32(v))
-			} else if elementKind.IsType(&datatypes.StringType) {
-				_ = r.Set(i, datatypes.GetString(v))
-			} else if elementKind.IsType(&datatypes.BoolType) {
+			switch elementKind.Kind() {
+
+			case datatypes.BoolKind:
 				_ = r.Set(i, datatypes.GetBool(v))
-			} else {
+
+			case datatypes.ByteKind:
+				_ = r.Set(i, byte(datatypes.GetByte(v)))
+
+			case datatypes.Int32Kind:
+				_ = r.Set(i, int32(datatypes.GetInt32(v)))
+
+			case datatypes.IntKind:
+				_ = r.Set(i, datatypes.GetInt(v))
+
+			case datatypes.Int64Kind:
+				_ = r.Set(i, datatypes.GetInt64(v))
+
+			case datatypes.Float32Kind:
+				_ = r.Set(i, datatypes.GetFloat32(v))
+
+			case datatypes.Float64Kind:
+				_ = r.Set(i, datatypes.GetFloat64(v))
+
+			case datatypes.StringKind:
+				_ = r.Set(i, datatypes.GetString(v))
+
+			default:
 				return nil, errors.New(errors.ErrInvalidType)
 			}
 		}

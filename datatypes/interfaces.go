@@ -28,7 +28,7 @@ func GetType(v interface{}) *Type {
 	// If it's a value object, return it's type.
 	switch v.(type) {
 	case bool:
-		return &BoolType
+		return BoolType
 
 	case int32:
 		return &Int32Type

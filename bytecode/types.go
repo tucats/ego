@@ -35,24 +35,32 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 					}
 				} else {
 					if t, ok := i.(int); ok {
-						dataType := datatypes.TypeOf(t)
-						if dataType.IsType(&datatypes.IntType) {
+						switch datatypes.TypeOf(t).Kind() {
+						case datatypes.IntKind:
 							_, ok = v.(int)
-						} else if dataType.IsType(&datatypes.Int32Type) {
+
+						case datatypes.Int32Kind:
 							_, ok = v.(int32)
-						} else if dataType.IsType(&datatypes.Int64Type) {
+
+						case datatypes.Int64Kind:
 							_, ok = v.(int64)
-						} else if dataType.IsType(&datatypes.ByteType) {
+
+						case datatypes.ByteKind:
 							_, ok = v.(byte)
-						} else if dataType.IsType(&datatypes.BoolType) {
+
+						case datatypes.BoolKind:
 							_, ok = v.(bool)
-						} else if dataType.IsType(&datatypes.StringType) {
+
+						case datatypes.StringKind:
 							_, ok = v.(string)
-						} else if dataType.IsType(&datatypes.Float32Type) {
+
+						case datatypes.Float32Kind:
 							_, ok = v.(float32)
-						} else if dataType.IsType(&datatypes.Float64Type) {
+
+						case datatypes.Float64Kind:
 							_, ok = v.(float64)
-						} else {
+
+						default:
 							ok = true
 						}
 
@@ -65,8 +73,8 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 		} else {
 			t := datatypes.GetType(i)
 			// If it's not interface type, check it out...
-			if !t.IsType(&datatypes.InterfaceType) {
-				if t.IsType(&datatypes.ErrorType) {
+			if t.Kind() != datatypes.InterfaceKind {
+				if t.IsKind(datatypes.ErrorKind) {
 					v = errors.New(errors.ErrPanic).Context(v)
 				}
 
@@ -88,27 +96,32 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 					return c.newError(errors.ErrArgumentType)
 				}
 
-				if t.IsType(&datatypes.IntType) {
+				switch t.Kind() {
+				case datatypes.IntKind:
 					v = datatypes.GetInt(v)
-				} else if t.IsType(&datatypes.Int32Type) {
+
+				case datatypes.Int32Kind:
 					v = datatypes.GetInt32(v)
-				} else if t.IsType(&datatypes.Int64Type) {
+
+				case datatypes.Int64Kind:
 					v = datatypes.GetInt64(v)
-				} else if t.IsType(&datatypes.ByteType) {
-					v = datatypes.GetByte(v)
-				} else if t.IsType(&datatypes.Float32Type) {
-					v = datatypes.GetFloat32(v)
-				} else if t.IsType(&datatypes.Float32Type) {
-					v = datatypes.GetFloat32(v)
-				} else if t.IsType(&datatypes.Float32Type) {
-					v = datatypes.GetFloat32(v)
-				} else if t.IsType(&datatypes.Float64Type) {
-					v = datatypes.GetFloat64(v)
-				} else if t.IsType(&datatypes.StringType) {
-					v = datatypes.GetString(v)
-				} else if t.IsType(&datatypes.BoolType) {
+
+				case datatypes.BoolKind:
 					v = datatypes.GetBool(v)
+
+				case datatypes.ByteKind:
+					v = datatypes.GetByte(v)
+
+				case datatypes.Float32Kind:
+					v = datatypes.GetFloat32(v)
+
+				case datatypes.Float64Kind:
+					v = datatypes.GetFloat64(v)
+
+				case datatypes.StringKind:
+					v = datatypes.GetString(v)
 				}
+
 			} else {
 				// It is an interface type, if it's a non-empty interface
 				// verify the value against the interface entries.
@@ -150,10 +163,10 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	// @tomcole restructure this back as a switch statement based on Kind()
-	if t.Kind() == datatypes.MapKind {
+	switch t.Kind() {
+	case datatypes.MapKind, datatypes.ErrorKind, datatypes.InterfaceKind, datatypes.UndefinedKind:
 
-	} else if t.Kind() == datatypes.StructKind {
+	case datatypes.StructKind:
 		// Check all the fields in the struct to ensure they exist in the type.
 		vv := v.(*datatypes.EgoStruct)
 		for _, k := range vv.FieldNames() {
@@ -173,27 +186,32 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v = vv
-	} else if t.IsType(&datatypes.ErrorType) {
 
-	} else if t.IsType(&datatypes.IntType) {
+	case datatypes.IntKind:
 		v = datatypes.GetInt(v)
-	} else if t.IsType(&datatypes.Int32Type) {
+
+	case datatypes.Int32Kind:
 		v = datatypes.GetInt32(v)
-	} else if t.IsType(&datatypes.Int64Type) {
+
+	case datatypes.Int64Kind:
 		v = datatypes.GetInt64(v)
-	} else if t.IsType(&datatypes.Float64Type) {
-		v = datatypes.GetFloat64(v)
-	} else if t.IsType(&datatypes.Float32Type) {
-		v = datatypes.GetFloat32(v)
-	} else if t.IsType(&datatypes.ByteType) {
-		v = datatypes.GetByte(v)
-	} else if t.IsType(&datatypes.BoolType) {
+
+	case datatypes.BoolKind:
 		v = datatypes.GetBool(v)
-	} else if t.IsType(&datatypes.StringType) {
+
+	case datatypes.ByteKind:
+		v = datatypes.GetByte(v)
+
+	case datatypes.Float32Kind:
+		v = datatypes.GetFloat32(v)
+
+	case datatypes.Float64Kind:
+		v = datatypes.GetFloat64(v)
+
+	case datatypes.StringKind:
 		v = datatypes.GetString(v)
-	} else if t.IsType(&datatypes.InterfaceType) || t.IsUndefined() {
-		// No work to do here.
-	} else {
+
+	default:
 		var base []interface{}
 
 		if a, ok := v.(*datatypes.EgoArray); ok {

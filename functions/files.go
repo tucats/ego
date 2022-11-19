@@ -30,7 +30,7 @@ func initializeFileType() {
 	if fileType == nil {
 		structType := datatypes.Structure()
 		structType.DefineField(fileFieldName, &datatypes.InterfaceType).
-			DefineField(validFieldName, &datatypes.BoolType).
+			DefineField(validFieldName, datatypes.BoolType).
 			DefineField(nameFieldName, &datatypes.StringType).
 			DefineField(modeFieldName, &datatypes.StringType)
 

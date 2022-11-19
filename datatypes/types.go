@@ -40,8 +40,8 @@ const (
 	MutexKind
 	maximumNativeType // After list of Go-native types
 
-	varArgs  // pseudo type used for variable argument list items
-	TypeKind // something defined by a type statement
+	VarArgsKind // pseudo type used for variable argument list items
+	TypeKind    // something defined by a type statement
 )
 
 const (
@@ -283,6 +283,12 @@ func (t Type) String() string {
 // Ego data types.
 func (t Type) Kind() int {
 	return t.kind
+}
+
+// For a given type, return true if the type is of the given scalar
+// base kind. Note this cannot be used for user-defined Types.
+func (t Type) IsKind(k int) bool {
+	return t.kind == k
 }
 
 // Return true if this type is a pointer to something.
@@ -630,7 +636,7 @@ func TypeOf(i interface{}) *Type {
 		return Pointer(&MutexType)
 
 	case bool:
-		return &BoolType
+		return BoolType
 
 	case byte:
 		return &ByteType
@@ -684,7 +690,7 @@ func TypeOf(i interface{}) *Type {
 		return Pointer(&StringType)
 
 	case *bool:
-		return Pointer(&BoolType)
+		return Pointer(BoolType)
 
 	case *EgoPackage:
 		return Pointer(TypeOf(*v))

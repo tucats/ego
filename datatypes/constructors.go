@@ -29,7 +29,7 @@ var ErrorType = Type{
 	kind: ErrorKind,
 }
 
-var BoolType = Type{
+var BoolType = &Type{
 	name:      BoolTypeName,
 	kind:      BoolKind,
 	keyType:   nil,
@@ -108,7 +108,7 @@ var MutexType = Type{
 
 var VarArgsType = Type{
 	name: "...",
-	kind: varArgs,
+	kind: VarArgsKind,
 }
 
 // Construct a type that is an array of the given type.

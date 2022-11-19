@@ -278,7 +278,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	empty := true
 
 	if m, ok := v.(*datatypes.EgoMap); ok {
-		if !m.KeyType().IsType(&datatypes.StringType) {
+		if m.KeyType().Kind() != datatypes.StringKind {
 			err = c.newError(errors.ErrInvalidStruct)
 		} else {
 			keys := m.Keys()

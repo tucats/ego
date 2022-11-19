@@ -265,7 +265,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		valueType = &Float32Type
 
 	case reflect.Bool:
-		valueType = &BoolType
+		valueType = BoolType
 
 	case reflect.String:
 		valueType = &StringType
@@ -288,7 +288,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		keyType = Float64Type
 
 	case reflect.Bool:
-		keyType = BoolType
+		keyType = *BoolType
 
 	case reflect.String:
 		keyType = StringType
