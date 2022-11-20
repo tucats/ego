@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 // BuildVersion is the incremental build version. This is normally
@@ -23,7 +24,7 @@ var BuildTime string
 var Copyright = "(C) Copyright Tom Cole 2020, 2021, 2022"
 
 func main() {
-	app := app.New("ego: execute code in the Ego language").
+	app := app.New("ego: " + i18n.T("ego.desc")).
 		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright).
 		SetDefaultAction(commands.RunAction)
@@ -35,7 +36,7 @@ func main() {
 	// Hack. If the second argument is a filename ending in ".ego"
 	// then assume it was mean to be a "run" command.
 	args := os.Args
-	if filepath.Ext(args[1]) == defs.EgoFilenameExtension {
+	if len(args) > 1 && filepath.Ext(args[1]) == defs.EgoFilenameExtension {
 		args = make([]string, 0)
 
 		for i, arg := range os.Args {
@@ -52,7 +53,7 @@ func main() {
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
 	if !errors.Nil(err) {
-		msg := fmt.Sprintf("Error: %v\n", err.Error())
+		msg := fmt.Sprintf("%s: %v\n", i18n.T("error.label"), err.Error())
 		os.Stderr.Write([]byte(msg))
 
 		if value := err.GetContext(); value != nil {
@@ -76,7 +77,7 @@ func main() {
 func parseVersion(version string) (major int, minor int, build int) {
 	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
 	if count != 3 || err != nil {
-		fmt.Printf("Unable to process version number %s; count=%d, err=%v\n", version, count, err)
+		fmt.Printf("%s\n", i18n.T("version.parse.error", map[string]interface{}{"v": version, "c": count, "e": err}))
 		os.Exit(1)
 	}
 
