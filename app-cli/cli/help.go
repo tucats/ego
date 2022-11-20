@@ -69,11 +69,12 @@ func ShowHelp(c *Context) {
 		minimumFirstColumnWidth = 26
 	}
 
+	commandDescription := i18n.T(c.Description)
 	if c.Parent == nil && c.Version != "" {
-		c.Description = c.Description + ", " + c.Version
+		commandDescription = commandDescription + ", " + c.Version
 	}
 
-	fmt.Printf("\n%s:\n   %-26s   %s\n\n", i18n.T("label.Usage"), composedCommand, c.Description)
+	fmt.Printf("\n%s:\n   %-26s   %s\n\n", i18n.T("label.Usage"), composedCommand, commandDescription)
 
 	// Now prepare the descriptions of the subcommands. This is done using a
 	// table format, where the headings are not printed. But this lets the

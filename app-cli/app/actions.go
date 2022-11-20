@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	rest_runtime "github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/util"
 )
@@ -77,8 +78,9 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		fmt.Printf("%s version %s (%s, %s)\n",
+		fmt.Printf("%s %s %s (%s, %s)\n",
 			c.FindGlobal().AppName,
+			i18n.T("label.version"),
 			c.FindGlobal().Version,
 			runtime.Version(),
 			arch)

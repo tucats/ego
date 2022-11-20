@@ -60,6 +60,7 @@ var Messages = map[string]map[string]string{
 		"label.parameters": "parameters",
 		"label.Parameters": "Parameters",
 		"label.Usage":      "Usage",
+		"label.version":    "version",
 
 		"opt.logon.server": "URL of server to authenticate with",
 
