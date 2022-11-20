@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/i18n"
 )
 
 // Default indentation for subordinate text, and default
@@ -40,27 +41,27 @@ func ShowHelp(c *Context) {
 	}
 
 	if hasOptions {
-		composedCommand = composedCommand + "[options] "
+		composedCommand = composedCommand + "[" + i18n.T("label.options") + "] "
 	}
 
 	if hasSubcommand {
-		composedCommand = composedCommand + "[command] "
+		composedCommand = composedCommand + "[" + i18n.T("label.command") + "] "
 	}
 
 	g := c.FindGlobal()
 	e := g.ExpectedParameterCount
 
 	if g.ParameterDescription > "" {
-		parmDesc := g.ParameterDescription
+		parmDesc := i18n.T(g.ParameterDescription)
 		if g.ExpectedParameterCount < 1 {
 			parmDesc = "[" + parmDesc + "]"
 		}
 
 		composedCommand = composedCommand + " " + parmDesc
 	} else if e == 1 {
-		composedCommand = composedCommand + " [parameter]"
+		composedCommand = composedCommand + " [" + i18n.T("label.parameter") + "]"
 	} else if e > 1 {
-		composedCommand = composedCommand + " [parameters]"
+		composedCommand = composedCommand + " [" + i18n.T("label.parameters") + "]"
 	}
 
 	minimumFirstColumnWidth := len(composedCommand)
@@ -72,7 +73,7 @@ func ShowHelp(c *Context) {
 		c.Description = c.Description + ", " + c.Version
 	}
 
-	fmt.Printf("\nUsage:\n   %-26s   %s\n\n", composedCommand, c.Description)
+	fmt.Printf("\n%s:\n   %-26s   %s\n\n", i18n.T("label.Usage"), composedCommand, c.Description)
 
 	// Now prepare the descriptions of the subcommands. This is done using a
 	// table format, where the headings are not printed. But this lets the
@@ -91,13 +92,13 @@ func ShowHelp(c *Context) {
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
 			if !headerShown {
-				fmt.Printf("Commands:\n")
+				fmt.Printf("%s:\n", i18n.T("label.Commands"))
 
-				_ = tc.AddRow([]string{"help", "Display help text"})
+				_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
 				headerShown = true
 			}
 
-			_ = tc.AddRow([]string{option.LongName, option.Description})
+			_ = tc.AddRow([]string{option.LongName, i18n.T(option.Description)})
 		}
 	}
 
@@ -120,10 +121,10 @@ func ShowHelp(c *Context) {
 	for _, option := range c.Grammar {
 		if option.OptionType == ParameterType {
 			if !headerShown {
-				fmt.Printf("Parameters:\n")
+				fmt.Printf("%s:\n", i18n.T("label.Parameters"))
 
 				headerShown = true
-				_ = tc.AddRowItems(option.Description)
+				_ = tc.AddRowItems(i18n.T(option.Description))
 			}
 		}
 	}
@@ -177,7 +178,7 @@ func ShowHelp(c *Context) {
 				name = name + " <list>"
 			}
 
-			fullDescription := option.Description
+			fullDescription := i18n.T(option.Description)
 
 			if option.EnvironmentVariable != "" {
 				fullDescription = fullDescription + " [" + option.EnvironmentVariable + "]"
@@ -189,7 +190,7 @@ func ShowHelp(c *Context) {
 
 	fmt.Printf("Options:\n")
 
-	_ = to.AddRow([]string{"--help, -h", "Show this help text"})
+	_ = to.AddRow([]string{"--help, -h", i18n.T("opt.help.text")})
 	_ = to.SortRows(0, true)
 	_ = to.Print(ui.TextFormat)
 }

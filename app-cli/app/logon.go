@@ -23,14 +23,14 @@ var LogonGrammar = []cli.Option{
 		LongName:            "username",
 		ShortName:           "u",
 		OptionType:          cli.StringType,
-		Description:         "Username for login",
+		Description:         "opt.username",
 		EnvironmentVariable: "EGO_USERNAME",
 	},
 	{
 		LongName:            "password",
 		ShortName:           "p",
 		OptionType:          cli.StringType,
-		Description:         "Password for login",
+		Description:         "opt.password",
 		EnvironmentVariable: "EGO_PASSWORD",
 	},
 	{
@@ -38,7 +38,7 @@ var LogonGrammar = []cli.Option{
 		ShortName:           "l",
 		Aliases:             []string{"server"},
 		OptionType:          cli.StringType,
-		Description:         "URL of logon server",
+		Description:         "opt.logon.server",
 		EnvironmentVariable: "EGO_LOGON_SERVER",
 	},
 }
