@@ -559,7 +559,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 		}
 
 	default:
-		err = errors.New(errors.ErrInvalidArgType)
+		err = errors.New(errors.ErrArgumentType)
 	}
 
 	return err

@@ -50,7 +50,7 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 				parameters[field] = datatypes.GetString(value)
 			}
 		} else if value != nil {
-			return nil, errors.New(errors.ErrInvalidArgType)
+			return nil, errors.New(errors.ErrArgumentType)
 		}
 	}
 

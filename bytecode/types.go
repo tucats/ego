@@ -26,12 +26,12 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
-					err = c.newError(errors.ErrInvalidArgType)
+					err = c.newError(errors.ErrArgumentType)
 				}
 			} else {
 				if t, ok := i.(string); ok {
 					if t != reflect.TypeOf(v).String() {
-						err = c.newError(errors.ErrInvalidArgType)
+						err = c.newError(errors.ErrArgumentType)
 					}
 				} else {
 					if t, ok := i.(int); ok {
@@ -65,7 +65,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 						}
 
 						if !ok {
-							err = c.newError(errors.ErrInvalidArgType)
+							err = c.newError(errors.ErrArgumentType)
 						}
 					}
 				}
