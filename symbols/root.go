@@ -14,7 +14,7 @@ var rootNames = map[string]int{
 }
 
 var rootBaseValues = []interface{}{
-	"(c) Copyright 2020, 2021",
+	"(c) Copyright 2020, 2021, 2022",
 	uuid.NewString(),
 }
 
