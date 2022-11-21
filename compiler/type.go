@@ -147,8 +147,8 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type
 		if pkg, found := c.s.Root().Get(packageName); found {
 			if m, ok := pkg.(datatypes.EgoPackage); ok {
 				if t, found := m.Get(typeName); found {
-					if theType, ok := t.(datatypes.Type); ok {
-						return &theType, true
+					if theType, ok := t.(*datatypes.Type); ok {
+						return theType, true
 					}
 				}
 

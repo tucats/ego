@@ -52,15 +52,18 @@ var Messages = map[string]map[string]string{
 		"ego.test":              "Run a test suite",
 
 		// Note that labels are case-sensitive, to indicate the expected case of the translation.
-		"label.command":    "command",
-		"label.Commands":   "Commands",
-		"label.Error":      "Error",
-		"label.options":    "options",
-		"label.parameter":  "parameter",
-		"label.parameters": "parameters",
-		"label.Parameters": "Parameters",
-		"label.Usage":      "Usage",
-		"label.version":    "version",
+		"label.command":         "command",
+		"label.Commands":        "Commands",
+		"label.Error":           "Error",
+		"label.options":         "options",
+		"label.parameter":       "parameter",
+		"label.parameters":      "parameters",
+		"label.Parameters":      "Parameters",
+		"label.password.prompt": "Password: ",
+		"label.Usage":           "Usage",
+		"label.version":         "version",
+
+		"msg.logged.in": "Successfully logged in as {{user}}, valid until {{expires}}",
 
 		"opt.logon.server": "URL of server to authenticate with",
 
@@ -303,6 +306,7 @@ var Messages = map[string]map[string]string{
 		"error.token.extra":            "unexpected token",
 		"error.token.encryption":       "invalid token encryption",
 		"error.type":                   "invalid or unsupported data type for this operation",
+		"error.type.not.found":         "no such type",
 		"error.try.stack":              "try/catch stack error",
 		"error.type.check":             "invalid @type keyword",
 		"error.type.def":               "missing type definition",

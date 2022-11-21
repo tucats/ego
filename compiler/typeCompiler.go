@@ -206,6 +206,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 
 	// User type known to this compilation?
 	typeName := c.t.Peek(1)
+
 	if t, found := c.Types[typeName]; found {
 		c.t.Advance(1)
 
@@ -221,9 +222,11 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 
 			return t, nil
 		}
+
+		typeName = packageName + "." + typeName
 	}
 
-	return &datatypes.UndefinedType, c.newError(errors.ErrInvalidType)
+	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType).Context(typeName)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

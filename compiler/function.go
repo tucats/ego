@@ -205,7 +205,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 			// If there was a receiver, make sure this function is added to the type structure
 			t, ok := c.Types[receiverType]
 			if !ok {
-				return c.newError(errors.ErrInvalidType)
+				return c.newError(errors.ErrUnknownType)
 			}
 
 			// Update the function in the type map, and generate new code

@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
@@ -83,7 +84,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Get the password. If not supplied by the user, prompt until provided.
 	pass, _ := c.String("password")
 	for pass == "" {
-		pass = ui.PromptPassword("Password: ")
+		pass = ui.PromptPassword(i18n.T("label.password.prompt"))
 	}
 
 	// Turn logon server address and endpoint into full URL.
@@ -133,7 +134,12 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 		err = settings.Save()
 		if errors.Nil(err) {
-			ui.Say("Successfully logged in as \"%s\", valid until %s", user, payload.Expiration)
+			msg := i18n.T("msg.logged.in", map[string]interface{}{
+				"user":    user,
+				"expires": payload.Expiration,
+			})
+
+			ui.Say("%s", msg)
 		}
 
 		return errors.New(err)
