@@ -216,9 +216,17 @@ func LogMessage(class int, format string, args ...interface{}) string {
 }
 
 // Say displays a message to the user unless we are in "quiet" mode.
+// If there are no arguments, the format string is output without
+// further processing (that is, safe even if it contains formatting
+// operators, as long as there are no arguments).
 func Say(format string, args ...interface{}) {
+	var s string
 	if !QuietMode {
-		s := fmt.Sprintf(format, args...)
+		if len(args) == 0 {
+			s = format
+		} else {
+			s = fmt.Sprintf(format, args...)
+		}
 		fmt.Println(s)
 	}
 }
