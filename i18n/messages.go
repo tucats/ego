@@ -72,6 +72,7 @@ var Messages = map[string]map[string]string{
 		"label.parameters":            "parameters",
 		"label.Parameters":            "Parameters",
 		"label.password.prompt":       "Password: ",
+		"label.Row":                   "Row",
 		"label.Usage":                 "Usage",
 		"label.Value":                 "Value",
 		"label.version":               "version",

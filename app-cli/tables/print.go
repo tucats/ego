@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 // Print will output a table using current rows and format specifications.
@@ -237,7 +238,7 @@ func (t *Table) paginateText() []string {
 			if t.showHeadings {
 				headers = append(headers, strings.Builder{})
 				if rowNumberWidth > 0 {
-					headers[headerIndex].WriteString("Row")
+					headers[headerIndex].WriteString(i18n.T("label.Row"))
 
 					for pad := 0; pad < rowNumberWidth-3; pad++ {
 						headers[headerIndex].WriteRune(' ')
@@ -252,7 +253,7 @@ func (t *Table) paginateText() []string {
 
 		if t.showHeadings {
 			if first && rowNumberWidth > 0 {
-				headers[headerIndex].WriteString("Row")
+				headers[headerIndex].WriteString(i18n.T("label.Row"))
 
 				for pad := 0; pad < rowNumberWidth-3; pad++ {
 					headers[headerIndex].WriteRune(' ')
@@ -402,9 +403,10 @@ func (t *Table) FormatText() []string {
 
 	if t.showHeadings {
 		buffer.WriteString(t.indent)
+		rowString := i18n.T("label.Row")
 
 		if t.showRowNumbers {
-			buffer.WriteString("Row")
+			buffer.WriteString(rowString)
 			buffer.WriteString(t.spacing)
 		}
 
@@ -420,7 +422,7 @@ func (t *Table) FormatText() []string {
 			buffer.WriteString(t.indent)
 
 			if t.showRowNumbers {
-				buffer.WriteString("===")
+				buffer.WriteString(strings.Repeat("=", len(rowString)))
 				buffer.WriteString(t.spacing)
 			}
 
@@ -466,6 +468,11 @@ func (t *Table) FormatText() []string {
 	return output
 }
 
+// AlignText aligns a string to a given width and alignment. This
+// is used to manage columns once the contents are formatted.
+//
+// @tomcole This isn't really unicode-safe, because the substrings
+// are done on byte positions, not rune positions.
 func AlignText(text string, width int, alignment int) string {
 	if len(text) >= width {
 		switch alignment {
