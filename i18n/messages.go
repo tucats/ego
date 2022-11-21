@@ -97,6 +97,7 @@ var Messages = map[string]map[string]string{
 		"label.ID":                    "ID",
 		"label.Key":                   "Key",
 		"label.Logger":                "Logger",
+		"label.Member":                "Member",
 		"label.Name":                  "Name",
 		"label.Nullable":              "Nullable",
 		"label.options":               "options",

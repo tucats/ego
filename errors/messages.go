@@ -11,6 +11,7 @@ import (
 // TODO introduce localized strings.
 
 // Return values used to signal flow change.
+// THESE SHOULD NOT BE LOCALIZED.
 
 var ErrContinue = errors.New("continue")
 var ErrSignalDebugger = errors.New("signal")

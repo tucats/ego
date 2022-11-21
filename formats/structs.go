@@ -5,13 +5,13 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/i18n"
 )
 
 // StructAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
 func StructAsString(vv *datatypes.EgoStruct) string {
-	t, _ := tables.New([]string{"Field", "Type", "Value"})
-	//t.ShowUnderlines(false).ShowHeadings(false)
+	t, _ := tables.New([]string{i18n.L("Field"), i18n.L("Type"), i18n.L("Value")})
 
 	keys := vv.FieldNames()
 	for _, key := range keys {
