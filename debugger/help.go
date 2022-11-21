@@ -6,45 +6,46 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 const defaultHelpIndent = 3
 
 var helpText = [][]string{
-	{"break at <line>", "Halt execution at a given line number"},
-	{"break when <expression>", "Halt execution when expression is true"},
-	{"break clear at <line>", "Remove breakpoint for line number"},
-	{"break clear when <expression>", "Remove breakpoint for expression"},
-	{"break load [\"file\"]", "Load breakpoints from named file"},
-	{"break save [\"file\"]", "Save breakpoint list to named file"},
-	{"continue", "Resume execution of the program"},
-	{"exit", "Exit the debugger"},
-	{"help", "display this help text"},
-	{"print", "Print the value of an expression"},
-	{"set <variable> = <expression>", "Set a variable to a value"},
-	{"show breaks", "Display list of breakpoints"},
-	{"show calls [<count>]", "Display the call stack to the given depth"},
-	{"show symbols", "Display the current symbol table"},
-	{"show line", "Display the current program line"},
-	{"show scope", "Display nested call scope"},
-	{"show source [start [:end]]", "Display source of current module"},
-	{"step [into]", "Execute the next line of the program"},
-	{"step over", "Step over a function call to the next line in this program"},
-	{"step return", "Execute until the next return operation"},
+	{"break at <line>", i18n.T("help.break.at")},
+	{"break when <expression>", i18n.T("help.break.when")},
+	{"break clear at <line>", i18n.T("help.break.clear")},
+	{"break clear when <expression>", i18n.T("help.break.clear.when")},
+	{"break load [\"file\"]", i18n.T("help.break.load")},
+	{"break save [\"file\"]", i18n.T("help.break.save")},
+	{"continue", i18n.T("help.continue")},
+	{"exit", i18n.T("help.exit")},
+	{"help", i18n.T("help.help")},
+	{"print", i18n.T("help.print")},
+	{"set <variable> = <expression>", i18n.T("help.set")},
+	{"show breaks", i18n.T("help.show.breaks")},
+	{"show calls [<count>]", i18n.T("help.show.calls")},
+	{"show symbols", i18n.T("help.show.symbols")},
+	{"show line", i18n.T("help.show.line")},
+	{"show scope", i18n.T("help.show.scope")},
+	{"show source [start [:end]]", i18n.T("help.show.source")},
+	{"step [into]", i18n.T("help.step")},
+	{"step over", i18n.T("help.step.over")},
+	{"step return", i18n.T("help.step.return")},
 }
 
 func Help() *errors.EgoError {
-	table, err := tables.New([]string{"Command", "Description"})
+	table, err := tables.New([]string{i18n.L("Command"), i18n.L("Description")})
 
 	for _, helpItem := range helpText {
 		err = table.AddRow(helpItem)
 	}
 
 	if errors.Nil(err) {
-		fmt.Println("Debugger commands:")
+		fmt.Println(i18n.L("debug.commands"))
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)
-		_ = table.SetOrderBy("Command")
+		_ = table.SetOrderBy(i18n.L("Command"))
 		_ = table.Print(ui.TextFormat)
 	}
 
