@@ -41,6 +41,14 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
+func LanguageAction(c *cli.Context) *errors.EgoError {
+	if language, ok := c.FindGlobal().String("language"); ok {
+		i18n.Language = strings.ToLower(language)[0:2]
+	}
+
+	return nil
+}
+
 // DebugAction is an action routine to set the loggers that will get debug messages
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.

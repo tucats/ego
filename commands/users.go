@@ -42,7 +42,6 @@ func AddUser(c *cli.Context) *errors.EgoError {
 			ui.Say("msg.user.added", map[string]interface{}{
 				"user": user,
 			})
-
 		} else {
 			_ = commandOutput(resp)
 		}

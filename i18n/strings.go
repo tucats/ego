@@ -22,9 +22,9 @@ func T(key string, valueMap ...map[string]interface{}) string {
 	}
 
 	// Find the message using the current language
-	text, ok := Messages[Language][key]
+	text, ok := Messages[key][Language]
 	if !ok {
-		text, ok = Messages["en"][key]
+		text, ok = Messages[key]["en"]
 		if !ok {
 			text = key
 		}

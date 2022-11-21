@@ -228,6 +228,7 @@ func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
 	ui.Say("msg.debug.break.added", map[string]interface{}{
 		"break": FormatBreakpoint(b),
 	})
+
 	return nil
 }
 

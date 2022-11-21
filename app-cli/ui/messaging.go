@@ -240,6 +240,7 @@ func Say(format string, args ...interface{}) {
 				format = i18n.T(format, m)
 				alreadyFormatted = true
 			}
+			
 			format = i18n.T(format)
 		} else {
 			format = i18n.T(format)

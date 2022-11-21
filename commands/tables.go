@@ -759,7 +759,6 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 
 func printPermissionObject(result defs.PermissionObject) {
 	if ui.OutputFormat == ui.TextFormat {
-
 		if len(result.Permissions) < 1 {
 			if len(result.Permissions) == 0 {
 				result.Permissions = []string{"none"}
@@ -772,7 +771,6 @@ func printPermissionObject(result defs.PermissionObject) {
 			"table":  result.Table,
 			"perms":  strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
 		})
-
 	} else {
 		_ = commandOutput(result)
 	}
