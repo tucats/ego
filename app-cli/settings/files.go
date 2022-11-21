@@ -11,11 +11,16 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 // ProfileDirectory is the name of the invisible directory that is created
 // in the user's home directory to host configuration data.
 const ProfileDirectory = ".org.fernwood"
+
+// DefaultConfiguration is a localized string that contains the
+// local text for "Default configuration"
+var DefaultConfiguration = i18n.T("label.Default.configuration")
 
 // ProfileFile is the name of the configuration file that contains the
 // profiles.
@@ -49,7 +54,7 @@ var Configurations map[string]Configuration
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) *errors.EgoError {
 	var c = Configuration{
-		Description: "Default configuration",
+		Description: DefaultConfiguration,
 		Items:       map[string]string{},
 	}
 
@@ -90,7 +95,7 @@ func Load(application string, name string) *errors.EgoError {
 		c, found := Configurations[name]
 
 		if !found {
-			c = Configuration{Description: "Default configuration", Items: map[string]string{}}
+			c = Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
 			Configurations[name] = c
 			ProfileDirty = true
 		}
@@ -150,7 +155,7 @@ func Save() *errors.EgoError {
 func UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
-		c = Configuration{Description: name + " configuration", Items: map[string]string{}}
+		c = Configuration{Description: name + " " + i18n.T("label.configuration"), Items: map[string]string{}}
 		Configurations[name] = c
 		ProfileDirty = true
 	}
@@ -298,7 +303,7 @@ func DeleteProfile(key string) *errors.EgoError {
 
 func getCurrentConfiguration() *Configuration {
 	if CurrentConfiguration == nil {
-		CurrentConfiguration = &Configuration{Description: "Default configuration", Items: map[string]string{}}
+		CurrentConfiguration = &Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
 	}
 
 	return CurrentConfiguration
