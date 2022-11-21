@@ -19,10 +19,6 @@ type Channel struct {
 	id      string
 }
 
-const (
-	ChannelNotOpenError = "channel not open"
-)
-
 // Create a mew instance of an Ego channel. The size passed indicates
 // the buffer size, which is 1 unless size is greater than 1, in which
 // case it is set to the given size.

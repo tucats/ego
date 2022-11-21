@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -66,7 +68,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
-		fmt.Printf("Symbol table scope:\n")
+		ui.Say("msg.debug.scope")
 
 		for symbolTable != nil {
 			idx := "local"
@@ -75,7 +77,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				idx = fmt.Sprintf("%5d", depth)
 			}
 
-			fmt.Printf("\t%s:  %s, %d symbols\n", idx, symbolTable.Name, len(symbolTable.Symbols))
+			fmt.Printf("\t%s:  %s, %d %s\n", idx, symbolTable.Name, len(symbolTable.Symbols), i18n.L("symbols"))
 
 			depth++
 

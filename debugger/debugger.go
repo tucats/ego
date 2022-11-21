@@ -8,15 +8,14 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
-const (
-	stepTo  = "Stepped to"
-	breakAt = "Break at"
-)
+var stepTo = i18n.L("stepped.to")
+var breakAt = i18n.L("break.at")
 
 // Run a context but allow the debugger to take control as
 // needed.
@@ -54,7 +53,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		if tok := c.GetTokenizer(); tok != nil {
 			text = tok.GetLine(line)
 		} else {
-			fmt.Printf("No source available for debugging\n")
+			ui.Say("msg.debug.no.source")
 		}
 	}
 
@@ -66,9 +65,11 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		// Big hack here. Let's change the text of the "@entrypoint" directive
 		// to be more easily read by the user when the debugger runs.
 		if line < 0 {
-			fmt.Println("Return from entrypoint")
+			ui.Say("msg.debug.return")
 		} else if strings.HasPrefix(text, "@entrypoint ") {
-			fmt.Printf("Start program with call to entrypoint: %s()\n", strings.TrimPrefix(text, "@entrypoint "))
+			ui.Say("msg.debug.start", map[string]interface{}{
+				"name": strings.TrimPrefix(text, "@entrypoint "),
+			})
 		} else {
 			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, c.GetModuleName(), line, text)
 		}
@@ -166,7 +167,9 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			}
 
 			if !errors.Nil(err) && !err.Is(errors.ErrStop) && !err.Is(errors.ErrStepOver) {
-				fmt.Printf("Debugger error, %v\n", err)
+				ui.Say("msg.debug.error", map[string]interface{}{
+					"err": err,
+				})
 
 				err = nil
 			}

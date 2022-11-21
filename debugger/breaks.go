@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
@@ -95,7 +96,9 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				name = defaultBreakpointFilename
 			}
 
-			fmt.Printf("Saving %d breakpoints\n", len(breakPoints))
+			ui.Say("msg.debug.save.count", map[string]interface{}{
+				"count": len(breakPoints),
+			})
 
 			b, e := json.MarshalIndent(breakPoints, "", "  ")
 			if e == nil {
@@ -133,7 +136,9 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 
 				breakPoints = v
 
-				fmt.Printf("Loaded %d breakpoints\n", len(breakPoints))
+				ui.Say("msg.debug.load.count", map[string]interface{}{
+					"count": len(breakPoints),
+				})
 			}
 
 			err = errors.New(e)
@@ -181,7 +186,7 @@ func clearBreakAtLine(module string, line int) {
 func breakAtLine(module string, line int) *errors.EgoError {
 	for _, b := range breakPoints {
 		if b.Kind == BreakAlways && b.Line == line {
-			fmt.Println("Breakpoint already set")
+			ui.Say("msg.debug.break.exists")
 
 			return nil
 		}
@@ -195,7 +200,9 @@ func breakAtLine(module string, line int) *errors.EgoError {
 	}
 	breakPoints = append(breakPoints, b)
 
-	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
+	ui.Say("msg.debug.break.added", map[string]interface{}{
+		"break": FormatBreakpoint(b),
+	})
 
 	return nil
 }
@@ -203,7 +210,7 @@ func breakAtLine(module string, line int) *errors.EgoError {
 func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
 	for _, b := range breakPoints {
 		if b.Kind == BreakValue && b.Text == text {
-			fmt.Println("Breakpoint already set")
+			ui.Say("msg.debug.break.exists")
 
 			return nil
 		}
@@ -218,14 +225,15 @@ func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
 	}
 	breakPoints = append(breakPoints, b)
 
-	fmt.Printf("Added break %s\n", FormatBreakpoint(b))
-
+	ui.Say("msg.debug.break.added", map[string]interface{}{
+		"break": FormatBreakpoint(b),
+	})
 	return nil
 }
 
 func ShowBreaks() {
 	if len(breakPoints) == 0 {
-		fmt.Printf("No breakpoints defined\n")
+		ui.Say("msg.debug.no.breakpoints")
 	} else {
 		for _, b := range breakPoints {
 			fmt.Printf("break %s\n", FormatBreakpoint(b))

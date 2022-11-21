@@ -61,6 +61,7 @@ var Messages = map[string]map[string]string{
 
 		// Note that labels are case-sensitive, to indicate the expected case of the translation.
 		"label.Active":                "Active",
+		"label.break.at":              "Break at",
 		"label.Columns":               "Columns",
 		"label.command":               "command",
 		"label.Commands":              "Commands",
@@ -85,6 +86,8 @@ var Messages = map[string]map[string]string{
 		"label.Schema":                "Schema",
 		"label.since":                 "since",
 		"label.Size":                  "Size",
+		"label.stepped.to":            "Step to",
+		"label.symbols":               "symbols",
 		"label.Table":                 "Table",
 		"label.Type":                  "Type",
 		"label.Unique":                "Unique",
@@ -96,6 +99,16 @@ var Messages = map[string]map[string]string{
 
 		"msg.config.written":           "Configuration key {{key}} written",
 		"msg.config.deleted":           "Configuration {{name}} deleted",
+		"msg.debug.break.added":        "Added break {{break}}",
+		"msg.debug.break.exists":       "Breakpoint already set",
+		"msg.debug.error":              "Debugger error, {{err}}",
+		"msg.debug.load.count":         "Loaded {{count}} breakpoints",
+		"msg.debug.no.breakpoints":     "No breakpoints defined",
+		"msg.debug.no.source":          "No source available for debugging",
+		"msg.debug.return":             "Return from entrypoint",
+		"msg.debug.save.count":         "Saving {{count}} breakpoints",
+		"msg.debug.scope":              "Symbol table scope:",
+		"msg.debug.start":              "Start program with call to entrypoint {{name}}()",
 		"msg.enter.blank.line":         "Enter a blank line to terminate command input",
 		"msg.logged.in":                "Successfully logged in as {{user}}, valid until {{expires}}",
 		"msg.server.cache":             "Server Cache, hostname {{host}}, ID {{id}}",
