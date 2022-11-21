@@ -27,7 +27,7 @@ func Status(c *cli.Context) *errors.EgoError {
 	}
 
 	// Otherwise, it's the local server by port number.
-	msg := "Server not running"
+	msg := i18n.T("msg.server.not.running")
 
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) {

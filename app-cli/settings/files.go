@@ -19,7 +19,7 @@ import (
 const ProfileDirectory = ".org.fernwood"
 
 // DefaultConfiguration is a localized string that contains the
-// local text for "Default configuration"
+// local text for "Default configuration".
 var DefaultConfiguration = i18n.T("label.Default.configuration")
 
 // ProfileFile is the name of the configuration file that contains the

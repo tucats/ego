@@ -1,8 +1,9 @@
 package i18n
 
-// Internalized strings. The map is organized by language as the first key,
-// and then the text ID passed into the i18n.T() function. If a key in a
-// given language is not found, it reverts to using the "en" key.
+// Messages contains a map of internalized strings. The map is organized
+// by language as the first key, and then the text ID passed into the
+// i18n.T() function. If a key in a given language is not found, it
+// reverts to using the "en" key.
 var Messages = map[string]map[string]string{
 	"en": {
 		"ego": "run an Ego program",
@@ -99,6 +100,7 @@ var Messages = map[string]map[string]string{
 		"msg.server.logs.purged":       "Purged {{count}} old log files",
 		"msg.server.logs.retains":      "Server also retains last {{count}} previous log files",
 		"msg.server.logs.status":       "Logging status, hostname {{host}}, ID {{id}}",
+		"msg.server.not.running":       "Server not running",
 		"msg.server.started":           "Server started as process {{pid}}",
 		"msg.server.status":            "Ego {{version}}, pid {{pid}}, host {{host}}, session {{id}}",
 		"msg.server.stopped":           "Server (pid {{pid}}) stopped",

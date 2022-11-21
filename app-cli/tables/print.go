@@ -403,6 +403,7 @@ func (t *Table) FormatText() []string {
 
 	if t.showHeadings {
 		buffer.WriteString(t.indent)
+
 		rowString := i18n.T("label.Row")
 
 		if t.showRowNumbers {

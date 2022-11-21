@@ -236,6 +236,7 @@ func Say(format string, args ...interface{}) {
 		} else {
 			s = fmt.Sprintf(format, args...)
 		}
+
 		fmt.Println(s)
 	}
 }
