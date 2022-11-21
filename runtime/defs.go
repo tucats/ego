@@ -35,12 +35,6 @@ const (
 		db 		interface{},
 	}`
 
-	// gremlin.Client type specification.
-	gremlinTypeSpec = `
-	type gremlin.Client struct {
-		client	interface{}
-	}`
-
 	// rest.Client type specification.
 	restTypeSpec = `
 	type rest.Client struct {

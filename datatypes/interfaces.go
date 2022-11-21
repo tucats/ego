@@ -276,7 +276,7 @@ func DeepCopy(v interface{}) interface{} {
 
 // GetNativeMap extracts a map from an abstract interface. Returns nil
 // if the interface did not contain a map. Note this is NOT an
-// Ego map, but rather is used by the gremlin package for actual maps.
+// Ego map, but rather is used by  runtime.Table() for actual maps.
 func GetNativeMap(v interface{}) map[string]interface{} {
 	if m, ok := v.(map[string]interface{}); ok {
 		return m

@@ -402,9 +402,6 @@ var Messages = map[string]map[string]string{
 	"error.go.error": {
 		"en": "Go routine {{name}} failed, {{err}}",
 	},
-	"error.gremlin.client": {
-		"en": "invalid gremlin client",
-	},
 	"error.http": {
 		"en": "received HTTP",
 	},

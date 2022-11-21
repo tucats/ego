@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -11,6 +13,20 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
+
+type column struct {
+	Name           string `json:"name"`
+	FormattedWidth int    `json:"formattedWidth"`
+	Kind           int    `json:"kind"`
+	KindName       string `json:"kindName"`
+}
+
+type Row []interface{}
+
+type jsonData struct {
+	Columns []column `json:"columns"`
+	Rows    []Row    `json:"rows"`
+}
 
 var tableTypeDef *datatypes.Type
 var tableTypeDefLock sync.Mutex
@@ -360,4 +376,129 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 	}
 
 	return nil, errors.New(errors.ErrNoFunctionReceiver)
+}
+
+// Table generates a string describing a rectangular result map.
+func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.New(errors.ErrArgumentCount)
+	}
+
+	includeHeadings := true
+
+	if len(args) == 2 {
+		includeHeadings = datatypes.GetBool(args[1])
+	}
+
+	// Scan over the first data element to pick up the column names and types
+	a := datatypes.GetNativeArray(args[0])
+	if len(a) == 0 {
+		return nil, errors.New(errors.ErrInvalidResultSetType)
+	}
+
+	// Make a list of the sort key names
+	row := datatypes.GetNativeMap(a[0])
+	keys := []string{}
+
+	for k := range row {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	columns := []column{}
+
+	for _, k := range keys {
+		v := row[k]
+		c := column{}
+		c.Name = k
+		c.Kind = int(reflect.TypeOf(v).Kind())
+
+		if includeHeadings {
+			c.FormattedWidth = len(k)
+		}
+
+		columns = append(columns, c)
+	}
+
+	// Scan all rows to get maximum length values
+	for _, r := range a {
+		row := datatypes.GetNativeMap(r)
+
+		for n := 0; n < len(columns); n = n + 1 {
+			c := columns[n]
+
+			v, ok := row[c.Name]
+			if ok {
+				width := len(datatypes.FormatUnquoted(v))
+				if width > c.FormattedWidth {
+					c.FormattedWidth = width
+					columns[n] = c
+				}
+			}
+		}
+	}
+
+	// Go over the columns and right-align numeric values
+	for n := 0; n < len(columns); n = n + 1 {
+		c := columns[n]
+		if isNumeric(c.Kind) {
+			c.FormattedWidth = -c.FormattedWidth
+			columns[n] = c
+		}
+	}
+
+	// Fill in the headers
+	result := []interface{}{}
+
+	if includeHeadings {
+		var b strings.Builder
+
+		var h strings.Builder
+
+		for _, c := range columns {
+			b.WriteString(Pad(c.Name, c.FormattedWidth))
+			b.WriteRune(' ')
+
+			w := c.FormattedWidth
+			if w < 0 {
+				w = -w
+			}
+
+			h.WriteString(strings.Repeat("=", w))
+			h.WriteRune(' ')
+		}
+
+		result = append(result, b.String())
+		result = append(result, h.String())
+	}
+
+	// Loop over the rows and fill in the values
+	for _, r := range a {
+		row := datatypes.GetNativeMap(r)
+
+		var b strings.Builder
+
+		for _, c := range columns {
+			v, ok := row[c.Name]
+			if ok {
+				b.WriteString(Pad(v, c.FormattedWidth))
+				b.WriteRune(' ')
+			} else {
+				b.WriteString(strings.Repeat(" ", c.FormattedWidth+1))
+			}
+		}
+
+		result = append(result, b.String())
+	}
+
+	return result, nil
+}
+
+func isNumeric(t int) bool {
+	if t >= int(reflect.Int) && t <= int(reflect.Complex128) {
+		return true
+	}
+
+	return false
 }

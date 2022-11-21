@@ -8,68 +8,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-/*  TEST ONLY IF YOU HAVE A LOCAL GREMLIN SERVER
-
-func TestFunctionGremlinQuery(t *testing.T) {
-	tests := []struct {
-		name    string
-		query   string
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name:    "Simple vertex count",
-			query:   "g.V().hasLabel('MADEUPNAME').count()",
-			want:    0,
-			wantErr: false,
-		},
-		{
-			name:    "create vertex",
-			query:   "g.addV('airport').property('name', 'Raleigh').property('code', 'RDU')",
-			wantErr: false,
-		},
-		{
-			name:  "value map",
-			query: "g.V().hasLabel('airport').valueMap()",
-			want: map[string]interface{}{
-				"code": "RDU",
-				"name": "Raleigh",
-			},
-			wantErr: false,
-		},
-		{
-			name:    "cleanup vertex",
-			query:   "g.V().hasLabel('airport').drop()",
-			wantErr: false,
-		},
-	}
-
-	syms := symbols.NewSymbolTable("test")
-	client, err := GremlinOpen(syms, []interface{}{"ws://localhost:8182/gremlin"})
-	if !errors.Nil(err) {
-		t.Errorf("Error connecting to gremlin server: %v", err)
-		t.Fail()
-	}
-
-	_ = syms.SetAlways("__this", client)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GremlinQuery(syms, []interface{}{
-				tt.query,
-			})
-			if (!errors.Nil(err)) != tt.wantErr {
-				t.Errorf("FunctionGremlinQuery() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.want != nil && !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionGremlinQuery() = %#v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-*/
-
 func Test_pad(t *testing.T) {
 	type args struct {
 		s string
