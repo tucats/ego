@@ -153,7 +153,7 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type
 				}
 
 				if t, found := m.Get(datatypes.TypeMDKey); found {
-					if theType, ok := t.(datatypes.Type); ok {
+					if theType, ok := t.(*datatypes.Type); ok {
 						return theType.BaseType(), true
 					}
 				}

@@ -60,8 +60,8 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	}
 
 	// Is it an actual type?
-	if typeValue, ok := args[0].(datatypes.Type); ok {
-		return typeValue.InstanceOf(&typeValue), nil
+	if typeValue, ok := args[0].(*datatypes.Type); ok {
+		return typeValue.InstanceOf(typeValue), nil
 	}
 
 	if typeValue, ok := args[0].(*datatypes.Type); ok {

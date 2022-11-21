@@ -69,7 +69,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return m.Reflect(), nil
 	}
 
-	if m, ok := args[0].(datatypes.Type); ok {
+	if m, ok := args[0].(*datatypes.Type); ok {
 		return m.Reflect(), nil
 	}
 	// Is it an Ego package?
