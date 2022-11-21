@@ -41,11 +41,11 @@ func ShowHelp(c *Context) {
 	}
 
 	if hasOptions {
-		composedCommand = composedCommand + "[" + i18n.T("label.options") + "] "
+		composedCommand = composedCommand + "[" + i18n.L("options") + "] "
 	}
 
 	if hasSubcommand {
-		composedCommand = composedCommand + "[" + i18n.T("label.command") + "] "
+		composedCommand = composedCommand + "[" + i18n.L("command") + "] "
 	}
 
 	g := c.FindGlobal()
@@ -59,9 +59,9 @@ func ShowHelp(c *Context) {
 
 		composedCommand = composedCommand + " " + parmDesc
 	} else if e == 1 {
-		composedCommand = composedCommand + " [" + i18n.T("label.parameter") + "]"
+		composedCommand = composedCommand + " [" + i18n.L("parameter") + "]"
 	} else if e > 1 {
-		composedCommand = composedCommand + " [" + i18n.T("label.parameters") + "]"
+		composedCommand = composedCommand + " [" + i18n.L("parameters") + "]"
 	}
 
 	minimumFirstColumnWidth := len(composedCommand)
@@ -74,7 +74,7 @@ func ShowHelp(c *Context) {
 		commandDescription = commandDescription + ", " + c.Version
 	}
 
-	fmt.Printf("\n%s:\n   %-26s   %s\n\n", i18n.T("label.Usage"), composedCommand, commandDescription)
+	fmt.Printf("\n%s:\n   %-26s   %s\n\n", i18n.L("Usage"), composedCommand, commandDescription)
 
 	// Now prepare the descriptions of the subcommands. This is done using a
 	// table format, where the headings are not printed. But this lets the
@@ -93,7 +93,7 @@ func ShowHelp(c *Context) {
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
 			if !headerShown {
-				fmt.Printf("%s:\n", i18n.T("label.Commands"))
+				fmt.Printf("%s:\n", i18n.L("Commands"))
 
 				_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
 				headerShown = true
@@ -122,7 +122,7 @@ func ShowHelp(c *Context) {
 	for _, option := range c.Grammar {
 		if option.OptionType == ParameterType {
 			if !headerShown {
-				fmt.Printf("%s:\n", i18n.T("label.Parameters"))
+				fmt.Printf("%s:\n", i18n.L("Parameters"))
 
 				headerShown = true
 				_ = tc.AddRowItems(i18n.T(option.Description))

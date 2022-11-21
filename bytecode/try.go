@@ -52,7 +52,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch i := i.(type) {
 	case int:
 		if i > len(catchSets) {
-			return c.newError(errors.ErrInternalCompiler).Context(i18n.T("error.invalid.catch.set",
+			return c.newError(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
 				map[string]interface{}{"index": i}))
 		}
 

@@ -92,7 +92,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		fmt.Println(i18n.T("msg.server.cache", map[string]interface{}{
+		fmt.Println(i18n.M("server.cache", map[string]interface{}{
 			"host": cacheStatus.Hostname,
 			"id":   cacheStatus.ID,
 		}))
@@ -116,15 +116,15 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 
 		switch cacheStatus.AssetCount {
 		case 0:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.no.assets"))
+			fmt.Printf("  %s\n", i18n.M("server.cache.no.assets"))
 
 		case 1:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.asset", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.one.asset", map[string]interface{}{
 				"size": cacheStatus.AssetSize,
 			}))
 
 		default:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.assets", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.assets", map[string]interface{}{
 				"count": cacheStatus.AssetCount,
 				"size":  cacheStatus.AssetSize,
 			}))
@@ -132,17 +132,17 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 
 		switch cacheStatus.Count {
 		case 0:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.no.services", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.no.services", map[string]interface{}{
 				"limit": cacheStatus.Limit,
 			}))
 
 		case 1:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.service", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
 				"limit": cacheStatus.Limit,
 			}))
 
 		default:
-			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.service", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
 				"count": cacheStatus.Count,
 				"limit": cacheStatus.Limit,
 			}))

@@ -11,7 +11,7 @@ import (
 // MapAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
 func MapAsString(vv *datatypes.EgoMap) string {
-	t, _ := tables.New([]string{i18n.T("label.Key"), i18n.T("label.Type"), i18n.T("label.Value")})
+	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Type"), i18n.L("Value")})
 
 	keys := vv.Keys()
 	for _, key := range keys {

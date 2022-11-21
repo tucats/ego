@@ -97,7 +97,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	t, _ := tables.New([]string{i18n.T("label.Key"), i18n.T("label.Value")})
+	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Value")})
 
 	for k, v := range settings.CurrentConfiguration.Items {
 		if len(fmt.Sprintf("%v", v)) > maxKeyValuePrintWidth {
@@ -110,7 +110,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	// Pagination makes no sense in this context.
 	t.SetPagination(0, 0)
 
-	_ = t.SetOrderBy(i18n.T("label.Key"))
+	_ = t.SetOrderBy(i18n.L("Key"))
 	t.ShowUnderlines(false)
 	t.Print(ui.TextFormat)
 
@@ -119,7 +119,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 
 // ListAction Displays the current contents of the active configuration.
 func ListAction(c *cli.Context) *errors.EgoError {
-	t, _ := tables.New([]string{i18n.T("label.Name"), i18n.T("label.Description")})
+	t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Description")})
 
 	for k, v := range settings.Configurations {
 		_ = t.AddRowItems(k, v.Description)
@@ -172,7 +172,7 @@ func SetAction(c *cli.Context) *errors.EgoError {
 
 	settings.Set(key, value)
 
-	msg := i18n.T("msg.config.written", map[string]interface{}{"key": key})
+	msg := i18n.M("config.written", map[string]interface{}{"key": key})
 
 	ui.Say("%s", msg)
 
@@ -209,7 +209,7 @@ func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 
 	err := settings.DeleteProfile(name)
 	if errors.Nil(err) {
-		ui.Say("%s", i18n.T("msg.config.deleted", map[string]interface{}{"name": name}))
+		ui.Say("%s", i18n.M("config.deleted", map[string]interface{}{"name": name}))
 
 		return nil
 	}

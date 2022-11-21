@@ -26,7 +26,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 			e2 = proc.Kill()
 			// If successful, and in text mode, report the stop to the console.
 			if e2 == nil && ui.OutputFormat == ui.TextFormat {
-				ui.Say(i18n.T("msg.server.stopped", map[string]interface{}{
+				ui.Say(i18n.M("server.stopped", map[string]interface{}{
 					"pid": status.PID,
 				}))
 			}
@@ -74,9 +74,9 @@ func Restart(c *cli.Context) *errors.EgoError {
 			err = server.WritePidFile(c, *status)
 
 			if ui.OutputFormat == ui.TextFormat {
-				ui.Say(i18n.T("msg.server.started", map[string]interface{}{
-					"pid":pid,
-					}))
+				ui.Say(i18n.M("server.started", map[string]interface{}{
+					"pid": pid,
+				}))
 			} else {
 				serverState, _ := server.ReadPidFile(c)
 				_ = commandOutput(serverState)

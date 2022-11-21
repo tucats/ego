@@ -376,6 +376,7 @@ var UserGrammar = []cli.Option{
 	{
 		LongName:    "set",
 		Description: "ego.server.user.set",
+		Aliases:     []string{"add", "create"},
 		OptionType:  cli.Subcommand,
 		Action:      commands.AddUser,
 		Value:       ServerUserGrammar,

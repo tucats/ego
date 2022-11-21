@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -113,7 +114,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		b, err := comp.Compile(name, t)
 		if !errors.Nil(err) {
 			exitValue = 1
-			msg := fmt.Sprintf("Error: %v\n", err.Error())
+			msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
 			os.Stderr.Write([]byte(msg))
 		} else {
@@ -124,7 +125,9 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				// Always autoimport
 				err := comp.AutoImport(true)
 				if !errors.Nil(err) {
-					msg := fmt.Sprintf("Error: unable to auto-import: %v\n", err.Error())
+					msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
+						"err": err.Error(),
+					}))
 
 					os.Stderr.Write([]byte(msg))
 				}
@@ -160,7 +163,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 			if !errors.Nil(err) {
 				exitValue = 2
-				msg := fmt.Sprintf("Error: %v\n", err.Error())
+				msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
 				os.Stderr.Write([]byte(msg))
 			}

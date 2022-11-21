@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -48,8 +49,8 @@ func TableList(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			if rowCounts {
-				t, _ := tables.New([]string{"Schema", "Name", "Columns", "Rows"})
-				_ = t.SetOrderBy("Name")
+				t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns"), i18n.L("Rows")})
+				_ = t.SetOrderBy(i18n.L("Name"))
 				_ = t.SetAlignment(2, tables.AlignmentRight)
 				_ = t.SetAlignment(3, tables.AlignmentRight)
 
@@ -59,8 +60,8 @@ func TableList(c *cli.Context) *errors.EgoError {
 
 				t.Print(ui.OutputFormat)
 			} else {
-				t, _ := tables.New([]string{"Schema", "Name", "Columns"})
-				_ = t.SetOrderBy("Name")
+				t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns")})
+				_ = t.SetOrderBy(i18n.L("Name"))
 				_ = t.SetAlignment(2, tables.AlignmentRight)
 
 				for _, row := range resp.Tables {
@@ -86,8 +87,14 @@ func TableShow(c *cli.Context) *errors.EgoError {
 	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{"Name", "Type", "Size", "Nullable", "Unique"})
-			_ = t.SetOrderBy("Name")
+			t, _ := tables.New([]string{
+				i18n.L("Name"),
+				i18n.L("Type"),
+				i18n.L("Size"),
+				i18n.L("Nullable"),
+				i18n.L("Unique"),
+			})
+			_ = t.SetOrderBy(i18n.L("Name"))
 			_ = t.SetAlignment(2, tables.AlignmentRight)
 
 			for _, row := range resp.Columns {
@@ -124,14 +131,14 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 		if errors.Nil(err) {
 			count++
 
-			ui.Say("Table %s deleted", table)
+			ui.Say("msg.table.deleted", map[string]interface{}{"name": table})
 		} else {
 			break
 		}
 	}
 
 	if err == nil && count > 1 {
-		ui.Say("Deleted %d tables", count)
+		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
 	} else if !errors.Nil(err) {
 		return errors.New(err)
 	}
@@ -182,7 +189,7 @@ func TableContents(c *cli.Context) *errors.EgoError {
 func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
-			ui.Say("No rows in query")
+			ui.Say("msg.table.empty.rowset")
 
 			return nil
 		}
@@ -271,7 +278,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 	}
 
 	if len(payload) == 0 {
-		ui.Say("Nothing to insert")
+		ui.Say("msg.tables.no.insert")
 
 		return nil
 	}
@@ -280,7 +287,10 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if errors.Nil(err) {
-		ui.Say("Added %d row(s) to table %s", resp.Count, table)
+		ui.Say("msg.tables.insert.count", map[string]interface{}{
+			"count": resp.Count,
+			"name":  table,
+		})
 
 		return nil
 	}
@@ -398,7 +408,10 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		defs.TableAgent)
 
 	if errors.Nil(err) {
-		ui.Say("Created table %s with %d columns", table, len(payload))
+		ui.Say("msg.table.created", map[string]interface{}{
+			"name":  table,
+			"count": len(payload),
+		})
 	}
 
 	return err
@@ -458,7 +471,10 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		defs.RowCountMediaType)
 
 	if errors.Nil(err) {
-		ui.Say("Updated %d rows in table %s", resp.Count, table)
+		ui.Say("msg.table.update.count", map[string]interface{}{
+			"name":  table,
+			"count": len(payload),
+		})
 	}
 
 	return err
@@ -485,12 +501,12 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			if resp.Count == 0 {
-				ui.Say("No rows deleted")
+				ui.Say("msg.table.deleted.no.rows")
 
 				return nil
 			}
 
-			ui.Say("%d rows deleted", resp.Count)
+			ui.Say("msg.table.deleted.rows", map[string]interface{}{"count": resp.Count})
 		} else {
 			_ = commandOutput(resp)
 		}
@@ -528,7 +544,7 @@ func makeFilter(filters []string) string {
 		term2 := t.Next()
 
 		if term1 == "" || term2 == "" {
-			return filterParseError + "Missing filter term"
+			return filterParseError + i18n.E("filter.term.missing")
 		}
 
 		switch strings.ToUpper(op) {
@@ -560,7 +576,8 @@ func makeFilter(filters []string) string {
 			op = "LE"
 
 		default:
-			return filterParseError + "Unrecognized operator: " + op
+			return filterParseError + i18n.E("filter.term.invalid",
+				map[string]interface{}{"term": op})
 		}
 
 		// Assuming nothing has been written to the buffer yet (such as
@@ -630,7 +647,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	}
 
 	if len(strings.TrimSpace(sql)) == 0 {
-		ui.Say("Enter a blank line to terminate SQL command input")
+		ui.Say("msg.enter.blank.line")
 
 		for {
 			line := runtime.ReadConsoleText("sql> ")
@@ -662,11 +679,11 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 		}
 
 		if resp.Count == 0 {
-			ui.Say("No rows modified")
+			ui.Say("msg.table.sql.no.rows")
 		} else if resp.Count == 1 {
-			ui.Say("1 row modified")
+			ui.Say("msg.table.sql.one.row")
 		} else {
-			ui.Say("%d rows modified", resp.Count)
+			ui.Say("msg.table.sql.rows", map[string]interface{}{"count": resp.Count})
 		}
 	}
 
@@ -685,7 +702,13 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			t, _ := tables.New([]string{"User", "Schema", "Table", "Permissions"})
+			t, _ := tables.New([]string{
+				i18n.L("User"),
+				i18n.L("Schema"),
+				i18n.L("Table"),
+				i18n.L("Permissions"),
+			})
+
 			for _, permission := range permissions.Permissions {
 				_ = t.AddRowItems(permission.User,
 					permission.Schema,
@@ -736,26 +759,20 @@ func TableShowPermission(c *cli.Context) *errors.EgoError {
 
 func printPermissionObject(result defs.PermissionObject) {
 	if ui.OutputFormat == ui.TextFormat {
-		plural := "s"
-		verb := "are"
 
 		if len(result.Permissions) < 1 {
-			plural = ""
-			verb = "is"
-
 			if len(result.Permissions) == 0 {
 				result.Permissions = []string{"none"}
 			}
 		}
 
-		ui.Say("User %s permission%s for %s.%s %s %s",
-			result.User,
-			plural,
-			result.Schema,
-			result.Table,
-			verb,
-			strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
-		)
+		ui.Say("msg.table.user.permissions", map[string]interface{}{
+			"user":   result.User,
+			"schema": result.Schema,
+			"table":  result.Table,
+			"perms":  strings.TrimPrefix(strings.Join(result.Permissions, ","), ","),
+		})
+
 	} else {
 		_ = commandOutput(result)
 	}

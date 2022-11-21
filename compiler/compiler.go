@@ -306,7 +306,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 
 	// Keep the global symbol version in sync also. If it exists already, get its values
 	// and merge into this new definition, then write out the value.
-	// @tomcole This MAY be able to completly supplan the compiler package structures at
+	// @tomcole This MAY be able to completly supplant the compiler package structures at
 	// some point in the future.
 	if oldPackage, found := symbols.RootSymbolTable.Get(pkgname); found {
 		fd.Merge(oldPackage.(datatypes.EgoPackage))

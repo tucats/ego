@@ -53,7 +53,7 @@ func main() {
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
 	if !errors.Nil(err) {
-		msg := fmt.Sprintf("%s: %v\n", i18n.T("label.Error"), err.Error())
+		msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 		os.Stderr.Write([]byte(msg))
 
 		if value := err.GetContext(); value != nil {
@@ -77,7 +77,7 @@ func main() {
 func parseVersion(version string) (major int, minor int, build int) {
 	count, err := fmt.Sscanf(version, "%d.%d-%d", &major, &minor, &build)
 	if count != 3 || err != nil {
-		fmt.Printf("%s\n", i18n.T("error.version.parse", map[string]interface{}{"v": version, "c": count, "e": err}))
+		fmt.Printf("%s\n", i18n.E("version.parse", map[string]interface{}{"v": version, "c": count, "e": err}))
 		os.Exit(1)
 	}
 

@@ -221,17 +221,33 @@ func LogMessage(class int, format string, args ...interface{}) string {
 // If there are no arguments, the format string is output without
 // further processing (that is, safe even if it contains formatting
 // operators, as long as there are no arguments).
+//
+// Note that the format string is tested to see if it is probably
+// a localization string. If so, it is localized before output.
+// If it was localized, and there is a single argument that is a
+// proper map[string]interface{} object, then that is used for the
+// formatting.
 func Say(format string, args ...interface{}) {
 	var s string
+
+	alreadyFormatted := false
 
 	// If it might be a message ID, translate it. If there is not
 	// translation available, then the format is unchanged.
 	if strings.Index(format, ".") > 0 {
-		format = i18n.T(format)
+		if len(args) > 0 {
+			if m, ok := args[0].(map[string]interface{}); ok {
+				format = i18n.T(format, m)
+				alreadyFormatted = true
+			}
+			format = i18n.T(format)
+		} else {
+			format = i18n.T(format)
+		}
 	}
 
 	if !QuietMode {
-		if len(args) == 0 {
+		if alreadyFormatted || len(args) == 0 {
 			s = i18n.T(format)
 		} else {
 			s = fmt.Sprintf(format, args...)

@@ -27,19 +27,19 @@ func Status(c *cli.Context) *errors.EgoError {
 	}
 
 	// Otherwise, it's the local server by port number.
-	msg := i18n.T("msg.server.not.running")
+	msg := i18n.M("server.not.running")
 
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
 			msg = fmt.Sprintf("UP (%s) %s %s",
-				i18n.T("msg.server.status", map[string]interface{}{
+				i18n.M("server.status", map[string]interface{}{
 					"version": status.Version,
 					"pid":     status.PID,
 					"host":    status.Hostname,
 					"id":      status.LogID,
 				}),
-				i18n.T("label.since"),
+				i18n.L("since"),
 				status.Started.Format(time.UnixDate))
 		} else {
 			_ = server.RemovePidFile(c)
@@ -71,6 +71,10 @@ func remoteStatus(addr string) *errors.EgoError {
 
 	name, err := ResolveServerName(addr)
 	if !errors.Nil(err) {
+		// @tomcole This is not a good idea, comparing against text literal.
+		// However, not sure how else to do it at this point, since the error
+		// contains data about connection, etc. that we don't want to use in
+		// the comparison.
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			if ui.OutputFormat == ui.TextFormat {
 				fmt.Println("DOWN")
@@ -106,13 +110,13 @@ func remoteStatus(addr string) *errors.EgoError {
 
 	if ui.OutputFormat == ui.TextFormat {
 		msg := fmt.Sprintf("UP (%s) %s %s, %s",
-			i18n.T("msg.server.status", map[string]interface{}{
+			i18n.M("server.status", map[string]interface{}{
 				"version": resp.Version,
 				"pid":     resp.Pid,
 				"host":    resp.Hostname,
 				"id":      resp.ID,
 			}),
-			i18n.T("label.since"),
+			i18n.L("since"),
 			resp.Since,
 			name)
 

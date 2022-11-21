@@ -3,7 +3,9 @@
 // whether those messages are displayed or not.
 package ui
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestLogMessage(t *testing.T) {
 	type args struct {

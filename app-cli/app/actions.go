@@ -80,7 +80,7 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s %s %s (%s, %s)\n",
 			c.FindGlobal().AppName,
-			i18n.T("label.version"),
+			i18n.L("version"),
 			c.FindGlobal().Version,
 			runtime.Version(),
 			arch)

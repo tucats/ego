@@ -20,7 +20,7 @@ const ProfileDirectory = ".org.fernwood"
 
 // DefaultConfiguration is a localized string that contains the
 // local text for "Default configuration".
-var DefaultConfiguration = i18n.T("label.Default.configuration")
+var DefaultConfiguration = i18n.L("Default.configuration")
 
 // ProfileFile is the name of the configuration file that contains the
 // profiles.
@@ -155,7 +155,7 @@ func Save() *errors.EgoError {
 func UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
-		c = Configuration{Description: name + " " + i18n.T("label.configuration"), Items: map[string]string{}}
+		c = Configuration{Description: name + " " + i18n.L("configuration"), Items: map[string]string{}}
 		Configurations[name] = c
 		ProfileDirty = true
 	}

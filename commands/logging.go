@@ -55,7 +55,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		if count.Count > 0 {
-			ui.Say(i18n.T("msg.server.logs.purged", map[string]interface{}{
+			ui.Say(i18n.M("server.logs.purged", map[string]interface{}{
 				"count": count.Count,
 			}))
 		}
@@ -155,12 +155,12 @@ func Logging(c *cli.Context) *errors.EgoError {
 		if fileOnly {
 			ui.Say("%s", response.Filename)
 		} else {
-			fmt.Printf("%s\n\n", i18n.T("msg.server.logs.status", map[string]interface{}{
+			fmt.Printf("%s\n\n", i18n.M("server.logs.status", map[string]interface{}{
 				"host": response.Hostname,
 				"id":   response.ID,
 			}))
 
-			t, _ := tables.New([]string{i18n.T("label.Logger"), i18n.T("label.Active")})
+			t, _ := tables.New([]string{i18n.L("Logger"), i18n.L("Active")})
 
 			for k, v := range response.Loggers {
 				_ = t.AddRowItems(k, v)
@@ -173,15 +173,15 @@ func Logging(c *cli.Context) *errors.EgoError {
 			t.Print(ui.OutputFormat)
 
 			if response.Filename != "" {
-				fmt.Printf("\n%s\n", i18n.T("msg.server.logs.file", map[string]interface{}{
+				fmt.Printf("\n%s\n", i18n.M("server.logs.file", map[string]interface{}{
 					"name": response.Filename,
 				}))
 
 				if response.RetainCount > 0 {
 					if response.RetainCount == 1 {
-						fmt.Printf("%s\n", i18n.T("msg.server.logs.no.retain"))
+						fmt.Printf("%s\n", i18n.M("server.logs.no.retain"))
 					} else {
-						fmt.Printf("%s\n", i18n.T("msg.server.logs.retains", map[string]interface{}{
+						fmt.Printf("%s\n", i18n.M("server.logs.retains", map[string]interface{}{
 							"count": response.RetainCount - 1,
 						}))
 					}

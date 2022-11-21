@@ -84,7 +84,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 	// Get the password. If not supplied by the user, prompt until provided.
 	pass, _ := c.String("password")
 	for pass == "" {
-		pass = ui.PromptPassword(i18n.T("label.password.prompt"))
+		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
 
 	// Turn logon server address and endpoint into full URL.
@@ -134,7 +134,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 		err = settings.Save()
 		if errors.Nil(err) {
-			msg := i18n.T("msg.logged.in", map[string]interface{}{
+			msg := i18n.M("logged.in", map[string]interface{}{
 				"user":    user,
 				"expires": payload.Expiration,
 			})

@@ -189,7 +189,7 @@ func Start(c *cli.Context) *errors.EgoError {
 		}
 
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say(i18n.T("msg.server.started", map[string]interface{}{
+			ui.Say(i18n.M("server.started", map[string]interface{}{
 				"pid": pid,
 			}))
 		} else {

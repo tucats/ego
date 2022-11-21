@@ -197,7 +197,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	}
 
 	if !err.Is(errors.ErrStop) {
-		fmt.Printf("%s\n", i18n.T("error.go.error", map[string]interface{}{"name": fName, "err": err}))
+		fmt.Printf("%s\n", i18n.E("go.error", map[string]interface{}{"name": fName, "err": err}))
 
 		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)

@@ -238,7 +238,7 @@ func (t *Table) paginateText() []string {
 			if t.showHeadings {
 				headers = append(headers, strings.Builder{})
 				if rowNumberWidth > 0 {
-					headers[headerIndex].WriteString(i18n.T("label.Row"))
+					headers[headerIndex].WriteString(i18n.L("Row"))
 
 					for pad := 0; pad < rowNumberWidth-3; pad++ {
 						headers[headerIndex].WriteRune(' ')
@@ -253,7 +253,7 @@ func (t *Table) paginateText() []string {
 
 		if t.showHeadings {
 			if first && rowNumberWidth > 0 {
-				headers[headerIndex].WriteString(i18n.T("label.Row"))
+				headers[headerIndex].WriteString(i18n.L("Row"))
 
 				for pad := 0; pad < rowNumberWidth-3; pad++ {
 					headers[headerIndex].WriteRune(' ')
@@ -404,7 +404,7 @@ func (t *Table) FormatText() []string {
 	if t.showHeadings {
 		buffer.WriteString(t.indent)
 
-		rowString := i18n.T("label.Row")
+		rowString := i18n.L("Row")
 
 		if t.showRowNumbers {
 			buffer.WriteString(rowString)

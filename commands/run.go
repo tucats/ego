@@ -274,7 +274,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
 			exitValue = 1
-			msg := fmt.Sprintf("%s: %s\n", i18n.T("label.Error"), err.Error())
+			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
 			os.Stderr.Write([]byte(msg))
 		} else {
@@ -306,7 +306,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			if !errors.Nil(err) {
 				exitValue = 2
-				msg := fmt.Sprintf("%s: %s\n", i18n.T("label.Error"), err.Error())
+				msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
 				os.Stderr.Write([]byte(msg))
 			} else {

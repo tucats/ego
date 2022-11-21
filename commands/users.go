@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
@@ -21,11 +22,11 @@ func AddUser(c *cli.Context) *errors.EgoError {
 	permissions, _ := c.StringList("permissions")
 
 	for user == "" {
-		user = ui.Prompt("Username: ")
+		user = ui.Prompt(i18n.L("username.prompt"))
 	}
 
 	for pass == "" {
-		pass = ui.PromptPassword("Password: ")
+		pass = ui.PromptPassword(i18n.L("password.prompt"))
 	}
 
 	payload := defs.User{
@@ -38,7 +39,10 @@ func AddUser(c *cli.Context) *errors.EgoError {
 	err = runtime.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("User %s added", user)
+			ui.Say("msg.user.added", map[string]interface{}{
+				"user": user,
+			})
+
 		} else {
 			_ = commandOutput(resp)
 		}
@@ -64,7 +68,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 	err = runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
 	if errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say("User %s deleted", user)
+			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
 		} else {
 			_ = commandOutput(resp)
 		}
@@ -82,7 +86,7 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		t, _ := tables.New([]string{"User", "ID", "Permissions"})
+		t, _ := tables.New([]string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions")})
 
 		for _, u := range ud.Items {
 			perms := ""
