@@ -7,8 +7,15 @@ var Messages = map[string]map[string]string{
 	"en": {
 		"ego": "run an Ego program",
 
-		"ego.config": "Manage the configuration",
-		"ego.logon":  "Log onto a remote server",
+		"ego.config":                 "Manage the configuration",
+		"ego.config.delete":          "Delete a key from the configuration",
+		"ego.config.list":            "List all configurations",
+		"ego.config.remove":          "Delete an entire configuration",
+		"ego.config.set":             "Set a configuration value",
+		"ego.config.set.description": "Set the configuration description",
+		"ego.config.set.output":      "Set the default output type (text or json)",
+		"ego.config.show":            "Show the current configuration",
+		"ego.logon":                  "Log onto a remote server",
 
 		"ego.path": "Print the default ego path",
 
@@ -54,16 +61,24 @@ var Messages = map[string]map[string]string{
 		// Note that labels are case-sensitive, to indicate the expected case of the translation.
 		"label.command":         "command",
 		"label.Commands":        "Commands",
+		"label.Description":     "Description",
 		"label.Error":           "Error",
+		"label.Key":             "Key",
+		"label.Name":            "Name",
 		"label.options":         "options",
 		"label.parameter":       "parameter",
 		"label.parameters":      "parameters",
 		"label.Parameters":      "Parameters",
 		"label.password.prompt": "Password: ",
 		"label.Usage":           "Usage",
+		"label.Value":           "Value",
 		"label.version":         "version",
 
-		"msg.logged.in": "Successfully logged in as {{user}}, valid until {{expires}}",
+		"msg.config.written": "Configuration key {{key}} written",
+		"msg.config.deleted": "Configuration {{name}} deleted",
+		"msg.logged.in":      "Successfully logged in as {{user}}, valid until {{expires}}",
+
+		"opt.config.force": "Do not signal error if option not found",
 
 		"opt.logon.server": "URL of server to authenticate with",
 
@@ -141,8 +156,13 @@ var Messages = map[string]map[string]string{
 		"parm.file":         "file",
 		"parm.file.or.path": "file or path",
 		"parm.address.port": "address:port",
+		"parm.name":         "name",
+		"parm.key":          "key",
 
-		"parm.sql.text":     "sql-text",
+		"parm.config.key.value": "key=value",
+
+		"parm.sql.text": "sql-text",
+
 		"parm.table.name":   "table-name",
 		"parm.table.create": "table-name column:type [column:type...]",
 		"parm.table.insert": "table-name [column=value...]",

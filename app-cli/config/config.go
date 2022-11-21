@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/util"
 )
 
@@ -19,13 +20,13 @@ const maxKeyValuePrintWidth = 60
 var Grammar = []cli.Option{
 	{
 		LongName:    "list",
-		Description: "List all configurations",
+		Description: "ego.config.list",
 		Action:      ListAction,
 		OptionType:  cli.Subcommand,
 	},
 	{
 		LongName:             "show",
-		Description:          "Show the current configuration",
+		Description:          "ego.config.show",
 		Action:               ShowAction,
 		ParameterDescription: "key",
 		ParametersExpected:   -1,
@@ -34,7 +35,7 @@ var Grammar = []cli.Option{
 	{
 		LongName:             "set-output",
 		OptionType:           cli.Subcommand,
-		Description:          "Set the default output type (text or json)",
+		Description:          "ego.config.set.output",
 		ParameterDescription: "type",
 		Action:               SetOutputAction,
 		ParametersExpected:   1,
@@ -42,7 +43,7 @@ var Grammar = []cli.Option{
 	{
 		LongName:             "set-description",
 		OptionType:           cli.Subcommand,
-		Description:          "Set the configuration description",
+		Description:          "ego.config.set.description",
 		ParameterDescription: "text",
 		ParametersExpected:   1,
 		Action:               SetDescriptionAction,
@@ -51,34 +52,34 @@ var Grammar = []cli.Option{
 		LongName:             "delete",
 		Aliases:              []string{"unset"},
 		OptionType:           cli.Subcommand,
-		Description:          "Delete a key from the configuration",
+		Description:          "ego.config.delete",
 		Action:               DeleteAction,
 		ParametersExpected:   1,
-		ParameterDescription: "key",
+		ParameterDescription: "parm.key",
 		Value: []cli.Option{
 			{
 				LongName:    "force",
 				ShortName:   "f",
 				OptionType:  cli.BooleanType,
-				Description: "Do not signal error if option not found",
+				Description: "opt.config.force",
 			},
 		},
 	},
 	{
 		LongName:             "remove",
 		OptionType:           cli.Subcommand,
-		Description:          "Delete an entire configuration",
+		Description:          "ego.config.remove",
 		Action:               DeleteProfileAction,
 		ParametersExpected:   1,
-		ParameterDescription: "name",
+		ParameterDescription: "parm.name",
 	},
 	{
 		LongName:             "set",
-		Description:          "Set a configuration value",
+		Description:          "ego.config.set",
 		Action:               SetAction,
 		OptionType:           cli.Subcommand,
 		ParametersExpected:   1,
-		ParameterDescription: "key=value",
+		ParameterDescription: "parm.config.key.value",
 	},
 }
 
@@ -96,7 +97,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	t, _ := tables.New([]string{"Key", "Value"})
+	t, _ := tables.New([]string{i18n.T("label.Key"), i18n.T("label.Value")})
 
 	for k, v := range settings.CurrentConfiguration.Items {
 		if len(fmt.Sprintf("%v", v)) > maxKeyValuePrintWidth {
@@ -109,7 +110,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 	// Pagination makes no sense in this context.
 	t.SetPagination(0, 0)
 
-	_ = t.SetOrderBy("key")
+	_ = t.SetOrderBy(i18n.T("label.Key"))
 	t.ShowUnderlines(false)
 	t.Print(ui.TextFormat)
 
@@ -118,7 +119,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 
 // ListAction Displays the current contents of the active configuration.
 func ListAction(c *cli.Context) *errors.EgoError {
-	t, _ := tables.New([]string{"Name", "Description"})
+	t, _ := tables.New([]string{i18n.T("label.Name"), i18n.T("label.Description")})
 
 	for k, v := range settings.Configurations {
 		_ = t.AddRowItems(k, v.Description)
@@ -170,7 +171,10 @@ func SetAction(c *cli.Context) *errors.EgoError {
 	}
 
 	settings.Set(key, value)
-	ui.Say("Profile key %s written", key)
+
+	msg := i18n.T("msg.config.written", map[string]interface{}{"key": key})
+
+	ui.Say("%s", msg)
 
 	return nil
 }
@@ -201,11 +205,11 @@ func DeleteAction(c *cli.Context) *errors.EgoError {
 
 // DeleteProfileAction deletes a named profile.
 func DeleteProfileAction(c *cli.Context) *errors.EgoError {
-	key := c.GetParameter(0)
+	name := c.GetParameter(0)
 
-	err := settings.DeleteProfile(key)
+	err := settings.DeleteProfile(name)
 	if errors.Nil(err) {
-		ui.Say("Profile %s deleted", key)
+		ui.Say("%s", i18n.T("msg.config.deleted", map[string]interface{}{"name": name}))
 
 		return nil
 	}
