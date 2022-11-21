@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -280,12 +281,13 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	if len(args) < fdef.Min || len(args) > fdef.Max {
-		return nil, errors.New(errors.ErrPanic).Context("incorrect number of arguments")
+		return nil, errors.New(errors.ErrPanic).Context(i18n.E("arg.count"))
 	}
 
 	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError))
 	if !ok {
-		return nil, errors.New(errors.ErrPanic).Context(fmt.Errorf("unable to convert %#v to function pointer", fdef.F))
+		return nil, errors.New(errors.ErrPanic).Context(fmt.Errorf(i18n.E("function.pointer", 
+		map[string]interface{}{ "ptr": fdef.F})))
 	}
 
 	return fn(s, args)

@@ -339,6 +339,7 @@ var Messages = map[string]map[string]string{
 		"error.function.body":          "missing function body",
 		"error.function.name":          "missing function name",
 		"error.function.list":          "missing function parameter list",
+		"error.function.ptr":           "unable to convert {{ptr}} to function pointer",
 		"error.function.receiver":      "no function receiver",
 		"error.function.return":        "missing function return type",
 		"error.fucntion.values":        "missing return values",
