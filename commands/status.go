@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
@@ -31,11 +32,14 @@ func Status(c *cli.Context) *errors.EgoError {
 	status, err := server.ReadPidFile(c)
 	if errors.Nil(err) {
 		if server.IsRunning(status.PID) {
-			msg = fmt.Sprintf("UP (Ego %s, pid %d, host %s, session %s) since %s",
-				status.Version,
-				status.PID,
-				status.Hostname,
-				status.LogID,
+			msg = fmt.Sprintf("UP (%s) %s %s",
+				i18n.T("msg.server.status", map[string]interface{}{
+					"version": status.Version,
+					"pid":     status.PID,
+					"host":    status.Hostname,
+					"id":      status.LogID,
+				}),
+				i18n.T("label.since"),
 				status.Started.Format(time.UnixDate))
 		} else {
 			_ = server.RemovePidFile(c)
@@ -101,7 +105,18 @@ func remoteStatus(addr string) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		ui.Say("UP (Ego %s, pid %d, host %s, session %s) since %s, %s", resp.Version, resp.Pid, resp.Hostname, resp.ServerInfo.ID, resp.Since, name)
+		msg := fmt.Sprintf("UP (%s) %s %s, %s",
+			i18n.T("msg.server.status", map[string]interface{}{
+				"version": resp.Version,
+				"pid":     resp.Pid,
+				"host":    resp.Hostname,
+				"id":      resp.ID,
+			}),
+			i18n.T("label.since"),
+			resp.Since,
+			name)
+
+		ui.Say(msg)
 	} else {
 		_ = commandOutput(resp)
 	}

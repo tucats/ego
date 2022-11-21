@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
@@ -39,7 +40,7 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		ui.Say("Server cache size updated")
+		ui.Say("msg.server.cache.updated")
 	} else {
 		_ = commandOutput(cacheStatus)
 	}
@@ -72,7 +73,7 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 		fmt.Println(string(b))
 
 	case ui.TextFormat:
-		ui.Say("Server cache emptied")
+		ui.Say("msg.server.cache.emptied")
 	}
 
 	return nil
@@ -91,7 +92,10 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		fmt.Printf("Server Cache, hostname %s, ID %s\n", cacheStatus.Hostname, cacheStatus.ID)
+		fmt.Println(i18n.T("msg.server.cache", map[string]interface{}{
+			"host": cacheStatus.Hostname,
+			"id":   cacheStatus.ID,
+		}))
 
 		if cacheStatus.Count > 0 {
 			fmt.Printf("\n")
@@ -112,24 +116,36 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 
 		switch cacheStatus.AssetCount {
 		case 0:
-			fmt.Printf("  There are no HTML assets cached.\n")
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.no.assets"))
 
 		case 1:
-			fmt.Printf("  There is 1 HTML asset in cache, for a total size of %d bytes\n", cacheStatus.AssetSize)
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.asset", map[string]interface{}{
+				"size": cacheStatus.AssetSize,
+			}))
 
 		default:
-			fmt.Printf("  There are %d HTML assets in cache, for a total size of %d bytes\n", cacheStatus.AssetCount, cacheStatus.AssetSize)
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.assets", map[string]interface{}{
+				"count": cacheStatus.AssetCount,
+				"size":  cacheStatus.AssetSize,
+			}))
 		}
 
 		switch cacheStatus.Count {
 		case 0:
-			fmt.Printf("  There are no service items in cache. The maximum cache size is %d items\n", cacheStatus.Limit)
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.no.services", map[string]interface{}{
+				"limit": cacheStatus.Limit,
+			}))
 
 		case 1:
-			fmt.Printf("  There is 1 service item in cache. The maximum cache size is %d items\n", cacheStatus.Limit)
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.service", map[string]interface{}{
+				"limit": cacheStatus.Limit,
+			}))
 
 		default:
-			fmt.Printf("  There are %d service items in cache. The maximum cache size is %d items\n", cacheStatus.Count, cacheStatus.Limit)
+			fmt.Printf("  %s\n", i18n.T("msg.server.cache.one.service", map[string]interface{}{
+				"count": cacheStatus.Count,
+				"limit": cacheStatus.Limit,
+			}))
 		}
 	} else {
 		_ = commandOutput(cacheStatus)

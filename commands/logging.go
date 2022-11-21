@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
@@ -54,7 +55,9 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		if count.Count > 0 {
-			ui.Say("Purged %d old log files", count.Count)
+			ui.Say(i18n.T("msg.server.logs.purged", map[string]interface{}{
+				"count": count.Count,
+			}))
 		}
 	}
 
@@ -152,8 +155,12 @@ func Logging(c *cli.Context) *errors.EgoError {
 		if fileOnly {
 			ui.Say("%s", response.Filename)
 		} else {
-			fmt.Printf("Logging Status, hostname %s, ID %s\n\n", response.Hostname, response.ID)
-			t, _ := tables.New([]string{"Logger", "Active"})
+			fmt.Printf("%s\n\n", i18n.T("msg.server.logs.status", map[string]interface{}{
+				"host": response.Hostname,
+				"id":   response.ID,
+			}))
+
+			t, _ := tables.New([]string{i18n.T("label.Logger"), i18n.T("label.Active")})
 
 			for k, v := range response.Loggers {
 				_ = t.AddRowItems(k, v)
@@ -166,12 +173,17 @@ func Logging(c *cli.Context) *errors.EgoError {
 			t.Print(ui.OutputFormat)
 
 			if response.Filename != "" {
-				fmt.Printf("\nServer log file is %s\n", response.Filename)
+				fmt.Printf("\n%s\n", i18n.T("msg.server.logs.file", map[string]interface{}{
+					"name": response.Filename,
+				}))
+
 				if response.RetainCount > 0 {
 					if response.RetainCount == 1 {
-						fmt.Printf("Server does not retain previous log files")
+						fmt.Printf("%s\n", i18n.T("msg.server.logs.no.retain"))
 					} else {
-						fmt.Printf("Server also retains last %d previous log files\n", response.RetainCount-1)
+						fmt.Printf("%s\n", i18n.T("msg.server.logs.retains", map[string]interface{}{
+							"count": response.RetainCount - 1,
+						}))
 					}
 				}
 			}

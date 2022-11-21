@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/tucats/ego/i18n"
 )
 
 // Formatted output types for data more complex than individual messages, such
@@ -221,9 +223,16 @@ func LogMessage(class int, format string, args ...interface{}) string {
 // operators, as long as there are no arguments).
 func Say(format string, args ...interface{}) {
 	var s string
+
+	// If it might be a message ID, translate it. If there is not
+	// translation available, then the format is unchanged.
+	if strings.Index(format, ".") > 0 {
+		format = i18n.T(format)
+	}
+
 	if !QuietMode {
 		if len(args) == 0 {
-			s = format
+			s = i18n.T(format)
 		} else {
 			s = fmt.Sprintf(format, args...)
 		}

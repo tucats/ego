@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -273,7 +274,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		b, err := comp.Compile(mainName, t)
 		if !errors.Nil(err) {
 			exitValue = 1
-			msg := fmt.Sprintf("Error: %s\n", err.Error())
+			msg := fmt.Sprintf("%s: %s\n", i18n.T("label.Error"), err.Error())
 
 			os.Stderr.Write([]byte(msg))
 		} else {
@@ -305,7 +306,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			if !errors.Nil(err) {
 				exitValue = 2
-				msg := fmt.Sprintf("Error: %s\n", err.Error())
+				msg := fmt.Sprintf("%s: %s\n", i18n.T("label.Error"), err.Error())
 
 				os.Stderr.Write([]byte(msg))
 			} else {

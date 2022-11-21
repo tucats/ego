@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
+	"github.com/tucats/ego/i18n"
 )
 
 // Restart stops and then starts a server, using the information
@@ -25,7 +26,9 @@ func Restart(c *cli.Context) *errors.EgoError {
 			e2 = proc.Kill()
 			// If successful, and in text mode, report the stop to the console.
 			if e2 == nil && ui.OutputFormat == ui.TextFormat {
-				ui.Say("Server (pid %d) stopped", status.PID)
+				ui.Say(i18n.T("msg.server.stopped", map[string]interface{}{
+					"pid": status.PID,
+				}))
 			}
 		}
 
@@ -71,7 +74,9 @@ func Restart(c *cli.Context) *errors.EgoError {
 			err = server.WritePidFile(c, *status)
 
 			if ui.OutputFormat == ui.TextFormat {
-				ui.Say("Server started as process %d", pid)
+				ui.Say(i18n.T("msg.server.started", map[string]interface{}{
+					"pid":pid,
+					}))
 			} else {
 				serverState, _ := server.ReadPidFile(c)
 				_ = commandOutput(serverState)
