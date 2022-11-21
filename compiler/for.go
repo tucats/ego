@@ -10,22 +10,23 @@ import (
 
 // compileFor compiles the loop statement. This has four syntax types that
 // can be specified.
-// 1. There are three clauses which are separated by ";", followed
-//    by a statement or block that is run as described by the loop
-//    index variable conditions.
 //
-// 2. There can be a range operation which creates an implied loop
-//    using each member of the array or struct.
+//  1. There are three clauses which are separated by ";", followed
+//     by a statement or block that is run as described by the loop
+//     index variable conditions.
 //
-// 3. There can be a simple conditional expression. The loop runs
-//    until the condition expression is false. The condition is
-//    tested at the start of every loop, so a condition that is
-//    initially false never runs the loop
+//  2. There can be a range operation which creates an implied loop
+//     using each member of the array or struct.
 //
-// 4. A for{} with no condition, loop, or range expression.
-//    this form _requires_ that there be at least one break
-//    statement inside the loop, which algorithmically stops
-//    the loop
+//  3. There can be a simple conditional expression. The loop runs
+//     until the condition expression is false. The condition is
+//     tested at the start of every loop, so a condition that is
+//     initially false never runs the loop
+//
+//  4. A for{} with no condition, loop, or range expression.
+//     this form _requires_ that there be at least one break
+//     statement inside the loop, which algorithmically stops
+//     the loop
 func (c *Compiler) compileFor() *errors.EgoError {
 	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
@@ -268,11 +269,11 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 
 	c.loopStackPop()
 
-	if indexName != "" && indexName != "_" {
+	if indexName != "" && indexName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, indexName)
 	}
 
-	if valueName != "" && valueName != "_" {
+	if valueName != "" && valueName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, valueName)
 	}
 

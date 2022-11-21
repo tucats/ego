@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -196,7 +197,9 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	}
 
 	if !err.Is(errors.ErrStop) {
-		fmt.Printf("Go routine  %s failed, %v\n", fName, err)
+
+		fmt.Printf("%s\n", i18n.T("error.go.error", map[string]interface{}{"name": fName, "err": err}))
+
 		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)
 	}

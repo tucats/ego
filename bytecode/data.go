@@ -5,6 +5,12 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// DiscardedVariableName is the reserved name for the variable
+// whose value is not used. This is place-holder in some Ego/Go
+// syntax constructs where a value is not used. It can also be
+// used to discard the result of a function call.
+const DiscardedVariableName = "_"
+
 // storeByteCode implements the Store opcode
 //
 // Inputs:
@@ -34,7 +40,7 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Get the name. If it is the reserved name "_" it means
 	// to just discard the value.
 	varname := datatypes.GetString(i)
-	if varname == "_" {
+	if varname == DiscardedVariableName {
 		return nil
 	}
 
@@ -49,7 +55,7 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(varname) > 1 && varname[0:1] == "_" {
+	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
 		case datatypes.EgoMap:
 			a.ImmutableKeys(true)
@@ -114,7 +120,7 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 	if destChan {
 		err = x.(*datatypes.Channel).Send(datum)
 	} else {
-		if varname != "_" {
+		if varname != DiscardedVariableName {
 			err = c.symbolSet(varname, datum)
 		}
 	}
@@ -139,7 +145,7 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(varname) > 1 && varname[0:1] == "_" {
+	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
 		case datatypes.EgoMap:
 			a.ImmutableKeys(true)
@@ -232,7 +238,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(varname) > 1 && varname[0:1] == "_" {
+	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
 		case datatypes.EgoMap:
 			a.ImmutableKeys(true)

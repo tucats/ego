@@ -186,7 +186,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 
 	// Quick optimization; if the name is "_" it just means
 	// discard and we can shortcircuit that.
-	if name == "_" {
+	if name == bytecode.DiscardedVariableName {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment

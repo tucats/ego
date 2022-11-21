@@ -50,11 +50,11 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 		r.indexName = datatypes.GetString(list[0])
 		r.valueName = datatypes.GetString(list[1])
 
-		if r.indexName != "" && r.indexName != "_" {
+		if r.indexName != "" && r.indexName != DiscardedVariableName {
 			err = c.symbols.Create(r.indexName)
 		}
 
-		if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+		if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 			err = c.symbols.Create(r.valueName)
 		}
 	}
@@ -141,11 +141,11 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				key := r.keySet[r.index]
 				value := r.runes[r.index]
 
-				if r.indexName != "" && r.indexName != "_" {
+				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 					err = c.symbols.Set(r.valueName, string(value))
 				}
 
@@ -161,11 +161,11 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 			} else {
 				key := r.keySet[r.index]
 
-				if r.indexName != "" && r.indexName != "_" {
+				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 					var value interface{}
 
 					ok := false
@@ -189,10 +189,10 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 			} else {
 				datum, err = actual.Receive()
 				if errors.Nil(err) {
-					if r.indexName != "" && r.indexName != "_" {
+					if r.indexName != "" && r.indexName != DiscardedVariableName {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
-					if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+					if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 						err = c.symbols.Set(r.valueName, datum)
 					}
 
@@ -209,10 +209,10 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				actual.Immutable(false)
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
-				if r.indexName != "" && r.indexName != "_" {
+				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 					var d interface{}
 
 					d, err = actual.Get(r.index)
@@ -228,10 +228,10 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
-				if r.indexName != "" && r.indexName != "_" {
+				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if errors.Nil(err) && r.valueName != "" && r.valueName != "_" {
+				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
 					err = c.symbols.Set(r.valueName, actual[r.index])
 				}
 				r.index++

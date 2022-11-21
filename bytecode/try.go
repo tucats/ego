@@ -1,10 +1,9 @@
 package bytecode
 
 import (
-	"strconv"
-
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/i18n"
 )
 
 const (
@@ -53,7 +52,8 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 	switch i := i.(type) {
 	case int:
 		if i > len(catchSets) {
-			return c.newError(errors.ErrInternalCompiler).Context("invalid catch set " + strconv.Itoa(i))
+			return c.newError(errors.ErrInternalCompiler).Context(i18n.T("error.invalid.catch.set",
+				map[string]interface{}{"index": i}))
 		}
 
 		// Zero has a special meaning of "catch everything"
