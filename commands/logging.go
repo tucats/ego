@@ -55,9 +55,9 @@ func Logging(c *cli.Context) *errors.EgoError {
 		}
 
 		if count.Count > 0 {
-			ui.Say(i18n.M("server.logs.purged", map[string]interface{}{
+			ui.Say("msg.server.logs.purged", map[string]interface{}{
 				"count": count.Count,
-			}))
+			})
 		}
 	}
 

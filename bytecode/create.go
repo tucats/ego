@@ -264,8 +264,19 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(structure)
 }
 
-// Create a new map. The argument is the number of key/value pairs on the
-// stack, preceded by the key and value types.
+// makeMapByteCode implements the MakeMap opcode
+//
+// Inputs:
+//
+//		argument   - The count of key/values on the stack
+//		stack+0    = The map key type
+//	    stack+1    = The map value type
+//		stack+2    - The first key
+//		stack+3    - The first value
+//		stack+4    - ...
+//
+// Create a new map. The argument is the number of key/value
+// pairs on the stack, preceded by the key and value types.
 func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := datatypes.GetInt(i)
 

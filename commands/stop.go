@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/i18n"
 )
 
 // Stop stops a running server if it exists.
@@ -23,9 +22,9 @@ func Stop(c *cli.Context) *errors.EgoError {
 			e2 = proc.Kill()
 			if e2 == nil {
 				if ui.OutputFormat == ui.TextFormat {
-					ui.Say(i18n.M("server.stopped", map[string]interface{}{
+					ui.Say("msg.server.stopped", map[string]interface{}{
 						"pid": status.PID,
-					}))
+					})
 				} else {
 					_ = commandOutput(status)
 				}

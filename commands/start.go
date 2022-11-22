@@ -13,7 +13,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/i18n"
 )
 
 // Detach starts the sever as a detached process.
@@ -189,9 +188,9 @@ func Start(c *cli.Context) *errors.EgoError {
 		}
 
 		if ui.OutputFormat == ui.TextFormat {
-			ui.Say(i18n.M("server.started", map[string]interface{}{
+			ui.Say("msg.server.started", map[string]interface{}{
 				"pid": pid,
-			}))
+			})
 		} else {
 			serverState, _ := server.ReadPidFile(c)
 			_ = commandOutput(serverState)

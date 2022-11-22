@@ -23,11 +23,6 @@ type column struct {
 
 type Row []interface{}
 
-type jsonData struct {
-	Columns []column `json:"columns"`
-	Rows    []Row    `json:"rows"`
-}
-
 var tableTypeDef *datatypes.Type
 var tableTypeDefLock sync.Mutex
 
