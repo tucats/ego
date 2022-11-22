@@ -1,7 +1,6 @@
 package tokenizer
 
 import (
-	"fmt"
 	"strings"
 	"text/scanner"
 	"unicode"
@@ -21,10 +20,7 @@ const (
 	EndOfTokens = "<<end-of-tokens>>"
 
 	// ToTheEnd means to advance the token stream to the end.
-	ToTheEnd = 9999
-
-	// The string format for display line and column info.
-	LineColumnFormat = "at %d:%d"
+	ToTheEnd = 999999
 )
 
 // This describes a token that is "crushed"; that is converting a sequence
@@ -200,17 +196,6 @@ func (t *Tokenizer) Remainder() string {
 	}
 
 	return strings.TrimSuffix(s[p:], "\n")
-}
-
-// PositionString reports the position of the current
-// token in terms of line and column information.
-func (t *Tokenizer) PositionString() string {
-	p := t.TokenP
-	if p >= len(t.Line) {
-		p = len(t.Line) - 1
-	}
-
-	return fmt.Sprintf(LineColumnFormat, t.Line[p], t.Pos[p])
 }
 
 // Next gets the next token in the tokenizer.
