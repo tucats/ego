@@ -75,18 +75,6 @@ func InterfaceMapKeys(data map[string]interface{}) []string {
 	return keys
 }
 
-func StringMapKeys(data map[string]string) []string {
-	keys := make([]string, 0)
-
-	for key := range data {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
-
-	return keys
-}
-
 // Session log is used to take a multi-line message for the server log,
 // and insert prefixes on each line with the session number so the log
 // lines will be tagged with the appropriate session identifier, and
