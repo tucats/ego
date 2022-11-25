@@ -106,8 +106,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			// Otherwise, use the parameter as a filename
 			content, err := ioutil.ReadFile(fileName)
 			if !errors.Nil(err) {
-				content, err = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
-				if !errors.Nil(err) {
+				var e2 error
+
+				content, e2 = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
+				if !errors.Nil(e2) {
 					return errors.New(err).Context(fileName)
 				}
 			}
