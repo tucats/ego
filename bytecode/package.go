@@ -36,7 +36,9 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	if v, ok := c.symbols.Root().Get(name); ok {
 		switch actual := v.(type) {
 		case *datatypes.EgoStruct:
-			panic("DEBUG: map/struct confusion: pushPackageByteCode()")
+			ui.Log(ui.InternalLogger, "DEBUG: pushPackageByteCode() map/struct confusion")
+
+			return errors.New(errors.ErrStop)
 
 		case datatypes.EgoPackage:
 			pkg = actual
@@ -82,7 +84,9 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	if _, ok := pkgValue.(*datatypes.EgoStruct); ok {
-		panic("DEBUG: map/struct confusion: popPackageByteCode()")
+		ui.Log(ui.InternalLogger, "DEBUG: popPackageByteCode() map/struct confusion")
+
+		return errors.New(errors.ErrStop)
 	}
 
 	pkg, _ := pkgValue.(datatypes.EgoPackage)

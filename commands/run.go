@@ -266,7 +266,9 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			err := comp.AutoImport(autoImport)
 			if !errors.Nil(err) {
-				panic(fmt.Sprintf("Unable to auto-import packages: " + err.Error()))
+				ui.Log(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
+
+				return errors.New(errors.ErrStop)
 			}
 
 			comp.AddPackageToSymbols(&symbols.RootSymbolTable)

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -460,14 +461,18 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 	}
 
 	if kind != StructKind {
-		panic("attempt to define a field for a type that is not a struct")
+		ui.Log(ui.InternalLogger, "ERROR: DefineField() called for a type that is not a struct")
+
+		return nil
 	}
 
 	if t.fields == nil {
 		t.fields = map[string]*Type{}
 	} else {
 		if _, found := t.fields[name]; found {
-			panic("attempt to define a duplicate field for a type")
+			ui.Log(ui.InternalLogger, "ERROR: DefineField() called with duplicate field name %s", name)
+
+			return nil
 		}
 	}
 

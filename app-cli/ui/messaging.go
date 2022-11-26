@@ -5,7 +5,6 @@ package ui
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -58,6 +57,7 @@ const (
 	DBLogger
 	DebugLogger
 	InfoLogger
+	InternalLogger
 	RestLogger
 	ServerLogger
 	SQLLogger
@@ -82,6 +82,7 @@ var loggers []logger = []logger{
 	{"DB", false},
 	{"DEBUG", false},
 	{"INFO", false},
+	{"INTERNAL", true},
 	{"REST", false},
 	{"SERVER", false},
 	{"SQL", false},
@@ -109,6 +110,7 @@ func LoggerNames() []string {
 // Get the name of a given logger class.
 func LoggerName(class int) string {
 	if class < 0 || class >= len(loggers) {
+		Log(InternalLogger, "ERROR: Invalid LoggerName() class %d", class)
 		return ""
 	}
 
@@ -140,13 +142,17 @@ func Logger(loggerName string) int {
 		}
 	}
 
+	Log(InternalLogger, "ERROR: Invalid Logger() class name %s", loggerName)
+
 	return -1
 }
 
 // SetLogger enables or disables a logger.
 func SetLogger(class int, mode bool) bool {
 	if class < 0 || class >= len(loggers) {
-		panic("invalid logger: " + strconv.Itoa(class))
+		Log(InternalLogger, "ERROR: Invalid SetLogger() class %d", class)
+
+		return false
 	}
 
 	loggers[class].active = mode
@@ -158,7 +164,9 @@ func SetLogger(class int, mode bool) bool {
 // when deciding if it's worth doing complex formatting operations.
 func LoggerIsActive(class int) bool {
 	if class < 0 || class >= len(loggers) {
-		panic("invalid logger: " + strconv.Itoa(class))
+		Log(InternalLogger, "ERROR: Invalid LoggerIsActive() class %d", class)
+
+		return false
 	}
 
 	return loggers[class].active
@@ -167,7 +175,9 @@ func LoggerIsActive(class int) bool {
 // Debug displays a message if debugging mode is enabled.
 func Debug(class int, format string, args ...interface{}) {
 	if class < 0 || class >= len(loggers) {
-		panic("invalid logger: " + strconv.Itoa(class))
+		Log(InternalLogger, "ERROR: Invalid Debug() class %d", class)
+
+		return
 	}
 
 	if loggers[class].active {
@@ -178,7 +188,9 @@ func Debug(class int, format string, args ...interface{}) {
 // Log displays a message to stdout.
 func Log(class int, format string, args ...interface{}) {
 	if class < 0 || class >= len(loggers) {
-		panic("invalid logger: " + strconv.Itoa(class))
+		Log(InternalLogger, "ERROR: Invalid Log() class %d", class)
+
+		return
 	}
 
 	s := LogMessage(class, format, args...)
@@ -186,7 +198,10 @@ func Log(class int, format string, args ...interface{}) {
 	if logFile != nil {
 		_, err := logFile.Write([]byte(s + "\n"))
 		if err != nil {
-			panic("Unable to write to log file; " + err.Error())
+			logFile = nil
+			Log(InternalLogger, "ERROR: Log() unable to write log entry; %v", err)
+
+			return
 		}
 	} else {
 		fmt.Println(s)
@@ -196,7 +211,9 @@ func Log(class int, format string, args ...interface{}) {
 // LogMessage displays a message to stdout.
 func LogMessage(class int, format string, args ...interface{}) string {
 	if class < 0 || class >= len(loggers) {
-		panic("invalid logger: " + strconv.Itoa(class))
+		Log(InternalLogger, "ERROR: Invalid LogMessage() class %d", class)
+
+		return ""
 	}
 
 	className := loggers[class].name
@@ -240,7 +257,7 @@ func Say(format string, args ...interface{}) {
 				format = i18n.T(format, m)
 				alreadyFormatted = true
 			}
-			
+
 			format = i18n.T(format)
 		} else {
 			format = i18n.T(format)

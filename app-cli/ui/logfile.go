@@ -98,12 +98,16 @@ func rollOverTask() {
 // it was created. Then create a new log file.
 func RollOverLog() {
 	if err1 := SaveLastLog(); err1 != nil {
-		panic("Unable to roll over log file; " + err1.Error())
+		Log(InternalLogger, "ERROR: RollOverLog() unable to roll over log file; %v", err1)
+
+		return
 	}
 
 	err := openLogFile(baseLogFileName, true)
 	if err != nil {
-		panic("Unable to open new log file; " + err.Error())
+		Log(InternalLogger, "ERROR: RollOverLog() unable to open new log file; %v", err)
+
+		return
 	}
 
 	PurgeLogs()

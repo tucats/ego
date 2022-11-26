@@ -1,10 +1,10 @@
 package bytecode
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -198,7 +198,9 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 				model = t.InstanceOf(t)
 				typeName = t.Name()
 			} else {
-				panic(fmt.Sprintf("Unexpected type value: %v\n", value))
+				ui.Log(ui.InternalLogger, "ERROR: structByteCode() unexpected type value %v", value)
+
+				return errors.New(errors.ErrStop)
 			}
 		} else {
 			m[name] = value
