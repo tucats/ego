@@ -630,6 +630,28 @@ func KindOf(i interface{}) int {
 	}
 }
 
+// IsNumeric determines if the value passed is an numeric type. The
+// parameter value can be an actual value (int, byte, float32, etc)
+// or a Type which represents a numeric value.
+func IsNumeric(i interface{}) bool {
+	switch actual := i.(type) {
+	case int, int32, int64, byte, float32, float64:
+		return true
+
+	case *Type:
+		if actual.kind == ByteKind ||
+			actual.kind == IntKind ||
+			actual.kind == Int32Kind ||
+			actual.kind == Int64Kind ||
+			actual.kind == Float32Kind ||
+			actual.kind == Float64Kind {
+			return true
+		}
+	}
+
+	return false
+}
+
 // TypeOf accepts an interface of arbitrary Ego or native data type,
 // and returns the associated type specification, such as datatypes.intKind
 // or datatypes.stringKind.

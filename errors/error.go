@@ -177,12 +177,15 @@ func (e *EgoError) Error() string {
 			} else {
 				b.WriteString(fmt.Sprintf("line %s", lineStr))
 			}
-		} else {
-			b.WriteString("in ")
-			b.WriteString(e.location.name)
-		}
 
-		predicate = true
+			predicate = true
+		} else {
+			if e.location.name != "" {
+				b.WriteString("in ")
+				b.WriteString(e.location.name)
+				predicate = true
+			}
+		}
 	}
 
 	// If we have an underlying error, report the string value for that

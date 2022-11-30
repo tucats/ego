@@ -306,6 +306,17 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrInvalidType)
 	}
 
+	// Special case of multiply of string by integer to repeat string
+	if (datatypes.KindOf(v1) == datatypes.StringKind) &&
+		datatypes.IsNumeric(v2) {
+		str := datatypes.GetString(v1)
+		count := datatypes.GetInt(v2)
+		r := strings.Repeat(str, count)
+
+		return c.stackPush(r)
+	}
+
+	// Nope, plain old math multiply, so normalize the values.
 	v1, v2 = datatypes.Normalize(v1, v2)
 
 	switch v1.(type) {

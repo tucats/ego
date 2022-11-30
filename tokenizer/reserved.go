@@ -31,7 +31,7 @@ var ReservedWords = map[string]bool{
 	"var":       true,
 }
 
-// Additionally, these verbs are permitted when running with
+// ExtendedReservedWords are additional reserved words when running with
 // language extensions enabled.
 var ExtendedReservedWords = map[string]bool{
 	"call":  true,

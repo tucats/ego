@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -14,23 +15,25 @@ func TestCompiler_typeCompiler(t *testing.T) {
 		name     string
 		arg      string
 		typeName string
-		want     datatypes.Type
+		want     *datatypes.Type
 		wantErr  *errors.EgoError
+		debug    bool
 	}{
 		{
 			name:     "map",
 			arg:      "map[string]int",
 			typeName: "type0",
-			want: *datatypes.TypeDefinition("type0", datatypes.Map(
+			want: datatypes.TypeDefinition("type0", datatypes.Map(
 				&datatypes.StringType,
 				&datatypes.IntType)),
 			wantErr: nil,
+			debug:   true,
 		},
 		{
 			name:     "struct",
 			arg:      "struct{ age int name string }",
 			typeName: "type1",
-			want: *datatypes.TypeDefinition("type1", datatypes.Structure(
+			want: datatypes.TypeDefinition("type1", datatypes.Structure(
 				datatypes.Field{Name: "age", Type: &datatypes.IntType},
 				datatypes.Field{Name: "name", Type: &datatypes.StringType},
 			)),
@@ -40,7 +43,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			name:     "int",
 			arg:      "int",
 			typeName: "type2",
-			want:     *datatypes.TypeDefinition("type2", &datatypes.IntType),
+			want:     datatypes.TypeDefinition("type2", &datatypes.IntType),
 			wantErr:  nil,
 		},
 
@@ -52,6 +55,10 @@ func TestCompiler_typeCompiler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c.t = tokenizer.New(tt.arg)
+
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
 
 			got, err := c.typeCompiler(tt.typeName)
 			if err != tt.wantErr {

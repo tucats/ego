@@ -11,35 +11,35 @@ import (
 func TestCompileTypeSpec(t *testing.T) {
 	tests := []struct {
 		name string
-		want datatypes.Type
+		want *datatypes.Type
 	}{
 		{
 			name: "int",
-			want: datatypes.IntType,
+			want: &datatypes.IntType,
 		},
 		{
 			name: "float64",
-			want: datatypes.Float64Type,
+			want: &datatypes.Float64Type,
 		},
 		{
 			name: "string",
-			want: datatypes.StringType,
+			want: &datatypes.StringType,
 		},
 		{
 			name: "*int",
-			want: *datatypes.Pointer(&datatypes.IntType),
+			want: datatypes.Pointer(&datatypes.IntType),
 		},
 		{
 			name: "[]string",
-			want: *datatypes.Array(&datatypes.StringType),
+			want: datatypes.Array(&datatypes.StringType),
 		},
 		{
 			name: "struct { name int }",
-			want: *datatypes.Structure(datatypes.Field{Name: "name", Type: &datatypes.IntType}),
+			want: datatypes.Structure(datatypes.Field{Name: "name", Type: &datatypes.IntType}),
 		},
 		{
 			name: "struct { name string, age int }",
-			want: *datatypes.Structure(
+			want: datatypes.Structure(
 				datatypes.Field{Name: "name", Type: &datatypes.StringType},
 				datatypes.Field{Name: "age", Type: &datatypes.IntType},
 			),

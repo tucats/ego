@@ -111,6 +111,7 @@ func LoggerNames() []string {
 func LoggerName(class int) string {
 	if class < 0 || class >= len(loggers) {
 		Log(InternalLogger, "ERROR: Invalid LoggerName() class %d", class)
+
 		return ""
 	}
 
@@ -199,6 +200,7 @@ func Log(class int, format string, args ...interface{}) {
 		_, err := logFile.Write([]byte(s + "\n"))
 		if err != nil {
 			logFile = nil
+
 			Log(InternalLogger, "ERROR: Log() unable to write log entry; %v", err)
 
 			return
