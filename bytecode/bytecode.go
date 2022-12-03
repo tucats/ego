@@ -135,20 +135,6 @@ func (b *ByteCode) GetInstruction(pos int) *Instruction {
 	return &(b.instructions[pos])
 }
 
-// DefineInstruction adds a user-defined instruction to the bytecode
-// set.
-func DefineInstruction(opcode OpcodeID, name string, implementation OpcodeHandler) *errors.EgoError {
-	// First, make sure this isn't a duplicate
-	if _, found := dispatch[opcode]; found {
-		return errors.New(errors.ErrOpcodeAlreadyDefined).Context(opcode)
-	}
-
-	instructionNames[opcode] = name
-	dispatch[opcode] = implementation
-
-	return nil
-}
-
 // Run generates a one-time context for executing this bytecode.
 func (b *ByteCode) Run(s *symbols.SymbolTable) *errors.EgoError {
 	c := NewContext(s, b)

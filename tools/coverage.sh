@@ -7,9 +7,16 @@
 #   go get golang.org/x/tools/cmd/cover
 #
 
+TESTPATH=$1
+
+if [[ "$1" == "" ]]; then
+   TESTPATH="./..."
+fi 
+echo "TEST PATH IS $TESTPATH"
+
 FILE=/tmp/ego.coverage_data 
 
-go test -coverprofile $FILE ./...
+go test -coverprofile $FILE $TESTPATH
 go tool cover -html=$FILE
 
 #

@@ -3,6 +3,8 @@ package bytecode
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/errors"
 )
 
 func TestByteCode_New(t *testing.T) {
@@ -32,10 +34,11 @@ func TestByteCode_Emit2(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []Instruction
+		name    string
+		fields  fields
+		args    args
+		want    []Instruction
+		emitPos int
 	}{
 		{
 			name: "first emit",
@@ -50,6 +53,7 @@ func TestByteCode_Emit2(t *testing.T) {
 			want: []Instruction{
 				{Push, 33},
 			},
+			emitPos: 1,
 		},
 		{
 			name: "multiple emit",
@@ -70,6 +74,7 @@ func TestByteCode_Emit2(t *testing.T) {
 				{Operation: Add},
 				{Operation: Stop},
 			},
+			emitPos: 4,
 		},
 		// TODO: Add test cases.
 	}
@@ -85,6 +90,12 @@ func TestByteCode_Emit2(t *testing.T) {
 				b.Emit(i.Operation, i.Operand)
 			}
 
+			b.Seal()
+
+			if tt.emitPos > 0 && b.Mark() != tt.emitPos {
+				t.Errorf("invalid emit position after emit: %d", b.Mark())
+			}
+
 			for n, i := range b.instructions {
 				if n < b.emitPos && i != tt.want[n] {
 					t.Error("opcode mismatch")
@@ -92,6 +103,70 @@ func TestByteCode_Emit2(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestByteCode_EmitArrayOfOperands(t *testing.T) {
+	t.Run("emit with array", func(t *testing.T) {
+		b := &ByteCode{
+			Name:         "emit with array of operands",
+			instructions: []Instruction{},
+			emitPos:      0,
+		}
+
+		b.Emit(ArgCheck, 10, 20, "foobar")
+
+		// Some misc extra unit testing here. Append with a nil value
+		b.Append(nil)
+
+		// GetInstruction with invalid index
+		i := b.GetInstruction(500)
+		if i != nil {
+			t.Errorf("expected nil, got: %v", i)
+		}
+
+		// GetInstruction with valid index
+		i = b.GetInstruction(0)
+
+		if !reflect.DeepEqual(i, &Instruction{
+			Operand:   []interface{}{10, 20, "foobar"},
+			Operation: ArgCheck,
+		}) {
+			t.Errorf("incorrect instruction created: %v", b.instructions[0])
+		}
+	})
+}
+
+func TestByteCode_SetAddress(t *testing.T) {
+	t.Run("emit with array", func(t *testing.T) {
+		b := &ByteCode{
+			Name:         "setAddress",
+			instructions: []Instruction{},
+			emitPos:      0,
+		}
+
+		savedMark := b.Mark()
+		b.Emit(Branch, nil)
+
+		b.Emit(Stop)
+		e1 := b.SetAddressHere(savedMark)
+
+		if !errors.Nil(e1) {
+			t.Errorf("Unexpected error from setAddressHere: %v", e1)
+		}
+
+		if !reflect.DeepEqual(b.instructions[0],
+			Instruction{
+				Operation: Branch,
+				Operand:   2,
+			}) {
+			t.Errorf("Incorrect bytecode fixup: %v", b.instructions[0])
+		}
+
+		e1 = b.SetAddressHere(500)
+		if e1.Error() != errors.ErrInvalidBytecodeAddress.Error() {
+			t.Errorf("Expected error not seen: %v", e1)
+		}
+	})
 }
 
 func TestByteCode_Append(t *testing.T) {

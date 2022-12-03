@@ -111,25 +111,13 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(!value)
 
 	case byte, int32, int, int64:
-		if datatypes.GetInt64(v) != 0 {
-			_ = c.stackPush(false)
-		} else {
-			_ = c.stackPush(true)
-		}
+		_ = c.stackPush(value == 0)
 
 	case float32:
-		if value != 0.0 {
-			_ = c.stackPush(false)
-		} else {
-			_ = c.stackPush(true)
-		}
+		_ = c.stackPush(value == float32(0))
 
 	case float64:
-		if value != 0.0 {
-			_ = c.stackPush(false)
-		} else {
-			_ = c.stackPush(true)
-		}
+		_ = c.stackPush(value == float64(0))
 
 	default:
 		return c.newError(errors.ErrInvalidType)
@@ -536,6 +524,11 @@ func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.newError(errors.ErrInvalidType)
+	}
+
 	result := datatypes.GetInt(v1) & datatypes.GetInt(v2)
 	_ = c.stackPush(result)
 
@@ -553,6 +546,11 @@ func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.newError(errors.ErrInvalidType)
+	}
+
 	result := datatypes.GetInt(v1) | datatypes.GetInt(v2)
 	_ = c.stackPush(result)
 
@@ -568,6 +566,11 @@ func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	// Cannot do math on a nil value
+	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+		return c.newError(errors.ErrInvalidType)
 	}
 
 	shift := datatypes.GetInt(v1)

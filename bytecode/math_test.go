@@ -23,16 +23,79 @@ func Test_negateByteCode(t *testing.T) {
 		err   error
 	}{
 		{
-			name:  "negate positive integer",
+			name:  "stack underflow",
 			arg:   nil,
-			stack: []interface{}{5},
+			stack: []interface{}{},
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "boolean NOT stack underflow",
+			arg:   true,
+			stack: []interface{}{},
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "unsupported nil value",
+			arg:   nil,
+			stack: []interface{}{nil},
 			want:  -5,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "unsupported nil boolean value",
+			arg:   true,
+			stack: []interface{}{nil},
+			want:  -5,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "NOT  integer",
+			arg:   true,
+			stack: []interface{}{3},
+			want:  false,
+		},
+		{
+			name:  "NOT  int64",
+			arg:   true,
+			stack: []interface{}{int64(3)},
+			want:  false,
+		},
+		{
+			name:  "NOT boolean",
+			arg:   true,
+			stack: []interface{}{false},
+			want:  true,
+		},
+		{
+			name:  "NOT float32",
+			arg:   true,
+			stack: []interface{}{float32(3.5)},
+			want:  false,
+		},
+		{
+			name:  "NOT  float64",
+			arg:   true,
+			stack: []interface{}{float64(0)},
+			want:  true,
+		},
+		{
+			name:  "NOT  string",
+			arg:   true,
+			stack: []interface{}{"invalid"},
+			want:  false,
+			err:   errors.ErrInvalidType,
 		},
 		{
 			name:  "negate negative integer",
 			arg:   nil,
 			stack: []interface{}{-3},
 			want:  3,
+		},
+		{
+			name:  "negate int64 integer",
+			arg:   nil,
+			stack: []interface{}{int64(-3)},
+			want:  int64(3),
 		},
 		{
 			name:  "negate boolean",
@@ -51,6 +114,12 @@ func Test_negateByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{float32(6.6)},
 			want:  float32(-6.6),
+		},
+		{
+			name:  "negate negative float64",
+			arg:   nil,
+			stack: []interface{}{float64(-6.6)},
+			want:  float64(6.6),
 		},
 		{
 			name:  "negate positive byte",
@@ -149,6 +218,26 @@ func Test_addByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "add string to error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), "-thing"},
+			want:  "@assert error-thing",
+		},
+		{
+			name:  "add with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "add with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
 			name:  "add integers",
 			arg:   nil,
 			stack: []interface{}{2, 5},
@@ -185,9 +274,28 @@ func Test_addByteCode(t *testing.T) {
 			want:  int(7),
 		},
 		{
-			name:  "add without enough args on stack",
+			name:  "add byte to int32",
+			arg:   nil,
+			stack: []interface{}{byte(5), int32(2)},
+			want:  int32(7),
+		},
+		{
+			name:  "add int32 to int32",
+			arg:   nil,
+			stack: []interface{}{int32(5), int32(2)},
+			want:  int32(7),
+		},
+		{
+			name:  "add with 1 args on stack",
 			arg:   nil,
 			stack: []interface{}{int32(-12)},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "add with 0 args on stack",
+			arg:   nil,
+			stack: []interface{}{},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -257,6 +365,291 @@ func Test_addByteCode(t *testing.T) {
 	}
 }
 
+func Test_andByteCode(t *testing.T) {
+	target := andByteCode
+	name := "andByteCode"
+
+	tests := []struct {
+		name  string
+		arg   interface{}
+		stack []interface{}
+		want  interface{}
+		err   error
+		debug bool
+	}{
+		{
+			name:  "AND with no value",
+			arg:   nil,
+			stack: []interface{}{},
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "AND with only 1 value",
+			arg:   nil,
+			stack: []interface{}{true},
+			err:   errors.ErrStackUnderflow,
+		}, {
+			name:  "AND string to error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), "-thing"},
+			want:  false,
+		},
+		{
+			name:  "AND empty string to error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), ""},
+			want:  false,
+		},
+		{
+			name:  "AND with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "AND with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "AND integers",
+			arg:   nil,
+			stack: []interface{}{2, 5},
+			want:  true,
+		},
+		{
+			name:  "AND mixed boolean",
+			arg:   nil,
+			stack: []interface{}{true, false},
+			want:  false,
+		},
+		{
+			name:  "AND same boolean",
+			arg:   nil,
+			stack: []interface{}{true, true},
+			want:  true,
+		},
+		{
+			name:  "AND strings",
+			arg:   nil,
+			stack: []interface{}{"test", "plan"},
+			want:  false,
+		},
+		{
+			name:  "AND float32",
+			arg:   nil,
+			stack: []interface{}{float32(1.0), float32(6.6)},
+			want:  true,
+		},
+		{
+			name: "add a string an array",
+			arg:  nil,
+			stack: []interface{}{
+				"xyzzy",
+				datatypes.NewArrayFromArray(
+					&datatypes.StringType,
+					[]interface{}{"arrays are invalid but cast as", "false"}),
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+
+		c := NewContext(syms, &bc)
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, err := c.Pop()
+
+			if !errors.Nil(err) {
+				t.Errorf("%s() stack error %v", name, err)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
+func Test_orByteCode(t *testing.T) {
+	target := orByteCode
+	name := "orByteCode"
+
+	tests := []struct {
+		name  string
+		arg   interface{}
+		stack []interface{}
+		want  interface{}
+		err   error
+		debug bool
+	}{
+		{
+			name:  "OR with no value",
+			arg:   nil,
+			stack: []interface{}{},
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "OR with only 1 value",
+			arg:   nil,
+			stack: []interface{}{true},
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "OR string to error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), "-thing"},
+			want:  false,
+		},
+		{
+			name:  "OR empty string to error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), ""},
+			want:  false,
+		},
+		{
+			name:  "OR with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "OR with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "OR integers",
+			arg:   nil,
+			stack: []interface{}{2, 5},
+			want:  true,
+		},
+		{
+			name:  "OR mixed boolean",
+			arg:   nil,
+			stack: []interface{}{true, false},
+			want:  true,
+		},
+		{
+			name:  "OR same boolean",
+			arg:   nil,
+			stack: []interface{}{true, true},
+			want:  true,
+		},
+		{
+			name:  "OR strings",
+			arg:   nil,
+			stack: []interface{}{"test", "plan"},
+			want:  false,
+		},
+		{
+			name:  "OR float32",
+			arg:   nil,
+			stack: []interface{}{float32(1.0), float32(6.6)},
+			want:  true,
+		},
+		{
+			name: "OR a string boolean value with an array",
+			arg:  nil,
+			stack: []interface{}{
+				"true",
+				datatypes.NewArrayFromArray(
+					&datatypes.StringType,
+					[]interface{}{"arrays are invalid but cast as", "false"}),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+
+		c := NewContext(syms, &bc)
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, err := c.Pop()
+
+			if !errors.Nil(err) {
+				t.Errorf("%s() stack error %v", name, err)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
 func Test_subtractByteCode(t *testing.T) {
 	target := subtractByteCode
 	name := "subByteCode"
@@ -269,6 +662,26 @@ func Test_subtractByteCode(t *testing.T) {
 		err   error
 		debug bool
 	}{
+		{
+			name:  "sub string from error",
+			arg:   nil,
+			stack: []interface{}{errors.New(errors.ErrAssert), "-thing"},
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "sub with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "sub with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
 		{
 			name:  "sub integers",
 			arg:   nil,
@@ -301,9 +714,16 @@ func Test_subtractByteCode(t *testing.T) {
 			want:  int(3),
 		},
 		{
-			name:  "sub without enough args on stack",
+			name:  "sub with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "sub with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -372,6 +792,20 @@ func Test_multiplyByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "multiply with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "multiply with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
 			name:  "multiply integers",
 			arg:   nil,
 			stack: []interface{}{2, 5},
@@ -408,13 +842,149 @@ func Test_multiplyByteCode(t *testing.T) {
 			want:  int(10),
 		},
 		{
-			name:  "multiply without enough args on stack",
+			name:  "multiply with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "multiply with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
 	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+
+		c := NewContext(syms, &bc)
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, err := c.Pop()
+
+			if !errors.Nil(err) {
+				t.Errorf("%s() stack error %v", name, err)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
+func Test_exponentyByteCode(t *testing.T) {
+	target := exponentByteCode
+	name := "exponentByteCode"
+
+	tests := []struct {
+		name  string
+		arg   interface{}
+		stack []interface{}
+		want  interface{}
+		err   error
+		debug bool
+	}{
+		{
+			name:  "exponent with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "exponent with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "exponent integers",
+			arg:   nil,
+			stack: []interface{}{2, 5},
+			want:  int64(32), // 2^5
+		},
+		{
+			name:  "exponent true, false",
+			arg:   nil,
+			stack: []interface{}{true, false},
+			want:  true,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "exponent false, false",
+			arg:   nil,
+			stack: []interface{}{false, false},
+			want:  false,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "exponent strings",
+			arg:   nil,
+			stack: []interface{}{"*", 5},
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "exponent float32",
+			arg:   nil,
+			stack: []interface{}{float32(1.0), float32(6.6)},
+			want:  float32(1),
+		},
+		{
+			name:  "exponent int32 by byte",
+			arg:   nil,
+			stack: []interface{}{int(5), byte(2)},
+			want:  int64(25),
+		},
+		{
+			name:  "multiply with 0 args on stack",
+			arg:   nil,
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "multiply with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		}}
 
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
@@ -479,6 +1049,21 @@ func Test_divideByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "divide with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "divide with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+
+		{
 			name:  "divide by integer zero",
 			arg:   nil,
 			stack: []interface{}{9, 0},
@@ -530,9 +1115,16 @@ func Test_divideByteCode(t *testing.T) {
 			want:  int(6),
 		},
 		{
-			name:  "divide without enough args on stack",
+			name:  "divide with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "divide with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -601,6 +1193,20 @@ func Test_moduloByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "modulo with first nil",
+			arg:   nil,
+			stack: []interface{}{2, nil},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
+			name:  "modulo with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 5},
+			want:  7,
+			err:   errors.ErrInvalidType,
+		},
+		{
 			name:  "modulo integer zero",
 			arg:   nil,
 			stack: []interface{}{9, 0},
@@ -620,14 +1226,14 @@ func Test_moduloByteCode(t *testing.T) {
 			want:  0,
 		},
 		{
-			name:  "divide booleans",
+			name:  "modulo booleans",
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
 			err:   errors.ErrInvalidType,
 		},
 		{
-			name:  "divide strings",
+			name:  "modulo strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
 			err:   errors.ErrInvalidType,
@@ -639,9 +1245,16 @@ func Test_moduloByteCode(t *testing.T) {
 			want:  3,
 		},
 		{
-			name:  "modulo without enough args on stack",
+			name:  "modulo with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "modulo with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -710,10 +1323,16 @@ func Test_bitAndByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
-			name:  "AND integer zero",
+			name:  "AND with first nil",
 			arg:   nil,
-			stack: []interface{}{9, 0},
+			stack: []interface{}{9, nil},
+			err:   errors.ErrInvalidType},
+		{
+			name:  "AND with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 0},
 			want:  0,
+			err:   errors.ErrInvalidType,
 		},
 		{
 			name:  "AND integer values",
@@ -746,9 +1365,16 @@ func Test_bitAndByteCode(t *testing.T) {
 			want:  5,
 		},
 		{
-			name:  "AND without enough args on stack",
+			name:  "AND with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "AND with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -817,6 +1443,18 @@ func Test_bitOrByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "OR with first nil",
+			arg:   nil,
+			stack: []interface{}{9, nil},
+			err:   errors.ErrInvalidType},
+		{
+			name:  "OR with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 0},
+			want:  0,
+			err:   errors.ErrInvalidType,
+		},
+		{
 			name:  "OR integer zero",
 			arg:   nil,
 			stack: []interface{}{9, 0},
@@ -859,9 +1497,16 @@ func Test_bitOrByteCode(t *testing.T) {
 			want:  7,
 		},
 		{
-			name:  "OR without enough args on stack",
+			name:  "OR with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "OR with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
@@ -930,6 +1575,18 @@ func Test_bitShiftByteCode(t *testing.T) {
 		debug bool
 	}{
 		{
+			name:  "bitshift with first nil",
+			arg:   nil,
+			stack: []interface{}{9, nil},
+			err:   errors.ErrInvalidType},
+		{
+			name:  "bitshift with second nil",
+			arg:   nil,
+			stack: []interface{}{nil, 0},
+			want:  0,
+			err:   errors.ErrInvalidType,
+		},
+		{
 			name:  "bitshift right 2 bits",
 			arg:   nil,
 			stack: []interface{}{12, 2},
@@ -947,9 +1604,16 @@ func Test_bitShiftByteCode(t *testing.T) {
 			stack: []interface{}{5, -35},
 			err:   errors.New(errors.ErrInvalidBitShift).Context(-35)},
 		{
-			name:  "bitshift without enough args on stack",
+			name:  "shift with 0 args on stack",
 			arg:   nil,
-			stack: []interface{}{int32(-12)},
+			stack: []interface{}{},
+			want:  int32(12),
+			err:   errors.ErrStackUnderflow,
+		},
+		{
+			name:  "shift with 1 args on stack",
+			arg:   nil,
+			stack: []interface{}{55},
 			want:  int32(12),
 			err:   errors.ErrStackUnderflow,
 		},
