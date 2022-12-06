@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -89,5 +90,310 @@ func TestStructImpl(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func Test_storeByteCode(t *testing.T) {
+	target := storeByteCode
+	name := "storeByteCode"
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		initialValue interface{}
+		stack        []interface{}
+		want         interface{}
+		err          error
+		static       bool
+		debug        bool
+	}{
+		{
+			name:         "stack underflow",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{},
+			err:          errors.New(errors.ErrStackUnderflow),
+			want:         0,
+		},
+		{
+			name:         "store to nul name",
+			arg:          "_",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         0,
+		},
+		{
+			name:         "simple integer store",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "simple integer store to readonly value",
+			arg:          "_a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          errors.New(errors.ErrReadOnlyValue).Context("_a"),
+			want:         int32(55),
+		},
+		{
+			name:         "replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "invalid static replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			err:          errors.New(errors.ErrInvalidVarType),
+			static:       true,
+			want:         int32(55),
+		},
+		{
+			name:         "store of unknown variable",
+			arg:          "a",
+			initialValue: nil,
+			stack:        []interface{}{int32(55)},
+			err:          errors.New(errors.ErrUnknownSymbol).Context("a"),
+			want:         int32(55),
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+		varname := datatypes.GetString(tt.arg)
+
+		c := NewContext(syms, &bc)
+		c.Static = tt.static
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		if tt.initialValue != nil {
+			_ = c.symbolCreate(varname)
+			_ = c.symbolSet(varname, tt.initialValue)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+
+			if !found {
+				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
+func Test_loadByteCode(t *testing.T) {
+	target := loadByteCode
+	name := "loadByteCode"
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		initialValue interface{}
+		stack        []interface{}
+		want         interface{}
+		err          error
+		static       bool
+		debug        bool
+	}{
+		{
+			name:         "simple integer load",
+			arg:          "a",
+			initialValue: int32(55),
+			stack:        []interface{}{},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:  "variable not found",
+			arg:   "a",
+			stack: []interface{}{},
+			err:   errors.New(errors.ErrUnknownIdentifier).Context("a"),
+			want:  int32(55),
+		},
+		{
+			name:  "variable name invalid",
+			arg:   "",
+			stack: []interface{}{},
+			err:   errors.New(errors.ErrInvalidIdentifier).Context(""),
+			want:  int32(55),
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+		varname := datatypes.GetString(tt.arg)
+
+		c := NewContext(syms, &bc)
+		c.Static = tt.static
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		if tt.initialValue != nil {
+			_ = c.symbolCreate(varname)
+			_ = c.symbolSet(varname, tt.initialValue)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, err := c.Pop()
+
+			if !errors.Nil(err) {
+				t.Errorf("%s() error popping value from stack: %v", name, tt.arg)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
+func Test_explodeByteCode(t *testing.T) {
+	tests := []struct {
+		name  string
+		value interface{}
+		want  map[string]interface{}
+		err   *errors.EgoError
+	}{
+		{
+			name: "simple map explosion",
+			value: datatypes.NewMapFromMap(map[string]interface{}{
+				"foo": byte(1),
+				"bar": "frobozz",
+			}),
+			want: map[string]interface{}{"foo": byte(1), "bar": "frobozz"},
+		},
+		{
+			name: "wrong map key type",
+			value: datatypes.NewMapFromMap(map[int]interface{}{
+				1: byte(1),
+				2: "frobozz",
+			}),
+			err: errors.New(errors.ErrWrongMapKeyType),
+		},
+		{
+			name:  "not a map",
+			value: "not a map",
+			err:   errors.New(errors.ErrInvalidType),
+		},
+		{
+			name: "empty stack",
+			err:  errors.New(errors.ErrStackUnderflow),
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+
+		c := NewContext(syms, &bc)
+
+		if tt.value != nil {
+			_ = c.stackPush(tt.value)
+		}
+
+		err := explodeByteCode(c, nil)
+		if !errors.Nil(err) {
+			e1 := nilError
+			e2 := nilError
+
+			if tt.err != nil {
+				e1 = tt.err.Error()
+			}
+
+			if err != nil {
+				e2 = err.Error()
+			}
+
+			if e1 == e2 {
+				return
+			}
+
+			t.Errorf("explodeByteCode() error %v", err)
+		} else if tt.err != nil {
+			t.Errorf("explodeByteCode() expected error not reported: %v", tt.err)
+		}
+
+		for k, wantValue := range tt.want {
+			v, found := syms.Get(k)
+
+			if !found {
+				t.Error("explodeByteCode() symbol 'foo' not found")
+			}
+
+			if !reflect.DeepEqual(v, wantValue) {
+				t.Errorf("explodeByteCode() symbol '%s' contains: %v want %#v", k, v, wantValue)
+			}
+		}
 	}
 }

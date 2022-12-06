@@ -543,8 +543,12 @@ func (t Type) Function(name string) interface{} {
 // For a given type, return the type of its base type. So for
 // an array, this is the type of each array element. For a pointer,
 // it is the type it points to.
-func (t Type) BaseType() *Type {
-	return t.valueType
+func (t *Type) BaseType() *Type {
+	if t.valueType != nil {
+		return t.valueType
+	}
+
+	return t
 }
 
 // For a given type, return the key type. This only applies to arrays
