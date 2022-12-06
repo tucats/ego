@@ -163,6 +163,10 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := datatypes.GetString(i)
 
+	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
+		return errors.New(errors.ErrInvalidIdentifier)
+	}
+
 	dest, ok := c.symbolGet(name)
 	if !ok {
 		return c.newError(errors.ErrUnknownIdentifier).Context(name)
@@ -182,19 +186,83 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		*actual = src
 
 	case *bool:
-		d := datatypes.Coerce(src, true)
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, true)
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
 		*actual = d.(bool)
 
+	case *byte:
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, byte(1))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
+		*actual = d.(byte)
+
+	case *int32:
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, int32(1))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
+		*actual = d.(int32)
+
 	case *int:
-		d := datatypes.Coerce(src, 1)
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, int(1))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
 		*actual = d.(int)
 
+	case *int64:
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, int64(1))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
+		*actual = d.(int64)
+
 	case *float64:
-		d := datatypes.Coerce(src, 1.0)
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, float64(0))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
 		*actual = d.(float64)
 
+	case *float32:
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, float32(0))
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
+		*actual = d.(float32)
+
 	case *string:
-		d := datatypes.Coerce(src, "")
+		d := src
+		if !c.Static {
+			d = datatypes.Coerce(src, "")
+		} else if _, ok := d.(string); !ok {
+			return errors.New(errors.ErrInvalidVarType).Context(name)
+		}
+
 		*actual = d.(string)
 
 	case *datatypes.EgoArray:

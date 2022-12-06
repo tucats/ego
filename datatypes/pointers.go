@@ -8,6 +8,8 @@ func AddressOf(v interface{}) (interface{}, *errors.EgoError) {
 	switch actual := v.(type) {
 	case bool:
 		return &actual, nil
+	case byte:
+		return &actual, nil
 	case int32:
 		return &actual, nil
 	case int:

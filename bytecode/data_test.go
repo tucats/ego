@@ -223,6 +223,303 @@ func Test_storeByteCode(t *testing.T) {
 	}
 }
 
+func Test_storeAlwaysByteCode(t *testing.T) {
+	target := storeAlwaysByteCode
+	name := "storeAlwaysByteCode"
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		initialValue interface{}
+		stack        []interface{}
+		want         interface{}
+		err          error
+		static       bool
+		debug        bool
+	}{
+		{
+			name:         "stack underflow",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{},
+			err:          errors.New(errors.ErrStackUnderflow),
+			want:         0,
+		},
+		{
+			name:         "store to nul name is allowed",
+			arg:          "_",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "simple integer store",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "simple integer store to readonly value",
+			arg:          "_a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+		},
+		{
+			name:         "replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "static replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         int32(55),
+		},
+		{
+			name:         "store of unknown variable",
+			arg:          "a",
+			initialValue: nil,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+		varname := datatypes.GetString(tt.arg)
+
+		c := NewContext(syms, &bc)
+		c.Static = tt.static
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		if tt.initialValue != nil {
+			_ = c.symbolCreate(varname)
+			_ = c.symbolSet(varname, tt.initialValue)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+
+			if !found {
+				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
+func Test_storeViaPointerByteCode(t *testing.T) {
+	target := storeViaPointerByteCode
+	name := "storeViaPointerByteCode"
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		initialValue interface{}
+		stack        []interface{}
+		want         interface{}
+		err          error
+		static       bool
+		debug        bool
+	}{
+		{
+			name:         "stack underflow",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{},
+			err:          errors.New(errors.ErrStackUnderflow),
+			want:         0,
+		},
+		{
+			name:         "store to nul name is not allowed",
+			arg:          "_",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          errors.New(errors.ErrInvalidIdentifier),
+			want:         int32(55),
+		},
+		{
+			name:         "*bool store",
+			arg:          "a",
+			initialValue: true,
+			stack:        []interface{}{byte(55)},
+			err:          nil,
+			want:         true,
+		},
+		{
+			name:         "*byte store",
+			arg:          "a",
+			initialValue: byte(1),
+			stack:        []interface{}{byte(55)},
+			err:          nil,
+			want:         byte(55),
+		},
+		{
+			name:         "*int32 store",
+			arg:          "a",
+			initialValue: int32(55),
+			stack:        []interface{}{55},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "*int store",
+			arg:          "a",
+			initialValue: 55,
+			stack:        []interface{}{55},
+			err:          nil,
+			want:         55,
+		},
+		{
+			name:         "*int64 store",
+			arg:          "a",
+			initialValue: int64(55),
+			stack:        []interface{}{int64(55)},
+			err:          nil,
+			want:         int64(55),
+			debug:        true,
+		},
+		{
+			name:         "*int store to readonly value",
+			arg:          "_a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+			err:          errors.New(errors.ErrInvalidIdentifier),
+		},
+		{
+			name:         "*str store of int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         "55",
+		},
+		{
+			name:         "static *str store int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         "55",
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "store of unknown variable",
+			arg:          "a",
+			initialValue: nil,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+			debug:        true,
+			err:          errors.New(errors.ErrUnknownIdentifier).Context("a"),
+		},
+	}
+
+	for _, tt := range tests {
+		syms := symbols.NewSymbolTable("testing")
+		bc := ByteCode{}
+		varname := datatypes.GetString(tt.arg)
+
+		if tt.debug {
+			fmt.Println("DEBUG")
+		}
+
+		c := NewContext(syms, &bc)
+		c.Static = tt.static
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		if tt.initialValue != nil {
+			_ = c.symbolCreate(varname)
+			ptr, _ := datatypes.AddressOf(tt.initialValue)
+			_ = c.symbolSet(varname, ptr)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() unexpected error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+
+			if !found {
+				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
+			}
+
+			v, _ = datatypes.Dereference(v)
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
 func Test_loadByteCode(t *testing.T) {
 	target := loadByteCode
 	name := "loadByteCode"
