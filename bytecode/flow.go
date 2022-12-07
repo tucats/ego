@@ -26,7 +26,7 @@ import (
 func stopByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
-	return c.newError(errors.ErrStop)
+	return errors.New(errors.ErrStop)
 }
 
 // panicByteCode instruction processor generates an error. The boolean flag is used
@@ -58,7 +58,7 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
-		return c.newError(errors.ErrSignalDebugger)
+		return errors.New(errors.ErrSignalDebugger)
 	}
 	// If we are tracing, put that out now.
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
@@ -220,17 +220,6 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Depends on the type here as to what we call...
 	switch af := funcPointer.(type) {
-	case datatypes.Type:
-		// Calls to a type are really an attempt to cast the value.
-		args = append(args, af)
-
-		v, err := functions.InternalCast(c.symbols, args)
-		if errors.Nil(err) {
-			err = c.stackPush(v)
-		}
-
-		return err
-
 	case *datatypes.Type:
 		// Calls to a type are really an attempt to cast the value.
 		args = append(args, af)

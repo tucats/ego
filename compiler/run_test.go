@@ -45,6 +45,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			want: "yes",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := symbols.NewRootSymbolTable(tt.name)
