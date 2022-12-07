@@ -350,6 +350,135 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 	}
 }
 
+func Test_storeGlobalByteCode(t *testing.T) {
+	target := storeGlobalByteCode
+	name := "storeGlobalByteCode"
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		initialValue interface{}
+		stack        []interface{}
+		want         interface{}
+		err          error
+		static       bool
+		debug        bool
+	}{
+		{
+			name:         "stack underflow",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{},
+			err:          errors.New(errors.ErrStackUnderflow),
+			want:         0,
+		},
+		{
+			name:         "store to nul name is allowed",
+			arg:          "_",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "simple integer store",
+			arg:          "a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "simple integer store to readonly value",
+			arg:          "_a",
+			initialValue: 0,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+		},
+		{
+			name:         "replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			err:          nil,
+			want:         int32(55),
+		},
+		{
+			name:         "static replace string value with int32 value",
+			arg:          "a",
+			initialValue: "test",
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         int32(55),
+		},
+		{
+			name:         "store of unknown variable",
+			arg:          "a",
+			initialValue: nil,
+			stack:        []interface{}{int32(55)},
+			want:         int32(55),
+		},
+	}
+
+	for _, tt := range tests {
+		root := symbols.NewRootSymbolTable("root table")
+		syms := symbols.NewChildSymbolTable("testing", root)
+
+		bc := ByteCode{}
+		varname := datatypes.GetString(tt.arg)
+
+		c := NewContext(syms, &bc)
+		c.Static = tt.static
+
+		for _, item := range tt.stack {
+			_ = c.stackPush(item)
+		}
+
+		if tt.initialValue != nil {
+			_ = c.symbolCreate(varname)
+			_ = c.symbolSet(varname, tt.initialValue)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debug {
+				fmt.Println("DEBUG")
+			}
+
+			err := target(c, tt.arg)
+
+			if !errors.Nil(err) {
+				e1 := nilError
+				e2 := nilError
+
+				if tt.err != nil {
+					e1 = tt.err.Error()
+				}
+				if err != nil {
+					e2 = err.Error()
+				}
+
+				if e1 == e2 {
+					return
+				}
+
+				t.Errorf("%s() error %v", name, err)
+			} else if tt.err != nil {
+				t.Errorf("%s() expected error not reported: %v", name, tt.err)
+			}
+
+			v, found := root.Get(datatypes.GetString(tt.arg))
+
+			if !found {
+				t.Errorf("%s() value not in root symbol table: %v", name, tt.arg)
+			}
+
+			if !reflect.DeepEqual(v, tt.want) {
+				t.Errorf("%s() got %v, want %v", name, v, tt.want)
+			}
+		})
+	}
+}
+
 func Test_storeViaPointerByteCode(t *testing.T) {
 	target := storeViaPointerByteCode
 	name := "storeViaPointerByteCode"
@@ -419,7 +548,22 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int64(55)},
 			err:          nil,
 			want:         int64(55),
-			debug:        true,
+		},
+		{
+			name:         "*float32 store",
+			arg:          "a",
+			initialValue: float32(0),
+			stack:        []interface{}{float32(3.14)},
+			err:          nil,
+			want:         float32(3.14),
+		},
+		{
+			name:         "*float64 store",
+			arg:          "a",
+			initialValue: float64(0),
+			stack:        []interface{}{float64(3.14)},
+			err:          nil,
+			want:         float64(3.14),
 		},
 		{
 			name:         "*int store to readonly value",
@@ -436,6 +580,61 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			err:          nil,
 			want:         "55",
+		},
+		{
+			name:         "static *int store int32 value",
+			arg:          "a",
+			initialValue: int(0),
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			debug:        true,
+			want:         int(55),
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "static *byte store int32 value",
+			arg:          "a",
+			initialValue: byte(9),
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         byte(55),
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "static *int64 store int32 value",
+			arg:          "a",
+			initialValue: int64(0),
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         int64(55),
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "static *float32 store int32 value",
+			arg:          "a",
+			initialValue: float32(0),
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         float32(55),
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "static *float64 store int32 value",
+			arg:          "a",
+			initialValue: float64(0),
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         float64(55),
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+		},
+		{
+			name:         "static *bool store int32 value",
+			arg:          "a",
+			initialValue: false,
+			stack:        []interface{}{int32(55)},
+			static:       true,
+			want:         true,
+			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *str store int32 value",
