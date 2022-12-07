@@ -67,5 +67,12 @@ const (
 	CacheMediaType          = EgoMediaType + "cache+json"
 )
 
+const (
+	UserAuthenticationRequired  = "user"
+	TokenRequired               = "token"
+	AdminAuthneticationRequired = "admin"
+	AdminTokenRequired          = "admintoken"
+)
+
 // ServerInstanceID is the UUID of the current Server Instance.
 var ServerInstanceID string

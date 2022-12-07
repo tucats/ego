@@ -60,7 +60,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// See if the authentication required is for a token or admin token.
-	if (kind == "token" || kind == "tokenadmin") && !tokenValid {
+	if (kind == defs.TokenRequired || kind == defs.AdminTokenRequired) && !tokenValid {
 		c.running = false
 
 		_ = c.GetSymbols().Root().SetAlways("_rest_status", http.StatusForbidden)
@@ -71,7 +71,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	if kind == "user" {
+	if kind == defs.UserAuthenticationRequired {
 		if user == "" && pass == "" {
 			c.running = false
 
@@ -106,7 +106,7 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 	}
 
-	if kind == "admin" || kind == "admintoken" {
+	if kind == defs.AdminAuthneticationRequired || kind == defs.AdminTokenRequired {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_superuser"); ok {

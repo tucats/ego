@@ -313,7 +313,13 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 		token = strings.ToLower(c.t.Next())
 	}
 
-	if !util.InList(token, "user", "admin", defs.Any, "token", "tokenadmin") {
+	if !util.InList(token,
+		defs.UserAuthenticationRequired,
+		defs.AdminAuthneticationRequired,
+		defs.Any,
+		defs.TokenRequired,
+		defs.AdminTokenRequired,
+	) {
 		return c.newError(errors.ErrInvalidAuthenticationType, token)
 	}
 

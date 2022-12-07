@@ -287,7 +287,7 @@ is not authenticated then the rest of the services does not run.  Valid types ar
 | token      | User must be authenticated by token only |
 | user       | User must be authenticated with username/password only |
 | admin      | The user (regardless of authentication) must have root privileges |
-| tokenadmin | The user must authenticated by token and have root privilieges |
+| admintoken | The user must authenticated by token and have root privilieges |
 
 &nbsp;
 &nbsp;
