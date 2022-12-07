@@ -268,6 +268,8 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		_ = c.symbolSetAlways("__args", datatypes.NewArrayFromArray(&datatypes.InterfaceType, args))
 
 	case functions.NativeFunction:
+		// Native functions are methods on actual Go objects that we surface to Ego
+		// code. Examples include the functions for waitgroup and mutex objects.
 		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
 		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
@@ -409,7 +411,7 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	if errors.Nil(err) && c.breakOnReturn {
 		c.breakOnReturn = false
 
-		return c.newError(errors.ErrSignalDebugger)
+		return errors.New(errors.ErrSignalDebugger)
 	}
 
 	return c.newError(err)
