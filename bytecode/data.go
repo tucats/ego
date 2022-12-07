@@ -164,7 +164,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 	name := datatypes.GetString(i)
 
 	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
-		return errors.New(errors.ErrInvalidIdentifier)
+		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
 	dest, ok := c.symbolGet(name)
@@ -190,7 +190,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, true)
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(bool)
@@ -200,7 +200,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, byte(1))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(byte)
@@ -210,7 +210,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, int32(1))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int32)
@@ -220,7 +220,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, int(1))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int)
@@ -230,7 +230,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, int64(1))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int64)
@@ -240,7 +240,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, float64(0))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(float64)
@@ -250,7 +250,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, float32(0))
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(float32)
@@ -260,7 +260,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 		if !c.Static {
 			d = datatypes.Coerce(src, "")
 		} else if _, ok := d.(string); !ok {
-			return errors.New(errors.ErrInvalidVarType).Context(name)
+			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(string)
