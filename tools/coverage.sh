@@ -25,3 +25,5 @@ go tool cover -html=$FILE
 
 # Be a good citizen and clean up the coverage data file
 rm $FILE
+go mod tidy
+

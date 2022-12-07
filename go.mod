@@ -13,6 +13,5 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.14
 	golang.org/x/net v0.3.0 // indirect
 	golang.org/x/term v0.3.0
-	golang.org/x/tools v0.4.0 // indirect
 	gopkg.in/resty.v1 v1.12.0
 )
