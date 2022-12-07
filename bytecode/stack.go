@@ -13,8 +13,13 @@ type StackMarker struct {
 }
 
 func NewStackMarker(label string, count int) StackMarker {
+	d := label
+	if count != 0 {
+		d = fmt.Sprintf("%s %d items", label, count)
+	}
+
 	return StackMarker{
-		Desc: fmt.Sprintf("%s %d items", label, count),
+		Desc: d,
 	}
 }
 

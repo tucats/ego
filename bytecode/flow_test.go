@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -40,10 +41,84 @@ func Test_panicByteCode(t *testing.T) {
 	}
 }
 
-func Test_localCallByteCode(t *testing.T) {
+func Test_typeCast(t *testing.T) {
+	name := "call to a type"
+	tests := []struct {
+		name string
+		t    *datatypes.Type
+		v    interface{}
+		want interface{}
+		err  *errors.EgoError
+	}{
+		{
+			name: "cast int to string",
+			t:    &datatypes.StringType,
+			v:    55,
+			want: "55",
+		},
+		{
+			name: "cast bool to string",
+			t:    &datatypes.StringType,
+			v:    true,
+			want: "true",
+		},
+	}
+
+	for _, tt := range tests {
+		ctx := &Context{
+			stack:          make([]interface{}, 5),
+			stackPointer:   0,
+			running:        true,
+			symbols:        symbols.NewSymbolTable("cast test"),
+			programCounter: 1,
+			bc: &ByteCode{
+				instructions: make([]Instruction, 5),
+				emitPos:      5,
+			},
+		}
+
+		// Push the type on the stack that is to be used as the function pointer,
+		// then the value to convert.
+		_ = ctx.stackPush(tt.t)
+		_ = ctx.stackPush(tt.v)
+
+		err := callByteCode(ctx, 1)
+		if !errors.Nil(err) {
+			e1 := nilError
+			e2 := nilError
+
+			if tt.err != nil {
+				e1 = tt.err.Error()
+			}
+
+			if err != nil {
+				e2 = err.Error()
+			}
+
+			if e1 == e2 {
+				return
+			}
+
+			t.Errorf("%s() error %v", name, err)
+		} else if tt.err != nil {
+			t.Errorf("%s() expected error not reported: %v", name, tt.err)
+		}
+
+		v, err := ctx.Pop()
+		if !errors.Nil(err) {
+			t.Errorf("%s() pop error: %v", name, err)
+		}
+
+		if !reflect.DeepEqual(v, tt.want) {
+			t.Errorf("%s() got: %#v, want %#v", name, v, tt.want)
+		}
+	}
+}
+
+func Test_localCallandReturnByteCode(t *testing.T) {
 	const (
 		symbolTableName    = "local call test"
-		uninterestingValue = "unintersting value"
+		uninterestingValue = "uninteresting value"
 	)
 
 	ctx := &Context{
@@ -62,6 +137,9 @@ func Test_localCallByteCode(t *testing.T) {
 	// to see this is still here later.
 	_ = ctx.stackPush(uninterestingValue)
 
+	marker := NewStackMarker("defer test", 0)
+	_ = ctx.stackPush(marker)
+
 	e := localCallByteCode(ctx, 5)
 	if !errors.Nil(e) {
 		t.Errorf("localCallByteCode unexpected error %v", e)
@@ -73,7 +151,7 @@ func Test_localCallByteCode(t *testing.T) {
 
 	// Test context frame info. Frame pointer points to start of available stack space
 	// in new local frame.
-	if ctx.framePointer != 2 {
+	if ctx.framePointer != 3 {
 		t.Errorf("localCallByteCode wrong fp value %v", ctx.framePointer)
 	}
 
@@ -97,13 +175,11 @@ func Test_localCallByteCode(t *testing.T) {
 		t.Errorf("localCallByteCode unexpected return error: %v", e)
 	}
 
-	// @TOMCOLE I think this is wrong. There appears to be an extra value
-	// on the stack, that must be discarded. Need to look into the logic
-	// flow between local function calls and defer calls. The local call
-	// with multiple return values needs this extra space, apparently.
-	_, e = ctx.Pop()
+	// Drop the stack contents that may have accumulated during the
+	// local call.
+	e = dropToMarkerByteCode(ctx, marker)
 	if !errors.Nil(e) {
-		t.Errorf("localCallByteCode unexpected pop error: %v", e)
+		t.Errorf("localCallByteCode unexpected dropToMarker error: %v", e)
 	}
 
 	// Fetch the value we had pushed on the stack as a marker that was
@@ -113,7 +189,7 @@ func Test_localCallByteCode(t *testing.T) {
 		t.Errorf("localCallByteCode unexpected pop error: %v", e)
 	}
 
-	if datatypes.GetFloat64(d) != 3.14 {
+	if datatypes.GetString(d) != uninterestingValue {
 		t.Errorf("localCallByteCode wrong TOS value: %#v", d)
 	}
 }

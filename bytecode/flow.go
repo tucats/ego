@@ -26,7 +26,7 @@ import (
 func stopByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.running = false
 
-	return errors.New(errors.ErrStop)
+	return c.newError(errors.ErrStop)
 }
 
 // panicByteCode instruction processor generates an error. The boolean flag is used
@@ -58,7 +58,7 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
-		return errors.New(errors.ErrSignalDebugger)
+		return c.newError(errors.ErrSignalDebugger)
 	}
 	// If we are tracing, put that out now.
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
@@ -323,7 +323,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 			if len(args) < df.Min || len(args) > df.Max {
 				name := functions.FindName(af)
 
-				return errors.New(errors.ErrArgumentCount).Context(name)
+				return c.newError(errors.ErrArgumentCount).Context(name)
 			}
 		}
 
@@ -420,10 +420,10 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	if errors.Nil(err) && c.breakOnReturn {
 		c.breakOnReturn = false
 
-		return errors.New(errors.ErrSignalDebugger)
+		return c.newError(errors.ErrSignalDebugger)
 	}
 
-	return errors.New(err)
+	return c.newError(err)
 }
 
 // argCheckByteCode instruction processor verifies that there are enough items
@@ -484,10 +484,10 @@ func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if va.Len() < min || va.Len() > max {
-			return errors.New(errors.ErrArgumentCount).In(name)
+			return c.newError(errors.ErrArgumentCount).In(name)
 		}
 	} else {
-		return errors.New(errors.ErrArgumentTypeCheck)
+		return c.newError(errors.ErrArgumentTypeCheck)
 	}
 
 	return nil
@@ -550,7 +550,7 @@ func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 		return nil
 	}
 
-	return errors.New(errors.ErrWrongMode).Context(mode)
+	return c.newError(errors.ErrWrongMode).Context(mode)
 }
 
 func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
@@ -565,7 +565,7 @@ func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	entryPoint, found := c.symbolGet(entryPointName)
 	if !found {
-		return errors.New(errors.ErrUndefinedEntrypoint).Context(entryPointName)
+		return c.newError(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 	}
 
 	_ = c.stackPush(entryPoint)
