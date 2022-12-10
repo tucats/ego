@@ -52,6 +52,9 @@ func panicByteCode(c *Context, i interface{}) *errors.EgoError {
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
 func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	c.line = datatypes.GetInt(i)
 	c.stepOver = false
 	_ = c.symbols.SetAlways("__line", c.line)
@@ -163,16 +166,18 @@ func goByteCode(c *Context, i interface{}) *errors.EgoError {
 		args[(argc-n)-1] = v
 	}
 
-	fName, err := c.Pop()
+	fx, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
 	}
+
+	fName := datatypes.GetString(fx)
 
 	// Launch the function call as a separate thread.
 	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
 	waitGroup.Add(1)
 
-	go GoRoutine(datatypes.GetString(fName), c, args)
+	go GoRoutine(fName, c, args)
 
 	return nil
 }

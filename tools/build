@@ -27,6 +27,13 @@ FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 GO="go"
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
+RACE=""
+
+if [ "$1" == "-r" ]; then
+   RACE="-race"
+   echo Build with -race checking enabled
+fi
+
 
 if [ "$1" == "-all" ]; then
    mkdir -p builds/linux
@@ -84,7 +91,7 @@ echo $BUILDVER >buildver.txt
 fi
 
 echo Build $BUILDVER on $GOOS $GOARCH
-GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS"
+GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE
 
 if [ "$1" == "-bin" ]; then
    echo "Updating ~/bin copy"

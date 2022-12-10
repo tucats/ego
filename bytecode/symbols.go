@@ -20,9 +20,11 @@ import (
 func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 	oldName := c.symbols.Name
 
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	c.blockDepth++
-	s := symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
-	c.symbols = s
+	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
 
 	ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, c.symbols.Name, oldName)

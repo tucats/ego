@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -45,6 +46,7 @@ type Context struct {
 	output               *strings.Builder
 	lastStruct           interface{}
 	result               interface{}
+	mux                  sync.RWMutex
 	programCounter       int
 	stackPointer         int
 	framePointer         int
@@ -121,6 +123,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 // original source being executed. This is stored in the
 // context every time an AtLine instruction is executed.
 func (c *Context) GetLine() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
 	return c.line
 }
 

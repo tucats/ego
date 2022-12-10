@@ -164,7 +164,10 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
 func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
+	parentCtx.mux.RLock()
 	parentSymbols := parentCtx.symbols
+	parentCtx.mux.RUnlock()
+
 	err := parentCtx.newError(errors.ErrInvalidFunctionCall)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)

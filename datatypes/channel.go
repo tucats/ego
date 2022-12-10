@@ -12,7 +12,7 @@ import (
 // Structure of an Ego channel wrapper around Go channels.
 type Channel struct {
 	channel chan interface{}
-	mutex   sync.Mutex
+	mutex   sync.RWMutex
 	size    int
 	isOpen  bool
 	count   int
@@ -30,29 +30,35 @@ func NewChannel(size int) *Channel {
 	c := &Channel{
 		isOpen:  true,
 		size:    size,
-		mutex:   sync.Mutex{},
+		mutex:   sync.RWMutex{},
 		count:   0,
 		id:      uuid.New().String(),
 		channel: make(chan interface{}, size),
 	}
 
-	ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
+	if ui.LoggerIsActive(ui.TraceLogger) {
+		ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
+	}
 
 	return c
 }
 
 // Send transmits an arbitrary data object through the channel, if it
-// is open.
+// is open. We must verify that the chanel is open before using it. It
+// is important to put the logging message out brefore re-locking the
+// channel since c.String needs a read-lock.
 func (c *Channel) Send(datum interface{}) *errors.EgoError {
-	c.mutex.Lock()
+	if c.IsOpen() {
+		if ui.LoggerIsActive(ui.TraceLogger) {
+			ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
+		}
 
-	defer c.mutex.Unlock()
+		c.channel <- datum
 
-	if c.isOpen {
-		ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
 
 		c.count++
-		c.channel <- datum
 
 		return nil
 	}
@@ -65,13 +71,19 @@ func (c *Channel) Send(datum interface{}) *errors.EgoError {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, *errors.EgoError) {
-	ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
+	if ui.LoggerIsActive(ui.TraceLogger) {
+		ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
+	}
 
-	if !c.isOpen && c.count == 0 {
+	if !c.IsOpen() && c.count == 0 {
 		return nil, errors.New(errors.ErrChannelNotOpen)
 	}
 
 	datum := <-c.channel
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	c.count--
 
 	return datum, nil
@@ -80,6 +92,9 @@ func (c *Channel) Receive() (interface{}, *errors.EgoError) {
 // Return a boolean value indicating if this channel is still open for
 // business.
 func (c *Channel) IsOpen() bool {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	return c.isOpen
 }
 
@@ -87,17 +102,23 @@ func (c *Channel) IsOpen() bool {
 // closed and there are no more items). This is used by the len()
 // function, for example.
 func (c *Channel) IsEmpty() bool {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	return !c.isOpen && c.count == 0
 }
 
 // Close the channel so no more sends are permitted to the channel, and
-// the receiver can test for channel completion.
+// the receiver can test for channel completion. Must do the logging
+// before taking the exclusive lock so c.String() can work.
 func (c *Channel) Close() bool {
-	c.mutex.Lock()
+	if ui.LoggerIsActive(ui.TraceLogger) {
+		ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
+	}
 
+	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
 	close(c.channel)
 
 	wasActive := c.isOpen
@@ -107,6 +128,9 @@ func (c *Channel) Close() bool {
 }
 
 func (c *Channel) String() string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	state := "open"
 
 	if !c.isOpen {
