@@ -175,6 +175,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 
+	// If we are compiling a function INSIDE a package definition, make sure
+	// the code has access to the full package definition at runtime.
+	if c.PackageName != "" {
+		cx.b.Emit(bytecode.Import, c.PackageName)
+	}
+
 	err = cx.compileRequiredBlock()
 	if !errors.Nil(err) {
 		return err
@@ -187,6 +193,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		cx.b.Emit(bytecode.Push, dm)
 		cx.b.Emit(bytecode.LocalCall, cx.deferQueue[i])
 		cx.b.Emit(bytecode.DropToMarker, dm)
+	}
+
+	// If we are compiling a function INSIDE a package definition, make sure
+	// the code has access to the full package definition at runtime.
+	if c.PackageName != "" {
+		cx.b.Emit(bytecode.PopScope)
 	}
 
 	// Add trailing return to ensure we close out the scope correctly

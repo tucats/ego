@@ -241,15 +241,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")
 		compilerInstance = compiler.New(name).ExtensionsEnabled(true).SetRoot(symbolTable)
 
-		// Add the standard non-package functions
+		// Add the standard non-package functions, and any auto-imported packages.
 		compilerInstance.AddStandard(symbolTable)
 
-		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting))
+		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 		if !errors.Nil(err) {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
 		}
-
-		compilerInstance.AddPackageToSymbols(symbolTable)
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if !errors.Nil(err) {

@@ -420,6 +420,9 @@ var Messages = map[string]map[string]string{
 	"error.import": {
 		"en": "import not permitted inside a block or loop",
 	},
+	"error.import.not.found": {
+		"en": "attempt to use imported package not in package cache",
+	},
 	"error.instruction": {
 		"en": "invalid instruction",
 	},

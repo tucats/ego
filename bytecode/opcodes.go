@@ -51,6 +51,7 @@ const (
 	Go
 	GreaterThan
 	GreaterThanOrEqual
+	Import
 	LessThan
 	LessThanOrEqual
 	Load
@@ -154,6 +155,7 @@ var instructionNames = map[OpcodeID]string{
 	Go:                 "Go",
 	GreaterThan:        "GT",
 	GreaterThanOrEqual: "GTEQ",
+	Import:             "Import",
 	LessThan:           "LT",
 	LessThanOrEqual:    "LTEQ",
 	Load:               "Load",
@@ -247,6 +249,7 @@ func initializeDispatch() {
 			Go:                 goByteCode,
 			GreaterThan:        greaterThanByteCode,
 			GreaterThanOrEqual: greaterThanOrEqualByteCode,
+			Import:             importByteCode,
 			LessThan:           lessThanByteCode,
 			LessThanOrEqual:    lessThanOrEqualByteCode,
 			Load:               loadByteCode,

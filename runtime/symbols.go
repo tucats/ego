@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -89,4 +90,26 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 
 	return strings.Join(t.FormatText(), "\n") + "\n", nil
+}
+
+// Get retrieves a value from the package structure by name. It returns the value and
+// a boolean value indicating if it was found. The flag is true if the package has been
+// initialized, the hash map is initialized, and the named value is found in the hashmap.
+func GetPackageSymbols(p *datatypes.EgoPackage) *symbols.SymbolTable {
+	if p == nil {
+		return nil
+	}
+
+	symV, found := p.Get(datatypes.SymbolsMDKey)
+	if found {
+		if syms, ok := symV.(*symbols.SymbolTable); ok {
+			return syms
+		} else {
+			ui.Debug(ui.DebugLogger, "Package symbol table was of wrong type: %#v", symV)
+
+			return nil
+		}
+	} else {
+		return symbols.NewSymbolTable("package " + p.Name())
+	}
 }

@@ -1,6 +1,9 @@
 package bytecode
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -10,6 +13,77 @@ import (
 
 type packageDef struct {
 	name string
+}
+
+type ConstantWrapper struct {
+	Value interface{}
+}
+
+var packageCache = map[string]*datatypes.EgoPackage{}
+var packageCacheLock sync.RWMutex
+
+func CopyPackagesToSymbols(s *symbols.SymbolTable) {
+	packageCacheLock.Lock()
+	defer packageCacheLock.Unlock()
+
+	for k, v := range packageCache {
+		_ = s.SetAlways(k, v)
+	}
+}
+
+func GetPackage(name string) (*datatypes.EgoPackage, bool) {
+	packageCacheLock.Lock()
+	defer packageCacheLock.Unlock()
+
+	p, ok := packageCache[name]
+	if ok {
+		return p, true
+	}
+
+	// No such package already defined, so let's create one and store a new
+	// empty symbol table for it's use.
+	px := datatypes.NewPackage(name)
+	px.Set(datatypes.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
+
+	packageCache[name] = &px
+
+	return &px, false
+}
+
+func importByteCode(c *Context, i interface{}) *errors.EgoError {
+	name := datatypes.GetString(i)
+
+	pkg, ok := GetPackage(name)
+	if !ok {
+		return c.newError(errors.ErrImportNotCached).Context(name)
+	}
+
+	// Do we already have the local symbol table in the tree?
+	alreadyFound := false
+
+	for s := c.symbols; s != nil; s = s.Parent {
+		if s.Package == name {
+			alreadyFound = true
+
+			break
+		}
+	}
+
+	// If the package table isn't already in the tree, inject if it
+	// there is one.
+	if !alreadyFound {
+		symV, found := pkg.Get(datatypes.SymbolsMDKey)
+		if found {
+			sym := symV.(*symbols.SymbolTable)
+			sym.Package = name
+
+			sym.Parent = c.symbols
+			c.symbols = sym
+		}
+	}
+
+	// Finally, store the entire package definition by name as well.
+	return c.symbolSetAlways(name, pkg)
 }
 
 func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
@@ -27,41 +101,30 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.packageStack = append(c.packageStack, packageDef{
 		name,
 	})
-	c.symbols = symbols.NewChildSymbolTable("package "+name, c.symbols)
 
 	// Create an initialize the package variable. If it already exists
 	// as a package (from a previous import or autoimport) re-use it
-	pkg := datatypes.NewPackage(name)
+	pkg, _ := GetPackage(name)
 
-	if v, ok := c.symbols.Root().Get(name); ok {
-		switch actual := v.(type) {
-		case *datatypes.EgoStruct:
-			ui.Log(ui.InternalLogger, "DEBUG: pushPackageByteCode() map/struct confusion")
+	var syms *symbols.SymbolTable
 
-			return errors.New(errors.ErrStop)
-
-		case datatypes.EgoPackage:
-			pkg = actual
-
-			if v, ok := datatypes.GetMetadata(actual, datatypes.SymbolsMDKey); ok {
-				if ps, ok := v.(*symbols.SymbolTable); ok {
-					ps.Parent = c.symbols
-					c.symbols = ps
-				}
-			}
-		}
+	if symV, ok := pkg.Get(datatypes.SymbolsMDKey); ok {
+		syms = symV.(*symbols.SymbolTable)
+	} else {
+		syms = symbols.NewSymbolTable("package " + name)
 	}
 
-	// Define the attribute of the struct as a package.
-	datatypes.SetType(pkg, datatypes.Package(name))
+	syms.SetParent(c.symbols)
+	syms.Package = name
+	c.symbols = syms
 
-	return c.symbols.Root().SetAlways(name, pkg)
+	return nil
 }
 
 // Instruction to indicate we are done with any definitions for a
 // package. The current (package-specific) symbol table is drained
 // and any visible names are copied into the package structure, which
-// is then saved in the current symbol table.
+// is then saved in the package cache.
 func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	size := len(c.packageStack)
 	if size == 0 {
@@ -78,26 +141,15 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	// Retrieve the package variable
-	pkgValue, found := c.symbols.Root().Get(pkgdef.name)
+	pkg, found := GetPackage(pkgdef.name)
 	if !found {
 		return c.newError(errors.ErrMissingPackageStatement)
-	}
-
-	if _, ok := pkgValue.(*datatypes.EgoStruct); ok {
-		ui.Log(ui.InternalLogger, "DEBUG: popPackageByteCode() map/struct confusion")
-
-		return errors.New(errors.ErrStop)
-	}
-
-	pkg, _ := pkgValue.(datatypes.EgoPackage)
-	if pkg.IsEmpty() {
-		pkg = datatypes.NewPackage(pkgdef.name)
 	}
 
 	first := true
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
-		if util.HasCapitalizedName(k) {
+		if !strings.HasPrefix(k, "__") && util.HasCapitalizedName(k) {
 			v, _ := c.symbols.Get(k)
 
 			if first {
@@ -121,26 +173,27 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			ui.Debug(ui.ByteCodeLogger, "(%d)   constant %s", c.threadID, k)
-			pkg.Set(k, v)
+			pkg.Set(k, ConstantWrapper{v})
 		}
 	}
 
-	// Mark the active symbol table we just used as belonging to a package.
-	c.symbols.Package = pkgdef.name
+	// Save a copy of symbol table as well in the package, containing the non-exported
+	// symbols that aren't hidden values used by Ego itself.
+	s := symbols.NewSymbolTable("package " + pkgdef.name + " local values")
 
-	// Define the attribute of the package.
-	datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
-	datatypes.SetMetadata(pkg, datatypes.StaticMDKey, true)
-	datatypes.SetMetadata(pkg, datatypes.SymbolsMDKey, c.symbols)
+	for k := range c.symbols.Symbols {
+		if !strings.HasPrefix(k, "__") {
+			v, _ := c.symbols.Get(k)
+
+			_ = s.SetAlways(k, v)
+		}
+	}
+
+	pkg.Set(datatypes.SymbolsMDKey, s)
 
 	// Reset the active symbol table to the state before we processed
 	// the package.
 	c.popSymbolTable()
 
-	// Store the package definition in the root symbol table.
-	rootTable := c.symbols.Root()
-
-	ui.Debug(ui.TraceLogger, "(%d) Store package %s in root table %s", c.threadID, pkgdef.name, rootTable.Name)
-
-	return c.symbols.Root().SetAlways(pkgdef.name, pkg)
+	return nil
 }

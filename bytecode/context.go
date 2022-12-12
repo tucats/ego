@@ -400,6 +400,10 @@ func (c *Context) popSymbolTable() {
 		return
 	}
 
+	if c.symbols == c.symbols.Parent {
+		panic("SYMBOL TABLE CYCLE ERROR")
+	}
+
 	name := c.symbols.Name
 	c.symbols = c.symbols.Parent
 

@@ -74,7 +74,7 @@ var dictionary = map[string]string{
 	"functions.Substring":    "Substring(text string, position int, count int) string",
 	"functions.Sum":          "Sum(item... int) int",
 	"functions.Template":     "Template(name string <,values interface{}>) string",
-	"functions.Upper":        "ToUpper(s string) tring",
+	"functions.Upper":        "ToUpper(s string) string",
 	"functions.Tokenize":     "Tokenize(s string) []string",
 	"functions.Truncate":     "Truncate(s string, maxLength int) string",
 	"functions.URLPattern":   "URLPattern(url string, pattern string) map[string]string",

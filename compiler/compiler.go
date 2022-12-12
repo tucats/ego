@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -69,6 +70,7 @@ type Compiler struct {
 	blockDepth           int
 	statementCount       int
 	disasm               bool
+	testMode             bool
 	LowercaseIdentifiers bool
 	extensionsEnabled    bool
 	exitEnabled          bool // Only true in interactive mode
@@ -108,6 +110,16 @@ func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 // If set to true, the compiler allows the EXIT statement.
 func (c *Compiler) ExitEnabled(b bool) *Compiler {
 	c.exitEnabled = b
+
+	return c
+}
+
+func (c *Compiler) TestMode() bool {
+	return c.testMode
+}
+
+func (c *Compiler) SetTestMode(b bool) *Compiler {
+	c.testMode = b
 
 	return c
 }
@@ -182,12 +194,11 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 
-	compilerName := "compiler"
-	if c.s != nil {
-		compilerName = c.s.Name
-	}
+	pkg, _ := bytecode.GetPackage(pkgname)
+	symV, _ := pkg.Get(datatypes.SymbolsMDKey)
+	syms := symV.(*symbols.SymbolTable)
 
-	ui.Debug(ui.CompilerLogger, "### Adding builtin packages to %s compilation unit", compilerName)
+	ui.Debug(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
 
 	functionNames := make([]string, 0)
 	for k := range functions.FunctionDictionary {
@@ -220,21 +231,18 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 			added = true
 
 			if pkgname == "" && c.s != nil {
-				_ = c.s.SetAlways(name, f.F)
+				_ = syms.SetAlways(name, f.F)
+				pkg.Set(name, f.F)
 			} else {
 				if f.F != nil {
-					_ = c.addPackageFunction(pkgname, name, f.F)
+					_ = syms.SetAlways(name, f.F)
+					pkg.Set(name, f.F)
 				} else {
-					_ = c.addPackageValue(pkgname, name, f.V)
+					_ = syms.SetAlways(name, f.V)
+					pkg.Set(name, f.V)
 				}
 			}
 		}
-	}
-
-	// If we added one or more functions, update the package definition
-	// in the root symbol table for this builtin package.
-	if added {
-		_ = c.RootTable.Root().SetAlways(pkgname, c.packages.Package[pkgname])
 	}
 
 	return added
@@ -275,6 +283,7 @@ func (c *Compiler) normalize(name string) string {
 	return name
 }
 
+/* @TOMCOLE DELETE?
 // addPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
@@ -319,6 +328,7 @@ func (c *Compiler) addPackageFunction(pkgname string, name string, function inte
 	return nil
 }
 
+
 // AddPackageFunction adds a new package function to the compiler's package dictionary. If the
 // package name does not yet exist, it is created. The function name and interface are then used
 // to add an entry for that package.
@@ -350,6 +360,7 @@ func (c *Compiler) addPackageValue(pkgname string, name string, value interface{
 
 	return nil
 }
+*/
 
 func (c *Compiler) SetInteractive(b bool) {
 	if b {
@@ -419,7 +430,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // parameter indicates if all available packages (including those
 // found in the ego path) are imported, versus just essential
 // packages like "util".
-func (c *Compiler) AutoImport(all bool) *errors.EgoError {
+func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError {
 	ui.Debug(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
 
 	// Start by making a list of the packages. If we need all packages,
@@ -461,7 +472,7 @@ func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 	var firstError *errors.EgoError
 
 	for _, packageName := range sortedPackageNames {
-		text := "import " + packageName
+		text := fmt.Sprintf("import \"%s\"", packageName)
 
 		_, err := c.CompileString(packageName, text)
 		if errors.Nil(err) {
@@ -472,6 +483,11 @@ func (c *Compiler) AutoImport(all bool) *errors.EgoError {
 	c.b = savedBC
 	c.t = savedT
 	c.SourceFile = savedSource
+
+	// Finally, traverse the package cache to move the symbols to the
+	// given symbol table
+
+	bytecode.CopyPackagesToSymbols(s)
 
 	return firstError
 }

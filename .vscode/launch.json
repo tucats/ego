@@ -4,6 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+
         {
             "name": "run with options but no verb",
             "type": "go",
@@ -63,7 +65,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": []
+            "args": ["-d", "debug"]
         },
         {
             "name": "ego test <all>",
@@ -103,7 +105,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["test", "test.ego"]
+            "args": ["-d", "trace", "test", "test.ego"]
         },
         {
             "name": "Trace test test.ego",

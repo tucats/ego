@@ -215,6 +215,15 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		return t.String(), nil
 
+	case *datatypes.EgoPackage:
+		t := datatypes.TypeOf(v)
+
+		if t.IsTypeDefinition() {
+			return t.Name(), nil
+		}
+
+		return t.String(), nil
+
 	case *interface{}:
 		tt := datatypes.TypeOfPointer(v)
 

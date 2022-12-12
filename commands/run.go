@@ -190,7 +190,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 		// If we are processing interactive console commands, and help is aenabled, and this is a
 		// "help" command, handle that specially.
-		if interactive && settings.GetBool(defs.ExtensionsEnabledSetting) && len(text) >= 4 && (text == "help\n" || text[:5] == "help ") {
+		if interactive && settings.GetBool(defs.ExtensionsEnabledSetting) && (strings.HasPrefix(text, "help\n") || strings.HasPrefix(text, "help ")) {
 			keys := strings.Split(strings.ToLower(text), " ")
 
 			help(keys)
@@ -264,14 +264,14 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			// link to the global table so we pick up special builtins.
 			comp.SetRoot(&symbols.RootSymbolTable)
 
-			err := comp.AutoImport(autoImport)
+			err := comp.AutoImport(autoImport, symbolTable)
 			if !errors.Nil(err) {
 				ui.Log(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
 				return errors.New(errors.ErrStop)
 			}
 
-			comp.AddPackageToSymbols(&symbols.RootSymbolTable)
+			comp.AddPackageToSymbols(symbolTable)
 			comp.SetInteractive(interactive)
 		}
 

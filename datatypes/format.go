@@ -218,6 +218,13 @@ func Format(element interface{}) string {
 			return fmt.Sprintf("F<%s:%d>", module, line)
 		}
 
+		if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
+			e := reflect.ValueOf(v).Field(0)
+			name := fmt.Sprintf("%v", e.Interface())
+
+			return fmt.Sprintf("Constant %s", Format(name))
+		}
+
 		// If it's a slice of an interface array, used to pass compound
 		// parameters to bytecodes, then format it as {a, b, c}
 

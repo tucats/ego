@@ -44,12 +44,17 @@ func (c *Compiler) compilePackage() *errors.EgoError {
 func (c *Compiler) compileImport() *errors.EgoError {
 	var err *errors.EgoError
 
-	if c.blockDepth > 0 {
-		return c.newError(errors.ErrInvalidImport)
-	}
+	// Unless we are in test mode, constrain imports to
+	// only occur at the top-level before blocks are
+	// compiled (i.e. not inside a function, etc.)
+	if !c.TestMode() {
+		if c.blockDepth > 0 {
+			return c.newError(errors.ErrInvalidImport)
+		}
 
-	if c.loops != nil {
-		return c.newError(errors.ErrInvalidImport)
+		if c.loops != nil {
+			return c.newError(errors.ErrInvalidImport)
+		}
 	}
 
 	isList := false
@@ -66,11 +71,30 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			parsing = false
 		}
 
-		fileName := c.t.Next()
+		var packageName string
 
-		c.packages.Mutex.Lock()
-		_, ok := c.packages.Package[fileName]
-		c.packages.Mutex.Unlock()
+		fileName := c.t.Next()
+		if fileName[0:1] != "\"" {
+			packageName = fileName
+			fileName = c.t.Next()
+		}
+
+		if len(fileName) > 2 && fileName[:1] == "\"" {
+			fileName = fileName[1 : len(fileName)-1]
+			// Get the package name from the given string if it wasn't
+			// explicitly given in the import statement.If this is
+			// a file system name, remove the extension if present.
+			if packageName == "" {
+				packageName = filepath.Base(fileName)
+				if filepath.Ext(packageName) != "" {
+					packageName = packageName[:len(filepath.Ext(packageName))]
+				}
+			}
+		}
+
+		packageName = strings.ToLower(packageName)
+
+		pkgData, ok := bytecode.GetPackage(packageName)
 
 		if ok {
 			ui.Debug(ui.CompilerLogger, "*** Already imported \"%s\", skipping...", fileName)
@@ -81,32 +105,6 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				break
 			}
 
-			if len(fileName) > 2 && fileName[:1] == "\"" {
-				fileName = fileName[1 : len(fileName)-1]
-			}
-
-			if c.loops != nil {
-				return c.newError(errors.ErrInvalidImport)
-			}
-
-			// Get the package name from the given string. If this is
-			// a file system name, remove the extension if present.
-			packageName := filepath.Base(fileName)
-			if filepath.Ext(packageName) != "" {
-				packageName = packageName[:len(filepath.Ext(packageName))]
-			}
-
-			packageName = strings.ToLower(packageName)
-
-			// If this is an import of a package already processed, no work to do.
-			if pkg, found := c.s.Root().Get(packageName); found {
-				if p, ok := pkg.(datatypes.EgoPackage); ok && p.Imported {
-					ui.Debug(ui.CompilerLogger, "+++ Previously imported \"%s\", skipping", packageName)
-
-					continue
-				}
-			}
-
 			// If this is an import of the package we're currently importing, no work to do.
 			if packageName == c.PackageName {
 				continue
@@ -114,13 +112,13 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			builtinsAdded := c.AddBuiltins(packageName)
 			if builtinsAdded {
-				ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+packageName)
+				ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName)
 			} else {
 				// The nil in the packages list just prevents this from being read again
 				// if it was already processed once.
-				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+packageName)
+				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName)
 				c.packages.Mutex.Lock()
-				c.packages.Package[packageName] = datatypes.NewPackage(packageName)
+				c.packages.Package[packageName] = datatypes.NewPackage(fileName)
 				c.packages.Mutex.Unlock()
 			}
 
@@ -145,7 +143,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + fileName).SetRoot(c.RootTable)
+			importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
 			importCompiler.b = bytecode.New("import " + fileName)
 			importCompiler.t = tokenizer.New(text)
 			importCompiler.PackageName = packageName
@@ -179,44 +177,35 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				break
 			}
 
-			c.packages.Mutex.Lock()
-			pkgData, ok := c.packages.Package[fileName]
-			c.packages.Mutex.Unlock()
+			// Rewrite the package now that we've added stuff to it.
+			pkgData.Imported = true
 
-			if !ok {
-				ui.Debug(ui.CompilerLogger, "+++ expected package not in dictionary: %s", fileName)
-			} else {
-				// Rewrite the package now that we've added stuff to it.
-				pkgData.Imported = true
+			if ui.LoggerIsActive(ui.CompilerLogger) {
+				ui.Debug(ui.CompilerLogger, "+++ updating package: %s", fileName)
 
-				oldPackageX, found := symbols.RootSymbolTable.Get(fileName)
-				if found {
-					pkgData.Merge(oldPackageX.(datatypes.EgoPackage))
-				}
+				keys := pkgData.Keys()
 
-				if ui.LoggerIsActive(ui.CompilerLogger) {
-					ui.Debug(ui.CompilerLogger, "+++ updating package in global dictionary: %s", fileName)
-
-					keys := pkgData.Keys()
-
-					keyString := ""
-					for idx, k := range keys {
-						if idx > 0 {
-							keyString = keyString + ","
-						}
-
-						keyString = keyString + k
+				keyString := ""
+				for idx, k := range keys {
+					if idx > 0 {
+						keyString = keyString + ","
 					}
 
-					ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
+					keyString = keyString + k
 				}
 
-				err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
-				if !errors.Nil(err2) {
-					return err2
-				}
+				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
+			}
+
+			err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
+			if !errors.Nil(err2) {
+				return err2
 			}
 		}
+
+		// Now that the package is in the cache, add the instruction to the active
+		// program to import that cached info at runtime.
+		c.b.Emit(bytecode.Import, packageName)
 
 		if !isList {
 			break

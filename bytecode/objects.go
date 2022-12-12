@@ -4,6 +4,8 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // memberByteCode instruction processor. This pops two values from
@@ -50,6 +52,43 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		if v == nil {
 			return c.newError(errors.ErrUnknownMember).Context(name)
 		}
+
+	case *datatypes.EgoPackage:
+		// First, see if it's a variable in the symbol table for the package, assuming
+		// it starts with an uppercase letter.
+		if util.HasCapitalizedName(name) {
+			if symV, ok := mv.Get(datatypes.SymbolsMDKey); ok {
+				syms := symV.(*symbols.SymbolTable)
+
+				v, ok := syms.Get(name)
+				if ok {
+					_ = c.stackPush(v)
+
+					return nil
+				}
+			}
+		}
+
+		tt := datatypes.TypeOf(mv)
+
+		// See if it's one of the items within the package store.
+		v, found = mv.Get(name)
+		if !found {
+			// Okay, could it be a function based on the type of this object?
+			fv := tt.Function(name)
+			if fv == nil {
+				return c.newError(errors.ErrUnknownPackageMember).Context(name)
+			}
+
+			v = fv
+		}
+
+		// Special case; if the value being retrieved is a constant, unwrap it.
+		if vconst, ok := v.(ConstantWrapper); ok {
+			v = vconst.Value
+		}
+
+		c.lastStruct = m
 
 	case datatypes.EgoPackage:
 		tt := datatypes.TypeOf(mv)

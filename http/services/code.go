@@ -72,12 +72,10 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		// Add the builtin functions
 		comp.AddStandard(symbolTable)
 
-		err := comp.AutoImport(settings.GetBool(defs.AutoImportSetting))
+		err := comp.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 		if !errors.Nil(err) {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: %v", err)
 		}
-
-		comp.AddPackageToSymbols(symbolTable)
 
 		// Run the compiled code
 		ctx := bytecode.NewContext(symbolTable, b)

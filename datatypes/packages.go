@@ -33,7 +33,7 @@ func NewPackage(name string) EgoPackage {
 
 // NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
 // is a nil value, then an empty package definition is created.
-func NewPackageFromMap(name string, items map[string]interface{}) EgoPackage {
+func NewPackageFromMap(name string, items map[string]interface{}) *EgoPackage {
 	if items == nil {
 		items = map[string]interface{}{}
 	}
@@ -43,7 +43,7 @@ func NewPackageFromMap(name string, items map[string]interface{}) EgoPackage {
 		items: items,
 	}
 
-	return pkg
+	return &pkg
 }
 
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
@@ -116,7 +116,7 @@ func (p *EgoPackage) Set(key string, value interface{}) {
 			action = "update"
 		}
 
-		ui.Debug(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %v", p.name, action, key, v))
+		ui.Debug(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.name, action, key, v))
 	}
 
 	p.items[key] = value
@@ -149,4 +149,8 @@ func (p *EgoPackage) Merge(source EgoPackage) {
 			ui.Debug(ui.CompilerLogger, "... merging key %s from existing package", key)
 		}
 	}
+}
+
+func (p *EgoPackage) Name() string {
+	return p.name
 }

@@ -76,6 +76,12 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	return &symbols
 }
 
+func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
+	s.Parent = p
+
+	return s
+}
+
 func (s *SymbolTable) Lock() {
 	s.mutex.Lock()
 }

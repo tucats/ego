@@ -103,9 +103,9 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			continue
 		}
 
-		// Compile the token stream
+		// Compile the token stream, using a compilier running in "test" mode.
 		name := filepath.Base(fileOrPath)
-		comp := compiler.New(name)
+		comp := compiler.New(name).SetTestMode(true)
 
 		// We set this to "interaactive" mode so tests can include program
 		// text without needing a main
@@ -123,7 +123,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				comp.AddStandard(symbolTable)
 
 				// Always autoimport
-				err := comp.AutoImport(true)
+				err := comp.AutoImport(true, symbolTable)
 				if !errors.Nil(err) {
 					msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
 						"err": err.Error(),
@@ -132,7 +132,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 					os.Stderr.Write([]byte(msg))
 				}
 
-				comp.AddPackageToSymbols(symbolTable)
+				//comp.AddPackageToSymbols(symbolTable)
 
 				builtinsAdded = true
 			}
