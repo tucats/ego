@@ -703,13 +703,7 @@ func TypeOf(i interface{}) *Type {
 		return &StringType
 
 	case EgoPackage:
-		if t, ok := GetMetadata(v, TypeMDKey); ok {
-			if t, ok := t.(*Type); ok {
-				return t
-			}
-		}
-
-		return &UndefinedType
+		return &PackageType
 
 	case *byte:
 		return Pointer(&ByteType)

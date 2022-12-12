@@ -72,6 +72,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	if m, ok := args[0].(*datatypes.Type); ok {
 		return m.Reflect(), nil
 	}
+
 	// Is it an Ego package?
 	if m, ok := args[0].(datatypes.EgoPackage); ok {
 		// Make a list of the visible member names
@@ -89,6 +90,35 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members
 		result[datatypes.TypeMDName] = "package"
+		result["native"] = false
+		result["istype"] = false
+
+		t := datatypes.TypeOf(m)
+		if t.IsTypeDefinition() {
+			result[datatypes.TypeMDName] = t.Name()
+			result[datatypes.BasetypeMDName] = "package"
+		}
+
+		return datatypes.NewStructFromMap(result), nil
+	}
+
+	// Is it an pionter to an Ego package?
+	if m, ok := args[0].(*datatypes.EgoPackage); ok {
+		// Make a list of the visible member names
+		memberList := []string{}
+
+		for _, k := range m.Keys() {
+			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
+				memberList = append(memberList, k)
+			}
+		}
+
+		// Sort the member list and forge it into an Ego array
+		members := datatypes.NewArrayFromArray(&datatypes.StringType, util.MakeSortedArray(memberList))
+
+		result := map[string]interface{}{}
+		result[datatypes.MembersMDName] = members
+		result[datatypes.TypeMDName] = "*package"
 		result["native"] = false
 		result["istype"] = false
 
