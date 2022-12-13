@@ -36,8 +36,8 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		s := ""
 
-		// If it's an array, print each element as a row in the output.
-		if vv, ok := v.(*datatypes.EgoArray); ok {
+		switch vv := v.(type) {
+		case *datatypes.EgoArray:
 			r := make([]string, vv.Len())
 			for n := 0; n < len(r); n++ {
 				vvv, _ := vv.Get(n)
@@ -45,13 +45,17 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			s = strings.Join(r, "\n")
-		} else if vv, ok := v.(*datatypes.EgoPackage); ok {
+
+		case *datatypes.EgoPackage:
 			s = formats.PackageAsString(vv)
-		} else if vv, ok := v.(*datatypes.EgoStruct); ok {
+
+		case *datatypes.EgoStruct:
 			s = formats.StructAsString(vv)
-		} else if vv, ok := v.(*datatypes.EgoMap); ok {
+
+		case *datatypes.EgoMap:
 			s = formats.MapAsString(vv)
-		} else {
+
+		default:
 			s = datatypes.FormatUnquoted(v)
 		}
 
