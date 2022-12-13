@@ -26,6 +26,8 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoError {
 
 	if c.PackageName != "" {
 		e = e.In(c.PackageName)
+	} else if c.SourceFile != "" {
+		e = e.In(c.SourceFile)
 	}
 
 	// Get the context info if possible.

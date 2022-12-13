@@ -31,6 +31,14 @@ func CopyPackagesToSymbols(s *symbols.SymbolTable) {
 	}
 }
 
+func IsPackage(name string) bool {
+	packageCacheLock.Lock()
+	defer packageCacheLock.Unlock()
+
+	_, found := packageCache[name]
+
+	return found
+}
 func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()

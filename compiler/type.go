@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -157,6 +158,16 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type
 						return theType.BaseType(), true
 					}
 				}
+			}
+		}
+	}
+
+	// Is it a previously imported package type?
+	if bytecode.IsPackage(packageName) {
+		p, _ := bytecode.GetPackage(packageName)
+		if tV, ok := p.Get(typeName); ok {
+			if t, ok := tV.(*datatypes.Type); ok {
+				return t, true
 			}
 		}
 	}

@@ -226,7 +226,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 		typeName = packageName + "." + typeName
 	}
 
-	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType).Context(typeName)
+	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType, typeName)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

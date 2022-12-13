@@ -240,7 +240,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 		default:
-			return c.newError(errors.ErrUnknownType).Context(typeInfo.String())
+			return c.newError(errors.ErrUnknownType, typeInfo.String())
 		}
 	} else {
 		// No type, default it to a struct.
