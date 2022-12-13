@@ -5,6 +5,8 @@ import (
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/util"
 )
 
 // This manages operations on structures (structs, maps, and arrays)
@@ -175,11 +177,47 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch a := destination.(type) {
-	/*
-		case datatypes.Type:
-			fmt.Println("DEBUG: dead code")
-			a.DefineFunction(datatypes.GetString(index), v)
-	*/
+	case *datatypes.EgoPackage:
+		name := datatypes.GetString(index)
+
+		// Must be an exported (capitalized) name.
+		if !util.HasCapitalizedName(name) {
+			return c.newError(errors.ErrSymbolNotExported, a.Name()+"."+name)
+		}
+
+		// Cannot start with the read-only name
+		if name[0:1] == "_" {
+			return c.newError(errors.ErrReadOnlyValue, a.Name()+"."+name)
+		}
+
+		// If it's a declared item in the package, is it one of the ones
+		// that is readOnly by default?
+		if oldItem, found := a.Get(name); found {
+			switch oldItem.(type) {
+			// These types cannot be written to.
+			case *ByteCode,
+				func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError),
+				ConstantWrapper:
+				// Tell the caller nope...
+				return c.newError(errors.ErrReadOnlyValue, a.Name()+"."+name)
+			}
+		}
+
+		// Get the associated symbol table
+		symV, found := a.Get(datatypes.SymbolsMDKey)
+		if found {
+			syms := symV.(*symbols.SymbolTable)
+
+			existingValue, found := syms.Get(name)
+			if found {
+				if _, ok := existingValue.(ConstantWrapper); ok {
+					return c.newError(errors.ErrInvalidConstant, a.Name()+"."+name)
+				}
+			}
+
+			return syms.Set(name, v)
+		}
+
 	case *datatypes.Type:
 		a.DefineFunction(datatypes.GetString(index), v)
 

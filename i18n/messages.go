@@ -606,6 +606,9 @@ var Messages = map[string]map[string]string{
 	"error.symbol.name": {
 		"en": "invalid symbol name",
 	},
+	"error.symbol.not.exported": {
+		"en": "symbol not exported from package",
+	},
 	"error.symbol.not.found": {
 		"en": "unknown symbol",
 	},
