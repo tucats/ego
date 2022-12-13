@@ -45,8 +45,6 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			s = strings.Join(r, "\n")
-		} else if vv, ok := v.(datatypes.EgoPackage); ok {
-			s = formats.PackageAsString(&vv)
 		} else if vv, ok := v.(*datatypes.EgoPackage); ok {
 			s = formats.PackageAsString(vv)
 		} else if vv, ok := v.(*datatypes.EgoStruct); ok {

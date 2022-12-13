@@ -22,13 +22,13 @@ type EgoPackage struct {
 var packageLock sync.RWMutex
 
 // NewPackage creates a new, empty package definition.
-func NewPackage(name string) EgoPackage {
+func NewPackage(name string) *EgoPackage {
 	pkg := EgoPackage{
 		name:  name,
 		items: map[string]interface{}{},
 	}
 
-	return pkg
+	return &pkg
 }
 
 // NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map

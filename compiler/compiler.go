@@ -49,7 +49,7 @@ type Loop struct {
 // PackageDictionary is a list of packages each with a function dictionary.
 type PackageDictionary struct {
 	Mutex   sync.Mutex
-	Package map[string]datatypes.EgoPackage
+	Package map[string]*datatypes.EgoPackage
 }
 
 // Compiler is a structure defining what we know about the compilation.
@@ -87,7 +87,7 @@ func New(name string) *Compiler {
 		Types:      map[string]*datatypes.Type{},
 		packages: PackageDictionary{
 			Mutex:   sync.Mutex{},
-			Package: map[string]datatypes.EgoPackage{},
+			Package: map[string]*datatypes.EgoPackage{},
 		},
 		LowercaseIdentifiers: false,
 		extensionsEnabled:    settings.GetBool(ExtensionsSetting),
@@ -283,85 +283,6 @@ func (c *Compiler) normalize(name string) string {
 	return name
 }
 
-/* @TOMCOLE DELETE?
-// addPackageFunction adds a new package function to the compiler's package dictionary. If the
-// package name does not yet exist, it is created. The function name and interface are then used
-// to add an entry for that package.
-func (c *Compiler) addPackageFunction(pkgname string, name string, function interface{}) *errors.EgoError {
-	c.packages.Mutex.Lock()
-	defer c.packages.Mutex.Unlock()
-
-	fd, found := c.packages.Package[pkgname]
-	if !found || fd.IsEmpty() {
-		fx, found := c.RootTable.Get(pkgname)
-		if !found {
-			fd = datatypes.NewPackage(pkgname)
-		} else {
-			fd = fx.(datatypes.EgoPackage)
-			c.packages.Package[pkgname] = fd
-		}
-
-		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
-		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
-	}
-
-	if _, found := fd.Get(name); found {
-		return c.newError(errors.ErrFunctionAlreadyExists)
-	}
-
-	fd.Set(name, function)
-
-	c.packages.Package[pkgname] = fd
-
-	// Keep the global symbol version in sync also. If it exists already, get its values
-	// and merge into this new definition, then write out the value.
-	// @tomcole This MAY be able to completly supplant the compiler package structures at
-	// some point in the future.
-	if oldPackage, found := symbols.RootSymbolTable.Get(pkgname); found {
-		fd.Merge(oldPackage.(datatypes.EgoPackage))
-	}
-
-	_ = symbols.RootSymbolTable.SetAlways(pkgname, fd)
-
-	ui.Debug(ui.CompilerLogger, "... added function %s", name)
-
-	return nil
-}
-
-
-// AddPackageFunction adds a new package function to the compiler's package dictionary. If the
-// package name does not yet exist, it is created. The function name and interface are then used
-// to add an entry for that package.
-func (c *Compiler) addPackageValue(pkgname string, name string, value interface{}) *errors.EgoError {
-	c.packages.Mutex.Lock()
-	defer c.packages.Mutex.Unlock()
-
-	fd, found := c.packages.Package[pkgname]
-	if !found || fd.IsEmpty() {
-		fx, found := c.RootTable.Get(pkgname)
-		if !found {
-			fd = datatypes.NewPackage(pkgname)
-		} else {
-			fd = fx.(datatypes.EgoPackage)
-			c.packages.Package[pkgname] = fd
-		}
-
-		datatypes.SetMetadata(fd, datatypes.TypeMDKey, datatypes.Package(pkgname))
-		datatypes.SetMetadata(fd, datatypes.ReadonlyMDKey, true)
-	}
-
-	if _, found := fd.Get(name); found {
-		return c.newError(errors.ErrFunctionAlreadyExists)
-	}
-
-	fd.Set(name, value)
-
-	c.packages.Package[pkgname] = fd
-
-	return nil
-}
-*/
-
 func (c *Compiler) SetInteractive(b bool) {
 	if b {
 		c.functionDepth++
@@ -510,7 +431,7 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 
 	packages := PackageDictionary{
 		Mutex:   sync.Mutex{},
-		Package: map[string]datatypes.EgoPackage{},
+		Package: map[string]*datatypes.EgoPackage{},
 	}
 
 	c.packages.Mutex.Lock()

@@ -142,7 +142,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
 
-	case datatypes.EgoPackage:
+	case *datatypes.EgoPackage:
 		// Create the replica count if needed, and update it.
 		replica := 0
 
@@ -252,7 +252,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case datatypes.EgoPackage:
+	case *datatypes.EgoPackage:
 		r := datatypes.EgoPackage{}
 		keys := v.Keys()
 
@@ -261,7 +261,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 			r.Set(k, DeepCopy(d, depth-1))
 		}
 
-		return r
+		return &r
 
 	default:
 		return v

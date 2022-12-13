@@ -568,7 +568,7 @@ func (t Type) Name() string {
 // as a pointer type, without the pointer designation.
 
 func KindOf(i interface{}) int {
-	switch v := i.(type) {
+	switch i.(type) {
 	case *interface{}, **sync.WaitGroup, **sync.Mutex, *string:
 		return PointerKind
 
@@ -609,12 +609,6 @@ func KindOf(i interface{}) int {
 		return StringKind
 
 	case EgoPackage:
-		if t, ok := GetMetadata(v, TypeMDKey); ok {
-			if t, ok := t.(Type); ok {
-				return t.kind
-			}
-		}
-
 		return UndefinedKind
 
 	case *EgoPackage:

@@ -146,7 +146,7 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type
 
 		// It was a package, but without a package body. Already moved to global storage?
 		if pkg, found := c.s.Root().Get(packageName); found {
-			if m, ok := pkg.(datatypes.EgoPackage); ok {
+			if m, ok := pkg.(*datatypes.EgoPackage); ok {
 				if t, found := m.Get(typeName); found {
 					if theType, ok := t.(*datatypes.Type); ok {
 						return theType, true

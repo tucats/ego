@@ -74,7 +74,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	// Is it an Ego package?
-	if m, ok := args[0].(datatypes.EgoPackage); ok {
+	if m, ok := args[0].(*datatypes.EgoPackage); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
 
@@ -89,7 +89,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members
-		result[datatypes.TypeMDName] = "package"
+		result[datatypes.TypeMDName] = "*package"
 		result["native"] = false
 		result["istype"] = false
 
@@ -235,15 +235,6 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 		}
 
 		return "type " + typeName, nil
-
-	case datatypes.EgoPackage:
-		t := datatypes.TypeOf(v)
-
-		if t.IsTypeDefinition() {
-			return t.Name(), nil
-		}
-
-		return t.String(), nil
 
 	case *datatypes.EgoPackage:
 		t := datatypes.TypeOf(v)

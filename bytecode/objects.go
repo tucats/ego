@@ -90,22 +90,6 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		c.lastStruct = m
 
-	case datatypes.EgoPackage:
-		tt := datatypes.TypeOf(mv)
-
-		v, found = mv.Get(name)
-		if !found {
-			// Okay, could it be a function based on the type of this object?
-			fv := tt.Function(name)
-			if fv == nil {
-				return c.newError(errors.ErrUnknownPackageMember).Context(name)
-			}
-
-			v = fv
-		}
-
-		c.lastStruct = m
-
 	default:
 		// Is it a native type? If so, see if there is a function for it
 		// with the given name. If so, push that as if it was a builtin.

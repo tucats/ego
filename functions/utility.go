@@ -127,7 +127,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	case *datatypes.EgoMap:
 		return len(arg.Keys()), nil
 
-	case datatypes.EgoPackage:
+	case *datatypes.EgoPackage:
 		return nil, errors.New(errors.ErrInvalidType)
 
 	case nil:
@@ -190,7 +190,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	case *datatypes.EgoStruct:
 		return v.FieldNamesArray(), nil
 
-	case datatypes.EgoPackage:
+	case *datatypes.EgoPackage:
 		keys := datatypes.NewArray(&datatypes.StringType, 0)
 
 		for _, k := range v.Keys() {

@@ -117,7 +117,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 				// look to see if this is a known type. If so, copy the embedded fields to
 				// the newly created type we're working on.
 				if pkgData, found := c.Symbols().Get(packageName); found {
-					if pkg, ok := pkgData.(datatypes.EgoPackage); ok {
+					if pkg, ok := pkgData.(*datatypes.EgoPackage); ok {
 						if typeInterface, ok := pkg.Get(name); ok {
 							if typeData, ok := typeInterface.(*datatypes.Type); ok {
 								embedType(t, typeData)

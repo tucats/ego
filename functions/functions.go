@@ -205,7 +205,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 			pkg := datatypes.NewPackage(d.Pkg)
 
 			if p, found := symbols.Root().Get(d.Pkg); found {
-				if pp, ok := p.(datatypes.EgoPackage); ok {
+				if pp, ok := p.(*datatypes.EgoPackage); ok {
 					pkg = pp
 				}
 			} else {
@@ -286,8 +286,8 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 
 	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError))
 	if !ok {
-		return nil, errors.New(errors.ErrPanic).Context(fmt.Errorf(i18n.E("function.pointer", 
-		map[string]interface{}{ "ptr": fdef.F})))
+		return nil, errors.New(errors.ErrPanic).Context(fmt.Errorf(i18n.E("function.pointer",
+			map[string]interface{}{"ptr": fdef.F})))
 	}
 
 	return fn(s, args)
@@ -303,7 +303,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) *errors.EgoError
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
-		if p, ok := pkg.(datatypes.EgoPackage); ok {
+		if p, ok := pkg.(*datatypes.EgoPackage); ok {
 			p.Set(fd.Name, fd.F)
 		}
 	}

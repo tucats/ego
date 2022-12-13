@@ -53,9 +53,9 @@ func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 	px := datatypes.NewPackage(name)
 	px.Set(datatypes.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
 
-	packageCache[name] = &px
+	packageCache[name] = px
 
-	return &px, false
+	return px, false
 }
 
 func importByteCode(c *Context, i interface{}) *errors.EgoError {

@@ -61,7 +61,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		case *datatypes.EgoStruct:
 			typeString = actual.TypeString()
 
-		case datatypes.EgoPackage:
+		case *datatypes.EgoPackage:
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
 				typeString = datatypes.GetString(tsx)
 			}
@@ -175,7 +175,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		case *datatypes.EgoStruct:
 			typeString = actual.TypeString()
 
-		case datatypes.EgoPackage:
+		case *datatypes.EgoPackage:
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
 				typeString = datatypes.GetString(tsx)
 			}
