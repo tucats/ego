@@ -33,7 +33,6 @@ type SymbolTable struct {
 	Package       string
 	Parent        *SymbolTable
 	Symbols       map[string]SymbolAttribute
-	Constants     map[string]interface{}
 	Values        []*[]interface{}
 	ID            uuid.UUID
 	ValueSize     int
@@ -49,11 +48,10 @@ func NewRootSymbolTable(name string) *SymbolTable {
 // NewSymbolTable generates a new symbol table.
 func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
-		Name:      name,
-		Parent:    &RootSymbolTable,
-		Symbols:   map[string]SymbolAttribute{},
-		Constants: map[string]interface{}{},
-		ID:        uuid.New(),
+		Name:    name,
+		Parent:  &RootSymbolTable,
+		Symbols: map[string]SymbolAttribute{},
+		ID:      uuid.New(),
 	}
 	symbols.initializeValues()
 
@@ -64,11 +62,10 @@ func NewSymbolTable(name string) *SymbolTable {
 // parent table. The table is created with a default capacity.
 func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
-		Name:      name,
-		Parent:    parent,
-		Symbols:   map[string]SymbolAttribute{},
-		Constants: map[string]interface{}{},
-		ID:        uuid.New(),
+		Name:    name,
+		Parent:  parent,
+		Symbols: map[string]SymbolAttribute{},
+		ID:      uuid.New(),
 	}
 
 	if parent == nil {
@@ -83,6 +80,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 	s.Parent = p
+	s.isRoot = (p == nil)
 
 	return s
 }
@@ -98,7 +96,7 @@ func (s *SymbolTable) Unlock() {
 // Find the root table for this symbol table.
 func (s *SymbolTable) Root() *SymbolTable {
 	st := s
-	for !st.isRoot && s.Parent != nil {
+	for !st.IsRoot() {
 		st = st.Parent
 	}
 

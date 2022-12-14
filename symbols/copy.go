@@ -20,7 +20,6 @@ func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 		Package:       s.Package,
 		Parent:        s.Parent,
 		Symbols:       map[string]SymbolAttribute{},
-		Constants:     map[string]interface{}{},
 		Values:        s.Values,
 		ID:            uuid.New(),
 		ValueSize:     s.ValueSize,
@@ -30,10 +29,6 @@ func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 
 	for k, v := range s.Symbols {
 		t.Symbols[k] = v
-	}
-
-	for k, v := range s.Constants {
-		t.Constants[k] = v
 	}
 
 	return &t

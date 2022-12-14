@@ -22,9 +22,6 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	attr, found := s.Symbols[name]
 	if found {
 		v = s.GetValue(attr.Slot)
-	} else {
-		v, found = s.Constants[name]
-		attr.Slot = NoSlot
 	}
 
 	if !found && !s.IsRoot() {
@@ -46,6 +43,40 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	}
 
 	return v, found
+}
+
+// Get retrieves a symbol from the current table or any parent
+// table that exists.
+func (s *SymbolTable) GetWithAttributes(name string) (interface{}, SymbolAttribute, bool) {
+	var v interface{}
+
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	attr, found := s.Symbols[name]
+	if found {
+		v = s.GetValue(attr.Slot)
+	}
+
+	if !found && !s.IsRoot() {
+		return s.Parent.GetWithAttributes(name)
+	}
+
+	if ui.LoggerIsActive(ui.SymbolLogger) {
+		status := "<not found>"
+		if found {
+			status = datatypes.Format(v)
+			if len(status) > 60 {
+				status = status[:57] + "..."
+			}
+		}
+
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
+			s.Name, s.ID.String(), quotedName, attr.Slot, status)
+	}
+
+	return v, attr, found
 }
 
 // GetAddress retrieves the address of a symbol values from the
@@ -79,7 +110,22 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.Constants[name] = v
+	// Does it already exist and is it readonly? IF so, fail
+	attr, ok := s.Symbols[name]
+	if ok && attr.Readonly {
+		return errors.New(errors.ErrReadOnlyValue).Context(name)
+	}
+
+	if !ok {
+		attr = SymbolAttribute{
+			Slot:     s.ValueSize,
+			Readonly: true,
+		}
+		s.ValueSize++
+		s.Symbols[name] = attr
+	}
+
+	s.SetValue(attr.Slot, v)
 
 	if ui.LoggerIsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
@@ -121,6 +167,48 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	}
 
 	symbolTable.SetValue(attr.Slot, v)
+
+	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
+		valueString := datatypes.Format(v)
+		if len(valueString) > 60 {
+			valueString = valueString[:57] + "..."
+		}
+
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
+			s.Name, s.ID, quotedName, attr.Slot, valueString)
+	}
+
+	return nil
+}
+
+// SetAlways stores a symbol value in the local table. No value in
+// any parent table is affected. This can be used for functions and
+// readonly values.
+func (s *SymbolTable) SetWithAttributes(name string, v interface{}, attr SymbolAttribute) *errors.EgoError {
+	// Hack. If this is the "_rest_response" variable, we have
+	// to find the right table to put it in, which may be different
+	// that were we started.
+	symbolTable := s
+
+	if name == "_rest_response" {
+		for symbolTable.Parent != nil && symbolTable.Parent.Parent != nil {
+			symbolTable = symbolTable.Parent
+		}
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	// IF this doesn't exist, allocate more space in the values array
+	_, ok := symbolTable.Symbols[name]
+	if !ok {
+		attr.Slot = s.ValueSize
+		s.ValueSize++
+	}
+
+	symbolTable.SetValue(attr.Slot, v)
+	symbolTable.Symbols[name] = attr
 
 	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
@@ -258,9 +346,12 @@ func (s *SymbolTable) IsConstant(name string) bool {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	if _, found := s.Constants[name]; found {
-		return true
-	} else if s.Parent != nil {
+	attr, found := s.Symbols[name]
+	if found {
+		return attr.Readonly
+	}
+
+	if !s.IsRoot() {
 		return s.Parent.IsConstant(name)
 	} else {
 		return false

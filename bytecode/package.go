@@ -158,7 +158,7 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for k := range c.symbols.Symbols {
 		if !strings.HasPrefix(k, "__") && util.HasCapitalizedName(k) {
-			v, _ := c.symbols.Get(k)
+			v, attr, _ := c.symbols.GetWithAttributes(k)
 
 			if first {
 				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
@@ -167,21 +167,18 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			ui.Debug(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
-			pkg.Set(k, v)
-		}
-	}
 
-	// Copy all the exported constants
-	for k, v := range c.symbols.Constants {
-		if util.HasCapitalizedName(k) {
-			if first {
-				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
-
-				first = false
+			// If it was readonly, and not already in a constant wrapper,
+			// wrap it as a constant now.
+			if attr.Readonly {
+				if _, ok := v.(ConstantWrapper); !ok {
+					pkg.Set(k, ConstantWrapper{v})
+				} else {
+					pkg.Set(k, v)
+				}
+			} else {
+				pkg.Set(k, v)
 			}
-
-			ui.Debug(ui.ByteCodeLogger, "(%d)   constant %s", c.threadID, k)
-			pkg.Set(k, ConstantWrapper{v})
 		}
 	}
 

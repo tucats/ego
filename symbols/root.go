@@ -46,7 +46,6 @@ var RootSymbolTable = SymbolTable{
 	Symbols:       rootNames,
 	ValueSize:     len(rootNames),
 	Values:        rootValues,
-	Constants:     map[string]interface{}{},
 	isRoot:        true,
 }
 
