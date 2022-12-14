@@ -102,7 +102,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 			if m, ok := pkg.(*datatypes.EgoPackage); ok {
 				for k, v := range packageSymbols.Symbols {
 					if util.HasCapitalizedName(k) {
-						m.Set(k, packageSymbols.GetValue(v))
+						m.Set(k, packageSymbols.GetValue(v.Slot))
 					}
 				}
 			}

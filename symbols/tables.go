@@ -22,12 +22,17 @@ var SymbolAllocationSize = 32
 // Exported because it is referenced by CLI handlers.
 const MinSymbolAllocationSize = 16
 
+type SymbolAttribute struct {
+	Slot     int
+	Readonly bool
+}
+
 // SymbolTable contains an abstract symbol table.
 type SymbolTable struct {
 	Name          string
 	Package       string
 	Parent        *SymbolTable
-	Symbols       map[string]int
+	Symbols       map[string]SymbolAttribute
 	Constants     map[string]interface{}
 	Values        []*[]interface{}
 	ID            uuid.UUID
@@ -46,7 +51,7 @@ func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
 		Parent:    &RootSymbolTable,
-		Symbols:   map[string]int{},
+		Symbols:   map[string]SymbolAttribute{},
 		Constants: map[string]interface{}{},
 		ID:        uuid.New(),
 	}
@@ -61,7 +66,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:      name,
 		Parent:    parent,
-		Symbols:   map[string]int{},
+		Symbols:   map[string]SymbolAttribute{},
 		Constants: map[string]interface{}{},
 		ID:        uuid.New(),
 	}

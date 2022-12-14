@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
@@ -18,15 +19,15 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	slot, found := s.Symbols[name]
+	attr, found := s.Symbols[name]
 	if found {
-		v = s.GetValue(slot)
+		v = s.GetValue(attr.Slot)
 	} else {
 		v, found = s.Constants[name]
-		slot = NoSlot
+		attr.Slot = NoSlot
 	}
 
-	if !found && s.Parent != nil {
+	if !found && !s.IsRoot() {
 		return s.Parent.Get(name)
 	}
 
@@ -41,7 +42,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.ID.String(), quotedName, slot, status)
+			s.Name, s.ID.String(), quotedName, attr.Slot, status)
 	}
 
 	return v, found
@@ -55,12 +56,12 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	slot, found := s.Symbols[name]
+	attr, found := s.Symbols[name]
 	if found {
-		v = s.AddressOfValue(slot)
+		v = s.AddressOfValue(attr.Slot)
 	}
 
-	if !found && s.Parent != nil {
+	if !found && !s.IsRoot() {
 		return s.Parent.GetAddress(name)
 	}
 
@@ -112,14 +113,14 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 	defer s.mutex.Unlock()
 
 	// IF this doesn't exist, allocate more space in the values array
-	slot, ok := symbolTable.Symbols[name]
+	attr, ok := symbolTable.Symbols[name]
 	if !ok {
-		slot = s.ValueSize
-		symbolTable.Symbols[name] = s.ValueSize
+		attr.Slot = s.ValueSize
+		symbolTable.Symbols[name] = attr
 		s.ValueSize++
 	}
 
-	symbolTable.SetValue(slot, v)
+	symbolTable.SetValue(attr.Slot, v)
 
 	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
@@ -129,7 +130,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
-			s.Name, s.ID, quotedName, slot, valueString)
+			s.Name, s.ID, quotedName, attr.Slot, valueString)
 	}
 
 	return nil
@@ -142,17 +143,18 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	slot, found := s.Symbols[name]
+	attr, found := s.Symbols[name]
 	if found {
-		old = s.GetValue(slot)
+		old = s.GetValue(attr.Slot)
+
+		if attr.Readonly {
+			return errors.New(errors.ErrReadOnlyValue).Context(name)
+		}
 	}
 
 	// If it was already there, we hae some additional checks to do
 	// to be sure it's writable.
 	if found {
-		if old != nil && name[0:1] == "_" {
-			return errors.New(errors.ErrReadOnlyValue).Context(name)
-		}
 		// Check to be sure this isn't a restricted (function code) type
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 			return errors.New(errors.ErrReadOnlyValue).Context(name)
@@ -166,7 +168,12 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		return s.Parent.Set(name, v)
 	}
 
-	s.SetValue(slot, v)
+	s.SetValue(attr.Slot, v)
+
+	if strings.HasPrefix(name, "_") {
+		attr.Readonly = true
+		s.Symbols[name] = attr
+	}
 
 	if ui.LoggerIsActive(ui.SymbolLogger) {
 		valueString := datatypes.Format(v)
@@ -176,7 +183,7 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
-			s.Name, s.ID, quotedName, slot, valueString)
+			s.Name, s.ID, quotedName, attr.Slot, valueString)
 	}
 
 	return nil
@@ -191,20 +198,20 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 		return errors.New(errors.ErrInvalidSymbolName)
 	}
 
-	if !always && name[:1] == "_" {
-		return errors.New(errors.ErrReadOnlyValue).Context(name)
-	}
-
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	_, f := s.Symbols[name]
+	attr, f := s.Symbols[name]
 	if !f {
 		if s.IsRoot() {
 			return errors.New(errors.ErrUnknownSymbol).Context(name)
 		}
 
 		return s.Parent.Delete(name, always)
+	}
+
+	if !always && attr.Readonly {
+		return errors.New(errors.ErrReadOnlyValue).Context(name)
 	}
 
 	delete(s.Symbols, name)
@@ -230,7 +237,11 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.ErrSymbolExists).Context(name)
 	}
 
-	s.Symbols[name] = s.ValueSize
+	s.Symbols[name] = SymbolAttribute{
+		Slot:     s.ValueSize,
+		Readonly: false,
+	}
+
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 

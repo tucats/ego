@@ -44,7 +44,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.GetValue(s.Symbols[k])
+		v := s.GetValue(s.Symbols[k].Slot)
 		omitType := false
 		omitThisSymbol := false
 
@@ -159,7 +159,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		v := s.GetValue(s.Symbols[k])
+		v := s.GetValue(s.Symbols[k].Slot)
 		omitThisSymbol := false
 
 		dt := datatypes.TypeOf(v)

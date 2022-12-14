@@ -8,9 +8,15 @@ import (
 // This is the list of symbols that are initialized in the root
 // symbol table. These must match the values in rootValues below.
 // The slot numbers must be sequential starting at zero.
-var rootNames = map[string]int{
-	"_copyright":       0,
-	"_server_instance": 1,
+var rootNames = map[string]SymbolAttribute{
+	"_copyright": {
+		Slot:     0,
+		Readonly: true,
+	},
+	"_server_instance": {
+		Slot:     1,
+		Readonly: true,
+	},
 }
 
 var rootBaseValues = []interface{}{
