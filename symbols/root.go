@@ -50,3 +50,13 @@ func (s *SymbolTable) SetGlobal(name string, value interface{}) *errors.EgoError
 
 	return RootSymbolTable.SetAlways(name, value)
 }
+
+// IsRoot determines if the current symbol table is the root table, or
+// is a root table because it has no parent.
+func (s *SymbolTable) IsRoot() bool {
+	if s.isRoot {
+		return true
+	}
+
+	return s.Parent == nil
+}

@@ -8,6 +8,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+const NoSlot = -1
+
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
@@ -21,7 +23,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		v = s.GetValue(slot)
 	} else {
 		v, found = s.Constants[name]
-		slot = -1
+		slot = NoSlot
 	}
 
 	if !found && s.Parent != nil {
@@ -157,7 +159,7 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		}
 	} else {
 		// If there are no more tables, we have an error.
-		if s.Parent == nil {
+		if s.IsRoot() {
 			return errors.New(errors.ErrUnknownSymbol).Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
@@ -198,7 +200,7 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 
 	_, f := s.Symbols[name]
 	if !f {
-		if s.Parent == nil {
+		if s.IsRoot() {
 			return errors.New(errors.ErrUnknownSymbol).Context(name)
 		}
 

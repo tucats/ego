@@ -394,7 +394,7 @@ func (c *Context) Result() interface{} {
 }
 
 func (c *Context) popSymbolTable() {
-	if c.symbols.Parent == nil {
+	if c.symbols.IsRoot() {
 		ui.Debug(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
 
 		return
@@ -408,7 +408,7 @@ func (c *Context) popSymbolTable() {
 	c.symbols = c.symbols.Parent
 
 	for strings.HasPrefix(c.symbols.Name, "pkg func ") {
-		if c.symbols.Parent == nil {
+		if c.symbols.IsRoot() {
 			break
 		}
 
