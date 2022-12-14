@@ -178,8 +178,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // AddBuiltins adds or overrides the default function library in the symbol map.
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
-func AddBuiltins(symbols *symbols.SymbolTable) {
-	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbols.Name)
+func AddBuiltins(symbolTable *symbols.SymbolTable) {
+	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
 
 	functionNames := make([]string, 0)
 	for k := range FunctionDictionary {
@@ -196,7 +196,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 		}
 
 		if d.Pkg == "" {
-			_ = symbols.SetAlways(n, d.F)
+			_ = symbolTable.SetWithAttributes(n, d.F, symbols.SymbolAttribute{Readonly: true})
 		} else {
 			// Does package already exist? IF not, make it. The package
 			// is just a struct containing where each member is a function
@@ -204,7 +204,7 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 
 			pkg := datatypes.NewPackage(d.Pkg)
 
-			if p, found := symbols.Root().Get(d.Pkg); found {
+			if p, found := symbolTable.Root().Get(d.Pkg); found {
 				if pp, ok := p.(*datatypes.EgoPackage); ok {
 					pkg = pp
 				}
@@ -212,18 +212,20 @@ func AddBuiltins(symbols *symbols.SymbolTable) {
 				ui.Debug(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
+			root := symbolTable.Root()
 			// Is this a value bound to the package, or a function?
 			if d.V != nil {
 				pkg.Set(n, d.V)
 
-				_ = symbols.Root().SetAlways(d.Pkg, pkg)
+				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
+
 				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				pkg.Set(n, d.F)
 
 				datatypes.SetMetadata(pkg, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
 				datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
-				_ = symbols.Root().SetAlways(d.Pkg, pkg)
+				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
 				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}

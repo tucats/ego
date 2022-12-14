@@ -19,28 +19,39 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	json := false
 
 	if len(args) > 0 {
-		json = strings.EqualFold(datatypes.GetString(args[0]), "json")
+		selectedScope = datatypes.GetInt(args[0])
 	}
 
 	if len(args) > 1 {
-		selectedScope = datatypes.GetInt(args[1])
+		json = strings.EqualFold(datatypes.GetString(args[1]), "json")
 	}
 
+	// We start counting scope one level above the scope created just for
+	// the function call (which will always be empty).
 	scopeLevel := 0
 	syms := s.Parent
 
+	// Prepare the column names. If a specific scope was NOT requested, we add
+	// columns for the scope and table names in the output.
 	scopeColumns := []string{}
 	if selectedScope < 0 {
 		scopeColumns = []string{"Scope", "Table"}
 	}
 
-	t, _ := tables.New(append(scopeColumns, []string{"Symbol", "Type", "Value"}...))
+	t, _ := tables.New(append(scopeColumns, []string{"Symbol", "Type", "Readonly", "Value"}...))
 
 	_ = t.SetAlignment(0, tables.AlignmentCenter)
 
 	for syms != nil {
+		// If a specific scope was requested and we never found it,
+		// time to bail out. Otherwise, keep crawling up the tree.
 		if selectedScope >= 0 && selectedScope != scopeLevel {
+			if syms.IsRoot() && selectedScope > scopeLevel {
+				return nil, errors.New(errors.ErrInvalidScopeLevel).Context(selectedScope)
+			}
+
 			syms = syms.Parent
+			scopeLevel++
 
 			continue
 		}
@@ -48,6 +59,8 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		name := syms.Name
 		scope := strconv.Itoa(scopeLevel)
 
+		// Get the sets of rows for this table. If the table is empty,
+		// we don't print it out.
 		rows := syms.FormattedData(false)
 		if len(rows) > 0 {
 			for _, row := range rows {
@@ -76,6 +89,11 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		} else if !json {
 			_ = t.AddRow([]string{scope, name, "<no symbols>", "", ""})
 			_ = t.AddRow([]string{"", "", "", "", ""})
+		}
+
+		// If we were only doing a specific scope, bail out now.
+		if selectedScope >= 0 {
+			break
 		}
 
 		scopeLevel++

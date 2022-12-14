@@ -570,6 +570,9 @@ var Messages = map[string]map[string]string{
 	"error.sandbox.path": {
 		"en": "invalid sandbox path",
 	},
+	"error.scope.invalid": {
+		"en": "invalid or non-existent symbol table scope",
+	},
 	"error.semicolon": {
 		"en": "missing ';'",
 	},

@@ -142,7 +142,7 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 	_ = platform.Set("arch", runtime.GOARCH)
 	_ = platform.Set("cpus", runtime.NumCPU())
 	platform.SetReadonly(true)
-	_ = symbols.RootSymbolTable.SetAlways("_platform", platform)
+	_ = symbols.RootSymbolTable.SetWithAttributes("_platform", platform, symbols.SymbolAttribute{Readonly: true})
 
 	if err := SetDefaultLoggers(); !errors.Nil(err) {
 		return err

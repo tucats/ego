@@ -82,6 +82,7 @@ var dictionary = map[string]string{
 	"runtime.DBNew":          "New(connection string) *db",
 	"runtime.LookPath":       "LookPath(command string) string",
 	"runtime.NewCommand":     "Command(command string, args...string) Cmd",
+	"runtime.FormatSymbols":  "Symbols([scope[,format]])",
 }
 
 func GetBuiltinDeclaration(name string) string {

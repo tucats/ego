@@ -32,7 +32,7 @@ type SymbolTable struct {
 	Name          string
 	Package       string
 	Parent        *SymbolTable
-	Symbols       map[string]SymbolAttribute
+	Symbols       map[string]*SymbolAttribute
 	Values        []*[]interface{}
 	ID            uuid.UUID
 	ValueSize     int
@@ -50,7 +50,7 @@ func NewSymbolTable(name string) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
 		Parent:  &RootSymbolTable,
-		Symbols: map[string]SymbolAttribute{},
+		Symbols: map[string]*SymbolAttribute{},
 		ID:      uuid.New(),
 	}
 	symbols.initializeValues()
@@ -64,7 +64,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
 		Parent:  parent,
-		Symbols: map[string]SymbolAttribute{},
+		Symbols: map[string]*SymbolAttribute{},
 		ID:      uuid.New(),
 	}
 

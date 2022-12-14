@@ -159,7 +159,8 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		v := s.GetValue(s.Symbols[k].Slot)
+		attr := s.Symbols[k]
+		v := s.GetValue(attr.Slot)
 		omitThisSymbol := false
 
 		dt := datatypes.TypeOf(v)
@@ -214,7 +215,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		row := make([]string, 3)
+		row := make([]string, 4)
 		row[0] = k
 		row[1] = typeString
 
@@ -223,7 +224,8 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			v = "\"******\""
 		}
 
-		row[2] = datatypes.Format(v)
+		row[2] = datatypes.GetString(attr.Readonly)
+		row[3] = datatypes.Format(v)
 		rows = append(rows, row)
 	}
 

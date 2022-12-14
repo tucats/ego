@@ -32,7 +32,7 @@ import "github.com/tucats/ego/app-cli/ui"
 // nil, create it as well.
 func (s *SymbolTable) initializeValues() {
 	if s.Symbols == nil {
-		s.Symbols = map[string]SymbolAttribute{}
+		s.Symbols = map[string]*SymbolAttribute{}
 	}
 
 	if s.Values == nil {

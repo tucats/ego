@@ -30,6 +30,8 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 	if ui.LoggerIsActive(ui.SymbolLogger) {
 		status := "<not found>"
+		attr = &SymbolAttribute{}
+
 		if found {
 			status = datatypes.Format(v)
 			if len(status) > 60 {
@@ -47,7 +49,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
-func (s *SymbolTable) GetWithAttributes(name string) (interface{}, SymbolAttribute, bool) {
+func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttribute, bool) {
 	var v interface{}
 
 	s.mutex.RLock()
@@ -117,7 +119,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	}
 
 	if !ok {
-		attr = SymbolAttribute{
+		attr = &SymbolAttribute{
 			Slot:     s.ValueSize,
 			Readonly: true,
 		}
@@ -135,6 +137,34 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 	return nil
 }
 
+// SetReadOnly can be used to set the read-only attribute of a symbol.
+// This code locates the symbol anywhere in the scope tree and sets its
+// value. It returns nil if this was successful, else a symbol-not-found
+// error is reported.
+func (s *SymbolTable) SetReadOnly(name string, flag bool) *errors.EgoError {
+	syms := s
+
+	for syms != nil {
+		attr, found := syms.Symbols[name]
+		if found {
+			attr.Readonly = flag
+
+			ui.Debug(ui.SymbolLogger, "Marking %s in %s table, readonly=%v",
+				name, syms.Name, flag)
+
+			return nil
+		}
+
+		if !syms.IsRoot() {
+			syms = syms.Parent
+		} else {
+			break
+		}
+	}
+
+	return errors.New(errors.ErrUnknownSymbol).Context(name)
+}
+
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
@@ -150,20 +180,21 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 		}
 	}
 
-	// See if it's in the current constants table.
-	if symbolTable.IsConstant(name) {
-		return errors.New(errors.ErrReadOnlyValue).Context(name)
-	}
-
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	readOnly := strings.HasPrefix(name, "_")
 
 	// IF this doesn't exist, allocate more space in the values array
 	attr, ok := symbolTable.Symbols[name]
 	if !ok {
-		attr.Slot = s.ValueSize
+		attr = &SymbolAttribute{Slot: s.ValueSize}
 		symbolTable.Symbols[name] = attr
 		s.ValueSize++
+	}
+
+	if readOnly {
+		attr.Readonly = true
 	}
 
 	symbolTable.SetValue(attr.Slot, v)
@@ -185,7 +216,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetWithAttributes(name string, v interface{}, attr SymbolAttribute) *errors.EgoError {
+func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr SymbolAttribute) *errors.EgoError {
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -200,15 +231,22 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, attr SymbolA
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// IF this doesn't exist, allocate more space in the values array
-	_, ok := symbolTable.Symbols[name]
+	// IF this doesn't exist, allocate more space in the values array, and
+	// add it to the symbol table slot.
+	attr, ok := symbolTable.Symbols[name]
 	if !ok {
-		attr.Slot = s.ValueSize
+		attr = &SymbolAttribute{Slot: s.ValueSize}
+		symbolTable.Symbols[name] = attr
+
 		s.ValueSize++
 	}
 
+	// Copy the attributes other than slot from the new attribute
+	// set to this attribute set.
+	attr.Readonly = newAttr.Readonly
+
+	// Store the value, and update the symbol table entry.
 	symbolTable.SetValue(attr.Slot, v)
-	symbolTable.Symbols[name] = attr
 
 	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
@@ -217,8 +255,8 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, attr SymbolA
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
-			s.Name, s.ID, quotedName, attr.Slot, valueString)
+		ui.Debug(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
+			s.Name, s.ID, quotedName, attr.Slot, valueString, attr.Readonly)
 	}
 
 	return nil
@@ -233,21 +271,20 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 
 	attr, found := s.Symbols[name]
 	if found {
-		old = s.GetValue(attr.Slot)
-
+		// Of the value exists and is readonly, we can do no more.
 		if attr.Readonly {
+			return errors.New(errors.ErrReadOnlyValue).Context(name)
+		}
+
+		// Check to be sure this isn't a restricted (function code) type
+		// that we are not allowed to write over, ever.
+		old = s.GetValue(attr.Slot)
+		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 			return errors.New(errors.ErrReadOnlyValue).Context(name)
 		}
 	}
 
-	// If it was already there, we hae some additional checks to do
-	// to be sure it's writable.
-	if found {
-		// Check to be sure this isn't a restricted (function code) type
-		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return errors.New(errors.ErrReadOnlyValue).Context(name)
-		}
-	} else {
+	if !found {
 		// If there are no more tables, we have an error.
 		if s.IsRoot() {
 			return errors.New(errors.ErrUnknownSymbol).Context(name)
@@ -260,7 +297,6 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 
 	if strings.HasPrefix(name, "_") {
 		attr.Readonly = true
-		s.Symbols[name] = attr
 	}
 
 	if ui.LoggerIsActive(ui.SymbolLogger) {
@@ -325,7 +361,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 		return errors.New(errors.ErrSymbolExists).Context(name)
 	}
 
-	s.Symbols[name] = SymbolAttribute{
+	s.Symbols[name] = &SymbolAttribute{
 		Slot:     s.ValueSize,
 		Readonly: false,
 	}
@@ -341,7 +377,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	return nil
 }
 
-// IsConstant determines if a name is a constant value.
+// IsConstant determines if a name is a constant or readonly value.
 func (s *SymbolTable) IsConstant(name string) bool {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()

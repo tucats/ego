@@ -19,7 +19,7 @@ func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 		Name:          s.Name,
 		Package:       s.Package,
 		Parent:        s.Parent,
-		Symbols:       map[string]SymbolAttribute{},
+		Symbols:       map[string]*SymbolAttribute{},
 		Values:        s.Values,
 		ID:            uuid.New(),
 		ValueSize:     s.ValueSize,

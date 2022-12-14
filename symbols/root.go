@@ -8,7 +8,7 @@ import (
 // This is the list of symbols that are initialized in the root
 // symbol table. These must match the values in rootValues below.
 // The slot numbers must be sequential starting at zero.
-var rootNames = map[string]SymbolAttribute{
+var rootNames = map[string]*SymbolAttribute{
 	"_copyright": {
 		Slot:     0,
 		Readonly: true,
@@ -40,7 +40,7 @@ var rootValues = []*[]interface{}{
 // RootSymbolTable is the parent of all other tables. It is populated
 // by the initialized structures above.
 var RootSymbolTable = SymbolTable{
-	Name:          "Root Symbol Table",
+	Name:          "root",
 	Parent:        nil,
 	ScopeBoundary: true,
 	Symbols:       rootNames,
