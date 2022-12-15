@@ -94,113 +94,112 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		packageName = strings.ToLower(packageName)
 
-		pkgData, ok := bytecode.GetPackage(packageName)
+		pkgData, _ := bytecode.GetPackage(packageName)
 
-		if ok {
-			ui.Debug(ui.CompilerLogger, "*** Already imported \"%s\", skipping...", fileName)
+		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
+
+		if isList && fileName == ")" {
+			break
+		}
+
+		// If this is an import of the package we're currently importing, no work to do.
+		if packageName == c.PackageName {
+			continue
+		}
+
+		if !pkgData.Builtins {
+			pkgData.Builtins = c.AddBuiltins(packageName)
+		}
+
+		if pkgData.Builtins {
+			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName)
 		} else {
-			ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
+			// The nil in the packages list just prevents this from being read again
+			// if it was already processed once.
+			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName)
+			c.packages.Mutex.Lock()
+			c.packages.Package[packageName] = datatypes.NewPackage(fileName)
+			c.packages.Mutex.Unlock()
+		}
 
-			if isList && fileName == ")" {
-				break
-			}
+		// Read the imported object as a file path
+		text, err := c.readPackageFile(fileName)
+		if !errors.Nil(err) {
+			// If it wasn't found but we did add some builtins, good enough.
+			// Skip past the filename that was rejected by c.Readfile()...
+			if pkgData.Builtins {
+				c.t.Advance(1)
 
-			// If this is an import of the package we're currently importing, no work to do.
-			if packageName == c.PackageName {
+				if !isList || c.t.IsNext(")") {
+					break
+				}
+
 				continue
 			}
 
-			builtinsAdded := c.AddBuiltins(packageName)
-			if builtinsAdded {
-				ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName)
-			} else {
-				// The nil in the packages list just prevents this from being read again
-				// if it was already processed once.
-				ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName)
-				c.packages.Mutex.Lock()
-				c.packages.Package[packageName] = datatypes.NewPackage(fileName)
-				c.packages.Mutex.Unlock()
-			}
+			// Nope, import had no effect.
+			return err
+		}
 
-			// Read the imported object as a file path
-			text, err := c.readPackageFile(fileName)
+		ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
+
+		importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
+		importCompiler.b = bytecode.New("import " + fileName)
+		importCompiler.t = tokenizer.New(text)
+		importCompiler.PackageName = packageName
+
+		for !importCompiler.t.AtEnd() {
+			err := importCompiler.compileStatement()
 			if !errors.Nil(err) {
-				// If it wasn't found but we did add some builtins, good enough.
-				// Skip past the filename that was rejected by c.Readfile()...
-				if builtinsAdded {
-					c.t.Advance(1)
-
-					if !isList || c.t.IsNext(")") {
-						break
-					}
-
-					continue
-				}
-
-				// Nope, import had no effect.
 				return err
 			}
+		}
 
-			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
+		importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
-			importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
-			importCompiler.b = bytecode.New("import " + fileName)
-			importCompiler.t = tokenizer.New(text)
-			importCompiler.PackageName = packageName
+		// If we are disassembling, do it now for the imported definitions.
+		if ui.LoggerIsActive(ui.ByteCodeLogger) {
+			importCompiler.b.Disasm()
+		}
 
-			for !importCompiler.t.AtEnd() {
-				err := importCompiler.compileStatement()
-				if !errors.Nil(err) {
-					return err
-				}
-			}
+		// If after the import we ended with mismatched block markers, complain
+		if importCompiler.blockDepth != 0 {
+			return c.newError(errors.ErrMissingEndOfBlock, packageName)
+		}
 
-			importCompiler.b.Emit(bytecode.PopPackage, packageName)
+		// The import will have generate code that must be run to actually register
+		// package contents.
+		importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
+		ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
-			// If we are disassembling, do it now for the imported definitions.
-			if ui.LoggerIsActive(ui.ByteCodeLogger) {
-				importCompiler.b.Disasm()
-			}
+		err = ctx.Run()
+		if err != nil && !err.Is(errors.ErrStop) {
+			break
+		}
 
-			// If after the import we ended with mismatched block markers, complain
-			if importCompiler.blockDepth != 0 {
-				return c.newError(errors.ErrMissingEndOfBlock, packageName)
-			}
+		// Rewrite the package now that we've added stuff to it.
+		pkgData.Imported = true
 
-			// The import will have generate code that must be run to actually register
-			// package contents.
-			importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
-			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+		if ui.LoggerIsActive(ui.CompilerLogger) {
+			ui.Debug(ui.CompilerLogger, "+++ updating package: %s", fileName)
 
-			err = ctx.Run()
-			if err != nil && !err.Is(errors.ErrStop) {
-				break
-			}
+			keys := pkgData.Keys()
+			keyString := ""
 
-			// Rewrite the package now that we've added stuff to it.
-			pkgData.Imported = true
-
-			if ui.LoggerIsActive(ui.CompilerLogger) {
-				ui.Debug(ui.CompilerLogger, "+++ updating package: %s", fileName)
-
-				keys := pkgData.Keys()
-
-				keyString := ""
-				for idx, k := range keys {
-					if idx > 0 {
-						keyString = keyString + ","
-					}
-
-					keyString = keyString + k
+			for idx, k := range keys {
+				if idx > 0 {
+					keyString = keyString + ","
 				}
 
-				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
+				keyString = keyString + k
 			}
 
-			err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
-			if !errors.Nil(err2) {
-				return err2
-			}
+			ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
+		}
+
+		err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
+		if !errors.Nil(err2) {
+			return err2
 		}
 
 		// Now that the package is in the cache, add the instruction to the active

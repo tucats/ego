@@ -158,14 +158,14 @@ func responseByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 func writeStatus(c *Context, status int) {
-	responseSymbol, _ := c.symbolGet("_response")
+	responseSymbol, _ := c.symbolGet("$response")
 	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 		_ = responseStruct.SetAlways("Status", status)
 	}
 }
 
 func writeResponse(c *Context, output string) {
-	responseSymbol, _ := c.symbolGet("_response")
+	responseSymbol, _ := c.symbolGet("$response")
 	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 

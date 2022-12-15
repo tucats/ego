@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 )
 
@@ -12,7 +13,9 @@ import (
 // (function, data type, etc).
 type EgoPackage struct {
 	name     string
+	ID       string
 	Imported bool
+	Builtins bool
 	items    map[string]interface{}
 }
 
@@ -25,6 +28,7 @@ var packageLock sync.RWMutex
 func NewPackage(name string) *EgoPackage {
 	pkg := EgoPackage{
 		name:  name,
+		ID:    uuid.New().String(),
 		items: map[string]interface{}{},
 	}
 
@@ -40,6 +44,7 @@ func NewPackageFromMap(name string, items map[string]interface{}) *EgoPackage {
 
 	pkg := EgoPackage{
 		name:  name,
+		ID:    uuid.New().String(),
 		items: items,
 	}
 

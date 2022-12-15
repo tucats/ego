@@ -158,8 +158,8 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	// Make a copy of the response and store as _response
 	c.b.Emit(bytecode.Dup)
-	c.b.Emit(bytecode.SymbolOptCreate, "_response")
-	c.b.Emit(bytecode.StoreAlways, "_response")
+	c.b.Emit(bytecode.SymbolOptCreate, "$response")
+	c.b.Emit(bytecode.StoreAlways, "$response")
 
 	// Call the handler with the request and response
 	c.b.Emit(bytecode.Call, 2)

@@ -94,7 +94,7 @@ func Format(element interface{}) string {
 	case FunctionDeclaration:
 		return v.String()
 
-	case EgoPackage:
+	case *EgoPackage:
 		var b strings.Builder
 
 		keys := v.Keys()

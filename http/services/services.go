@@ -59,7 +59,7 @@ var ServiceCacheMutex sync.Mutex
 // @tomcole there is currently a problem with cached services accessing
 // the http package entries, so the current default value is zero until
 // this is fixed.
-var MaxCachedEntries = -1
+var MaxCachedEntries = 10
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
@@ -449,7 +449,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
 	} else {
 		// Otherwise, capture the print buffer.
-		responseSymbol, _ := ctx.GetSymbols().Get("_response")
+		responseSymbol, _ := ctx.GetSymbols().Get("$response")
 		buffer := ""
 		if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")

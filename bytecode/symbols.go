@@ -85,7 +85,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 		sp = sp.Parent
 	}
 
-	err := c.symbolCreate(n)
+	err := c.symbols.Create(n)
 	if !errors.Nil(err) {
 		err = c.newError(err)
 	}

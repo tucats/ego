@@ -123,8 +123,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		return datatypes.DeepCopy(structValue), nil
 	}
 
-	// @tomcole should we also handle maps and arrays here?
-
 	// Otherwise, make a deep copy of the item.
 	r := DeepCopy(args[0], MaxDeepCopyDepth)
 

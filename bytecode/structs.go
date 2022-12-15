@@ -37,8 +37,8 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	case *datatypes.EgoMap:
 		var v interface{}
 
-		// @tomcole a bit of a hack here. If this is a map index,
-		// and we know the next instruction is a StackCheck 2, then
+		// A bit of a hack here. If this is a map index, and we
+		// know the next instruction is a StackCheck 2, then
 		// it is the condition that allows for an optional second
 		// value indicating if the map value was found or not.
 		//

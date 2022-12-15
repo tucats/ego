@@ -1,5 +1,6 @@
 
 import "http"
+import "util"
 
 func mb(f float64) string {
     return fmt.Sprintf("%3.2fmb", f)
@@ -8,7 +9,7 @@ func mb(f float64) string {
 func handler( req http.Request, resp http.Response ) {
 
     // Prepare the data to be used by the page.
-    m := util.Memory()
+    m := util.Memory()    
     pageData := { 
         Allocated: mb(m.current),
         Total: mb(m.total),
