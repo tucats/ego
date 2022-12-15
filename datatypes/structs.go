@@ -206,7 +206,7 @@ func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 		if t, ok := s.typeDef.fields[name]; ok {
 			// Does it have to match already?
 			if s.strongTyping && !IsType(value, t) {
-				return errors.New(errors.ErrInvalidType)
+				return errors.New(errors.ErrInvalidType).Context(TypeOf(value).String())
 			}
 			// Make sure it is compatible with the field type.
 			value = t.Coerce(value)

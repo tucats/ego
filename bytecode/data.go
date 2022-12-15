@@ -371,7 +371,7 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 		}
 	} else {
-		err = c.newError(errors.ErrInvalidType)
+		err = c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 	}
 
 	return err

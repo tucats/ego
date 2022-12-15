@@ -87,7 +87,7 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "zork",
 			stack: []interface{}{3.14},
 			want:  nil,
-			err:   errors.New(errors.ErrInvalidType),
+			err:   errors.New(errors.ErrInvalidStructOrPackage).Context("interface{}"),
 		},
 	}
 
@@ -164,7 +164,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			name:  "store something other than bytecode",
 			arg:   "foo",
 			stack: []interface{}{"not bytecode"},
-			err:   errors.New(errors.ErrInvalidType),
+			err:   errors.New(errors.ErrInvalidType).Context("string"),
 		},
 	}
 

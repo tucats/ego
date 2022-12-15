@@ -7,6 +7,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -38,13 +39,47 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		switch vv := v.(type) {
 		case *datatypes.EgoArray:
-			r := make([]string, vv.Len())
-			for n := 0; n < len(r); n++ {
-				vvv, _ := vv.Get(n)
-				r[n] = datatypes.GetString(vvv)
-			}
+			// Is this an array of a single type that is a structure?
+			valueType := vv.ValueType()
 
-			s = strings.Join(r, "\n")
+			isStruct := valueType.Kind() == datatypes.StructKind
+			isStructType := valueType.Kind() == datatypes.TypeKind && valueType.BaseType().Kind() == datatypes.StructKind
+
+			if isStruct || isStructType {
+				var columns []string
+
+				if isStruct {
+					columns = valueType.FieldNames()
+				} else {
+					columns = valueType.BaseType().FieldNames()
+				}
+
+				t, _ := tables.New(columns)
+
+				for i := 0; i < vv.Len(); i++ {
+					rowV, _ := vv.Get(i)
+					row := rowV.(*datatypes.EgoStruct)
+
+					rowItems := []string{}
+
+					for _, key := range columns {
+						v := row.GetAlways(key)
+						rowItems = append(rowItems, datatypes.GetString(v))
+					}
+
+					_ = t.AddRow(rowItems)
+				}
+
+				s = strings.Join(t.FormatText(), "\n")
+			} else {
+				r := make([]string, vv.Len())
+				for n := 0; n < len(r); n++ {
+					vvv, _ := vv.Get(n)
+					r[n] = datatypes.GetString(vvv)
+				}
+
+				s = strings.Join(r, "\n")
+			}
 
 		case *datatypes.EgoPackage:
 			s = formats.PackageAsString(vv)

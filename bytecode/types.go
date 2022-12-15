@@ -158,7 +158,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		t.Kind() == datatypes.StructKind ||
 		t.Kind() == datatypes.ArrayKind {
 		if !t.IsType(datatypes.TypeOf(v)) {
-			return c.newError(errors.ErrInvalidType)
+			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 		}
 	}
 

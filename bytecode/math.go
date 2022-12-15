@@ -36,7 +36,7 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch value := v.(type) {
@@ -103,7 +103,7 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch value := v.(type) {
@@ -144,7 +144,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch vx := v1.(type) {
@@ -181,7 +181,7 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 			return c.stackPush(v1.(bool) && v2.(bool))
 
 		default:
-			return c.newError(errors.ErrInvalidType)
+			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 		}
 	}
 }
@@ -200,7 +200,7 @@ func andByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	return c.stackPush(datatypes.GetBool(v1) && datatypes.GetBool(v2))
@@ -220,7 +220,7 @@ func orByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	return c.stackPush(datatypes.GetBool(v1) || datatypes.GetBool(v2))
@@ -243,7 +243,7 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = datatypes.Normalize(v1, v2)
@@ -273,7 +273,7 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(s)
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 	}
 }
 
@@ -291,7 +291,7 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	// Special case of multiply of string by integer to repeat string
@@ -330,7 +330,7 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(v1.(float64) * v2.(float64))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 	}
 }
 
@@ -350,7 +350,7 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch v1.(type) {
@@ -381,7 +381,7 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 	}
 }
 
@@ -403,7 +403,7 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = datatypes.Normalize(v1, v2)
@@ -452,7 +452,7 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(v1.(float64) / v2.(float64))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 	}
 }
 
@@ -474,7 +474,7 @@ func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = datatypes.Normalize(v1, v2)
@@ -509,7 +509,7 @@ func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
 		return c.stackPush(v1.(int64) % v2.(int64))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
 	}
 }
 
@@ -526,7 +526,7 @@ func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	result := datatypes.GetInt(v1) & datatypes.GetInt(v2)
@@ -548,7 +548,7 @@ func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	result := datatypes.GetInt(v1) | datatypes.GetInt(v2)
@@ -570,7 +570,7 @@ func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
 	shift := datatypes.GetInt(v1)

@@ -27,7 +27,6 @@ func TestCompiler_typeCompiler(t *testing.T) {
 				&datatypes.StringType,
 				&datatypes.IntType)),
 			wantErr: nil,
-			debug:   true,
 		},
 		{
 			name:     "struct",

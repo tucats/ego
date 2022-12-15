@@ -73,7 +73,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 		try.catches = append(try.catches, errors.NewMessage(i))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(i).String())
 	}
 
 	c.tryStack[len(c.tryStack)-1] = try

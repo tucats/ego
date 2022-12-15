@@ -587,7 +587,6 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			initialValue: int(0),
 			stack:        []interface{}{int32(55)},
 			static:       true,
-			debug:        true,
 			want:         int(55),
 			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
 		},
@@ -651,7 +650,6 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
 			want:         int32(55),
-			debug:        true,
 			err:          errors.New(errors.ErrUnknownIdentifier).Context("a"),
 		},
 	}

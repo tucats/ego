@@ -256,7 +256,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.New(errors.ErrInvalidType).In("Template()")
+		return nil, errors.New(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -272,7 +272,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.New(errors.ErrInvalidType).In("Template()")
+				return nil, errors.New(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(tv).String())
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)

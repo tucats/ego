@@ -23,7 +23,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			return nil, errors.New(errors.ErrInvalidType).In("min()")
 		}
 
-		switch r.(type) {
+		switch rv := r.(type) {
 		case byte, int32, int, int64:
 			if datatypes.GetInt(v) < datatypes.GetInt(r) {
 				r = v
@@ -44,7 +44,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 				r = v
 			}
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("min()")
+			return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(rv).String())
 		}
 	}
 
@@ -59,10 +59,10 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 	r := args[0]
 
-	for _, v := range args[1:] {
-		v = datatypes.Coerce(v, r)
+	for _, xv := range args[1:] {
+		v := datatypes.Coerce(xv, r)
 		if v == nil {
-			return nil, errors.New(errors.ErrInvalidType).In("max()")
+			return nil, errors.New(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(r).String())
 		}
 
 		switch rr := r.(type) {
@@ -87,7 +87,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			}
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("max()")
+			return nil, errors.New(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(rr).String())
 		}
 	}
 
@@ -98,13 +98,13 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	base := args[0]
 
-	for _, addend := range args[1:] {
-		addend = datatypes.Coerce(addend, base)
+	for _, addendV := range args[1:] {
+		addend := datatypes.Coerce(addendV, base)
 		if addend == nil {
-			return nil, errors.New(errors.ErrInvalidType).In("sum()")
+			return nil, errors.New(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(addendV).String())
 		}
 
-		switch addend.(type) {
+		switch rv := addend.(type) {
 		case bool:
 			base = base.(bool) || addend.(bool)
 
@@ -130,7 +130,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			base = base.(string) + addend.(string)
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("sum()")
+			return nil, errors.New(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(rv).String())
 		}
 	}
 

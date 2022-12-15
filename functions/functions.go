@@ -169,10 +169,10 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"util.Memory":         {Min: 0, Max: 0, F: MemStats},
 	"util.Mode":           {Min: 0, Max: 0, F: GetMode, FullScope: true},
 	"util.Packages":       {Min: 0, Max: 0, F: Packages, FullScope: true},
-	"util.SymbolTable":    {Min: 0, Max: 1, F: CurrentSymbolTable, FullScope: true},
-	"uuid.New":            {Min: 0, Max: 0, F: UUIDNew},
-	"uuid.Nil":            {Min: 0, Max: 0, F: UUIDNil},
-	"uuid.Parse":          {Min: 1, Max: 1, F: UUIDParse, ErrReturn: true},
+	//"util.SymbolTable":    {Min: 0, Max: 1, F: CurrentSymbolTable, FullScope: true},
+	"uuid.New":   {Min: 0, Max: 0, F: UUIDNew},
+	"uuid.Nil":   {Min: 0, Max: 0, F: UUIDNil},
+	"uuid.Parse": {Min: 1, Max: 1, F: UUIDParse, ErrReturn: true},
 }
 
 // AddBuiltins adds or overrides the default function library in the symbol map.

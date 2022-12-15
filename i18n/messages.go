@@ -441,6 +441,9 @@ var Messages = map[string]map[string]string{
 	"error.invalid.catch.set": {
 		"en": "invalid catch set {{index}}",
 	},
+	"error.invalid.struct.or.package": {
+		"en": "invalid structure or package",
+	},
 	"error.keyword.option": {
 		"en": "invalid option keyword",
 	},
@@ -598,7 +601,7 @@ var Messages = map[string]map[string]string{
 		"en": "invalid step type",
 	},
 	"error.struct": {
-		"en": "invalid result struct",
+		"en": "invalid struct",
 	},
 	"error.struct.type": {
 		"en": "unknown structure type",

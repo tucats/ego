@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -130,4 +131,47 @@ func GetPackageSymbols(p *datatypes.EgoPackage) *symbols.SymbolTable {
 	} else {
 		return symbols.NewSymbolTable("package " + p.Name())
 	}
+}
+
+func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+	// This function doesn't take any parameters.
+	if len(args) > 0 {
+		return nil, errors.New(errors.ErrArgumentCount)
+	}
+
+	// Compile the type definition for the structure we're going to return.
+	t, e := compiler.CompileTypeSpec(`
+	type SymbolTable struct{
+		depth int
+		name string
+		id string
+		root bool
+		size int
+		}`)
+
+	if !errors.Nil(e) {
+		return nil, e
+	}
+
+	result := datatypes.NewArray(t, 0)
+	depth := 0
+	p := s.Parent
+
+	for p != nil {
+		item := datatypes.NewStructFromMap(map[string]interface{}{
+			"depth": depth,
+			"name":  p.Name,
+			"id":    p.ID.String(),
+			"root":  p.IsRoot(),
+			"size":  len(p.Symbols),
+		})
+
+		result.Append(item)
+
+		depth++
+
+		p = p.Parent
+	}
+
+	return result, nil
 }

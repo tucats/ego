@@ -1,7 +1,6 @@
 package functions
 
 import (
-	"fmt"
 	"math"
 	"os"
 	"runtime"
@@ -128,7 +127,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return len(arg.Keys()), nil
 
 	case *datatypes.EgoPackage:
-		return nil, errors.New(errors.ErrInvalidType)
+		return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(arg).String())
 
 	case nil:
 		return 0, nil
@@ -389,21 +388,6 @@ func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 func bToMb(b uint64) float64 {
 	return float64(b) / 1024.0 / 1024.0
-}
-
-func CurrentSymbolTable(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	var result strings.Builder
-
-	depth := 0
-	p := s
-
-	for p != nil {
-		depth++
-		result.WriteString(fmt.Sprintf("%2d:  %s\n", depth, p.Name))
-		p = p.Parent
-	}
-
-	return result.String(), nil
 }
 
 func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {

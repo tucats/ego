@@ -159,7 +159,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	v1 := array[0]
 
-	switch v1.(type) {
+	switch rv := v1.(type) {
 	case byte:
 		intArray := make([]byte, 0)
 
@@ -280,6 +280,6 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 		return resultArray, nil
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType).In("sort()")
+		return nil, errors.New(errors.ErrInvalidType).In("sort()").Context(datatypes.TypeOf(rv).String())
 	}
 }

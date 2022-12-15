@@ -279,7 +279,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		_ = c.stackPush(a)
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(a).String())
 	}
 
 	return nil

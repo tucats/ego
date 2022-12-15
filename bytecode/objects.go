@@ -103,7 +103,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		// Nothing we can do something with, so bail
-		return c.newError(errors.ErrInvalidType)
+		return c.newError(errors.ErrInvalidStructOrPackage).Context(datatypes.TypeOf(v).String())
 	}
 
 	_ = c.stackPush(v)
@@ -121,7 +121,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
 			bc.Name = datatypes.GetString(i)
 			err = c.symbols.SetAlways(bc.Name, bc)
 		} else {
-			err = errors.New(errors.ErrInvalidType)
+			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 		}
 	}
 

@@ -123,7 +123,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 				_ = array.SetType(datatypes.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.newError(errors.ErrInvalidType)
+					return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 				}
 			}
 		}

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
@@ -42,6 +43,18 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		datatypes.TypeMDKey:     datatypes.Package("db"),
 		datatypes.ReadonlyMDKey: true,
 	}))
+
+	var utilPkg *datatypes.EgoPackage
+
+	utilV, found := s.Root().Get("util")
+	if !found {
+		utilPkg, _ = bytecode.GetPackage("util")
+	} else {
+		utilPkg = utilV.(*datatypes.EgoPackage)
+	}
+
+	utilPkg.Set("SymbolTables", SymbolTables)
+	_ = s.Root().SetWithAttributes("util", utilPkg, symbols.SymbolAttribute{Readonly: true})
 
 	_ = s.SetAlways("tables", datatypes.NewPackageFromMap("tables", map[string]interface{}{
 		"New":                   TableNew,

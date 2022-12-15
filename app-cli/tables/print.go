@@ -134,7 +134,7 @@ func (t *Table) FormatJSON() string {
 			} else if row[i] == defs.True || row[i] == defs.False {
 				buffer.WriteString(row[i])
 			} else {
-				buffer.WriteString("\"" + row[i] + "\"")
+				buffer.WriteString("\"" + escape(row[i]) + "\"")
 			}
 		}
 
@@ -527,4 +527,20 @@ func AlignText(text string, width int, alignment int) string {
 
 		return r[:width]
 	}
+}
+
+// Helper function for formatting JSON output so quotes
+// are properly quoted.
+func escape(s string) string {
+	result := strings.Builder{}
+
+	for _, ch := range s {
+		if ch == '"' {
+			result.WriteString("\\\"")
+		} else {
+			result.WriteRune(ch)
+		}
+	}
+
+	return result.String()
 }

@@ -351,7 +351,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 				_ = r.Set(i, datatypes.GetString(v))
 
 			default:
-				return nil, errors.New(errors.ErrInvalidType)
+				return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 			}
 		}
 
@@ -384,6 +384,6 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
 		}
 
-		return nil, errors.New(errors.ErrInvalidType)
+		return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(source).String())
 	}
 }
