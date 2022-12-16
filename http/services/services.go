@@ -56,9 +56,6 @@ var ServiceCacheMutex sync.Mutex
 // cache before items start to be aged out (oldest first). This is set to
 // -1 by default, which causes the first service to read the cache size
 // from the config file.
-// @tomcole there is currently a problem with cached services accessing
-// the http package entries, so the current default value is zero until
-// this is fixed.
 var MaxCachedEntries = 10
 
 // ServiceHandler is the rest handler for services written

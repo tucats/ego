@@ -470,67 +470,77 @@ func (t *Table) FormatText() []string {
 }
 
 // AlignText aligns a string to a given width and alignment. This
-// is used to manage columns once the contents are formatted.
-//
-// @tomcole This isn't really unicode-safe, because the substrings
-// are done on byte positions, not rune positions.
+// is used to manage columns once the contents are formatted. This
+// is Unicode-safe.
 func AlignText(text string, width int, alignment int) string {
-	if len(text) >= width {
+	runes := []rune{}
+	for _, ch := range text {
+		runes = append(runes, ch)
+	}
+
+	textLength := len(runes)
+
+	if textLength >= width {
 		switch alignment {
 		case AlignmentLeft:
-			return text[:width]
+			return string(runes[:width])
 
 		case AlignmentRight:
-			return text[len(text)-width:]
+			return string(runes[textLength-width:])
 
 		case AlignmentCenter:
-			pos := len(text)/2 - (width / 2)
+			pos := textLength/2 - (width / 2)
 
-			return text[pos : pos+width]
+			return string(runes[pos : pos+width])
 
 		default:
-			return text[:width]
+			return string(runes[:width])
 		}
 	}
 
-	pad := strings.Repeat(" ", width)
+	// Make an array of the pad character as runes to be sliced
+	// along with the source text as runes.
+	padRunes := make([]rune, width)
+	for i := range padRunes {
+		padRunes[i] = ' '
+	}
 
+	// Based on aligntment, do the right thing.
 	switch alignment {
 	case AlignmentRight:
-		r := pad + text
+		r := append(padRunes, runes...)
 
-		return r[len(r)-width:]
+		return string(r[width-textLength:])
 
 	case AlignmentLeft:
-		r := text + pad
+		r := append(runes, padRunes...)
 
-		return r[:width]
+		return string(r[:width])
 
 	case AlignmentCenter:
-		r := text
-		left := true
+		left := (width - textLength) / 2
+		right := width - (left + textLength)
 
-		for len(r) < width {
-			if left {
-				r = " " + r
-			} else {
-				r = r + " "
-			}
-
-			left = !left
+		if left+right+textLength != width {
+			right = width - left
 		}
 
-		return r
+		r := []rune{}
+		r = append(r, padRunes[:left]...)
+		r = append(r, runes...)
+		r = append(r, padRunes[:right]...)
+
+		return string(r)
 
 	default: // same as AlignmentLeft
-		r := text + pad
+		r := append(runes, padRunes...)
 
-		return r[:width]
+		return string(r[:width])
 	}
 }
 
 // Helper function for formatting JSON output so quotes
-// are properly quoted.
+// are properly escaped.
 func escape(s string) string {
 	result := strings.Builder{}
 

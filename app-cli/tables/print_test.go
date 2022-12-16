@@ -137,7 +137,12 @@ func TestAlignText(t *testing.T) {
 			args: args{text: "hello", width: 3, alignment: AlignmentCenter},
 			want: "ell",
 		},
-		// TODO: Add test cases.
+		{
+			// Note the text has a multibyte first character.
+			name: "multibyte unicode left alignment",
+			args: args{text: "Ąnswer", width: 10, alignment: AlignmentLeft},
+			want: "Ąnswer    ",
+		},
 	}
 
 	for _, tt := range tests {
