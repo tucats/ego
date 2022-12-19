@@ -373,11 +373,11 @@ func (a *EgoArray) String() string {
 	return b.String()
 }
 
-// Fetach a slide of the underlying array and return it as an array of interfaces.
+// Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
-	if first < 0 || last > len(a.data) {
+	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
 		return nil, errors.New(errors.ErrArrayBounds)
 	}
 
@@ -394,6 +394,24 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 	}
 
 	return a.data[first:last], nil
+}
+
+// Fetach a slice of the underlying array and return it as an array of interfaces.
+// This can't be used directly as a new array, but can be used to create a new
+// array.
+func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, *errors.EgoError) {
+	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
+		return nil, errors.New(errors.ErrArrayBounds)
+	}
+
+	slice, err := a.GetSlice(first, last)
+	if !errors.Nil(err) {
+		return nil, err
+	}
+
+	r := NewArrayFromArray(a.valueType, slice)
+
+	return r, nil
 }
 
 // Append an item to the array. If the item being appended is an array itself,

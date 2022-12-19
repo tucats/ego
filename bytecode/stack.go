@@ -126,6 +126,25 @@ func dupByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
+// dupByteCode instruction processor reads an item from the stack,
+// without otherwise changing the stack, and then pushes it back
+// on the stack. The argument must be an integer which describes the
+// offset from the top-of-stack. That is, zero means just duplicate
+// the ToS, while 1 means read the second item and make a dup on the
+// stack of that value, etc.
+func readStackByteCode(c *Context, i interface{}) *errors.EgoError {
+	idx := datatypes.GetInt(i)
+	if idx < 0 {
+		idx = -idx
+	}
+
+	if idx > c.stackPointer {
+		return c.newError(errors.ErrStackUnderflow)
+	}
+
+	return c.stackPush(c.stack[(c.stackPointer-1)-idx])
+}
+
 // swapByteCode instruction processor exchanges the top two
 // stack items. It is an error if there are not at least
 // two items on the stack.

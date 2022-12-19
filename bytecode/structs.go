@@ -131,7 +131,7 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 		subscript1 := datatypes.GetInt(index1)
 		subscript2 := datatypes.GetInt(index2)
 
-		v, err := a.GetSlice(subscript1, subscript2)
+		v, err := a.GetSliceAsArray(subscript1, subscript2)
 		if errors.Nil(err) {
 			err = c.stackPush(v)
 		}

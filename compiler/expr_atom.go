@@ -355,7 +355,6 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		// of the form [start:end] which creates an array of integers between the start
 		// and end values (inclusive). It can also be of the form [:end] which assumes
 		// a start number of 1.
-
 		t1 := 1
 
 		var e2 error

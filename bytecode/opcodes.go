@@ -78,6 +78,7 @@ const (
 	PushScope
 	RangeInit
 	RangeNext
+	ReadStack
 	RequiredType
 	Response
 	Return
@@ -183,6 +184,7 @@ var instructionNames = map[OpcodeID]string{
 	PushScope:          "PushScope",
 	RangeInit:          "RangeInit",
 	RangeNext:          "RangeNext",
+	ReadStack:          "ReadStack",
 	RequiredType:       "RequiredType",
 	Response:           "Response",
 	Return:             "Return",
@@ -277,6 +279,7 @@ func initializeDispatch() {
 			PushScope:          pushScopeByteCode,
 			RangeInit:          rangeInitByteCode,
 			RangeNext:          rangeNextByteCode,
+			ReadStack:          readStackByteCode,
 			RequiredType:       requiredTypeByteCode,
 			Response:           responseByteCode,
 			Return:             returnByteCode,

@@ -97,16 +97,34 @@ func (c *Compiler) reference() *errors.EgoError {
 		case "[":
 			c.t.Advance(1)
 
-			err := c.conditional()
-			if !errors.Nil(err) {
-				return err
+			// If there is an slice with an implied start of 0,
+			// handle that here.
+			t := c.t.Peek(1)
+			if t == ":" {
+				c.b.Emit(bytecode.Push, 0)
+			} else {
+				err := c.conditional()
+				if !errors.Nil(err) {
+					return err
+				}
 			}
 
 			// is it a slice instead of an index?
 			if c.t.IsNext(":") {
-				err := c.conditional()
-				if !errors.Nil(err) {
-					return err
+				// IS this the case of the assumed end being the
+				// length of the item? If so, add code to use the
+				// length of the item below current ToS. The actual
+				// displacement is 2, since before executing it we
+				// also already pushed the length fuction on stack.
+				if c.t.Peek(1) == "]" {
+					c.b.Emit(bytecode.Load, "len")
+					c.b.Emit(bytecode.ReadStack, -2)
+					c.b.Emit(bytecode.Call, 1)
+				} else {
+					err := c.conditional()
+					if !errors.Nil(err) {
+						return err
+					}
 				}
 
 				c.b.Emit(bytecode.LoadSlice)
