@@ -400,7 +400,7 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 // This can't be used directly as a new array, but can be used to create a new
 // array.
 func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, *errors.EgoError) {
-	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
+	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
 		return nil, errors.New(errors.ErrArrayBounds)
 	}
 
