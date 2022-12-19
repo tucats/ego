@@ -96,8 +96,7 @@ The _Ego_ language name is a portmanteaux for _Emulated Go_. The data
 types and language statements are very similar to _Go_ with a few
 notable exceptions:
 
-* The _Ego_ type system is simpler than Go, and does not yet offer
-  the idea of typed interfaces.
+* The _Ego_ type system is simpler than Go.
 * If enabled by settings, _Ego_ offers language extensions such as
   a try/catch model for intercepting runtime errors and "optional"
   values similar to Swift.
@@ -114,12 +113,12 @@ programs as web services. This functionality is documented elsewhere;
 this guide focusses on writing _Ego_ programs regardless of the runtime
 environment.
 
-The _Ego_ language is Copyright 2020, 2021 by Tom Cole, and is freely
+The _Ego_ language is Copyright 2020-2022 by Tom Cole, and is freely
 available for any use, public or private, including commercial software.
 The only requirement is that any software that incorporates or makes use
-of _Ego_ or the packages written by Tom Cole to support must include a
-statement attributing authorship to _Ego_ and it's runtime environment
-to Tom Cole.
+of _Ego_ or the packages written by Tom Cole to support _Ego_ must 
+include a statement attributing authorship to _Ego_ and it's runtime 
+environment to Tom Cole.
 
 &nbsp;
 &nbsp;
