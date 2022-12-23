@@ -395,6 +395,10 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
+	} else {
+		// No return values, so flush any extra stuff left on stack.
+		c.stackPointer = c.framePointer - 1
+		c.result = nil
 	}
 
 	// If we are running in an active package table (such as running a non-receiver

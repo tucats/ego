@@ -37,6 +37,12 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if marker, ok := v.(StackMarker); ok {
+		if marker.Desc == "call" || marker.Desc == "let" {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+	}
+
 	// Get the name. If it is the reserved name "_" it means
 	// to just discard the value.
 	varname := datatypes.GetString(i)

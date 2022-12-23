@@ -375,6 +375,9 @@ var Messages = map[string]map[string]string{
 	"error.func.unused": {
 		"en": "function call used as parameter has unused error return value",
 	},
+	"error.func.void": {
+		"en": "function returned void (no valud to store)",
+	},
 	"error.function": {
 		"en": "missing function",
 	},
@@ -698,6 +701,9 @@ var Messages = map[string]map[string]string{
 	},
 	"error.version.parse": {
 		"en": "Unable to process version number {{v}; count={{c}}, err={{err}\n",
+	},
+	"errors.terminated": {
+		"en": "terminated due to errors",
 	},
 	"help.break.at": {
 		"en": "Halt execution at a given line number",
