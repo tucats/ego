@@ -740,18 +740,21 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if token := settings.Get(defs.LogonTokenSetting); token != "" {
-		// Let's check to see if it's expired already...
-		if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
-			expireTime, err := time.Parse(time.UnixDate, expirationString)
-			if err != nil {
-				return errors.New(err)
-			}
+		// Let's check to see if it's expired already... Note we skip this if the
+		// agent string is "status".
+		if !strings.EqualFold(agentType, defs.StatusAgent) {
+			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
+				expireTime, err := time.Parse(time.UnixDate, expirationString)
+				if err != nil {
+					return errors.New(err)
+				}
 
-			now := time.Since(expireTime)
-			if now > 0 {
-				ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
+				now := time.Since(expireTime)
+				if now > 0 {
+					ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
 
-				os.Exit(1)
+					os.Exit(1)
+				}
 			}
 		}
 

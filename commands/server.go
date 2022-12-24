@@ -320,7 +320,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 	if hasScheme {
 		settings.SetDefault("ego.application.server", name)
 
-		return name, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
+		return name, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 	}
 
 	// No scheme, so let's try https. If no port supplied, assume the default port.
@@ -328,7 +328,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
+	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 	if errors.Nil(err) {
 		return normalizedName, nil
 	}
@@ -338,5 +338,5 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	return normalizedName, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.AdminAgent)
+	return normalizedName, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 }

@@ -97,7 +97,7 @@ func remoteStatus(addr string) *errors.EgoError {
 		return err
 	}
 
-	err = runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.AdminAgent)
+	err = runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.StatusAgent)
 	if !errors.Nil(err) {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
