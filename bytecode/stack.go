@@ -45,6 +45,10 @@ func IsStackMarker(i interface{}, types ...string) bool {
 	}
 
 	for _, t := range types {
+		if strings.EqualFold(t, marker.Desc) {
+			return true
+		}
+
 		for _, data := range marker.Data {
 			if strings.EqualFold(t, datatypes.GetString(data)) {
 				return true
