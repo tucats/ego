@@ -30,6 +30,10 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// If both are nil, then they match.
 	if datatypes.IsNil(v1) && datatypes.IsNil(v2) {
 		return c.stackPush(true)
@@ -128,6 +132,10 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// IF only one side is nil, they are not equal by definition.
 	if !datatypes.IsNil(v1) && datatypes.IsNil(v2) ||
 		datatypes.IsNil(v1) && !datatypes.IsNil(v2) {
@@ -212,6 +220,10 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	if v1 == nil || v2 == nil {
 		_ = c.stackPush(false)
 
@@ -276,6 +288,10 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	if v1 == nil || v2 == nil {
 		_ = c.stackPush(false)
 
@@ -336,6 +352,10 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Handle nil cases
@@ -401,6 +421,10 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {

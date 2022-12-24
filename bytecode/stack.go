@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 )
@@ -43,8 +44,25 @@ func NewStackMarker(label string, values ...interface{}) StackMarker {
 // marker, the item must contain at least one of the types as one of
 // it data elements.
 func IsStackMarker(i interface{}, values ...string) bool {
+	// First, check special case of a call frame, which acts
+	// as a marker but has lots of other data in it as well.
+	frame, ok := i.(CallFrame)
+	if ok {
+		ui.Debug(ui.TraceLogger, "                 >>> Unexpected call frame found: %s:%d", frame.Module, frame.Line)
+
+		return true
+	}
+
+	// Okay, see if it is a StackMarker. If not, we're done here.
 	marker, ok := i.(StackMarker)
-	if !ok || len(values) == 0 {
+	if !ok {
+		return false
+	}
+
+	// Log that we hit a marker
+	ui.Debug(ui.TraceLogger, "                 >>> Unexpected marker found: %s", marker)
+
+	if len(values) == 0 {
 		return ok
 	}
 
@@ -58,7 +76,6 @@ func IsStackMarker(i interface{}, values ...string) bool {
 				return true
 			}
 		}
-
 	}
 
 	return false
@@ -74,6 +91,7 @@ func (sm StackMarker) String() string {
 		b.WriteString(", ")
 		b.WriteString(fmt.Sprintf("%v", data))
 	}
+
 	b.WriteString(">")
 
 	return b.String()

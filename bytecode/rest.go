@@ -135,6 +135,10 @@ func responseByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	isJSON := false
 	if v, ok := c.symbols.Get("_json"); ok {
 		isJSON = datatypes.GetBool(v)

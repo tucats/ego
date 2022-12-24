@@ -379,7 +379,7 @@ var Messages = map[string]map[string]string{
 		"en": "function call used as parameter has unused error return value",
 	},
 	"error.func.void": {
-		"en": "function returned void (no valud to store)",
+		"en": "function did not return a value",
 	},
 	"error.function": {
 		"en": "missing function",

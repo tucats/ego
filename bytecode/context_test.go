@@ -112,7 +112,7 @@ func TestNewContext(t *testing.T) {
 		t.Errorf("Failed to run bytecode: %v", e)
 	}
 
-	r, e = c.Pop()
+	_, e = c.Pop()
 
 	if errors.Nil(e) {
 		t.Errorf("Expected stack underflow not found")

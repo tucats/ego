@@ -210,6 +210,10 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		args[(argc-n)-1] = v
 	}
 
@@ -221,6 +225,10 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if funcPointer == nil {
 		return c.newError(errors.ErrInvalidFunctionCall).Context("<nil>")
+	}
+
+	if IsStackMarker(funcPointer) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Depends on the type here as to what we call...
@@ -395,6 +403,9 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
+		if IsStackMarker(c.Result) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
 	} else if b, ok := i.(int); ok && b > 0 {
 		// there are return items expected on the stack.
 		if b == 1 {

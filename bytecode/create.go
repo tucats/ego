@@ -39,6 +39,10 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 	count := datatypes.GetInt(i)
 
 	if v, err := c.Pop(); err == nil {
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		baseType = datatypes.GetType(v)
 	}
 
@@ -49,6 +53,10 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
+			if IsStackMarker(v) {
+				return c.newError(errors.ErrFunctionReturnedVoid)
+			}
+
 			t := datatypes.GetType(v)
 
 			// If we are initializing any integer or float array, coerce the
@@ -114,6 +122,10 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 		v, err := c.Pop()
 		if !errors.Nil(err) {
 			return err
+		}
+
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If we are in static mode, array must be homogeneous.
@@ -189,6 +201,10 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		value, err := c.Pop()
 		if !errors.Nil(err) {
 			return err
+		}
+
+		if IsStackMarker(value) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
@@ -294,6 +310,10 @@ func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	valueType := datatypes.GetType(v)
 
 	m := datatypes.NewMap(keyType, valueType)
@@ -307,6 +327,10 @@ func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
 		k, err := c.Pop()
 		if err != nil {
 			return err
+		}
+
+		if IsStackMarker(v) || IsStackMarker(k) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
 		_, err = m.Set(k, v)

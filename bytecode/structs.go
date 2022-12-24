@@ -33,6 +33,10 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(index) || IsStackMarker(array) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	switch a := array.(type) {
 	case *datatypes.EgoMap:
 		var v interface{}
@@ -126,6 +130,10 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(array) || IsStackMarker(index1) || IsStackMarker(index2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	switch a := array.(type) {
 	case *datatypes.EgoArray:
 		subscript1 := datatypes.GetInt(index1)
@@ -174,6 +182,10 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(destination) || IsStackMarker(index) || IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := destination.(type) {
@@ -302,6 +314,10 @@ func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(destination) || IsStackMarker(v) || IsStackMarker(index) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
 		if _, err = a.Set(index, v); errors.Nil(err) {
@@ -324,6 +340,10 @@ func flattenByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	v, err := c.Pop()
 	if errors.Nil(err) {
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		if array, ok := v.(*datatypes.EgoArray); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)

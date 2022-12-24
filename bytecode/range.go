@@ -61,6 +61,10 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	if errors.Nil(err) {
 		if v, err = c.Pop(); errors.Nil(err) {
+			if IsStackMarker(v) {
+				return c.newError(errors.ErrFunctionReturnedVoid)
+			}
+
 			r.value = v
 
 			switch actual := v.(type) {

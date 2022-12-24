@@ -23,12 +23,20 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		name = datatypes.GetString(v)
 	}
 
 	m, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(m) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	var v interface{}
@@ -117,6 +125,10 @@ func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	var v interface{}
 
 	if v, err = c.Pop(); err == nil {
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		if bc, ok := v.(*ByteCode); ok {
 			bc.Name = datatypes.GetString(i)
 			err = c.symbols.SetAlways(bc.Name, bc)

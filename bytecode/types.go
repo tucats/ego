@@ -12,6 +12,10 @@ import (
 func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if errors.Nil(err) {
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		c.Static = datatypes.GetBool(v)
 		err = c.symbols.SetAlways("__static_data_types", c.Static)
 	}
@@ -22,6 +26,10 @@ func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
 func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if errors.Nil(err) {
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		// If we're doing strict type checking...
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
@@ -151,6 +159,10 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Some types cannot be coerced, so must match.

@@ -35,6 +35,10 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 			return err
 		}
 
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		s := ""
 
 		switch vv := v.(type) {
@@ -182,6 +186,10 @@ func templateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	t, err := c.Pop()
 	if errors.Nil(err) {
+		if IsStackMarker(t) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
+
 		t, e2 := template.New(name).Parse(datatypes.GetString(t))
 		if e2 == nil {
 			err = c.stackPush(t)

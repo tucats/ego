@@ -80,6 +80,10 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	sourceChan := false
 
 	if _, ok := v.(*datatypes.Channel); ok {
@@ -139,6 +143,10 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Get the name.
 	varname := datatypes.GetString(i)
 
@@ -183,6 +191,10 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 	src, err := c.Pop()
 	if err != nil {
 		return err
+	}
+
+	if IsStackMarker(src) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch actual := dest.(type) {
@@ -300,6 +312,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Get the name.
 	varname := datatypes.GetString(i)
 
@@ -351,6 +367,10 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 	v, err = c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	empty := true

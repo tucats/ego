@@ -112,6 +112,10 @@ func constantByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	varname := datatypes.GetString(i)
 
 	err = c.constantSet(varname, v)

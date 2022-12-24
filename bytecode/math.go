@@ -34,6 +34,10 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -101,6 +105,10 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -140,6 +148,10 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
@@ -198,6 +210,10 @@ func andByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -216,6 +232,10 @@ func orByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
@@ -239,6 +259,10 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
@@ -287,6 +311,10 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
@@ -346,6 +374,10 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	v1, v2 = datatypes.Normalize(v1, v2)
 
 	// Cannot do math on a nil value
@@ -399,6 +431,10 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 	v1, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
@@ -472,6 +508,10 @@ func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -524,6 +564,10 @@ func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -546,6 +590,10 @@ func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
 		return err
 	}
 
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
+	}
+
 	// Cannot do math on a nil value
 	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
 		return c.newError(errors.ErrInvalidType).Context("nil")
@@ -566,6 +614,10 @@ func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
 	v2, err := c.Pop()
 	if !errors.Nil(err) {
 		return err
+	}
+
+	if IsStackMarker(v1) || IsStackMarker(v2) {
+		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
