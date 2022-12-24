@@ -15,7 +15,7 @@ func (c *Compiler) compileFunctionCall() *errors.EgoError {
 		return c.newError(errors.ErrInvalidFunctionCall)
 	}
 
-	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "call"})
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
 	// Parse the function as an expression
 	bc, err := c.Expression()
 	if !errors.Nil(err) {
@@ -25,7 +25,7 @@ func (c *Compiler) compileFunctionCall() *errors.EgoError {
 	c.b.Append(bc)
 
 	// We don't care about the result values, so flush to the marker.
-	c.b.Emit(bytecode.DropToMarker, bytecode.StackMarker{Desc: "call"})
+	c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("call"))
 
 	return nil
 }

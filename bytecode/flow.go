@@ -286,7 +286,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(StackMarker{Desc: "results"})
+			_ = c.stackPush(NewStackMarker("results"))
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.stackPush(r.Value[i])
 			}
@@ -345,7 +345,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		result, err = af(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(StackMarker{Desc: "results"})
+			_ = c.stackPush(NewStackMarker("results"))
 
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
 				_ = c.stackPush(r.Value[i])
@@ -357,7 +357,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if df != nil && df.ErrReturn {
-			_ = c.stackPush(StackMarker{Desc: "results"})
+			_ = c.stackPush(NewStackMarker("results"))
 			_ = c.stackPush(err)
 			_ = c.stackPush(result)
 
@@ -395,6 +395,13 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
+	} else if b, ok := i.(int); ok && b > 0 {
+		// there are return items expected on the stack.
+		if b == 1 {
+			c.result, err = c.Pop()
+		} else {
+			c.result = nil
+		}
 	} else {
 		// No return values, so flush any extra stuff left on stack.
 		c.stackPointer = c.framePointer - 1

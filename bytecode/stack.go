@@ -3,31 +3,73 @@ package bytecode
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 )
-
-type StackMarker struct {
-	Desc string
-}
-
-func NewStackMarker(label string, count int) StackMarker {
-	d := label
-	if count != 0 {
-		d = fmt.Sprintf("%s %d items", label, count)
-	}
-
-	return StackMarker{
-		Desc: d,
-	}
-}
 
 /******************************************\
 *                                         *
 *    S T A C K   M A N A G E M E N T      *
 *                                         *
 \******************************************/
+
+// StackMarker is a special object used to mark a location on the
+// stack. It is used, for example, to mark locations to where a stack
+// should be flushed. The marker contains a text description, and
+// optionally any additional desired data.
+type StackMarker struct {
+	Desc string
+	Data []interface{}
+}
+
+// NewStackMarker generates a enw stack marker object, using the
+// supplied label and optional list of datu.
+func NewStackMarker(label string, data ...interface{}) StackMarker {
+	return StackMarker{
+		Desc: label,
+		Data: data,
+	}
+}
+
+// See if the item is a marker. If there are no marker types, this
+// just returns true if the interface given is any stack marker. If
+// one or more type strings are passed, then in addition to being a
+// marker, the item must contain at least one of the types as one of
+// it data elements.
+func IsStackMarker(i interface{}, types ...string) bool {
+	marker, ok := i.(StackMarker)
+	if !ok || len(types) == 0 {
+		return ok
+	}
+
+	for _, t := range types {
+		for _, data := range marker.Data {
+			if strings.EqualFold(t, datatypes.GetString(data)) {
+				return true
+			}
+		}
+
+	}
+
+	return false
+}
+
+// Produce a string reprsentation of a stack marker.
+func (sm StackMarker) String() string {
+	b := strings.Builder{}
+	b.WriteString("M<")
+	b.WriteString(sm.Desc)
+
+	for _, data := range sm.Data {
+		b.WriteString(", ")
+		b.WriteString(fmt.Sprintf("%v", data))
+	}
+	b.WriteString(">")
+
+	return b.String()
+}
 
 // dropToMarkerByteCode discards items on the stack until it
 // finds a marker value, at which point it stops. This is
@@ -80,7 +122,7 @@ func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 	} else {
 		// The marker is an instance of a StackMarker object.
 		v := c.stack[c.stackPointer-(count+1)]
-		if _, ok := v.(StackMarker); ok {
+		if IsStackMarker(v) {
 			return nil
 		}
 	}

@@ -54,7 +54,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 				found := false
 
 				if v, found, err = a.Get(index); errors.Nil(err) {
-					_ = c.stackPush(StackMarker{Desc: "results"})
+					_ = c.stackPush(NewStackMarker("results"))
 					_ = c.stackPush(found)
 					err = c.stackPush(v)
 					twoValues = true

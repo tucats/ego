@@ -189,7 +189,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// Generate the deferral invocations, if any, in reverse order
 	// that they were defined. Discard any stack leftovers.
 	for i := len(cx.deferQueue) - 1; i >= 0; i = i - 1 {
-		dm := bytecode.NewStackMarker("defer", 0)
+		dm := bytecode.NewStackMarker("defer")
 		cx.b.Emit(bytecode.Push, dm)
 		cx.b.Emit(bytecode.LocalCall, cx.deferQueue[i])
 		cx.b.Emit(bytecode.DropToMarker, dm)

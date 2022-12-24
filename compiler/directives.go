@@ -128,7 +128,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	ui.Debug(ui.ByteCodeLogger, "@handler invocation uses real http mode: %v", httpMode)
 
-	stackMarker := bytecode.StackMarker{Desc: "handler"}
+	stackMarker := bytecode.NewStackMarker("handler")
 
 	// Plant a stack marker and load the handler function value
 	c.b.Emit(bytecode.Push, stackMarker)
@@ -373,7 +373,7 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 
 // errorDirective implements the @error directive.
 func (c *Compiler) errorDirective() *errors.EgoError {
-	c.b.Emit(bytecode.Push, bytecode.StackMarker{Desc: "call"})
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
 	c.b.Emit(bytecode.Load, "error")
 
 	if !c.atStatementEnd() {

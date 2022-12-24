@@ -137,7 +137,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 	// to see this is still here later.
 	_ = ctx.stackPush(uninterestingValue)
 
-	marker := NewStackMarker("defer test", 0)
+	marker := NewStackMarker("defer test")
 	_ = ctx.stackPush(marker)
 
 	e := localCallByteCode(ctx, 5)

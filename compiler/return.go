@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 )
@@ -12,7 +10,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined. Discard any results or stack leftovers.
 	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
-		dm := bytecode.NewStackMarker("defer", 0)
+		dm := bytecode.NewStackMarker("defer")
 		c.b.Emit(bytecode.Push, dm)
 		c.b.Emit(bytecode.LocalCall, c.deferQueue[i])
 		c.b.Emit(bytecode.DropToMarker, dm)
@@ -56,9 +54,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 		// If there are multiple return values, start with pushing
 		// a unique marker value.
 		if len(returnExpressions) > 1 {
-			c.b.Emit(bytecode.Push, bytecode.StackMarker{
-				Desc: fmt.Sprintf("%s(),%d]", c.b.Name, returnCount),
-			})
+			c.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name, returnCount))
 		}
 
 		for i := len(returnExpressions) - 1; i >= 0; i = i - 1 {

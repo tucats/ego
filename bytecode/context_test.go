@@ -21,7 +21,7 @@ func TestNewContext(t *testing.T) {
 	b.Emit(Load, "foo")
 	b.Emit(Push, 2)
 	b.Emit(Add)
-	b.Emit(Return)
+	b.Emit(Return, 1)
 
 	// Create a new context to test and validate the initial state
 	c := NewContext(s, b)
@@ -114,10 +114,11 @@ func TestNewContext(t *testing.T) {
 
 	r, e = c.Pop()
 
-	if !errors.Nil(e) {
-		t.Errorf("Failed to pop stack: %v", e)
+	if errors.Nil(e) {
+		t.Errorf("Expected stack underflow not found")
 	}
 
+	r = c.Result()
 	if !reflect.DeepEqual(r, 3) {
 		t.Errorf("Wrong final result: %v", r)
 	}

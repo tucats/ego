@@ -203,10 +203,7 @@ func Format(element interface{}) string {
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {
-			e := reflect.ValueOf(v).Field(0)
-			name := fmt.Sprintf("%v", e.Interface())
-
-			return fmt.Sprintf("M<%s>", name)
+			return fmt.Sprintf("%v", v)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
