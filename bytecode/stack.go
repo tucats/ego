@@ -20,16 +20,20 @@ import (
 // should be flushed. The marker contains a text description, and
 // optionally any additional desired data.
 type StackMarker struct {
-	Desc string
-	Data []interface{}
+	label  string
+	values []interface{}
 }
 
 // NewStackMarker generates a enw stack marker object, using the
 // supplied label and optional list of datu.
-func NewStackMarker(label string, data ...interface{}) StackMarker {
+func NewStackMarker(label string, values ...interface{}) StackMarker {
+	if label == "" {
+		label = "anon"
+	}
+
 	return StackMarker{
-		Desc: label,
-		Data: data,
+		label:  label,
+		values: values,
 	}
 }
 
@@ -38,19 +42,19 @@ func NewStackMarker(label string, data ...interface{}) StackMarker {
 // one or more type strings are passed, then in addition to being a
 // marker, the item must contain at least one of the types as one of
 // it data elements.
-func IsStackMarker(i interface{}, types ...string) bool {
+func IsStackMarker(i interface{}, values ...string) bool {
 	marker, ok := i.(StackMarker)
-	if !ok || len(types) == 0 {
+	if !ok || len(values) == 0 {
 		return ok
 	}
 
-	for _, t := range types {
-		if strings.EqualFold(t, marker.Desc) {
+	for _, value := range values {
+		if strings.EqualFold(value, marker.label) {
 			return true
 		}
 
-		for _, data := range marker.Data {
-			if strings.EqualFold(t, datatypes.GetString(data)) {
+		for _, data := range marker.values {
+			if strings.EqualFold(value, datatypes.GetString(data)) {
 				return true
 			}
 		}
@@ -64,9 +68,9 @@ func IsStackMarker(i interface{}, types ...string) bool {
 func (sm StackMarker) String() string {
 	b := strings.Builder{}
 	b.WriteString("M<")
-	b.WriteString(sm.Desc)
+	b.WriteString(sm.label)
 
-	for _, data := range sm.Data {
+	for _, data := range sm.values {
 		b.WriteString(", ")
 		b.WriteString(fmt.Sprintf("%v", data))
 	}
@@ -84,7 +88,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 	target := ""
 
 	if m, ok := i.(StackMarker); ok {
-		target = m.Desc
+		target = m.label
 	}
 
 	for !found {
@@ -109,7 +113,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 		// drop to a specific one, also test the market name.
 		_, found = v.(StackMarker)
 		if found && i != nil {
-			found = v.(StackMarker).Desc == target
+			found = v.(StackMarker).label == target
 		}
 	}
 
