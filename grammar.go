@@ -575,6 +575,13 @@ var ServerStateGrammar = []cli.Option{
 		Description:         "opt.port",
 		EnvironmentVariable: "EGO_PORT",
 	},
+	{
+		LongName:    "local",
+		ShortName:   "l",
+		Aliases:     []string{"pid", "pidfile"},
+		OptionType:  cli.BooleanType,
+		Description: "opt.local",
+	},
 }
 
 // ServerRunGrammar handles command line options for the server subcommand.

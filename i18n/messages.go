@@ -227,6 +227,9 @@ var Messages = map[string]map[string]string{
 	"error.channel.not.open": {
 		"en": "channel not open",
 	},
+	"error.cli.command.not.found": {
+		"en": "unrecognized command",
+	},
 	"error.cli.extra": {
 		"en": "unexpected text after command",
 	},
@@ -1024,7 +1027,7 @@ var Messages = map[string]map[string]string{
 		"en": "User {{user}} deleted",
 	},
 	"opt.address.port": {
-		"en": "Specify address (and optionally address) of server",
+		"en": "Specify address (and optionally port) of server",
 	},
 	"opt.config.force": {
 		"en": "Do not signal error if option not found",
@@ -1055,6 +1058,9 @@ var Messages = map[string]map[string]string{
 	},
 	"opt.limit": {
 		"en": "If specified, limit the result set to this many rows",
+	},
+	"opt.local": {
+		"en": "Show local server status info",
 	},
 	"opt.logon.server": {
 		"en": "URL of server to authenticate with",

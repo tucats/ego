@@ -20,13 +20,16 @@ import (
 // Status displays the status of a running server if it exists.
 func Status(c *cli.Context) *errors.EgoError {
 	// If there is a parameter, it's the server address to query.
+	addr := "localhost"
 	if c.GetParameterCount() > 0 {
-		addr := c.GetParameter(0)
+		addr = c.GetParameter(0)
+	}
 
+	if !c.Boolean("local") {
 		return remoteStatus(addr)
 	}
 
-	// Otherwise, it's the local server by port number.
+	// Otherwise, it's the local pidfile, based on the port number.
 	msg := i18n.M("server.not.running")
 
 	status, err := server.ReadPidFile(c)

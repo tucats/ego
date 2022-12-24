@@ -38,6 +38,32 @@ func (c *Context) Parse() *errors.EgoError {
 func (c *Context) parseGrammar(args []string) *errors.EgoError {
 	var err *errors.EgoError
 
+	// Are there parameters already stored away in the global? If so,
+	// they are unrecognized verbs that were hoovered up by the grammar
+	// parent processing, and are not parameters (which must always
+	// follow the grammar verbs and options).
+	parmList := c.FindGlobal().Parameters
+	if len(parmList) > 0 {
+		list := strings.Builder{}
+
+		plural := "s"
+		if len(parmList) == 1 {
+			plural = ""
+		}
+
+		for index, parm := range parmList {
+			if index > 0 {
+				list.WriteString(", ")
+			}
+			list.WriteString(parm)
+		}
+
+		ui.Debug(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
+
+		return errors.New(errors.ErrUnrecognizedCommand).Context(parmList[0])
+	}
+
+	// No dangling parameters, let's keep going.
 	lastArg := len(args)
 	parametersOnly := false
 	helpVerb := true
