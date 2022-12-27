@@ -92,15 +92,14 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			}
 		}
 
-		packageName = strings.ToLower(packageName)
-
-		pkgData, _ := bytecode.GetPackage(packageName)
-
-		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
-
 		if isList && fileName == ")" {
 			break
 		}
+
+		packageName = strings.ToLower(packageName)
+		pkgData, _ := bytecode.GetPackage(packageName)
+
+		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.PackageName {
@@ -122,64 +121,70 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			c.packages.Mutex.Unlock()
 		}
 
-		// Read the imported object as a file path
-		text, err := c.readPackageFile(fileName)
-		if !errors.Nil(err) {
-			// If it wasn't found but we did add some builtins, good enough.
-			// Skip past the filename that was rejected by c.Readfile()...
-			if pkgData.Builtins {
-				c.t.Advance(1)
+		// Read the imported object as a file path if we haven't already done this
+		// for this package.
+		if !pkgData.Imported {
+			text, err := c.readPackageFile(fileName)
+			if !errors.Nil(err) {
+				// If it wasn't found but we did add some builtins, good enough.
+				// Skip past the filename that was rejected by c.Readfile()...
+				if pkgData.Builtins {
+					c.t.Advance(1)
 
-				if !isList || c.t.IsNext(")") {
-					break
+					if !isList || c.t.IsNext(")") {
+						break
+					}
+
+					continue
 				}
 
-				continue
-			}
-
-			// Nope, import had no effect.
-			return err
-		}
-
-		ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
-
-		importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
-		importCompiler.b = bytecode.New("import " + fileName)
-		importCompiler.t = tokenizer.New(text)
-		importCompiler.PackageName = packageName
-
-		for !importCompiler.t.AtEnd() {
-			err := importCompiler.compileStatement()
-			if !errors.Nil(err) {
+				// Nope, import had no effect.
 				return err
 			}
-		}
 
-		importCompiler.b.Emit(bytecode.PopPackage, packageName)
+			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-		// If we are disassembling, do it now for the imported definitions.
-		if ui.LoggerIsActive(ui.ByteCodeLogger) {
-			importCompiler.b.Disasm()
-		}
+			importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
+			importCompiler.b = bytecode.New("import " + fileName)
+			importCompiler.t = tokenizer.New(text)
+			importCompiler.PackageName = packageName
 
-		// If after the import we ended with mismatched block markers, complain
-		if importCompiler.blockDepth != 0 {
-			return c.newError(errors.ErrMissingEndOfBlock, packageName)
-		}
+			for !importCompiler.t.AtEnd() {
+				err := importCompiler.compileStatement()
+				if !errors.Nil(err) {
+					return err
+				}
+			}
 
-		// The import will have generate code that must be run to actually register
-		// package contents.
-		importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
-		ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+			importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
-		err = ctx.Run()
-		if err != nil && !err.Is(errors.ErrStop) {
-			break
+			// If we are disassembling, do it now for the imported definitions.
+			if ui.LoggerIsActive(ui.ByteCodeLogger) {
+				importCompiler.b.Disasm()
+			}
+
+			// If after the import we ended with mismatched block markers, complain
+			if importCompiler.blockDepth != 0 {
+				return c.newError(errors.ErrMissingEndOfBlock, packageName)
+			}
+
+			// The import will have generate code that must be run to actually register
+			// package contents.
+			importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
+			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
+
+			err = ctx.Run()
+			if err != nil && !err.Is(errors.ErrStop) {
+				break
+			}
+
+			pkgData.Imported = true
+
+		} else {
+			ui.Debug(ui.CompilerLogger, "*** Import of package \"%s\" already done", fileName)
 		}
 
 		// Rewrite the package now that we've added stuff to it.
-		pkgData.Imported = true
-
 		if ui.LoggerIsActive(ui.CompilerLogger) {
 			ui.Debug(ui.CompilerLogger, "+++ updating package: %s", fileName)
 
