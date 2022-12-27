@@ -13,7 +13,9 @@ import (
 
 // loadIndexByteCode instruction processor. If the operand is non-nil then
 // it is used as the index value, else the index value comes from the
-// stack.
+// stack. Note that LoadIndex cannot be used to lcoate a package member,
+// that can only be done using the Member opcoode. This is used to detect
+// when an (illegal) attempt is made to write to a package member.
 func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	var err *errors.EgoError
 
@@ -38,6 +40,9 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	switch a := array.(type) {
+	case *datatypes.EgoPackage:
+		return c.newError(errors.ErrReadOnlyValue)
+
 	case *datatypes.EgoMap:
 		var v interface{}
 
