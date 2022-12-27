@@ -99,6 +99,9 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		packageName = strings.ToLower(packageName)
 		pkgData, _ := bytecode.GetPackage(packageName)
 
+		wasBuiltin := pkgData.Builtins
+		wasImported := pkgData.Imported
+
 		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
 		// If this is an import of the package we're currently importing, no work to do.
@@ -108,11 +111,13 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		if !pkgData.Builtins {
 			pkgData.Builtins = c.AddBuiltins(packageName)
-		}
 
-		if pkgData.Builtins {
 			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName)
 		} else {
+			ui.Debug(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName)
+		}
+
+		if !pkgData.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName)
@@ -181,30 +186,32 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			pkgData.Imported = true
 
 		} else {
-			ui.Debug(ui.CompilerLogger, "*** Import of package \"%s\" already done", fileName)
+			ui.Debug(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
 		}
 
-		// Rewrite the package now that we've added stuff to it.
-		if ui.LoggerIsActive(ui.CompilerLogger) {
-			ui.Debug(ui.CompilerLogger, "+++ updating package: %s", fileName)
+		// Rewrite the package if we've added stuff to it.
+		if wasImported != pkgData.Imported || wasBuiltin != pkgData.Builtins {
+			if ui.LoggerIsActive(ui.CompilerLogger) {
+				ui.Debug(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 
-			keys := pkgData.Keys()
-			keyString := ""
+				keys := pkgData.Keys()
+				keyString := ""
 
-			for idx, k := range keys {
-				if idx > 0 {
-					keyString = keyString + ","
+				for idx, k := range keys {
+					if idx > 0 {
+						keyString = keyString + ","
+					}
+
+					keyString = keyString + k
 				}
 
-				keyString = keyString + k
+				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
 			}
 
-			ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
-		}
-
-		err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
-		if !errors.Nil(err2) {
-			return err2
+			err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
+			if !errors.Nil(err2) {
+				return err2
+			}
 		}
 
 		// Now that the package is in the cache, add the instruction to the active

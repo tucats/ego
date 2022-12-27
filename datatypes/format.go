@@ -101,7 +101,23 @@ func Format(element interface{}) string {
 
 		b.WriteString("Pkg<")
 
-		for n, k := range keys {
+		needsComma := false
+		if v.Builtins {
+			b.WriteString("builtins")
+			needsComma = true
+		}
+
+		if v.Imported {
+			if needsComma {
+				b.WriteString(", ")
+			}
+
+			b.WriteString("imports")
+
+			needsComma = true
+		}
+
+		for _, k := range keys {
 			// Skip over hidden values
 			if strings.HasPrefix(k, "__") {
 				continue
@@ -109,9 +125,11 @@ func Format(element interface{}) string {
 
 			i, _ := v.Get(k)
 
-			if n > 0 {
+			if needsComma {
 				b.WriteString(",")
 			}
+
+			needsComma = true
 
 			b.WriteRune(' ')
 			b.WriteString(k)
