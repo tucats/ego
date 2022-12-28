@@ -10,7 +10,7 @@ import (
 // compileIf compiles conditional statments. The verb is already
 // removed from the token stream.
 func (c *Compiler) compileIf() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
 

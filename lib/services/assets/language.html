@@ -1333,7 +1333,7 @@ io.WriteFile(&quot;newdata.txt&quot;, s)</code></pre>
 <p>The <code>Marshal</code> function converts a value into a JSON string expression, which is the function result. Note that unlike its <em>Go</em> counterpart, the <code>json</code> package automatically converts the value expression to a string as the result.</p>
 <pre><code>a := { name: &quot;Tom&quot;, age: 44 }
 s := json.Marshal(a)</code></pre>
-<p>This results in <code>s</code> containing the value “{ "name":"Tom", "age": 44}”. This value can be passed as the body of a rest request, for example, to send an instance of this structure to the REST service.</p>
+<p>This results in <code>s</code> containing the value “{ "nametokenizer.ColonTokenTom", "age": 44}”. This value can be passed as the body of a rest request, for example, to send an instance of this structure to the REST service.</p>
 <h3 id="json.marshalindentedv">json.MarshalIndent(v)</h3>
 <p>The <code>MarshalIndented</code> function converts a value into a JSON string expression, which is the function result. Note that unlike its <em>Go</em> counterpart, the <code>json</code> package automatically converts the value expression to a string as the result. The <code>MarshalIndent</code> function differs from the standard <code>Marshal</code> function in that it provides indentation automatically to make the JSON string more readable.</p>
 <pre><code>a := { name: &quot;Tom&quot;, age: 44 }

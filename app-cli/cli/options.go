@@ -194,7 +194,7 @@ func p(level int, label string, value interface{}) {
 			for n, option := range v {
 				dumpOption(level+1, option, n < len(v))
 			}
-			
+
 			fmt.Printf("%s  },\n", prefix)
 		}
 

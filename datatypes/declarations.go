@@ -1,5 +1,7 @@
 package datatypes
 
+import "github.com/tucats/ego/tokenizer"
+
 // This defines the token structure for various type declarations, including a model of that
 // type and the type designation.
 type TypeDeclaration struct {
@@ -101,7 +103,7 @@ var TypeDeclarations = []TypeDeclaration{
 		Array(&StringType),
 	},
 	{
-		[]string{"[", "]", "interface{}"},
+		[]string{"[", "]", tokenizer.EmptyInterfaceToken},
 		NewArray(&InterfaceType, 0),
 		Array(&InterfaceType),
 	},
@@ -146,7 +148,7 @@ var TypeDeclarations = []TypeDeclaration{
 		&StringType,
 	},
 	{
-		[]string{"interface{}"},
+		[]string{tokenizer.EmptyInterfaceToken},
 		interfaceModel,
 		&InterfaceType,
 	},
@@ -191,7 +193,7 @@ var TypeDeclarations = []TypeDeclaration{
 		Pointer(&StringType),
 	},
 	{
-		[]string{"*", "interface{}"},
+		[]string{"*", tokenizer.EmptyInterfaceToken},
 		&interfaceModel,
 		Pointer(&InterfaceType),
 	},

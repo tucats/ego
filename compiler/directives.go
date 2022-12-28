@@ -25,7 +25,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
 
 	switch name {
-	case "assert":
+	case tokenizer.AssertToken:
 		return c.Assert()
 
 	case "authenticated":
@@ -93,7 +93,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 // Generate the call to the main program, and the the exit code.
 func (c *Compiler) entrypointDirective() *errors.EgoError {
 	mainName := c.t.Next()
-	if mainName == tokenizer.EndOfTokens || mainName == ";" {
+	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
 		mainName = "main"
 	}
 
@@ -112,7 +112,7 @@ func (c *Compiler) entrypointDirective() *errors.EgoError {
 
 func (c *Compiler) handlerDirective() *errors.EgoError {
 	handlerName := c.t.Next()
-	if handlerName == tokenizer.EndOfTokens || handlerName == ";" {
+	if handlerName == tokenizer.EndOfTokens || handlerName == tokenizer.SemicolonToken {
 		handlerName = "handler"
 	}
 
@@ -410,7 +410,7 @@ func (c *Compiler) typeDirective() *errors.EgoError {
 // atStatementEnd checks the next token in the stream to see if it indicates
 // that we have parsed all of the statement.
 func (c *Compiler) atStatementEnd() bool {
-	return util.InList(c.t.Peek(1), ";", "{", "}", tokenizer.EndOfTokens)
+	return util.InList(c.t.Peek(1), tokenizer.SemicolonToken, tokenizer.BlockBeginToken, tokenizer.BlockEndToken, tokenizer.EndOfTokens)
 }
 
 // modeCheck emits the code to verify that we are running

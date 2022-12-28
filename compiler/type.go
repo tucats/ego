@@ -10,7 +10,7 @@ import (
 // compileTypeDefinition compiles a type statement which creates
 // a user-defined type specification.
 func (c *Compiler) compileTypeDefinition() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingType)
 	}
 
@@ -21,7 +21,7 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 
 	name = c.normalize(name)
 
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingType)
 	}
 

@@ -23,11 +23,11 @@ func (c *Compiler) reference() *errors.EgoError {
 
 		switch op {
 		// Structure initialization
-		case "{":
+		case tokenizer.DataBeginToken:
 			name := c.t.Peek(2)
 			colon := c.t.Peek(3)
 
-			if tokenizer.IsSymbol(name) && colon == ":" {
+			if tokenizer.IsSymbol(name) && colon == tokenizer.ColonToken {
 				c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 				err := c.expressionAtom()
@@ -70,13 +70,13 @@ func (c *Compiler) reference() *errors.EgoError {
 
 			c.b.Emit(bytecode.Member, lastName)
 
-			if c.t.IsNext("{}") {
+			if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 				c.b.Emit(bytecode.Load, "new")
 				c.b.Emit(bytecode.Swap)
 				c.b.Emit(bytecode.Call, 1)
 			} else {
 				// Is it a generator for a type?
-				if c.t.Peek(1) == "{" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == ":" {
+				if c.t.Peek(1) == tokenizer.DataBeginToken && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == tokenizer.ColonToken {
 					c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 					err := c.expressionAtom()
@@ -100,7 +100,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			// If there is an slice with an implied start of 0,
 			// handle that here.
 			t := c.t.Peek(1)
-			if t == ":" {
+			if t == tokenizer.ColonToken {
 				c.b.Emit(bytecode.Push, 0)
 			} else {
 				err := c.conditional()
@@ -110,7 +110,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			}
 
 			// is it a slice instead of an index?
-			if c.t.IsNext(":") {
+			if c.t.IsNext(tokenizer.ColonToken) {
 				// IS this the case of the assumed end being the
 				// length of the item? If so, add code to use the
 				// length of the item below current ToS. The actual

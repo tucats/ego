@@ -38,7 +38,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// If it's not a literal, there will be a function name, which must be a valid
 	// symbol name. It might also be an object-oriented (a->b()) call.
 	if !isLiteral {
-		if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+		if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 			return c.newError(errors.ErrMissingFunctionName)
 		}
 
@@ -132,7 +132,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	for {
 		coercion := bytecode.New(fmt.Sprintf("%s return item %d", functionName, returnValueCount))
 
-		if c.t.Peek(1) == "{" || c.t.Peek(1) == "{}" {
+		if c.t.Peek(1) == tokenizer.BlockBeginToken || c.t.Peek(1) == tokenizer.EmptyBlockToken {
 			wasVoid = true
 		} else {
 			k, err := c.typeDeclaration()
@@ -147,7 +147,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 			coercions = append(coercions, coercion)
 		}
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			break
 		}
 
@@ -260,7 +260,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 
 	// Start with the function name,  which must be a valid
 	// symbol name.
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return nil, c.newError(errors.ErrMissingFunctionName)
 	}
 
@@ -299,7 +299,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 
 		funcDef.ReturnTypes = append(funcDef.ReturnTypes, theType)
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			break
 		}
 
@@ -414,7 +414,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			}
 
 			parameters = append(parameters, p)
-			_ = c.t.IsNext(",")
+			_ = c.t.IsNext(tokenizer.CommaToken)
 		}
 	} else {
 		return parameters, hasVarArgs, c.newError(errors.ErrMissingParameterList)

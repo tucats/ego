@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 type DatabaseService struct {
@@ -77,7 +78,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 
 	// If there was a password specified in the URL, blank it out now before we log it.
 	if pstr, found := url.User.Password(); found {
-		svc.constr = strings.ReplaceAll(connStr, ":"+pstr+"@", ":"+strings.Repeat("*", len(pstr))+"@")
+		svc.constr = strings.ReplaceAll(connStr, tokenizer.ColonToken+pstr+"@", tokenizer.ColonToken+strings.Repeat("*", len(pstr))+"@")
 	} else {
 		svc.constr = connStr
 	}

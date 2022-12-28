@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 )
 
 type UserIOService interface {
@@ -35,7 +36,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	defaultPassword := "password"
 
 	if up := settings.Get(defs.DefaultCredentialSetting); up != "" {
-		if pos := strings.Index(up, ":"); pos >= 0 {
+		if pos := strings.Index(up, tokenizer.ColonToken); pos >= 0 {
 			defaultUser = up[:pos]
 			defaultPassword = strings.TrimSpace(up[pos+1:])
 		} else {

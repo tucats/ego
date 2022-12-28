@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // compileReturn handles the return statement compilation.
@@ -38,7 +39,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 
 		returnExpressions = append(returnExpressions, bc)
 
-		if !c.t.IsNext(",") {
+		if !c.t.IsNext(tokenizer.CommaToken) {
 			break
 		}
 	}

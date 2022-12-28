@@ -41,11 +41,11 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	}
 
 	// Not auto-anything, so verify that this is a legit assignment
-	if !c.t.AnyNext(":=", "=", "<-", "+=", "-=", "*=", "/=") {
+	if !c.t.AnyNext(tokenizer.AssignToken, "=", "<-", "+=", "-=", "*=", "/=") {
 		return c.newError(errors.ErrMissingAssignment)
 	}
 
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
 
@@ -68,7 +68,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 
 	if mode != bytecode.NoOperation {
 		c.t.Set(start)
-		
+
 		e1, err := c.Expression()
 		if !errors.Nil(err) {
 			return err

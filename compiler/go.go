@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Compiler) compileGo() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingFunction)
 	}
 
@@ -61,7 +61,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 			break
 		}
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			return c.newError(errors.ErrInvalidList)
 		}
 

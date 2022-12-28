@@ -10,7 +10,7 @@ import (
 // Compile an initializer, given a type definition. This can be a literal
 // initializer in braces or a simple value.
 func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
-	if !c.t.IsNext("{") {
+	if !c.t.IsNext(tokenizer.DataBeginToken) {
 		// It's not an initializer constant, but it could still be an expression. Try the
 		// top-level expression compiler.
 		return c.conditional()
@@ -25,7 +25,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 	case datatypes.StructKind:
 		count := 0
 
-		for !c.t.IsNext("}") {
+		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Pairs of name:value
 			name := c.t.Next()
 			if !tokenizer.IsSymbol(name) {
@@ -39,7 +39,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 				return err
 			}
 
-			if !c.t.IsNext(":") {
+			if !c.t.IsNext(tokenizer.ColonToken) {
 				return c.newError(errors.ErrMissingColon)
 			}
 
@@ -53,11 +53,11 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 
 			count++
 
-			if c.t.IsNext("}") {
+			if c.t.IsNext(tokenizer.DataEndToken) {
 				break
 			}
 
-			if !c.t.IsNext(",") {
+			if !c.t.IsNext(tokenizer.CommaToken) {
 				return c.newError(errors.ErrInvalidList)
 			}
 		}
@@ -71,7 +71,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 	case datatypes.MapKind:
 		count := 0
 
-		for !c.t.IsNext("}") {
+		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Pairs of values with a colon between.
 			err := c.unary()
 			if !errors.Nil(err) {
@@ -80,7 +80,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 
 			c.b.Emit(bytecode.Coerce, base.KeyType())
 
-			if !c.t.IsNext(":") {
+			if !c.t.IsNext(tokenizer.ColonToken) {
 				return c.newError(errors.ErrMissingColon)
 			}
 
@@ -93,11 +93,11 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 
 			count++
 
-			if c.t.IsNext("}") {
+			if c.t.IsNext(tokenizer.DataEndToken) {
 				break
 			}
 
-			if !c.t.IsNext(",") {
+			if !c.t.IsNext(tokenizer.CommaToken) {
 				return c.newError(errors.ErrInvalidList)
 			}
 		}
@@ -111,7 +111,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 	case datatypes.ArrayKind:
 		count := 0
 
-		for !c.t.IsNext("}") {
+		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Values separated by commas.
 			err := c.compileInitializer(base.BaseType())
 			if !errors.Nil(err) {
@@ -120,11 +120,11 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 
 			count++
 
-			if c.t.IsNext("}") {
+			if c.t.IsNext(tokenizer.DataEndToken) {
 				break
 			}
 
-			if !c.t.IsNext(",") {
+			if !c.t.IsNext(tokenizer.CommaToken) {
 				return c.newError(errors.ErrInvalidList)
 			}
 		}

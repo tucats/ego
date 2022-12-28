@@ -11,7 +11,7 @@ import (
 // compileFor compiles the loop statement. This has four syntax types that
 // can be specified.
 //
-//  1. There are three clauses which are separated by ";", followed
+//  1. There are three clauses which are separated by tokenizer.SemicolonToken, followed
 //     by a statement or block that is run as described by the loop
 //     index variable conditions.
 //
@@ -28,18 +28,18 @@ import (
 //     statement inside the loop, which algorithmically stops
 //     the loop
 func (c *Compiler) compileFor() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
 
-	if c.t.IsNext("{}") {
+	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		return c.newError(errors.ErrLoopExit)
 	}
 
 	c.b.Emit(bytecode.PushScope)
 
 	// Is this a for{} with no conditional or iterator?
-	if c.t.Peek(1) == "{" {
+	if c.t.Peek(1) == tokenizer.BlockBeginToken {
 		return c.simpleFor()
 	}
 
@@ -47,7 +47,7 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	indexName := c.t.Peek(1)
 	valueName := ""
 
-	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == ",") {
+	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == tokenizer.CommaToken) {
 		c.t.Advance(2)
 		valueName = c.t.Peek(1)
 	}
@@ -70,7 +70,7 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	// drop the marker.
 	defer c.b.Emit(bytecode.DropToMarker)
 
-	if !c.t.IsNext(":=") {
+	if !c.t.IsNext(tokenizer.AssignToken) {
 		return c.newError(errors.ErrMissingLoopAssignment)
 	}
 
@@ -302,7 +302,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Append(initializerCode)
 	c.b.Append(indexStore)
 
-	if !c.t.IsNext(";") {
+	if !c.t.IsNext(tokenizer.SemicolonToken) {
 		return c.newError(errors.ErrMissingSemicolon)
 	}
 
@@ -313,7 +313,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		return err
 	}
 
-	if !c.t.IsNext(";") {
+	if !c.t.IsNext(tokenizer.SemicolonToken) {
 		return c.newError(errors.ErrMissingSemicolon)
 	}
 

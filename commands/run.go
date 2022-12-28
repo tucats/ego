@@ -253,7 +253,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// If this is the exit command, turn off the debugger to prevent and endless loop
-		if t != nil && len(t.Tokens) > 0 && t.Tokens[0] == "exit" {
+		if t != nil && len(t.Tokens) > 0 && t.Tokens[0] == tokenizer.ExitToken {
 			debug = false
 		}
 

@@ -7,7 +7,7 @@ import (
 )
 
 func (c *Compiler) compileDefer() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingStatement)
 	}
 

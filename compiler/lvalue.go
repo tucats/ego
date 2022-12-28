@@ -35,7 +35,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 	// is a valid/correct lvalue. We also stop searching at some point.
 	for i := 2; i < 100; i = i + 1 {
 		t := c.t.Peek(i)
-		if util.InList(t, ":=", "=", "<-", "+=", "-=", "*=", "/=") {
+		if util.InList(t, tokenizer.AssignToken, "=", "<-", "+=", "-=", "*=", "/=") {
 			return true
 		}
 
@@ -53,7 +53,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 			return false
 		}
 
-		if util.InList(t, "{", ";", tokenizer.EndOfTokens) {
+		if util.InList(t, tokenizer.BlockBeginToken, tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 			return false
 		}
 	}
@@ -108,7 +108,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 
 		count++
 
-		if c.t.Peek(1) == "," {
+		if c.t.Peek(1) == tokenizer.CommaToken {
 			c.t.Advance(1)
 
 			isLvalueList = true
@@ -116,7 +116,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 			continue
 		}
 
-		if util.InList(c.t.Peek(1), "=", ":=", "<-") {
+		if util.InList(c.t.Peek(1), "=", tokenizer.AssignToken, "<-") {
 			break
 		}
 	}
@@ -190,10 +190,10 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment
-		if util.InList(c.t.Peek(1), "=", ":=") && c.t.Peek(2) == "<-" {
+		if util.InList(c.t.Peek(1), "=", tokenizer.AssignToken) && c.t.Peek(2) == "<-" {
 			c.t.Advance(1)
 		}
-		if c.t.Peek(1) == ":=" {
+		if c.t.Peek(1) == tokenizer.AssignToken {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
 

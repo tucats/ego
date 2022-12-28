@@ -11,7 +11,7 @@ import (
 func (c *Compiler) compileSwitch() *errors.EgoError {
 	var defaultBlock *bytecode.ByteCode
 
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
 
@@ -29,25 +29,25 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 	c.b.Emit(bytecode.SymbolCreate, t)
 	c.b.Emit(bytecode.Store, t)
 
-	if !c.t.IsNext("{") {
+	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		return c.newError(errors.ErrMissingBlock)
 	}
 
-	for !c.t.IsNext("}") {
+	for !c.t.IsNext(tokenizer.BlockEndToken) {
 		if next > 0 {
 			_ = c.b.SetAddressHere(next)
 		}
 
 		// Could be a default statement:
-		if c.t.IsNext("default") {
-			if !c.t.IsNext(":") {
+		if c.t.IsNext(tokenizer.DefaultToken) {
+			if !c.t.IsNext(tokenizer.ColonToken) {
 				return c.newError(errors.ErrMissingColon)
 			}
 
 			savedBC := c.b
 			c.b = bytecode.New("default switch")
 
-			for c.t.Peek(1) != "case" && c.t.Peek(1) != "}" {
+			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
 				err := c.compileStatement()
 				if !errors.Nil(err) {
 					return err
@@ -58,7 +58,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			c.b = savedBC
 		} else {
 			// Must be a "case" statement:
-			if !c.t.IsNext("case") {
+			if !c.t.IsNext(tokenizer.CaseToken) {
 				return c.newError(errors.ErrMissingCase)
 			}
 
@@ -75,11 +75,11 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 
 			c.b.Emit(bytecode.BranchFalse, 0)
 
-			if !c.t.IsNext(":") {
+			if !c.t.IsNext(tokenizer.ColonToken) {
 				return c.newError(errors.ErrMissingColon)
 			}
 
-			for c.t.Peek(1) != "case" && c.t.Peek(1) != "default" && c.t.Peek(1) != "}" {
+			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.DefaultToken && c.t.Peek(1) != tokenizer.BlockEndToken {
 				err := c.compileStatement()
 				if !errors.Nil(err) {
 					return err

@@ -13,11 +13,11 @@ import (
 func (c *Compiler) compileStatement() *errors.EgoError {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return nil
 	}
 
-	if c.t.IsNext("{}") {
+	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		// Empty body at end of token array means no more at-lines...
 		if c.t.TokenP < len(c.t.Line) {
 			c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP])
@@ -92,10 +92,10 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	// also valid.
 	if c.functionDepth > 0 {
 		switch verb {
-		case "{":
+		case tokenizer.BlockBeginToken:
 			return c.compileBlock()
 
-		case "assert":
+		case tokenizer.AssertToken:
 			if c.extensionsEnabled {
 				return c.Assert()
 			}
@@ -105,7 +105,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 		case tokenizer.BreakToken:
 			return c.compileBreak()
 
-		case "call":
+		case tokenizer.CallToken:
 			if c.extensionsEnabled {
 				return c.compileFunctionCall()
 			}
@@ -116,7 +116,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 		case tokenizer.DeferToken:
 			return c.compileDefer()
 
-		case "exit":
+		case tokenizer.ExitToken:
 			if c.exitEnabled {
 				return c.compileExit()
 			}
@@ -180,10 +180,10 @@ func (c *Compiler) isFunctionCall() bool {
 
 		// Is this a reserved word or delimiter punctuation? IF so we've shot past the statement
 		if subexpr == 0 && util.InList(t,
-			";",
+			tokenizer.SemicolonToken,
 			"@",
-			"{",
-			",",
+			tokenizer.DataBeginToken,
+			tokenizer.AssignToken,
 			"+",
 			"/",
 			"*",
@@ -191,19 +191,19 @@ func (c *Compiler) isFunctionCall() bool {
 			"^",
 			"&",
 			"|",
-			"{",
+			tokenizer.DataBeginToken,
 			"==",
 			">=",
 			"<=",
 			"!=",
 			"==",
 			"=",
-			"assert",
+			tokenizer.AssertToken,
 			tokenizer.BreakToken,
-			"call",
+			tokenizer.CallToken,
 			tokenizer.ConstToken,
 			tokenizer.ContinueToken,
-			"exit",
+			tokenizer.ExitToken,
 			tokenizer.ForToken,
 			tokenizer.FuncToken,
 			tokenizer.GoToken,

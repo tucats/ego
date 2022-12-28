@@ -339,7 +339,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 func (c *Compiler) isStatementEnd() bool {
 	next := c.t.Peek(1)
 
-	return util.InList(next, tokenizer.EndOfTokens, ";", "}")
+	return util.InList(next, tokenizer.EndOfTokens, tokenizer.SemicolonToken, tokenizer.BlockEndToken)
 }
 
 // Symbols returns the symbol table map from compilation.

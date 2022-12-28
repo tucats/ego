@@ -306,7 +306,7 @@ func (c *Compiler) Fail() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 
 	next := c.t.Peek(1)
-	if next != "@" && next != ";" && next != tokenizer.EndOfTokens {
+	if next != "@" && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
 		if !errors.Nil(err) {
 			return err

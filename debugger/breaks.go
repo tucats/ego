@@ -69,7 +69,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 		case "at":
 			name := t.Next()
 
-			if t.Peek(1) == ":" {
+			if t.Peek(1) == tokenizer.ColonToken {
 				t.Advance(1)
 			} else {
 				name = "main"

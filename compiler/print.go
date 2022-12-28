@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // compilePrint compiles a print statement. The verb is already removed
@@ -11,7 +12,7 @@ func (c *Compiler) compilePrint() *errors.EgoError {
 	newline := true
 
 	for !c.isStatementEnd() {
-		if c.t.IsNext(",") {
+		if c.t.IsNext(tokenizer.CommaToken) {
 			return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
 		}
 
@@ -25,7 +26,7 @@ func (c *Compiler) compilePrint() *errors.EgoError {
 		c.b.Append(bc)
 		c.b.Emit(bytecode.Print)
 
-		if !c.t.IsNext(",") {
+		if !c.t.IsNext(tokenizer.CommaToken) {
 			break
 		}
 

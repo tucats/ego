@@ -51,20 +51,20 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	// Is it a known complex type?
 
 	// Empty interface
-	if c.t.Peek(1) == "interface" && c.t.Peek(2) == "{}" {
+	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.EmptyInitializerToken {
 		c.t.Advance(2)
 
 		return &datatypes.InterfaceType, nil
 	}
 
 	// Interfaces
-	if c.t.Peek(1) == "interface" && c.t.Peek(2) == "{" {
+	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		c.t.Advance(2)
 
 		t := datatypes.NewInterfaceType(name)
 
 		// Parse function declarations, add to the type object.
-		for !c.t.IsNext("}") {
+		for !c.t.IsNext(tokenizer.DataEndToken) {
 			f, err := c.parseFunctionDeclaration()
 			if !errors.Nil(err) {
 				return &datatypes.UndefinedType, err
@@ -77,7 +77,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	}
 
 	// Maps
-	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
+	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == "[" {
 		c.t.Advance(2)
 
 		keyType, err := c.parseType("", false)
@@ -98,11 +98,11 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	}
 
 	// Structures
-	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == "{" {
+	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		t := datatypes.Structure()
 		c.t.Advance(2)
 
-		for !c.t.IsNext("}") {
+		for !c.t.IsNext(tokenizer.DataEndToken) {
 			name := c.t.Next()
 			if !tokenizer.IsSymbol(name) {
 				return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
@@ -124,7 +124,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 
 								// Skip past the tokens and any optional trailing comma
 								c.t.Advance(2)
-								c.t.IsNext(",")
+								c.t.IsNext(tokenizer.CommaToken)
 
 								continue
 							}
@@ -137,7 +137,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 			// over its fields, copying them into our current structure definition.
 			if typeData, found := c.Types[name]; found {
 				embedType(t, typeData)
-				c.t.IsNext(",")
+				c.t.IsNext(tokenizer.CommaToken)
 
 				continue
 			}
@@ -149,7 +149,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 			fieldNames := make([]string, 1)
 			fieldNames[0] = name
 
-			for c.t.IsNext(",") {
+			for c.t.IsNext(tokenizer.CommaToken) {
 				nextField := c.t.Next()
 				if !tokenizer.IsSymbol(nextField) {
 					return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
@@ -167,7 +167,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 				t.DefineField(fieldName, fieldType)
 			}
 
-			c.t.IsNext(",")
+			c.t.IsNext(tokenizer.CommaToken)
 		}
 
 		return t, nil

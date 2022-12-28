@@ -141,11 +141,11 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is it a map constant?
-	if t == "{" {
+	if t == tokenizer.DataBeginToken {
 		return c.parseStruct()
 	}
 
-	if t == tokenizer.StructToken && c.t.Peek(2) == "{" {
+	if t == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		c.t.Advance(1)
 
 		return c.parseStruct()
@@ -234,13 +234,13 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 		if typeSpec, err := c.parseType("", true); err == nil {
 			// Is there an initial value for the type?
-			if c.t.Peek(1) == "{" {
+			if c.t.Peek(1) == tokenizer.DataBeginToken {
 				err = c.compileInitializer(typeSpec)
 
 				return err
 			}
 
-			if c.t.IsNext("{}") {
+			if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 				c.b.Emit(bytecode.Load, "new")
 				c.b.Emit(bytecode.Push, typeSpec)
 				c.b.Emit(bytecode.Call, 1)

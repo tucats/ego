@@ -3,6 +3,7 @@ package compiler
 import (
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 func (c *Compiler) functionCall() *errors.EgoError {
@@ -32,7 +33,7 @@ func (c *Compiler) functionCall() *errors.EgoError {
 			break
 		}
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			return c.newError(errors.ErrInvalidList)
 		}
 

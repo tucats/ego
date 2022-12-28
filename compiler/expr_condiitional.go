@@ -3,6 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // conditional handles parsing the ?: trinary operator. The first term is
@@ -33,7 +34,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 		return err
 	}
 
-	if c.t.AtEnd() || c.t.Peek(1) != ":" {
+	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.ColonToken {
 		return c.newError(errors.ErrMissingColon)
 	}
 

@@ -247,7 +247,7 @@ func splitSQLStatements(s string) []string {
 
 	for !t.AtEnd() {
 		token := t.Next()
-		if token == ";" {
+		if token == tokenizer.SemicolonToken {
 			if len(strings.TrimSpace(next)) > 0 {
 				result = append(result, next)
 			}

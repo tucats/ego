@@ -340,7 +340,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		t := tokenizer.New(columnDefText)
 		column := t.Next()
 
-		if !t.IsNext(":") {
+		if !t.IsNext(tokenizer.ColonToken) {
 			return errors.New(errors.ErrInvalidColumnDefinition).Context(columnDefText)
 		}
 
@@ -364,7 +364,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrInvalidType).Context(columnType)
 		}
 
-		for t.IsNext(",") {
+		for t.IsNext(tokenizer.CommaToken) {
 			flag := t.Next()
 
 			switch strings.ToLower(flag) {
@@ -713,7 +713,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 				_ = t.AddRowItems(permission.User,
 					permission.Schema,
 					permission.Table,
-					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
+					strings.TrimPrefix(strings.Join(permission.Permissions, tokenizer.CommaToken), tokenizer.CommaToken),
 				)
 			}
 

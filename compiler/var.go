@@ -40,7 +40,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		name = c.normalize(name)
 		names = append(names, name)
 
-		if !c.t.IsNext(",") {
+		if !c.t.IsNext(tokenizer.CommaToken) {
 			break
 		}
 	}

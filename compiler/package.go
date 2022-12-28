@@ -18,7 +18,7 @@ import (
 
 // compilePackage compiles a package statement.
 func (c *Compiler) compilePackage() *errors.EgoError {
-	if c.t.AnyNext(";", tokenizer.EndOfTokens) {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingPackageName)
 	}
 
@@ -198,7 +198,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 				for idx, k := range keys {
 					if idx > 0 {
-						keyString = keyString + ","
+						keyString = keyString + tokenizer.CommaToken
 					}
 
 					keyString = keyString + k

@@ -58,12 +58,12 @@ var crushedTokens = []crushedToken{
 		result: "--",
 	},
 	{
-		source: []string{"interface", "{", "}"},
-		result: "interface{}",
+		source: []string{InterfaceToken, DataBeginToken, DataEndToken},
+		result: EmptyInterfaceToken,
 	},
 	{
-		source: []string{"{", "}"},
-		result: "{}",
+		source: []string{BlockBeginToken, BlockEndToken},
+		result: EmptyBlockToken,
 	},
 	{
 		source: []string{".", ".", "."},
@@ -94,8 +94,8 @@ var crushedTokens = []crushedToken{
 		result: "!=",
 	},
 	{
-		source: []string{":", "="},
-		result: ":=",
+		source: []string{ColonToken, "="},
+		result: AssignToken,
 	},
 	{
 		source: []string{"&", "&"},

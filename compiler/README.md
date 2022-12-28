@@ -275,7 +275,7 @@ loop. There are two kinds of loops.
 
 This example creates an array, and then uses a loop to read all
 the values of the array. The `for` statement is followed by three
-clauses, each separated by a ";" character. The first clause must
+clauses, each separated by a tokenizer.SemicolonToken character. The first clause must
 be a valid assignment that initializes the loop value. The second
 clause is a condition which is tested at the start of each loop;
 when the condition results in a false value, the loop stop 

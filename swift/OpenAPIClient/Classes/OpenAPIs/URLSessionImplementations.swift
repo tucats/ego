@@ -262,7 +262,7 @@ open class URLSessionRequestBuilder<T>: RequestBuilder<T> {
             return nil
         }
 
-        let items = contentDisposition.components(separatedBy: ";")
+        let items = contentDisposition.components(separatedBy: tokenizer.SemicolonToken)
 
         var filename: String?
 

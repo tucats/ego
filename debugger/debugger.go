@@ -139,7 +139,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			case "set":
 				err = runAfterFirstToken(s, tokens, false)
 
-			case "call":
+			case tokenizer.CallToken:
 				err = runAfterFirstToken(s, tokens, true)
 
 			case tokenizer.PrintToken:
@@ -159,7 +159,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			case tokenizer.BreakToken:
 				err = Break(c, tokens)
 
-			case "exit":
+			case tokenizer.ExitToken:
 				return errors.New(errors.ErrStop)
 
 			default:
@@ -238,10 +238,10 @@ func getLine() string {
 				case ")":
 					parenCount--
 
-				case "{":
+				case tokenizer.DataBeginToken:
 					braceCount++
 
-				case "}":
+				case tokenizer.DataEndToken:
 					braceCount--
 				}
 			}

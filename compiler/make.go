@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 func (c *Compiler) makeInvocation() *errors.EgoError {
@@ -44,7 +45,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 		}
 	}
 
-	if !c.t.IsNext(",") {
+	if !c.t.IsNext(tokenizer.CommaToken) {
 		return c.newError(errors.ErrInvalidList)
 	}
 
