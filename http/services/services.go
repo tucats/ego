@@ -292,7 +292,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&credentials)
 		if errors.Nil(err) && credentials.Username != "" && credentials.Password != "" {
 			// Create the authorization header from the payload
-			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+tokenizer.ColonToken+credentials.Password))
+			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			r.Header.Set("Authorization", authorization)
 			ui.Debug(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
 		} else {

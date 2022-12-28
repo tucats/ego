@@ -1,6 +1,5 @@
-[
-    {
-        "operationtokenizer.ColonTokensymbols",
+[{
+        "operation": "symbols",
         "data": {
             "name": "key"
         }

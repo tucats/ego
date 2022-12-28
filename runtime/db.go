@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/tokenizer"
 
 	// Blank imports to make sure we link in the database drivers.
 	_ "github.com/lib/pq"
@@ -71,7 +70,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 	// If there was a password specified in the URL, blank it out now before we log it.
 	if secretString, found := url.User.Password(); found {
-		connStr = strings.ReplaceAll(connStr, tokenizer.ColonToken+secretString+"@", tokenizer.ColonToken+strings.Repeat("*", len(secretString))+"@")
+		connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
 	}
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)

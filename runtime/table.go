@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/tokenizer"
 )
 
 type column struct {
@@ -52,8 +51,8 @@ func initTableTypeDef() {
 // TableNew implements the New() table package function. This accepts a list
 // of column names (as individual arguments or an array of strings) and allocates
 // a new table. Additionally, the column names can contain alignment information;
-// a name with a leading tokenizer.ColonToken is left-aligned, and a trailing tokenizer.ColonToken is right-
-// aligned. In either case the tokenizer.ColonToken is removed from the name.
+// a name with a leading ":" is left-aligned, and a trailing":" is right-
+// aligned. In either case the ":" is removed from the name.
 func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
 	if len(args) == 0 {
 		return nil, errors.New(errors.ErrArgumentCount)
@@ -79,21 +78,21 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	// Scan over the heading strings and look for alignment cues. If found,
-	// remove the tokenizer.ColonToken cue character, and record the specified (or default)
+	// remove the":" cue character, and record the specified (or default)
 	// alignment for each column.
 	align := make([]int, len(headings))
 
 	for i := 0; i < len(headings); i = i + 1 {
 		h := headings[i]
-		if strings.HasPrefix(h, tokenizer.ColonToken) && strings.HasSuffix(h, tokenizer.ColonToken) {
+		if strings.HasPrefix(h, ":") && strings.HasSuffix(h, ":") {
 			align[i] = tables.AlignmentCenter
-			headings[i] = strings.TrimPrefix(strings.TrimSuffix(h, tokenizer.ColonToken), tokenizer.ColonToken)
-		} else if strings.HasPrefix(h, tokenizer.ColonToken) {
+			headings[i] = strings.TrimPrefix(strings.TrimSuffix(h, ":"), ":")
+		} else if strings.HasPrefix(h, ":") {
 			align[i] = tables.AlignmentLeft
-			headings[i] = strings.TrimPrefix(h, tokenizer.ColonToken)
-		} else if strings.HasSuffix(h, tokenizer.ColonToken) {
+			headings[i] = strings.TrimPrefix(h, ":")
+		} else if strings.HasSuffix(h, ":") {
 			align[i] = tables.AlignmentRight
-			headings[i] = strings.TrimSuffix(h, tokenizer.ColonToken)
+			headings[i] = strings.TrimSuffix(h, ":")
 		} else {
 			align[i] = tables.AlignmentLeft
 		}

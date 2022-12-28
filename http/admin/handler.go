@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/http/server"
-	"github.com/tucats/ego/tokenizer"
 )
 
 const (
@@ -29,7 +28,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	server.CountRequest(server.AdminRequestCounter)
 
 	if forward := r.Header.Get(forwardedForHeader); forward != "" {
-		addrs := strings.Split(forward, tokenizer.CommaToken)
+		addrs := strings.Split(forward, ",")
 		requestor = addrs[0]
 	}
 

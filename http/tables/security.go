@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
 
@@ -428,7 +427,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, stripQuotes(user), stripQuotes(tableName))
 	if err != nil {
-		return errors.New(err).Context(user + tokenizer.ColonToken + tableName)
+		return errors.New(err).Context(user + ":" + tableName)
 	}
 
 	defer rows.Close()

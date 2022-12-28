@@ -7,7 +7,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/tokenizer"
 )
 
 // Define data types as abstract identifiers. These are the base
@@ -885,7 +884,7 @@ func (t Type) Reflect() *EgoStruct {
 	r[TypeMDName] = t.TypeString()
 	if t.IsTypeDefinition() {
 		r["basetype"] = t.valueType.TypeString()
-		r[TypeMDName] = tokenizer.TypeToken
+		r[TypeMDName] = "type"
 	}
 
 	methodList := t.FunctionNameList()

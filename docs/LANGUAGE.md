@@ -1621,10 +1621,10 @@ hours := 40
 pay := ?emp.wage : 25.0 * hours
 ```
 
-The "?" indicates that the following expression component (up to the tokenizer.ColonToken)
+The "?" indicates that the following expression component (up to the ":")
 is wrapped in a try/catch block. If no error occurs, the expression is
 used as specified. But if there is an error ("no such structure field",
-for example) then the expression after the tokenizer.ColonToken is used instead. So in the
+for example) then the expression after the ":" is used instead. So in the
 above example, because there isn't a `wage` field in this employee's
 record, the program assumes a wage of $25/hour in the calculation of
 the pay.
@@ -3301,7 +3301,7 @@ t.Print()
 t.Close()
 ```
 
-This sample program creates a table with three column headings. The use of the tokenizer.ColonToken
+This sample program creates a table with three column headings. The use of the ":"
 character controls alignment for the column. If the colon is at the left or right
 side of the heading, that is how the heading is aligned. If no colon is used, then
 the default is left-aligned.
@@ -3642,7 +3642,7 @@ loacalized string.
     },
     "es": {
         "hello.msg": "hola, {{.Name}}",
-        "goodbye.msgtokenizer.ColonTokenadios"
+        "goodbye.msg":"adios"
     }
 }
 

@@ -961,7 +961,7 @@ Here is a sample payload with three transactions:
     },
     {
         "operation": "update",
-        "tabletokenizer.ColonTokenx6",
+        "table":"x6",
         "filters":[
             "EQ(description,'tx row')"
         ],
@@ -970,7 +970,7 @@ Here is a sample payload with three transactions:
         ],
         "emptyError": true,
         "data": {
-            "addresstokenizer.ColonToken666 Scary Drive"
+            "address":"666 Scary Drive"
             "description" : "tx row",
             "first": "Daffy",
             "last": "Duck",
