@@ -98,7 +98,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	}
 
 	// Structures
-	if c.t.Peek(1) == "struct" && c.t.Peek(2) == "{" {
+	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == "{" {
 		t := datatypes.Structure()
 		c.t.Advance(2)
 

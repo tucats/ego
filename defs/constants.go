@@ -4,6 +4,9 @@ package defs
 // in REST calls.
 const AuthScheme = "bearer "
 
+// Name of the default local host, in TCP/IP standards.
+const LocalHost = "localhost"
+
 // DefaultUserdataFileName is the default file system name of
 // the user database file, if not specified by the user.
 const DefaultUserdataFileName = "sqlite3://users.db"

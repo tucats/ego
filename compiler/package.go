@@ -184,7 +184,6 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			}
 
 			pkgData.Imported = true
-
 		} else {
 			ui.Debug(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
 		}

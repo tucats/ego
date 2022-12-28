@@ -1,43 +1,80 @@
 package tokenizer
 
+// Symbolic names for each string token value.
+const (
+	BoolToken      = "bool"
+	BreakToken     = "break"
+	ByteToken      = "byte"
+	CallToken      = "call"
+	CatchToken     = "catch"
+	ChanToken      = "chan"
+	ConstToken     = "const"
+	ContinueToken  = "continue"
+	DeferToken     = "defer"
+	ElseToken      = "else"
+	Float32Token   = "flaot32"
+	Float64Token   = "float64"
+	ForToken       = "for"
+	FuncToken      = "func"
+	GoToken        = "go"
+	IfToken        = "if"
+	IntToken       = "int"
+	Int32Token     = "int32"
+	Int64Token     = "int64"
+	InterfaceToken = "interface"
+	ImportToken    = "import"
+	MapToken       = "map"
+	NilToken       = "nil"
+	PackageToken   = "package"
+	PrintToken     = "print"
+	ReturnToken    = "return"
+	StringToken    = "string"
+	StructToken    = "struct"
+	SwitchToken    = "switch"
+	TypeToken      = "type"
+	TryToken       = "try"
+	VarToken       = "var"
+)
+
 // ReservedWords is the list of reserved words in the _Ego_ language.
 var ReservedWords = map[string]bool{
-	"bool":      true,
-	"break":     true,
-	"byte":      true,
-	"chan":      true,
-	"const":     true,
-	"continue":  true,
-	"defer":     true,
-	"else":      true,
-	"float32":   true,
-	"float64":   true,
-	"for":       true,
-	"func":      true,
-	"go":        true,
-	"if":        true,
-	"import":    true,
-	"interface": true,
-	"int":       true,
-	"int32":     true,
-	"int64":     true,
-	"map":       true,
-	"nil":       true,
-	"package":   true,
-	"return":    true,
-	"string":    true,
-	"struct":    true,
-	"type":      true,
-	"var":       true,
+	BoolToken:      true,
+	BreakToken:     true,
+	ByteToken:      true,
+	ChanToken:      true,
+	ConstToken:     true,
+	ContinueToken:  true,
+	DeferToken:     true,
+	ElseToken:      true,
+	Float32Token:   true,
+	Float64Token:   true,
+	ForToken:       true,
+	FuncToken:      true,
+	GoToken:        true,
+	IfToken:        true,
+	ImportToken:    true,
+	InterfaceToken: true,
+	IntToken:       true,
+	Int32Token:     true,
+	Int64Token:     true,
+	MapToken:       true,
+	NilToken:       true,
+	PackageToken:   true,
+	ReturnToken:    true,
+	SwitchToken:    true,
+	StringToken:    true,
+	StructToken:    true,
+	TypeToken:      true,
+	VarToken:       true,
 }
 
 // ExtendedReservedWords are additional reserved words when running with
 // language extensions enabled.
 var ExtendedReservedWords = map[string]bool{
-	"call":  true,
-	"catch": true,
-	"print": true,
-	"try":   true,
+	CallToken:  true,
+	CatchToken: true,
+	PrintToken: true,
+	TryToken:   true,
 }
 
 // IsReserved indicates if a name is a reserved word.

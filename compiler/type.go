@@ -111,7 +111,7 @@ func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 	name := ""
 
 	// Does it have a type <name> prefix? And is that a package.name style name?
-	if typeCompiler.t.IsNext("type") {
+	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
 		name = typeCompiler.t.Next()
 		if !tokenizer.IsSymbol(name) {
 			return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name)

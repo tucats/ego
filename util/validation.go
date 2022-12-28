@@ -12,6 +12,14 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+const (
+	FlagParameterType   = "flag"
+	BoolParameterType   = "bool"
+	IntParameterType    = "int"
+	StringParameterType = "string"
+	ListParameterType   = "list"
+)
+
 // ValidateParameters checks the parameters in a previously-parsed URL against a map
 // describing the expected parameters and types. IF there is no error, the function
 // returns nil, else an error describing the first parameter found that was invalid.
@@ -20,7 +28,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 	for name, values := range parameters {
 		if typeString, ok := validation[name]; ok {
 			switch strings.ToLower(typeString) {
-			case "flag":
+			case FlagParameterType:
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
@@ -29,7 +37,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-			case "int":
+			case IntParameterType:
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
@@ -38,7 +46,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 					return errors.New(errors.ErrInvalidInteger).Context(name)
 				}
 
-			case "bool":
+			case BoolParameterType:
 				if len(values) > 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
@@ -49,12 +57,12 @@ func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoErr
 					}
 				}
 
-			case defs.Any, "string":
+			case defs.Any, StringParameterType:
 				if len(values) != 1 {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-			case "list":
+			case ListParameterType:
 				if len(values) == 0 || values[0] == "" {
 					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
 				}

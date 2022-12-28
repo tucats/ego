@@ -71,25 +71,28 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// Is the type an string? If so it's a type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
-		case "byte":
+		case datatypes.ByteType.Name():
 			return byte(0), nil
 
 		case datatypes.Int32TypeName:
 			return int32(0), nil
 
-		case "int":
+		case datatypes.Int64TypeName:
+			return int64(0), nil
+
+		case datatypes.IntTypeName:
 			return 0, nil
 
-		case "string":
+		case datatypes.StringTypeName:
 			return "", nil
 
-		case "bool":
+		case datatypes.BoolType.Name():
 			return false, nil
 
-		case "float32":
+		case datatypes.Float32TypeName:
 			return float32(0), nil
 
-		case "float64":
+		case datatypes.Float64TypeName:
 			return float64(0), nil
 
 		default:

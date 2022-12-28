@@ -290,7 +290,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 		}
 
 		if name == "" {
-			name = "localhost"
+			name = defs.LocalHost
 		}
 	}
 

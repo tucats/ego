@@ -18,7 +18,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 	}
 
 	// Is it a function constant?
-	if fName == "func" {
+	if fName == tokenizer.FuncToken {
 		fName = datatypes.GenerateName()
 
 		// Compile a function literal onto the stack.

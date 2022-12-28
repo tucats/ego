@@ -38,7 +38,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	// Is it a function definition? These aren't compiled inline,
 	// so we call a special compile unit that will compile the
 	// function and store it in the bytecode symbol table.
-	if c.t.IsNext("func") {
+	if c.t.IsNext(tokenizer.FuncToken) {
 		return c.compileFunctionDefinition(false)
 	}
 
@@ -72,19 +72,19 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 
 	// First, check the statements that can appear anywhere.
 	switch verb {
-	case "const":
+	case tokenizer.ConstToken:
 		return c.compileConst()
 
-	case "import":
+	case tokenizer.ImportToken:
 		return c.compileImport()
 
-	case "package":
+	case tokenizer.PackageToken:
 		return c.compilePackage()
 
-	case "type":
+	case tokenizer.TypeToken:
 		return c.compileTypeDefinition()
 
-	case "var":
+	case tokenizer.VarToken:
 		return c.compileVar()
 	}
 
@@ -102,7 +102,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 
 			return c.newError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 
-		case "break":
+		case tokenizer.BreakToken:
 			return c.compileBreak()
 
 		case "call":
@@ -110,10 +110,10 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 				return c.compileFunctionCall()
 			}
 
-		case "continue":
+		case tokenizer.ContinueToken:
 			return c.compileContinue()
 
-		case "defer":
+		case tokenizer.DeferToken:
 			return c.compileDefer()
 
 		case "exit":
@@ -121,27 +121,27 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 				return c.compileExit()
 			}
 
-		case "for":
+		case tokenizer.ForToken:
 			return c.compileFor()
 
-		case "go":
+		case tokenizer.GoToken:
 			return c.compileGo()
 
-		case "if":
+		case tokenizer.IfToken:
 			return c.compileIf()
 
-		case "print":
+		case tokenizer.PrintToken:
 			if c.extensionsEnabled {
 				return c.compilePrint()
 			}
 
-		case "return":
+		case tokenizer.ReturnToken:
 			return c.compileReturn()
 
-		case "switch":
+		case tokenizer.SwitchToken:
 			return c.compileSwitch()
 
-		case "try":
+		case tokenizer.TryToken:
 			if c.extensionsEnabled {
 				return c.compileTry()
 			}
@@ -199,22 +199,22 @@ func (c *Compiler) isFunctionCall() bool {
 			"==",
 			"=",
 			"assert",
-			"break",
+			tokenizer.BreakToken,
 			"call",
-			"const",
-			"continue",
+			tokenizer.ConstToken,
+			tokenizer.ContinueToken,
 			"exit",
-			"for",
-			"func",
-			"go",
-			"if",
-			"import",
-			"package",
-			"return",
-			"switch",
-			"try",
-			"type",
-			"var",
+			tokenizer.ForToken,
+			tokenizer.FuncToken,
+			tokenizer.GoToken,
+			tokenizer.IfToken,
+			tokenizer.ImportToken,
+			tokenizer.PackageToken,
+			tokenizer.ReturnToken,
+			tokenizer.SwitchToken,
+			tokenizer.TryToken,
+			tokenizer.TypeToken,
+			tokenizer.VarToken,
 		) {
 			return false
 		}

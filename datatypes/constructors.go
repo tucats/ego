@@ -3,29 +3,29 @@ package datatypes
 // Prebuilt definitions for each given type.
 
 var UndefinedType = Type{
-	name: "undefined",
+	name: UndefinedTypeName,
 	kind: UndefinedKind,
 }
 
 var PackageType = Type{
-	name: "package",
+	name: PackageTypeName,
 	kind: PackageKind,
 }
 
 var StructType = Type{
-	name: "struct",
+	name: StructTypeName,
 	kind: StructKind,
 }
 
 var InterfaceType = Type{
-	name:      "interface{}",
+	name:      InterfaceTypeName,
 	kind:      InterfaceKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
 var ErrorType = Type{
-	name: "error",
+	name: ErrorTypeName,
 	kind: ErrorKind,
 }
 
@@ -143,7 +143,7 @@ func Map(key, value *Type) *Type {
 // can later add additional fields using the AddField method.
 func Structure(fields ...Field) *Type {
 	t := Type{
-		name:   "struct",
+		name:   StructTypeName,
 		kind:   StructKind,
 		fields: map[string]*Type{},
 	}

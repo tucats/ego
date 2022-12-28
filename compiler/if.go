@@ -35,7 +35,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 	}
 
 	// If there's an else clause, branch around it.
-	if c.t.IsNext("else") {
+	if c.t.IsNext(tokenizer.ElseToken) {
 		b2 := c.b.Mark()
 
 		c.b.Emit(bytecode.Branch, 0)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // Define data types as abstract identifiers. These are the base
@@ -46,14 +47,20 @@ const (
 )
 
 const (
-	StringTypeName  = "string"
-	BoolTypeName    = "bool"
-	ByteTypeName    = "byte"
-	IntTypeName     = "int"
-	Int32TypeName   = "int32"
-	Int64TypeName   = "int64"
-	Float32TypeName = "float32"
-	Float64TypeName = "float64"
+	StringTypeName    = "string"
+	BoolTypeName      = "bool"
+	ByteTypeName      = "byte"
+	IntTypeName       = "int"
+	Int32TypeName     = "int32"
+	Int64TypeName     = "int64"
+	Float32TypeName   = "float32"
+	Float64TypeName   = "float64"
+	StructTypeName    = "struct"
+	MapTypeName       = "map"
+	PackageTypeName   = "package"
+	InterfaceTypeName = "interface{}"
+	ErrorTypeName     = "error"
+	UndefinedTypeName = "undefined"
 )
 
 const (
@@ -246,7 +253,7 @@ func (t Type) String() string {
 	case StructKind:
 		// If there are fields, let's include that in the type info?
 		b := strings.Builder{}
-		b.WriteString("struct")
+		b.WriteString(StructTypeName)
 
 		if t.fields != nil && len(t.fields) > 0 {
 			b.WriteString("{")
@@ -875,10 +882,10 @@ func (t Type) Reflect() *EgoStruct {
 
 	r["istype"] = true
 
-	r["type"] = t.TypeString()
+	r[TypeMDName] = t.TypeString()
 	if t.IsTypeDefinition() {
 		r["basetype"] = t.valueType.TypeString()
-		r["type"] = "type"
+		r[TypeMDName] = tokenizer.TypeToken
 	}
 
 	methodList := t.FunctionNameList()

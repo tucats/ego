@@ -55,6 +55,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			if index > 0 {
 				list.WriteString(", ")
 			}
+			
 			list.WriteString(parm)
 		}
 

@@ -101,7 +101,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			case "help":
 				_ = Help()
 
-			case "go", "continue":
+			case tokenizer.GoToken, tokenizer.ContinueToken:
 				c.SetSingleStep(false)
 
 				prompt = false
@@ -119,7 +119,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				case "into":
 					c.SetStepOver(false)
 
-				case "return":
+				case tokenizer.ReturnToken:
 					c.SetBreakOnReturn()
 					c.SetSingleStep(false)
 
@@ -142,8 +142,8 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			case "call":
 				err = runAfterFirstToken(s, tokens, true)
 
-			case "print":
-				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
+			case tokenizer.PrintToken:
+				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), tokenizer.PrintToken, "", 1) + ")"
 				t2 := tokenizer.New(text)
 
 				traceMode := ui.LoggerIsActive(ui.TraceLogger)
@@ -156,7 +156,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				ui.SetLogger(ui.TraceLogger, traceMode)
 
-			case "break":
+			case tokenizer.BreakToken:
 				err = Break(c, tokens)
 
 			case "exit":

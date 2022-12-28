@@ -98,12 +98,13 @@ func Format(element interface{}) string {
 		var b strings.Builder
 
 		keys := v.Keys()
+		needsComma := false
 
 		b.WriteString("Pkg<")
 
-		needsComma := false
 		if v.Builtins {
 			b.WriteString("builtins")
+
 			needsComma = true
 		}
 

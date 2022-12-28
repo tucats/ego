@@ -307,7 +307,7 @@ func (s EgoStruct) String() string {
 func (s EgoStruct) Reflect() *EgoStruct {
 	m := map[string]interface{}{}
 
-	m["type"] = s.TypeString()
+	m[TypeMDName] = s.TypeString()
 	if s.typeDef.IsTypeDefinition() {
 		m["basetype"] = s.typeDef.BaseType().String()
 	} else {

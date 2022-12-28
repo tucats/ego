@@ -96,7 +96,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		t := datatypes.TypeOf(m)
 		if t.IsTypeDefinition() {
 			result[datatypes.TypeMDName] = t.Name()
-			result[datatypes.BasetypeMDName] = "package"
+			result[datatypes.BasetypeMDName] = datatypes.PackageTypeName
 		}
 
 		return datatypes.NewStructFromMap(result), nil
@@ -125,7 +125,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		t := datatypes.TypeOf(m)
 		if t.IsTypeDefinition() {
 			result[datatypes.TypeMDName] = t.Name()
-			result[datatypes.BasetypeMDName] = "package"
+			result[datatypes.BasetypeMDName] = datatypes.PackageTypeName
 		}
 
 		return datatypes.NewStructFromMap(result), nil
@@ -288,14 +288,14 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 func makeDeclaration(fd *datatypes.FunctionDeclaration) *datatypes.EgoStruct {
 	parameterType := datatypes.TypeDefinition(datatypes.NoName, &datatypes.StructType)
 	parameterType.DefineField("name", &datatypes.StringType)
-	parameterType.DefineField("type", &datatypes.StringType)
+	parameterType.DefineField(datatypes.TypeMDName, &datatypes.StringType)
 
 	parameters := datatypes.NewArray(parameterType, len(fd.Parameters))
 
 	for n, i := range fd.Parameters {
 		parameter := datatypes.NewStruct(parameterType)
 		_ = parameter.Set("name", i.Name)
-		_ = parameter.Set("type", i.ParmType.Name())
+		_ = parameter.Set(datatypes.TypeMDName, i.ParmType.Name())
 
 		_ = parameters.Set(n, parameter)
 	}

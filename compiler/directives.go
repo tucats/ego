@@ -122,7 +122,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	// Determine if we are in "real" http mode
 	httpMode := false
-	if c.t.Tokens[0] == "import" || util.InList(c.t.Tokens[1], "http", "\"http\"") {
+	if c.t.Tokens[0] == tokenizer.ImportToken || util.InList(c.t.Tokens[1], "http", "\"http\"") {
 		httpMode = true
 	}
 

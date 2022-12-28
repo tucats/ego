@@ -25,7 +25,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 	c.b.Emit(bytecode.Branch, 0)
 	_ = c.b.SetAddressHere(b1)
 
-	if !c.t.IsNext("catch") {
+	if !c.t.IsNext(tokenizer.CatchToken) {
 		return c.newError(errors.ErrMissingCatch)
 	}
 

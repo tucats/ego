@@ -601,7 +601,7 @@ var Messages = map[string]map[string]string{
 		"en": "missing statement",
 	},
 	"error.statement.not.found": {
-		"en": "unrecognized statement",
+		"en": "unexpected token",
 	},
 	"error.step.type": {
 		"en": "invalid step type",

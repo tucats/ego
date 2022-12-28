@@ -333,7 +333,7 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 // CoerceType will coerce an interface to a given type by name.
 func CoerceType(v interface{}, typeName string) interface{} {
 	switch typeName {
-	case "byte":
+	case ByteTypeName:
 		return Coerce(v, byte(0))
 
 	case Int32TypeName:

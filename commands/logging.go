@@ -21,7 +21,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 	if addr == "" {
 		addr = settings.Get(defs.LogonServerSetting)
 		if addr == "" {
-			addr = "localhost"
+			addr = defs.LocalHost
 		}
 	}
 

@@ -49,7 +49,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this the "nil" constant?
-	if t == "nil" {
+	if t == tokenizer.NilToken {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, nil)
 
@@ -65,7 +65,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this a function definition?
-	if t == "func" && c.t.Peek(2) == "(" {
+	if t == tokenizer.FuncToken && c.t.Peek(2) == "(" {
 		c.t.Advance(1)
 
 		return c.compileFunctionDefinition(true)
@@ -145,7 +145,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		return c.parseStruct()
 	}
 
-	if t == "struct" && c.t.Peek(2) == "{" {
+	if t == tokenizer.StructToken && c.t.Peek(2) == "{" {
 		c.t.Advance(1)
 
 		return c.parseStruct()
