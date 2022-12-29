@@ -19,11 +19,11 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	// Check for auto-increment or decrement
 	autoMode := bytecode.NoOperation
 
-	if c.t.Peek(1) == "++" {
+	if c.t.Peek(1) == tokenizer.IncrementToken {
 		autoMode = bytecode.Add
 	}
 
-	if c.t.Peek(1) == "--" {
+	if c.t.Peek(1) == tokenizer.DecrementToken {
 		autoMode = bytecode.Sub
 	}
 
@@ -41,7 +41,13 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	}
 
 	// Not auto-anything, so verify that this is a legit assignment
-	if !c.t.AnyNext(tokenizer.AssignToken, "=", "<-", "+=", "-=", "*=", "/=") {
+	if !c.t.AnyNext(tokenizer.DefineToken,
+		tokenizer.AssignToken,
+		tokenizer.ChannelReceiveToken,
+		tokenizer.AddAssignToken,
+		tokenizer.SubtractAssignToken,
+		tokenizer.MultiplyAssignToken,
+		tokenizer.DivideAssignToken) {
 		return c.newError(errors.ErrMissingAssignment)
 	}
 
@@ -53,16 +59,16 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	mode := bytecode.NoOperation
 
 	switch c.t.Peek(0) {
-	case "+=":
+	case tokenizer.AddAssignToken:
 		mode = bytecode.Add
 
-	case "-=":
+	case tokenizer.SubtractAssignToken:
 		mode = bytecode.Sub
 
-	case "*=":
+	case tokenizer.MultiplyAssignToken:
 		mode = bytecode.Mul
 
-	case "/=":
+	case tokenizer.DivideAssignToken:
 		mode = bytecode.Div
 	}
 
@@ -74,7 +80,10 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 			return err
 		}
 
-		if !c.t.AnyNext("+=", "-=", "*=", "/=") {
+		if !c.t.AnyNext(tokenizer.AddAssignToken,
+			tokenizer.SubtractAssignToken,
+			tokenizer.MultiplyAssignToken,
+			tokenizer.DivideAssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
@@ -92,7 +101,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	}
 
 	// If this is a construct like   x := <-ch   skip over the :=
-	_ = c.t.IsNext("<-")
+	_ = c.t.IsNext(tokenizer.ChannelReceiveToken)
 
 	expressionCode, err := c.Expression()
 	if !errors.Nil(err) {

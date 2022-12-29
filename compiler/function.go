@@ -22,9 +22,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	var err *errors.EgoError
 
 	coercions := []*bytecode.ByteCode{}
-	thisName := ""
-	functionName := ""
-	receiverType := ""
+	thisName := tokenizer.EmptyToken
+	functionName := tokenizer.EmptyToken
+	receiverType := tokenizer.EmptyToken
 	byValue := false
 
 	var fd *datatypes.FunctionDeclaration
@@ -87,7 +87,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.
-	if thisName != "" {
+	if thisName != tokenizer.EmptyToken {
 		b.Emit(bytecode.GetThis, thisName)
 
 		// If it was by value, make a copy of that so the function can't
@@ -124,7 +124,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	}
 
 	// Is there a list of return items (expressed as a parenthesis)?
-	hasReturnList := c.t.IsNext("(")
+	hasReturnList := c.t.IsNext(tokenizer.StartOfListToken)
 	returnValueCount := 0
 	wasVoid := false
 
@@ -160,7 +160,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	}
 
 	// If the return types were expressed as a list, there must be a trailing paren.
-	if hasReturnList && !c.t.IsNext(")") {
+	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
 		return c.newError(errors.ErrMissingParenthesis)
 	}
 
@@ -216,7 +216,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	if isLiteral {
 		c.b.Emit(bytecode.Push, b)
 	} else {
-		if receiverType != "" {
+		if receiverType != tokenizer.EmptyToken {
 			// If there was a receiver, make sure this function is added to the type structure
 			t, ok := c.Types[receiverType]
 			if !ok {
@@ -286,7 +286,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	}
 
 	// Is there a list of return items (expressed as a parenthesis)?
-	hasReturnList := c.t.IsNext("(")
+	hasReturnList := c.t.IsNext(tokenizer.StartOfListToken)
 
 	// Loop over the (possibly singular) return type specification. Currently
 	// we don't store this away, so it's discarded and we ignore any error. This
@@ -312,7 +312,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	}
 
 	// If the return types were expressed as a list, there must be a trailing paren.
-	if hasReturnList && !c.t.IsNext(")") {
+	if hasReturnList && !c.t.IsNext(tokenizer.EndOfListToken) {
 		return nil, c.newError(errors.ErrMissingParenthesis)
 	}
 
@@ -325,15 +325,15 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 func (c *Compiler) parseFunctionName() (functionName string, thisName string, typeName string, byValue bool, err *errors.EgoError) {
 	functionName = c.t.Next()
 	byValue = true
-	thisName = ""
-	typeName = ""
+	thisName = tokenizer.EmptyToken
+	typeName = tokenizer.EmptyToken
 
 	// Is this receiver notation?
-	if functionName == "(" {
+	if functionName == tokenizer.StartOfListToken {
 		thisName = c.t.Next()
-		functionName = ""
+		functionName = tokenizer.EmptyToken
 
-		if c.t.IsNext("*") {
+		if c.t.IsNext(tokenizer.PointerToken) {
 			byValue = false
 		}
 
@@ -350,7 +350,7 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 		}
 
 		// Must end with a closing paren for the receiver declaration.
-		if !errors.Nil(err) || !c.t.IsNext(")") {
+		if !errors.Nil(err) || !c.t.IsNext(tokenizer.EndOfListToken) {
 			err = c.newError(errors.ErrMissingParenthesis)
 		}
 
@@ -381,7 +381,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	hasVarArgs = false
 
 	if c.t.IsNext("(") {
-		for !c.t.IsNext(")") {
+		for !c.t.IsNext(tokenizer.EndOfListToken) {
 			if c.t.AtEnd() {
 				return parameters, hasVarArgs, c.newError(errors.ErrMissingParenthesis)
 			}
@@ -395,7 +395,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				return nil, false, c.newError(errors.ErrInvalidFunctionArgument)
 			}
 
-			if c.t.IsNext("...") {
+			if c.t.IsNext(tokenizer.VariadicToken) {
 				hasVarArgs = true
 			}
 

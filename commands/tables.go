@@ -260,7 +260,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		t := tokenizer.New(p)
 		column := t.Next()
 
-		if !t.IsNext("=") {
+		if !t.IsNext(tokenizer.AssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
@@ -432,7 +432,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		t := tokenizer.New(p)
 		column := t.Next()
 
-		if !t.IsNext("=") {
+		if !t.IsNext(tokenizer.AssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 

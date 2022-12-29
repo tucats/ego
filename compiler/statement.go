@@ -168,36 +168,39 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// Part of an object-oriented call?
-		if t == "->" {
+		// @tomcole is this really supported anymore?
+		if t == tokenizer.ChannelSendToken {
 			return true
 		}
 		// If this is a paren and there are no
 		// pending subexpression tokens, then this
 		// is a function calls
-		if t == "(" && subexpr == 0 {
+		if t == tokenizer.StartOfListToken && subexpr == 0 {
 			return true
 		}
 
 		// Is this a reserved word or delimiter punctuation? IF so we've shot past the statement
 		if subexpr == 0 && util.InList(t,
 			tokenizer.SemicolonToken,
-			"@",
+			tokenizer.DirectiveToken,
 			tokenizer.DataBeginToken,
+			tokenizer.DefineToken,
+			tokenizer.AddToken,
+			tokenizer.DivideToken,
+			tokenizer.MultiplyToken,
+			tokenizer.SubtractToken,
+			tokenizer.ExponentToken,
+			tokenizer.AndToken,
+			tokenizer.OrToken,
+			tokenizer.DataBeginToken,
+			tokenizer.EqualsToken,
+			tokenizer.GreaterThanToken,
+			tokenizer.GreaterThanOrEqualsToken,
+			tokenizer.LessThanToken,
+			tokenizer.LessThanOrEqualsToken,
+			tokenizer.NotEqualsToken,
+			tokenizer.EqualsToken,
 			tokenizer.AssignToken,
-			"+",
-			"/",
-			"*",
-			"-",
-			"^",
-			"&",
-			"|",
-			tokenizer.DataBeginToken,
-			"==",
-			">=",
-			"<=",
-			"!=",
-			"==",
-			"=",
 			tokenizer.AssertToken,
 			tokenizer.BreakToken,
 			tokenizer.CallToken,
@@ -236,7 +239,7 @@ func (c *Compiler) isFunctionCall() bool {
 
 		// if it's the end of an array subexpression, decrement
 		// the subexpression counter and keep going
-		if t == "]" {
+		if t == tokenizer.EndOfArrayToken {
 			subexpr--
 			pos++
 
@@ -245,7 +248,7 @@ func (c *Compiler) isFunctionCall() bool {
 
 		// If it's the start of an array subexpression, increment
 		// the subexpression counter and keep going.
-		if t == "[" {
+		if t == tokenizer.StartOfArrayToken {
 			subexpr++
 			pos++
 
@@ -253,7 +256,7 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// If it's a member dereference, keep on going.
-		if t == "." {
+		if t == tokenizer.DotToken {
 			pos++
 
 			continue
@@ -274,7 +277,7 @@ func (c *Compiler) isFunctionCall() bool {
 }
 
 func (c *Compiler) compilePanic() *errors.EgoError {
-	if !c.t.IsNext("(") {
+	if !c.t.IsNext(tokenizer.StartOfListToken) {
 		return errors.New(errors.ErrMissingParenthesis)
 	}
 
@@ -285,7 +288,7 @@ func (c *Compiler) compilePanic() *errors.EgoError {
 
 	c.b.Emit(bytecode.Panic)
 
-	if !c.t.IsNext(")") {
+	if !c.t.IsNext(tokenizer.EndOfListToken) {
 		return errors.New(errors.ErrMissingParenthesis)
 	}
 

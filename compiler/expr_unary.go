@@ -3,13 +3,14 @@ package compiler
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/tokenizer"
 )
 
 func (c *Compiler) unary() *errors.EgoError {
 	// Check for unary negation or not before passing into top-level diadic operators.
 	t := c.t.Peek(1)
 	switch t {
-	case "-":
+	case tokenizer.NegateToken:
 		c.t.Advance(1)
 
 		err := c.unary()
@@ -56,7 +57,7 @@ func (c *Compiler) unary() *errors.EgoError {
 			c.b.Emit(bytecode.Negate, false)
 		}
 
-	case "!":
+	case tokenizer.NotToken:
 		c.t.Advance(1)
 
 		err := c.unary()

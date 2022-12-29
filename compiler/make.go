@@ -8,18 +8,18 @@ import (
 )
 
 func (c *Compiler) makeInvocation() *errors.EgoError {
-	if !c.t.IsNext("make") {
+	if !c.t.IsNext(tokenizer.MakeToken) {
 		return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
 	}
 
-	if !c.t.IsNext("(") {
+	if !c.t.IsNext(tokenizer.StartOfListToken) {
 		return c.newError(errors.ErrMissingParenthesis)
 	}
 
 	c.b.Emit(bytecode.Load, "make")
 
 	// is this a channel?
-	if c.t.IsNext("chan") {
+	if c.t.IsNext(tokenizer.ChanToken) {
 		c.b.Emit(bytecode.Push, &datatypes.Channel{})
 	} else {
 		found := false
@@ -54,7 +54,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Call, 2)
 
-	if errors.Nil(err) && !c.t.IsNext(")") {
+	if errors.Nil(err) && !c.t.IsNext(tokenizer.EndOfListToken) {
 		err = c.newError(errors.ErrMissingParenthesis)
 	}
 

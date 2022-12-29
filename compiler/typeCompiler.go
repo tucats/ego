@@ -77,7 +77,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	}
 
 	// Maps
-	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == "[" {
+	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
 		c.t.Advance(2)
 
 		keyType, err := c.parseType("", false)
@@ -85,7 +85,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 			return &datatypes.UndefinedType, err
 		}
 
-		if !c.t.IsNext("]") {
+		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
 			return &datatypes.UndefinedType, c.newError(errors.ErrMissingBracket)
 		}
 
@@ -109,7 +109,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.
-			if c.t.Peek(1) == "." && tokenizer.IsSymbol(c.t.Peek(2)) {
+			if c.t.Peek(1) == tokenizer.DotToken && tokenizer.IsSymbol(c.t.Peek(2)) {
 				packageName := name
 				name := c.t.Peek(2)
 
@@ -174,7 +174,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	}
 
 	// Arrays
-	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
+	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
 		c.t.Advance(2)
 
 		valueType, err := c.parseType("", false)
@@ -213,7 +213,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 		return t, nil
 	}
 
-	if tokenizer.IsSymbol(typeName) && c.t.Peek(2) == "." && tokenizer.IsSymbol(c.t.Peek(3)) {
+	if tokenizer.IsSymbol(typeName) && c.t.Peek(2) == tokenizer.DotToken && tokenizer.IsSymbol(c.t.Peek(3)) {
 		packageName := typeName
 		typeName = c.t.Peek(3)
 

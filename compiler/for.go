@@ -45,7 +45,7 @@ func (c *Compiler) compileFor() *errors.EgoError {
 
 	// Is this the two-value range thing?
 	indexName := c.t.Peek(1)
-	valueName := ""
+	valueName := tokenizer.EmptyToken
 
 	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == tokenizer.CommaToken) {
 		c.t.Advance(2)
@@ -70,12 +70,12 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	// drop the marker.
 	defer c.b.Emit(bytecode.DropToMarker)
 
-	if !c.t.IsNext(tokenizer.AssignToken) {
+	if !c.t.IsNext(tokenizer.DefineToken) {
 		return c.newError(errors.ErrMissingLoopAssignment)
 	}
 
 	// Do we compile a range?
-	if c.t.IsNext("range") {
+	if c.t.IsNext(tokenizer.RangeToken) {
 		return c.rangeFor(indexName, valueName)
 	}
 
@@ -269,11 +269,11 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 
 	c.loopStackPop()
 
-	if indexName != "" && indexName != bytecode.DiscardedVariableName {
+	if indexName != tokenizer.EmptyToken && indexName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, indexName)
 	}
 
-	if valueName != "" && valueName != bytecode.DiscardedVariableName {
+	if valueName != tokenizer.EmptyToken && valueName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, valueName)
 	}
 
@@ -287,7 +287,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) *errors.EgoError {
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
-	if indexName == "" && valueName != "" {
+	if indexName == tokenizer.EmptyToken && valueName != tokenizer.EmptyToken {
 		return c.newError(errors.ErrInvalidLoopIndex)
 	}
 
@@ -328,11 +328,11 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Check for increment or decrement operators
 	autoMode := bytecode.Load
 
-	if c.t.Peek(1) == "++" {
+	if c.t.Peek(1) == tokenizer.IncrementToken {
 		autoMode = bytecode.Add
 	}
 
-	if c.t.Peek(1) == "--" {
+	if c.t.Peek(1) == tokenizer.DecrementToken {
 		autoMode = bytecode.Add
 	}
 
@@ -350,7 +350,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		c.t.Advance(1)
 	} else {
 		// Not auto-increment/decrement, so must be a legit assignment and expression
-		if !c.t.IsNext("=") {
+		if !c.t.IsNext(tokenizer.AssignToken) {
 			return c.newError(errors.ErrMissingEqual)
 		}
 

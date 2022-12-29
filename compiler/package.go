@@ -58,7 +58,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 	}
 
 	isList := false
-	if c.t.IsNext("(") {
+	if c.t.IsNext(tokenizer.StartOfListToken) {
 		isList = true
 
 		ui.Debug(ui.CompilerLogger, "*** Processing import list")
@@ -92,7 +92,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			}
 		}
 
-		if isList && fileName == ")" {
+		if isList && fileName == tokenizer.EndOfListToken {
 			break
 		}
 
@@ -136,7 +136,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				if pkgData.Builtins {
 					c.t.Advance(1)
 
-					if !isList || c.t.IsNext(")") {
+					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {
 						break
 					}
 
@@ -221,7 +221,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			break
 		}
 
-		if isList && c.t.Next() == ")" {
+		if isList && c.t.Next() == tokenizer.EndOfListToken {
 			break
 		}
 	}

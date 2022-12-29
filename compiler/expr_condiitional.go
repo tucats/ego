@@ -18,7 +18,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 
 	// If this is not a conditional, we're done. Conditionals
 	// are only permitted when extensions are enabled.
-	if c.t.AtEnd() || !c.extensionsEnabled || c.t.Peek(1) != "?" {
+	if c.t.AtEnd() || !c.extensionsEnabled || c.t.Peek(1) != tokenizer.OptionalToken {
 		return nil
 	}
 
@@ -61,8 +61,8 @@ func (c *Compiler) logicalAnd() *errors.EgoError {
 		return err
 	}
 
-	for c.t.AnyNext("&&", "and") {
-		// Handle short-circuit from boolean
+	for c.t.IsNext(tokenizer.BooleanAndToken) {
+		// Handle short-circuit form boolean
 		c.b.Emit(bytecode.Dup)
 
 		mark := c.b.Mark()
@@ -86,7 +86,7 @@ func (c *Compiler) logicalOr() *errors.EgoError {
 		return err
 	}
 
-	for c.t.AnyNext("||", "or") {
+	for c.t.IsNext(tokenizer.BooleanOrToken) {
 		// Handle short-circuit from boolean
 		c.b.Emit(bytecode.Dup)
 

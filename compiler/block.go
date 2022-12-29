@@ -10,7 +10,7 @@ import (
 // been parsed.
 func (c *Compiler) compileBlock() *errors.EgoError {
 	parsing := true
-	c.blockDepth = c.blockDepth + 1
+	c.blockDepth++
 
 	c.b.Emit(bytecode.PushScope)
 
@@ -34,7 +34,7 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 
 	c.b.Emit(bytecode.PopScope)
 
-	c.blockDepth = c.blockDepth - 1
+	c.blockDepth--
 
 	return nil
 }

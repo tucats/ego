@@ -32,13 +32,13 @@ func (c *Compiler) compileGo() *errors.EgoError {
 
 	c.b.Emit(bc.Push, fName)
 
-	if !c.t.IsNext("(") {
+	if !c.t.IsNext(tokenizer.StartOfListToken) {
 		return c.newError(errors.ErrMissingParenthesis)
 	}
 
 	argc := 0
 
-	for c.t.Peek(1) != ")" {
+	for c.t.Peek(1) != tokenizer.EndOfListToken {
 		err := c.conditional()
 		if !errors.Nil(err) {
 			return err
@@ -50,12 +50,12 @@ func (c *Compiler) compileGo() *errors.EgoError {
 			break
 		}
 
-		if c.t.Peek(1) == ")" {
+		if c.t.Peek(1) == tokenizer.EndOfListToken {
 			break
 		}
 
 		// Could be the "..." flatten operator
-		if c.t.IsNext("...") {
+		if c.t.IsNext(tokenizer.VariadicToken) {
 			c.b.Emit(bc.Flatten)
 
 			break
@@ -69,7 +69,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 	}
 
 	// Ensure trailing parenthesis
-	if c.t.AtEnd() || c.t.Peek(1) != ")" {
+	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.EndOfListToken {
 		return c.newError(errors.ErrMissingParenthesis)
 	}
 

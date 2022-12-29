@@ -21,7 +21,14 @@ func (c *Compiler) relations() *errors.EgoError {
 		}
 
 		op := c.t.Peek(1)
-		if op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" {
+
+		if util.InList(op,
+			tokenizer.EqualsToken,
+			tokenizer.NotEqualsToken,
+			tokenizer.LessThanToken,
+			tokenizer.LessThanOrEqualsToken,
+			tokenizer.GreaterThanToken,
+			tokenizer.GreaterThanOrEqualsToken) {
 			c.t.Advance(1)
 
 			err := c.addSubtract()
@@ -30,22 +37,22 @@ func (c *Compiler) relations() *errors.EgoError {
 			}
 
 			switch op {
-			case "==":
+			case tokenizer.EqualsToken:
 				c.b.Emit(bc.Equal)
 
-			case "!=":
+			case tokenizer.NotEqualsToken:
 				c.b.Emit(bc.NotEqual)
 
-			case "<":
+			case tokenizer.LessThanToken:
 				c.b.Emit(bc.LessThan)
 
-			case "<=":
+			case tokenizer.LessThanOrEqualsToken:
 				c.b.Emit(bc.LessThanOrEqual)
 
-			case ">":
+			case tokenizer.GreaterThanToken:
 				c.b.Emit(bc.GreaterThan)
 
-			case ">=":
+			case tokenizer.GreaterThanOrEqualsToken:
 				c.b.Emit(bc.GreaterThanOrEqual)
 			}
 		} else {
@@ -70,7 +77,11 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 		}
 
 		op := c.t.Peek(1)
-		if util.InList(op, "+", "-", "|", "<<", ">>") {
+		if util.InList(op, tokenizer.AddToken,
+			tokenizer.SubtractToken,
+			tokenizer.OrToken,
+			tokenizer.ShiftLeftToken,
+			tokenizer.ShiftRightToken) {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
@@ -83,20 +94,20 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 			}
 
 			switch op {
-			case "+":
+			case tokenizer.AddToken:
 				c.b.Emit(bc.Add)
 
-			case "-":
+			case tokenizer.SubtractToken:
 				c.b.Emit(bc.Sub)
 
-			case "|":
+			case tokenizer.OrToken:
 				c.b.Emit(bc.BitOr)
 
-			case "<<":
+			case tokenizer.ShiftLeftToken:
 				c.b.Emit(bc.Negate)
 				c.b.Emit(bc.BitShift)
 
-			case ">>":
+			case tokenizer.ShiftRightToken:
 				c.b.Emit(bc.BitShift)
 			}
 		} else {
@@ -124,13 +135,19 @@ func (c *Compiler) multDivide() *errors.EgoError {
 
 		// Special case; if the next tokens are * <symbol> = then this isn't a multiply,
 		// but rather a pointer dereference assignment statement boundary.
-		if c.t.Peek(1) == "*" && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == "=" {
+		if c.t.Peek(1) == tokenizer.PointerToken && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == tokenizer.AssignToken {
 			parsing = false
 
 			continue
 		}
 
-		if c.t.AnyNext("^", "*", "/", "&", "%") {
+		if c.t.AnyNext(
+			tokenizer.ExponentToken,
+			tokenizer.MultiplyToken,
+			tokenizer.DivideToken,
+			tokenizer.AndToken,
+			tokenizer.ModuloToken,
+		) {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
 				return c.newError(errors.ErrMissingTerm)
 			}
@@ -141,19 +158,19 @@ func (c *Compiler) multDivide() *errors.EgoError {
 			}
 
 			switch op {
-			case "^":
+			case tokenizer.ExponentToken:
 				c.b.Emit(bc.Exp)
 
-			case "*":
+			case tokenizer.MultiplyToken:
 				c.b.Emit(bc.Mul)
 
-			case "/":
+			case tokenizer.DivideToken:
 				c.b.Emit(bc.Div)
 
-			case "&":
+			case tokenizer.AndToken:
 				c.b.Emit(bc.BitAnd)
 
-			case "%":
+			case tokenizer.ModuloToken:
 				c.b.Emit(bc.Modulo)
 			}
 		} else {

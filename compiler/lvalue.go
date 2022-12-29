@@ -16,7 +16,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 	defer c.t.Set(mark)
 
 	// If this is a leading asterisk, that's fine.
-	if c.t.Peek(1) == "*" {
+	if c.t.Peek(1) == tokenizer.PointerToken {
 		c.t.Advance(1)
 	}
 
@@ -35,17 +35,24 @@ func (c *Compiler) isAssignmentTarget() bool {
 	// is a valid/correct lvalue. We also stop searching at some point.
 	for i := 2; i < 100; i = i + 1 {
 		t := c.t.Peek(i)
-		if util.InList(t, tokenizer.AssignToken, "=", "<-", "+=", "-=", "*=", "/=") {
+		if util.InList(t,
+			tokenizer.DefineToken,
+			tokenizer.AssignToken,
+			tokenizer.ChannelReceiveToken,
+			tokenizer.AddAssignToken,
+			tokenizer.SubtractAssignToken,
+			tokenizer.MultiplyAssignToken,
+			tokenizer.DivideAssignToken) {
 			return true
 		}
 
 		// Is this an auto increment?
-		if c.t.Peek(i) == "++" {
+		if c.t.Peek(i) == tokenizer.IncrementToken {
 			return true
 		}
 
 		// Is this an auto decrement?
-		if c.t.Peek(i) == "--" {
+		if c.t.Peek(i) == tokenizer.DecrementToken {
 			return true
 		}
 
@@ -53,7 +60,10 @@ func (c *Compiler) isAssignmentTarget() bool {
 			return false
 		}
 
-		if util.InList(t, tokenizer.BlockBeginToken, tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
+		if util.InList(t,
+			tokenizer.BlockBeginToken,
+			tokenizer.SemicolonToken,
+			tokenizer.EndOfTokens) {
 			return false
 		}
 	}
@@ -72,7 +82,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 
 	bc.Emit(bytecode.StackCheck, 1)
 
-	if c.t.Peek(1) == "*" {
+	if c.t.Peek(1) == tokenizer.PointerToken {
 		return nil, c.newError(errors.ErrInvalidSymbolName, "*")
 	}
 
@@ -88,7 +98,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 		needLoad := true
 
 		// Until we get to the end of the lvalue...
-		for util.InList(c.t.Peek(1), ".", "[") {
+		for util.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
 			if needLoad {
 				bc.Emit(bytecode.Load, name)
 
@@ -116,14 +126,17 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 			continue
 		}
 
-		if util.InList(c.t.Peek(1), "=", tokenizer.AssignToken, "<-") {
+		if util.InList(c.t.Peek(1),
+			tokenizer.AssignToken,
+			tokenizer.DefineToken,
+			tokenizer.ChannelReceiveToken) {
 			break
 		}
 	}
 
 	if isLvalueList {
 		// TODO if this is a channel store, then a list is not supported yet.
-		if c.t.Peek(1) == "<-" {
+		if c.t.Peek(1) == tokenizer.ChannelReceiveToken {
 			return nil, c.newError(errors.ErrInvalidChannelList)
 		}
 
@@ -158,7 +171,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 	isPointer := false
 
 	name := c.t.Next()
-	if name == "*" {
+	if name == tokenizer.PointerToken {
 		isPointer = true
 		name = c.t.Next()
 	}
@@ -171,7 +184,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 	needLoad := true
 
 	// Until we get to the end of the lvalue...
-	for c.t.Peek(1) == "." || c.t.Peek(1) == "[" {
+	for c.t.Peek(1) == tokenizer.DotToken || c.t.Peek(1) == tokenizer.StartOfArrayToken {
 		if needLoad {
 			bc.Emit(bytecode.Load, name)
 
@@ -190,14 +203,15 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment
-		if util.InList(c.t.Peek(1), "=", tokenizer.AssignToken) && c.t.Peek(2) == "<-" {
+		if util.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2) == tokenizer.ChannelReceiveToken {
 			c.t.Advance(1)
 		}
-		if c.t.Peek(1) == tokenizer.AssignToken {
+
+		if c.t.Peek(1) == tokenizer.DefineToken {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
 
-		patchStore(bc, name, isPointer, c.t.Peek(1) == "<-")
+		patchStore(bc, name, isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)
 	}
 
 	bc.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
@@ -244,7 +258,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 
 		bc.Append(ix)
 
-		if !c.t.IsNext("]") {
+		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
 			return c.newError(errors.ErrMissingBracket)
 		}
 
@@ -253,7 +267,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 		return nil
 	}
 
-	if term == "." {
+	if term == tokenizer.DotToken {
 		c.t.Advance(1)
 
 		member := c.t.Next()

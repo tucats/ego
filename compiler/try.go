@@ -31,13 +31,13 @@ func (c *Compiler) compileTry() *errors.EgoError {
 
 	// Is there a named variable that will hold the error?
 
-	if c.t.IsNext("(") {
+	if c.t.IsNext(tokenizer.StartOfListToken) {
 		errName := c.t.Next()
 		if !tokenizer.IsSymbol(errName) {
 			return c.newError(errors.ErrInvalidSymbolName)
 		}
 
-		if !c.t.IsNext(")") {
+		if !c.t.IsNext(tokenizer.EndOfListToken) {
 			return c.newError(errors.ErrMissingParenthesis)
 		}
 

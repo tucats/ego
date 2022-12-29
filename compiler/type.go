@@ -39,21 +39,21 @@ func (c *Compiler) typeDeclaration() (interface{}, *errors.EgoError) {
 }
 
 func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
-	if c.t.Peek(1) == "*" {
+	if c.t.Peek(1) == tokenizer.PointerToken {
 		c.t.Advance(1)
 		t, err := c.parseTypeSpec()
 
 		return datatypes.Pointer(t), err
 	}
 
-	if c.t.Peek(1) == "[" && c.t.Peek(2) == "]" {
+	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
 		c.t.Advance(2)
 		t, err := c.parseTypeSpec()
 
 		return datatypes.Array(t), err
 	}
 
-	if c.t.Peek(1) == "map" && c.t.Peek(2) == "[" {
+	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
 		c.t.Advance(2)
 
 		keyType, err := c.parseTypeSpec()
@@ -61,7 +61,7 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 			return &datatypes.UndefinedType, err
 		}
 
-		c.t.IsNext("]")
+		c.t.IsNext(tokenizer.EndOfArrayToken)
 
 		valueType, err := c.parseTypeSpec()
 		if err != nil {
@@ -108,7 +108,7 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 	typeCompiler := New("type compiler")
 	typeCompiler.t = tokenizer.New(source)
-	name := ""
+	name := tokenizer.EmptyToken
 
 	// Does it have a type <name> prefix? And is that a package.name style name?
 	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
@@ -117,7 +117,7 @@ func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 			return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name)
 		}
 
-		if typeCompiler.t.IsNext(".") {
+		if typeCompiler.t.IsNext(tokenizer.DotToken) {
 			name2 := typeCompiler.t.Next()
 			if !tokenizer.IsSymbol(name2) {
 				return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name2)
@@ -128,7 +128,7 @@ func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 	}
 
 	t, err := typeCompiler.parseType("", true)
-	if errors.Nil(err) && name != "" {
+	if errors.Nil(err) && name != tokenizer.EmptyToken {
 		t = datatypes.TypeDefinition(name, t)
 	}
 

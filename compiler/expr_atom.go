@@ -44,7 +44,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this the make() function?
-	if t == "make" && c.t.Peek(2) == "(" {
+	if t == "make" && c.t.Peek(2) == tokenizer.StartOfListToken {
 		return c.makeInvocation()
 	}
 
@@ -65,7 +65,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this a function definition?
-	if t == tokenizer.FuncToken && c.t.Peek(2) == "(" {
+	if t == tokenizer.FuncToken && c.t.Peek(2) == tokenizer.StartOfListToken {
 		c.t.Advance(1)
 
 		return c.compileFunctionDefinition(true)
@@ -96,7 +96,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this dereference?
-	if t == "*" {
+	if t == tokenizer.PointerToken {
 		c.t.Advance(1)
 
 		// If it's dereference of a symbol, short-circuit that
@@ -120,7 +120,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this a parenthesis expression?
-	if t == "(" {
+	if t == tokenizer.StartOfListToken {
 		c.t.Advance(1)
 
 		err := c.conditional()
@@ -128,7 +128,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 			return err
 		}
 
-		if c.t.Next() != ")" {
+		if c.t.Next() != tokenizer.EndOfListToken {
 			return c.newError(errors.ErrMissingParenthesis)
 		}
 
@@ -136,7 +136,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this an array constant?
-	if t == "[" && c.t.Peek(2) != "]" {
+	if t == tokenizer.StartOfArrayToken && c.t.Peek(2) != tokenizer.EndOfArrayToken {
 		return c.parseArray()
 	}
 
@@ -195,14 +195,14 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is it a type cast?
-	if c.t.Peek(2) == "(" {
+	if c.t.Peek(2) == tokenizer.StartOfListToken {
 		mark := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {
-			if c.t.IsNext("(") { // Skip the parentheses
+			if c.t.IsNext(tokenizer.StartOfListToken) { // Skip the parentheses
 				b, err := c.Expression()
 				if err == nil {
-					for c.t.IsNext(",") {
+					for c.t.IsNext(tokenizer.CommaToken) {
 						b2, e2 := c.Expression()
 						if e2 == nil {
 							b.Append(b2)
@@ -214,7 +214,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 					}
 				}
 
-				if err == nil && c.t.Peek(1) == ")" {
+				if err == nil && c.t.Peek(1) == tokenizer.EndOfListToken {
 					c.t.Next()
 					c.b.Emit(bytecode.Push, typeSpec)
 					c.b.Append(b)
@@ -229,7 +229,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Watch out for function calls here...
-	if c.t.Peek(2) != "(" {
+	if c.t.Peek(2) != tokenizer.StartOfListToken {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {
@@ -259,11 +259,11 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		// Check for auto-increment or decrement
 		autoMode := bytecode.NoOperation
 
-		if c.t.Peek(2) == "++" {
+		if c.t.Peek(2) == tokenizer.IncrementToken {
 			autoMode = bytecode.Add
 		}
 
-		if c.t.Peek(2) == "--" {
+		if c.t.Peek(2) == tokenizer.DecrementToken {
 			autoMode = bytecode.Sub
 		}
 
@@ -292,7 +292,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 func (c *Compiler) parseArray() *errors.EgoError {
 	var err *errors.EgoError
 
-	var listTerminator = ""
+	var listTerminator = tokenizer.EmptyToken
 
 	// Lets see if this is a type name. Remember where
 	// we came from, and back up over the previous "["
@@ -311,11 +311,11 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		// It could be a cast operation. If so, remember where we are
 		// in case we need to back up, and take a look...
-		if c.t.IsNext("(") {
+		if c.t.IsNext(tokenizer.StartOfListToken) {
 			mark := c.t.Mark() - 1
 
 			exp, e2 := c.Expression()
-			if e2 == nil && c.t.IsNext(")") {
+			if e2 == nil && c.t.IsNext(tokenizer.EndOfListToken) {
 				c.b.Emit(bytecode.Load, "$cast")
 				c.b.Append(exp)
 				c.b.Emit(bytecode.Push, kind)
@@ -327,28 +327,29 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			c.t.Set(mark)
 		}
 		// Is it an empty declaration, such as []int{} ?
-		if c.t.IsNext("{}") {
+		if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 			c.b.Emit(bytecode.Array, 0, kind)
 
 			return nil
 		}
 
 		// There better be at least the start of an initialization block then.
-		if !c.t.IsNext("{") {
+		if !c.t.IsNext(tokenizer.DataBeginToken) {
 			return c.newError(errors.ErrMissingBlock)
 		}
 
-		listTerminator = "}"
+		listTerminator = tokenizer.DataEndToken
 	} else {
 		c.t.Set(marker)
 
-		if c.t.Peek(1) == "(" {
-			listTerminator = ")"
+		if c.t.Peek(1) == tokenizer.StartOfListToken {
+			listTerminator = tokenizer.EndOfListToken
 		} else {
-			if c.t.Peek(1) == "[" {
-				listTerminator = "]"
+			if c.t.Peek(1) == tokenizer.StartOfArrayToken {
+				listTerminator = tokenizer.EndOfArrayToken
 			}
 		}
+
 		c.t.Advance(1)
 
 		// Let's experimentally see if this is a range constant expression. This can be
@@ -359,7 +360,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		var e2 error
 
-		if c.t.Peek(1) == ":" {
+		if c.t.Peek(1) == tokenizer.ColonToken {
 			err = nil
 
 			c.t.Advance(-1)
@@ -371,7 +372,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 
 		if errors.Nil(err) {
-			if c.t.Peek(2) == ":" {
+			if c.t.Peek(2) == tokenizer.ColonToken {
 				t2, err := strconv.Atoi(c.t.Peek(3))
 				if errors.Nil(err) {
 					c.t.Advance(3)
@@ -391,7 +392,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 					c.b.Emit(bytecode.Array, count)
 
-					if !c.t.IsNext("]") {
+					if !c.t.IsNext(tokenizer.EndOfArrayToken) {
 						return c.newError(errors.ErrInvalidRange)
 					}
 
@@ -401,7 +402,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		}
 	}
 
-	if listTerminator == "" {
+	if listTerminator == tokenizer.EmptyToken {
 		return nil
 	}
 
@@ -432,7 +433,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 			break
 		}
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			return c.newError(errors.ErrInvalidList)
 		}
 
@@ -451,7 +452,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 }
 
 func (c *Compiler) parseStruct() *errors.EgoError {
-	var listTerminator = "}"
+	var listTerminator = tokenizer.DataEndToken
 
 	var err error
 
@@ -476,7 +477,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 		name = c.normalize(name)
 
 		// Second element: colon
-		if c.t.Next() != ":" {
+		if c.t.Next() != tokenizer.ColonToken {
 			return c.newError(errors.ErrMissingColon)
 		}
 
@@ -547,7 +548,7 @@ func (c *Compiler) optional() *errors.EgoError {
 	c.b.Emit(bytecode.Branch)
 	_ = c.b.SetAddressHere(catch)
 
-	if !c.t.IsNext(":") {
+	if !c.t.IsNext(tokenizer.ColonToken) {
 		return c.newError(errors.ErrMissingCatch)
 	}
 

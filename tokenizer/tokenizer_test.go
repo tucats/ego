@@ -48,7 +48,7 @@ func TestTokenize(t *testing.T) {
 			args: args{
 				src: "a := 5 <= 6",
 			},
-			want: []string{"a", AssignToken, "5", "<=", "6"},
+			want: []string{"a", DefineToken, "5", "<=", "6"},
 		},
 		{
 			name: "channel compound tokens",

@@ -12,8 +12,8 @@ import (
 func (c *Compiler) compileConst() *errors.EgoError {
 	terminator := ""
 
-	if c.t.IsNext("(") {
-		terminator = ")"
+	if c.t.IsNext(tokenizer.StartOfListToken) {
+		terminator = tokenizer.EndOfListToken
 	}
 
 	for terminator == "" || !c.t.IsNext(terminator) {
@@ -24,7 +24,7 @@ func (c *Compiler) compileConst() *errors.EgoError {
 
 		name = c.normalize(name)
 
-		if !c.t.IsNext("=") {
+		if !c.t.IsNext(tokenizer.AssignToken) {
 			return c.newError(errors.ErrMissingEqual)
 		}
 
@@ -35,7 +35,6 @@ func (c *Compiler) compileConst() *errors.EgoError {
 
 		// Search to make sure it doesn't contain a load statement that isn't for another
 		// constant
-
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(datatypes.GetString(i.Operand), c.constants...) {
 				return c.newError(errors.ErrInvalidConstant)

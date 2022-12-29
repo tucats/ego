@@ -6,6 +6,7 @@ import (
 	"unicode"
 )
 
+
 // Tokenizer is an instance of a tokenized string.
 type Tokenizer struct {
 	Source []string
@@ -34,28 +35,28 @@ type crushedToken struct {
 // This is the table of tokens that are "crushed" into a single token.
 var crushedTokens = []crushedToken{
 	{
-		source: []string{"+", "="},
-		result: "+=",
+		source: []string{AddToken, AssignToken},
+		result: AddAssignToken,
 	},
 	{
-		source: []string{"-", "="},
-		result: "-=",
+		source: []string{SubtractToken, AssignToken},
+		result: SubtractAssignToken,
 	},
 	{
-		source: []string{"*", "="},
-		result: "*=",
+		source: []string{MultiplyToken, AssignToken},
+		result: MultiplyAssignToken,
 	},
 	{
-		source: []string{"/", "="},
-		result: "/=",
+		source: []string{DivideToken, AssignToken},
+		result: DivideAssignToken,
 	},
 	{
-		source: []string{"+", "+"},
-		result: "++",
+		source: []string{AddToken, AddToken},
+		result: IncrementToken,
 	},
 	{
-		source: []string{"-", "-"},
-		result: "--",
+		source: []string{SubtractToken, SubtractToken},
+		result: DecrementToken,
 	},
 	{
 		source: []string{InterfaceToken, DataBeginToken, DataEndToken},
@@ -66,52 +67,52 @@ var crushedTokens = []crushedToken{
 		result: EmptyBlockToken,
 	},
 	{
-		source: []string{".", ".", "."},
-		result: "...",
+		source: []string{DotToken, DotToken, DotToken},
+		result: VariadicToken,
 	},
 	{
-		source: []string{"<", "-"},
-		result: "<-",
+		source: []string{LessThanToken, SubtractToken},
+		result: ChannelReceiveToken,
 	},
 	{
-		source: []string{"-", ">"},
-		result: "->",
+		source: []string{SubtractToken, GreaterThanToken},
+		result: ChannelSendToken,
 	},
 	{
-		source: []string{">", "="},
-		result: ">=",
+		source: []string{GreaterThanToken, AssignToken},
+		result: GreaterThanOrEqualsToken,
 	},
 	{
-		source: []string{"<", "="},
-		result: "<=",
+		source: []string{LessThanToken, AssignToken},
+		result: LessThanOrEqualsToken,
 	},
 	{
-		source: []string{"=", "="},
-		result: "==",
+		source: []string{AssignToken, AssignToken},
+		result: EqualsToken,
 	},
 	{
-		source: []string{"!", "="},
-		result: "!=",
+		source: []string{NotToken, AssignToken},
+		result: NotEqualsToken,
 	},
 	{
-		source: []string{ColonToken, "="},
-		result: AssignToken,
+		source: []string{ColonToken, AssignToken},
+		result: DefineToken,
 	},
 	{
-		source: []string{"&", "&"},
-		result: "&&",
+		source: []string{AndToken, AndToken},
+		result: BooleanAndToken,
 	},
 	{
-		source: []string{"|", "|"},
-		result: "||",
+		source: []string{OrToken, OrToken},
+		result: BooleanOrToken,
 	},
 	{
-		source: []string{"<", "<"},
-		result: "<<",
+		source: []string{LessThanToken, LessThanToken},
+		result: ShiftLeftToken,
 	},
 	{
-		source: []string{">", ">"},
-		result: ">>",
+		source: []string{GreaterThanToken, GreaterThanToken},
+		result: ShiftRightToken,
 	},
 }
 

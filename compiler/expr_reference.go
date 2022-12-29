@@ -43,7 +43,7 @@ func (c *Compiler) reference() *errors.EgoError {
 				parsing = false
 			}
 		// Function invocation
-		case "(":
+		case tokenizer.StartOfListToken:
 			c.t.Advance(1)
 
 			err := c.functionCall()
@@ -52,7 +52,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			}
 
 		// Map member reference
-		case ".":
+		case tokenizer.DotToken:
 			c.t.Advance(1)
 
 			lastName = c.t.Next()
@@ -64,7 +64,7 @@ func (c *Compiler) reference() *errors.EgoError {
 
 			// Peek ahead. is this a chained call? If so, set the This
 			// value
-			if c.t.Peek(1) == "(" {
+			if c.t.Peek(1) == tokenizer.StartOfListToken {
 				c.b.Emit(bytecode.SetThis)
 			}
 
@@ -94,7 +94,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			}
 
 		// Array index reference
-		case "[":
+		case tokenizer.StartOfArrayToken:
 			c.t.Advance(1)
 
 			// If there is an slice with an implied start of 0,
@@ -129,12 +129,12 @@ func (c *Compiler) reference() *errors.EgoError {
 
 				c.b.Emit(bytecode.LoadSlice)
 
-				if c.t.Next() != "]" {
+				if c.t.Next() != tokenizer.EndOfArrayToken {
 					return c.newError(errors.ErrMissingBracket)
 				}
 			} else {
 				// Nope, singular index
-				if c.t.Next() != "]" {
+				if c.t.Next() != tokenizer.EndOfArrayToken {
 					return c.newError(errors.ErrMissingBracket)
 				}
 
