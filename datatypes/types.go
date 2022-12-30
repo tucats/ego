@@ -702,9 +702,6 @@ func TypeOf(i interface{}) *Type {
 	case string:
 		return &StringType
 
-	case EgoPackage:
-		return &PackageType
-
 	case *byte:
 		return Pointer(&ByteType)
 
@@ -737,6 +734,13 @@ func TypeOf(i interface{}) *Type {
 
 	case *EgoStruct:
 		return v.typeDef
+
+	case *EgoArray:
+		return &Type{
+			name:      "[]",
+			kind:      ArrayKind,
+			valueType: v.valueType,
+		}
 
 	case *Channel:
 		return Pointer(&ChanType)
