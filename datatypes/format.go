@@ -102,13 +102,13 @@ func Format(element interface{}) string {
 
 		b.WriteString("Pkg<")
 
-		if v.Builtins {
+		if v.Builtins() {
 			b.WriteString("builtins")
 
 			needsComma = true
 		}
 
-		if v.Imported {
+		if v.Imported() {
 			if needsComma {
 				b.WriteString(", ")
 			}

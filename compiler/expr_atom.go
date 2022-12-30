@@ -78,8 +78,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 
 		// If it's address of a symbol, short-circuit that
 		if c.t.Peek(1).IsIdentifier() {
-			name := c.t.Next().Spelling()
-			c.b.Emit(bytecode.AddressOf, name)
+			c.b.Emit(bytecode.AddressOf, c.t.Next())
 		} else {
 			// Address of an expression requires creating a temp symbol
 			err := c.expressionAtom()
@@ -153,28 +152,28 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// If the token is a number, convert it
-	if i, err := strconv.Atoi(t.Spelling()); errors.Nil(err) {
+	if i, err := strconv.Atoi(text); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if i, err := strconv.ParseFloat(t.Spelling(), 64); errors.Nil(err) {
+	if i, err := strconv.ParseFloat(text, 64); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if !t.IsString() && (t.Spelling() == defs.True || t.Spelling() == defs.False) {
+	if !t.IsString() && (text == defs.True || text == defs.False) {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, (t.Spelling() == defs.True))
+		c.b.Emit(bytecode.Push, (text == defs.True))
 
 		return nil
 	}
 
-	if t.IsString() {
+	if t.IsValue() {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, t)
 
@@ -352,7 +351,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 			c.t.Advance(-1)
 		} else {
-			t1, e2 = strconv.Atoi(c.t.Peek(1).Spelling())
+			t1, e2 = strconv.Atoi(c.t.PeekText(1))
 			if e2 != nil {
 				err = errors.New(e2)
 			}
@@ -360,7 +359,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		if errors.Nil(err) {
 			if c.t.Peek(2) == tokenizer.ColonToken {
-				t2, err := strconv.Atoi(c.t.Peek(3).Spelling())
+				t2, err := strconv.Atoi(c.t.PeekText(3))
 				if errors.Nil(err) {
 					c.t.Advance(3)
 

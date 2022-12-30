@@ -7,6 +7,10 @@ import "github.com/tucats/ego/errors"
 // compilation or runtime reflect line numbers based on the
 // @line specification rather than the actual literal line number.
 func (t *Tokenizer) SetLineNumber(line int) *errors.EgoError {
+	if t.TokenP >= len(t.Line) {
+		return nil
+	}
+
 	currentLine := t.Line[t.TokenP]
 	offset := line - currentLine - 1
 

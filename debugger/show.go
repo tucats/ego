@@ -92,11 +92,11 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 		if tokens.Peek(1) != tokenizer.EndOfTokens {
 			var e2 error
-			start, e2 = strconv.Atoi(tokens.Next().Spelling())
+			start, e2 = strconv.Atoi(tokens.NextText())
 			_ = tokens.IsNext(tokenizer.ColonToken)
 
 			if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
-				end, e2 = strconv.Atoi(tokens.Next().Spelling())
+				end, e2 = strconv.Atoi(tokens.NextText())
 			}
 
 			err = errors.New(e2)

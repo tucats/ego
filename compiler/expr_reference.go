@@ -55,7 +55,7 @@ func (c *Compiler) reference() *errors.EgoError {
 		case tokenizer.DotToken:
 			c.t.Advance(1)
 
-			lastName = c.t.Next().Spelling()
+			lastName = c.t.NextText()
 			if !tokenizer.IsSymbol(lastName) {
 				return c.newError(errors.ErrInvalidIdentifier)
 			}

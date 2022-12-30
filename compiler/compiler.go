@@ -363,6 +363,14 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError {
 	ui.Debug(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
 
+	// We do not want to dump tokens during import processing (there are a lot)
+	// so turn of token logging during auto-import, and set it back on when done.
+	savedTokenLogging := ui.LoggerIsActive(ui.TokenLogger)
+
+	ui.SetLogger(ui.TokenLogger, false)
+
+	defer ui.SetLogger(ui.TokenLogger, savedTokenLogging)
+
 	// Start by making a list of the packages. If we need all packages,
 	// scan all the built-in function names for package names. We ignore
 	// functions that don't have package names as those are already

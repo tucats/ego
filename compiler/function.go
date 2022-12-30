@@ -216,7 +216,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	if isLiteral {
 		c.b.Emit(bytecode.Push, b)
 	} else {
-		if receiverType != tokenizer.EmptyToken {
+		if receiverType.IsIdentifier() {
 			// If there was a receiver, make sure this function is added to the type structure
 			t, ok := c.Types[receiverType.Spelling()]
 			if !ok {

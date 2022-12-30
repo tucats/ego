@@ -14,8 +14,8 @@ import (
 type EgoPackage struct {
 	name     string
 	ID       string
-	Imported bool
-	Builtins bool
+	imported bool
+	builtins bool
 	items    map[string]interface{}
 }
 
@@ -49,6 +49,26 @@ func NewPackageFromMap(name string, items map[string]interface{}) *EgoPackage {
 	}
 
 	return &pkg
+}
+
+func (p *EgoPackage) SetBuiltins(f bool) *EgoPackage {
+	p.builtins = f
+
+	return p
+}
+
+func (p *EgoPackage) Builtins() bool {
+	return p.builtins
+}
+
+func (p *EgoPackage) SetImported(f bool) *EgoPackage {
+	p.imported = f
+
+	return p
+}
+
+func (p *EgoPackage) Imported() bool {
+	return p.imported
 }
 
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized

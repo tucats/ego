@@ -97,8 +97,8 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		packageName = strings.ToLower(packageName)
 		pkgData, _ := bytecode.GetPackage(packageName)
 
-		wasBuiltin := pkgData.Builtins
-		wasImported := pkgData.Imported
+		wasBuiltin := pkgData.Builtins()
+		wasImported := pkgData.Imported()
 
 		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
@@ -107,15 +107,15 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			continue
 		}
 
-		if !pkgData.Builtins {
-			pkgData.Builtins = c.AddBuiltins(packageName)
+		if !pkgData.Builtins() {
+			pkgData.SetBuiltins(c.AddBuiltins(packageName))
 
 			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName.Spelling())
 		} else {
 			ui.Debug(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName.Spelling())
 		}
 
-		if !pkgData.Builtins {
+		if !pkgData.Builtins() {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
@@ -126,12 +126,12 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
-		if !pkgData.Imported {
+		if !pkgData.Imported() {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if !errors.Nil(err) {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
-				if pkgData.Builtins {
+				if pkgData.Builtins() {
 					c.t.Advance(1)
 
 					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {
@@ -181,13 +181,13 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				break
 			}
 
-			pkgData.Imported = true
+			pkgData.SetImported(true)
 		} else {
 			ui.Debug(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
 		}
 
 		// Rewrite the package if we've added stuff to it.
-		if wasImported != pkgData.Imported || wasBuiltin != pkgData.Builtins {
+		if wasImported != pkgData.Imported() || wasBuiltin != pkgData.Builtins() {
 			if ui.LoggerIsActive(ui.CompilerLogger) {
 				ui.Debug(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 

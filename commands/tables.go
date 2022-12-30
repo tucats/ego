@@ -257,23 +257,35 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 			break
 		}
 
+		// Tokenize the parameter, which should be of the form <id> = <value>
 		t := tokenizer.New(p)
-		column := t.Next()
 
+		// Get the column name, and confirm that it's an identifier.
+		column := t.Next()
+		if !column.IsIdentifier() {
+			return errors.New(errors.ErrInvalidIdentifier).Context(column)
+		}
+
+		columnName := column.Spelling()
+
+		// Must be followed by a "=" token
 		if !t.IsNext(tokenizer.AssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
 		}
 
+		// Rest of the string is handled without regard for
+		// the text, as we want to treat the remainder of the
+		// parameter as the value, regardless of how it tokenized.
 		value := t.Remainder()
 
 		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[column.Spelling()] = true
+			payload[columnName] = true
 		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[column.Spelling()] = false
+			payload[columnName] = false
 		} else if i, err := strconv.Atoi(value); err == nil {
-			payload[column.Spelling()] = i
+			payload[columnName] = i
 		} else {
-			payload[column.Spelling()] = value
+			payload[columnName] = value
 		}
 	}
 
@@ -344,16 +356,23 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 			return errors.New(errors.ErrInvalidColumnDefinition).Context(columnDefText)
 		}
 
+		columnName := column.Spelling()
+
 		// If we've already defined this one, complain
-		if _, ok := defined[column.Spelling()]; ok {
-			return errors.New(errors.ErrDuplicateColumnName).Context(column)
+		if _, ok := defined[columnName]; ok {
+			return errors.New(errors.ErrDuplicateColumnName).Context(columnName)
 		}
 
 		columnType := t.Next()
+		if !columnType.IsIdentifier() {
+			return errors.New(errors.ErrInvalidType).Context(columnType)
+		}
+
+		columnTypeName := columnType.Spelling()
 		found := false
 
 		for _, typeName := range defs.TableColumnTypeNames {
-			if strings.EqualFold(columnType.Spelling(), typeName) {
+			if strings.EqualFold(columnTypeName, typeName) {
 				found = true
 
 				break
@@ -361,11 +380,11 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		}
 
 		if !found {
-			return errors.New(errors.ErrInvalidType).Context(columnType)
+			return errors.New(errors.ErrInvalidType).Context(columnTypeName)
 		}
 
 		for t.IsNext(tokenizer.CommaToken) {
-			flag := t.Next().Spelling()
+			flag := t.NextText()
 
 			switch strings.ToLower(flag) {
 			case "unique":
@@ -378,10 +397,10 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 			}
 		}
 
-		columnInfo.Name = column.Spelling()
-		columnInfo.Type = columnType.Spelling()
-		defined[column.Spelling()] = true
-		fields[column.Spelling()] = columnInfo
+		columnInfo.Name = columnName
+		columnInfo.Type = columnTypeName
+		defined[columnName] = true
+		fields[columnName] = columnInfo
 	}
 
 	// Convert the map to an array of fields
@@ -430,7 +449,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		}
 
 		t := tokenizer.New(p)
-		column := t.Next().Spelling()
+		column := t.NextText()
 
 		if !t.IsNext(tokenizer.AssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
@@ -522,7 +541,7 @@ func makeFilter(filters []string) string {
 		var term strings.Builder
 
 		t := tokenizer.New(filter)
-		term1 := t.Next().Spelling()
+		term1 := t.NextText()
 
 		if t.AtEnd() {
 			terms = append(terms, term1)
@@ -530,7 +549,7 @@ func makeFilter(filters []string) string {
 			continue
 		}
 
-		op := t.Next().Spelling()
+		op := t.NextText()
 
 		if util.InList(term1, "!", "not", "NOT") {
 			term.WriteString("NOT(")
@@ -541,7 +560,7 @@ func makeFilter(filters []string) string {
 			continue
 		}
 
-		term2 := t.Next().Spelling()
+		term2 := t.NextText()
 
 		if term1 == "" || term2 == "" {
 			return filterParseError + i18n.E("filter.term.missing")

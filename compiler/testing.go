@@ -43,7 +43,7 @@ func initTestType() {
 func (c *Compiler) testDirective() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 
-	testDescription := c.t.Next().Spelling()
+	testDescription := c.t.NextText()
 	if testDescription[:1] == "\"" {
 		testDescription = testDescription[1 : len(testDescription)-1]
 	}

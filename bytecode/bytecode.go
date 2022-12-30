@@ -77,9 +77,17 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 	}
 
 	// If the operand is a token, use the spelling of the token
-	// as the value.
+	// as the value. If it's an integer or floating point value,
+	// convert the token to a value.
 	if t, ok := i.Operand.(tokenizer.Token); ok {
-		i.Operand = t.Spelling()
+		text := t.Spelling()
+		if t.IsClass(tokenizer.IntegerTokenClass) {
+			i.Operand = datatypes.GetInt(text)
+		} else if t.IsClass(tokenizer.FloatTokenClass) {
+			i.Operand = datatypes.GetFloat64(text)
+		} else {
+			i.Operand = text
+		}
 	}
 
 	b.instructions[b.emitPos] = i

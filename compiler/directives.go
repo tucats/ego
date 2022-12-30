@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -11,6 +10,29 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
+)
+
+const (
+	AssertDirective       = "assert"
+	AuthentiatedDirective = "authenticated"
+	EntryPointDirective   = "entrypoint"
+	ErrorDirective        = "error"
+	FailDirective         = "fail"
+	GlobalDirective       = "global"
+	HandlerDirective      = "handler"
+	JSONDirective         = "json"
+	LineDirective         = "line"
+	LocalizationDirective = "localization"
+	LogDirective          = "log"
+	PassDirective         = "pass"
+	ResponseDirective     = "response"
+	StatusDirective       = "status"
+	TemplateDirective     = "template"
+	TestDirective         = "test"
+	TextDirective         = "text"
+	TypeDirective         = "type"
+	URLDirective          = "url"
+	WaitDirective         = "wait"
 )
 
 // compileDirective processes a compiler directive. These become symbols generated
@@ -25,64 +47,64 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
 
 	switch name.Spelling() {
-	case tokenizer.AssertToken.Spelling():
+	case AssertDirective:
 		return c.Assert()
 
-	case "authenticated":
+	case AuthentiatedDirective:
 		return c.authenticatedDirective()
 
-	case "entrypoint":
+	case EntryPointDirective:
 		return c.entrypointDirective()
 
-	case "error":
+	case ErrorDirective:
 		return c.errorDirective()
 
-	case "fail":
+	case FailDirective:
 		return c.Fail()
 
-	case "global":
+	case GlobalDirective:
 		return c.globalDirective()
 
-	case "handler":
+	case HandlerDirective:
 		return c.handlerDirective()
 
-	case "json":
+	case JSONDirective:
 		return c.jsonDirective()
 
-	case "line":
+	case LineDirective:
 		return c.lineDirective()
 
-	case "localization":
+	case LocalizationDirective:
 		return c.localizationDirective()
 
-	case "log":
+	case LogDirective:
 		return c.logDirective()
 
-	case "pass":
+	case PassDirective:
 		return c.TestPass()
 
-	case "response":
+	case ResponseDirective:
 		return c.responseDirective()
 
-	case "status":
+	case StatusDirective:
 		return c.statusDirective()
 
-	case "template":
+	case TemplateDirective:
 		return c.templateDirective()
 
-	case "test":
+	case TestDirective:
 		return c.testDirective()
 
-	case "text":
+	case TextDirective:
 		return c.textDirective()
 
-	case "type":
+	case TypeDirective:
 		return c.typeDirective()
 
-	case "url":
+	case URLDirective:
 		return c.urlDirective()
 
-	case "wait":
+	case WaitDirective:
 		return c.waitDirective()
 
 	default:
@@ -97,7 +119,7 @@ func (c *Compiler) entrypointDirective() *errors.EgoError {
 		mainName = tokenizer.NewIdentifierToken("main")
 	}
 
-	c.b.Emit(bytecode.Push, mainName.Spelling())
+	c.b.Emit(bytecode.Push, mainName)
 	c.b.Emit(bytecode.Dup)
 	c.b.Emit(bytecode.StoreAlways, "__main")
 	c.b.Emit(bytecode.EntryPoint)
@@ -235,12 +257,15 @@ func (c *Compiler) textDirective() *errors.EgoError {
 }
 
 func (c *Compiler) lineDirective() *errors.EgoError {
-	lineString := c.t.Next()
-
-	line, err := strconv.Atoi(lineString.Spelling())
-	if err != nil {
-		return c.newError(err)
+	// The next token must be an integer value
+	lineNumberToken := c.t.Next()
+	if !lineNumberToken.IsValue() {
+		return c.newError(errors.ErrInvalidInteger).Context(lineNumberToken)
 	}
+
+	// Extract the value from the token and store it as the current line number
+	// in the tokenizer. Also generate a bytecode to store this data at runtime.
+	line := int(lineNumberToken.Integer())
 
 	c.b.ClearLineNumbers()
 	_ = c.t.SetLineNumber(line)
@@ -310,7 +335,7 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		token = defs.Any
 	} else {
-		token = c.t.Next().Spelling()
+		token = c.t.NextText()
 	}
 
 	if !util.InList(token,
@@ -396,7 +421,7 @@ func (c *Compiler) errorDirective() *errors.EgoError {
 func (c *Compiler) typeDirective() *errors.EgoError {
 	var err error
 
-	if t := c.t.Next().Spelling(); util.InList(t, "static", "dynamic") {
+	if t := c.t.NextText(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
 		err = c.newError(errors.ErrInvalidTypeCheck, t)

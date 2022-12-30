@@ -193,8 +193,6 @@ func Get(key string) string {
 		v = c.Items[key]
 	}
 
-	ui.Debug(ui.AppLogger, "Reading profile key \"%s\" : \"%s\"", key, v)
-
 	return v
 }
 

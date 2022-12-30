@@ -196,7 +196,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 		found = true
 
 		for idx, token := range typeDeclaration.Tokens {
-			if c.t.Peek(1+idx).Spelling() != token {
+			if c.t.PeekText(1+idx) != token {
 				found = false
 
 				break

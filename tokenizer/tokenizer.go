@@ -6,6 +6,7 @@ import (
 	"text/scanner"
 	"unicode"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -199,6 +200,14 @@ func New(src string) *Tokenizer {
 		t.Pos = append(t.Pos, column)
 	}
 
+	if ui.LoggerIsActive(ui.TokenLogger) {
+		ui.Debug(ui.TokenLogger, "Tokenizer contents:")
+
+		for index, token := range t.Tokens {
+			ui.Debug(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
+		}
+	}
+
 	return &t
 }
 
@@ -234,6 +243,19 @@ func (t *Tokenizer) Next() Token {
 	return token
 }
 
+// Next gets the next token in the tokenizer and returns it's
+// text value as a string.
+func (t *Tokenizer) NextText() string {
+	if t.TokenP >= len(t.Tokens) {
+		return EndOfTokens.spelling
+	}
+
+	token := t.Tokens[t.TokenP]
+	t.TokenP++
+
+	return token.spelling
+}
+
 // Peek looks ahead at the next token without advancing the pointer.
 func (t *Tokenizer) Peek(offset int) Token {
 	pos := t.TokenP + (offset - 1)
@@ -242,6 +264,16 @@ func (t *Tokenizer) Peek(offset int) Token {
 	}
 
 	return t.Tokens[pos]
+}
+
+// Peek looks ahead at the next token without advancing the pointer.
+func (t *Tokenizer) PeekText(offset int) string {
+	pos := t.TokenP + (offset - 1)
+	if pos >= len(t.Tokens) {
+		return EndOfTokens.spelling
+	}
+
+	return t.Tokens[pos].spelling
 }
 
 // AtEnd indicates if we are at the end of the string.

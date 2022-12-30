@@ -112,7 +112,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				prompt = false
 
-				switch tokens.Peek(2).Spelling() {
+				switch tokens.PeekText(2) {
 				case "over":
 					c.SetStepOver(true)
 

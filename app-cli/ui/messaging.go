@@ -64,6 +64,7 @@ const (
 	SymbolLogger
 	TableLogger
 	TraceLogger
+	TokenLogger
 	UserLogger
 )
 
@@ -89,6 +90,7 @@ var loggers []logger = []logger{
 	{"SYMBOLS", false},
 	{"TABLES", false},
 	{"TRACE", false},
+	{"TOKEN", false},
 	{"USER", false},
 }
 

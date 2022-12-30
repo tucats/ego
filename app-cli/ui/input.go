@@ -49,5 +49,9 @@ func PromptPassword(p string) string {
 func IsConsolePipe() bool {
 	fi, _ := os.Stdin.Stat() // get the FileInfo struct describing the standard input.
 
-	return (fi.Mode() & os.ModeCharDevice) == 0
+	isPipe := (fi.Mode() & os.ModeCharDevice) == 0
+
+	Debug(AppLogger, "Console pipe: %v", isPipe)
+
+	return isPipe
 }

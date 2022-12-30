@@ -76,7 +76,7 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 	for _, typeDef := range datatypes.TypeDeclarations {
 		found := true
 
-		if c.t.Peek(1).Spelling() == "interface" {
+		if c.t.PeekText(1) == "interface" {
 			fmt.Println("DEBUG")
 		}
 

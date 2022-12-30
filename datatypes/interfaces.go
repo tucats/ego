@@ -136,7 +136,7 @@ func GetInt64(v interface{}) int64 {
 		result = int64(actual)
 
 	case string:
-		fmt.Scanf("%d", &result)
+		fmt.Sscanf(actual, "%d", &result)
 	}
 
 	return result

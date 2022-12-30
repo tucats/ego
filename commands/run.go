@@ -174,21 +174,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	exitValue := 0
 
 	for {
-		if len(text) > 8 && text[:8] == "%include" {
-			fileName := strings.TrimSpace(text[8:])
-
-			content, err := ioutil.ReadFile(fileName)
-			if !errors.Nil(err) {
-				content, err = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
-				if !errors.Nil(err) {
-					return errors.New(err).Context(fileName)
-				}
-			}
-			// Convert []byte to string
-			text = string(content)
-		}
-
-		// If we are processing interactive console commands, and help is aenabled, and this is a
+		// If we are processing interactive console commands, and help is enabled, and this is a
 		// "help" command, handle that specially.
 		if interactive && settings.GetBool(defs.ExtensionsEnabledSetting) && (strings.HasPrefix(text, "help\n") || strings.HasPrefix(text, "help ")) {
 			keys := strings.Split(strings.ToLower(text), " ")

@@ -28,7 +28,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 			found = true
 
 			for pos, token := range typeDef.Tokens {
-				if c.t.Peek(1+pos).Spelling() != token {
+				if c.t.PeekText(1+pos) != token {
 					found = false
 				}
 			}
