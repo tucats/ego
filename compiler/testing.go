@@ -43,7 +43,7 @@ func initTestType() {
 func (c *Compiler) testDirective() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 
-	testDescription := c.t.Next()
+	testDescription := c.t.Next().Spelling()
 	if testDescription[:1] == "\"" {
 		testDescription = testDescription[1 : len(testDescription)-1]
 	}
@@ -306,7 +306,7 @@ func (c *Compiler) Fail() *errors.EgoError {
 	_ = c.modeCheck("test", true)
 
 	next := c.t.Peek(1)
-	if next != "@" && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
+	if next != tokenizer.DirectiveToken && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
 		if !errors.Nil(err) {
 			return err

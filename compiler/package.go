@@ -23,17 +23,17 @@ func (c *Compiler) compilePackage() *errors.EgoError {
 	}
 
 	name := c.t.Next()
-	if !tokenizer.IsSymbol(name) {
+	if !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidPackageName, name)
 	}
 
-	name = strings.ToLower(name)
+	name = c.normalizeToken(name)
 
-	if (c.PackageName != "") && (c.PackageName != name) {
+	if (c.PackageName != "") && (c.PackageName != name.Spelling()) {
 		return c.newError(errors.ErrPackageRedefinition)
 	}
 
-	c.PackageName = name
+	c.PackageName = name.Spelling()
 
 	c.b.Emit(bytecode.PushPackage, name)
 
@@ -74,21 +74,19 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		var packageName string
 
 		fileName := c.t.Next()
-		if fileName[0:1] != "\"" {
-			packageName = fileName
+		if !fileName.IsString() {
+			packageName = fileName.Spelling()
 			fileName = c.t.Next()
 		}
 
-		if len(fileName) > 2 && fileName[:1] == "\"" {
-			fileName = fileName[1 : len(fileName)-1]
-			// Get the package name from the given string if it wasn't
-			// explicitly given in the import statement.If this is
-			// a file system name, remove the extension if present.
-			if packageName == "" {
-				packageName = filepath.Base(fileName)
-				if filepath.Ext(packageName) != "" {
-					packageName = packageName[:len(filepath.Ext(packageName))]
-				}
+		filePath := fileName.Spelling()
+		// Get the package name from the given string if it wasn't
+		// explicitly given in the import statement.If this is
+		// a file system name, remove the extension if present.
+		if packageName == "" {
+			packageName = filepath.Base(filePath)
+			if filepath.Ext(packageName) != "" {
+				packageName = packageName[:len(filepath.Ext(packageName))]
 			}
 		}
 
@@ -112,24 +110,24 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		if !pkgData.Builtins {
 			pkgData.Builtins = c.AddBuiltins(packageName)
 
-			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName)
+			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName.Spelling())
 		} else {
-			ui.Debug(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName)
+			ui.Debug(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName.Spelling())
 		}
 
 		if !pkgData.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
-			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName)
+			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
 			c.packages.Mutex.Lock()
-			c.packages.Package[packageName] = datatypes.NewPackage(fileName)
+			c.packages.Package[packageName] = datatypes.NewPackage(fileName.Spelling())
 			c.packages.Mutex.Unlock()
 		}
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
 		if !pkgData.Imported {
-			text, err := c.readPackageFile(fileName)
+			text, err := c.readPackageFile(fileName.Spelling())
 			if !errors.Nil(err) {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
@@ -149,8 +147,8 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + fileName).SetRoot(c.RootTable).SetTestMode(c.testMode)
-			importCompiler.b = bytecode.New("import " + fileName)
+			importCompiler := New("import " + filePath).SetRoot(c.RootTable).SetTestMode(c.testMode)
+			importCompiler.b = bytecode.New("import " + filePath)
 			importCompiler.t = tokenizer.New(text)
 			importCompiler.PackageName = packageName
 
@@ -175,7 +173,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			// The import will have generate code that must be run to actually register
 			// package contents.
-			importSymbols := symbols.NewChildSymbolTable("import "+fileName, c.RootTable)
+			importSymbols := symbols.NewChildSymbolTable("import "+fileName.Spelling(), c.RootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
 			err = ctx.Run()
@@ -198,7 +196,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 				for idx, k := range keys {
 					if idx > 0 {
-						keyString = keyString + tokenizer.CommaToken
+						keyString = keyString + ","
 					}
 
 					keyString = keyString + k
@@ -207,7 +205,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
 			}
 
-			err2 := symbols.RootSymbolTable.SetAlways(fileName, pkgData)
+			err2 := symbols.RootSymbolTable.SetAlways(filePath, pkgData)
 			if !errors.Nil(err2) {
 				return err2
 			}

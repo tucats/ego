@@ -15,7 +15,6 @@ import (
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 const (
@@ -283,6 +282,16 @@ func (c *Compiler) normalize(name string) string {
 	return name
 }
 
+// normalizeToken performs case-normalization based on the current
+// compiler settings for an identifier token.
+func (c *Compiler) normalizeToken(t tokenizer.Token) tokenizer.Token {
+	if t.IsIdentifier() && c.LowercaseIdentifiers {
+		return tokenizer.NewIdentifierToken(strings.ToLower(t.Spelling()))
+	}
+
+	return t
+}
+
 func (c *Compiler) SetInteractive(b bool) {
 	if b {
 		c.functionDepth++
@@ -339,7 +348,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 func (c *Compiler) isStatementEnd() bool {
 	next := c.t.Peek(1)
 
-	return util.InList(next, tokenizer.EndOfTokens, tokenizer.SemicolonToken, tokenizer.BlockEndToken)
+	return tokenizer.InList(next, tokenizer.EndOfTokens, tokenizer.SemicolonToken, tokenizer.BlockEndToken)
 }
 
 // Symbols returns the symbol table map from compilation.

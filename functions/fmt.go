@@ -147,16 +147,16 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		if parsingVerb {
 			// Must only be supported format string. TODO We do not allow width
 			// specifications yet.
-			if !util.InList(token, "s", "t", "f", "d", "v") {
+			if !util.InList(token.Spelling(), "s", "t", "f", "d", "v") {
 				return result, errors.New(errors.ErrInvalidFormatVerb)
 			}
 
 			// Add to the previous token
-			f[len(f)-1] = f[len(f)-1] + token
+			f[len(f)-1] = f[len(f)-1] + token.Spelling()
 			parsingVerb = false
 		} else {
-			f = append(f, token)
-			if token == "%" {
+			f = append(f, token.Spelling())
+			if token == tokenizer.ModuloToken {
 				parsingVerb = true
 			}
 		}
@@ -175,7 +175,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%v":
 			var v interface{}
 
-			_, e := fmt.Sscanf(d[idx], "%v", &v)
+			_, e := fmt.Sscanf(d[idx].Spelling(), "%v", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -186,12 +186,12 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 			result = append(result, v)
 
 		case "%s":
-			result = append(result, d[idx])
+			result = append(result, d[idx].Spelling())
 
 		case "%t":
 			v := false
 
-			_, e := fmt.Sscanf(d[idx], "%t", &v)
+			_, e := fmt.Sscanf(d[idx].Spelling(), "%t", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -204,7 +204,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%f":
 			v := 0.0
 
-			_, e := fmt.Sscanf(d[idx], "%f", &v)
+			_, e := fmt.Sscanf(d[idx].Spelling(), "%f", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -217,7 +217,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 		case "%d":
 			v := 0
 
-			_, e := fmt.Sscanf(d[idx], "%d", &v)
+			_, e := fmt.Sscanf(d[idx].Spelling(), "%d", &v)
 			if e != nil {
 				err = errors.New(e).Context("Sscanf()")
 				parsing = false
@@ -228,7 +228,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 			result = append(result, v)
 
 		default:
-			if token != d[idx] {
+			if token != d[idx].Spelling() {
 				parsing = false
 			}
 		}

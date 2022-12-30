@@ -4,7 +4,6 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // isAssignmentTarget peeks ahead to see if this is likely to be an lValue
@@ -21,11 +20,11 @@ func (c *Compiler) isAssignmentTarget() bool {
 	}
 
 	// See if it's a symbol
-	if name := c.t.Peek(1); !tokenizer.IsSymbol(name) {
+	if name := c.t.Peek(1); !name.IsIdentifier() {
 		return false
 	} else {
 		// See if it's a reserved word.
-		if tokenizer.IsReserved(name, c.extensionsEnabled) {
+		if name.IsReserved(c.extensionsEnabled) {
 			return false
 		}
 	}
@@ -35,7 +34,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 	// is a valid/correct lvalue. We also stop searching at some point.
 	for i := 2; i < 100; i = i + 1 {
 		t := c.t.Peek(i)
-		if util.InList(t,
+		if tokenizer.InList(t,
 			tokenizer.DefineToken,
 			tokenizer.AssignToken,
 			tokenizer.ChannelReceiveToken,
@@ -56,11 +55,11 @@ func (c *Compiler) isAssignmentTarget() bool {
 			return true
 		}
 
-		if tokenizer.IsReserved(t, c.extensionsEnabled) {
+		if t.IsReserved(c.extensionsEnabled) {
 			return false
 		}
 
-		if util.InList(t,
+		if tokenizer.InList(t,
 			tokenizer.BlockBeginToken,
 			tokenizer.SemicolonToken,
 			tokenizer.EndOfTokens) {
@@ -88,17 +87,17 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 
 	for {
 		name := c.t.Next()
-		if !tokenizer.IsSymbol(name) {
+		if !name.IsIdentifier() {
 			c.t.Set(savedPosition)
 
 			return nil, c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
-		name = c.normalize(name)
+		name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 		needLoad := true
 
 		// Until we get to the end of the lvalue...
-		for util.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
+		for tokenizer.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
 			if needLoad {
 				bc.Emit(bytecode.Load, name)
 
@@ -114,7 +113,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 		// Cheating here a bit; this opcode does an optional create
 		// if it's not found anywhere in the tree already.
 		bc.Emit(bytecode.SymbolOptCreate, name)
-		patchStore(bc, name, false, false)
+		patchStore(bc, name.Spelling(), false, false)
 
 		count++
 
@@ -126,7 +125,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 			continue
 		}
 
-		if util.InList(c.t.Peek(1),
+		if tokenizer.InList(c.t.Peek(1),
 			tokenizer.AssignToken,
 			tokenizer.DefineToken,
 			tokenizer.ChannelReceiveToken) {
@@ -176,11 +175,11 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		name = c.t.Next()
 	}
 
-	if !tokenizer.IsSymbol(name) {
+	if !name.IsIdentifier() {
 		return nil, c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
-	name = c.normalize(name)
+	name = c.normalizeToken(name)
 	needLoad := true
 
 	// Until we get to the end of the lvalue...
@@ -199,11 +198,11 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 
 	// Quick optimization; if the name is "_" it just means
 	// discard and we can shortcircuit that.
-	if name == bytecode.DiscardedVariableName {
+	if name.Spelling() == bytecode.DiscardedVariableName {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment
-		if util.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2) == tokenizer.ChannelReceiveToken {
+		if tokenizer.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2) == tokenizer.ChannelReceiveToken {
 			c.t.Advance(1)
 		}
 
@@ -211,7 +210,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 			bc.Emit(bytecode.SymbolCreate, name)
 		}
 
-		patchStore(bc, name, isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)
+		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1) == tokenizer.ChannelReceiveToken)
 	}
 
 	bc.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
@@ -248,7 +247,7 @@ func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 // lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences).
 func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 	term := c.t.Peek(1)
-	if term == "[" {
+	if term == tokenizer.StartOfArrayToken {
 		c.t.Advance(1)
 
 		ix, err := c.Expression()
@@ -271,13 +270,13 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
 		c.t.Advance(1)
 
 		member := c.t.Next()
-		if !tokenizer.IsSymbol(member) {
+		if !member.IsIdentifier() {
 			return c.newError(errors.ErrInvalidSymbolName, member)
 		}
 
 		// Must do this as a push/loadindex in case the struct is
 		// actuall a typed struct.
-		bc.Emit(bytecode.Push, c.normalize(member))
+		bc.Emit(bytecode.Push, c.normalize(member.Spelling()))
 		bc.Emit(bytecode.LoadIndex)
 
 		return nil

@@ -78,7 +78,7 @@ var dictionary = map[string]string{
 	"functions.Tokenize":     "Tokenize(s string) []string",
 	"functions.Truncate":     "Truncate(s string, maxLength int) string",
 	"functions.URLPattern":   "URLPattern(url string, pattern string) map[string]string",
-	"functions.Validate":     "Valicate(token string) bool",
+	"functions.Validate":     "Validate(token string) bool",
 	"runtime.DBNew":          "New(connection string) *db",
 	"runtime.LookPath":       "LookPath(command string) string",
 	"runtime.NewCommand":     "Command(command string, args...string) Cmd",

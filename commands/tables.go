@@ -267,13 +267,13 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		value := t.Remainder()
 
 		if strings.EqualFold(strings.TrimSpace(value), defs.True) {
-			payload[column] = true
+			payload[column.Spelling()] = true
 		} else if strings.EqualFold(strings.TrimSpace(value), defs.False) {
-			payload[column] = false
+			payload[column.Spelling()] = false
 		} else if i, err := strconv.Atoi(value); err == nil {
-			payload[column] = i
+			payload[column.Spelling()] = i
 		} else {
-			payload[column] = value
+			payload[column.Spelling()] = value
 		}
 	}
 
@@ -345,7 +345,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		}
 
 		// If we've already defined this one, complain
-		if _, ok := defined[column]; ok {
+		if _, ok := defined[column.Spelling()]; ok {
 			return errors.New(errors.ErrDuplicateColumnName).Context(column)
 		}
 
@@ -353,7 +353,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		found := false
 
 		for _, typeName := range defs.TableColumnTypeNames {
-			if strings.EqualFold(columnType, typeName) {
+			if strings.EqualFold(columnType.Spelling(), typeName) {
 				found = true
 
 				break
@@ -365,7 +365,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		}
 
 		for t.IsNext(tokenizer.CommaToken) {
-			flag := t.Next()
+			flag := t.Next().Spelling()
 
 			switch strings.ToLower(flag) {
 			case "unique":
@@ -378,10 +378,10 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 			}
 		}
 
-		columnInfo.Name = column
-		columnInfo.Type = columnType
-		defined[column] = true
-		fields[column] = columnInfo
+		columnInfo.Name = column.Spelling()
+		columnInfo.Type = columnType.Spelling()
+		defined[column.Spelling()] = true
+		fields[column.Spelling()] = columnInfo
 	}
 
 	// Convert the map to an array of fields
@@ -430,7 +430,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		}
 
 		t := tokenizer.New(p)
-		column := t.Next()
+		column := t.Next().Spelling()
 
 		if !t.IsNext(tokenizer.AssignToken) {
 			return errors.New(errors.ErrMissingAssignment)
@@ -522,7 +522,7 @@ func makeFilter(filters []string) string {
 		var term strings.Builder
 
 		t := tokenizer.New(filter)
-		term1 := t.Next()
+		term1 := t.Next().Spelling()
 
 		if t.AtEnd() {
 			terms = append(terms, term1)
@@ -530,7 +530,7 @@ func makeFilter(filters []string) string {
 			continue
 		}
 
-		op := t.Next()
+		op := t.Next().Spelling()
 
 		if util.InList(term1, "!", "not", "NOT") {
 			term.WriteString("NOT(")
@@ -541,7 +541,7 @@ func makeFilter(filters []string) string {
 			continue
 		}
 
-		term2 := t.Next()
+		term2 := t.Next().Spelling()
 
 		if term1 == "" || term2 == "" {
 			return filterParseError + i18n.E("filter.term.missing")
@@ -713,7 +713,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 				_ = t.AddRowItems(permission.User,
 					permission.Schema,
 					permission.Table,
-					strings.TrimPrefix(strings.Join(permission.Permissions, tokenizer.CommaToken), tokenizer.CommaToken),
+					strings.TrimPrefix(strings.Join(permission.Permissions, ","), ","),
 				)
 			}
 

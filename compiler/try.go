@@ -33,7 +33,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		errName := c.t.Next()
-		if !tokenizer.IsSymbol(errName) {
+		if !errName.IsIdentifier() {
 			return c.newError(errors.ErrInvalidSymbolName)
 		}
 

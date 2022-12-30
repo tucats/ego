@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
+	"github.com/tucats/ego/tokenizer"
 )
 
 // GrowOpcodesBy indicates the number of elements to add to the
@@ -73,6 +74,12 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 		} else {
 			i.Operand = operands[0]
 		}
+	}
+
+	// If the operand is a token, use the spelling of the token
+	// as the value.
+	if t, ok := i.Operand.(tokenizer.Token); ok {
+		i.Operand = t.Spelling()
 	}
 
 	b.instructions[b.emitPos] = i

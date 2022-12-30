@@ -14,7 +14,7 @@ func Test_formWhereClause(t *testing.T) {
 		{
 			name:    "bogus expression",
 			filters: []string{"faux(name,\"string\")"},
-			want:    "SYNTAX-ERROR:unexpected token: faux",
+			want:    "SYNTAX-ERROR:unexpected token: Identifier(faux)",
 		},
 		{
 			name:    "nested expression",
@@ -99,6 +99,11 @@ func Test_filterList(t *testing.T) {
 		arg  string
 		want string
 	}{
+		{
+			name: "compound list",
+			arg:  "https://localhost:8500/tables/data?filter=and(EQ(a,1),EQ(b,2),EQ(c,3))",
+			want: ` WHERE (("a" = 1)  AND  ("b" = 2)  AND  ("c" = 3))`,
+		},
 		{
 			name: "compound contains list",
 			arg:  "https://localhost:8500/tables/data?filter=contains(foo, 'abc', 'def')",

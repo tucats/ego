@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -15,17 +17,17 @@ func (c *Compiler) compileTypeDefinition() *errors.EgoError {
 	}
 
 	name := c.t.Next()
-	if !tokenizer.IsSymbol(name) {
+	if !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
-	name = c.normalize(name)
+	name = c.normalizeToken(name)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingType)
 	}
 
-	return c.typeEmitter(name)
+	return c.typeEmitter(name.Spelling())
 }
 
 // Parses a token stream for a generic type declaration.
@@ -74,9 +76,13 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 	for _, typeDef := range datatypes.TypeDeclarations {
 		found := true
 
+		if c.t.Peek(1).Spelling() == "interface" {
+			fmt.Println("DEBUG")
+		}
+
 		for pos, token := range typeDef.Tokens {
 			eval := c.t.Peek(1 + pos)
-			if eval != token {
+			if eval.Spelling() != token {
 				found = false
 			}
 		}
@@ -90,7 +96,7 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 
 	// Is it a type we already know about?
 	typeName := c.t.Peek(1)
-	if typeDef, ok := c.Types[typeName]; ok {
+	if typeDef, ok := c.Types[typeName.Spelling()]; ok {
 		c.t.Advance(1)
 
 		return typeDef, nil
@@ -108,28 +114,30 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, *errors.EgoError) {
 func CompileTypeSpec(source string) (*datatypes.Type, *errors.EgoError) {
 	typeCompiler := New("type compiler")
 	typeCompiler.t = tokenizer.New(source)
-	name := tokenizer.EmptyToken
+	nameSpelling := ""
 
 	// Does it have a type <name> prefix? And is that a package.name style name?
 	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
-		name = typeCompiler.t.Next()
-		if !tokenizer.IsSymbol(name) {
+		name := typeCompiler.t.Next()
+		if !name.IsIdentifier() {
 			return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name)
 		}
 
+		nameSpelling = name.Spelling()
+
 		if typeCompiler.t.IsNext(tokenizer.DotToken) {
 			name2 := typeCompiler.t.Next()
-			if !tokenizer.IsSymbol(name2) {
+			if !name2.IsIdentifier() {
 				return &datatypes.UndefinedType, errors.New(errors.ErrInvalidSymbolName).Context(name2)
 			}
 
-			name = name + "." + name2
+			nameSpelling = nameSpelling + "." + name2.Spelling()
 		}
 	}
 
 	t, err := typeCompiler.parseType("", true)
-	if errors.Nil(err) && name != tokenizer.EmptyToken {
-		t = datatypes.TypeDefinition(name, t)
+	if errors.Nil(err) && nameSpelling != "" {
+		t = datatypes.TypeDefinition(nameSpelling, t)
 	}
 
 	return t, err

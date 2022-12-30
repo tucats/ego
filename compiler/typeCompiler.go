@@ -39,8 +39,8 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	if !anonymous {
 		// Is it a previously defined type?
 		typeName := c.t.Peek(1)
-		if tokenizer.IsSymbol(typeName) {
-			if t, ok := c.Types[typeName]; ok {
+		if typeName.IsIdentifier() {
+			if t, ok := c.Types[typeName.Spelling()]; ok {
 				c.t.Advance(1)
 
 				return t, nil
@@ -51,6 +51,12 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	// Is it a known complex type?
 
 	// Empty interface
+	if c.t.Peek(1) == tokenizer.EmptyInterfaceToken {
+		c.t.Advance(1)
+
+		return &datatypes.InterfaceType, nil
+	}
+
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.EmptyInitializerToken {
 		c.t.Advance(2)
 
@@ -104,21 +110,21 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			name := c.t.Next()
-			if !tokenizer.IsSymbol(name) {
+			if !name.IsIdentifier() {
 				return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.
-			if c.t.Peek(1) == tokenizer.DotToken && tokenizer.IsSymbol(c.t.Peek(2)) {
+			if c.t.Peek(1) == tokenizer.DotToken && c.t.Peek(2).IsIdentifier() {
 				packageName := name
 				name := c.t.Peek(2)
 
 				// Is it a package name? If so, convert it to an actual package type and
 				// look to see if this is a known type. If so, copy the embedded fields to
 				// the newly created type we're working on.
-				if pkgData, found := c.Symbols().Get(packageName); found {
+				if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
 					if pkg, ok := pkgData.(*datatypes.EgoPackage); ok {
-						if typeInterface, ok := pkg.Get(name); ok {
+						if typeInterface, ok := pkg.Get(name.Spelling()); ok {
 							if typeData, ok := typeInterface.(*datatypes.Type); ok {
 								embedType(t, typeData)
 
@@ -135,7 +141,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 
 			// Is the name actually a type that we embed? If so, get the base type and iterate
 			// over its fields, copying them into our current structure definition.
-			if typeData, found := c.Types[name]; found {
+			if typeData, found := c.Types[name.Spelling()]; found {
 				embedType(t, typeData)
 				c.t.IsNext(tokenizer.CommaToken)
 
@@ -147,15 +153,15 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 			// up the names first, and then use each one on the list against
 			// the type definition.
 			fieldNames := make([]string, 1)
-			fieldNames[0] = name
+			fieldNames[0] = name.Spelling()
 
 			for c.t.IsNext(tokenizer.CommaToken) {
 				nextField := c.t.Next()
-				if !tokenizer.IsSymbol(nextField) {
+				if !nextField.IsIdentifier() {
 					return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 				}
 
-				fieldNames = append(fieldNames, nextField)
+				fieldNames = append(fieldNames, nextField.Spelling())
 			}
 
 			fieldType, err := c.parseType("", false)
@@ -190,7 +196,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 		found = true
 
 		for idx, token := range typeDeclaration.Tokens {
-			if c.t.Peek(1+idx) != token {
+			if c.t.Peek(1+idx).Spelling() != token {
 				found = false
 
 				break
@@ -207,26 +213,28 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 	// User type known to this compilation?
 	typeName := c.t.Peek(1)
 
-	if t, found := c.Types[typeName]; found {
+	if t, found := c.Types[typeName.Spelling()]; found {
 		c.t.Advance(1)
 
 		return t, nil
 	}
 
-	if tokenizer.IsSymbol(typeName) && c.t.Peek(2) == tokenizer.DotToken && tokenizer.IsSymbol(c.t.Peek(3)) {
+	typeNameSpelling := typeName.Spelling()
+
+	if typeName.IsIdentifier() && c.t.Peek(2) == tokenizer.DotToken && c.t.Peek(3).IsIdentifier() {
 		packageName := typeName
 		typeName = c.t.Peek(3)
 
-		if t, found := c.GetPackageType(packageName, typeName); found {
+		if t, found := c.GetPackageType(packageName.Spelling(), typeName.Spelling()); found {
 			c.t.Advance(3)
 
 			return t, nil
 		}
 
-		typeName = packageName + "." + typeName
+		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
 	}
 
-	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType, typeName)
+	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType, typeNameSpelling)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

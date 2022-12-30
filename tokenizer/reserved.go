@@ -1,100 +1,172 @@
 package tokenizer
 
 // Symbolic names for each string token value.
-const (
-	AssertToken              = "assert"
-	BoolToken                = "bool"
-	BlockBeginToken          = "{"
-	BlockEndToken            = "}"
-	BreakToken               = "break"
-	ByteToken                = "byte"
-	CallToken                = "call"
-	CaseToken                = "case"
-	CatchToken               = "catch"
-	ChanToken                = "chan"
-	ConstToken               = "const"
-	ContinueToken            = "continue"
-	DataBeginToken           = "{"
-	DataEndToken             = "}"
-	DefaultToken             = "default"
-	DeferToken               = "defer"
-	DirectiveToken           = "@"
-	ElseToken                = "else"
-	EmptyBlockToken          = "{}"
-	EmptyInitializerToken    = "{}"
-	EmptyInterfaceToken      = "interface{}"
-	ExitToken                = "exit"
-	Float32Token             = "flaot32"
-	Float64Token             = "float64"
-	ForToken                 = "for"
-	FuncToken                = "func"
-	GoToken                  = "go"
-	IfToken                  = "if"
-	IntToken                 = "int"
-	Int32Token               = "int32"
-	Int64Token               = "int64"
-	InterfaceToken           = "interface"
-	ImportToken              = "import"
-	MakeToken                = "make"
-	MapToken                 = "map"
-	NilToken                 = "nil"
-	PackageToken             = "package"
-	PrintToken               = "print"
-	RangeToken               = "range"
-	ReturnToken              = "return"
-	StringToken              = "string"
-	StructToken              = "struct"
-	SwitchToken              = "switch"
-	TypeToken                = "type"
-	TryToken                 = "try"
-	VarToken                 = "var"
-	SemicolonToken           = ";"
-	ColonToken               = ":"
-	DefineToken              = ":="
-	AssignToken              = "="
-	CommaToken               = ","
-	EqualsToken              = "=="
-	GreaterThanToken         = ">"
-	GreaterThanOrEqualsToken = ">="
-	LessThanToken            = "<"
-	LessThanOrEqualsToken    = "<="
-	ShiftLeftToken           = "<<"
-	ShiftRightToken          = ">>"
-	NotToken                 = "!"
-	NotEqualsToken           = "!="
-	ModuloToken              = "%"
-	ExponentToken            = "^"
-	AddToken                 = "+"
-	SubtractToken            = "-"
-	MultiplyToken            = "*"
-	DivideToken              = "/"
-	PointerToken             = "*"
-	AddressToken             = "&"
-	AndToken                 = "&"
-	OrToken                  = "|"
-	BooleanAndToken          = "&&"
-	BooleanOrToken           = "||"
-	AddAssignToken           = "+="
-	SubtractAssignToken      = "-="
-	MultiplyAssignToken      = "*="
-	DivideAssignToken        = "/="
-	IncrementToken           = "++"
-	DecrementToken           = "--"
-	DotToken                 = "."
-	VariadicToken            = "..."
-	ChannelReceiveToken      = "<-"
-	ChannelSendToken         = "->"
-	StartOfListToken         = "("
-	EndOfListToken           = ")"
-	StartOfArrayToken        = "["
-	EndOfArrayToken          = "]"
-	OptionalToken            = "?"
-	EmptyToken               = ""
-	NegateToken              = "-"
+var (
+	AssertToken              = NewReservedToken("assert")
+	BoolToken                = NewTypeToken("bool")
+	BlockBeginToken          = NewSpecialToken("{")
+	BlockEndToken            = NewSpecialToken("}")
+	BreakToken               = NewReservedToken("break")
+	ByteToken                = NewTypeToken("byte")
+	CallToken                = NewReservedToken("call")
+	CaseToken                = NewIdentifierToken("case")
+	CatchToken               = NewReservedToken("catch")
+	ChanToken                = NewTypeToken("chan")
+	ClearToken               = NewIdentifierToken("clear")
+	ConstToken               = NewReservedToken("const")
+	ContinueToken            = NewReservedToken("continue")
+	DataBeginToken           = NewSpecialToken("{")
+	DataEndToken             = NewSpecialToken("}")
+	DefaultToken             = NewIdentifierToken("default")
+	DeferToken               = NewReservedToken("defer")
+	DirectiveToken           = NewSpecialToken("@")
+	ElseToken                = NewReservedToken("else")
+	EmptyBlockToken          = NewSpecialToken("{}")
+	EmptyInitializerToken    = NewSpecialToken("{}")
+	EmptyInterfaceToken      = NewTypeToken("interface{}")
+	ExitToken                = NewReservedToken("exit")
+	Float32Token             = NewTypeToken("float32")
+	Float64Token             = NewTypeToken("float64")
+	ForToken                 = NewReservedToken("for")
+	FuncToken                = NewReservedToken("func")
+	GoToken                  = NewReservedToken("go")
+	IfToken                  = NewReservedToken("if")
+	IntToken                 = NewTypeToken("int")
+	Int32Token               = NewTypeToken("int32")
+	Int64Token               = NewTypeToken("int64")
+	InterfaceToken           = NewIdentifierToken("interface")
+	ImportToken              = NewReservedToken("import")
+	MakeToken                = NewReservedToken("make")
+	MapToken                 = NewTypeToken("map")
+	NilToken                 = NewReservedToken("nil")
+	PackageToken             = NewReservedToken("package")
+	PanicToken               = NewReservedToken("panic")
+	PrintToken               = NewReservedToken("print")
+	RangeToken               = NewIdentifierToken("range")
+	ReturnToken              = NewReservedToken("return")
+	StringToken              = NewTypeToken("string")
+	StructToken              = NewTypeToken("struct")
+	SwitchToken              = NewReservedToken("switch")
+	TestToken                = NewIdentifierToken("test")
+	TypeToken                = NewReservedToken("type")
+	TryToken                 = NewReservedToken("try")
+	VarToken                 = NewReservedToken("var")
+	WhenToken                = NewIdentifierToken("when")
+	SemicolonToken           = NewSpecialToken(";")
+	ColonToken               = NewSpecialToken(":")
+	DefineToken              = NewSpecialToken(":=")
+	AssignToken              = NewSpecialToken("=")
+	CommaToken               = NewSpecialToken(",")
+	EqualsToken              = NewSpecialToken("==")
+	GreaterThanToken         = NewSpecialToken(">")
+	GreaterThanOrEqualsToken = NewSpecialToken(">=")
+	LessThanToken            = NewSpecialToken("<")
+	LessThanOrEqualsToken    = NewSpecialToken("<=")
+	ShiftLeftToken           = NewSpecialToken("<<")
+	ShiftRightToken          = NewSpecialToken(">>")
+	NotToken                 = NewSpecialToken("!")
+	NotEqualsToken           = NewSpecialToken("!=")
+	ModuloToken              = NewSpecialToken("%")
+	ExponentToken            = NewSpecialToken("^")
+	AddToken                 = NewSpecialToken("+")
+	SubtractToken            = NewSpecialToken("-")
+	MultiplyToken            = NewSpecialToken("*")
+	DivideToken              = NewSpecialToken("/")
+	PointerToken             = NewSpecialToken("*")
+	AddressToken             = NewSpecialToken("&")
+	AndToken                 = NewSpecialToken("&")
+	OrToken                  = NewSpecialToken("|")
+	BooleanAndToken          = NewSpecialToken("&&")
+	BooleanOrToken           = NewSpecialToken("||")
+	AddAssignToken           = NewSpecialToken("+=")
+	SubtractAssignToken      = NewSpecialToken("-=")
+	MultiplyAssignToken      = NewSpecialToken("*=")
+	DivideAssignToken        = NewSpecialToken("/=")
+	IncrementToken           = NewSpecialToken("++")
+	DecrementToken           = NewSpecialToken("--")
+	DotToken                 = NewSpecialToken(".")
+	VariadicToken            = NewSpecialToken("...")
+	ChannelReceiveToken      = NewSpecialToken("<-")
+	ChannelSendToken         = NewSpecialToken("->")
+	StartOfListToken         = NewSpecialToken("(")
+	EndOfListToken           = NewSpecialToken(")")
+	StartOfArrayToken        = NewSpecialToken("[")
+	EndOfArrayToken          = NewSpecialToken("]")
+	OptionalToken            = NewSpecialToken("?")
+	EmptyToken               = NewSpecialToken("")
+	NegateToken              = NewSpecialToken("-")
 )
 
+// TypeTokens is a list of tokens that represent type names.
+var TypeTokens = map[Token]bool{
+	BoolToken:    true,
+	ByteToken:    true,
+	IntToken:     true,
+	Int32Token:   true,
+	Int64Token:   true,
+	Float32Token: true,
+	Float64Token: true,
+	StringToken:  true,
+	StructToken:  true,
+	MapToken:     true,
+}
+
+// SpecialTokens is a list of tokens that are considered special symantic characters.
+var SpecialTokens = map[Token]bool{
+	BlockBeginToken:          true,
+	BlockEndToken:            true,
+	DataBeginToken:           true,
+	DataEndToken:             true,
+	DirectiveToken:           true,
+	EmptyBlockToken:          true,
+	EmptyInitializerToken:    true,
+	SemicolonToken:           true,
+	ColonToken:               true,
+	DefineToken:              true,
+	AssignToken:              true,
+	CommaToken:               true,
+	EqualsToken:              true,
+	GreaterThanToken:         true,
+	GreaterThanOrEqualsToken: true,
+	LessThanToken:            true,
+	LessThanOrEqualsToken:    true,
+	ShiftLeftToken:           true,
+	ShiftRightToken:          true,
+	NotToken:                 true,
+	NotEqualsToken:           true,
+	ModuloToken:              true,
+	ExponentToken:            true,
+	AddToken:                 true,
+	SubtractToken:            true,
+	MultiplyToken:            true,
+	DivideToken:              true,
+	PointerToken:             true,
+	AddressToken:             true,
+	AndToken:                 true,
+	OrToken:                  true,
+	BooleanAndToken:          true,
+	BooleanOrToken:           true,
+	AddAssignToken:           true,
+	SubtractAssignToken:      true,
+	MultiplyAssignToken:      true,
+	DivideAssignToken:        true,
+	IncrementToken:           true,
+	DecrementToken:           true,
+	DotToken:                 true,
+	VariadicToken:            true,
+	ChannelReceiveToken:      true,
+	ChannelSendToken:         true,
+	StartOfListToken:         true,
+	EndOfListToken:           true,
+	StartOfArrayToken:        true,
+	EndOfArrayToken:          true,
+	OptionalToken:            true,
+	EmptyToken:               true,
+	NegateToken:              true,
+}
+
 // ReservedWords is the list of reserved words in the _Ego_ language.
-var ReservedWords = map[string]bool{
+var ReservedWords = map[Token]bool{
 	BoolToken:      true,
 	BreakToken:     true,
 	ByteToken:      true,
@@ -127,18 +199,28 @@ var ReservedWords = map[string]bool{
 
 // ExtendedReservedWords are additional reserved words when running with
 // language extensions enabled.
-var ExtendedReservedWords = map[string]bool{
+var ExtendedReservedWords = map[Token]bool{
 	CallToken:  true,
 	CatchToken: true,
 	PrintToken: true,
 	TryToken:   true,
+	ExitToken:  true,
+}
+
+// This is a list of spellings of reserved words that should be
+// considered as identifiers as well.
+var reservedIdentifiers = map[Token]bool{
+	MakeToken:      true,
+	TypeToken:      true,
+	InterfaceToken: true,
 }
 
 // IsReserved indicates if a name is a reserved word.
-func IsReserved(name string, includeExtensions bool) bool {
-	_, reserved := ReservedWords[name]
+func (t Token) IsReserved(includeExtensions bool) bool {
+	_, reserved := ReservedWords[t]
+
 	if !reserved && includeExtensions {
-		_, extendedReserved := ExtendedReservedWords[name]
+		_, extendedReserved := ExtendedReservedWords[t]
 		reserved = reserved || extendedReserved
 	}
 

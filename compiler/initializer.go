@@ -28,13 +28,13 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Pairs of name:value
 			name := c.t.Next()
-			if !tokenizer.IsSymbol(name) {
+			if !name.IsIdentifier() {
 				return c.newError(errors.ErrInvalidSymbolName)
 			}
 
-			name = c.normalize(name)
+			name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 
-			ft, err := base.Field(name)
+			ft, err := base.Field(name.Spelling())
 			if !errors.Nil(err) {
 				return err
 			}

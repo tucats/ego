@@ -27,7 +27,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			name := c.t.Peek(2)
 			colon := c.t.Peek(3)
 
-			if tokenizer.IsSymbol(name) && colon == tokenizer.ColonToken {
+			if name.IsIdentifier() && colon == tokenizer.ColonToken {
 				c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 				err := c.expressionAtom()
@@ -55,7 +55,7 @@ func (c *Compiler) reference() *errors.EgoError {
 		case tokenizer.DotToken:
 			c.t.Advance(1)
 
-			lastName = c.t.Next()
+			lastName = c.t.Next().Spelling()
 			if !tokenizer.IsSymbol(lastName) {
 				return c.newError(errors.ErrInvalidIdentifier)
 			}
@@ -76,7 +76,7 @@ func (c *Compiler) reference() *errors.EgoError {
 				c.b.Emit(bytecode.Call, 1)
 			} else {
 				// Is it a generator for a type?
-				if c.t.Peek(1) == tokenizer.DataBeginToken && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == tokenizer.ColonToken {
+				if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
 					c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 					err := c.expressionAtom()
@@ -116,7 +116,7 @@ func (c *Compiler) reference() *errors.EgoError {
 				// length of the item below current ToS. The actual
 				// displacement is 2, since before executing it we
 				// also already pushed the length fuction on stack.
-				if c.t.Peek(1) == "]" {
+				if c.t.Peek(1) == tokenizer.EndOfArrayToken {
 					c.b.Emit(bytecode.Load, "len")
 					c.b.Emit(bytecode.ReadStack, -2)
 					c.b.Emit(bytecode.Call, 1)

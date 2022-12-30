@@ -97,11 +97,11 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		// We have a command now in the tokens buffer.
 		if errors.Nil(err) {
 			t := tokens.Peek(1)
-			switch t {
+			switch t.Spelling() {
 			case "help":
 				_ = Help()
 
-			case tokenizer.GoToken, tokenizer.ContinueToken:
+			case "go", "continue":
 				c.SetSingleStep(false)
 
 				prompt = false
@@ -112,18 +112,18 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				prompt = false
 
-				switch tokens.Peek(2) {
+				switch tokens.Peek(2).Spelling() {
 				case "over":
 					c.SetStepOver(true)
 
 				case "into":
 					c.SetStepOver(false)
 
-				case tokenizer.ReturnToken:
+				case "return":
 					c.SetBreakOnReturn()
 					c.SetSingleStep(false)
 
-				case tokenizer.EndOfTokens:
+				case "":
 					// No action, this is the default step case
 
 				default:
@@ -139,11 +139,11 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 			case "set":
 				err = runAfterFirstToken(s, tokens, false)
 
-			case tokenizer.CallToken:
+			case "call":
 				err = runAfterFirstToken(s, tokens, true)
 
-			case tokenizer.PrintToken:
-				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), tokenizer.PrintToken, "", 1) + ")"
+			case "print":
+				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
 				t2 := tokenizer.New(text)
 
 				traceMode := ui.LoggerIsActive(ui.TraceLogger)
@@ -156,10 +156,10 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				ui.SetLogger(ui.TraceLogger, traceMode)
 
-			case tokenizer.BreakToken:
+			case "break":
 				err = Break(c, tokens)
 
-			case tokenizer.ExitToken:
+			case "exit":
 				return errors.New(errors.ErrStop)
 
 			default:
@@ -218,14 +218,14 @@ func getLine() string {
 		bracketCount := 0
 		openTick := false
 
-		lastToken := t.Tokens[len(t.Tokens)-1]
+		lastToken := t.Tokens[len(t.Tokens)-1].Spelling()
 		if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
 			openTick = true
 		}
 
 		if !openTick {
 			for _, v := range t.Tokens {
-				switch v {
+				switch v.Spelling() {
 				case "[":
 					bracketCount++
 
@@ -238,10 +238,10 @@ func getLine() string {
 				case ")":
 					parenCount--
 
-				case tokenizer.DataBeginToken:
+				case "{":
 					braceCount++
 
-				case tokenizer.DataEndToken:
+				case "}":
 					braceCount--
 				}
 			}

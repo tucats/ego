@@ -42,11 +42,11 @@ func Test_negateByteCode(t *testing.T) {
 			err:   errors.New(errors.ErrInvalidType).Context("nil"),
 		},
 		{
-			name:  "unsupported nil boolean value",
+			name:  "negate nil boolean value",
 			arg:   true,
 			stack: []interface{}{nil},
-			want:  -5,
-			err:   errors.New(errors.ErrInvalidType).Context("nil"),
+			want:  true,
+			err:   nil,
 		},
 		{
 			name:  "NOT  integer",

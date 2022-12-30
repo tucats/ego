@@ -109,9 +109,9 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
-	// Cannot do math on a nil value
+	// A nil value is treated as false, so !nil is true
 	if datatypes.IsNil(v) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.stackPush(true)
 	}
 
 	switch value := v.(type) {

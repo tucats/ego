@@ -99,7 +99,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 		// If it doesn't start with "@", "test" it's not a test,
 		// but a support file, and we skip it.
-		if len(t.Tokens) < 2 || t.Peek(1) != "@" || t.Peek(2) != "test" {
+		if len(t.Tokens) < 2 || t.Peek(1) != tokenizer.DirectiveToken || t.Peek(2) != tokenizer.TestToken {
 			continue
 		}
 

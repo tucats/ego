@@ -20,14 +20,14 @@ func (c *Compiler) compileVar() *errors.EgoError {
 			return c.newError(errors.ErrMissingSymbol)
 		}
 
-		if !tokenizer.IsSymbol(name) {
+		if !name.IsIdentifier() {
 			c.t.Advance(-1)
 
 			return c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
 		// See if it's a reserved word.
-		if tokenizer.IsReserved(name, c.extensionsEnabled) {
+		if name.IsReserved(c.extensionsEnabled) {
 			c.t.Advance(-1)
 			// If we mid-list, then just done with list
 			if len(names) > 0 {
@@ -37,8 +37,8 @@ func (c *Compiler) compileVar() *errors.EgoError {
 			return c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
-		name = c.normalize(name)
-		names = append(names, name)
+		name = c.normalizeToken(name)
+		names = append(names, name.Spelling())
 
 		if !c.t.IsNext(tokenizer.CommaToken) {
 			break
@@ -56,7 +56,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		// Is the next item a symbol? If so, assume it's a user
 		// defined type
 		typeName := c.t.Next()
-		if tokenizer.IsSymbol(typeName) {
+		if typeName.IsIdentifier() {
 			for _, name := range names {
 				c.b.Emit(bytecode.Load, "new")
 				c.b.Emit(bytecode.Load, typeName)

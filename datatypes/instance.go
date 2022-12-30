@@ -30,7 +30,7 @@ func InstanceOfType(t *Type) interface{} {
 		return NewMap(t.keyType, t.valueType)
 
 	case ArrayKind:
-		return NewArray(t, 0)
+		return NewArray(t.valueType, 0)
 
 	case TypeKind:
 		return t.InstanceOf(nil)

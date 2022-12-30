@@ -3,6 +3,7 @@ package tables
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -258,7 +259,11 @@ func splitSQLStatements(s string) []string {
 				next = next + " "
 			}
 
-			next = next + token
+			if token.IsString() {
+				next = fmt.Sprintf("%s\"%s\"", next, token.Spelling())
+			} else {
+				next = next + token.Spelling()
+			}
 		}
 	}
 

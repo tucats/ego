@@ -40,7 +40,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
 		// reserved words are not valid symbol names
-		if tokenizer.IsReserved(k, false) {
+		if tokenizer.NewReservedToken(k).IsReserved(false) {
 			continue
 		}
 
@@ -155,7 +155,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
 		// reserved words are not valid symbol names
-		if tokenizer.IsReserved(k, false) {
+		if tokenizer.NewReservedToken(k).IsReserved(false) {
 			continue
 		}
 

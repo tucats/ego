@@ -18,14 +18,14 @@ import (
 // elsewhere.
 func (c *Compiler) compileDirective() *errors.EgoError {
 	name := c.t.Next()
-	if !tokenizer.IsSymbol(name) {
+	if !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidDirective, name)
 	}
 
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
 
-	switch name {
-	case tokenizer.AssertToken:
+	switch name.Spelling() {
+	case tokenizer.AssertToken.Spelling():
 		return c.Assert()
 
 	case "authenticated":
@@ -94,10 +94,10 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 func (c *Compiler) entrypointDirective() *errors.EgoError {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
-		mainName = "main"
+		mainName = tokenizer.NewIdentifierToken("main")
 	}
 
-	c.b.Emit(bytecode.Push, mainName)
+	c.b.Emit(bytecode.Push, mainName.Spelling())
 	c.b.Emit(bytecode.Dup)
 	c.b.Emit(bytecode.StoreAlways, "__main")
 	c.b.Emit(bytecode.EntryPoint)
@@ -113,16 +113,16 @@ func (c *Compiler) entrypointDirective() *errors.EgoError {
 func (c *Compiler) handlerDirective() *errors.EgoError {
 	handlerName := c.t.Next()
 	if handlerName == tokenizer.EndOfTokens || handlerName == tokenizer.SemicolonToken {
-		handlerName = "handler"
+		handlerName = tokenizer.NewIdentifierToken("handler")
 	}
 
-	if !tokenizer.IsSymbol(handlerName) {
+	if !handlerName.IsIdentifier() {
 		return c.newError(errors.ErrInvalidIdentifier)
 	}
 
 	// Determine if we are in "real" http mode
 	httpMode := false
-	if c.t.Tokens[0] == tokenizer.ImportToken || util.InList(c.t.Tokens[1], "http", "\"http\"") {
+	if c.t.Tokens[0] == tokenizer.ImportToken || util.InList(c.t.Tokens[1].Spelling(), "http", "\"http\"") {
 		httpMode = true
 	}
 
@@ -180,11 +180,11 @@ func (c *Compiler) globalDirective() *errors.EgoError {
 	}
 
 	name := c.t.Next()
-	if strings.HasPrefix(name, "_") || !tokenizer.IsSymbol(name) {
+	if strings.HasPrefix(name.Spelling(), "_") || !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
-	name = c.normalize(name)
+	symbolName := c.normalize(name.Spelling())
 
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, "")
@@ -197,7 +197,7 @@ func (c *Compiler) globalDirective() *errors.EgoError {
 		c.b.Append(bc)
 	}
 
-	c.b.Emit(bytecode.StoreGlobal, name)
+	c.b.Emit(bytecode.StoreGlobal, symbolName)
 
 	return nil
 }
@@ -237,7 +237,7 @@ func (c *Compiler) textDirective() *errors.EgoError {
 func (c *Compiler) lineDirective() *errors.EgoError {
 	lineString := c.t.Next()
 
-	line, err := strconv.Atoi(lineString)
+	line, err := strconv.Atoi(lineString.Spelling())
 	if err != nil {
 		return c.newError(err)
 	}
@@ -255,9 +255,9 @@ func (c *Compiler) logDirective() *errors.EgoError {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
 
-	name := strings.ToUpper(c.t.Next())
-	if !tokenizer.IsSymbol(name) {
-		return c.newError(errors.ErrInvalidSymbolName, name)
+	next := c.t.Next()
+	if !next.IsIdentifier() {
+		return c.newError(errors.ErrInvalidSymbolName, next)
 	}
 
 	if c.t.AtEnd() {
@@ -271,7 +271,7 @@ func (c *Compiler) logDirective() *errors.EgoError {
 		c.b.Append(bc)
 	}
 
-	c.b.Emit(bytecode.Log, name)
+	c.b.Emit(bytecode.Log, c.normalize(next.Spelling()))
 
 	return nil
 }
@@ -310,7 +310,7 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 	if c.t.AtEnd() {
 		token = defs.Any
 	} else {
-		token = strings.ToLower(c.t.Next())
+		token = c.t.Next().Spelling()
 	}
 
 	if !util.InList(token,
@@ -351,11 +351,11 @@ func (c *Compiler) responseDirective() *errors.EgoError {
 func (c *Compiler) templateDirective() *errors.EgoError {
 	// Get the template name
 	name := c.t.Next()
-	if !tokenizer.IsSymbol(name) {
+	if !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidSymbolName, name)
 	}
 
-	name = c.normalize(name)
+	nameSpelling := c.normalize(name.Spelling())
 
 	// Get the template string definition
 	bc, err := c.Expression()
@@ -364,9 +364,9 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 	}
 
 	c.b.Append(bc)
-	c.b.Emit(bytecode.Template, name)
-	c.b.Emit(bytecode.SymbolCreate, name)
-	c.b.Emit(bytecode.Store, name)
+	c.b.Emit(bytecode.Template, nameSpelling)
+	c.b.Emit(bytecode.SymbolCreate, nameSpelling)
+	c.b.Emit(bytecode.Store, nameSpelling)
 
 	return nil
 }
@@ -396,7 +396,7 @@ func (c *Compiler) errorDirective() *errors.EgoError {
 func (c *Compiler) typeDirective() *errors.EgoError {
 	var err error
 
-	if t := c.t.Next(); util.InList(t, "static", "dynamic") {
+	if t := c.t.Next().Spelling(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
 		err = c.newError(errors.ErrInvalidTypeCheck, t)
@@ -410,7 +410,7 @@ func (c *Compiler) typeDirective() *errors.EgoError {
 // atStatementEnd checks the next token in the stream to see if it indicates
 // that we have parsed all of the statement.
 func (c *Compiler) atStatementEnd() bool {
-	return util.InList(c.t.Peek(1), tokenizer.SemicolonToken, tokenizer.BlockBeginToken, tokenizer.BlockEndToken, tokenizer.EndOfTokens)
+	return tokenizer.InList(c.t.Peek(1), tokenizer.SemicolonToken, tokenizer.BlockBeginToken, tokenizer.BlockEndToken, tokenizer.EndOfTokens)
 }
 
 // modeCheck emits the code to verify that we are running

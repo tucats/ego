@@ -21,12 +21,21 @@ const (
 	EgoDialect = 1
 )
 
-// @tomcole probably need to dump this entirely and work on variadic substitution arguments in query!
 func sqlEscape(source string) string {
 	var result strings.Builder
 
-	for _, ch := range source {
-		if ch == '\'' || ch == ';' {
+	if strings.HasPrefix(source, "'") {
+		source = strings.TrimPrefix(strings.TrimSuffix(source, "'"), "'")
+	} else if strings.HasPrefix(source, "\"") {
+		source = strings.TrimPrefix(strings.TrimSuffix(source, "\""), "\"")
+	}
+
+	for idx, ch := range source {
+		if idx > 0 && idx < len(source)-1 && ch == '\'' {
+			return "INVALID-NAME"
+		}
+
+		if ch == ';' {
 			return "INVALID-NAME"
 		}
 
@@ -97,7 +106,7 @@ func formWhereExpressions(filters []string) string {
 
 			result.WriteString(clause)
 
-			if !tokens.IsNext(",") {
+			if !tokens.IsNext(tokenizer.CommaToken) {
 				break
 			}
 
@@ -124,7 +133,7 @@ func formCondition(condition string) string {
 
 		result.WriteString(clause)
 
-		if !tokens.IsNext(",") {
+		if !tokens.IsNext(tokenizer.CommaToken) {
 			break
 		}
 
@@ -138,42 +147,37 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	var result strings.Builder
 
 	operator := tokens.Next()
-	isName := tokenizer.IsSymbol(operator)
+	isName := operator.IsIdentifier()
 
-	if operator == "true" || operator == "false" {
+	if operator.IsIdentifier() && (operator.Spelling() == "true" || operator.Spelling() == "false") {
 		isName = false
 	}
 
-	if !tokens.IsNext("(") {
-		// Assume it's a constant value of some kind. Convert Ego strings to SQL strings
-		isString := false
-
-		if strings.HasPrefix(operator, "\"") && strings.HasSuffix(operator, "\"") {
-			operator = stripQuotes(operator)
-			isString = true
-		} else {
-			if strings.HasPrefix(operator, "'") && strings.HasSuffix(operator, "'") {
-				operator = strings.TrimPrefix(strings.TrimSuffix(operator, "'"), "'")
-				isString = true
-			}
+	if !tokens.IsNext(tokenizer.StartOfListToken) {
+		// Assume it's a constant value of some kind. Convert Ego strings to SQL strings.
+		// Note that we have to test for the case of a value token that contains a single-
+		// quoted string. If found, identify as a string.
+		isString := operator.IsString()
+		if !isString && operator.IsClass(tokenizer.ValueTokenClass) {
+			isString = strings.HasPrefix(operator.Spelling(), "'")
 		}
 
-		operator = sqlEscape(operator)
+		operatorSpelling := sqlEscape(operator.Spelling())
 
 		if isString {
 			switch dialect {
 			case SQLDialect:
-				operator = "'" + operator + "'"
+				operatorSpelling = "'" + operatorSpelling + "'"
 			case EgoDialect:
-				operator = "\"" + operator + "\""
+				operatorSpelling = "\"" + operatorSpelling + "\""
 			}
 		}
 
 		if isName && dialect == SQLDialect {
-			operator = "\"" + operator + "\""
+			operatorSpelling = "\"" + operatorSpelling + "\""
 		}
 
-		return operator, nil
+		return operatorSpelling, nil
 	}
 
 	prefix := ""
@@ -182,7 +186,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	// Contains is weird, so handle it separately. Note that we pay attention to the *ALL form
 	// as meaning all the cases must be true, versus the default of any of the cases are true.
-	if util.InList(strings.ToUpper(operator), "CONTAINS", "HAS", "HASANY", "CONTAINSALL", "HASALL") {
+	if util.InList(strings.ToUpper(operator.Spelling()), "CONTAINS", "HAS", "HASANY", "CONTAINSALL", "HASALL") {
 		var conjunction string
 
 		switch dialect {
@@ -193,7 +197,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			conjunction = " || "
 		}
 
-		if util.InList(strings.ToUpper(operator), "CONTAINSALL", "HASALL") {
+		if util.InList(strings.ToUpper(operator.Spelling()), "CONTAINSALL", "HASALL") {
 			switch dialect {
 			case SQLDialect:
 				conjunction = " AND "
@@ -210,7 +214,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 		valueCount := 0
 
-		for tokens.IsNext(",") {
+		for tokens.IsNext(tokenizer.CommaToken) {
 			if valueCount > 0 {
 				result.WriteString(conjunction)
 			}
@@ -240,7 +244,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			}
 		}
 
-		if !tokens.IsNext(")") {
+		if !tokens.IsNext(tokenizer.EndOfListToken) {
 			return "", errors.New(errors.ErrMissingParenthesis)
 		}
 
@@ -248,7 +252,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	}
 
 	// Handle regular old monadic and diadic operators as a group.
-	switch strings.ToUpper(operator) {
+	switch strings.ToUpper(operator.Spelling()) {
 	case "EQ":
 		switch dialect {
 		case SQLDialect:
@@ -315,7 +319,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		for {
 			termCount++
 			result.WriteString(term)
-			if !tokens.IsNext(",") {
+			if !tokens.IsNext(tokenizer.CommaToken) {
 				if termCount < 2 {
 					return "", errors.New(errors.ErrInvalidList)
 				}
@@ -334,7 +338,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		result.WriteString(")")
 	}
 
-	if !tokens.IsNext(")") {
+	if !tokens.IsNext(tokenizer.EndOfListToken) {
 		return "", errors.New(errors.ErrMissingParenthesis)
 	}
 

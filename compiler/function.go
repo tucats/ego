@@ -64,7 +64,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	}
 	// Create a new bytecode object which will hold the function
 	// generated code.
-	b := bytecode.New(functionName)
+	b := bytecode.New(functionName.Spelling())
 
 	// Store the function declaration metadata (if any) in the
 	// bytecode we're generating.
@@ -168,7 +168,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	// current token stream in progress, and the current bytecode. But otherwise we
 	// use a new compiler context, so any nested operations do not affect the definition
 	// of the function body we're compiling.
-	cx := New("function " + functionName).SetRoot(c.RootTable)
+	cx := New("function " + functionName.Spelling()).SetRoot(c.RootTable)
 	cx.t = c.t
 	cx.b = b
 	cx.Types = c.Types
@@ -218,15 +218,15 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	} else {
 		if receiverType != tokenizer.EmptyToken {
 			// If there was a receiver, make sure this function is added to the type structure
-			t, ok := c.Types[receiverType]
+			t, ok := c.Types[receiverType.Spelling()]
 			if !ok {
 				return c.newError(errors.ErrUnknownType, receiverType)
 			}
 
 			// Update the function in the type map, and generate new code
 			// to update the type definition in the symbol table.
-			t.DefineFunction(functionName, b)
-			c.Types[receiverType] = t
+			t.DefineFunction(functionName.Spelling(), b)
+			c.Types[receiverType.Spelling()] = t
 
 			c.b.Emit(bytecode.Push, t)
 			c.b.Emit(bytecode.StoreAlways, receiverType)
@@ -264,9 +264,11 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 		return nil, c.newError(errors.ErrMissingFunctionName)
 	}
 
-	funcDef.Name, _, _, _, err = c.parseFunctionName()
+	funcName, _, _, _, err := c.parseFunctionName()
 	if !errors.Nil(err) {
 		return nil, err
+	} else {
+		funcDef.Name = funcName.Spelling()
 	}
 
 	// The function name must be followed by a parameter declaration. Currently
@@ -322,7 +324,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 // Parse the function name clause, which can contain a receiver declaration
 // (including  the name of the "this" variable, it's type name, and whether it
 // is by value vs. by reference) as well as the actual function name itself.
-func (c *Compiler) parseFunctionName() (functionName string, thisName string, typeName string, byValue bool, err *errors.EgoError) {
+func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName tokenizer.Token, typeName tokenizer.Token, byValue bool, err *errors.EgoError) {
 	functionName = c.t.Next()
 	byValue = true
 	thisName = tokenizer.EmptyToken
@@ -341,11 +343,11 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 
 		// Validatee that the name of the receiver variable and
 		// the receiver type name are both valid.
-		if !tokenizer.IsSymbol(thisName) {
+		if !thisName.IsIdentifier() {
 			err = c.newError(errors.ErrInvalidSymbolName, thisName)
 		}
 
-		if !errors.Nil(err) && !tokenizer.IsSymbol(typeName) {
+		if !errors.Nil(err) && !typeName.IsIdentifier() {
 			err = c.newError(errors.ErrInvalidSymbolName, typeName)
 		}
 
@@ -363,10 +365,10 @@ func (c *Compiler) parseFunctionName() (functionName string, thisName string, ty
 
 	// Make sure the function name is valid; bail out if not. Otherwise,
 	// normalize it and we're done.
-	if !tokenizer.IsSymbol(functionName) {
+	if !functionName.IsIdentifier() {
 		err = c.newError(errors.ErrInvalidFunctionName, functionName)
 	} else {
-		functionName = c.normalize(functionName)
+		functionName = tokenizer.NewIdentifierToken(c.normalize(functionName.Spelling()))
 	}
 
 	return
@@ -380,7 +382,9 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 	parameters = []parameter{}
 	hasVarArgs = false
 
-	if c.t.IsNext("(") {
+	c.t.IsNext(tokenizer.StartOfListToken)
+
+	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		for !c.t.IsNext(tokenizer.EndOfListToken) {
 			if c.t.AtEnd() {
 				return parameters, hasVarArgs, c.newError(errors.ErrMissingParenthesis)
@@ -389,8 +393,8 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			p := parameter{kind: &datatypes.UndefinedType}
 
 			name := c.t.Next()
-			if tokenizer.IsSymbol(name) {
-				p.name = name
+			if name.IsIdentifier() {
+				p.name = name.Spelling()
 			} else {
 				return nil, false, c.newError(errors.ErrInvalidFunctionArgument)
 			}

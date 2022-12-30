@@ -151,6 +151,11 @@ var TypeDeclarations = []TypeDeclaration{
 		&InterfaceType,
 	},
 	{
+		[]string{"interface", "{}"},
+		interfaceModel,
+		&InterfaceType,
+	},
+	{
 		[]string{"*", BoolTypeName},
 		&boolInterface,
 		Pointer(BoolType),
@@ -192,6 +197,11 @@ var TypeDeclarations = []TypeDeclaration{
 	},
 	{
 		[]string{"*", InterfaceTypeName},
+		&interfaceModel,
+		Pointer(&InterfaceType),
+	},
+	{
+		[]string{"*", "interface", "{}"},
 		&interfaceModel,
 		Pointer(&InterfaceType),
 	},

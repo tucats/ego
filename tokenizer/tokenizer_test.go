@@ -13,84 +13,120 @@ func TestTokenize(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []string
+		want []Token
 	}{
 		{
 			name: "compound token",
 			args: args{
 				src: "{}",
 			},
-			want: []string{"{}"},
+			want: []Token{EmptyInitializerToken},
 		},
 		{
 			name: "embedded compound token",
 			args: args{
 				src: "stuff{}here",
 			},
-			want: []string{"stuff", "{}", "here"},
+			want: []Token{
+				NewIdentifierToken("stuff"),
+				EmptyInitializerToken,
+				NewIdentifierToken("here")},
 		},
 		{
 			name: "interface{} compound token",
 			args: args{
 				src: "var x interface{}",
 			},
-			want: []string{"var", "x", "interface{}"},
+			want: []Token{
+				VarToken,
+				NewIdentifierToken("x"),
+				EmptyInterfaceToken},
 		},
 		{
 			name: "elipsis compound token",
 			args: args{
 				src: "fmt(stuff...)",
 			},
-			want: []string{"fmt", "(", "stuff", "...", ")"},
+			want: []Token{
+				NewIdentifierToken("fmt"),
+				StartOfListToken,
+				NewIdentifierToken("stuff"),
+				VariadicToken,
+				EndOfListToken},
 		},
 		{
 			name: "assignment, LEQ compound tokens",
 			args: args{
 				src: "a := 5 <= 6",
 			},
-			want: []string{"a", DefineToken, "5", "<=", "6"},
+			want: []Token{
+				NewIdentifierToken("a"),
+				DefineToken,
+				NewValueToken("5"),
+				LessThanOrEqualsToken,
+				NewValueToken("6")},
 		},
 		{
 			name: "channel compound tokens",
 			args: args{
 				src: "x <- 55 -> stuff",
 			},
-			want: []string{"x", "<-", "55", "->", "stuff"},
+			want: []Token{
+				NewIdentifierToken("x"),
+				ChannelReceiveToken,
+				NewValueToken("55"),
+				ChannelSendToken,
+				NewIdentifierToken("stuff")},
 		},
 		{
 			name: "Simple alphanumeric name",
 			args: args{
 				src: "wage55",
 			},
-			want: []string{"wage55"},
+			want: []Token{NewIdentifierToken("wage55")},
 		},
 		{
 			name: "Integer expression with spaces",
 			args: args{
 				src: "11 + 15",
 			},
-			want: []string{"11", "+", "15"},
+			want: []Token{
+				NewValueToken("11"),
+				AddToken,
+				NewValueToken("15")},
 		},
 		{
 			name: "Integer expression without spaces",
 			args: args{
 				src: "11+15",
 			},
-			want: []string{"11", "+", "15"},
+			want: []Token{
+				NewValueToken("11"),
+				AddToken,
+				NewValueToken("15"),
+			},
 		},
 		{
 			name: "String expression with spaces",
 			args: args{
 				src: "name + \"User\"",
 			},
-			want: []string{"name", "+", "\"User\""},
+			want: []Token{
+				NewIdentifierToken("name"),
+				AddToken,
+				NewStringToken("User"),
+			},
 		},
 		{
 			name: "Float expression",
 			args: args{
 				src: "3.14 + 2",
 			},
-			want: []string{"3.14", "+", "2"},
+			want: []Token{
+				NewValueToken("3.14"),
+				AddToken,
+				NewValueToken("2"),
+			},
 		},
 		// TODO: Add test cases.
 	}

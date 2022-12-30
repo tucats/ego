@@ -324,7 +324,10 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	kind := args[0]
 	size := datatypes.GetInt(args[1])
 
-	if egoArray, ok := kind.(*datatypes.EgoArray); ok {
+	// if it's an Ego type, get the model for the type.
+	if v, ok := kind.(*datatypes.Type); ok {
+		kind = datatypes.InstanceOfType(v)
+	} else if egoArray, ok := kind.(*datatypes.EgoArray); ok {
 		return egoArray.Make(size), nil
 	}
 
@@ -338,11 +341,12 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 	// If the model is a type we know about, let's go ahead and populate the array
 	// with specific values.
-	switch kind.(type) {
+	switch v := kind.(type) {
 	case *datatypes.Channel:
 		return datatypes.NewChannel(size), nil
 
 	case *datatypes.EgoArray:
+		return v.Make(size), nil
 
 	case []int, int:
 		for i := range array {

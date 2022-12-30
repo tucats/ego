@@ -41,10 +41,10 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 
 	t.Advance(1)
 
-	clear := t.IsNext("clear")
+	clear := t.IsNext(tokenizer.ClearToken)
 
 	for t.Peek(1) != tokenizer.EndOfTokens {
-		switch t.Next() {
+		switch t.Next().Spelling() {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
 			ec := compiler.New("break expression").WithTokens(tokenizer.New(text))
@@ -67,7 +67,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			t.Advance(tokenizer.ToTheEnd)
 
 		case "at":
-			name := t.Next()
+			name := t.Next().Spelling()
 
 			if t.Peek(1) == tokenizer.ColonToken {
 				t.Advance(1)
@@ -77,7 +77,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				t.Advance(-1)
 			}
 
-			line, e2 := strconv.Atoi(t.Next())
+			line, e2 := strconv.Atoi(t.Next().Spelling())
 			if e2 == nil {
 				if clear {
 					clearBreakAtLine(name, line)
@@ -91,8 +91,8 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			}
 
 		case "save":
-			name := util.Unquote(t.Next())
-			if name == "" || name == tokenizer.EndOfTokens {
+			name := util.Unquote(t.Next().Spelling())
+			if name == "" {
 				name = defaultBreakpointFilename
 			}
 
@@ -108,8 +108,8 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			err = errors.New(e)
 
 		case "load":
-			name := util.Unquote(t.Next())
-			if name == "" || name == tokenizer.EndOfTokens {
+			name := util.Unquote(t.Next().Spelling())
+			if name == "" {
 				name = defaultBreakpointFilename
 			}
 

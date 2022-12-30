@@ -47,13 +47,13 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	indexName := c.t.Peek(1)
 	valueName := tokenizer.EmptyToken
 
-	if tokenizer.IsSymbol(indexName) && (c.t.Peek(2) == tokenizer.CommaToken) {
+	if indexName.IsIdentifier() && (c.t.Peek(2) == tokenizer.CommaToken) {
 		c.t.Advance(2)
 		valueName = c.t.Peek(1)
 	}
 
-	indexName = c.normalize(indexName)
-	valueName = c.normalize(valueName)
+	indexNameSpelling := c.normalize(indexName.Spelling())
+	valueNameSpelling := c.normalize(valueName.Spelling())
 
 	// if not an lvalue, assume conditional mode
 	if !c.isAssignmentTarget() {
@@ -76,10 +76,10 @@ func (c *Compiler) compileFor() *errors.EgoError {
 
 	// Do we compile a range?
 	if c.t.IsNext(tokenizer.RangeToken) {
-		return c.rangeFor(indexName, valueName)
+		return c.rangeFor(indexNameSpelling, valueNameSpelling)
 	}
 
-	return c.iterationFor(indexName, valueName, indexStore)
+	return c.iterationFor(indexNameSpelling, valueNameSpelling, indexStore)
 }
 
 // loopStackPush creates a new loop context and adds it to the top of the
@@ -269,11 +269,11 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 
 	c.loopStackPop()
 
-	if indexName != tokenizer.EmptyToken && indexName != bytecode.DiscardedVariableName {
+	if indexName != tokenizer.EmptyToken.Spelling() && indexName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, indexName)
 	}
 
-	if valueName != tokenizer.EmptyToken && valueName != bytecode.DiscardedVariableName {
+	if valueName != tokenizer.EmptyToken.Spelling() && valueName != bytecode.DiscardedVariableName {
 		c.b.Emit(bytecode.SymbolDelete, valueName)
 	}
 
@@ -287,7 +287,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) *errors.EgoError {
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
-	if indexName == tokenizer.EmptyToken && valueName != tokenizer.EmptyToken {
+	if indexName == tokenizer.EmptyToken.Spelling() && valueName != tokenizer.EmptyToken.Spelling() {
 		return c.newError(errors.ErrInvalidLoopIndex)
 	}
 

@@ -13,13 +13,13 @@ func (c *Compiler) compileGo() *errors.EgoError {
 	}
 
 	fName := c.t.Next()
-	if !tokenizer.IsSymbol(fName) {
+	if fName != tokenizer.FuncToken && !fName.IsIdentifier() {
 		return c.newError(errors.ErrInvalidSymbolName, fName)
 	}
 
 	// Is it a function constant?
 	if fName == tokenizer.FuncToken {
-		fName = datatypes.GenerateName()
+		fName = tokenizer.NewIdentifierToken(datatypes.GenerateName())
 
 		// Compile a function literal onto the stack.
 		err := c.compileFunctionDefinition(true)

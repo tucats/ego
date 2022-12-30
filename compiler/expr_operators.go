@@ -4,7 +4,6 @@ import (
 	bc "github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // relations compiles a relationship expression.
@@ -22,7 +21,7 @@ func (c *Compiler) relations() *errors.EgoError {
 
 		op := c.t.Peek(1)
 
-		if util.InList(op,
+		if tokenizer.InList(op,
 			tokenizer.EqualsToken,
 			tokenizer.NotEqualsToken,
 			tokenizer.LessThanToken,
@@ -77,7 +76,7 @@ func (c *Compiler) addSubtract() *errors.EgoError {
 		}
 
 		op := c.t.Peek(1)
-		if util.InList(op, tokenizer.AddToken,
+		if tokenizer.InList(op, tokenizer.AddToken,
 			tokenizer.SubtractToken,
 			tokenizer.OrToken,
 			tokenizer.ShiftLeftToken,
@@ -135,7 +134,7 @@ func (c *Compiler) multDivide() *errors.EgoError {
 
 		// Special case; if the next tokens are * <symbol> = then this isn't a multiply,
 		// but rather a pointer dereference assignment statement boundary.
-		if c.t.Peek(1) == tokenizer.PointerToken && tokenizer.IsSymbol(c.t.Peek(2)) && c.t.Peek(3) == tokenizer.AssignToken {
+		if c.t.Peek(1) == tokenizer.PointerToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.AssignToken {
 			parsing = false
 
 			continue

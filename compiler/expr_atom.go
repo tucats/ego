@@ -16,35 +16,36 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	t := c.t.Peek(1)
 
 	// Is it a short-form try/catch?
-	if t == "?" {
+	if t == tokenizer.OptionalToken {
 		c.t.Advance(1)
 
 		return c.optional()
 	}
 
 	// Is it a binary constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(t), "0b") {
+	text := t.Spelling()
+	if strings.HasPrefix(strings.ToLower(text), "0b") {
 		binaryValue := 0
-		fmt.Sscanf(t[2:], "%b", &binaryValue)
-		t = strconv.Itoa(binaryValue)
+		fmt.Sscanf(text[2:], "%b", &binaryValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(binaryValue))
 	}
 
 	// Is it a hexadecimal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(t), "0x") {
+	if strings.HasPrefix(strings.ToLower(text), "0x") {
 		hexValue := 0
-		fmt.Sscanf(strings.ToLower(t[2:]), "%x", &hexValue)
-		t = strconv.Itoa(hexValue)
+		fmt.Sscanf(strings.ToLower(text[2:]), "%x", &hexValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(hexValue))
 	}
 
 	// Is it an octal constant? If so, convert to decimal.
-	if strings.HasPrefix(strings.ToLower(t), "0o") {
+	if strings.HasPrefix(strings.ToLower(text), "0o") {
 		octalValue := 0
-		fmt.Sscanf(strings.ToLower(t[2:]), "%o", &octalValue)
-		t = strconv.Itoa(octalValue)
+		fmt.Sscanf(strings.ToLower(text[2:]), "%o", &octalValue)
+		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
 	}
 
 	// Is this the make() function?
-	if t == "make" && c.t.Peek(2) == tokenizer.StartOfListToken {
+	if t == tokenizer.MakeToken && c.t.Peek(2) == tokenizer.StartOfListToken {
 		return c.makeInvocation()
 	}
 
@@ -57,7 +58,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is an empty struct?
-	if t == "{}" {
+	if t == tokenizer.EmptyInitializerToken {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, datatypes.NewStruct(&datatypes.StructType).SetStatic(false))
 
@@ -72,12 +73,12 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is this address-of?
-	if t == "&" {
+	if t == tokenizer.AddressToken {
 		c.t.Advance(1)
 
 		// If it's address of a symbol, short-circuit that
-		if tokenizer.IsSymbol(c.t.Peek(1)) {
-			name := c.t.Next()
+		if c.t.Peek(1).IsIdentifier() {
+			name := c.t.Next().Spelling()
 			c.b.Emit(bytecode.AddressOf, name)
 		} else {
 			// Address of an expression requires creating a temp symbol
@@ -100,7 +101,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		c.t.Advance(1)
 
 		// If it's dereference of a symbol, short-circuit that
-		if tokenizer.IsSymbol(c.t.Peek(1)) {
+		if c.t.Peek(1).IsIdentifier() {
 			name := c.t.Next()
 			c.b.Emit(bytecode.DeRef, name)
 		} else {
@@ -152,46 +153,32 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// If the token is a number, convert it
-	if i, err := strconv.Atoi(t); errors.Nil(err) {
+	if i, err := strconv.Atoi(t.Spelling()); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if i, err := strconv.ParseFloat(t, 64); errors.Nil(err) {
+	if i, err := strconv.ParseFloat(t.Spelling(), 64); errors.Nil(err) {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if t == defs.True || t == defs.False {
+	if !t.IsString() && (t.Spelling() == defs.True || t.Spelling() == defs.False) {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, (t == defs.True))
+		c.b.Emit(bytecode.Push, (t.Spelling() == defs.True))
 
 		return nil
 	}
 
-	runeValue := t[0:1]
-	if runeValue == "\"" {
+	if t.IsString() {
 		c.t.Advance(1)
+		c.b.Emit(bytecode.Push, t)
 
-		s, err := strconv.Unquote(t)
-
-		c.b.Emit(bytecode.Push, s)
-
-		return errors.New(err)
-	}
-
-	if runeValue == "`" {
-		c.t.Advance(1)
-
-		s, err := c.unLit(t)
-
-		c.b.Emit(bytecode.Push, s)
-
-		return err
+		return nil
 	}
 
 	// Is it a type cast?
@@ -255,7 +242,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// Is it just a symbol needing a load?
-	if tokenizer.IsSymbol(t) {
+	if t.IsIdentifier() {
 		// Check for auto-increment or decrement
 		autoMode := bytecode.NoOperation
 
@@ -365,7 +352,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 			c.t.Advance(-1)
 		} else {
-			t1, e2 = strconv.Atoi(c.t.Peek(1))
+			t1, e2 = strconv.Atoi(c.t.Peek(1).Spelling())
 			if e2 != nil {
 				err = errors.New(e2)
 			}
@@ -373,7 +360,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 		if errors.Nil(err) {
 			if c.t.Peek(2) == tokenizer.ColonToken {
-				t2, err := strconv.Atoi(c.t.Peek(3))
+				t2, err := strconv.Atoi(c.t.Peek(3).Spelling())
 				if errors.Nil(err) {
 					c.t.Advance(3)
 
@@ -463,18 +450,11 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 	for c.t.Peek(1) != listTerminator {
 		// First element: name
 		name := c.t.Next()
-		if len(name) > 2 && name[0:1] == "\"" {
-			name, err = strconv.Unquote(name)
-			if !errors.Nil(err) {
-				return errors.New(err)
-			}
-		} else {
-			if !tokenizer.IsSymbol(name) {
-				return c.newError(errors.ErrInvalidSymbolName, name)
-			}
+		if !name.IsString() && !name.IsIdentifier() {
+			return c.newError(errors.ErrInvalidSymbolName, name)
 		}
 
-		name = c.normalize(name)
+		name = c.normalizeToken(name)
 
 		// Second element: colon
 		if c.t.Next() != tokenizer.ColonToken {
@@ -500,7 +480,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 			break
 		}
 
-		if c.t.Peek(1) != "," {
+		if c.t.Peek(1) != tokenizer.CommaToken {
 			return c.newError(errors.ErrInvalidList)
 		}
 
@@ -511,14 +491,6 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 	c.t.Advance(1)
 
 	return errors.New(err)
-}
-
-func (c *Compiler) unLit(s string) (string, *errors.EgoError) {
-	if quote := s[0:1]; s[len(s)-1:] != quote {
-		return s[1:], c.newError(errors.ErrBlockQuote, quote)
-	}
-
-	return s[1 : len(s)-1], nil
 }
 
 // Handle the ? optional operation. This precedes an expression

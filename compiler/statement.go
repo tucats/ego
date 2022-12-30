@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
-	"github.com/tucats/ego/util"
 )
 
 // compileStatement compiles a single statement.
@@ -29,7 +28,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 	// Is it a directive token? These really just store data in the compiler
 	// symbol table that is used to extend features. These symbols end up in
 	// the runtime context of the running code
-	if c.t.IsNext("@") {
+	if c.t.IsNext(tokenizer.DirectiveToken) {
 		return c.compileDirective()
 	}
 
@@ -42,7 +41,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 		return c.compileFunctionDefinition(false)
 	}
 
-	if c.t.IsNext("panic") && settings.GetBool(defs.RuntimePanicsSetting) {
+	if c.t.IsNext(tokenizer.PanicToken) && settings.GetBool(defs.RuntimePanicsSetting) {
 		return c.compilePanic()
 	}
 	// At this point, we know we're trying to compile a statement,
@@ -180,7 +179,7 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// Is this a reserved word or delimiter punctuation? IF so we've shot past the statement
-		if subexpr == 0 && util.InList(t,
+		if subexpr == 0 && tokenizer.InList(t,
 			tokenizer.SemicolonToken,
 			tokenizer.DirectiveToken,
 			tokenizer.DataBeginToken,
@@ -223,7 +222,7 @@ func (c *Compiler) isFunctionCall() bool {
 		}
 
 		// If it's a symbol, just consume it unless the last token was also a symbol
-		if tokenizer.IsSymbol(t) {
+		if t.IsIdentifier() {
 			if lastWasSymbol {
 				return false
 			}

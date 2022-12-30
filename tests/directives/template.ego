@@ -14,7 +14,7 @@ s1 := strings.Template(g_getlabels)
 
 parms := { Label: "cars" }
 s2 := strings.Template(g_getbytype, parms)
-@assert T.Equal(s2, "g.V().hasLabel(\"cars\")" )
+@assert T.Equal(s2, `g.V().hasLabel("cars")` )
 
 @pass
 

@@ -16,17 +16,17 @@ func Test_scanner(t *testing.T) {
 		err    *errors.EgoError
 	}{
 		{
-			name:   "Const mismatch",
-			data:   "Hello Tom",
-			format: "Name %s",
-			want:   []interface{}{},
-			err:    nil,
-		},
-		{
 			name:   "Const and string",
 			data:   "Name Tom",
 			format: "Name %s",
 			want:   []interface{}{"Tom"},
+			err:    nil,
+		},
+		{
+			name:   "Const mismatch",
+			data:   "Hello Tom",
+			format: "Name %s",
+			want:   []interface{}{},
 			err:    nil,
 		},
 		{

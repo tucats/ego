@@ -20,7 +20,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 	t := tokens.Peek(2)
 	tx := c.GetTokenizer()
 
-	switch t {
+	switch t.Spelling() {
 	case "breaks", "breakpoints":
 		ShowBreaks()
 
@@ -49,9 +49,9 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(4))
 			}
 
-			if tx != "all" {
+			if tx.Spelling() != "all" {
 				var e2 error
-				depth, e2 = strconv.Atoi(tx)
+				depth, e2 = strconv.Atoi(tx.Spelling())
 				err = errors.New(e2)
 			}
 		}
@@ -92,11 +92,11 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 		if tokens.Peek(1) != tokenizer.EndOfTokens {
 			var e2 error
-			start, e2 = strconv.Atoi(tokens.Next())
+			start, e2 = strconv.Atoi(tokens.Next().Spelling())
 			_ = tokens.IsNext(tokenizer.ColonToken)
 
 			if e2 == nil && tokens.Peek(1) != tokenizer.EndOfTokens {
-				end, e2 = strconv.Atoi(tokens.Next())
+				end, e2 = strconv.Atoi(tokens.Next().Spelling())
 			}
 
 			err = errors.New(e2)
@@ -113,7 +113,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = errors.New(errors.ErrInvalidDebugCommand).Context("show " + t)
+		err = errors.New(errors.ErrInvalidDebugCommand).Context("show " + t.Spelling())
 	}
 
 	return err

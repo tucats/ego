@@ -215,7 +215,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		// re-tokenize
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
-			if lastToken[0:1] == "`" && lastToken[len(lastToken)-1:] != "`" {
+			if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
 				text = text + runtime.ReadConsoleText("...> ")
 				t = tokenizer.New(text)
 				lineNumber++
@@ -232,7 +232,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			count := 0
 
 			for _, v := range t.Tokens {
-				switch v {
+				switch v.Spelling() {
 				case "{", "(", "[":
 					count++
 
@@ -253,7 +253,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		// If this is the exit command, turn off the debugger to prevent and endless loop
-		if t != nil && len(t.Tokens) > 0 && t.Tokens[0] == tokenizer.ExitToken {
+		if t != nil && len(t.Tokens) > 0 && t.Tokens[0].Spelling() == tokenizer.ExitToken.Spelling() {
 			debug = false
 		}
 

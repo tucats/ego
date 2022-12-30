@@ -10,19 +10,19 @@ import (
 
 // compileConst compiles a constant block.
 func (c *Compiler) compileConst() *errors.EgoError {
-	terminator := ""
+	terminator := tokenizer.EmptyToken
 
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		terminator = tokenizer.EndOfListToken
 	}
 
-	for terminator == "" || !c.t.IsNext(terminator) {
+	for terminator == tokenizer.EmptyToken || !c.t.IsNext(terminator) {
 		name := c.t.Next()
-		if !tokenizer.IsSymbol(name) {
+		if !name.IsIdentifier() {
 			return c.newError(errors.ErrInvalidSymbolName)
 		}
 
-		name = c.normalize(name)
+		nameSpelling := c.normalize(name.Spelling())
 
 		if !c.t.IsNext(tokenizer.AssignToken) {
 			return c.newError(errors.ErrMissingEqual)
@@ -41,12 +41,12 @@ func (c *Compiler) compileConst() *errors.EgoError {
 			}
 		}
 
-		c.constants = append(c.constants, name)
+		c.constants = append(c.constants, nameSpelling)
 
 		c.b.Append(vx)
-		c.b.Emit(bytecode.Constant, name)
+		c.b.Emit(bytecode.Constant, nameSpelling)
 
-		if terminator == "" {
+		if terminator == tokenizer.EmptyToken {
 			break
 		}
 	}
