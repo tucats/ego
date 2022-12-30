@@ -92,6 +92,8 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		result[datatypes.TypeMDName] = "*package"
 		result["native"] = false
 		result["istype"] = false
+		result["imports"] = m.Imported()
+		result["builtins"] = m.Builtins()
 
 		t := datatypes.TypeOf(m)
 		if t.IsTypeDefinition() {
