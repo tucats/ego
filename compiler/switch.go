@@ -15,6 +15,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 		return c.newError(errors.ErrMissingExpression)
 	}
 
+	fallThrough := 0
 	next := 0
 	fixups := make([]int, 0)
 	t := datatypes.GenerateName()
@@ -91,17 +92,37 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 				return c.newError(errors.ErrMissingColon)
 			}
 
-			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.DefaultToken && c.t.Peek(1) != tokenizer.BlockEndToken {
+			if fallThrough > 0 {
+				if err := c.b.SetAddressHere(fallThrough); !errors.Nil(err) {
+					return c.newError(err)
+				}
+
+				fallThrough = 0
+			}
+
+			for !tokenizer.InList(c.t.Peek(1),
+				tokenizer.CaseToken,
+				tokenizer.DefaultToken,
+				tokenizer.FallthroughToken,
+				tokenizer.BlockEndToken) {
 				err := c.compileStatement()
 				if !errors.Nil(err) {
 					return err
 				}
 			}
 
-			// Emit the code that will jump to the exit point of the statement
-			fixups = append(fixups, c.b.Mark())
+			// Emit the code that will jump to the exit point of the statement,
+			// Unless we're on a "fallthrough" statement, in which case we just
+			// eat the token.
+			if c.t.Peek(1) == tokenizer.FallthroughToken {
+				c.t.Advance(1)
+				fallThrough = c.b.Mark()
+				c.b.Emit(bytecode.Branch, 0)
+			} else {
+				fixups = append(fixups, c.b.Mark())
 
-			c.b.Emit(bytecode.Branch, 0)
+				c.b.Emit(bytecode.Branch, 0)
+			}
 		}
 	}
 

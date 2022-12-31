@@ -25,6 +25,7 @@ var (
 	EmptyInitializerToken    = NewSpecialToken("{}")
 	EmptyInterfaceToken      = NewTypeToken("interface{}")
 	ExitToken                = NewReservedToken("exit")
+	FallthroughToken         = NewReservedToken("fallthrough")
 	Float32Token             = NewTypeToken("float32")
 	Float64Token             = NewTypeToken("float64")
 	ForToken                 = NewReservedToken("for")
@@ -167,34 +168,35 @@ var SpecialTokens = map[Token]bool{
 
 // ReservedWords is the list of reserved words in the _Ego_ language.
 var ReservedWords = map[Token]bool{
-	BoolToken:      true,
-	BreakToken:     true,
-	ByteToken:      true,
-	ChanToken:      true,
-	ConstToken:     true,
-	ContinueToken:  true,
-	DeferToken:     true,
-	ElseToken:      true,
-	Float32Token:   true,
-	Float64Token:   true,
-	ForToken:       true,
-	FuncToken:      true,
-	GoToken:        true,
-	IfToken:        true,
-	ImportToken:    true,
-	InterfaceToken: true,
-	IntToken:       true,
-	Int32Token:     true,
-	Int64Token:     true,
-	MapToken:       true,
-	NilToken:       true,
-	PackageToken:   true,
-	ReturnToken:    true,
-	SwitchToken:    true,
-	StringToken:    true,
-	StructToken:    true,
-	TypeToken:      true,
-	VarToken:       true,
+	BoolToken:        true,
+	BreakToken:       true,
+	ByteToken:        true,
+	ChanToken:        true,
+	ConstToken:       true,
+	ContinueToken:    true,
+	DeferToken:       true,
+	ElseToken:        true,
+	FallthroughToken: true,
+	Float32Token:     true,
+	Float64Token:     true,
+	ForToken:         true,
+	FuncToken:        true,
+	GoToken:          true,
+	IfToken:          true,
+	ImportToken:      true,
+	InterfaceToken:   true,
+	IntToken:         true,
+	Int32Token:       true,
+	Int64Token:       true,
+	MapToken:         true,
+	NilToken:         true,
+	PackageToken:     true,
+	ReturnToken:      true,
+	SwitchToken:      true,
+	StringToken:      true,
+	StructToken:      true,
+	TypeToken:        true,
+	VarToken:         true,
 }
 
 // ExtendedReservedWords are additional reserved words when running with
