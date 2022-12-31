@@ -84,6 +84,9 @@ const (
 	// tracing.
 	FullStackListingSetting = PrivilegedKeyPrefix + "compiler.full.stack"
 
+	// Should the bytecode generator attempt an optimization pass?
+	OptimizerSetting = PrivilegedKeyPrefix + "compiler.optimize"
+
 	// Should the Ego program(s) be run with "static" or
 	// "dynamic" typing? The default is "dynamic".
 	StaticTypesSetting = PrivilegedKeyPrefix + "compiler.types"
@@ -286,6 +289,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TableServerPartialInsertError:   true,
 	SymbolTableAllocationSetting:    true,
 	ExecPermittedSetting:            true,
+	OptimizerSetting:                true,
 }
 
 const (

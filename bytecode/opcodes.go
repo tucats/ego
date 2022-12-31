@@ -35,6 +35,7 @@ const (
 	Coerce
 	Constant
 	Copy
+	CreateAndStore
 	DeRef
 	Div
 	Drop
@@ -140,6 +141,7 @@ var instructionNames = map[OpcodeID]string{
 	Coerce:             "Coerce",
 	Constant:           "Constant",
 	Copy:               "Copy",
+	CreateAndStore:     "CreateAndStore",
 	DeRef:              "DeRef",
 	Div:                "Div",
 	Drop:               "Drop",
@@ -235,6 +237,7 @@ func initializeDispatch() {
 			Coerce:             coerceByteCode,
 			Constant:           constantByteCode,
 			Copy:               copyByteCode,
+			CreateAndStore:     createAndStoreByteCode,
 			DeRef:              deRefByteCode,
 			Div:                divideByteCode,
 			Drop:               dropByteCode,

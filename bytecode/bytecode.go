@@ -1,7 +1,9 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -29,12 +31,6 @@ const BuiltinInstructions = BranchInstruction - 1000
 // ErrorVariableName is the name of the local variable created for a
 // catch-block of a try/catch construct. The variable contains an error.
 const ErrorVariableName = "_error"
-
-// Instruction contains the information about a single bytecode.
-type Instruction struct {
-	Operation OpcodeID
-	Operand   interface{}
-}
 
 // ByteCode contains the context of the execution of a bytecode stream.
 type ByteCode struct {
@@ -99,6 +95,10 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 func (b *ByteCode) Seal() *ByteCode {
 	b.instructions = b.instructions[:b.emitPos]
 	// Optionally run optimizer
+	if settings.GetBool(defs.OptimizerSetting) {
+		_ = b.Optimize()
+	}
+
 	return b
 }
 
