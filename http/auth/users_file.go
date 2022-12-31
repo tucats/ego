@@ -69,7 +69,7 @@ func (f *FileService) ListUsers() map[string]defs.User {
 	return f.data
 }
 
-func (f *FileService) ReadUser(name string) (defs.User, *errors.EgoError) {
+func (f *FileService) ReadUser(name string, doNotLog bool) (defs.User, *errors.EgoError) {
 	var err *errors.EgoError
 
 	user, ok := f.data[name]
@@ -95,7 +95,7 @@ func (f *FileService) WriteUser(user defs.User) *errors.EgoError {
 }
 
 func (f *FileService) DeleteUser(name string) *errors.EgoError {
-	u, err := f.ReadUser(name)
+	u, err := f.ReadUser(name, false)
 	if errors.Nil(err) {
 		delete(f.data, u.Name)
 		f.dirty = true

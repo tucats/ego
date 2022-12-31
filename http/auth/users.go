@@ -17,7 +17,7 @@ import (
 )
 
 type UserIOService interface {
-	ReadUser(name string) (defs.User, *errors.EgoError)
+	ReadUser(name string, doNotLog bool) (defs.User, *errors.EgoError)
 	WriteUser(user defs.User) *errors.EgoError
 	DeleteUser(name string) *errors.EgoError
 	ListUsers() map[string]defs.User
@@ -102,7 +102,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 
 	privname := strings.ToLower(privilege)
 
-	if u, err := AuthService.ReadUser(user); errors.Nil(err) {
+	if u, err := AuthService.ReadUser(user, false); errors.Nil(err) {
 		if u.Permissions == nil {
 			u.Permissions = []string{"logon"}
 		}
@@ -148,7 +148,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 func GetPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 
-	if u, ok := AuthService.ReadUser(user); errors.Nil(ok) {
+	if u, ok := AuthService.ReadUser(user, false); errors.Nil(ok) {
 		pn := findPermission(u, privname)
 
 		return (pn >= 0)
@@ -177,7 +177,7 @@ func findPermission(u defs.User, perm string) int {
 func ValidatePassword(user, pass string) bool {
 	ok := false
 
-	if u, userExists := AuthService.ReadUser(user); errors.Nil(userExists) {
+	if u, userExists := AuthService.ReadUser(user, false); errors.Nil(userExists) {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
@@ -285,7 +285,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 			name = strings.ToLower(datatypes.GetString(n))
 		}
 
-		r, ok := AuthService.ReadUser(name)
+		r, ok := AuthService.ReadUser(name, false)
 		if !errors.Nil(ok) {
 			r = defs.User{
 				Name:        name,
@@ -344,7 +344,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
-	if _, ok := AuthService.ReadUser(name); errors.Nil(ok) {
+	if _, ok := AuthService.ReadUser(name, false); errors.Nil(ok) {
 		err := AuthService.DeleteUser(name)
 		if !errors.Nil(err) {
 			return false, err
@@ -367,7 +367,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	r := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
-	t, ok := AuthService.ReadUser(name)
+	t, ok := AuthService.ReadUser(name, false)
 	if !errors.Nil(ok) {
 		return r, nil
 	}
