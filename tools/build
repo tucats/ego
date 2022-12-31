@@ -19,6 +19,8 @@ if [[ ! -a buildver.txt ]]; then
    exit 1
 fi
 
+# Ensure that we have access to the go tools
+export PATH=/usr/local/go/bin:$PATH
 
 BUILDVER=$(cat buildver.txt)
 BUILDTIME=$(date +"%Y%m%d%H%M%S")
@@ -28,8 +30,6 @@ GO="go"
 GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
 RACE=""
-
-export PATH=/usr/local/go/bin:$PATH
 
 if [ "$1" == "-r" ]; then
    RACE="-race"
