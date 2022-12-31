@@ -216,18 +216,6 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	case *datatypes.Channel:
 		return "chan", nil
 
-	case datatypes.Type:
-		typeName := v.String()
-
-		space := strings.Index(typeName, " ")
-		if space > 0 {
-			typeName = typeName[space+1:]
-		}
-
-		fmt.Println("DEBUG: dead code")
-
-		return "type " + typeName, nil
-
 	case *datatypes.Type:
 		typeName := v.String()
 

@@ -14,6 +14,24 @@ func (c *Compiler) compileIf() *errors.EgoError {
 		return c.newError(errors.ErrMissingExpression)
 	}
 
+	conditionalAssignent := false
+
+	// Is there an assignment statement prefix before the conditional?
+	if c.isAssignmentTarget() {
+		c.b.Emit(bytecode.PushScope)
+
+		if err := c.compileAssignment(); !errors.Nil(err) {
+			return err
+		}
+
+		// Must be followed by a semicolon for the actual conditional
+		if !c.t.IsNext(tokenizer.SemicolonToken) {
+			return c.newError(errors.ErrMissingSemicolon)
+		}
+
+		conditionalAssignent = true
+	}
+
 	// Compile the conditional expression
 	bc, err := c.Expression()
 	if !errors.Nil(err) {
@@ -49,6 +67,12 @@ func (c *Compiler) compileIf() *errors.EgoError {
 		_ = c.b.SetAddressHere(b2)
 	} else {
 		_ = c.b.SetAddressHere(b1)
+	}
+
+	// If we had an assignment as part of the condition, discard
+	// the scope in which it was created.
+	if conditionalAssignent {
+		c.b.Emit(bytecode.PopScope)
 	}
 
 	return nil

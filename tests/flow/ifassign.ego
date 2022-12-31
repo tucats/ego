@@ -1,0 +1,29 @@
+@test "flow: assignent within a conditional"
+
+{
+
+    func forty4() int {
+        return 44
+    }
+
+    x := 55
+    failureState := 0
+
+    if x := forty4(); x != 44 {
+        failureState = 1
+    } else {
+        // This is the same inner-scope X from the if statement.
+        x = 33
+        failureState = 2
+    }
+
+    // The code should not have taken the failure=true branch, because
+    // it means the value of x was not the local-to-the-statement version.
+    @assert T.Equal(failureState, 2, "took incorrect conditional branch")
+
+    // After the scope of the if statement is cleared away, the visible
+    // version of x is the one at the main block.
+    @assert T.Equal(x, 55, "Did not restore scope properly")
+}
+
+@pass
