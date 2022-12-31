@@ -29,6 +29,8 @@ GOARCH=`go env GOARCH`
 GOOS=`go env GOOS`
 RACE=""
 
+export PATH=/usr/local/go/bin:$PATH
+
 if [ "$1" == "-r" ]; then
    RACE="-race"
    echo Build with -race checking enabled
