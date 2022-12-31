@@ -78,7 +78,6 @@ const (
 	PushPackage
 	PushScope
 	RangeInit
-	RangeNext
 	ReadStack
 	RequiredType
 	Response
@@ -116,6 +115,7 @@ const (
 	BranchTrue
 	BranchFalse
 	LocalCall
+	RangeNext
 	Try
 
 	// After this value, additional user branch instructions

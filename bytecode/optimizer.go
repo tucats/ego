@@ -85,8 +85,11 @@ func (b *ByteCode) Optimize() *errors.EgoError {
 			}
 
 			if found {
-				if count == 0 {
+				if count == 0 && ui.LoggerIsActive(ui.ByteCodeLogger) {
 					ui.Debug(ui.ByteCodeLogger, "@@@ Optimizing bytecode %s @@@", b.Name)
+					ui.Debug(ui.ByteCodeLogger, "    Code before optimizations:")
+					b.Disasm()
+					ui.Debug(ui.ByteCodeLogger, "")
 				}
 
 				ui.Debug(ui.ByteCodeLogger, "Optimization found in %s: %s", b.Name, optimization.Description)
@@ -104,6 +107,9 @@ func (b *ByteCode) Optimize() *errors.EgoError {
 				}
 
 				b.Patch(idx, len(optimization.Source), replacements)
+
+				// Discard the saved tokens created for this optimization.
+				tokens = map[string]OptimizerToken{}
 
 				count++
 			}
