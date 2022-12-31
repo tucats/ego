@@ -16,6 +16,8 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 	}
 
 	fallThrough := 0
+	conditional := false
+
 	next := 0
 	fixups := make([]int, 0)
 	t := datatypes.GenerateName()
@@ -26,17 +28,21 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 	// can look like a struct initializer.
 	c.flags.disallowStructInits = true
 
-	// Parse the expression to test
-	tx, err := c.Expression()
-	c.flags.disallowStructInits = false
+	if c.t.Peek(1) == tokenizer.BlockBeginToken {
+		conditional = true
+	} else {
+		// Parse the expression to test
+		tx, err := c.Expression()
+		c.flags.disallowStructInits = false
 
-	if !errors.Nil(err) {
-		return err
+		if !errors.Nil(err) {
+			return err
+		}
+
+		c.b.Append(tx)
+		c.b.Emit(bytecode.SymbolCreate, t)
+		c.b.Emit(bytecode.Store, t)
 	}
-
-	c.b.Append(tx)
-	c.b.Emit(bytecode.SymbolCreate, t)
-	c.b.Emit(bytecode.Store, t)
 
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
 		return c.newError(errors.ErrMissingBlock)
@@ -81,8 +87,13 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			}
 
 			c.b.Append(cx)
-			c.b.Emit(bytecode.Load, t)
-			c.b.Emit(bytecode.Equal)
+
+			if conditional {
+				// @tomcole do we need an expicit cast here?
+			} else {
+				c.b.Emit(bytecode.Load, t)
+				c.b.Emit(bytecode.Equal)
+			}
 
 			next = c.b.Mark()
 
@@ -141,7 +152,11 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 		_ = c.b.SetAddressHere(n)
 	}
 
-	c.b.Emit(bytecode.SymbolDelete, t)
+	// IF there wasn't a conditional, delete the temp symbol we used
+	// for case matching.
+	if !conditional {
+		c.b.Emit(bytecode.SymbolDelete, t)
+	}
 
 	return nil
 }

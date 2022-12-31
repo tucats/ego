@@ -39,5 +39,37 @@
         case 5:
             @fail "Case 5 incorrectly taken"
     }
+
+    // Conditional switch with fallthrough. Must hit both qualified
+    // conditional cases.
+    i := 45
+    count := 0
+    switch {
+    case i < 10:
+        @fail "Case i<10 incorrectly taken"
+        fallthrough
+    case i < 50:
+        count++
+        fallthrough
+    case i < 100:
+        count++
+    }
+    @assert T.Equal(count, 2, "Did not fall through from case i<50")
+
+    // Conditional switch without fallthrough, must hit only The
+    // first matching case (i<50)
+    i = 45
+    count = 0
+    switch {
+    case i < 10:
+        @fail "Case i<10 incorrectly taken"
+    case i < 50:
+        count++
+    case i < 100:
+        @fail "Case i<100 incorrectly taken"
+    }
+    @assert T.Equal(count, 1, "Did not fall through from case i<50")
+
 }
+
 @pass
