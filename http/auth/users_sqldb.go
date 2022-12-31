@@ -89,7 +89,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	}
 
 	// Does the default user already exist? If not, create it.
-	_, e2 := svc.ReadUser(defaultUser)
+	_, e2 := svc.ReadUser(defaultUser, true)
 	if !errors.Nil(e2) {
 		user := defs.User{
 			Name:        defaultUser,
@@ -154,7 +154,7 @@ func (pg *DatabaseService) ListUsers() map[string]defs.User {
 	return r
 }
 
-func (pg *DatabaseService) ReadUser(name string) (defs.User, *errors.EgoError) {
+func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, *errors.EgoError) {
 	var err *errors.EgoError
 
 	var user defs.User
@@ -196,7 +196,10 @@ func (pg *DatabaseService) ReadUser(name string) (defs.User, *errors.EgoError) {
 	}
 
 	if !found {
-		ui.Debug(ui.AuthLogger, "No database record for %s", name)
+		if !doNotLog {
+			ui.Debug(ui.AuthLogger, "No database record for %s", name)
+		}
+
 		err = errors.New(errors.ErrNoSuchUser).Context(name)
 	}
 
@@ -215,7 +218,7 @@ func (pg *DatabaseService) WriteUser(user defs.User) *errors.EgoError {
 
 	action := ""
 
-	_, dberr := pg.ReadUser(user.Name)
+	_, dberr := pg.ReadUser(user.Name, false)
 	if errors.Nil(dberr) {
 		action = "updated in"
 
@@ -269,6 +272,7 @@ func (pg *DatabaseService) Flush() *errors.EgoError {
 // Verify that the database is initialized.
 func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
 	rows, dberr := pg.db.Query(probeTableExistsQueryString)
+
 	defer func() {
 		if rows != nil {
 			rows.Close()
@@ -276,7 +280,7 @@ func (pg *DatabaseService) initializeDatabase() *errors.EgoError {
 	}()
 
 	if dberr != nil {
-		_, dberr := pg.db.Exec(createTableQueryString)
+		_, dberr = pg.db.Exec(createTableQueryString)
 		if dberr == nil {
 			ui.Debug(ui.AuthLogger, "Created empty credentials table")
 		} else {

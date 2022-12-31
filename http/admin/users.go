@@ -52,7 +52,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	} else {
 		name = strings.TrimPrefix(r.URL.Path, defs.AdminUsersPath)
 		if name != "" {
-			if ud, ok := auth.AuthService.ReadUser(name); errors.Nil(ok) {
+			if ud, ok := auth.AuthService.ReadUser(name, false); errors.Nil(ok) {
 				u = ud
 			}
 
@@ -88,7 +88,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			_, err = auth.SetUser(s, []interface{}{args})
 			if errors.Nil(err) {
-				u, err = auth.AuthService.ReadUser(name)
+				u, err = auth.AuthService.ReadUser(name, false)
 				if errors.Nil(err) {
 					u.Name = name
 					response = u
@@ -179,7 +179,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 }
 
 func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *symbols.SymbolTable) (bool, int) {
-	u, exists := auth.AuthService.ReadUser(name)
+	u, exists := auth.AuthService.ReadUser(name, false)
 	if !errors.Nil(exists) {
 		msg := fmt.Sprintf("No username entry for '%s'", name)
 
