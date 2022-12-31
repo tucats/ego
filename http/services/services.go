@@ -53,10 +53,11 @@ var ServiceCache = map[string]CachedCompilationUnit{}
 var ServiceCacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
-// cache before items start to be aged out (oldest first). This is set to
-// -1 by default, which causes the first service to read the cache size
-// from the config file.
-var MaxCachedEntries = 10
+// cache before items start to be aged out (oldest first).
+// @tomcole there is currently a bug where multiple uses of the same cached
+// server at the same time fail to find package symbols correctly. As such
+// the cache is currently disabled.
+var MaxCachedEntries = 0
 
 // ServiceHandler is the rest handler for services written
 // in Ego. It loads and compiles the service code, and
