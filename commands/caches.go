@@ -142,7 +142,7 @@ func ListServerCaches(c *cli.Context) *errors.EgoError {
 			}))
 
 		default:
-			fmt.Printf("  %s\n", i18n.M("server.cache.one.service", map[string]interface{}{
+			fmt.Printf("  %s\n", i18n.M("server.cache.services", map[string]interface{}{
 				"count": cacheStatus.Count,
 				"limit": cacheStatus.Limit,
 			}))
