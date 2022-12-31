@@ -166,11 +166,6 @@ func (c *Compiler) isFunctionCall() bool {
 			return false
 		}
 
-		// Part of an object-oriented call?
-		// @tomcole is this really supported anymore?
-		if t == tokenizer.ChannelSendToken {
-			return true
-		}
 		// If this is a paren and there are no
 		// pending subexpression tokens, then this
 		// is a function calls

@@ -88,7 +88,6 @@ var (
 	DotToken                 = NewSpecialToken(".")
 	VariadicToken            = NewSpecialToken("...")
 	ChannelReceiveToken      = NewSpecialToken("<-")
-	ChannelSendToken         = NewSpecialToken("->")
 	StartOfListToken         = NewSpecialToken("(")
 	EndOfListToken           = NewSpecialToken(")")
 	StartOfArrayToken        = NewSpecialToken("[")
@@ -156,7 +155,6 @@ var SpecialTokens = map[Token]bool{
 	DotToken:                 true,
 	VariadicToken:            true,
 	ChannelReceiveToken:      true,
-	ChannelSendToken:         true,
 	StartOfListToken:         true,
 	EndOfListToken:           true,
 	StartOfArrayToken:        true,

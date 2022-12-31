@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/errors"
@@ -260,7 +261,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	}
 
 	if !b {
-		fmt.Printf("DEBUG: args[0] = %v\n       args[1] = %v\n", args[0], args[1])
+		ui.Debug(ui.DebugLogger, "T.Equals fail, args[0] = %v; args[1] = %v", args[0], args[1])
 	}
 
 	return b, nil

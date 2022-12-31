@@ -11,7 +11,7 @@ import (
 // result value.
 func (c *Compiler) compileFunctionCall() *errors.EgoError {
 	// Let's peek ahead to see if this is a legit function call
-	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.ChannelSendToken && c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
+	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
 		return c.newError(errors.ErrInvalidFunctionCall)
 	}
 

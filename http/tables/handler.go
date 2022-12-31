@@ -333,7 +333,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @tomcole to be implemented.
+// Status 418 (Teapot); to be implemented.
 func alterTable(user string, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf("Unsupported request to alter metadata from table %s for user %s", tableName, user)
 	util.ErrorResponse(w, sessionID, msg, http.StatusTeapot)

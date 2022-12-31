@@ -88,9 +88,9 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 
 			c.b.Append(cx)
 
-			if conditional {
-				// @tomcole do we need an expicit cast here?
-			} else {
+			// If it was't a conditional switch, test for the
+			// specific value in the assigne variable.
+			if !conditional {
 				c.b.Emit(bytecode.Load, t)
 				c.b.Emit(bytecode.Equal)
 			}

@@ -74,7 +74,7 @@ func remoteStatus(addr string) *errors.EgoError {
 
 	name, err := ResolveServerName(addr)
 	if !errors.Nil(err) {
-		// @tomcole This is not a good idea, comparing against text literal.
+		// This is not a good idea, comparing against text literal.
 		// However, not sure how else to do it at this point, since the error
 		// contains data about connection, etc. that we don't want to use in
 		// the comparison.

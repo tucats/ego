@@ -140,7 +140,6 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		count := 0
 
 		for _, row := range rowSet.Rows {
-			// @tomcole TODO If it's one of the date/time values, make sure it is wrapped in single qutoes.
 			q, values := formAbstractInsertQuery(r.URL, user, rowSet.Columns, row)
 			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 

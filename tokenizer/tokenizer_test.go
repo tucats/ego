@@ -69,14 +69,13 @@ func TestTokenize(t *testing.T) {
 		{
 			name: "channel compound tokens",
 			args: args{
-				src: "x <- 55 -> stuff",
+				src: "x <- 55",
 			},
 			want: []Token{
 				NewIdentifierToken("x"),
 				ChannelReceiveToken,
 				NewValueToken("55"),
-				ChannelSendToken,
-				NewIdentifierToken("stuff")},
+			},
 		},
 		{
 			name: "Simple alphanumeric name",

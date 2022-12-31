@@ -80,10 +80,6 @@ var crushedTokens = []crushedToken{
 		result: ChannelReceiveToken,
 	},
 	{
-		source: []Token{SubtractToken, GreaterThanToken},
-		result: ChannelSendToken,
-	},
-	{
 		source: []Token{GreaterThanToken, AssignToken},
 		result: GreaterThanOrEqualsToken,
 	},
