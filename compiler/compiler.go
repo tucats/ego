@@ -51,6 +51,15 @@ type PackageDictionary struct {
 	Package map[string]*datatypes.EgoPackage
 }
 
+// FlagSet contains flags that generally identify the state of
+// the compiler at any given moment. For example, when parsing
+// something like a switch conditional value, the value cannot
+// be a struct initializer, though that is allowed elsewhere.
+type FlagSet struct {
+	disallowStructInits bool
+	extensionsEnabled   bool
+}
+
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
 	PackageName          string
@@ -71,8 +80,8 @@ type Compiler struct {
 	disasm               bool
 	testMode             bool
 	LowercaseIdentifiers bool
-	extensionsEnabled    bool
-	exitEnabled          bool // Only true in interactive mode
+	flags                FlagSet // Use to hold parser state flags
+	exitEnabled          bool    // Only true in interactive mode
 }
 
 // New creates a new compiler instance.
@@ -89,8 +98,10 @@ func New(name string) *Compiler {
 			Package: map[string]*datatypes.EgoPackage{},
 		},
 		LowercaseIdentifiers: false,
-		extensionsEnabled:    settings.GetBool(ExtensionsSetting),
-		RootTable:            &symbols.RootSymbolTable,
+		flags: FlagSet{
+			extensionsEnabled: settings.GetBool(ExtensionsSetting),
+		},
+		RootTable: &symbols.RootSymbolTable,
 	}
 
 	return &cInstance
@@ -133,7 +144,7 @@ func (c *Compiler) WithSymbols(s *symbols.SymbolTable) *Compiler {
 
 // If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements.
 func (c *Compiler) ExtensionsEnabled(b bool) *Compiler {
-	c.extensionsEnabled = b
+	c.flags.extensionsEnabled = b
 
 	return c
 }
@@ -442,8 +453,10 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		constants:            c.constants,
 		deferQueue:           []int{},
 		LowercaseIdentifiers: c.LowercaseIdentifiers,
-		extensionsEnabled:    c.extensionsEnabled,
-		exitEnabled:          c.exitEnabled,
+		flags: FlagSet{
+			extensionsEnabled: c.flags.extensionsEnabled,
+		},
+		exitEnabled: c.exitEnabled,
 	}
 
 	packages := PackageDictionary{

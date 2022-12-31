@@ -24,6 +24,12 @@ func (c *Compiler) reference() *errors.EgoError {
 		switch op {
 		// Structure initialization
 		case tokenizer.DataBeginToken:
+			// If this is during switch statement processing, it can't be
+			// a structure initialization.
+			if c.flags.disallowStructInits {
+				return nil
+			}
+
 			name := c.t.Peek(2)
 			colon := c.t.Peek(3)
 

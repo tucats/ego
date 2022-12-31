@@ -24,7 +24,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 		return false
 	} else {
 		// See if it's a reserved word.
-		if name.IsReserved(c.extensionsEnabled) {
+		if name.IsReserved(c.flags.extensionsEnabled) {
 			return false
 		}
 	}
@@ -55,7 +55,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 			return true
 		}
 
-		if t.IsReserved(c.extensionsEnabled) {
+		if t.IsReserved(c.flags.extensionsEnabled) {
 			return false
 		}
 

@@ -95,7 +95,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 			return c.compileBlock()
 
 		case tokenizer.AssertToken:
-			if c.extensionsEnabled {
+			if c.flags.extensionsEnabled {
 				return c.Assert()
 			}
 
@@ -105,7 +105,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 			return c.compileBreak()
 
 		case tokenizer.CallToken:
-			if c.extensionsEnabled {
+			if c.flags.extensionsEnabled {
 				return c.compileFunctionCall()
 			}
 
@@ -130,7 +130,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 			return c.compileIf()
 
 		case tokenizer.PrintToken:
-			if c.extensionsEnabled {
+			if c.flags.extensionsEnabled {
 				return c.compilePrint()
 			}
 
@@ -141,7 +141,7 @@ func (c *Compiler) compileStatement() *errors.EgoError {
 			return c.compileSwitch()
 
 		case tokenizer.TryToken:
-			if c.extensionsEnabled {
+			if c.flags.extensionsEnabled {
 				return c.compileTry()
 			}
 		}

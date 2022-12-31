@@ -19,8 +19,16 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 	fixups := make([]int, 0)
 	t := datatypes.GenerateName()
 
+	// The switch value cannot contain a struct initializer
+	// that doesn't include a derefernce after it. This
+	// prevents getting tangled up by the switch syntax which
+	// can look like a struct initializer.
+	c.flags.disallowStructInits = true
+
 	// Parse the expression to test
 	tx, err := c.Expression()
+	c.flags.disallowStructInits = false
+
 	if !errors.Nil(err) {
 		return err
 	}
@@ -60,6 +68,10 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			// Must be a "case" statement:
 			if !c.t.IsNext(tokenizer.CaseToken) {
 				return c.newError(errors.ErrMissingCase)
+			}
+
+			if c.t.IsNext(tokenizer.ColonToken) {
+				return c.newError(errors.ErrMissingExpression)
 			}
 
 			cx, err := c.Expression()

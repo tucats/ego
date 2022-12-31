@@ -24,6 +24,7 @@ import (
 func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
 	cx := New("expression eval")
 	cx.t = c.t
+	cx.flags = c.flags
 	cx.b = bytecode.New("subexpression")
 	cx.Types = c.Types
 

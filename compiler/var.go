@@ -27,7 +27,7 @@ func (c *Compiler) compileVar() *errors.EgoError {
 		}
 
 		// See if it's a reserved word.
-		if name.IsReserved(c.extensionsEnabled) {
+		if name.IsReserved(c.flags.extensionsEnabled) {
 			c.t.Advance(-1)
 			// If we mid-list, then just done with list
 			if len(names) > 0 {

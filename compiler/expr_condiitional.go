@@ -18,7 +18,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 
 	// If this is not a conditional, we're done. Conditionals
 	// are only permitted when extensions are enabled.
-	if c.t.AtEnd() || !c.extensionsEnabled || c.t.Peek(1) != tokenizer.OptionalToken {
+	if c.t.AtEnd() || !c.flags.extensionsEnabled || c.t.Peek(1) != tokenizer.OptionalToken {
 		return nil
 	}
 

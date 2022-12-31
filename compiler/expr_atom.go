@@ -256,7 +256,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		// If language extensions are supported and this is an auto-increment
 		// or decrement operation, do it now. The modification is applied after
 		// the value is read; i.e. the atom is the pre-modified value.
-		if c.extensionsEnabled && (autoMode != bytecode.NoOperation) {
+		if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
 			c.b.Emit(bytecode.Load, t)
 			c.b.Emit(bytecode.Dup)
 			c.b.Emit(bytecode.Push, 1)
@@ -500,7 +500,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 //
 // This is only supported when extensions are enabled.
 func (c *Compiler) optional() *errors.EgoError {
-	if !c.extensionsEnabled {
+	if !c.flags.extensionsEnabled {
 		return c.newError(errors.ErrUnexpectedToken).Context("?")
 	}
 
