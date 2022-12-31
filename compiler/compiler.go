@@ -196,7 +196,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 		}
 	}
 
-	return c.b, nil
+	return c.b.Seal(), nil
 }
 
 // AddBuiltins adds the builtins for the named package (or prebuilt builtins if the package name

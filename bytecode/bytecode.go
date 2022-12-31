@@ -94,9 +94,12 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 	b.emitPos = b.emitPos + 1
 }
 
-// Truncate the output array to the current bytecode size.
-func (b *ByteCode) Seal() {
+// Truncate the output array to the current bytecode size. This is also
+// where we will optionally run an optimizer.
+func (b *ByteCode) Seal() *ByteCode {
 	b.instructions = b.instructions[:b.emitPos]
+	// Optionally run optimizer
+	return b
 }
 
 // Mark returns the address of the instruction about to be emitted.
