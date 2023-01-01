@@ -2,6 +2,28 @@ package bytecode
 
 var Optimizations = []Optimization{
 	{
+		Description: "Collapse constant push and createandstore",
+		Source: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "value"},
+			},
+			{
+				Operation: CreateAndStore,
+				Operand:   OptimizerToken{Name: "name"},
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: CreateAndStore,
+				Operand: []interface{}{
+					OptimizerToken{Name: "name"},
+					OptimizerToken{Name: "value"},
+				},
+			},
+		},
+	},
+	{
 		Description: "Unnecessary stack marker for constant store",
 		Source: []Instruction{
 			{

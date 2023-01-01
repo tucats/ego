@@ -11,6 +11,13 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// @tomcole there is a problem with the static initializers,
+// which I think is related to timing of when type values are
+// available (not ready at compile time, but ready at runtime).
+// For now, turning off static optimizations like rolling up
+// struct builds.
+var staticOptimizations = false
+
 type OptimizerOperation int
 
 const (
@@ -139,14 +146,6 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 			if found {
 				if count == 0 && ui.LoggerIsActive(ui.OptimizerLogger) {
 					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.Name)
-					ui.Debug(ui.OptimizerLogger, "    Code before optimizations:")
-
-					oldBytecodeLoggingStatus := ui.LoggerIsActive(ui.ByteCodeLogger)
-
-					ui.SetLogger(ui.ByteCodeLogger, true)
-					b.Disasm()
-					ui.SetLogger(ui.ByteCodeLogger, oldBytecodeLoggingStatus)
-					ui.Debug(ui.OptimizerLogger, "")
 				}
 
 				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.Name, optimization.Description)
@@ -207,17 +206,12 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 	}
 
 	// Now do any additional optimizations that aren't pattern-based.
-	count += b.constantStructOptimizer()
+	if staticOptimizations {
+		count += b.constantStructOptimizer()
+	}
 
-	if count > 0 && ui.LoggerIsActive(ui.OptimizerLogger) {
+	if count > 0 && ui.LoggerIsActive(ui.OptimizerLogger) && b.emitPos != startingSize {
 		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.emitPos)
-		oldBytecodeLoggingStatus := ui.LoggerIsActive(ui.ByteCodeLogger)
-
-		ui.Debug(ui.OptimizerLogger, "    Code after  optimizations:")
-
-		ui.SetLogger(ui.ByteCodeLogger, true)
-		b.Disasm()
-		ui.SetLogger(ui.ByteCodeLogger, oldBytecodeLoggingStatus)
 		ui.Debug(ui.OptimizerLogger, "")
 	}
 
@@ -227,10 +221,12 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoError) {
 	fragment := New("code fragment")
 
-	for idx := start; idx <= end; idx++ {
+	for idx := start; idx < end; idx++ {
 		i := b.instructions[idx]
 		fragment.Emit(i.Operation, i.Operand)
 	}
+
+	fragment.Emit(Stop)
 
 	s := symbols.NewSymbolTable("fragment")
 	c := NewContext(s, fragment)
@@ -242,6 +238,17 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoErro
 
 func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 	offset := deleteSize - len(insert)
+	savedBytecodeLoggerState := ui.LoggerIsActive(ui.ByteCodeLogger)
+
+	defer func() {
+		ui.SetLogger(ui.ByteCodeLogger, savedBytecodeLoggerState)
+	}()
+
+	if ui.LoggerIsActive(ui.OptimizerLogger) {
+		ui.SetLogger(ui.ByteCodeLogger, true)
+		ui.Debug(ui.OptimizerLogger, "Patching, existing code:")
+		b.Disasm(start, start+deleteSize)
+	}
 
 	// Start by deleting the old instructions
 	instructions := append(b.instructions[:start], insert...)
@@ -259,6 +266,12 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 
 	b.instructions = instructions
 	b.emitPos = b.emitPos - offset
+
+	if ui.LoggerIsActive(ui.OptimizerLogger) {
+		ui.SetLogger(ui.ByteCodeLogger, true)
+		ui.Debug(ui.OptimizerLogger, "Patching, new code:")
+		b.Disasm(start, start+len(insert))
+	}
 }
 
 func (b *ByteCode) constantStructOptimizer() int {

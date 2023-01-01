@@ -9,17 +9,33 @@ import (
 )
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
-func (b *ByteCode) Disasm() {
-	if ui.LoggerIsActive(ui.ByteCodeLogger) {
-		ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
+func (b *ByteCode) Disasm(ranges ...int) {
+	start := 0
+	if len(ranges) > 0 {
+		start = ranges[0]
+	}
 
-		for n := 0; n < b.emitPos; n++ {
+	end := b.emitPos
+	if len(ranges) > 1 {
+		end = ranges[1]
+	}
+
+	hadRange := (len(ranges) > 0)
+
+	if ui.LoggerIsActive(ui.ByteCodeLogger) {
+		if !hadRange {
+			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
+		}
+
+		for n := start; n < end; n++ {
 			i := b.instructions[n]
 			op := FormatInstruction(i)
 			ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
 		}
 
-		ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", b.emitPos)
+		if !hadRange {
+			ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
+		}
 	}
 }
 

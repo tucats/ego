@@ -25,6 +25,10 @@ const DiscardedVariableName = "_"
 // to ensure that the value is compatible if we are in
 // static type mode.
 //
+// Note that if the operand is actually an interface
+// array, then the first item is the name and the second
+// is the value, and the stack is not popped.
+//
 // The value is then written to the symbol table.
 //
 // If the variable name begins with "_" then it is
@@ -32,25 +36,37 @@ const DiscardedVariableName = "_"
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
 func storeByteCode(c *Context, i interface{}) *errors.EgoError {
-	v, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	var value interface{}
+
+	var err *errors.EgoError
+
+	var name string
+
+	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+		name = datatypes.GetString(operands[0])
+		value = operands[1]
+	} else {
+		name = datatypes.GetString(i)
+
+		value, err = c.Pop()
+		if !errors.Nil(err) {
+			return err
+		}
 	}
 
-	if IsStackMarker(v) {
+	if IsStackMarker(value) {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name. If it is the reserved name "_" it means
 	// to just discard the value.
-	varname := datatypes.GetString(i)
-	if varname == DiscardedVariableName {
+	if name == DiscardedVariableName {
 		return nil
 	}
 
-	err = c.checkType(varname, v)
+	err = c.checkType(name, value)
 	if errors.Nil(err) {
-		err = c.symbolSet(varname, v)
+		err = c.symbolSet(name, value)
 	}
 
 	if !errors.Nil(err) {
@@ -59,12 +75,12 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
-		switch a := v.(type) {
-		case datatypes.EgoMap:
+	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+		switch a := value.(type) {
+		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case datatypes.EgoStruct:
+		case *datatypes.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}

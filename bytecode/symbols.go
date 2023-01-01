@@ -65,14 +65,31 @@ func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // symbolCreateByteCode instruction processor.
 func createAndStoreByteCode(c *Context, i interface{}) *errors.EgoError {
-	n := datatypes.GetString(i)
-	if c.symbolIsConstant(n) {
+	var value interface{}
+
+	var name string
+
+	wasList := false
+
+	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
+		name = datatypes.GetString(operands[0])
+		value = operands[1]
+		wasList = true
+	} else {
+		name = datatypes.GetString(i)
+	}
+
+	if c.symbolIsConstant(name) {
 		return c.newError(errors.ErrReadOnly)
 	}
 
-	err := c.symbolCreate(n)
+	err := c.symbolCreate(name)
 	if !errors.Nil(err) {
 		return c.newError(err)
+	}
+
+	if wasList {
+		i = []interface{}{name, value}
 	}
 
 	return storeByteCode(c, i)
