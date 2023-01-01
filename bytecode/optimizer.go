@@ -36,9 +36,8 @@ type Optimization struct {
 }
 
 // Optimize runs a peep-hold optimizer over the bytecode.
-func (b *ByteCode) Optimize() (int, *errors.EgoError) {
+func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 	startingSize := b.emitPos
-	count := 0
 
 	// Figure out the maximum pattern size, since we'll need this for backing
 	// up the bytecode scanner after each patch operation.
@@ -77,11 +76,6 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 				continue
 			}
 
-			// Debugging trap for optimization in "main"
-			if optimization.Debug && b.Name == defs.Main {
-				fmt.Println("DEBUG breakpoint for " + optimization.Description)
-			}
-
 			// Search each instruction in the pattern to see if it matches
 			// with the instruction stream we are positioned at.
 			for sourceIdx, sourceInstruction := range optimization.Source {
@@ -100,6 +94,17 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 
 					// This optimization didn't match; go to next optimization
 					break
+				}
+
+				// Debugging trap for optimization in "main"
+				if sourceIdx == 0 && optimization.Debug && b.Name == defs.Main {
+					fmt.Printf("DEBUG breakpoint for %s, first operand = %v\n", optimization.Description, i.Operand)
+				}
+
+				// If the operands match between the instruction and the pattern,
+				// we're good and should keep going...
+				if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
+					continue
 				}
 
 				if token, ok := sourceInstruction.Operand.(OptimizerToken); ok {
@@ -222,7 +227,7 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoError) {
 	fragment := New("code fragment")
 
-	for idx := start; idx < end; idx++ {
+	for idx := start; idx <= end; idx++ {
 		i := b.instructions[idx]
 		fragment.Emit(i.Operation, i.Operand)
 	}
@@ -284,64 +289,19 @@ func (b *ByteCode) constantStructOptimizer() int {
 		}
 
 		// If they are all constant values, we can construct an array constant
-		// here one time.
+		// here one time by executing the code fragment.
 		if areConstant {
-			var structType *datatypes.Type
-
-			var typeModel interface{}
-
-			m := map[string]interface{}{}
-
-			for idx2 := 1; idx2 <= fieldCount*2; idx2 += 2 {
-				name := datatypes.GetString(b.instructions[idx-idx2].Operand)
-				value := b.instructions[idx-idx2-1].Operand
-
-				if name == datatypes.TypeMDKey {
-					if t, ok := value.(*datatypes.Type); ok {
-						structType = t
-						typeModel = t.InstanceOf(t)
-					}
-				}
-
-				m[name] = value
-			}
-
-			// Add in any fields from the type model not present
-			// in the new structure we're creating. We ignore any
-			// function definitions in the model, as they will be
-			// found later during function invocation if needed
-			// by chasing the model chain.
-			if typeModel != nil {
-				if realModel, ok := typeModel.(*datatypes.EgoStruct); ok {
-					for _, k := range realModel.FieldNames() {
-						v, _ := realModel.Get(k)
-
-						vx := reflect.ValueOf(v)
-						if vx.Kind() == reflect.Ptr {
-							ts := vx.String()
-							if ts == defs.ByteCodeReflectionTypeString {
-								continue
-							}
-						}
-
-						if _, found := m[k]; !found {
-							m[k] = v
-						}
-					}
-				}
-			}
-
-			s := datatypes.NewStructFromMap(m)
-			if structType != nil {
-				s.AsType(structType)
-			}
+			v, _ := b.executeFragment(idx-fieldCount*2, idx)
 
 			b.Patch(idx-fieldCount*2, fieldCount*2+1, []Instruction{
 				{
 					Operation: Push,
-					Operand:   s,
+					Operand:   v,
 				},
 			})
+
+			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.Name)
+
 			count++
 		}
 	}

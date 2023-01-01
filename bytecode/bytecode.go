@@ -97,14 +97,14 @@ func (b *ByteCode) Seal() *ByteCode {
 	// Optionally run optimizer. @tomcole temp flag
 	// indicating if repeated optimization passes are done.
 	if settings.GetBool(defs.OptimizerSetting) {
-		if false {
-			for {
-				if count, _ := b.Optimize(); count == 0 {
-					break
-				}
+		count := 0
+
+		for {
+			if newCount, _ := b.Optimize(count); count == newCount {
+				break
+			} else {
+				count = newCount
 			}
-		} else {
-			_, _ = b.Optimize()
 		}
 	}
 

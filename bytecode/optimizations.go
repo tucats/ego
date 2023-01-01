@@ -2,6 +2,37 @@ package bytecode
 
 var Optimizations = []Optimization{
 	{
+		Description: "Unnecessary stack marker for constant store",
+		Source: []Instruction{
+			{
+				Operation: Push,
+				Operand:   NewStackMarker("let"),
+			},
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "constant"},
+			},
+			{
+				Operation: CreateAndStore,
+				Operand:   OptimizerToken{Name: "name"},
+			},
+			{
+				Operation: DropToMarker,
+				Operand:   NewStackMarker("let"),
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "constant"},
+			},
+			{
+				Operation: CreateAndStore,
+				Operand:   OptimizerToken{Name: "name"},
+			},
+		},
+	},
+	{
 		Description: "Sequential PopScope",
 		Source: []Instruction{
 			{
