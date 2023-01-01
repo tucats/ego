@@ -94,9 +94,18 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 // where we will optionally run an optimizer.
 func (b *ByteCode) Seal() *ByteCode {
 	b.instructions = b.instructions[:b.emitPos]
-	// Optionally run optimizer
+	// Optionally run optimizer. @tomcole temp flag
+	// indicating if repeated optimization passes are done.
 	if settings.GetBool(defs.OptimizerSetting) {
-		_ = b.Optimize()
+		if false {
+			for {
+				if count, _ := b.Optimize(); count == 0 {
+					break
+				}
+			}
+		} else {
+			_, _ = b.Optimize()
+		}
 	}
 
 	return b

@@ -58,6 +58,7 @@ const (
 	DebugLogger
 	InfoLogger
 	InternalLogger
+	OptimizerLogger
 	RestLogger
 	ServerLogger
 	SQLLogger
@@ -84,6 +85,7 @@ var loggers []logger = []logger{
 	{"DEBUG", false},
 	{"INFO", false},
 	{"INTERNAL", true},
+	{"OPTIMIZER", false},
 	{"REST", false},
 	{"SERVER", false},
 	{"SQL", false},

@@ -307,31 +307,41 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // storeAlwaysByteCode instruction processor.
 func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
-	v, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	var v interface{}
+
+	var symbolName string
+
+	var err *errors.EgoError
+
+	if array, ok := i.([]interface{}); ok && len(array) == 2 {
+		symbolName = datatypes.GetString(array[0])
+		v = array[1]
+	} else {
+		symbolName = datatypes.GetString(i)
+
+		v, err = c.Pop()
+		if !errors.Nil(err) {
+			return err
+		}
+
+		if IsStackMarker(v) {
+			return c.newError(errors.ErrFunctionReturnedVoid)
+		}
 	}
 
-	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
-	}
-
-	// Get the name.
-	varname := datatypes.GetString(i)
-
-	err = c.symbolSetAlways(varname, v)
+	err = c.symbolSetAlways(symbolName, v)
 	if !errors.Nil(err) {
 		return c.newError(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
+	if len(symbolName) > 1 && symbolName[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
-		case datatypes.EgoMap:
+		case *datatypes.EgoMap:
 			a.ImmutableKeys(true)
 
-		case datatypes.EgoStruct:
+		case *datatypes.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
