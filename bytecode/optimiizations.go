@@ -2,8 +2,25 @@ package bytecode
 
 var Optimizations = []Optimization{
 	{
+		Description: "Sequential PopScope",
+		Source: []Instruction{
+			{
+				Operation: PopScope,
+				Operand:   OptimizerToken{Name: "count1", Operation: OptCount, Register: 1},
+			},
+			{
+				Operation: PopScope,
+				Operand:   OptimizerToken{Name: "count2", Operation: OptCount, Register: 1},
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: PopScope,
+				Operand:   OptimizerToken{Name: "count", Operation: OptRead, Register: 1},
+			},
+		},
+	}, {
 		Description: "Create and store",
-		Debug:       true,
 		Source: []Instruction{
 			{
 				Operation: SymbolCreate,
@@ -18,6 +35,24 @@ var Optimizations = []Optimization{
 			{
 				Operation: CreateAndStore,
 				Operand:   OptimizerToken{Name: "symbolName"},
+			},
+		},
+	},
+	{
+		Description: "Push and Storeindex",
+		Source: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "value"},
+			},
+			{
+				Operation: StoreIndex,
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: StoreIndex,
+				Operand:   OptimizerToken{Name: "value"},
 			},
 		},
 	},
@@ -48,11 +83,11 @@ var Optimizations = []Optimization{
 		Source: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value1", Operation: OptAdd},
+				Operand:   OptimizerToken{Name: "v1"},
 			},
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value2", Operation: OptAdd},
+				Operand:   OptimizerToken{Name: "v2"},
 			},
 			{
 				Operation: Add,
@@ -61,7 +96,51 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value", Operation: OptAdd},
+				Operand:   OptimizerToken{Name: "sum", Operation: OptRunConstantFragment},
+			},
+		},
+	},
+	{
+		Description: "Constant subtraction fold",
+		Source: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "v1"},
+			},
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "v2"},
+			},
+			{
+				Operation: Sub,
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "difference", Operation: OptRunConstantFragment},
+			},
+		},
+	},
+	{
+		Description: "Constant multiplication fold",
+		Source: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "v1"},
+			},
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "v2"},
+			},
+			{
+				Operation: Mul,
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: Push,
+				Operand:   OptimizerToken{Name: "product", Operation: OptRunConstantFragment},
 			},
 		},
 	},

@@ -240,6 +240,7 @@ const (
 	Any     = "any"
 	Static  = "static"
 	Dynamic = "dynamic"
+	Main    = "main"
 )
 
 const (

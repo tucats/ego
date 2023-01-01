@@ -37,7 +37,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	}
 
 	programArgs := make([]interface{}, 0)
-	mainName := "main"
+	mainName := defs.Main
 	prompt := c.MainProgram + "> "
 	debug := c.Boolean("debug")
 	text := ""
@@ -47,7 +47,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
-		entryPoint = "main"
+		entryPoint = defs.Main
 	}
 
 	var comp *compiler.Compiler
@@ -169,7 +169,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 	// Set up the symbol table.
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
-	_ = symbolTable.Root().SetAlways("__main", "main")
+	_ = symbolTable.Root().SetAlways("__main", defs.Main)
 
 	exitValue := 0
 

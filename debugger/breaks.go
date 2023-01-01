@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -72,7 +73,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			if t.Peek(1) == tokenizer.ColonToken {
 				t.Advance(1)
 			} else {
-				name = "main"
+				name = defs.Main
 
 				t.Advance(-1)
 			}

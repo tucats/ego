@@ -186,7 +186,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and
-	// value) and add them into the array.
+	// value) and add them into the map.
 	for n := 0; n < count; n++ {
 		nx, err := c.Pop()
 		if !errors.Nil(err) {

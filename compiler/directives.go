@@ -116,7 +116,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 func (c *Compiler) entrypointDirective() *errors.EgoError {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
-		mainName = tokenizer.NewIdentifierToken("main")
+		mainName = tokenizer.NewIdentifierToken(defs.Main)
 	}
 
 	c.b.Emit(bytecode.Push, mainName)

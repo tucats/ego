@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
@@ -30,7 +31,7 @@ func (c *Context) GetName() string {
 		return c.bc.Name
 	}
 
-	return "main"
+	return defs.Main
 }
 
 func (c *Context) StepOver(b bool) {

@@ -174,9 +174,19 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // storeIndexByteCode instruction processor.
 func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
-	index, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	var index interface{}
+
+	var err *errors.EgoError
+
+	// If the index value is in the parameter, then use that, else get
+	// it from the stack.
+	if i != nil {
+		index = i
+	} else {
+		index, err = c.Pop()
+		if !errors.Nil(err) {
+			return err
+		}
 	}
 
 	destination, err := c.Pop()

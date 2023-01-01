@@ -2,22 +2,29 @@ package bytecode
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 )
 
 type OptimizerOperation int
 
 const (
 	OptNothing OptimizerOperation = iota
-	OptAdd
+	OptStore
+	OptRead
+	OptCount
+	OptRunConstantFragment
 )
 
 type OptimizerToken struct {
 	Name      string
 	Operation OptimizerOperation
+	Register  int
 	Value     interface{}
 }
 
@@ -50,10 +57,28 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 		// Scan over all the available optimizations.
 		for _, optimization := range Optimizations {
 			operandValues := map[string]OptimizerToken{}
-			integerAccumulator := 0
+			registers := make([]interface{}, 5)
 			found = true
 
-			if optimization.Debug && b.Name == "main" {
+			// Is there a branch INTO this pattern? If so, then it
+			// cannot be optimized.
+			for _, i := range b.instructions {
+				if i.Operation > BranchInstructions {
+					destination := datatypes.GetInt(i.Operand)
+					if destination >= idx && destination < idx+len(optimization.Source) {
+						found = false
+
+						break
+					}
+				}
+			}
+
+			if !found {
+				continue
+			}
+
+			// Debugging trap for optimization in "main"
+			if optimization.Debug && b.Name == defs.Main {
 				fmt.Println("DEBUG breakpoint for " + optimization.Description)
 			}
 
@@ -88,10 +113,16 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 							continue
 						}
 					} else {
-						if token.Operation == OptAdd {
-							if _, ok := i.Operand.(int); ok {
-								integerAccumulator += datatypes.GetInt(i.Operand)
+						switch token.Operation {
+						case OptCount:
+							increment := 1
+							if i.Operand != nil {
+								increment = datatypes.GetInt(i.Operand)
 							}
+							registers[token.Register] = datatypes.GetInt(registers[token.Register]) + increment
+
+						case OptStore:
+							registers[token.Register] = i.Operand
 						}
 
 						operandValues[token.Name] = OptimizerToken{Name: token.Name, Value: i.Operand}
@@ -124,8 +155,12 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 
 					if token, ok := replacement.Operand.(OptimizerToken); ok {
 						switch token.Operation {
-						case OptAdd:
-							newInstruction.Operand = integerAccumulator
+						case OptRunConstantFragment:
+							v, _ := b.executeFragment(idx, idx+len(optimization.Source))
+							newInstruction.Operand = v
+
+						case OptRead:
+							newInstruction.Operand = registers[token.Register]
 
 						default:
 							newInstruction.Operand = operandValues[token.Name].Value
@@ -163,11 +198,11 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 
 				count++
 			}
-
-			// Clear out the operand values after each check.
-			integerAccumulator = 0
 		}
 	}
+
+	// Now do any additional optimizations that aren't pattern-based.
+	count += b.constantStructOptimizer()
 
 	if count > 0 && ui.LoggerIsActive(ui.OptimizerLogger) {
 		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.emitPos)
@@ -182,6 +217,22 @@ func (b *ByteCode) Optimize() (int, *errors.EgoError) {
 	}
 
 	return count, nil
+}
+
+func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoError) {
+	fragment := New("code fragment")
+
+	for idx := start; idx < end; idx++ {
+		i := b.instructions[idx]
+		fragment.Emit(i.Operation, i.Operand)
+	}
+
+	s := symbols.NewSymbolTable("fragment")
+	c := NewContext(s, fragment)
+
+	_ = c.Run()
+
+	return c.Pop()
 }
 
 func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
@@ -203,4 +254,97 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 
 	b.instructions = instructions
 	b.emitPos = b.emitPos - offset
+}
+
+func (b *ByteCode) constantStructOptimizer() int {
+	count := 0
+
+	for idx := 0; idx < b.emitPos; idx++ {
+		i := b.instructions[idx]
+
+		if i.Operation != Struct {
+			continue
+		}
+
+		fieldCount := datatypes.GetInt(i.Operand)
+
+		// Bogus count, let it be caught at runtime.
+		if idx-fieldCount < 0 {
+			continue
+		}
+
+		areConstant := true
+
+		for idx2 := 1; idx2 <= fieldCount*2; idx2++ {
+			if b.instructions[idx-idx2].Operation != Push {
+				areConstant = false
+
+				break
+			}
+		}
+
+		// If they are all constant values, we can construct an array constant
+		// here one time.
+		if areConstant {
+			var structType *datatypes.Type
+
+			var typeModel interface{}
+
+			m := map[string]interface{}{}
+
+			for idx2 := 1; idx2 <= fieldCount*2; idx2 += 2 {
+				name := datatypes.GetString(b.instructions[idx-idx2].Operand)
+				value := b.instructions[idx-idx2-1].Operand
+
+				if name == datatypes.TypeMDKey {
+					if t, ok := value.(*datatypes.Type); ok {
+						structType = t
+						typeModel = t.InstanceOf(t)
+					}
+				}
+
+				m[name] = value
+			}
+
+			// Add in any fields from the type model not present
+			// in the new structure we're creating. We ignore any
+			// function definitions in the model, as they will be
+			// found later during function invocation if needed
+			// by chasing the model chain.
+			if typeModel != nil {
+				if realModel, ok := typeModel.(*datatypes.EgoStruct); ok {
+					for _, k := range realModel.FieldNames() {
+						v, _ := realModel.Get(k)
+
+						vx := reflect.ValueOf(v)
+						if vx.Kind() == reflect.Ptr {
+							ts := vx.String()
+							if ts == defs.ByteCodeReflectionTypeString {
+								continue
+							}
+						}
+
+						if _, found := m[k]; !found {
+							m[k] = v
+						}
+					}
+				}
+			}
+
+			s := datatypes.NewStructFromMap(m)
+			if structType != nil {
+				s.AsType(structType)
+			}
+
+			b.Patch(idx-fieldCount*2, fieldCount*2+1, []Instruction{
+				{
+					Operation: Push,
+					Operand:   s,
+				},
+			})
+			count++
+		}
+	}
+
+	return count
 }

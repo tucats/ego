@@ -42,14 +42,23 @@ func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 // time to update the readonly copies of the values in the package
 // object itself.
 func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
-	// See if we're popping off a package table; if so there is work to do to
-	// copy the values back to the named package object.
-	c.syncPackageSymbols()
+	count := 1
+	if i != nil {
+		count = datatypes.GetInt(i)
+	}
 
-	// Pop off the symbol table and clear up the "this" stack
-	c.popSymbolTable()
-	c.thisStack = nil
-	c.blockDepth--
+	for count > 0 {
+		// See if we're popping off a package table; if so there is work to do to
+		// copy the values back to the named package object.
+		c.syncPackageSymbols()
+
+		// Pop off the symbol table and clear up the "this" stack
+		c.popSymbolTable()
+		c.thisStack = nil
+		c.blockDepth--
+
+		count--
+	}
 
 	return nil
 }
