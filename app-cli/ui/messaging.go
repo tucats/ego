@@ -167,7 +167,7 @@ func SetLogger(class int, mode bool) bool {
 
 // Determine if a given logger is active. This is particularly useful
 // when deciding if it's worth doing complex formatting operations.
-func LoggerIsActive(class int) bool {
+func IsActive(class int) bool {
 	if class < 0 || class >= len(loggers) {
 		Log(InternalLogger, "ERROR: Invalid LoggerIsActive() class %d", class)
 

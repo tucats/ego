@@ -89,7 +89,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
-	if ui.LoggerIsActive(ui.InfoLogger) {
+	if ui.IsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
 			if strings.EqualFold(headerName, "Authorization") {
 				continue
@@ -319,7 +319,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If doing INFO logging, make a neutered version of the token showing
 		// only the first few bytes of the token string.
-		if ui.LoggerIsActive(ui.AuthLogger) {
+		if ui.IsActive(ui.AuthLogger) {
 			tokenstr := token
 			if len(tokenstr) > 10 {
 				tokenstr = tokenstr[:10] + "..."
@@ -424,7 +424,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
-		if ui.LoggerIsActive(ui.InfoLogger) {
+		if ui.IsActive(ui.InfoLogger) {
 			ui.Debug(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
 		} else {
 			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.Host, status)
@@ -459,7 +459,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
 	}
 
-	if !ui.LoggerIsActive(ui.InfoLogger) {
+	if !ui.IsActive(ui.InfoLogger) {
 		kind := "text"
 		if isJSON {
 			kind = "json"

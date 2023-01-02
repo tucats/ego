@@ -13,7 +13,7 @@ import (
 // Debugging tool that dumps interesting things about a request. Only outputs
 // when DEBUG logging is enabled.
 func LogRequest(r *http.Request, sessionID int32) {
-	if ui.LoggerIsActive(ui.RestLogger) {
+	if ui.IsActive(ui.RestLogger) {
 		ui.Debug(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
 		ui.Debug(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
 

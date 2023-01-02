@@ -251,7 +251,7 @@ func Format(element interface{}) string {
 			return valueString
 		}
 
-		if ui.LoggerIsActive(ui.DebugLogger) {
+		if ui.IsActive(ui.DebugLogger) {
 			return fmt.Sprintf("kind %v %#v", vv.Kind(), v)
 		}
 

@@ -148,7 +148,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 			count := 0
 			tableName, _ := fullName(user, task.Table)
 
-			if ui.LoggerIsActive(ui.TableLogger) {
+			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
 					ui.Debug(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
 				} else {

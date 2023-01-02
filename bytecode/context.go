@@ -199,7 +199,7 @@ func (c *Context) SetTracing(b bool) {
 }
 
 func (c *Context) Tracing() bool {
-	return ui.LoggerIsActive(ui.TraceLogger)
+	return ui.IsActive(ui.TraceLogger)
 }
 
 // SetTokenizer sets a tokenizer in the current context for use by

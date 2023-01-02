@@ -52,7 +52,7 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 	w.WriteHeader(status)
 	_, _ = w.Write(b)
 
-	if ui.LoggerIsActive(ui.RestLogger) {
+	if ui.IsActive(ui.RestLogger) {
 		ui.Debug(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
 	}
 }

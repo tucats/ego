@@ -105,7 +105,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
 
-			if ui.LoggerIsActive(ui.RestLogger) {
+			if ui.IsActive(ui.RestLogger) {
 				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
@@ -287,7 +287,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
 
-			if ui.LoggerIsActive(ui.RestLogger) {
+			if ui.IsActive(ui.RestLogger) {
 				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
@@ -365,7 +365,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 	return columns, nil
 }
 
-//DeleteTable will delete a database table from the user's schema.
+// DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	if e := util.AcceptedMediaType(r, []string{}); !errors.Nil(e) {
 		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
@@ -561,7 +561,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				b, _ := json.MarshalIndent(resp, "", "  ")
 				_, _ = w.Write(b)
 
-				if ui.LoggerIsActive(ui.RestLogger) {
+				if ui.IsActive(ui.RestLogger) {
 					ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 				}
 

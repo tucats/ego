@@ -82,6 +82,15 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 	}
 
+	if c.WasFound(defs.OptimizerOption) {
+		optimize := "true"
+		if !c.Boolean(defs.OptimizerOption) {
+			optimize = "false"
+		}
+
+		settings.Set(defs.OptimizerSetting, optimize)
+	}
+
 	interactive := false
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
@@ -268,7 +277,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
-			if ui.LoggerIsActive(ui.ByteCodeLogger) {
+			if ui.IsActive(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 

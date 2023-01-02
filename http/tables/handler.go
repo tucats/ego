@@ -69,7 +69,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If doing INFO logging, make a neutered version of the token showing
 		// only the first few bytes of the token string.
-		if ui.LoggerIsActive(ui.AuthLogger) {
+		if ui.IsActive(ui.AuthLogger) {
 			tokenstr := token
 			if len(tokenstr) > 10 {
 				tokenstr = tokenstr[:10] + "..."

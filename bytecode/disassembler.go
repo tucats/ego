@@ -22,15 +22,25 @@ func (b *ByteCode) Disasm(ranges ...int) {
 
 	hadRange := (len(ranges) > 0)
 
-	if ui.LoggerIsActive(ui.ByteCodeLogger) {
+	if ui.IsActive(ui.ByteCodeLogger) {
 		if !hadRange {
 			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 		}
 
+		scopePad := 0
+
 		for n := start; n < end; n++ {
 			i := b.instructions[n]
+			if i.Operation == PopScope && scopePad > 0 {
+				scopePad = scopePad - 1
+			}
+
 			op := FormatInstruction(i)
-			ui.Debug(ui.ByteCodeLogger, "%4d: %s", n, op)
+			ui.Debug(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op)
+
+			if i.Operation == PushScope {
+				scopePad = scopePad + 1
+			}
 		}
 
 		if !hadRange {

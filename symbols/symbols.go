@@ -28,7 +28,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		return s.Parent.Get(name)
 	}
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		status := "<not found>"
 		attr = &SymbolAttribute{}
 
@@ -64,7 +64,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 		return s.Parent.GetWithAttributes(name)
 	}
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		status := "<not found>"
 		if found {
 			status = datatypes.Format(v)
@@ -98,7 +98,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		return s.Parent.GetAddress(name)
 	}
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
 			s.Name, s.ID, name)
 	}
@@ -129,7 +129,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 
 	s.SetValue(attr.Slot, v)
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
 			s.Name, s.ID, name, datatypes.Format(v))
 	}
@@ -199,7 +199,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 
 	symbolTable.SetValue(attr.Slot, v)
 
-	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
+	if ui.IsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -248,7 +248,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	// Store the value, and update the symbol table entry.
 	symbolTable.SetValue(attr.Slot, v)
 
-	if ui.LoggerIsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
+	if ui.IsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -299,7 +299,7 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 		attr.Readonly = true
 	}
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -340,7 +340,7 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 
 	delete(s.Symbols, name)
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
 			s.Name, s.ID, name)
 	}
@@ -369,7 +369,7 @@ func (s *SymbolTable) Create(name string) *errors.EgoError {
 	s.SetValue(s.ValueSize, nil)
 	s.ValueSize++
 
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
 			s.Name, s.ID, name, s.ValueSize-1)
 	}

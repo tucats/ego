@@ -69,7 +69,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		}
 
 		// If we're doing REST logging, dump out the statement array we will execute now.
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.Debug(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
@@ -143,7 +143,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 					b, _ := json.MarshalIndent(reply, "", "  ")
 					_, _ = w.Write(b)
 
-					if ui.LoggerIsActive(ui.RestLogger) {
+					if ui.IsActive(ui.RestLogger) {
 						ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 					}
 
@@ -232,7 +232,7 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int32, w http.ResponseWriter)
 
 		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}

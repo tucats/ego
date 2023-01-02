@@ -56,7 +56,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 
 	var err *errors.EgoError
 
-	if !ui.LoggerIsActive(ui.AuthLogger) {
+	if !ui.IsActive(ui.AuthLogger) {
 		ui.Debug(ui.ServerLogger, "Initializing credentials and authorizations")
 	} else {
 		ui.Debug(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)

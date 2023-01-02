@@ -223,6 +223,7 @@ const (
 	FullSymbolScopeOption = "full-symbol-scope"
 	StaticTypesOption     = "static-types"
 	SymbolTableSizeOption = "symbol-allocation"
+	OptimizerOption       = "optimize"
 )
 
 // Agent identifiers for REST calls, which indicate the role of the client.

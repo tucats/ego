@@ -144,7 +144,7 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 
 			// Does this optimization match?
 			if found {
-				if count == 0 && ui.LoggerIsActive(ui.OptimizerLogger) {
+				if count == 0 && ui.IsActive(ui.OptimizerLogger) {
 					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.Name)
 				}
 
@@ -210,7 +210,7 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 		count += b.constantStructOptimizer()
 	}
 
-	if count > 0 && ui.LoggerIsActive(ui.OptimizerLogger) && b.emitPos != startingSize {
+	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.emitPos != startingSize {
 		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.emitPos)
 		ui.Debug(ui.OptimizerLogger, "")
 	}
@@ -238,13 +238,13 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoErro
 
 func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 	offset := deleteSize - len(insert)
-	savedBytecodeLoggerState := ui.LoggerIsActive(ui.ByteCodeLogger)
+	savedBytecodeLoggerState := ui.IsActive(ui.ByteCodeLogger)
 
 	defer func() {
 		ui.SetLogger(ui.ByteCodeLogger, savedBytecodeLoggerState)
 	}()
 
-	if ui.LoggerIsActive(ui.OptimizerLogger) {
+	if ui.IsActive(ui.OptimizerLogger) {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 		ui.Debug(ui.OptimizerLogger, "Patching, existing code:")
 		b.Disasm(start, start+deleteSize)
@@ -267,7 +267,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 	b.instructions = instructions
 	b.emitPos = b.emitPos - offset
 
-	if ui.LoggerIsActive(ui.OptimizerLogger) {
+	if ui.IsActive(ui.OptimizerLogger) {
 		ui.SetLogger(ui.ByteCodeLogger, true)
 		ui.Debug(ui.OptimizerLogger, "Patching, new code:")
 		b.Disasm(start, start+len(insert))

@@ -22,7 +22,7 @@ func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 		return nil, errors.New(errors.ErrInvalidLoggerName).Context(name)
 	}
 
-	oldSetting := ui.LoggerIsActive(loggerID)
+	oldSetting := ui.IsActive(loggerID)
 
 	ui.SetLogger(loggerID, enabled)
 

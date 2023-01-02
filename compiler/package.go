@@ -162,7 +162,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			importCompiler.b.Emit(bytecode.PopPackage, packageName)
 
 			// If we are disassembling, do it now for the imported definitions.
-			if ui.LoggerIsActive(ui.ByteCodeLogger) {
+			if ui.IsActive(ui.ByteCodeLogger) {
 				importCompiler.b.Disasm()
 			}
 
@@ -188,7 +188,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 		// Rewrite the package if we've added stuff to it.
 		if wasImported != pkgData.Imported() || wasBuiltin != pkgData.Builtins() {
-			if ui.LoggerIsActive(ui.CompilerLogger) {
+			if ui.IsActive(ui.CompilerLogger) {
 				ui.Debug(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 
 				keys := pkgData.Keys()

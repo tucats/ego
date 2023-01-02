@@ -40,8 +40,17 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	symbolTable := symbols.NewSymbolTable("Unit Tests")
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
 
-	if c.WasFound("static-types") {
-		staticTypes = c.Boolean("static-types")
+	if c.WasFound(defs.StaticTypesOption) {
+		staticTypes = c.Boolean(defs.StaticTypesOption)
+	}
+
+	if c.WasFound(defs.OptimizerOption) {
+		optimize := "true"
+		if !c.Boolean(defs.OptimizerOption) {
+			optimize = "false"
+		}
+
+		settings.Set(defs.OptimizerSetting, optimize)
 	}
 
 	// Add test-specific functions and values
@@ -137,7 +146,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 				builtinsAdded = true
 			}
 
-			if ui.LoggerIsActive(ui.ByteCodeLogger) {
+			if ui.IsActive(ui.ByteCodeLogger) {
 				b.Disasm()
 			}
 
@@ -147,13 +156,6 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			ctx.EnableConsoleOutput(false)
 			if c.Boolean("trace") {
 				ui.SetLogger(ui.TraceLogger, true)
-			}
-
-			// If we are doing source tracing of execution, we'll need to link the tokenizer
-			// back to the execution context. If you don't need source tracing, you can use
-			// the simpler CompileString() function which doesn't require a discrete tokenizer.
-			if c.Boolean("source-tracing") {
-				ctx.SetTokenizer(t)
 			}
 
 			err = ctx.Run()

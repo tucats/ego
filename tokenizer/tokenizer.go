@@ -196,7 +196,7 @@ func New(src string) *Tokenizer {
 		t.Pos = append(t.Pos, column)
 	}
 
-	if ui.LoggerIsActive(ui.TokenLogger) {
+	if ui.IsActive(ui.TokenLogger) {
 		ui.Debug(ui.TokenLogger, "Tokenizer contents:")
 
 		for index, token := range t.Tokens {

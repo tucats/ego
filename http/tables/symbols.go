@@ -20,7 +20,7 @@ const (
 func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) *errors.EgoError {
 	var err *errors.EgoError
 
-	if ui.LoggerIsActive(ui.RestLogger) {
+	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		ui.Debug(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
 	}

@@ -133,7 +133,7 @@ func (p *EgoPackage) Set(key string, value interface{}) {
 
 	// If we're doing symbol tracing, indicate what we're doing (set vs. update) for the
 	// given package, key, and value.
-	if ui.LoggerIsActive(ui.SymbolLogger) {
+	if ui.IsActive(ui.SymbolLogger) {
 		v := Format(value)
 		action := "set"
 

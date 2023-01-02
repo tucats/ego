@@ -100,7 +100,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		}
 
 		// If we're showing our payload in the log, do that now
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))

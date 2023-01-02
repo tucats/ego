@@ -140,6 +140,10 @@ func GetDeclaration(bc interface{}) *FunctionDeclaration {
 	// If it's a bytecode.Bytecode pointer, use reflection to get the
 	// Name field value and use that with the name. A function literal
 	// will have no name.
+	//
+	// Note this introduces a dependancy on the order of items in the
+	// ByteCode object; if you add fields they MUST be after the
+	// fourth item.
 	if vv.Kind() == reflect.Ptr {
 		if ts == defs.ByteCodeReflectionTypeString {
 			switch v := bc.(type) {

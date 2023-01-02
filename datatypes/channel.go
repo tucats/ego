@@ -36,7 +36,7 @@ func NewChannel(size int) *Channel {
 		channel: make(chan interface{}, size),
 	}
 
-	if ui.LoggerIsActive(ui.TraceLogger) {
+	if ui.IsActive(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
 	}
 
@@ -49,7 +49,7 @@ func NewChannel(size int) *Channel {
 // channel since c.String needs a read-lock.
 func (c *Channel) Send(datum interface{}) *errors.EgoError {
 	if c.IsOpen() {
-		if ui.LoggerIsActive(ui.TraceLogger) {
+		if ui.IsActive(ui.TraceLogger) {
 			ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
 		}
 
@@ -71,7 +71,7 @@ func (c *Channel) Send(datum interface{}) *errors.EgoError {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, *errors.EgoError) {
-	if ui.LoggerIsActive(ui.TraceLogger) {
+	if ui.IsActive(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
 	}
 
@@ -112,7 +112,7 @@ func (c *Channel) IsEmpty() bool {
 // the receiver can test for channel completion. Must do the logging
 // before taking the exclusive lock so c.String() can work.
 func (c *Channel) Close() bool {
-	if ui.LoggerIsActive(ui.TraceLogger) {
+	if ui.IsActive(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
 	}
 

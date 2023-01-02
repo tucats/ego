@@ -79,7 +79,7 @@ func (c *Context) popThis() (interface{}, bool) {
 // Add a line to the trace output that shows the "this" stack of
 // saved function receivers.
 func (c *Context) PrintThisStack(operation string) {
-	if ui.LoggerIsActive(ui.TraceLogger) {
+	if ui.IsActive(ui.TraceLogger) {
 		var b strings.Builder
 
 		label := fmt.Sprintf("(%d) %s this; stack =", c.threadID, operation)

@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/app-cli/settings"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -32,12 +33,21 @@ const BuiltinInstructions = BranchInstruction - 1000
 // catch-block of a try/catch construct. The variable contains an error.
 const ErrorVariableName = "_error"
 
-// ByteCode contains the context of the execution of a bytecode stream.
+// firstOptimizerLogMessage is a flag that indicates if this is the first time the
+// optimizer is being invoked, but has been turned off by configuration, and
+// the optimizer log is active. In this case, we put out (once) a message saying
+// logging is suppressed by configuration option.
+var firstOptimizerLogMessage = true
+
+// ByteCode contains the context of the execution of a bytecode stream. Note that
+// the first four fields must be unchanged as formatting a bytecode using reflection
+// looks at positions 0 and 3.
 type ByteCode struct {
 	Name         string
 	instructions []Instruction
 	emitPos      int
 	Declaration  *datatypes.FunctionDeclaration
+	sealed       bool
 }
 
 // New generates and initializes a new bytecode.
@@ -46,6 +56,7 @@ func New(name string) *ByteCode {
 		Name:         name,
 		instructions: make([]Instruction, InitialOpcodeSize),
 		emitPos:      0,
+		sealed:       false,
 	}
 
 	return &bc
@@ -88,23 +99,49 @@ func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
 
 	b.instructions[b.emitPos] = i
 	b.emitPos = b.emitPos + 1
+	b.sealed = false
 }
 
 // Truncate the output array to the current bytecode size. This is also
 // where we will optionally run an optimizer.
 func (b *ByteCode) Seal() *ByteCode {
+	// If this bytecode block is already sealed, we have no work to do.
+	if b.sealed {
+		return b
+	}
+
+	b.sealed = true
+
 	b.instructions = b.instructions[:b.emitPos]
-	// Optionally run optimizer. @tomcole temp flag
-	// indicating if repeated optimization passes are done.
-	if settings.GetBool(defs.OptimizerSetting) {
+
+	useOptimizer := settings.GetBool(defs.OptimizerSetting)
+
+	if ui.IsActive(ui.OptimizerLogger) && firstOptimizerLogMessage && !useOptimizer {
+		firstOptimizerLogMessage = false
+
+		ui.Debug(ui.OptimizerLogger, "Optimizations disabled by configuration setting")
+	}
+
+	// Optionally run optimizer. This is done iteratively until
+	// there are no optimizations to be performed. @tomcole check
+	// to see if this is ever necessary...
+	if useOptimizer {
 		count := 0
 
-		for {
-			if newCount, _ := b.Optimize(count); count == newCount {
-				break
-			} else {
-				count = newCount
+		// If static optimizations are allowed, we have to run the
+		// optimizer repeatedly until it finds no more optimizations.
+		// If we are not using the static optimizer, then we need only
+		// run the peep-hole optimizer once.
+		if staticOptimizations {
+			for {
+				if newCount, _ := b.Optimize(count); count == newCount {
+					break
+				} else {
+					count = newCount
+				}
 			}
+		} else {
+			_, _ = b.Optimize(0)
 		}
 	}
 

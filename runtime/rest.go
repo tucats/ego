@@ -849,7 +849,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			}
 
 			err = json.Unmarshal([]byte(body), response)
-			if errors.Nil(err) && ui.LoggerIsActive(ui.RestLogger) {
+			if errors.Nil(err) && ui.IsActive(ui.RestLogger) {
 				responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
 				ui.Debug(ui.RestLogger, "Response payload:\n%s", string(responseBytes))

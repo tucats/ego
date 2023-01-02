@@ -95,7 +95,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			b, _ := json.MarshalIndent(resp, "", "  ")
 			_, _ = w.Write(b)
 
-			if ui.LoggerIsActive(ui.RestLogger) {
+			if ui.IsActive(ui.RestLogger) {
 				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
@@ -205,7 +205,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		}
 
 		// If we're showing our payload in the log, do that now
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
 			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
@@ -302,7 +302,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			b, _ := json.MarshalIndent(result, "", "  ")
 			_, _ = w.Write(b)
 
-			if ui.LoggerIsActive(ui.RestLogger) {
+			if ui.IsActive(ui.RestLogger) {
 				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
@@ -451,7 +451,7 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 
 		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
 
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
@@ -556,7 +556,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 		}
 
@@ -664,7 +664,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
 
-		if ui.LoggerIsActive(ui.RestLogger) {
+		if ui.IsActive(ui.RestLogger) {
 			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 

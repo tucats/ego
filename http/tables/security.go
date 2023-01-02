@@ -315,7 +315,7 @@ func Authorized(sessionID int32, db *sql.DB, user string, table string, operatio
 		}
 	}
 
-	if ui.LoggerIsActive(ui.TableLogger) {
+	if ui.IsActive(ui.TableLogger) {
 		operationsList := ""
 
 		for i, operation := range operations {

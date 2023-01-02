@@ -229,7 +229,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 		}
 
 		if f.Pkg == pkgname {
-			if ui.LoggerIsActive(ui.CompilerLogger) {
+			if ui.IsActive(ui.CompilerLogger) {
 				debugName := name
 				if f.Pkg != "" {
 					debugName = f.Pkg + "." + name
@@ -376,9 +376,9 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.
-	savedTokenLogging := ui.LoggerIsActive(ui.TokenLogger)
-	savedOptimizerLogging := ui.LoggerIsActive(ui.OptimizerLogger)
-	savedTraceLogging := ui.LoggerIsActive(ui.TraceLogger)
+	savedTokenLogging := ui.IsActive(ui.TokenLogger)
+	savedOptimizerLogging := ui.IsActive(ui.OptimizerLogger)
+	savedTraceLogging := ui.IsActive(ui.TraceLogger)
 
 	ui.SetLogger(ui.TokenLogger, false)
 	ui.SetLogger(ui.OptimizerLogger, false)

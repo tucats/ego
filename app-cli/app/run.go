@@ -50,8 +50,8 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 			EnvironmentVariable: "EGO_PROFILE",
 		},
 		{
-			ShortName:           "d",
 			LongName:            "debug",
+			ShortName:           "d",
 			Description:         "opt.global.debug",
 			OptionType:          cli.StringListType,
 			Action:              DebugAction,

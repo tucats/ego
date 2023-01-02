@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/commands"
+	"github.com/tucats/ego/defs"
 )
 
 // EgoGrammar handles the command line options. There is an entry here for
@@ -52,6 +53,7 @@ var EgoGrammar = []cli.Option{
 		LongName:             "test",
 		Description:          "ego.test",
 		OptionType:           cli.Subcommand,
+		Value:                TestGrammar,
 		Action:               commands.TestAction,
 		ParametersExpected:   -99,
 		ParameterDescription: "parm.file.or.path",
@@ -728,6 +730,12 @@ var RunGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    defs.OptimizerOption,
+		ShortName:   "o",
+		Description: "opt.run.optimize",
+		OptionType:  cli.BooleanValueType,
+	},
+	{
 		LongName:    "full-symbol-scope",
 		Description: "opt.scope",
 		OptionType:  cli.BooleanType,
@@ -755,5 +763,34 @@ var RunGrammar = []cli.Option{
 		ShortName:   "e",
 		Description: "opt.run.entry.point",
 		OptionType:  cli.StringType,
+	},
+}
+
+// TestGrammar handles the command line options.
+var TestGrammar = []cli.Option{
+	{
+		LongName:            "static-types",
+		Description:         "opt.run.static",
+		OptionType:          cli.BooleanType,
+		EnvironmentVariable: "EGO_STATIC_TYPES",
+	},
+	{
+		LongName:    "debug",
+		ShortName:   "d",
+		Description: "opt.run.debug",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    defs.OptimizerOption,
+		ShortName:   "o",
+		Description: "opt.run.optimize",
+		OptionType:  cli.BooleanValueType,
+	},
+	{
+		LongName:            "trace",
+		ShortName:           "t",
+		Description:         "opt.trace",
+		OptionType:          cli.BooleanType,
+		EnvironmentVariable: "EGO_TRACE",
 	},
 }

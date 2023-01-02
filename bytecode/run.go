@@ -70,7 +70,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 	c.programCounter = addr
 	c.running = true
 
-	if ui.LoggerIsActive(ui.TraceLogger) {
+	if ui.IsActive(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 	}
 
@@ -144,7 +144,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 				// Implicit pop-scope done here.
 				_ = c.symbols.SetAlways(ErrorVariableName, err)
 
-				if ui.LoggerIsActive(ui.TraceLogger) {
+				if ui.IsActive(ui.TraceLogger) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
 				}
 			} else {

@@ -70,7 +70,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		response.ServerInfo = util.MakeServerInfo(sessionID)
 
 		for _, k := range ui.LoggerNames() {
-			response.Loggers[k] = ui.LoggerIsActive(ui.Logger(k))
+			response.Loggers[k] = ui.IsActive(ui.Logger(k))
 		}
 
 		w.Header().Add(contentTypeHeader, defs.LogStatusMediaType)
@@ -123,7 +123,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 }
 
 func logHeaders(r *http.Request, sessionID int32) {
-	if ui.LoggerIsActive(ui.InfoLogger) {
+	if ui.IsActive(ui.InfoLogger) {
 		for headerName, headerValues := range r.Header {
 			if strings.EqualFold(headerName, "Authorization") {
 				continue

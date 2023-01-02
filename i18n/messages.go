@@ -1086,6 +1086,9 @@ var Messages = map[string]map[string]string{
 	"opt.run.log": {
 		"en": "Direct log output to this file instead of stdout",
 	},
+	"opt.run.optimize": {
+		"en": "Enable bytecode optimizer",
+	},
 	"opt.run.static": {
 		"en": "Enforce static typing on program execution",
 	},

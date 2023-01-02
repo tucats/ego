@@ -40,7 +40,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	status := userAction(sessionID, w, r)
 
 	// If not doing INFO logging, no intermediate messages have been generated so we can generate a single summary here.
-	if !ui.LoggerIsActive(ui.ServerLogger) {
+	if !ui.IsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
@@ -63,7 +63,7 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := cachesAction(sessionID, w, r)
 
-	if !ui.LoggerIsActive(ui.ServerLogger) {
+	if !ui.IsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
@@ -86,7 +86,7 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := loggingAction(sessionID, w, r)
 
-	if !ui.LoggerIsActive(ui.ServerLogger) {
+	if !ui.IsActive(ui.ServerLogger) {
 		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 	}
 }
