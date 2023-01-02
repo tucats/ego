@@ -38,6 +38,30 @@ func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
+// loadThisByteCode implements the LoadThis opcode. This combines the
+// functionality of the Load followed by the SetThis opcodes.
+func loadThisByteCode(c *Context, i interface{}) *errors.EgoError {
+	name := datatypes.GetString(i)
+	if len(name) == 0 {
+		return c.newError(errors.ErrInvalidIdentifier)
+	}
+
+	v, found := c.symbolGet(name)
+	if !found {
+		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+	}
+
+	_ = c.stackPush(v)
+	name = datatypes.GenerateName()
+	_ = c.symbolSetAlways(name, v)
+
+	if v, ok := c.symbolGet(name); ok {
+		c.pushThis(name, v)
+	}
+
+	return nil
+}
+
 // getThisByteCode implements the GetThis opcode. Given a value name,
 // get the top-most item from the "this" stack and store it in the
 // named value. This is done as part of prologue of a function that

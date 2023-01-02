@@ -58,6 +58,7 @@ const (
 	Load
 	LoadIndex
 	LoadSlice
+	LoadThis
 	Log
 	MakeArray
 	MakeMap
@@ -164,6 +165,7 @@ var instructionNames = map[OpcodeID]string{
 	Load:               "Load",
 	LoadIndex:          "LoadIndex",
 	LoadSlice:          "LoadSlice",
+	LoadThis:           "LoadThis",
 	LocalCall:          "LocalCall",
 	Log:                "Log",
 	MakeArray:          "MakeArray",
@@ -260,6 +262,7 @@ func initializeDispatch() {
 			Load:               loadByteCode,
 			LoadIndex:          loadIndexByteCode,
 			LoadSlice:          loadSliceByteCode,
+			LoadThis:           loadThisByteCode,
 			LocalCall:          localCallByteCode,
 			Log:                logByteCode,
 			MakeArray:          makeArrayByteCode,

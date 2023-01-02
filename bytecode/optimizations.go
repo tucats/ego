@@ -2,6 +2,25 @@ package bytecode
 
 var Optimizations = []Optimization{
 	{
+		Description: "Load followed by SetThis",
+		Source: []Instruction{
+			{
+				Operation: Load,
+				Operand:   OptimizerToken{Name: "name"},
+			},
+			{
+				Operation: SetThis,
+				Operand:   nil,
+			},
+		},
+		Replacement: []Instruction{
+			{
+				Operation: LoadThis,
+				Operand:   OptimizerToken{Name: "name"},
+			},
+		},
+	},
+	{
 		Description: "Collapse constant push and createandstore",
 		Source: []Instruction{
 			{

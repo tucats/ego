@@ -158,8 +158,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	// Generate a new request and put it on the stack
 	if httpMode {
-		c.b.Emit(bytecode.Load, "http")
-		c.b.Emit(bytecode.SetThis)
+		c.b.Emit(bytecode.LoadThis, "http")
 		c.b.Emit(bytecode.Member, "NewRequest")
 	} else {
 		c.b.Emit(bytecode.Load, "NewRequest")
@@ -169,8 +168,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 	// Generate a new response and put it on the stack.
 	if httpMode {
-		c.b.Emit(bytecode.Load, "http")
-		c.b.Emit(bytecode.SetThis)
+		c.b.Emit(bytecode.LoadThis, "http")
 		c.b.Emit(bytecode.Member, "NewResponse")
 	} else {
 		c.b.Emit(bytecode.Load, "NewResponse")
