@@ -377,10 +377,18 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.
 	savedTokenLogging := ui.LoggerIsActive(ui.TokenLogger)
+	savedOptimizerLogging := ui.LoggerIsActive(ui.OptimizerLogger)
+	savedTraceLogging := ui.LoggerIsActive(ui.TraceLogger)
 
 	ui.SetLogger(ui.TokenLogger, false)
+	ui.SetLogger(ui.OptimizerLogger, false)
+	ui.SetLogger(ui.TraceLogger, false)
 
-	defer ui.SetLogger(ui.TokenLogger, savedTokenLogging)
+	defer func(token, opt, trace bool) {
+		ui.SetLogger(ui.TokenLogger, token)
+		ui.SetLogger(ui.OptimizerLogger, opt)
+		ui.SetLogger(ui.TraceLogger, trace)
+	}(savedTokenLogging, savedOptimizerLogging, savedTraceLogging)
 
 	// Start by making a list of the packages. If we need all packages,
 	// scan all the built-in function names for package names. We ignore
