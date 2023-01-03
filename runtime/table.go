@@ -108,6 +108,9 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		_ = t.SetAlignment(i, v)
 	}
 
+	// Turn off pagination by default.
+	t.SetPagination(0, 0)
+
 	// Move the string array of headings into a native array type, which can
 	// be read by the caller.
 	headingsArray := datatypes.NewArray(&datatypes.StringType, len(headings))

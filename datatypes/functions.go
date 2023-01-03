@@ -141,7 +141,7 @@ func GetDeclaration(bc interface{}) *FunctionDeclaration {
 	// Name field value and use that with the name. A function literal
 	// will have no name.
 	//
-	// Note this introduces a dependancy on the order of items in the
+	// Note this introduces a dependency on the order of items in the
 	// ByteCode object; if you add fields they MUST be after the
 	// fourth item.
 	if vv.Kind() == reflect.Ptr {

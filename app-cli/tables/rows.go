@@ -13,9 +13,18 @@ func (t *Table) AddRow(row []string) *errors.EgoError {
 		return errors.New(errors.ErrColumnCount).Context(len(row))
 	}
 
+	// Update the maximum row width based on this new row info. Count
+	// the runes explicitly since len() of a string is really the byte
+	// count, not the character count.
 	for n, h := range row {
-		if len(h) > t.maxWidth[n] {
-			t.maxWidth[n] = len(h)
+		realLength := 0
+
+		for range h {
+			realLength++
+		}
+
+		if realLength > t.maxWidth[n] {
+			t.maxWidth[n] = realLength
 		}
 	}
 

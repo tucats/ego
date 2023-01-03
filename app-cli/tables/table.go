@@ -62,7 +62,13 @@ func New(headings []string) (*Table, *errors.EgoError) {
 	t.showHeadings = true
 
 	for n, h := range headings {
-		t.maxWidth[n] = len(h)
+		realLen := 0
+
+		for range h {
+			realLen++
+		}
+
+		t.maxWidth[n] = realLen
 		t.columns[n] = h
 		t.alignment[n] = AlignmentLeft
 		t.columnOrder[n] = n

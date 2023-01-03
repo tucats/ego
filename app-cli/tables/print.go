@@ -510,7 +510,7 @@ func AlignText(text string, width int, alignment int) string {
 	case AlignmentRight:
 		r := append(padRunes, runes...)
 
-		return string(r[width-textLength:])
+		return string(r[len(r)-width:])
 
 	case AlignmentLeft:
 		r := append(runes, padRunes...)
