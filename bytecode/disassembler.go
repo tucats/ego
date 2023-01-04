@@ -10,9 +10,12 @@ import (
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
 func (b *ByteCode) Disasm(ranges ...int) {
+	usingRange := false
 	start := 0
+
 	if len(ranges) > 0 {
 		start = ranges[0]
+		usingRange = true
 	}
 
 	end := b.emitPos
@@ -20,10 +23,8 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		end = ranges[1]
 	}
 
-	hadRange := (len(ranges) > 0)
-
 	if ui.IsActive(ui.ByteCodeLogger) {
-		if !hadRange {
+		if !usingRange {
 			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
 		}
 
@@ -43,7 +44,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 			}
 		}
 
-		if !hadRange {
+		if !usingRange {
 			ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
 		}
 	}

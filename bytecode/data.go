@@ -109,8 +109,8 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	// so it can receive the channel info regardless of its type.
 	varname := datatypes.GetString(i)
 
-	x, ok := c.symbolGet(varname)
-	if !ok {
+	x, found := c.symbolGet(varname)
+	if !found {
 		if sourceChan {
 			err = c.symbolCreate(varname)
 		} else {
@@ -343,8 +343,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	err = c.symbolSetAlways(symbolName, v)
-	if err != nil {
+	if err = c.symbolSetAlways(symbolName, v); err != nil {
 		return c.newError(err)
 	}
 
@@ -375,9 +374,7 @@ func loadByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	_ = c.stackPush(v)
-
-	return nil
+	return c.stackPush(v)
 }
 
 // explodeByteCode implements Explode. This accepts a struct on the top of
@@ -414,6 +411,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 					break
 				}
 			}
+
 			if err == nil {
 				return c.stackPush(empty)
 			}

@@ -239,19 +239,18 @@ func structByteCode(c *Context, i interface{}) error {
 			// function definitions in the model, as they will be
 			// found later during function invocation if needed
 			// by chasing the model chain.
-			for _, k := range model.FieldNames() {
-				v, _ := model.Get(k)
+			for _, fieldName := range model.FieldNames() {
+				fieldValue, _ := model.Get(fieldName)
 
-				vx := reflect.ValueOf(v)
-				if vx.Kind() == reflect.Ptr {
-					ts := vx.String()
+				if value := reflect.ValueOf(fieldValue); value.Kind() == reflect.Ptr {
+					ts := value.String()
 					if ts == defs.ByteCodeReflectionTypeString {
 						continue
 					}
 				}
 
-				if _, found := m[k]; !found {
-					m[k] = v
+				if _, found := m[fieldName]; !found {
+					m[fieldName] = fieldValue
 				}
 			}
 
@@ -333,8 +332,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		_, err = m.Set(k, v)
-		if err != nil {
+		if _, err = m.Set(k, v); err != nil {
 			return err
 		}
 	}
