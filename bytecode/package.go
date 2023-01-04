@@ -15,6 +15,8 @@ type packageDef struct {
 	name string
 }
 
+// Note there are reflection dependencies on the name of the
+// field; it must be named "Value".
 type ConstantWrapper struct {
 	Value interface{}
 }

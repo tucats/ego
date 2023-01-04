@@ -134,7 +134,7 @@ func GetDeclaration(bc interface{}) *datatypes.FunctionDeclaration {
 			switch v := bc.(type) {
 			default:
 				e := reflect.ValueOf(v).Elem()
-				fd, _ := e.Field(3).Interface().(*datatypes.FunctionDeclaration)
+				fd, _ := e.FieldByName("Declaration").Interface().(*datatypes.FunctionDeclaration)
 
 				return fd
 			}

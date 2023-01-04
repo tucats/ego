@@ -141,15 +141,15 @@ func GetDeclaration(bc interface{}) *FunctionDeclaration {
 	// Name field value and use that with the name. A function literal
 	// will have no name.
 	//
-	// Note this introduces a dependency on the order of items in the
-	// ByteCode object; if you add fields they MUST be after the
-	// fourth item.
+	// Note this introduces a dependency on the names of items in the
+	// ByteCode object; the bytecode declaration *must* be named
+	// "Declaration".
 	if vv.Kind() == reflect.Ptr {
 		if ts == defs.ByteCodeReflectionTypeString {
 			switch v := bc.(type) {
 			default:
 				e := reflect.ValueOf(v).Elem()
-				fd, _ := e.Field(3).Interface().(*FunctionDeclaration)
+				fd, _ := e.FieldByName("Declaration").Interface().(*FunctionDeclaration)
 
 				return fd
 			}

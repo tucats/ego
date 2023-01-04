@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/tucats/ego/datatypes"
 )
 
 // Unquote removes quotation marks from a string if present.
@@ -52,13 +54,16 @@ func Hostname() string {
 
 // Given a list of strings, convert them to a sorted list in
 // Ego array format.
-func MakeSortedArray(array []string) []interface{} {
+func MakeSortedArray(array []string) *datatypes.EgoArray {
 	sort.Strings(array)
-	result := make([]interface{}, len(array))
+
+	intermediateArray := make([]interface{}, len(array))
 
 	for i, v := range array {
-		result[i] = v
+		intermediateArray[i] = v
 	}
+
+	result := datatypes.NewArrayFromArray(&datatypes.StringType, intermediateArray)
 
 	return result
 }

@@ -85,7 +85,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		// Sort the member list and forge it into an Ego array
-		members := datatypes.NewArrayFromArray(&datatypes.StringType, util.MakeSortedArray(memberList))
+		members := util.MakeSortedArray(memberList)
 
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members
@@ -116,7 +116,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		// Sort the member list and forge it into an Ego array
-		members := datatypes.NewArrayFromArray(&datatypes.StringType, util.MakeSortedArray(memberList))
+		members := util.MakeSortedArray(memberList)
 
 		result := map[string]interface{}{}
 		result[datatypes.MembersMDName] = members

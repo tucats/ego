@@ -205,7 +205,7 @@ func Format(element interface{}) string {
 			if ts == defs.ByteCodeReflectionTypeString {
 				e := reflect.ValueOf(v).Elem()
 
-				name := fmt.Sprintf("%v", e.Field(0).Interface())
+				name := fmt.Sprintf("%v", e.FieldByName("Name").Interface())
 				if name == "" {
 					name = "<anon>"
 				}
@@ -226,16 +226,16 @@ func Format(element interface{}) string {
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
-			e := reflect.ValueOf(v).Field(0)
+			e := reflect.ValueOf(v).FieldByName("Module")
 			module := fmt.Sprintf("%v", e.Interface())
-			e = reflect.ValueOf(v).Field(1)
+			e = reflect.ValueOf(v).FieldByName("Line")
 			line := GetInt(e.Interface())
 
 			return fmt.Sprintf("F<%s:%d>", module, line)
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
-			e := reflect.ValueOf(v).Field(0)
+			e := reflect.ValueOf(v).FieldByName("Value")
 			name := fmt.Sprintf("%v", e.Interface())
 
 			return fmt.Sprintf("Constant %s", Format(name))

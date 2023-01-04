@@ -40,8 +40,7 @@ const ErrorVariableName = "_error"
 var firstOptimizerLogMessage = true
 
 // ByteCode contains the context of the execution of a bytecode stream. Note that
-// the first four fields must be unchanged as formatting a bytecode using reflection
-// looks at positions 0 and 3.
+// there is a dependency in format.go on the name of the "Declaration" variable.
 type ByteCode struct {
 	Name         string
 	instructions []Instruction
