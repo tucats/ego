@@ -13,13 +13,13 @@ import (
 // be enabled or disabled, and returns the previous state of the logger. It is
 // an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
-func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := strings.TrimSpace(datatypes.GetString(args[0]))
 	enabled := datatypes.GetBool(args[1])
 
 	loggerID := ui.Logger(name)
 	if loggerID <= 0 {
-		return nil, errors.New(errors.ErrInvalidLoggerName).Context(name)
+		return nil, errors.EgoError(errors.ErrInvalidLoggerName).Context(name)
 	}
 
 	oldSetting := ui.IsActive(loggerID)
@@ -31,7 +31,7 @@ func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 
 // LogTail implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
-func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := datatypes.GetInt(args[0])
 	filter := 0
 

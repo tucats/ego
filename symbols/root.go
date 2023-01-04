@@ -2,7 +2,6 @@ package symbols
 
 import (
 	"github.com/google/uuid"
-	"github.com/tucats/ego/errors"
 )
 
 // This is the list of symbols that are initialized in the root
@@ -50,7 +49,7 @@ var RootSymbolTable = SymbolTable{
 }
 
 // SetGlobal sets a symbol value in the global symbol table.
-func (s *SymbolTable) SetGlobal(name string, value interface{}) *errors.EgoError {
+func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
 	_ = RootSymbolTable.Create(name)
 
 	return RootSymbolTable.SetAlways(name, value)

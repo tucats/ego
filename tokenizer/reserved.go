@@ -205,6 +205,7 @@ var ExtendedReservedWords = map[Token]bool{
 	PrintToken: true,
 	TryToken:   true,
 	ExitToken:  true,
+	PanicToken: true,
 }
 
 // This is a list of spellings of reserved words that should be

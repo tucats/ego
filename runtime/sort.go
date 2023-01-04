@@ -14,18 +14,18 @@ import (
 // cycle problem. So this function (and others like it) are declared outside the functions
 // package here in the runtime package, and are manually added to the dictionary when the
 // run command is invoked.
-func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	array, ok := args[0].(*datatypes.EgoArray)
 	if !ok {
-		return nil, errors.New(errors.ErrArgumentType)
+		return nil, errors.EgoError(errors.ErrArgumentType)
 	}
 
 	fn, ok := args[1].(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.New(errors.ErrArgumentType)
+		return nil, errors.EgoError(errors.ErrArgumentType)
 	}
 
-	var funcError *errors.EgoError
+	var funcError error
 
 	// Create a symbol table to use for the slice comparator callback function.
 	sliceSymbols := symbols.NewChildSymbolTable("sort slice", s)
@@ -48,8 +48,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 		_ = sliceSymbols.SetAlways("__args", datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{i, j}))
 
 		// Run the comparator function
-		err := ctx.RunFromAddress(0)
-		if err != nil {
+		if err := ctx.RunFromAddress(0); err != nil {
 			if funcError == nil {
 				funcError = err
 			}

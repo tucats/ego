@@ -9,7 +9,7 @@ import (
 
 // Compile an initializer, given a type definition. This can be a literal
 // initializer in braces or a simple value.
-func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
+func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 	if !c.t.IsNext(tokenizer.DataBeginToken) {
 		// It's not an initializer constant, but it could still be an expression. Try the
 		// top-level expression compiler.
@@ -35,7 +35,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 			name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 
 			ft, err := base.Field(name.Spelling())
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -44,7 +44,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 			}
 
 			err = c.compileInitializer(ft)
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -74,7 +74,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Pairs of values with a colon between.
 			err := c.unary()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -87,7 +87,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 			// Note we compile the value using ourselves, to allow for nested
 			// type specifications.
 			err = c.compileInitializer(base.BaseType())
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -114,7 +114,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			// Values separated by commas.
 			err := c.compileInitializer(base.BaseType())
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -136,7 +136,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) *errors.EgoError {
 
 	default:
 		err := c.unary()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

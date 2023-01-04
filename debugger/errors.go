@@ -2,16 +2,16 @@ package debugger
 
 import "github.com/tucats/ego/errors"
 
-func InvokeDebugger(e *errors.EgoError) bool {
+func InvokeDebugger(e error) bool {
 	if e == nil {
 		return false
 	}
 
-	if e.Is(errors.ErrSignalDebugger) {
+	if errors.Equals(e, errors.ErrSignalDebugger) {
 		return true
 	}
 
-	if e.Is(errors.ErrStepOver) {
+	if errors.Equals(e, errors.ErrStepOver) {
 		return true
 	}
 

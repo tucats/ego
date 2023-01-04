@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) expressionAtom() *errors.EgoError {
+func (c *Compiler) expressionAtom() error {
 	t := c.t.Peek(1)
 
 	// Is it a short-form try/catch?
@@ -82,7 +82,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		} else {
 			// Address of an expression requires creating a temp symbol
 			err := c.expressionAtom()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -106,7 +106,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		} else {
 			// Dereference of an expression requires creating a temp symbol
 			err := c.expressionAtom()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -124,7 +124,7 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		c.t.Advance(1)
 
 		err := c.conditional()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -152,14 +152,14 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	}
 
 	// If the token is a number, convert it
-	if i, err := strconv.Atoi(text); errors.Nil(err) {
+	if i, err := strconv.Atoi(text); err == nil {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
 		return nil
 	}
 
-	if i, err := strconv.ParseFloat(text, 64); errors.Nil(err) {
+	if i, err := strconv.ParseFloat(text, 64); err == nil {
 		c.t.Advance(1)
 		c.b.Emit(bytecode.Push, i)
 
@@ -214,8 +214,9 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 		c.t.Set(mark)
 	}
 
-	// Watch out for function calls here...
-	if c.t.Peek(2) != tokenizer.StartOfListToken {
+	// Watch out for function calls here.
+	isPanic := c.flags.extensionsEnabled && (c.t.Peek(1) == tokenizer.PanicToken)
+	if !isPanic && c.t.Peek(2) != tokenizer.StartOfListToken {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {
@@ -275,8 +276,8 @@ func (c *Compiler) expressionAtom() *errors.EgoError {
 	return c.newError(errors.ErrUnexpectedToken, t)
 }
 
-func (c *Compiler) parseArray() *errors.EgoError {
-	var err *errors.EgoError
+func (c *Compiler) parseArray() error {
+	var err error
 
 	var listTerminator = tokenizer.EmptyToken
 
@@ -353,14 +354,14 @@ func (c *Compiler) parseArray() *errors.EgoError {
 		} else {
 			t1, e2 = strconv.Atoi(c.t.PeekText(1))
 			if e2 != nil {
-				err = errors.New(e2)
+				err = errors.EgoError(e2)
 			}
 		}
 
-		if errors.Nil(err) {
+		if err == nil {
 			if c.t.Peek(2) == tokenizer.ColonToken {
 				t2, err := strconv.Atoi(c.t.PeekText(3))
-				if errors.Nil(err) {
+				if err == nil {
 					c.t.Advance(3)
 
 					count := t2 - t1 + 1
@@ -396,7 +397,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 
 	for c.t.Peek(1) != listTerminator {
 		err := c.conditional()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -437,7 +438,7 @@ func (c *Compiler) parseArray() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) parseStruct() *errors.EgoError {
+func (c *Compiler) parseStruct() error {
 	var listTerminator = tokenizer.DataEndToken
 
 	var err error
@@ -462,7 +463,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 
 		// Third element: value, which is emitted.
 		err := c.conditional()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -489,7 +490,11 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 	c.b.Emit(bytecode.Struct, count)
 	c.t.Advance(1)
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // Handle the ? optional operation. This precedes an expression
@@ -499,7 +504,7 @@ func (c *Compiler) parseStruct() *errors.EgoError {
 // structure member, or divide-by-zero.
 //
 // This is only supported when extensions are enabled.
-func (c *Compiler) optional() *errors.EgoError {
+func (c *Compiler) optional() error {
 	if !c.flags.extensionsEnabled {
 		return c.newError(errors.ErrUnexpectedToken).Context("?")
 	}
@@ -511,7 +516,7 @@ func (c *Compiler) optional() *errors.EgoError {
 	c.b.Emit(bytecode.WillCatch, bytecode.OptionalCatchSet)
 
 	err := c.unary()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -524,7 +529,7 @@ func (c *Compiler) optional() *errors.EgoError {
 	}
 
 	err = c.unary()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

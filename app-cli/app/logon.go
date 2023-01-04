@@ -53,7 +53,7 @@ var LogonGrammar = []cli.Option{
 // If the user credentials are valid and a token is returned, it is
 // stored in the user's active profile where it can be accessed by
 // other Ego commands as needed.
-func Logon(c *cli.Context) *errors.EgoError {
+func Logon(c *cli.Context) error {
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
@@ -61,18 +61,15 @@ func Logon(c *cli.Context) *errors.EgoError {
 	if c.WasFound("logon-server") {
 		url, _ = c.String("logon-server")
 
-		var e2 *errors.EgoError
-
-		url, e2 = resolveServerName(url)
-		if !errors.Nil(e2) {
-			return e2
+		if url, err := resolveServerName(url); err != nil {
+			return err
+		} else {
+			settings.Set(defs.LogonServerSetting, url)
 		}
-
-		settings.Set(defs.LogonServerSetting, url)
 	}
 
 	if url == "" {
-		return errors.New(errors.ErrNoLogonServer)
+		return errors.EgoError(errors.ErrNoLogonServer)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -116,12 +113,12 @@ func Logon(c *cli.Context) *errors.EgoError {
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
-	if errors.Nil(err) && r.StatusCode() == http.StatusOK {
+	if err == nil && r.StatusCode() == http.StatusOK {
 		payload := defs.LogonResponse{}
 
 		err := json.Unmarshal(r.Body(), &payload)
 		if err != nil {
-			return errors.New(err).Context("logon")
+			return errors.EgoError(err).Context("logon")
 		}
 
 		if ui.IsActive(ui.RestLogger) {
@@ -133,7 +130,7 @@ func Logon(c *cli.Context) *errors.EgoError {
 		settings.Set(defs.LogonTokenExpirationSetting, payload.Expiration)
 
 		err = settings.Save()
-		if errors.Nil(err) {
+		if err == nil {
 			msg := i18n.M("logged.in", map[string]interface{}{
 				"user":    user,
 				"expires": payload.Expiration,
@@ -142,33 +139,41 @@ func Logon(c *cli.Context) *errors.EgoError {
 			ui.Say("%s", msg)
 		}
 
-		return errors.New(err)
+		if err != nil {
+			err = errors.EgoError(err)
+		}
+
+		return err
 	}
 
 	// If there was an HTTP error condition, let's report it now.
-	if errors.Nil(err) {
+	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = errors.New(errors.ErrNoCredentials)
+			err = errors.EgoError(errors.ErrNoCredentials)
 
 		case http.StatusForbidden:
-			err = errors.New(errors.ErrInvalidCredentials)
+			err = errors.EgoError(errors.ErrInvalidCredentials)
 
 		case http.StatusNotFound:
-			err = errors.New(errors.ErrLogonEndpoint)
+			err = errors.EgoError(errors.ErrLogonEndpoint)
 
 		default:
-			err = errors.New(errors.ErrHTTP).Context(r.StatusCode())
+			err = errors.EgoError(errors.ErrHTTP).Context(r.StatusCode())
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // Resolve a name that may not be fully qualified, and make it the default
 // application host name. This is used by commands that allow a host name
 // specification as part of the command (login, or server logging, etc.).
-func resolveServerName(name string) (string, *errors.EgoError) {
+func resolveServerName(name string) (string, error) {
 	hasScheme := true
 
 	normalizedName := strings.ToLower(name)
@@ -180,7 +185,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return "", errors.New(err)
+		return "", errors.EgoError(err)
 	}
 
 	port := url.Port()
@@ -196,7 +201,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 		settings.SetDefault("ego.application.server", name)
 
 		err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
-		if errors.Nil(err) {
+		if err == nil {
 			return name, nil
 		}
 	}
@@ -207,7 +212,7 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 	settings.SetDefault("ego.application.server", normalizedName)
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		return normalizedName, nil
 	}
 
@@ -218,5 +223,9 @@ func resolveServerName(name string) (string, *errors.EgoError) {
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
-	return normalizedName, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return normalizedName, err
 }

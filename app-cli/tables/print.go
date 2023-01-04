@@ -13,7 +13,7 @@ import (
 )
 
 // Print will output a table using current rows and format specifications.
-func (t *Table) Print(format string) *errors.EgoError {
+func (t *Table) Print(format string) error {
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
 		_ = t.SortRows(t.orderBy, t.ascending)
@@ -45,14 +45,14 @@ func (t *Table) Print(format string) *errors.EgoError {
 		fmt.Printf("%s\n", string(b))
 
 	default:
-		return errors.New(errors.ErrInvalidOutputFormat).Context(format)
+		return errors.EgoError(errors.ErrInvalidOutputFormat).Context(format)
 	}
 
 	return nil
 }
 
 // String will output a table using current rows and format specifications.
-func (t *Table) String(format string) (string, *errors.EgoError) {
+func (t *Table) String(format string) (string, error) {
 	// If there is an orderBy set for the table, do the sort now
 	if t.orderBy >= 0 {
 		_ = t.SortRows(t.orderBy, t.ascending)
@@ -87,7 +87,7 @@ func (t *Table) String(format string) (string, *errors.EgoError) {
 		b.WriteString("\n")
 
 	default:
-		return "", errors.New(errors.ErrInvalidOutputFormat).Context(format)
+		return "", errors.EgoError(errors.ErrInvalidOutputFormat).Context(format)
 	}
 
 	return b.String(), nil

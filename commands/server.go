@@ -30,8 +30,8 @@ var PathList []string
 
 // RunServer initializes and runs the REST server, which starts listenting for
 // new connections. This will never terminate until the process is killed.
-func RunServer(c *cli.Context) *errors.EgoError {
-	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
+func RunServer(c *cli.Context) error {
+	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 		if fn, ok := c.String("log"); ok {
 			err := ui.OpenLogFile(fn, true)
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 		}
@@ -154,7 +154,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	}
 
 	// Load the user database (if requested)
-	if err := auth.LoadUserDatabase(c); !errors.Nil(err) {
+	if err := auth.LoadUserDatabase(c); err != nil {
 		return err
 	}
 
@@ -162,7 +162,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 	_ = symbols.RootSymbolTable.SetAlways("__paths", []string{})
 
 	err := services.DefineLibHandlers(server.PathRoot, "/services")
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		}
 
 		if !found {
-			return errors.New(errors.ErrNoSuchDebugService).Context(debugPath)
+			return errors.EgoError(errors.ErrNoSuchDebugService).Context(debugPath)
 		}
 	}
 
@@ -207,7 +207,7 @@ func RunServer(c *cli.Context) *errors.EgoError {
 
 		sandboxPath, e2 := filepath.Abs(sandboxPath)
 		if e2 != nil {
-			return errors.New(errors.ErrInvalidSandboxPath).Context(sandboxPath)
+			return errors.EgoError(errors.ErrInvalidSandboxPath).Context(sandboxPath)
 		}
 
 		settings.SetDefault(defs.SandboxPathSetting, sandboxPath)
@@ -241,7 +241,11 @@ func RunServer(c *cli.Context) *errors.EgoError {
 		e2 = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
 	}
 
-	return errors.New(e2)
+	if e2 != nil {
+		e2 = errors.EgoError(e2)
+	}
+
+	return e2
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's
@@ -282,7 +286,7 @@ func HeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 // Resolve a name that may not be fully qualified, and make it the default
 // application host name. This is used by commands that allow a host name
 // specification as part of the command (login, or server logging, etc.).
-func ResolveServerName(name string) (string, *errors.EgoError) {
+func ResolveServerName(name string) (string, error) {
 	if name == "." {
 		name = settings.Get(defs.ApplicationServerSetting)
 		if name == "" {
@@ -305,7 +309,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return "", errors.New(err)
+		return "", errors.EgoError(err)
 	}
 
 	port := url.Port()
@@ -329,7 +333,7 @@ func ResolveServerName(name string) (string, *errors.EgoError) {
 	settings.SetDefault("ego.application.server", normalizedName)
 
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		return normalizedName, nil
 	}
 

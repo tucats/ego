@@ -9,7 +9,7 @@ import (
 )
 
 // compileConst compiles a constant block.
-func (c *Compiler) compileConst() *errors.EgoError {
+func (c *Compiler) compileConst() error {
 	terminator := tokenizer.EmptyToken
 
 	if c.t.IsNext(tokenizer.StartOfListToken) {
@@ -29,7 +29,7 @@ func (c *Compiler) compileConst() *errors.EgoError {
 		}
 
 		vx, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

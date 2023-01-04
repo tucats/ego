@@ -38,7 +38,7 @@ const (
 // compileDirective processes a compiler directive. These become symbols generated
 // at compile time that are copied to the compiler's symbol table for processing
 // elsewhere.
-func (c *Compiler) compileDirective() *errors.EgoError {
+func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
 	if !name.IsIdentifier() {
 		return c.newError(errors.ErrInvalidDirective, name)
@@ -113,7 +113,7 @@ func (c *Compiler) compileDirective() *errors.EgoError {
 }
 
 // Generate the call to the main program, and the the exit code.
-func (c *Compiler) entrypointDirective() *errors.EgoError {
+func (c *Compiler) entrypointDirective() error {
 	mainName := c.t.Next()
 	if mainName == tokenizer.EndOfTokens || mainName == tokenizer.SemicolonToken {
 		mainName = tokenizer.NewIdentifierToken(defs.Main)
@@ -132,7 +132,7 @@ func (c *Compiler) entrypointDirective() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) handlerDirective() *errors.EgoError {
+func (c *Compiler) handlerDirective() error {
 	handlerName := c.t.Next()
 	if handlerName == tokenizer.EndOfTokens || handlerName == tokenizer.SemicolonToken {
 		handlerName = tokenizer.NewIdentifierToken("handler")
@@ -194,7 +194,7 @@ func (c *Compiler) handlerDirective() *errors.EgoError {
 
 // globalDirective parses the @global directive which sets a symbol
 // value in the root symbol table, global to all execution.
-func (c *Compiler) globalDirective() *errors.EgoError {
+func (c *Compiler) globalDirective() error {
 	if c.t.AtEnd() {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
@@ -210,7 +210,7 @@ func (c *Compiler) globalDirective() *errors.EgoError {
 		c.b.Emit(bytecode.Push, "")
 	} else {
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -223,7 +223,7 @@ func (c *Compiler) globalDirective() *errors.EgoError {
 }
 
 // Parse the @json directive.
-func (c *Compiler) jsonDirective() *errors.EgoError {
+func (c *Compiler) jsonDirective() error {
 	_ = c.modeCheck("server", true)
 	c.b.Emit(bytecode.Load, "_json")
 
@@ -231,7 +231,7 @@ func (c *Compiler) jsonDirective() *errors.EgoError {
 	c.b.Emit(bytecode.BranchFalse, 0)
 
 	err := c.compileStatement()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -239,7 +239,7 @@ func (c *Compiler) jsonDirective() *errors.EgoError {
 }
 
 // Parse the @text directive.
-func (c *Compiler) textDirective() *errors.EgoError {
+func (c *Compiler) textDirective() error {
 	_ = c.modeCheck("server", true)
 	c.b.Emit(bytecode.Load, "_json")
 
@@ -247,14 +247,14 @@ func (c *Compiler) textDirective() *errors.EgoError {
 	c.b.Emit(bytecode.BranchTrue, 0)
 
 	err := c.compileStatement()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	return c.b.SetAddressHere(branch)
 }
 
-func (c *Compiler) lineDirective() *errors.EgoError {
+func (c *Compiler) lineDirective() error {
 	// The next token must be an integer value
 	lineNumberToken := c.t.Next()
 	if !lineNumberToken.IsValue() {
@@ -273,7 +273,7 @@ func (c *Compiler) lineDirective() *errors.EgoError {
 }
 
 // logDirective parses the @log directive.
-func (c *Compiler) logDirective() *errors.EgoError {
+func (c *Compiler) logDirective() error {
 	if c.t.AtEnd() {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
@@ -287,7 +287,7 @@ func (c *Compiler) logDirective() *errors.EgoError {
 		c.b.Emit(bytecode.Push, "")
 	} else {
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -301,7 +301,7 @@ func (c *Compiler) logDirective() *errors.EgoError {
 
 // statusDirective parses the @status directive which sets a symbol
 // value in the root symbol table with the REST call status value.
-func (c *Compiler) statusDirective() *errors.EgoError {
+func (c *Compiler) statusDirective() error {
 	if c.t.AtEnd() {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
@@ -313,7 +313,7 @@ func (c *Compiler) statusDirective() *errors.EgoError {
 		c.b.Emit(bytecode.Push, http.StatusOK)
 	} else {
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -325,7 +325,7 @@ func (c *Compiler) statusDirective() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) authenticatedDirective() *errors.EgoError {
+func (c *Compiler) authenticatedDirective() error {
 	var token string
 
 	_ = c.modeCheck("server", true)
@@ -352,7 +352,7 @@ func (c *Compiler) authenticatedDirective() *errors.EgoError {
 }
 
 // responseDirective processes the @response directive.
-func (c *Compiler) responseDirective() *errors.EgoError {
+func (c *Compiler) responseDirective() error {
 	if c.t.AtEnd() {
 		return c.newError(errors.ErrInvalidSymbolName)
 	}
@@ -360,7 +360,7 @@ func (c *Compiler) responseDirective() *errors.EgoError {
 	_ = c.modeCheck("server", true)
 
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -371,7 +371,7 @@ func (c *Compiler) responseDirective() *errors.EgoError {
 }
 
 // templateDirective implements the template compiler directive.
-func (c *Compiler) templateDirective() *errors.EgoError {
+func (c *Compiler) templateDirective() error {
 	// Get the template name
 	name := c.t.Next()
 	if !name.IsIdentifier() {
@@ -382,7 +382,7 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 
 	// Get the template string definition
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -395,13 +395,13 @@ func (c *Compiler) templateDirective() *errors.EgoError {
 }
 
 // errorDirective implements the @error directive.
-func (c *Compiler) errorDirective() *errors.EgoError {
+func (c *Compiler) errorDirective() error {
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
 	c.b.Emit(bytecode.Load, "error")
 
 	if !c.atStatementEnd() {
 		code, err := c.Expression()
-		if errors.Nil(err) {
+		if err == nil {
 			c.b.Append(code)
 		}
 	} else {
@@ -416,7 +416,7 @@ func (c *Compiler) errorDirective() *errors.EgoError {
 
 // typeDirective implements the @type directive which must be followed by the
 // keyword "static" or "dynamic", indicating the type of type checking.
-func (c *Compiler) typeDirective() *errors.EgoError {
+func (c *Compiler) typeDirective() error {
 	var err error
 
 	if t := c.t.NextText(); util.InList(t, "static", "dynamic") {
@@ -427,7 +427,11 @@ func (c *Compiler) typeDirective() *errors.EgoError {
 
 	c.b.Emit(bytecode.StaticTyping)
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // atStatementEnd checks the next token in the stream to see if it indicates
@@ -440,7 +444,7 @@ func (c *Compiler) atStatementEnd() bool {
 // in the given mode. If check is true, we require that we
 // are in the given mode. If check is false, we require that
 // we are not in the given mode.
-func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
+func (c *Compiler) modeCheck(mode string, check bool) error {
 	c.b.Emit(bytecode.ModeCheck, mode)
 
 	return nil
@@ -448,15 +452,15 @@ func (c *Compiler) modeCheck(mode string, check bool) *errors.EgoError {
 
 // Implement the @wait directive which waits for any outstanding
 // go routines to finish.
-func (c *Compiler) waitDirective() *errors.EgoError {
+func (c *Compiler) waitDirective() error {
 	c.b.Emit(bytecode.Wait)
 
 	return nil
 }
 
-func (c *Compiler) localizationDirective() *errors.EgoError {
+func (c *Compiler) localizationDirective() error {
 	err := c.parseStruct()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

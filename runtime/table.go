@@ -53,9 +53,9 @@ func initTableTypeDef() {
 // a new table. Additionally, the column names can contain alignment information;
 // a name with a leading ":" is left-aligned, and a trailing":" is right-
 // aligned. In either case the ":" is removed from the name.
-func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	// Fetch the arguments as column headings. If the value is passed by array,
@@ -100,7 +100,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 	// Create the new table object, and set the alignment for each column heading now.
 	t, err := tables.New(headings)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -131,9 +131,9 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 // TableClose closes the table handle, and releases any memory resources
 // being held by the table.
-func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getTable(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -145,16 +145,16 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // TableClose closes the table handle, and releases any memory resources
 // being held by the table.
-func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
-		return nil, errors.New(errors.ErrInvalidVariableArguments)
+		return nil, errors.EgoError(errors.ErrInvalidVariableArguments)
 	}
 
 	h := datatypes.GetInt(args[0])
 	w := datatypes.GetInt(args[1])
 
 	t, err := getTable(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -168,20 +168,20 @@ func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, *
 // name, and the associated value is used as the table cell value. If a list of
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
-func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		if len(args) > 0 {
 			if m, ok := args[0].(*datatypes.EgoStruct); ok {
 				if len(args) > 1 {
-					err = errors.New(errors.ErrArgumentCount)
+					err = errors.EgoError(errors.ErrArgumentCount)
 				} else {
 					values := make([]string, len(m.FieldNames()))
 
 					for _, k := range m.FieldNames() {
 						v := m.GetAlways(k)
 						if v == nil {
-							return nil, errors.New(errors.ErrInvalidField)
+							return nil, errors.EgoError(errors.ErrInvalidField)
 						}
 
 						p, ok := t.FindColumn(k)
@@ -195,7 +195,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 			} else {
 				if m, ok := args[0].([]interface{}); ok {
 					if len(args) > 1 {
-						err = errors.New(errors.ErrArgumentCount)
+						err = errors.EgoError(errors.ErrArgumentCount)
 
 						return err, err
 					}
@@ -216,9 +216,9 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // significant sort, etc. until the first argument, which is the most
 // significant sort. The column names can start with a tilde ("~") character
 // to reverse the sort order from it's default value of ascending to descending.
-func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		for i := len(args) - 1; i >= 0; i = i - 1 {
 			v := args[i]
 			ascending := true
@@ -231,7 +231,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 			pos, found := t.FindColumn(heading)
 			if !found {
-				err = errors.New(errors.ErrInvalidColumnName).Context(heading)
+				err = errors.EgoError(errors.ErrInvalidColumnName).Context(heading)
 			} else {
 				err = t.SortRows(pos, ascending)
 			}
@@ -245,15 +245,15 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // are both booleans. The first indicates if a headings row is to be printed
 // in the output. The second is examined only if the headings value is true;
 // it controls whether an underline string is printed under the column names.
-func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		err := errors.New(errors.ErrArgumentCount)
+		err := errors.EgoError(errors.ErrArgumentCount)
 
 		return err, err
 	}
 
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		headings := true
 		lines := true
 
@@ -274,21 +274,21 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // TableAlign specifies alignment for a given column.
-func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		err := errors.New(errors.ErrArgumentCount)
+		err := errors.EgoError(errors.ErrArgumentCount)
 
 		return err, err
 	}
 
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		column := 0
 
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.FindColumn(columnName)
 			if !ok {
-				err = errors.New(errors.ErrInvalidColumnName).Context(columnName)
+				err = errors.EgoError(errors.ErrInvalidColumnName).Context(columnName)
 
 				return err, err
 			}
@@ -310,7 +310,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 				mode = tables.AlignmentCenter
 
 			default:
-				err = errors.New(errors.ErrAlignment).Context(modeName)
+				err = errors.EgoError(errors.ErrAlignment).Context(modeName)
 
 				return err, err
 			}
@@ -324,7 +324,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // TablePrint prints a table to the default output, in the default --output-format
 // type (text or json).
-func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
@@ -332,7 +332,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		err = t.Print(fmt)
 	}
 
@@ -340,7 +340,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // TableString formats a table as a string in the default output.
-func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
@@ -348,7 +348,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	}
 
 	t, err := getTable(s)
-	if errors.Nil(err) {
+	if err == nil {
 		return t.String(fmt)
 	}
 
@@ -358,13 +358,13 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 // getTable searches the symbol table for the client receiver ("__this")
 // variable, validates that it contains a table object, and returns the
 // native table object.
-func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
+func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(*datatypes.EgoStruct); ok {
 			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {
-						return nil, errors.New(errors.ErrTableClosed)
+						return nil, errors.EgoError(errors.ErrTableClosed)
 					}
 
 					return tp, nil
@@ -373,13 +373,13 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.ErrNoFunctionReceiver)
+	return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
 }
 
 // Table generates a string describing a rectangular result map.
-func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	includeHeadings := true
@@ -391,7 +391,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	// Scan over the first data element to pick up the column names and types
 	a := datatypes.GetNativeArray(args[0])
 	if len(a) == 0 {
-		return nil, errors.New(errors.ErrInvalidResultSetType)
+		return nil, errors.EgoError(errors.ErrInvalidResultSetType)
 	}
 
 	// Make a list of the sort key names

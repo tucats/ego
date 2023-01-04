@@ -48,7 +48,7 @@ func initializeFileType() {
 }
 
 // OpenFile opens a file.
-func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var mask os.FileMode = 0644
 
 	var f *os.File
@@ -56,8 +56,8 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	mode := os.O_RDONLY
 
 	fname, err := filepath.Abs(sandboxName(datatypes.GetString(args[0])))
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	modeValue := "input"
@@ -67,7 +67,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
-			return nil, errors.New(errors.ErrInvalidFileMode).Context(modeValue)
+			return nil, errors.EgoError(errors.ErrInvalidFileMode).Context(modeValue)
 		}
 		// If we are opening for output mode, delete the file if it already
 		// exists
@@ -88,8 +88,8 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	initializeFileType()
@@ -104,12 +104,12 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return fobj, nil
 }
 
-func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	f := getThis(s)
 	if f == nil {
-		return nil, errors.New(errors.ErrNoFunctionReceiver).In("String()")
+		return nil, errors.EgoError(errors.ErrNoFunctionReceiver).In("String()")
 	}
 
 	b.WriteString("<file")
@@ -158,7 +158,7 @@ func getThis(s *symbols.SymbolTable) *datatypes.EgoStruct {
 
 // Helper function that gets the file handle for a all to a
 // handle-based function.
-func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
+func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	this := getThis(s)
 	if v, ok := this.Get(validFieldName); ok && datatypes.GetBool(v) {
 		fh, ok := this.Get(fileFieldName)
@@ -170,20 +170,20 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.ErrInvalidfileIdentifier).In(fn)
+	return nil, errors.EgoError(errors.ErrInvalidfileIdentifier).In(fn)
 }
 
 // Close closes a file.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Close()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Close()")
 	}
 
 	f, err := getFile("Close", s)
-	if errors.Nil(err) {
+	if err == nil {
 		e2 := f.Close()
 		if e2 != nil {
-			err = errors.New(e2)
+			err = errors.EgoError(e2)
 		}
 
 		this := getThis(s)
@@ -198,13 +198,13 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 }
 
 // ReadString reads the next line from the file as a string.
-func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.New(errors.ErrArgumentCount).In("ReadString()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("ReadString()")
 	}
 
 	f, err := getFile("ReadString", s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
@@ -226,20 +226,20 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // WriteString writes a string value to a file.
-func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var e2 error
 
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("WriteString()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("WriteString()")
 	}
 
 	length := 0
 
 	f, err := getFile("WriteString", s)
-	if errors.Nil(err) {
+	if err == nil {
 		length, e2 = f.WriteString(datatypes.GetString(args[0]) + "\n")
 		if e2 != nil {
-			err = errors.New(e2)
+			err = errors.EgoError(e2)
 		}
 	}
 
@@ -247,9 +247,9 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // Write writes an arbitrary binary object to a file.
-func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Write()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Write()")
 	}
 
 	var buf bytes.Buffer
@@ -257,44 +257,52 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	bytes := buf.Bytes()
 	length := len(bytes)
 
 	f, err := getFile("Write", s)
-	if errors.Nil(err) {
+	if err == nil {
 		length, err = f.Write(bytes)
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
-func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
 
 	if len(args) != 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("WriteAt()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("WriteAt()")
 	}
 
 	offset := datatypes.GetInt(args[1])
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	bytes := buf.Bytes()
 	length := len(bytes)
 
 	f, err := getFile("WriteAt", s)
-	if errors.Nil(err) {
+	if err == nil {
 		length, err = f.WriteAt(bytes, int64(offset))
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return MultiValueReturn{Value: []interface{}{length, err}}, err
 }

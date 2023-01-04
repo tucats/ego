@@ -9,10 +9,10 @@ import (
 // conditional handles parsing the ?: trinary operator. The first term is
 // converted to a boolean value, and if true the second term is returned, else
 // the third term. All terms must be present.
-func (c *Compiler) conditional() *errors.EgoError {
+func (c *Compiler) conditional() error {
 	// Parse the conditional
 	err := c.logicalOr()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -30,7 +30,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 	c.t.Advance(1)
 
 	err = c.logicalOr()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -45,7 +45,7 @@ func (c *Compiler) conditional() *errors.EgoError {
 	c.t.Advance(1)
 
 	err = c.logicalOr()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -55,9 +55,9 @@ func (c *Compiler) conditional() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) logicalAnd() *errors.EgoError {
+func (c *Compiler) logicalAnd() error {
 	err := c.relations()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -69,7 +69,7 @@ func (c *Compiler) logicalAnd() *errors.EgoError {
 		c.b.Emit(bytecode.BranchFalse, 0)
 
 		err := c.relations()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -80,9 +80,9 @@ func (c *Compiler) logicalAnd() *errors.EgoError {
 	return nil
 }
 
-func (c *Compiler) logicalOr() *errors.EgoError {
+func (c *Compiler) logicalOr() error {
 	err := c.logicalAnd()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -94,7 +94,7 @@ func (c *Compiler) logicalOr() *errors.EgoError {
 		c.b.Emit(bytecode.BranchTrue, 0)
 
 		err := c.logicalAnd()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

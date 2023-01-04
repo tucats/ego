@@ -18,7 +18,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func InsecureAction(c *cli.Context) *errors.EgoError {
+func InsecureAction(c *cli.Context) error {
 	rest_runtime.AllowInsecure(true)
 
 	return nil
@@ -26,13 +26,13 @@ func InsecureAction(c *cli.Context) *errors.EgoError {
 
 // OutputFormatAction sets the default output format to use. This must be one of
 // the supported types "test"", "json"", or "indented").
-func OutputFormatAction(c *cli.Context) *errors.EgoError {
+func OutputFormatAction(c *cli.Context) error {
 	if formatString, present := c.FindGlobal().String("format"); present {
 		if util.InList(strings.ToLower(formatString),
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
 			ui.OutputFormat = formatString
 		} else {
-			return errors.New(errors.ErrInvalidOutputFormat).Context(formatString)
+			return errors.EgoError(errors.ErrInvalidOutputFormat).Context(formatString)
 		}
 
 		settings.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
@@ -41,7 +41,7 @@ func OutputFormatAction(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-func LanguageAction(c *cli.Context) *errors.EgoError {
+func LanguageAction(c *cli.Context) error {
 	if language, ok := c.FindGlobal().String("language"); ok {
 		i18n.Language = strings.ToLower(language)[0:2]
 	}
@@ -52,7 +52,7 @@ func LanguageAction(c *cli.Context) *errors.EgoError {
 // DebugAction is an action routine to set the loggers that will get debug messages
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.
-func DebugAction(c *cli.Context) *errors.EgoError {
+func DebugAction(c *cli.Context) error {
 	loggers, specified := c.FindGlobal().StringList("debug")
 
 	if specified {
@@ -61,7 +61,7 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 			if name != "" {
 				logger := ui.Logger(name)
 				if logger < 0 {
-					return errors.New(errors.ErrInvalidLoggerName).Context(name)
+					return errors.EgoError(errors.ErrInvalidLoggerName).Context(name)
 				}
 
 				ui.SetLogger(logger, true)
@@ -73,13 +73,13 @@ func DebugAction(c *cli.Context) *errors.EgoError {
 }
 
 // QuietAction is an action routine to set the global debug status if specified.
-func QuietAction(c *cli.Context) *errors.EgoError {
+func QuietAction(c *cli.Context) error {
 	ui.QuietMode = c.FindGlobal().Boolean("quiet")
 
 	return nil
 }
 
-func VersionAction(c *cli.Context) *errors.EgoError {
+func VersionAction(c *cli.Context) error {
 	arch := fmt.Sprintf("%s, %s", runtime.GOOS, runtime.GOARCH)
 	if arch == "darwin, arm64" {
 		arch = "Apple Silicon"
@@ -125,7 +125,7 @@ func VersionAction(c *cli.Context) *errors.EgoError {
 
 // UseProfileAction is the action routine when --profile is specified as a global
 // option. Its string value is used as the name of the active profile.
-func UseProfileAction(c *cli.Context) *errors.EgoError {
+func UseProfileAction(c *cli.Context) error {
 	name, _ := c.String("profile")
 	settings.UseProfile(name)
 
@@ -136,7 +136,7 @@ func UseProfileAction(c *cli.Context) *errors.EgoError {
 
 // ShowVersionAction is the action routine called when --version is specified.
 // It prints the version number information and then exits the application.
-func ShowVersionAction(c *cli.Context) *errors.EgoError {
+func ShowVersionAction(c *cli.Context) error {
 	fmt.Printf("%s %s\n", c.MainProgram, c.Version)
 	os.Exit(0)
 

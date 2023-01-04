@@ -72,7 +72,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 
 // Check to see if this is a list of lvalues, which can occur
 // in a multi-part assignment.
-func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
+func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 	bc := bytecode.New("lvalue list")
 	count := 0
 
@@ -105,7 +105,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 			}
 
 			err := c.lvalueTerm(bc)
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -158,8 +158,8 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, *errors.EgoError) {
 // assignmentTarget compiles the information on the left side of
 // an assignment. This information is used later to store the
 // data in the named object.
-func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
-	if bc, err := assignmentTargetList(c); errors.Nil(err) {
+func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
+	if bc, err := assignmentTargetList(c); err == nil {
 		return bc, nil
 	}
 
@@ -191,7 +191,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, *errors.EgoError) {
 		}
 
 		err := c.lvalueTerm(bc)
-		if !errors.Nil(err) {
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -245,13 +245,13 @@ func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 }
 
 // lvalueTerm parses secondary lvalue operations (array indexes, or struct member dereferences).
-func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) *errors.EgoError {
+func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	term := c.t.Peek(1)
 	if term == tokenizer.StartOfArrayToken {
 		c.t.Advance(1)
 
 		ix, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

@@ -16,12 +16,12 @@ import (
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directorie(s) found to identify defs.EgoExtension programs that can be defined as
 // available service endpoints.
-func DefineLibHandlers(root, subpath string) *errors.EgoError {
+func DefineLibHandlers(root, subpath string) error {
 	paths := make([]string, 0)
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	for _, f := range fids {
@@ -45,7 +45,7 @@ func DefineLibHandlers(root, subpath string) *errors.EgoError {
 			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
 
 			err := DefineLibHandlers(root, newpath)
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 		}

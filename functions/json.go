@@ -10,7 +10,7 @@ import (
 )
 
 // JSONUnmarshal reads a string as JSON data.
-func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v interface{}
 
 	var err error
@@ -34,19 +34,23 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 			v = datatypes.NewArrayFromArray(&datatypes.InterfaceType, a)
 		}
 
-		return v, errors.New(err)
+		if err != nil {
+			err = errors.EgoError(err)
+		}
+
+		return v, err
 	}
 
 	// There's a model, so the return value should be an error code. IF we already
 	// have had an error on the Unmarshal, we report it now.
-	if !errors.Nil(err) {
-		return errors.New(err), nil
+	if err != nil {
+		return errors.EgoError(err), nil
 	}
 
 	// There is a model, so do some mapping if possible.
 	pointer, ok := args[1].(*interface{})
 	if !ok {
-		return errors.New(errors.ErrInvalidPointerType), nil
+		return errors.EgoError(errors.ErrInvalidPointerType), nil
 	}
 
 	value := *pointer
@@ -56,12 +60,12 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				err = target.Set(k, v)
-				if !errors.Nil(err) {
-					return errors.New(err), nil
+				if err != nil {
+					return errors.EgoError(err), nil
 				}
 			}
 		} else {
-			return errors.New(errors.ErrInvalidType), nil
+			return errors.EgoError(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
@@ -74,12 +78,12 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				_, err = target.Set(k, v)
-				if !errors.Nil(err) {
-					return errors.New(err), nil
+				if err != nil {
+					return errors.EgoError(err), nil
 				}
 			}
 		} else {
-			return errors.New(errors.ErrInvalidType), nil
+			return errors.EgoError(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
@@ -101,12 +105,12 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 				}
 
 				err = target.Set(k, v)
-				if !errors.Nil(err) {
-					return errors.New(err), nil
+				if err != nil {
+					return errors.EgoError(err), nil
 				}
 			}
 		} else {
-			return errors.New(errors.ErrInvalidType), nil
+			return errors.EgoError(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
@@ -115,13 +119,17 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 
 	if !datatypes.TypeOf(v).IsType(datatypes.TypeOf(value)) {
-		err = errors.New(errors.ErrInvalidType)
+		err = errors.EgoError(errors.ErrInvalidType)
 		v = nil
 	}
 
 	*pointer = v
 
-	return errors.New(err), nil
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err, nil
 }
 
 func Seal(i interface{}) interface{} {
@@ -145,11 +153,14 @@ func Seal(i interface{}) interface{} {
 }
 
 // JSONMarshal writes a JSON string from arbitrary data.
-func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(datatypes.Sanitize(args[0]))
+		if err != nil {
+			err = errors.EgoError(err)
+		}
 
-		return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
+		return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), err
 	}
 
 	var b strings.Builder
@@ -162,8 +173,8 @@ func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 		}
 
 		jsonBuffer, err := json.Marshal(datatypes.Sanitize(v))
-		if !errors.Nil(err) {
-			return nil, errors.New(err)
+		if err != nil {
+			return nil, errors.EgoError(err)
 		}
 
 		b.WriteString(string(jsonBuffer))
@@ -176,11 +187,14 @@ func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // JSONMarshalIndent writes a  JSON string from arbitrary data.
-func JSONMarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func JSONMarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	prefix := datatypes.GetString(args[1])
 	indent := datatypes.GetString(args[2])
 
 	jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), prefix, indent)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
 
-	return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), errors.New(err)
+	return datatypes.NewArray(&datatypes.ByteType, 0).Append(jsonBuffer), err
 }

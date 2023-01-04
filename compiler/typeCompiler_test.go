@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -16,7 +15,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 		arg      string
 		typeName string
 		want     *datatypes.Type
-		wantErr  *errors.EgoError
+		wantErr  error
 		debug    bool
 	}{
 		{

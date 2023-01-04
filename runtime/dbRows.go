@@ -32,9 +32,9 @@ func initDBRowsTypeDef() {
 
 // DBQueryRows executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
-func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, tx, err := getDBClient(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
 	}
 
@@ -58,7 +58,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	}
 
 	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(e2)}}, errors.New(e2)
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.EgoError(e2)}}, errors.EgoError(e2)
 	}
 
 	initDBRowsTypeDef()
@@ -72,7 +72,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
 }
 
-func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 
@@ -86,25 +86,29 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	return err, nil
 }
 
-func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	result := make([]interface{}, 0)
 
 	columns, err := rows.Columns()
-	if errors.Nil(err) {
+	if err == nil {
 		for _, name := range columns {
 			result = append(result, name)
 		}
 	}
 
-	return result, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return result, err
 }
 
-func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 	if this == nil {
-		return nil, errors.New(errors.ErrNoFunctionReceiver)
+		return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
@@ -115,10 +119,10 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return active, nil
 }
 
-func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 	if this == nil {
-		return nil, errors.New(errors.ErrNoFunctionReceiver)
+		return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
@@ -134,8 +138,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		rowTemplate[i] = &rowValues[i]
 	}
 
-	if err := rows.Scan(rowTemplate...); !errors.Nil(err) {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.New(err)}}, errors.New(err)
+	if err := rows.Scan(rowTemplate...); err != nil {
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.EgoError(err)}}, errors.EgoError(err)
 	}
 
 	if asStruct {

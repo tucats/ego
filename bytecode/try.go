@@ -14,22 +14,22 @@ const (
 	OptionalCatchSet = 1
 )
 
-var catchSets = [][]*errors.EgoError{
+var catchSets = [][]error{
 	// OptionalCatchSet
 	{
-		errors.New(errors.ErrUnknownMember),
-		errors.New(errors.ErrInvalidType),
-		errors.New(errors.ErrNilPointerReference),
-		errors.New(errors.ErrDivisionByZero),
-		errors.New(errors.ErrArrayIndex),
+		errors.EgoError(errors.ErrUnknownMember),
+		errors.EgoError(errors.ErrInvalidType),
+		errors.EgoError(errors.ErrNilPointerReference),
+		errors.EgoError(errors.ErrDivisionByZero),
+		errors.EgoError(errors.ErrArrayIndex),
 	},
 }
 
 // tryByteCode instruction processor.
-func tryByteCode(c *Context, i interface{}) *errors.EgoError {
+func tryByteCode(c *Context, i interface{}) error {
 	try := TryInfo{
 		addr:    datatypes.GetInt(i),
-		catches: make([]*errors.EgoError, 0),
+		catches: make([]error, 0),
 	}
 	c.tryStack = append(c.tryStack, try)
 
@@ -39,14 +39,14 @@ func tryByteCode(c *Context, i interface{}) *errors.EgoError {
 // WillCatch instruction. This lets the code specify which errors
 // are permitted to be caught; if the list is empty then all errors
 // are caught.
-func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
+func willCatchByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
 		return c.newError(errors.ErrTryCatchMismatch)
 	}
 
 	try := c.tryStack[len(c.tryStack)-1]
 	if try.catches == nil {
-		try.catches = make([]*errors.EgoError, 0)
+		try.catches = make([]error, 0)
 	}
 
 	switch i := i.(type) {
@@ -58,16 +58,16 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		// Zero has a special meaning of "catch everything"
 		if i == AllErrorsCatchSet {
-			try.catches = make([]*errors.EgoError, 0)
+			try.catches = make([]error, 0)
 		} else {
 			try.catches = append(try.catches, catchSets[i-1]...)
 		}
 
-	case *errors.EgoError:
+	case *errors.EgoErrorMsg:
 		try.catches = append(try.catches, i)
 
 	case error:
-		try.catches = append(try.catches, errors.New(i))
+		try.catches = append(try.catches, errors.EgoError(i))
 
 	case string:
 		try.catches = append(try.catches, errors.NewMessage(i))
@@ -82,7 +82,7 @@ func willCatchByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // tryPopByteCode instruction processor.
-func tryPopByteCode(c *Context, i interface{}) *errors.EgoError {
+func tryPopByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
 		return c.newError(errors.ErrTryCatchMismatch)
 	}

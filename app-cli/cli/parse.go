@@ -16,7 +16,7 @@ import (
 // Unrecognized options or subcommands, as well as invalid values
 // are reported as an error. If there is an action routine associated
 // with an option or a subcommand, that action is executed.
-func (c *Context) Parse() *errors.EgoError {
+func (c *Context) Parse() error {
 	args := c.Args
 	c.MainProgram = filepath.Base(args[0])
 	c.Command = ""
@@ -35,8 +35,8 @@ func (c *Context) Parse() *errors.EgoError {
 // ParseGrammar accepts an argument list and parses it using the current context grammar
 // definition. This is abstracted from Parse because it allows for recursion for subcomamnds.
 // This is never called by the user directly.
-func (c *Context) parseGrammar(args []string) *errors.EgoError {
-	var err *errors.EgoError
+func (c *Context) parseGrammar(args []string) error {
+	var err error
 
 	// Are there parameters already stored away in the global? If so,
 	// they are unrecognized verbs that were hoovered up by the grammar
@@ -55,13 +55,13 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			if index > 0 {
 				list.WriteString(", ")
 			}
-			
+
 			list.WriteString(parm)
 		}
 
 		ui.Debug(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
 
-		return errors.New(errors.ErrUnrecognizedCommand).Context(parmList[0])
+		return errors.EgoError(errors.ErrUnrecognizedCommand).Context(parmList[0])
 	}
 
 	// No dangling parameters, let's keep going.
@@ -148,7 +148,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return errors.New(errors.ErrUnknownOption).Context(option)
+			return errors.EgoError(errors.ErrUnknownOption).Context(option)
 		}
 
 		// It could be a parameter, or a subcommand.
@@ -217,7 +217,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
-						return errors.New(errors.ErrMissingOptionValue).Context(name)
+						return errors.EgoError(errors.ErrMissingOptionValue).Context(name)
 					}
 
 					value = args[currentArg]
@@ -238,7 +238,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 				}
 
 				if !found {
-					return errors.New(errors.ErrInvalidKeyword).Context(value)
+					return errors.EgoError(errors.ErrInvalidKeyword).Context(value)
 				}
 
 			case BooleanType:
@@ -247,7 +247,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return errors.New(errors.ErrInvalidBooleanValue).Context(value)
+					return errors.EgoError(errors.ErrInvalidBooleanValue).Context(value)
 				}
 
 				location.Value = b
@@ -257,8 +257,8 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			case UUIDType:
 				uuid, err := uuid.Parse(value)
-				if !errors.Nil(err) {
-					return errors.New(err)
+				if err != nil {
+					return errors.EgoError(err)
 				}
 
 				location.Value = uuid.String()
@@ -268,8 +268,8 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 			case IntType:
 				i, err := strconv.Atoi(value)
-				if !errors.Nil(err) {
-					return errors.New(errors.ErrInvalidInteger).Context(value)
+				if err != nil {
+					return errors.EgoError(errors.ErrInvalidInteger).Context(value)
 				}
 
 				location.Value = i
@@ -280,7 +280,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
 				err = location.Action(c)
-				if !errors.Nil(err) {
+				if err != nil {
 					break
 				}
 			}
@@ -292,7 +292,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.New(errors.ErrRequiredNotFound).Context(entry.LongName)
+			err = errors.EgoError(errors.ErrRequiredNotFound).Context(entry.LongName)
 
 			break
 		}
@@ -301,7 +301,7 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 	// If the parse went okay, let's check to make sure we don't have dangling
 	// parameters, and then call the action if there is one.
 
-	if errors.Nil(err) {
+	if err == nil {
 		g := c.FindGlobal()
 
 		if g.ExpectedParameterCount == -99 {
@@ -311,16 +311,16 @@ func (c *Context) parseGrammar(args []string) *errors.EgoError {
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return errors.New(errors.ErrUnexpectedParameters)
+			return errors.EgoError(errors.ErrUnexpectedParameters)
 		}
 
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return errors.New(errors.ErrTooManyParameters)
+				return errors.EgoError(errors.ErrTooManyParameters)
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return errors.New(errors.ErrWrongParameterCount)
+				return errors.EgoError(errors.ErrWrongParameterCount)
 			}
 		}
 

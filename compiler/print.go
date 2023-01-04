@@ -8,7 +8,7 @@ import (
 
 // compilePrint compiles a print statement. The verb is already removed
 // from the token stream.
-func (c *Compiler) compilePrint() *errors.EgoError {
+func (c *Compiler) compilePrint() error {
 	newline := true
 
 	for !c.isStatementEnd() {
@@ -17,7 +17,7 @@ func (c *Compiler) compilePrint() *errors.EgoError {
 		}
 
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

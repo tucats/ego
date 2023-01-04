@@ -33,7 +33,7 @@ import (
 // The function allocates a new EgoArray of the given size
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
-func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
+func makeArrayByteCode(c *Context, i interface{}) error {
 	var baseType *datatypes.Type
 
 	count := datatypes.GetInt(i)
@@ -101,7 +101,7 @@ func makeArrayByteCode(c *Context, i interface{}) *errors.EgoError {
 // are loaded into the array. The resulting array is validated
 // if static types are enabled. The resulting array is then
 // pushed back on the stack.
-func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
+func arrayByteCode(c *Context, i interface{}) error {
 	var arrayType reflect.Type
 
 	var count int
@@ -120,7 +120,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -176,7 +176,7 @@ func arrayByteCode(c *Context, i interface{}) *errors.EgoError {
 // resulting structure. This allows type names, etc. to be added
 // to the struct definition
 // The resulting map is then pushed back on the stack.
-func structByteCode(c *Context, i interface{}) *errors.EgoError {
+func structByteCode(c *Context, i interface{}) error {
 	var model interface{}
 
 	count := datatypes.GetInt(i)
@@ -189,7 +189,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 	// value) and add them into the map.
 	for n := 0; n < count; n++ {
 		nx, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -199,7 +199,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		value, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -216,7 +216,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 			} else {
 				ui.Log(ui.InternalLogger, "ERROR: structByteCode() unexpected type value %v", value)
 
-				return errors.New(errors.ErrStop)
+				return errors.EgoError(errors.ErrStop)
 			}
 		} else {
 			m[name] = value
@@ -295,7 +295,7 @@ func structByteCode(c *Context, i interface{}) *errors.EgoError {
 //
 // Create a new map. The argument is the number of key/value
 // pairs on the stack, preceded by the key and value types.
-func makeMapByteCode(c *Context, i interface{}) *errors.EgoError {
+func makeMapByteCode(c *Context, i interface{}) error {
 	count := datatypes.GetInt(i)
 
 	v, err := c.Pop()

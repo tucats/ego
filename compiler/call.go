@@ -9,7 +9,13 @@ import (
 // compileFunctionCall handles the call statement. This is really the same as
 // invoking a function in an expression, except there is no
 // result value.
-func (c *Compiler) compileFunctionCall() *errors.EgoError {
+func (c *Compiler) compileFunctionCall() error {
+	// Is this really panic, handled elsewhere?
+	isPanic := c.flags.extensionsEnabled && c.t.Peek(0) == tokenizer.PanicToken
+	if isPanic {
+		return c.compilePanic()
+	}
+
 	// Let's peek ahead to see if this is a legit function call
 	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
 		return c.newError(errors.ErrInvalidFunctionCall)
@@ -18,7 +24,7 @@ func (c *Compiler) compileFunctionCall() *errors.EgoError {
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("call"))
 	// Parse the function as an expression
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

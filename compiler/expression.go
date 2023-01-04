@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/errors"
 )
 
 // Expression is the public entrypoint to compile an expression which
@@ -21,7 +20,7 @@ import (
 //	2             &&
 //	1             ||
 
-func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
+func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx := New("expression eval")
 	cx.t = c.t
 	cx.flags = c.flags
@@ -29,7 +28,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, *errors.EgoError) {
 	cx.Types = c.Types
 
 	err := cx.conditional()
-	if errors.Nil(err) {
+	if err == nil {
 		c.t = cx.t
 	}
 

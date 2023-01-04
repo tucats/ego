@@ -23,35 +23,40 @@ import (
 
 // stopByteCode instruction processor causes the current execution context to
 // stop executing immediately.
-func stopByteCode(c *Context, i interface{}) *errors.EgoError {
+func stopByteCode(c *Context, i interface{}) error {
 	c.running = false
 
-	return errors.New(errors.ErrStop)
+	return errors.EgoError(errors.ErrStop)
 }
 
 // panicByteCode instruction processor generates an error. The boolean flag is used
 // to indicate if this is a fatal error that stops Ego, versus a user error.
-func panicByteCode(c *Context, i interface{}) *errors.EgoError {
-	c.running = !datatypes.GetBool(i)
+func panicByteCode(c *Context, i interface{}) error {
+	var panicMessage string
 
-	strValue, err := c.Pop()
-	if !errors.Nil(err) {
-		return err
+	c.running = false
+
+	if i != nil {
+		panicMessage = datatypes.GetString(i)
+	} else {
+		if v, err := c.Pop(); err != nil {
+			return err
+		} else {
+			panicMessage = datatypes.GetString(v)
+		}
 	}
-
-	msg := datatypes.GetString(strValue)
 
 	if settings.GetBool(defs.RuntimePanicsSetting) {
-		panic(msg)
+		panic(panicMessage)
 	}
 
-	return errors.NewMessage(msg).Context("panic")
+	return errors.EgoError(errors.ErrPanic).Context(panicMessage)
 }
 
 // atLineByteCode instruction processor. This identifies the start of a new statement,
 // and tags the line number from the source where this was found. This is used
 // in error messaging, primarily.
-func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
+func atLineByteCode(c *Context, i interface{}) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -59,10 +64,12 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 	c.stepOver = false
 	_ = c.symbols.SetAlways("__line", c.line)
 	_ = c.symbols.SetAlways("__module", c.bc.Name)
+
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
-		return errors.New(errors.ErrSignalDebugger)
+		return errors.EgoError(errors.ErrSignalDebugger)
 	}
+
 	// If we are tracing, put that out now.
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
 		text := c.tokenizer.GetLine(c.line)
@@ -79,10 +86,10 @@ func atLineByteCode(c *Context, i interface{}) *errors.EgoError {
 // branchFalseByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean FALSE value. Otherwise,
 // execution continues with the next instruction.
-func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
+func branchFalseByteCode(c *Context, i interface{}) error {
 	// Get test value
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -101,14 +108,13 @@ func branchFalseByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // branchByteCode instruction processor branches to the instruction named in
 // the operand.
-func branchByteCode(c *Context, i interface{}) *errors.EgoError {
+func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
-	address := datatypes.GetInt(i)
-	if address < 0 || address > c.bc.emitPos {
+	if address := datatypes.GetInt(i); address < 0 || address > c.bc.emitPos {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
+	} else {
+		c.programCounter = address
 	}
-
-	c.programCounter = address
 
 	return nil
 }
@@ -116,10 +122,10 @@ func branchByteCode(c *Context, i interface{}) *errors.EgoError {
 // branchTrueByteCode instruction processor branches to the instruction named in
 // the operand if the top-of-stack item is a boolean TRUE value. Otherwise,
 // execution continues with the next instruction.
-func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
+func branchTrueByteCode(c *Context, i interface{}) error {
 	// Get test value
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -141,7 +147,7 @@ func branchTrueByteCode(c *Context, i interface{}) *errors.EgoError {
 // instruction stream. This is used to implement defer statement blocks, for
 // example, so when defers have been generated then a local call is added to
 // the return statement(s) for the block.
-func localCallByteCode(c *Context, i interface{}) *errors.EgoError {
+func localCallByteCode(c *Context, i interface{}) error {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
@@ -150,7 +156,7 @@ func localCallByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func goByteCode(c *Context, i interface{}) *errors.EgoError {
+func goByteCode(c *Context, i interface{}) error {
 	argc := i.(int) + c.argCountDelta
 	c.argCountDelta = 0
 
@@ -159,7 +165,7 @@ func goByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -167,7 +173,7 @@ func goByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	fx, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -188,8 +194,8 @@ func goByteCode(c *Context, i interface{}) *errors.EgoError {
 // number of arguments that are on the stack. The function value must be
 // either a pointer to a built-in function, or a pointer to a bytecode
 // function implementation.
-func callByteCode(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func callByteCode(c *Context, i interface{}) error {
+	var err error
 
 	var funcPointer interface{}
 
@@ -206,7 +212,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < argc; n = n + 1 {
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -219,7 +225,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Function value is last item on stack
 	funcPointer, err = c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -238,7 +244,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 		args = append(args, af)
 
 		v, err := functions.InternalCast(c.symbols, args)
-		if errors.Nil(err) {
+		if err == nil {
 			err = c.stackPush(v)
 		}
 
@@ -304,11 +310,11 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
-		if !errors.Nil(err) {
+		if err != nil {
 			err = c.newError(err).In(functions.FindName(af))
 		}
 
-	case func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError):
+	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
 		// First, can we check the argument count on behalf of the caller?
 		df := functions.FindFunction(af)
 		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
@@ -374,18 +380,18 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
-		if !errors.Nil(err) {
+		if err != nil {
 			err = c.newError(err).In(functions.FindName(af))
 		}
 
-	case *errors.EgoError:
+	case error:
 		return c.newError(errors.ErrUnusedErrorReturn)
 
 	default:
 		return c.newError(errors.ErrInvalidFunctionCall).Context(af)
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -398,7 +404,7 @@ func callByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // returnByteCode implements the return opcode which returns from a called function
 // or local subroutine.
-func returnByteCode(c *Context, i interface{}) *errors.EgoError {
+func returnByteCode(c *Context, i interface{}) error {
 	var err error
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
@@ -423,11 +429,13 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 	// function from the package) then hoist symbol table values from the package
 	// symbol table back to the package object itself so they an be externally
 	// referenced.
-	c.syncPackageSymbols()
+	if err := c.syncPackageSymbols(); err != nil {
+		return errors.EgoError(err)
+	}
 
 	// If FP is zero, there are no frames; this is a return from the main source
 	// of the program or service.
-	if c.framePointer > 0 && errors.Nil(err) {
+	if c.framePointer > 0 && err == nil {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
 		err = c.callFramePop()
@@ -435,10 +443,14 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 		c.running = false
 	}
 
-	if errors.Nil(err) && c.breakOnReturn {
+	if err == nil && c.breakOnReturn {
 		c.breakOnReturn = false
 
-		return errors.New(errors.ErrSignalDebugger)
+		return errors.EgoError(errors.ErrSignalDebugger)
+	}
+
+	if err == nil {
+		return err
 	}
 
 	return c.newError(err)
@@ -449,7 +461,7 @@ func returnByteCode(c *Context, i interface{}) *errors.EgoError {
 // number of values that must be available. Alternatively, the operand can be
 // an array of objects, which are the minimum count, maximum count, and
 // function name.
-func argCheckByteCode(c *Context, i interface{}) *errors.EgoError {
+func argCheckByteCode(c *Context, i interface{}) error {
 	min := 0
 	max := 0
 	name := "function call"
@@ -550,7 +562,7 @@ func (c *Context) inPackageSymbolTable(name string) bool {
 	return false
 }
 
-func waitByteCode(c *Context, i interface{}) *errors.EgoError {
+func waitByteCode(c *Context, i interface{}) error {
 	if _, ok := i.(*sync.WaitGroup); ok {
 		i.(*sync.WaitGroup).Wait()
 	} else {
@@ -560,7 +572,7 @@ func waitByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
+func modeCheckBytecode(c *Context, i interface{}) error {
 	mode, found := c.symbols.Get("__exec_mode")
 	valid := found && (datatypes.GetString(i) == datatypes.GetString(mode))
 
@@ -571,7 +583,7 @@ func modeCheckBytecode(c *Context, i interface{}) *errors.EgoError {
 	return c.newError(errors.ErrWrongMode).Context(mode)
 }
 
-func entryPointByteCode(c *Context, i interface{}) *errors.EgoError {
+func entryPointByteCode(c *Context, i interface{}) error {
 	var entryPointName string
 
 	if i != nil {

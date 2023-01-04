@@ -47,7 +47,7 @@ func NewChannel(size int) *Channel {
 // is open. We must verify that the chanel is open before using it. It
 // is important to put the logging message out brefore re-locking the
 // channel since c.String needs a read-lock.
-func (c *Channel) Send(datum interface{}) *errors.EgoError {
+func (c *Channel) Send(datum interface{}) error {
 	if c.IsOpen() {
 		if ui.IsActive(ui.TraceLogger) {
 			ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
@@ -63,20 +63,20 @@ func (c *Channel) Send(datum interface{}) *errors.EgoError {
 		return nil
 	}
 
-	return errors.New(errors.ErrChannelNotOpen)
+	return errors.EgoError(errors.ErrChannelNotOpen)
 }
 
 // Receive accepts an arbitrary data object through the channel, waiting
 // if there is no information available yet. If it's not open, we also
 // check to see if the messages have all been drained by looking at the
 // counter.
-func (c *Channel) Receive() (interface{}, *errors.EgoError) {
+func (c *Channel) Receive() (interface{}, error) {
 	if ui.IsActive(ui.TraceLogger) {
 		ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
 	}
 
 	if !c.IsOpen() && c.count == 0 {
-		return nil, errors.New(errors.ErrChannelNotOpen)
+		return nil, errors.EgoError(errors.ErrChannelNotOpen)
 	}
 
 	datum := <-c.channel

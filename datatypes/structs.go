@@ -182,23 +182,23 @@ func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
 	return s
 }
 
-func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
+func (s *EgoStruct) Set(name string, value interface{}) error {
 	if s.readonly {
-		return errors.New(errors.ErrReadOnly)
+		return errors.EgoError(errors.ErrReadOnly)
 	}
 
 	// Is it a readonly symbol name and it already exists? If so, fail...
 	if name[0:1] == "_" {
 		_, ok := s.fields[name]
 		if ok {
-			return errors.New(errors.ErrReadOnly)
+			return errors.EgoError(errors.ErrReadOnly)
 		}
 	}
 
 	if s.static {
 		_, ok := s.fields[name]
 		if !ok {
-			return errors.New(errors.ErrInvalidField)
+			return errors.EgoError(errors.ErrInvalidField)
 		}
 	}
 
@@ -206,7 +206,7 @@ func (s *EgoStruct) Set(name string, value interface{}) *errors.EgoError {
 		if t, ok := s.typeDef.fields[name]; ok {
 			// Does it have to match already?
 			if s.strongTyping && !IsType(value, t) {
-				return errors.New(errors.ErrInvalidType).Context(TypeOf(value).String())
+				return errors.EgoError(errors.ErrInvalidType).Context(TypeOf(value).String())
 			}
 			// Make sure it is compatible with the field type.
 			value = t.Coerce(value)
@@ -354,7 +354,7 @@ func (s EgoStruct) MarshalJSON() ([]byte, error) {
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, errors.EgoError(err)
 		}
 
 		b.WriteString(fmt.Sprintf(`"%s":%s`, k, string(jsonBytes)))

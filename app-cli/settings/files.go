@@ -1,3 +1,6 @@
+// Package persistence manages the persistent user profile used by the command
+// application infrastructure. This includes automatically reading any
+// profile in as part of startup, and of updating the profile as needed.
 package settings
 
 import (
@@ -52,7 +55,7 @@ var ProfileDirty = false
 var Configurations map[string]Configuration
 
 // Load reads in the named profile, if it exists.
-func Load(application string, name string) *errors.EgoError {
+func Load(application string, name string) error {
 	var c = Configuration{
 		Description: DefaultConfiguration,
 		Items:       map[string]string{},
@@ -63,8 +66,8 @@ func Load(application string, name string) *errors.EgoError {
 	ProfileFile = application + ".json"
 
 	home, err := os.UserHomeDir()
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	var path strings.Builder
@@ -76,8 +79,8 @@ func Load(application string, name string) *errors.EgoError {
 	path.WriteString(ProfileFile)
 
 	configFile, err := os.Open(path.String())
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	defer configFile.Close()
@@ -87,7 +90,7 @@ func Load(application string, name string) *errors.EgoError {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into the config map which we defined above
 	err = json.Unmarshal(byteValue, &Configurations)
-	if errors.Nil(err) {
+	if err == nil {
 		if name == "" {
 			name = ProfileName
 		}
@@ -104,11 +107,15 @@ func Load(application string, name string) *errors.EgoError {
 		CurrentConfiguration = &c
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // Save the current configuration.
-func Save() *errors.EgoError {
+func Save() error {
 	// So we even need to do anything?
 	if !ProfileDirty {
 		return nil
@@ -118,8 +125,8 @@ func Save() *errors.EgoError {
 	var path strings.Builder
 
 	home, err := os.UserHomeDir()
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	path.WriteString(home)
@@ -147,7 +154,11 @@ func Save() *errors.EgoError {
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
 	err = ioutil.WriteFile(path.String(), byteBuffer, os.ModePerm)
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // UseProfile specifies the name of the profile to use, if other
@@ -233,11 +244,11 @@ func GetUsingList(key string, values ...string) int {
 
 // Delete removes a key from the map entirely. Also removes if from the
 // active defaults.
-func Delete(key string) *errors.EgoError {
+func Delete(key string) error {
 	c := getCurrentConfiguration()
 
 	if _, found := c.Items[key]; !found {
-		return errors.New(errors.ErrInvalidConfigName).Context(key)
+		return errors.EgoError(errors.ErrInvalidConfigName).Context(key)
 	}
 
 	delete(c.Items, key)
@@ -274,12 +285,12 @@ func Exists(key string) bool {
 	return exists
 }
 
-func DeleteProfile(key string) *errors.EgoError {
+func DeleteProfile(key string) error {
 	if cfg, ok := Configurations[key]; ok {
 		if cfg.ID == getCurrentConfiguration().ID {
 			ui.Debug(ui.AppLogger, "cannot delete active profile")
 
-			return errors.New(errors.ErrCannotDeleteActiveProfile).Context(key)
+			return errors.EgoError(errors.ErrCannotDeleteActiveProfile).Context(key)
 		}
 
 		delete(Configurations, key)
@@ -287,7 +298,7 @@ func DeleteProfile(key string) *errors.EgoError {
 		ProfileDirty = true
 
 		err := Save()
-		if errors.Nil(err) {
+		if err == nil {
 			ui.Debug(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
 		}
 
@@ -296,7 +307,7 @@ func DeleteProfile(key string) *errors.EgoError {
 
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
 
-	return errors.New(errors.ErrNoSuchProfile).Context(key)
+	return errors.EgoError(errors.ErrNoSuchProfile).Context(key)
 }
 
 func getCurrentConfiguration() *Configuration {

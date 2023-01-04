@@ -14,8 +14,8 @@ import (
 
 // Show implements the debugger's show command. This can be used to display information
 // about the state of the running program or it's runtime environment.
-func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) *errors.EgoError {
-	var err *errors.EgoError
+func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
+	var err error
 
 	t := tokens.Peek(2)
 	tx := c.GetTokenizer()
@@ -26,14 +26,14 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	case "symbols":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		fmt.Println(s.Format(true))
 
 	case "line":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		text := tx.GetLine(line)
@@ -46,17 +46,20 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tokens.Peek(4) != tokenizer.EndOfTokens {
-				return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(4))
+				return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(4))
 			}
 
 			if tx.Spelling() != "all" {
 				var e2 error
+
 				depth, e2 = strconv.Atoi(tx.Spelling())
-				err = errors.New(e2)
+				if e2 != nil {
+					err = errors.EgoError(e2)
+				}
 			}
 		}
 
-		if errors.Nil(err) {
+		if err == nil {
 			fmt.Print(c.FormatFrames(depth))
 		}
 
@@ -65,7 +68,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		depth := 0
 
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.New(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
 		}
 
 		ui.Say("msg.debug.scope")
@@ -99,10 +102,12 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				end, e2 = strconv.Atoi(tokens.NextText())
 			}
 
-			err = errors.New(e2)
+			if e2 != nil {
+				err = errors.EgoError(e2)
+			}
 		}
 
-		if errors.Nil(err) {
+		if err == nil {
 			for i, t := range tx.Source {
 				if i < start-1 || i > end-1 {
 					continue
@@ -113,7 +118,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = errors.New(errors.ErrInvalidDebugCommand).Context("show " + t.Spelling())
+		err = errors.EgoError(errors.ErrInvalidDebugCommand).Context("show " + t.Spelling())
 	}
 
 	return err

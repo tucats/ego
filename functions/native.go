@@ -2,7 +2,6 @@ package functions
 
 import (
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -14,7 +13,7 @@ import (
 // the argument count, locating the native "this" value, mapping it to the
 // correct type, and then calling the function.
 
-type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)
+type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 type NativeFunctionDef struct {
 	Kind *datatypes.Type

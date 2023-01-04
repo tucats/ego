@@ -40,11 +40,11 @@ type Table struct {
 }
 
 // New creates a new table object, given a list of headings.
-func New(headings []string) (*Table, *errors.EgoError) {
+func New(headings []string) (*Table, error) {
 	t := &Table{}
 
 	if len(headings) == 0 {
-		return t, errors.New(errors.ErrEmptyColumnList)
+		return t, errors.EgoError(errors.ErrEmptyColumnList)
 	}
 
 	t.rowLimit = -1
@@ -80,7 +80,7 @@ func New(headings []string) (*Table, *errors.EgoError) {
 	if term.IsTerminal(0) {
 		width, height, err := term.GetSize(0)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, errors.EgoError(err)
 		}
 
 		t.terminalWidth = width

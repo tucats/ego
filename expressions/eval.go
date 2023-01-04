@@ -9,10 +9,10 @@ import (
 
 // Eval evaluates the parsed expression. This can be called multiple times
 // with the same scanned string, but with different symbols.
-func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
+func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 	// If the compile failed, bail out now.
-	if !errors.Nil(e.err) {
-		return nil, errors.New(e.err)
+	if e.err != nil {
+		return nil, e.err
 	}
 
 	// If the symbol table we're given is unallocated, make one for our use now.
@@ -27,7 +27,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, *errors.EgoError
 	ctx := bytecode.NewContext(s, e.b)
 
 	err := ctx.Run()
-	if !err.Is(errors.ErrStop) {
+	if !errors.Equals(err, errors.ErrStop) {
 		return nil, err
 	}
 

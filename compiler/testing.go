@@ -41,7 +41,7 @@ func initTestType() {
 }
 
 // testDirective compiles the @test directive.
-func (c *Compiler) testDirective() *errors.EgoError {
+func (c *Compiler) testDirective() error {
 	_ = c.modeCheck("test", true)
 
 	testDescription := c.t.NextText()
@@ -97,9 +97,9 @@ func getTestName(s *symbols.SymbolTable) string {
 }
 
 // TestAssert implements the T.assert() function.
-func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("assert")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("assert")
 	}
 
 	// The argument could be an array with the boolean value and the
@@ -111,7 +111,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 			fmt.Println()
 
-			return nil, errors.New(errors.ErrAssert).In(getTestName(s)).Context(msg)
+			return nil, errors.EgoError(errors.ErrAssert).In(getTestName(s)).Context(msg)
 		}
 
 		return true, nil
@@ -121,7 +121,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	// argument.
 	b := datatypes.GetBool(args[0])
 	if !b {
-		msg := errors.New(errors.ErrTestingAssert)
+		msg := errors.EgoError(errors.ErrTestingAssert)
 
 		if len(args) > 1 {
 			msg = msg.Context(args[1])
@@ -138,9 +138,9 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // TestIsType implements the T.type() function.
-func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ErrArgumentCount).In("IsType()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("IsType()")
 	}
 
 	// Use the Type() function to get a string representation of the type
@@ -162,7 +162,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // TestFail implements the T.fail() function which generates a fatal
 // error.
-func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	msg := "T.fail()"
 
 	if len(args) == 1 {
@@ -173,13 +173,13 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 }
 
 // TestNil implements the T.Nil() function.
-func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	isNil := args[0] == nil
-	if e, ok := args[0].(*errors.EgoError); ok {
+	if e, ok := args[0].(error); ok {
 		isNil = errors.Nil(e)
 	}
 
@@ -191,13 +191,13 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // TestNotNil implements the T.NotNil() function.
-func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	isNil := args[0] == nil
-	if e, ok := args[0].(*errors.EgoError); ok {
+	if e, ok := args[0].(error); ok {
 		isNil = errors.Nil(e)
 	}
 
@@ -209,9 +209,9 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // TestTrue implements the T.True() function.
-func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	if len(args) == 2 {
@@ -222,9 +222,9 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 }
 
 // TestFalse implements the T.False() function.
-func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	if len(args) == 2 {
@@ -235,9 +235,9 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // TestEqual implements the T.Equal() function.
-func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	b := reflect.DeepEqual(args[0], args[1])
@@ -268,13 +268,13 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // TestNotEqual implements the T.NotEqual() function.
-func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.New(errors.ErrArgumentCount).In(getTestName(s))
+		return nil, errors.EgoError(errors.ErrArgumentCount).In(getTestName(s))
 	}
 
 	b, err := TestEqual(s, args)
-	if errors.Nil(err) {
+	if err == nil {
 		return !datatypes.GetBool(b), nil
 	}
 
@@ -282,7 +282,7 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 }
 
 // Assert implements the @assert directive.
-func (c *Compiler) Assert() *errors.EgoError {
+func (c *Compiler) Assert() error {
 	_ = c.modeCheck("test", true)
 	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("assert"))
 	c.b.Emit(bytecode.Load, "T")
@@ -291,7 +291,7 @@ func (c *Compiler) Assert() *errors.EgoError {
 	argCount := 1
 
 	code, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -303,13 +303,13 @@ func (c *Compiler) Assert() *errors.EgoError {
 }
 
 // Fail implements the @fail directive.
-func (c *Compiler) Fail() *errors.EgoError {
+func (c *Compiler) Fail() error {
 	_ = c.modeCheck("test", true)
 
 	next := c.t.Peek(1)
 	if next != tokenizer.DirectiveToken && next != tokenizer.SemicolonToken && next != tokenizer.EndOfTokens {
 		code, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -324,7 +324,7 @@ func (c *Compiler) Fail() *errors.EgoError {
 }
 
 // TestPass implements the @pass directive.
-func (c *Compiler) TestPass() *errors.EgoError {
+func (c *Compiler) TestPass() error {
 	_ = c.modeCheck("test", true)
 	c.b.Emit(bytecode.Push, "(PASS)  ")
 	c.b.Emit(bytecode.Print)

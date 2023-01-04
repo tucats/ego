@@ -15,7 +15,7 @@ import (
 // FormatSymbols implements the util.symbols() function. We skip over the current
 // symbol table, which was created just for this function call and will always be
 // empty.
-func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	selectedScope := -1
 	json := false
 
@@ -48,7 +48,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		// time to bail out. Otherwise, keep crawling up the tree.
 		if selectedScope >= 0 && selectedScope != scopeLevel {
 			if syms.IsRoot() && selectedScope > scopeLevel {
-				return nil, errors.New(errors.ErrInvalidScopeLevel).Context(selectedScope)
+				return nil, errors.EgoError(errors.ErrInvalidScopeLevel).Context(selectedScope)
 			}
 
 			syms = syms.Parent
@@ -133,14 +133,14 @@ func GetPackageSymbols(p *datatypes.EgoPackage) *symbols.SymbolTable {
 	}
 }
 
-func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// This function doesn't take any parameters.
 	if len(args) > 0 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	// Compile the type definition for the structure we're going to return.
-	t, e := compiler.CompileTypeSpec(`
+	t, err := compiler.CompileTypeSpec(`
 	type SymbolTable struct{
 		depth int
 		name string
@@ -149,8 +149,8 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		size int
 		}`)
 
-	if !errors.Nil(e) {
-		return nil, e
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	result := datatypes.NewArray(t, 0)

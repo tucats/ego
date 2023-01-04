@@ -6,11 +6,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func dummyAction(c *Context) *errors.EgoError {
+func dummyAction(c *Context) error {
 	return nil
 }
 
-func integerAction(c *Context) *errors.EgoError {
+func integerAction(c *Context) error {
 	v, found := c.Integer("integer")
 	if !found {
 		return errors.NewMessage("No integer option found")
@@ -23,7 +23,7 @@ func integerAction(c *Context) *errors.EgoError {
 	return nil
 }
 
-func stringAction(c *Context) *errors.EgoError {
+func stringAction(c *Context) error {
 	v, found := c.String("string")
 	if !found {
 		return errors.NewMessage("No string option found")
@@ -36,7 +36,7 @@ func stringAction(c *Context) *errors.EgoError {
 	return nil
 }
 
-func booleanValueAction(c *Context) *errors.EgoError {
+func booleanValueAction(c *Context) error {
 	if v := c.Boolean("boolean"); v != true {
 		return errors.NewMessage("Boolean value not true")
 	}
@@ -44,7 +44,7 @@ func booleanValueAction(c *Context) *errors.EgoError {
 	return nil
 }
 
-func booleanAction(c *Context) *errors.EgoError {
+func booleanAction(c *Context) error {
 	if v := c.Boolean("flag"); !v {
 		return errors.NewMessage("Boolean not present")
 	}
@@ -384,7 +384,7 @@ func TestContext_ParseGrammar(t *testing.T) {
 				ParameterDescription:   tt.fields.ParameterDescription,
 			}
 
-			if err := c.parseGrammar(tt.args.args); (!errors.Nil(err)) != tt.wantErr {
+			if err := c.parseGrammar(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("Context.parseGrammar() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

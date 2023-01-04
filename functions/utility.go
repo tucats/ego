@@ -14,28 +14,30 @@ import (
 )
 
 // Sleep implements util.sleep().
-func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	duration, err := time.ParseDuration(datatypes.GetString(args[0]))
-	if errors.Nil(err) {
+	if err == nil {
 		time.Sleep(duration)
+	} else {
+		err = errors.EgoError(err)
 	}
 
-	return true, errors.New(err)
+	return true, err
 }
 
 // ProfileGet implements the profile.get() function.
-func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := datatypes.GetString(args[0])
 
 	return settings.Get(key), nil
 }
 
 // ProfileSet implements the profile.set() function.
-func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	var err *errors.EgoError
+func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var err error
 
 	if len(args) != 2 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Set()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Set()")
 	}
 
 	key := datatypes.GetString(args[0])
@@ -46,7 +48,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// doesn't exist yet, for example
 	if isEgoSetting {
 		if !settings.Exists(key) {
-			return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
+			return nil, errors.EgoError(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 		}
 	}
 
@@ -61,7 +63,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		(strings.HasPrefix(key, "ego.runtime") ||
 			strings.HasPrefix(key, "ego.server") ||
 			strings.HasPrefix(key, "ego.compiler")) {
-		return nil, errors.New(errors.ErrReservedProfileSetting).In("Set()").Context(key)
+		return nil, errors.EgoError(errors.ErrReservedProfileSetting).In("Set()").Context(key)
 	}
 
 	// If the value is an empty string, delete the key else
@@ -85,12 +87,12 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 // ProfileDelete implements the profile.delete() function. This just calls
 // the set operation with an empty value, which results in a delete operatinon.
 // The consolidates the persmission checking, etc. in the Set routine only.
-func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ProfileDelete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return ProfileSet(symbols, []interface{}{args[0], ""})
 }
 
 // ProfileKeys implements the profile.keys() function.
-func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	keys := settings.Keys()
 	result := make([]interface{}, len(keys))
 
@@ -102,7 +104,7 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 }
 
 // Length implements the len() function.
-func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if args[0] == nil {
 		return 0, nil
 	}
@@ -127,7 +129,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 		return len(arg.Keys()), nil
 
 	case *datatypes.EgoPackage:
-		return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(arg).String())
+		return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(arg).String())
 
 	case nil:
 		return 0, nil
@@ -144,7 +146,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 // StrLen is the strings.Length() function, which counts characters/runes instead of
 // bytes like len() does.
-func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 	v := datatypes.GetString(args[0])
 
@@ -157,12 +159,12 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 
 // GetEnv implements the util.getenv() function which reads
 // an environment variable from the os.
-func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return os.Getenv(datatypes.GetString(args[0])), nil
 }
 
 // GetMode implements the util.Mode() function which reports the runtime mode.
-func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	m, ok := symbols.Get("__exec_mode")
 	if !ok {
 		m = "run"
@@ -172,7 +174,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 }
 
 // Members gets an array of the names of the fields in a structure.
-func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
 		keys := datatypes.NewArray(&datatypes.StringType, 0)
@@ -203,12 +205,12 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		return keys, err
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType).In("members()")
+		return nil, errors.EgoError(errors.ErrInvalidType).In("members()")
 	}
 }
 
 // Exit implements the os.exit() function.
-func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
 		os.Exit(0)
@@ -230,8 +232,8 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // Signal creates an error object based on the
 // parameters.
-func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	r := errors.New(errors.ErrUserDefined)
+func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	r := errors.EgoError(errors.ErrUserDefined)
 	if len(args) > 0 {
 		r = r.Context(args[0])
 	}
@@ -242,14 +244,14 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // Append implements the builtin append() function, which concatenates all the items
 // together as an array. The first argument is flattened into the result, and then each
 // additional argument is added to the array as-is.
-func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := make([]interface{}, 0)
 	kind := &datatypes.InterfaceType
 
 	for i, j := range args {
 		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
 			if !kind.IsInterface() {
-				if err := array.Validate(kind); !errors.Nil(err) {
+				if err := array.Validate(kind); err != nil {
 					return nil, err
 				}
 			}
@@ -263,7 +265,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 			result = append(result, array...)
 		} else {
 			if !kind.IsInterface() && !datatypes.TypeOf(j).IsType(kind) {
-				return nil, errors.New(errors.ErrWrongArrayValueType).In("append()")
+				return nil, errors.EgoError(errors.ErrWrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
 		}
@@ -276,14 +278,14 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // an element from an array by index number, or to delete a symbol entirely. The
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.
-func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if _, ok := args[0].(string); ok {
 		if len(args) != 1 {
-			return nil, errors.New(errors.ErrArgumentCount).In("delete{}")
+			return nil, errors.EgoError(errors.ErrArgumentCount).In("delete{}")
 		}
 	} else {
 		if len(args) != 2 {
-			return nil, errors.New(errors.ErrArgumentCount).In("delete{}")
+			return nil, errors.EgoError(errors.ErrArgumentCount).In("delete{}")
 		}
 	}
 
@@ -303,13 +305,13 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 		return v, err
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType).In("delete()")
+		return nil, errors.EgoError(errors.ErrInvalidType).In("delete()")
 	}
 }
 
 // GetArgs implements util.Args() which fetches command-line arguments from
 // the Ego command invocation, if any.
-func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, found := s.Get("__cli_args")
 	if !found {
 		r = datatypes.NewArray(&datatypes.StringType, 0)
@@ -320,7 +322,7 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 // Make implements the make() function. The first argument must be a model of the
 // array type (using the Go native version), and the second argument is the size.
-func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	kind := args[0]
 	size := datatypes.GetInt(args[1])
 
@@ -372,7 +374,7 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 	return array, nil
 }
 
-func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var m runtime.MemStats
 
 	result := map[string]interface{}{}
@@ -394,7 +396,7 @@ func bToMb(b uint64) float64 {
 	return float64(b) / 1024.0 / 1024.0
 }
 
-func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Make the unordered list of all package names defined in all
 	// scopes from here. This may include duplicates.
 	allNames := makePackageList(s)

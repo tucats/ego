@@ -11,7 +11,7 @@ import (
 // Given a list of path components, connect them together in the syntax
 // supported by the host platform as a file system path. Resolve duplicate
 // separators.
-func PathJoin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathJoin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parts := make([]string, len(args))
 	for i, v := range args {
 		parts[i] = datatypes.GetString(v)
@@ -20,32 +20,36 @@ func PathJoin(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	return filepath.Join(parts...), nil
 }
 
-func PathBase(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 
 	return filepath.Base(path), nil
 }
 
-func PathAbs(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathAbs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 	absPath, err := filepath.Abs(path)
 
-	return absPath, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return absPath, err
 }
 
-func PathExt(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathExt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 
 	return filepath.Ext(path), nil
 }
 
-func PathDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 
 	return filepath.Dir(path), nil
 }
 
-func PathClean(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func PathClean(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 
 	return filepath.Clean(path), nil

@@ -3,8 +3,6 @@ package functions
 import (
 	"reflect"
 	"testing"
-
-	"github.com/tucats/ego/errors"
 )
 
 func TestFunctionLeft(t *testing.T) {
@@ -44,7 +42,7 @@ func TestFunctionLeft(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Left(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLeft() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -97,7 +95,7 @@ func TestFunctionRight(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Right(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionRight() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -151,7 +149,7 @@ func TestFunctionLower(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Lower(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLower() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -205,7 +203,7 @@ func TestFunctionUpper(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Upper(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionUpper() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -268,7 +266,7 @@ func TestFunctionIndex(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Index(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionIndex() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -353,7 +351,7 @@ func TestSubstring(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Substring(nil, tt.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Substring() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

@@ -23,7 +23,7 @@ import (
 
 // printByteCode instruction processor. If the operand is given, it represents the number of items
 // to remove from the stack and print to stdout.
-func printByteCode(c *Context, i interface{}) *errors.EgoError {
+func printByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
 		count = datatypes.GetInt(i)
@@ -31,7 +31,7 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n = n + 1 {
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -117,7 +117,7 @@ func printByteCode(c *Context, i interface{}) *errors.EgoError {
 // logByteCode implements the Log directive, which outputs the top stack
 // item to the logger named in the operand. The operand can either by a logger
 // by name or by class id.
-func logByteCode(c *Context, i interface{}) *errors.EgoError {
+func logByteCode(c *Context, i interface{}) error {
 	var class int
 
 	if id, ok := i.(int); ok {
@@ -131,7 +131,7 @@ func logByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	msg, err := c.Pop()
-	if errors.Nil(err) {
+	if err == nil {
 		ui.Debug(class, "%v", msg)
 	}
 
@@ -145,7 +145,7 @@ func logByteCode(c *Context, i interface{}) *errors.EgoError {
 //
 // This is used by the code generated from @test and @pass, for example, to allow
 // test logging to be quiet if necessary.
-func sayByteCode(c *Context, i interface{}) *errors.EgoError {
+func sayByteCode(c *Context, i interface{}) error {
 	msg := ""
 	if c.output != nil {
 		msg = c.output.String()
@@ -163,7 +163,7 @@ func sayByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // newlineByteCode instruction processor generates a newline character to stdout.
-func newlineByteCode(c *Context, i interface{}) *errors.EgoError {
+func newlineByteCode(c *Context, i interface{}) error {
 	if c.output == nil {
 		fmt.Printf("\n")
 	} else {
@@ -181,11 +181,11 @@ func newlineByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
-func templateByteCode(c *Context, i interface{}) *errors.EgoError {
+func templateByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	t, err := c.Pop()
-	if errors.Nil(err) {
+	if err == nil {
 		if IsStackMarker(t) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
@@ -208,20 +208,20 @@ func templateByteCode(c *Context, i interface{}) *errors.EgoError {
 // fromFileByteCode loads the context tokenizer with the
 // source from a file if it does not already exist and
 // we are in debug mode.
-func fromFileByteCode(c *Context, i interface{}) *errors.EgoError {
+func fromFileByteCode(c *Context, i interface{}) error {
 	if !c.debugging {
 		return nil
 	}
 
 	b, err := ioutil.ReadFile(datatypes.GetString(i))
-	if errors.Nil(err) {
+	if err == nil {
 		c.tokenizer = tokenizer.New(string(b))
 	}
 
-	return errors.New(err)
+	return errors.EgoError(err)
 }
 
-func timerByteCode(c *Context, i interface{}) *errors.EgoError {
+func timerByteCode(c *Context, i interface{}) error {
 	mode := datatypes.GetInt(i)
 	switch mode {
 	case 0:

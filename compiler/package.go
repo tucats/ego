@@ -17,7 +17,7 @@ import (
 )
 
 // compilePackage compiles a package statement.
-func (c *Compiler) compilePackage() *errors.EgoError {
+func (c *Compiler) compilePackage() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingPackageName)
 	}
@@ -41,8 +41,8 @@ func (c *Compiler) compilePackage() *errors.EgoError {
 }
 
 // compileImport handles the import statement.
-func (c *Compiler) compileImport() *errors.EgoError {
-	var err *errors.EgoError
+func (c *Compiler) compileImport() error {
+	var err error
 
 	// Unless we are in test mode, constrain imports to
 	// only occur at the top-level before blocks are
@@ -128,7 +128,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 		// for this package.
 		if !pkgData.Imported() {
 			text, err := c.readPackageFile(fileName.Spelling())
-			if !errors.Nil(err) {
+			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
 				if pkgData.Builtins() {
@@ -154,7 +154,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 
 			for !importCompiler.t.AtEnd() {
 				err := importCompiler.compileStatement()
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 			}
@@ -176,8 +176,7 @@ func (c *Compiler) compileImport() *errors.EgoError {
 			importSymbols := symbols.NewChildSymbolTable("import "+fileName.Spelling(), c.RootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
-			err = ctx.Run()
-			if err != nil && !err.Is(errors.ErrStop) {
+			if err = ctx.Run(); !errors.Equals(err, errors.ErrStop) {
 				break
 			}
 
@@ -228,9 +227,9 @@ func (c *Compiler) compileImport() *errors.EgoError {
 }
 
 // readPackageFile reads the text from a file into a string.
-func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
+func (c *Compiler) readPackageFile(name string) (string, error) {
 	s, err := c.directoryContents(name)
-	if errors.Nil(err) {
+	if err == nil {
 		return s, nil
 	}
 
@@ -242,7 +241,7 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 	content, e2 := ioutil.ReadFile(fn)
 	if e2 != nil {
 		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
-		if !errors.Nil(e2) {
+		if e2 != nil {
 			// Path name did not resolve. Get the Ego path and try
 			// variations on that.
 			r := os.Getenv(defs.EgoPathEnv)
@@ -279,7 +278,7 @@ func (c *Compiler) readPackageFile(name string) (string, *errors.EgoError) {
 }
 
 // directoryContents reads all the files in a directory into a single string.
-func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
+func (c *Compiler) directoryContents(name string) (string, error) {
 	var b strings.Builder
 
 	r := os.Getenv(defs.EgoPathEnv)
@@ -297,8 +296,8 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 	}
 
 	fi, err := ioutil.ReadDir(dirname)
-	if !errors.Nil(err) {
-		return "", errors.New(err)
+	if err != nil {
+		return "", errors.EgoError(err)
 	}
 
 	ui.Debug(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)
@@ -318,7 +317,7 @@ func (c *Compiler) directoryContents(name string) (string, *errors.EgoError) {
 			fileName := filepath.Join(dirname, f.Name())
 
 			t, err := c.readPackageFile(fileName)
-			if !errors.Nil(err) {
+			if err != nil {
 				return "", err
 			}
 

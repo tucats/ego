@@ -9,7 +9,7 @@ import (
 
 // compileIf compiles conditional statments. The verb is already
 // removed from the token stream.
-func (c *Compiler) compileIf() *errors.EgoError {
+func (c *Compiler) compileIf() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
@@ -20,7 +20,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 	if c.isAssignmentTarget() {
 		c.b.Emit(bytecode.PushScope)
 
-		if err := c.compileAssignment(); !errors.Nil(err) {
+		if err := c.compileAssignment(); err != nil {
 			return err
 		}
 
@@ -34,7 +34,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 
 	// Compile the conditional expression
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -48,7 +48,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 
 	// Compile the statement to be executed if true
 	err = c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (c *Compiler) compileIf() *errors.EgoError {
 		_ = c.b.SetAddressHere(b1)
 
 		err = c.compileRequiredBlock()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

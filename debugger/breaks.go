@@ -37,8 +37,8 @@ type breakPoint struct {
 // This global variable maintains the list of breakpoints currently in effect.
 var breakPoints = []breakPoint{}
 
-func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
-	var err *errors.EgoError
+func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
+	var err error
 
 	t.Advance(1)
 
@@ -51,7 +51,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 			ec := compiler.New("break expression").WithTokens(tokenizer.New(text))
 
 			bc, err := ec.Expression()
-			if errors.Nil(err) {
+			if err == nil {
 				if clear {
 					clearBreakWhen(text)
 
@@ -60,7 +60,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 					err = breakWhen(bc, text)
 				}
 
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 			}
@@ -88,7 +88,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 					err = breakAtLine(name, line)
 				}
 			} else {
-				err = errors.New(e2)
+				err = errors.EgoError(e2)
 			}
 
 		case "save":
@@ -106,7 +106,9 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				e = ioutil.WriteFile(name, b, 0777)
 			}
 
-			err = errors.New(e)
+			if e != nil {
+				err = errors.EgoError(e)
+			}
 
 		case "load":
 			name := util.Unquote(t.NextText())
@@ -127,7 +129,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 						ec := compiler.New("break expression").WithTokens(tokenizer.New(bp.Text))
 
 						bc, err := ec.Expression()
-						if errors.Nil(err) {
+						if err == nil {
 							v[n].expr = bc
 						} else {
 							break
@@ -142,13 +144,15 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) *errors.EgoError {
 				})
 			}
 
-			err = errors.New(e)
+			if e != nil {
+				err = errors.EgoError(e)
+			}
 
 		default:
-			err = errors.New(errors.ErrInvalidBreakClause)
+			err = errors.EgoError(errors.ErrInvalidBreakClause)
 		}
 
-		if !errors.Nil(err) {
+		if err != nil {
 			break
 		}
 	}
@@ -184,7 +188,7 @@ func clearBreakAtLine(module string, line int) {
 	}
 }
 
-func breakAtLine(module string, line int) *errors.EgoError {
+func breakAtLine(module string, line int) error {
 	for _, b := range breakPoints {
 		if b.Kind == BreakAlways && b.Line == line {
 			ui.Say("msg.debug.break.exists")
@@ -208,7 +212,7 @@ func breakAtLine(module string, line int) *errors.EgoError {
 	return nil
 }
 
-func breakWhen(expression *bytecode.ByteCode, text string) *errors.EgoError {
+func breakWhen(expression *bytecode.ByteCode, text string) error {
 	for _, b := range breakPoints {
 		if b.Kind == BreakValue && b.Text == text {
 			ui.Say("msg.debug.break.exists")
@@ -276,8 +280,8 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			ctx.SetDebug(false)
 
 			err := ctx.Run()
-			if !errors.Nil(err) {
-				if err.Is(errors.ErrStepOver) {
+			if err != nil {
+				if errors.Equals(err, errors.ErrStepOver) {
 					err = nil
 
 					ctx.StepOver(true)
@@ -289,8 +293,8 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			}
 
 			//fmt.Printf("Break expression status = %v\n", err)
-			if errors.Nil(err) {
-				if v, err := ctx.Pop(); errors.Nil(err) {
+			if err == nil {
+				if v, err := ctx.Pop(); err == nil {
 					//fmt.Printf("Break expression result = %v\n", v)
 					prompt = datatypes.GetBool(v)
 					if prompt {

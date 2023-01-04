@@ -9,9 +9,9 @@ import (
 
 // StaticTypeOpcode implements the StaticType opcode, which
 // sets the static typing flag for the current context.
-func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
+func staticTypingByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if errors.Nil(err) {
+	if err == nil {
 		if IsStackMarker(v) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
@@ -23,9 +23,9 @@ func staticTypingByteCode(c *Context, i interface{}) *errors.EgoError {
 	return err
 }
 
-func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
+func requiredTypeByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if errors.Nil(err) {
+	if err == nil {
 		if IsStackMarker(v) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
@@ -83,7 +83,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 			// If it's not interface type, check it out...
 			if !t.IsInterface() {
 				if t.IsKind(datatypes.ErrorKind) {
-					v = errors.New(errors.ErrPanic).Context(v)
+					v = errors.EgoError(errors.ErrPanic).Context(v)
 				}
 
 				// Figure out the type. If it's a user type, get the underlying type unless we're
@@ -134,7 +134,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 				// verify the value against the interface entries.
 				if t.HasFunctions() {
 					vt := datatypes.TypeOf(v)
-					if e := t.ValidateFunctions(vt); !errors.Nil(e) {
+					if e := t.ValidateFunctions(vt); e != nil {
 						return c.newError(e)
 					}
 				}
@@ -148,7 +148,7 @@ func requiredTypeByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // coerceByteCode instruction processor.
-func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
+func coerceByteCode(c *Context, i interface{}) error {
 	// If we are in static mode, we don't do any coercions.
 	if c.Static {
 		return nil
@@ -157,7 +157,7 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 	t := datatypes.GetType(i)
 
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -182,8 +182,8 @@ func coerceByteCode(c *Context, i interface{}) *errors.EgoError {
 		vv := v.(*datatypes.EgoStruct)
 		for _, k := range vv.FieldNames() {
 			_, e2 := t.Field(k)
-			if !errors.Nil(e2) {
-				return e2
+			if e2 != nil {
+				return errors.EgoError(e2)
 			}
 		}
 
@@ -266,7 +266,7 @@ func (b ByteCode) NeedsCoerce(kind *datatypes.Type) bool {
 	return true
 }
 
-func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
+func addressOfByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)
@@ -277,7 +277,7 @@ func addressOfByteCode(c *Context, i interface{}) *errors.EgoError {
 	return c.stackPush(addr)
 }
 
-func deRefByteCode(c *Context, i interface{}) *errors.EgoError {
+func deRefByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	addr, ok := c.symbols.GetAddress(name)

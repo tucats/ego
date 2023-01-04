@@ -63,31 +63,31 @@ func (m *EgoMap) ImmutableKeys(b bool) {
 // value, or nil if not found. It also returns a flag indicating if the
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
-func (m *EgoMap) Get(key interface{}) (interface{}, bool, *errors.EgoError) {
+func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 	if IsType(key, m.keyType) {
 		v, found := m.data[key]
 
 		return v, found, nil
 	}
 
-	return nil, false, errors.New(errors.ErrWrongMapKeyType).Context(key)
+	return nil, false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
 }
 
 // Set sets a value in the map. The key value and type value must be compatible
 // with the type declaration for the map. Bad type values result in an error.
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
-func (m *EgoMap) Set(key interface{}, value interface{}) (bool, *errors.EgoError) {
+func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
 	if m.immutable > 0 {
-		return false, errors.New(errors.ErrImmutableMap)
+		return false, errors.EgoError(errors.ErrImmutableMap)
 	}
 
 	if !IsBaseType(key, m.keyType) {
-		return false, errors.New(errors.ErrWrongMapKeyType).Context(key)
+		return false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
 	}
 
 	if !IsBaseType(value, m.valueType) {
-		return false, errors.New(errors.ErrWrongMapValueType).Context(value)
+		return false, errors.EgoError(errors.ErrWrongMapValueType).Context(value)
 	}
 
 	_, found := m.data[key]
@@ -184,17 +184,17 @@ func (m *EgoMap) Keys() []interface{} {
 // Delete will delete a given value from the map based on key. The return
 // value indicates if the value was found (and therefore deleted) versus
 // was not found.
-func (m *EgoMap) Delete(key interface{}) (bool, *errors.EgoError) {
+func (m *EgoMap) Delete(key interface{}) (bool, error) {
 	if m.immutable > 0 {
-		return false, errors.New(errors.ErrImmutableMap)
+		return false, errors.EgoError(errors.ErrImmutableMap)
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.New(errors.ErrWrongMapKeyType).Context(key)
+		return false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
 	}
 
 	_, found, err := m.Get(key)
-	if errors.Nil(err) {
+	if err == nil {
 		delete(m.data, key)
 	}
 
@@ -322,7 +322,7 @@ func (m EgoMap) MarshalJSON() ([]byte, error) {
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, errors.EgoError(err)
 		}
 
 		b.WriteString(fmt.Sprintf(`"%s":%s`, key, string(jsonBytes)))

@@ -8,11 +8,11 @@ import (
 )
 
 // compileAssignment compiles an assignment statement.
-func (c *Compiler) compileAssignment() *errors.EgoError {
+func (c *Compiler) compileAssignment() error {
 	start := c.t.Mark()
 
 	storeLValue, err := c.assignmentTarget()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 		c.t.Set(start)
 
 		e1, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -84,11 +84,11 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 			tokenizer.SubtractAssignToken,
 			tokenizer.MultiplyAssignToken,
 			tokenizer.DivideAssignToken) {
-			return errors.New(errors.ErrMissingAssignment)
+			return errors.EgoError(errors.ErrMissingAssignment)
 		}
 
 		e2, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -104,7 +104,7 @@ func (c *Compiler) compileAssignment() *errors.EgoError {
 	_ = c.t.IsNext(tokenizer.ChannelReceiveToken)
 
 	expressionCode, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

@@ -39,7 +39,7 @@ func Test_memberByteCode(t *testing.T) {
 				"bar": 42,
 			})},
 			want: 55,
-			err:  errors.New(errors.ErrUnknownMember).Context("zork"),
+			err:  errors.EgoError(errors.ErrUnknownMember).Context("zork"),
 		},
 		{
 			name: "struct field with name on stack",
@@ -55,14 +55,14 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "foo",
 			stack: []interface{}{},
 			want:  55,
-			err:   errors.New(errors.ErrStackUnderflow),
+			err:   errors.EgoError(errors.ErrStackUnderflow),
 		},
 		{
 			name:  "struct field, name on stack, with stack underflow",
 			arg:   nil,
 			stack: []interface{}{},
 			want:  55,
-			err:   errors.New(errors.ErrStackUnderflow),
+			err:   errors.EgoError(errors.ErrStackUnderflow),
 		},
 		{
 			name: "map key",
@@ -87,7 +87,7 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "zork",
 			stack: []interface{}{3.14},
 			want:  nil,
-			err:   errors.New(errors.ErrInvalidStructOrPackage).Context("interface{}"),
+			err:   errors.EgoError(errors.ErrInvalidStructOrPackage).Context("interface{}"),
 		},
 	}
 
@@ -108,7 +108,7 @@ func Test_memberByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -130,7 +130,7 @@ func Test_memberByteCode(t *testing.T) {
 
 			v, err := c.Pop()
 
-			if !errors.Nil(err) {
+			if err != nil {
 				t.Errorf("%s() stack error %v", name, err)
 			}
 
@@ -164,7 +164,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			name:  "store something other than bytecode",
 			arg:   "foo",
 			stack: []interface{}{"not bytecode"},
-			err:   errors.New(errors.ErrInvalidType).Context("string"),
+			err:   errors.EgoError(errors.ErrInvalidType).Context("string"),
 		},
 	}
 
@@ -185,7 +185,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 

@@ -14,7 +14,7 @@ import (
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func AddUser(c *cli.Context) *errors.EgoError {
+func AddUser(c *cli.Context) error {
 	var err error
 
 	user, _ := c.String("username")
@@ -37,7 +37,7 @@ func AddUser(c *cli.Context) *errors.EgoError {
 	resp := defs.User{}
 
 	err = runtime.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.added", map[string]interface{}{
 				"user": user,
@@ -47,12 +47,16 @@ func AddUser(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // AddUser is used to add a new user to the security database of the
 // running server.
-func DeleteUser(c *cli.Context) *errors.EgoError {
+func DeleteUser(c *cli.Context) error {
 	var err error
 
 	user, _ := c.String("username")
@@ -65,7 +69,7 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 	url := runtime.URLBuilder(defs.AdminUsersNamePath, user)
 
 	err = runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
 		} else {
@@ -73,15 +77,19 @@ func DeleteUser(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
-func ListUsers(c *cli.Context) *errors.EgoError {
+func ListUsers(c *cli.Context) error {
 	var ud = defs.UserCollection{}
 
 	err := runtime.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent)
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
@@ -113,5 +121,9 @@ func ListUsers(c *cli.Context) *errors.EgoError {
 		_ = commandOutput(ud)
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }

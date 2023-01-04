@@ -101,7 +101,7 @@ func (sm StackMarker) String() string {
 // finds a marker value, at which point it stops. This is
 // used to discard unused return values on the stack. IF there
 // is no marker, this drains the stack.
-func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
+func dropToMarkerByteCode(c *Context, i interface{}) error {
 	found := false
 	target := ""
 
@@ -116,12 +116,12 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			break
 		}
 
 		// Was this an error that was abandoned by the assignment operation?
-		if e, ok := v.(*errors.EgoError); ok {
+		if e, ok := v.(error); ok {
 			if !errors.Nil(e) && c.throwUncheckedErrors {
 				return e
 			}
@@ -142,7 +142,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) *errors.EgoError {
 // that there are this many items on the stack, which is
 // used to verify that multiple return-values on the stack
 // are present.
-func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
+func stackCheckByteCode(c *Context, i interface{}) error {
 	if count := datatypes.GetInt(i); c.stackPointer <= count {
 		return c.newError(errors.ErrReturnValueCount)
 	} else {
@@ -158,14 +158,14 @@ func stackCheckByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // pushByteCode instruction processor. This pushes the instruction operand
 // onto the runtime stack.
-func pushByteCode(c *Context, i interface{}) *errors.EgoError {
+func pushByteCode(c *Context, i interface{}) error {
 	return c.stackPush(i)
 }
 
 // dropByteCode instruction processor drops items from the stack and
 // discards them. By default, one item is dropped, but an integer
 // operand can be specified indicating how many items to drop.
-func dropByteCode(c *Context, i interface{}) *errors.EgoError {
+func dropByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
 		count = datatypes.GetInt(i)
@@ -173,7 +173,7 @@ func dropByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	for n := 0; n < count; n = n + 1 {
 		_, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return nil
 		}
 	}
@@ -182,9 +182,9 @@ func dropByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // dupByteCode instruction processor duplicates the top stack item.
-func dupByteCode(c *Context, i interface{}) *errors.EgoError {
+func dupByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -200,7 +200,7 @@ func dupByteCode(c *Context, i interface{}) *errors.EgoError {
 // offset from the top-of-stack. That is, zero means just duplicate
 // the ToS, while 1 means read the second item and make a dup on the
 // stack of that value, etc.
-func readStackByteCode(c *Context, i interface{}) *errors.EgoError {
+func readStackByteCode(c *Context, i interface{}) error {
 	idx := datatypes.GetInt(i)
 	if idx < 0 {
 		idx = -idx
@@ -216,14 +216,14 @@ func readStackByteCode(c *Context, i interface{}) *errors.EgoError {
 // swapByteCode instruction processor exchanges the top two
 // stack items. It is an error if there are not at least
 // two items on the stack.
-func swapByteCode(c *Context, i interface{}) *errors.EgoError {
+func swapByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -236,9 +236,9 @@ func swapByteCode(c *Context, i interface{}) *errors.EgoError {
 // copyByteCode instruction processor makes a copy of the topmost
 // object. This is different than duplicating, as it creates a
 // entire deep copy of the object.
-func copyByteCode(c *Context, i interface{}) *errors.EgoError {
+func copyByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -248,13 +248,17 @@ func copyByteCode(c *Context, i interface{}) *errors.EgoError {
 	var v2 interface{}
 
 	byt, _ := json.Marshal(v)
-	err = errors.New(json.Unmarshal(byt, &v2))
+	err = json.Unmarshal(byt, &v2)
 	_ = c.stackPush(2)
+
+	if err != nil {
+		err = errors.EgoError(err)
+	}
 
 	return err
 }
 
-func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
+func getVarArgsByteCode(c *Context, i interface{}) error {
 	err := c.newError(errors.ErrInvalidVariableArguments)
 	argPos := datatypes.GetInt(i)
 
@@ -268,7 +272,7 @@ func getVarArgsByteCode(c *Context, i interface{}) *errors.EgoError {
 			}
 
 			value, err := args.GetSlice(argPos, args.Len())
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 

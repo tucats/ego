@@ -10,11 +10,11 @@ import (
 )
 
 // Stop stops a running server if it exists.
-func Stop(c *cli.Context) *errors.EgoError {
+func Stop(c *cli.Context) error {
 	var proc *os.Process
 
 	status, err := server.ReadPidFile(c)
-	if errors.Nil(err) {
+	if err == nil {
 		var e2 error
 
 		proc, e2 = os.FindProcess(status.PID)
@@ -34,5 +34,9 @@ func Stop(c *cli.Context) *errors.EgoError {
 
 	_ = server.RemovePidFile(c)
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }

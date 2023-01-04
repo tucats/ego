@@ -18,7 +18,7 @@ type FileService struct {
 	data  map[string]defs.User
 }
 
-func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (UserIOService, *errors.EgoError) {
+func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (UserIOService, error) {
 	svc := &FileService{
 		path: userDatabaseFile,
 		data: map[string]defs.User{},
@@ -26,22 +26,22 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 
 	if userDatabaseFile != "" {
 		b, err := ioutil.ReadFile(userDatabaseFile)
-		if errors.Nil(err) {
+		if err == nil {
 			if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
 				r, err := util.Decrypt(string(b), key)
-				if !errors.Nil(err) {
+				if err != nil {
 					return svc, err
 				}
 
 				b = []byte(r)
 			}
 
-			if errors.Nil(err) {
+			if err == nil {
 				err = json.Unmarshal(b, &svc.data)
 			}
 
-			if !errors.Nil(err) {
-				return svc, errors.New(err)
+			if err != nil {
+				return svc, errors.EgoError(err)
 			}
 
 			ui.Debug(ui.AuthLogger, "Using file-system credential store with %d items", len(svc.data))
@@ -69,18 +69,18 @@ func (f *FileService) ListUsers() map[string]defs.User {
 	return f.data
 }
 
-func (f *FileService) ReadUser(name string, doNotLog bool) (defs.User, *errors.EgoError) {
-	var err *errors.EgoError
+func (f *FileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
+	var err error
 
 	user, ok := f.data[name]
 	if !ok {
-		err = errors.New(errors.ErrNoSuchUser).Context(name)
+		err = errors.EgoError(errors.ErrNoSuchUser).Context(name)
 	}
 
 	return user, err
 }
 
-func (f *FileService) WriteUser(user defs.User) *errors.EgoError {
+func (f *FileService) WriteUser(user defs.User) error {
 	_, found := f.data[user.Name]
 	f.data[user.Name] = user
 	f.dirty = true
@@ -94,9 +94,9 @@ func (f *FileService) WriteUser(user defs.User) *errors.EgoError {
 	return nil
 }
 
-func (f *FileService) DeleteUser(name string) *errors.EgoError {
+func (f *FileService) DeleteUser(name string) error {
 	u, err := f.ReadUser(name, false)
-	if errors.Nil(err) {
+	if err == nil {
 		delete(f.data, u.Name)
 		f.dirty = true
 
@@ -106,19 +106,19 @@ func (f *FileService) DeleteUser(name string) *errors.EgoError {
 	return nil
 }
 
-func (f *FileService) Flush() *errors.EgoError {
+func (f *FileService) Flush() error {
 	if !f.dirty {
 		return nil
 	}
 	// Convert the database to a json string
 	b, err := json.MarshalIndent(f.data, "", "   ")
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	if key := settings.Get(defs.LogonUserdataKeySetting); key != "" {
 		r, err := util.Encrypt(string(b), key)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -131,7 +131,9 @@ func (f *FileService) Flush() *errors.EgoError {
 		f.dirty = false
 
 		ui.Debug(ui.AuthLogger, "Rewrote file-system credential store")
+	} else {
+		err = errors.EgoError(err)
 	}
 
-	return errors.New(err)
+	return err
 }

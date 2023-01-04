@@ -7,7 +7,7 @@ import (
 )
 
 // compileReturn handles the return statement compilation.
-func (c *Compiler) compileReturn() *errors.EgoError {
+func (c *Compiler) compileReturn() error {
 	// Generate the deferal invocations, if any, in reverse order
 	// that they were defined. Discard any results or stack leftovers.
 	for i := len(c.deferQueue) - 1; i >= 0; i = i - 1 {
@@ -23,7 +23,7 @@ func (c *Compiler) compileReturn() *errors.EgoError {
 
 	for !c.isStatementEnd() {
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

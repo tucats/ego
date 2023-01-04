@@ -103,7 +103,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 
 // Prompt implements the prompt() function, which uses the console
 // reader.
-func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	prompt := ""
 	if len(args) > 0 {
 		prompt = datatypes.GetString(args[0])
@@ -124,9 +124,9 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *err
 // Eval implements the eval() function which accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays.
-func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	return expressions.Evaluate(datatypes.GetString(args[0]), symbols)

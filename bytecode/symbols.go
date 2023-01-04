@@ -17,7 +17,7 @@ import (
 \******************************************/
 
 // pushScopeByteCode instruction processor.
-func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
+func pushScopeByteCode(c *Context, i interface{}) error {
 	oldName := c.symbols.Name
 
 	c.mux.Lock()
@@ -41,7 +41,7 @@ func pushScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 // Note special logic; if this was a package symbol table, take
 // time to update the readonly copies of the values in the package
 // object itself.
-func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
+func popScopeByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
 		count = datatypes.GetInt(i)
@@ -50,10 +50,15 @@ func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 	for count > 0 {
 		// See if we're popping off a package table; if so there is work to do to
 		// copy the values back to the named package object.
-		c.syncPackageSymbols()
+		if err := c.syncPackageSymbols(); err != nil {
+			return errors.EgoError(err)
+		}
 
 		// Pop off the symbol table and clear up the "this" stack
-		c.popSymbolTable()
+		if err := c.popSymbolTable(); err != nil {
+			return errors.EgoError(err)
+		}
+
 		c.thisStack = nil
 		c.blockDepth--
 
@@ -64,7 +69,7 @@ func popScopeByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // symbolCreateByteCode instruction processor.
-func createAndStoreByteCode(c *Context, i interface{}) *errors.EgoError {
+func createAndStoreByteCode(c *Context, i interface{}) error {
 	var value interface{}
 
 	var name string
@@ -84,7 +89,7 @@ func createAndStoreByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err := c.symbolCreate(name)
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(err)
 	}
 
@@ -96,14 +101,14 @@ func createAndStoreByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // symbolCreateByteCode instruction processor.
-func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
+func symbolCreateByteCode(c *Context, i interface{}) error {
 	n := datatypes.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
 
 	err := c.symbolCreate(n)
-	if !errors.Nil(err) {
+	if err != nil {
 		err = c.newError(err)
 	}
 
@@ -111,7 +116,7 @@ func symbolCreateByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // symbolCreateIfByteCode instruction processor.
-func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
+func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	n := datatypes.GetString(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
@@ -127,7 +132,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err := c.symbols.Create(n)
-	if !errors.Nil(err) {
+	if err != nil {
 		err = c.newError(err)
 	}
 
@@ -135,21 +140,21 @@ func symbolCreateIfByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // symbolDeleteByteCode instruction processor.
-func symbolDeleteByteCode(c *Context, i interface{}) *errors.EgoError {
+func symbolDeleteByteCode(c *Context, i interface{}) error {
 	n := datatypes.GetString(i)
 
 	err := c.symbolDelete(n)
-	if !errors.Nil(err) {
-		err = c.newError(err)
+	if err != nil {
+		return c.newError(err)
 	}
 
-	return err
+	return nil
 }
 
 // constantByteCode instruction processor.
-func constantByteCode(c *Context, i interface{}) *errors.EgoError {
+func constantByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -160,20 +165,23 @@ func constantByteCode(c *Context, i interface{}) *errors.EgoError {
 	varname := datatypes.GetString(i)
 
 	err = c.constantSet(varname, v)
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(err)
 	}
 
 	return err
 }
 
-func (c *Context) syncPackageSymbols() {
+func (c *Context) syncPackageSymbols() error {
 	// Before we toss away this, check to see if there are package symbols
 	// that need updating in the package object.
 	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
 		packageSymbols := c.symbols.Parent
 		pkgname := c.symbols.Parent.Package
-		c.popSymbolTable()
+
+		if err := c.popSymbolTable(); err != nil {
+			return errors.EgoError(err)
+		}
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
 			if m, ok := pkg.(*datatypes.EgoPackage); ok {
@@ -185,4 +193,6 @@ func (c *Context) syncPackageSymbols() {
 			}
 		}
 	}
+
+	return nil
 }

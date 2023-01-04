@@ -15,7 +15,7 @@ import (
 )
 
 // ReadFile reads a file contents into a string value.
-func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := datatypes.GetString(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -24,43 +24,53 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 	name = sandboxName(name)
 
 	content, err := ioutil.ReadFile(name)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	return datatypes.NewArray(&datatypes.ByteType, 0).Append(content), nil
 }
 
 // WriteFile writes a string to a file.
-func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fileName := sandboxName(datatypes.GetString(args[0]))
 
 	if a, ok := args[1].(*datatypes.EgoArray); ok {
 		if a.ValueType().Kind() == datatypes.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
+			if err != nil {
+				err = errors.EgoError(err)
+			}
 
-			return a.Len(), errors.New(err)
+			return a.Len(), err
 		}
 	}
 
 	text := datatypes.GetString(args[1])
-	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 
-	return len(text), errors.New(err)
+	err := ioutil.WriteFile(fileName, []byte(text), 0777)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return len(text), err
 }
 
 // DeleteFile deletes a file.
-func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fileName := datatypes.GetString(args[0])
 	fileName = sandboxName(fileName)
 
 	err := os.Remove(fileName)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
 
-	return errors.Nil(err), errors.New(err)
+	return err == nil, err
 }
 
 // Expand expands a list of file or path names into a list of files.
-func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 	ext := ""
 
@@ -84,24 +94,24 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 // ExpandPath is used to expand a path into a list of fie names. This is
 // also used elsewhere to product path lists, so it must be an exported
 // symbol.
-func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
+func ExpandPath(path, ext string) ([]string, error) {
 	names := []string{}
 
 	path = sandboxName(path)
 
 	// Can we read this as a directory?
 	fi, err := ioutil.ReadDir(path)
-	if !errors.Nil(err) {
+	if err != nil {
 		fn := path
 
 		_, err := ioutil.ReadFile(fn)
-		if !errors.Nil(err) {
+		if err != nil {
 			fn = path + ext
 			_, err = ioutil.ReadFile(fn)
 		}
 
-		if !errors.Nil(err) {
-			return names, errors.New(err)
+		if err != nil {
+			return names, errors.EgoError(err)
 		}
 
 		// If we have a default suffix, make sure the pattern matches
@@ -119,7 +129,7 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 		fn := filepath.Join(path, f.Name())
 
 		list, err := ExpandPath(fn, ext)
-		if !errors.Nil(err) {
+		if err != nil {
 			return names, err
 		}
 
@@ -130,15 +140,15 @@ func ExpandPath(path, ext string) ([]string, *errors.EgoError) {
 }
 
 // ReadDir implements the io.readdir() function.
-func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := datatypes.GetString(args[0])
 	result := datatypes.NewArray(&datatypes.InterfaceType, 0)
 
 	path = sandboxName(path)
 
 	files, err := ioutil.ReadDir(path)
-	if !errors.Nil(err) {
-		return result, errors.New(err).In("ReadDir()")
+	if err != nil {
+		return result, errors.EgoError(err).In("ReadDir()")
 	}
 
 	for _, file := range files {
@@ -158,13 +168,13 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 // This is the generic close() which can be used to close a channel, and maybe
 // later other items as well.
-func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
 	case *datatypes.Channel:
 		return arg.Close(), nil
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType).In("CloseAny()")
+		return nil, errors.EgoError(errors.ErrInvalidType).In("CloseAny()")
 	}
 }
 

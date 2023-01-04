@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	"github.com/tucats/ego/errors"
 )
 
 const (
@@ -50,7 +48,7 @@ type Option struct {
 	Aliases              []string
 	Keywords             []string
 	Value                interface{}
-	Action               func(c *Context) *errors.EgoError
+	Action               func(c *Context) error
 	OptionType           int
 	ParametersExpected   int
 	Found                bool
@@ -72,7 +70,7 @@ type Context struct {
 	Args                   []string
 	Parameters             []string
 	Parent                 *Context
-	Action                 func(c *Context) *errors.EgoError
+	Action                 func(c *Context) error
 	ParameterCount         int
 	ExpectedParameterCount int
 }
@@ -198,7 +196,7 @@ func p(level int, label string, value interface{}) {
 			fmt.Printf("%s  },\n", prefix)
 		}
 
-	case func(*Context) *errors.EgoError:
+	case func(*Context) error:
 		if v != nil {
 			vv := reflect.ValueOf(v)
 

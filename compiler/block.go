@@ -8,7 +8,7 @@ import (
 
 // compileBlock compiles a statement block. The leading { has already
 // been parsed.
-func (c *Compiler) compileBlock() *errors.EgoError {
+func (c *Compiler) compileBlock() error {
 	parsing := true
 	c.blockDepth++
 
@@ -20,7 +20,7 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 		}
 
 		err := c.compileStatement()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -40,7 +40,7 @@ func (c *Compiler) compileBlock() *errors.EgoError {
 }
 
 // Require that the next item be a block, enclosed in {} characters.
-func (c *Compiler) compileRequiredBlock() *errors.EgoError {
+func (c *Compiler) compileRequiredBlock() error {
 	// If an empty block, no work to do
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		return nil

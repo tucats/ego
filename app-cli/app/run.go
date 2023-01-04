@@ -8,13 +8,12 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 )
 
 // Run sets up required data structures and parses the command line. It then
 // automatically calls any action routines specfied in the grammar, which do
 // the work of the command.
-func runFromContext(context *cli.Context) *errors.EgoError {
+func runFromContext(context *cli.Context) error {
 	// Create a new grammar which prepends the default supplied options
 	// to the caller's grammar definition.
 	grammar := []cli.Option{
@@ -105,13 +104,16 @@ func runFromContext(context *cli.Context) *errors.EgoError {
 	}
 
 	// Parse the grammar and call the actions (essentially, execute
-	// the function of the CLI)
-	err := context.Parse()
-
-	// If no errors, then write out an updated profile as needed.
-	if errors.Nil(err) {
+	// the function of the CLI). If it goes poorly, error out.
+	if err := context.Parse(); err != nil {
+		return err
+	} else {
+		// If no errors, then write out an updated profile as needed.
 		err = settings.Save()
+		if err != nil {
+			return err
+		}
 	}
 
-	return err
+	return nil
 }

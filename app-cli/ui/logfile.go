@@ -20,14 +20,14 @@ var currentLogFileName string
 // logging directory.
 var LogRetainCount = -1
 
-func OpenLogFile(userLogFileName string, withTimeStamp bool) *errors.EgoError {
+func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 	if LogRetainCount < 1 {
 		LogRetainCount = 3
 	}
 
 	err := openLogFile(userLogFileName, withTimeStamp)
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	if withTimeStamp {
@@ -49,7 +49,7 @@ func CurrentLogFile() string {
 }
 
 // Internal routine that actually opens a log file.
-func openLogFile(path string, withTimeStamp bool) *errors.EgoError {
+func openLogFile(path string, withTimeStamp bool) error {
 	var err error
 
 	_ = SaveLastLog()
@@ -61,7 +61,7 @@ func openLogFile(path string, withTimeStamp bool) *errors.EgoError {
 	} else {
 		fileName, err = filepath.Abs(path)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 	}
 
@@ -69,7 +69,7 @@ func openLogFile(path string, withTimeStamp bool) *errors.EgoError {
 	if err != nil {
 		logFile = nil
 
-		return errors.New(err)
+		return errors.EgoError(err)
 	}
 
 	baseLogFileName, _ = filepath.Abs(path)
@@ -146,7 +146,7 @@ func PurgeLogs() int {
 	Debug(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
 
 	files, err := ioutil.ReadDir(searchPath)
-	if !errors.Nil(err) {
+	if err != nil {
 		Debug(ServerLogger, "Error making list of log files, %s", err.Error())
 
 		return count
@@ -169,7 +169,7 @@ func PurgeLogs() int {
 		fileName := path.Join(searchPath, name)
 
 		err := os.Remove(fileName)
-		if !errors.Nil(err) {
+		if err != nil {
 			Debug(ServerLogger, "Error purging log file, %v", err)
 		} else {
 			Debug(ServerLogger, "Purged log file %s", fileName)

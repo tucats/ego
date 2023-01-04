@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 )
 
 func TestComparisons(t *testing.T) {
@@ -22,7 +21,7 @@ func TestComparisons(t *testing.T) {
 		r interface{}
 
 		// Opcode function to test
-		f func(c *Context, i interface{}) *errors.EgoError
+		f func(c *Context, i interface{}) error
 
 		// Opcode parameter
 		i interface{}
@@ -125,11 +124,11 @@ func TestComparisons(t *testing.T) {
 			ctx.stackPointer = len(ctx.stack)
 
 			e := tt.f(&ctx, tt.i)
-			if errors.Nil(e) && !tt.err {
+			if e == nil && !tt.err {
 				if got := ctx.stack[0]; got != tt.r {
 					t.Errorf("%s bad result = %v,  want %v", tt.name, got, tt.r)
 				}
-			} else if errors.Nil(e) == tt.err {
+			} else if (e == nil) == tt.err {
 				t.Errorf("%s bad return code, unexpected %v", tt.name, e)
 			}
 		})

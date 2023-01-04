@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 )
 
 func TestTable_SortRows(t *testing.T) {
@@ -133,11 +132,11 @@ func TestTable_SortRows(t *testing.T) {
 
 			if tt.sortColumn != "" {
 				err := table.SetOrderBy(tt.sortColumn)
-				if (!errors.Nil(err)) && !tt.wantErr {
+				if (err != nil) && !tt.wantErr {
 					t.Errorf("Unexpected SetOrderBy error result: %v", err)
 				}
 				err = table.SortRows(table.orderBy, table.ascending)
-				if (!errors.Nil(err)) && !tt.wantErr {
+				if (err != nil) && !tt.wantErr {
 					t.Errorf("Unexpected SortRows error result: %v", err)
 				}
 			}
@@ -151,13 +150,13 @@ func TestTable_SortRows(t *testing.T) {
 
 			if tt.startingRow != 0 {
 				err := table.SetStartingRow(tt.startingRow)
-				if (!errors.Nil(err)) && !tt.wantErr {
+				if (err != nil) && !tt.wantErr {
 					t.Errorf("Unexpected SetStartingRow error result: %v", err)
 				}
 			}
 			if tt.width != 0 {
 				err := table.SetMinimumWidth(1, tt.width)
-				if (!errors.Nil(err)) && !tt.wantErr {
+				if (err != nil) && !tt.wantErr {
 					t.Errorf("Unexpected SetMinimumWidth error result: %v", err)
 				}
 			}
@@ -295,7 +294,7 @@ func TestTable_AddRow(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ttable := &tt.table
 			err := ttable.AddRow(tt.args.row)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Table.AddRow() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(*ttable, tt.want) {

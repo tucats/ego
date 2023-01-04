@@ -6,7 +6,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) compileDefer() *errors.EgoError {
+func (c *Compiler) compileDefer() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingStatement)
 	}
@@ -17,7 +17,7 @@ func (c *Compiler) compileDefer() *errors.EgoError {
 	code := c.b.Mark()
 
 	err := c.compileStatement()
-	if errors.Nil(err) {
+	if err == nil {
 		c.b.Emit(bytecode.Return)
 
 		c.deferQueue = append(c.deferQueue, code)

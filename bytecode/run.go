@@ -13,7 +13,7 @@ import (
 )
 
 // OpcodeHandler defines a function that implements an opcode.
-type OpcodeHandler func(b *Context, i interface{}) *errors.EgoError
+type OpcodeHandler func(b *Context, i interface{}) error
 
 // DispatchMap is a map that is used to locate the function for an opcode.
 type DispatchMap map[OpcodeID]OpcodeHandler
@@ -43,12 +43,12 @@ func (c *Context) GetSymbols() *symbols.SymbolTable {
 }
 
 // Run executes a bytecode context.
-func (c *Context) Run() *errors.EgoError {
+func (c *Context) Run() error {
 	return c.RunFromAddress(0)
 }
 
 // Used to resume execution after an event like the debugger being invoked.
-func (c *Context) Resume() *errors.EgoError {
+func (c *Context) Resume() error {
 	return c.RunFromAddress(c.programCounter)
 }
 
@@ -57,8 +57,8 @@ func (c *Context) IsRunning() bool {
 }
 
 // RunFromAddress executes a bytecode context from a given starting address.
-func (c *Context) RunFromAddress(addr int) *errors.EgoError {
-	var err *errors.EgoError
+func (c *Context) RunFromAddress(addr int) error {
+	var err error
 
 	// Make sure globals are initialized. Because this updates a global, let's
 	// do it in a thread-safe fashion.
@@ -104,7 +104,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 		}
 
 		err = imp(c, i.Operand)
-		if !errors.Nil(err) {
+		if err != nil {
 			text := err.Error()
 
 			// See if we are in a try/catch block. IF there is a Try/Catch stack
@@ -121,7 +121,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 					willCatch = false
 
 					for _, e := range try.catches {
-						if e.Equal(err) {
+						if e.(*errors.EgoErrorMsg).Equal(err) {
 							willCatch = true
 
 							break
@@ -131,7 +131,7 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 
 				// If we aren't catching it, just percolate the error
 				if !willCatch {
-					return errors.New(err)
+					return errors.EgoError(err)
 				}
 
 				// We are catching, so update the PC
@@ -148,18 +148,26 @@ func (c *Context) RunFromAddress(addr int) *errors.EgoError {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
 				}
 			} else {
-				if !err.Is(errors.ErrSignalDebugger) && !err.Is(errors.ErrStop) {
+				if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
 				}
 
-				return errors.New(err)
+				if err != nil {
+					err = errors.EgoError(err)
+				}
+
+				return err
 			}
 		}
 	}
 
 	ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
 
-	return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
+	}
+
+	return nil
 }
 
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
@@ -200,7 +208,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 		}
 	}
 
-	if !err.Is(errors.ErrStop) {
+	if err != nil && !err.Is(errors.ErrStop) {
 		fmt.Printf("%s\n", i18n.E("go.error", map[string]interface{}{"name": fName, "err": err}))
 
 		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)

@@ -13,13 +13,13 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	vv := reflect.ValueOf(args[0])
 	ts := vv.String()
 
 	// If it's a builtin function, it's description will match the signature. If it's a
 	// match, find out it's name and return it as a builtin.
-	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, *errors.EgoError) Value>" {
+	if ts == "<func(*symbols.SymbolTable, []interface {}) (interface {}, error) Value>" {
 		name := runtime.FuncForPC(reflect.ValueOf(args[0]).Pointer()).Name()
 		name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 		name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
@@ -154,7 +154,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		return datatypes.NewStructFromMap(result), nil
 	}
 
-	if e, ok := args[0].(*errors.EgoError); ok {
+	if e, ok := args[0].(errors.EgoErrorMsg); ok {
 		wrappedError := e.Unwrap()
 
 		if e.Is(errors.ErrUserDefined) {
@@ -179,7 +179,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	typeString, err := Type(s, args)
-	if errors.Nil(err) {
+	if err == nil {
 		result := map[string]interface{}{
 			datatypes.TypeMDName:     typeString,
 			datatypes.BasetypeMDName: typeString,
@@ -193,7 +193,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // Type implements the type() function.
-func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *datatypes.EgoMap:
 		return v.TypeString(), nil
@@ -240,7 +240,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 
 		return "*" + tt.String(), nil
 
-	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError):
+	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, error):
 		return "<builtin>", nil
 
 	default:
@@ -268,7 +268,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 }
 
 // SizeOf returns the size in bytes of an arbibrary object.
-func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	size := datatypes.RealSizeOf(args[0])
 
 	return size, nil

@@ -24,13 +24,13 @@ import (
 // If the argument is a boolen true, then this is a boolean
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
-func negateByteCode(c *Context, i interface{}) *errors.EgoError {
+func negateByteCode(c *Context, i interface{}) error {
 	if datatypes.GetBool(i) {
 		return NotImpl(c, i)
 	}
 
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -99,9 +99,9 @@ func negateByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // NotImpl instruction processor pops the top stack
 // item and pushes it's boolean NOT value.
-func NotImpl(c *Context, i interface{}) *errors.EgoError {
+func NotImpl(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -139,14 +139,14 @@ func NotImpl(c *Context, i interface{}) *errors.EgoError {
 // operation. For numeric values, it is arithmetic addition. For
 // strings or arrays, it concatenates the two items. For a struct,
 // it merges the addend into the first struct.
-func addByteCode(c *Context, i interface{}) *errors.EgoError {
+func addByteCode(c *Context, i interface{}) error {
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -199,14 +199,14 @@ func addByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // andByteCode bytecode instruction processor.
-func andByteCode(c *Context, i interface{}) *errors.EgoError {
+func andByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -223,14 +223,14 @@ func andByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // orByteCode bytecode instruction processor.
-func orByteCode(c *Context, i interface{}) *errors.EgoError {
+func orByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -250,14 +250,14 @@ func orByteCode(c *Context, i interface{}) *errors.EgoError {
 // stack and subtracts them. For numeric values, this is arithmetic
 // subtraction. For an array, the item to be subtracted is removed
 // from the array (in any array location it is found).
-func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
+func subtractByteCode(c *Context, i interface{}) error {
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -302,14 +302,14 @@ func subtractByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // multiplyByteCode bytecode instruction processor.
-func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
+func multiplyByteCode(c *Context, i interface{}) error {
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -363,14 +363,14 @@ func multiplyByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // exponentByteCode bytecode instruction processor.
-func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
+func exponentByteCode(c *Context, i interface{}) error {
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -418,18 +418,18 @@ func exponentByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // divideByteCode bytecode instruction processor.
-func divideByteCode(c *Context, i interface{}) *errors.EgoError {
+func divideByteCode(c *Context, i interface{}) error {
 	if c.stackPointer < 1 {
 		return c.newError(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -493,18 +493,18 @@ func divideByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // moduloByteCode bytecode instruction processor.
-func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
+func moduloByteCode(c *Context, i interface{}) error {
 	if c.stackPointer < 1 {
 		return c.newError(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -553,14 +553,14 @@ func moduloByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 }
 
-func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
+func bitAndByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -579,14 +579,14 @@ func bitAndByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
+func bitOrByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -605,14 +605,14 @@ func bitOrByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func bitShiftByteCode(c *Context, i interface{}) *errors.EgoError {
+func bitShiftByteCode(c *Context, i interface{}) error {
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

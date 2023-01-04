@@ -79,9 +79,9 @@ func TestStructImpl(t *testing.T) {
 			_ = ctx.symbols.SetAlways("usertype", typeDef)
 
 			err := structByteCode(ctx, tt.arg)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("StructImpl() error = %v, wantErr %v", err, tt.wantErr)
-			} else if errors.Nil(err) {
+			} else if err == nil {
 				got, _ := ctx.Pop()
 				f := reflect.DeepEqual(got, tt.want)
 
@@ -112,7 +112,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{},
-			err:          errors.New(errors.ErrStackUnderflow),
+			err:          errors.EgoError(errors.ErrStackUnderflow),
 			want:         0,
 		},
 		{
@@ -136,7 +136,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
-			err:          errors.New(errors.ErrReadOnlyValue).Context("_a"),
+			err:          errors.EgoError(errors.ErrReadOnlyValue).Context("_a"),
 			want:         int32(55),
 		},
 		{
@@ -152,7 +152,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
-			err:          errors.New(errors.ErrInvalidVarType),
+			err:          errors.EgoError(errors.ErrInvalidVarType),
 			static:       true,
 			want:         int32(55),
 		},
@@ -161,7 +161,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
-			err:          errors.New(errors.ErrUnknownSymbol).Context("a"),
+			err:          errors.EgoError(errors.ErrUnknownSymbol).Context("a"),
 			want:         int32(55),
 		},
 	}
@@ -190,7 +190,7 @@ func Test_storeByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -242,7 +242,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{},
-			err:          errors.New(errors.ErrStackUnderflow),
+			err:          errors.EgoError(errors.ErrStackUnderflow),
 			want:         0,
 		},
 		{
@@ -317,7 +317,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -369,7 +369,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{},
-			err:          errors.New(errors.ErrStackUnderflow),
+			err:          errors.EgoError(errors.ErrStackUnderflow),
 			want:         0,
 		},
 		{
@@ -446,7 +446,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -498,7 +498,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{},
-			err:          errors.New(errors.ErrStackUnderflow),
+			err:          errors.EgoError(errors.ErrStackUnderflow),
 			want:         0,
 		},
 		{
@@ -506,7 +506,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "_",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
-			err:          errors.New(errors.ErrInvalidIdentifier),
+			err:          errors.EgoError(errors.ErrInvalidIdentifier),
 			want:         int32(55),
 		},
 		{
@@ -571,7 +571,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			want:         int32(55),
-			err:          errors.New(errors.ErrInvalidIdentifier),
+			err:          errors.EgoError(errors.ErrInvalidIdentifier),
 		},
 		{
 			name:         "*str store of int32 value",
@@ -588,7 +588,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         int(55),
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *byte store int32 value",
@@ -597,7 +597,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         byte(55),
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *int64 store int32 value",
@@ -606,7 +606,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         int64(55),
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *float32 store int32 value",
@@ -615,7 +615,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         float32(55),
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *float64 store int32 value",
@@ -624,7 +624,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         float64(55),
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *bool store int32 value",
@@ -633,7 +633,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         true,
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "static *str store int32 value",
@@ -642,7 +642,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			stack:        []interface{}{int32(55)},
 			static:       true,
 			want:         "55",
-			err:          errors.New(errors.ErrInvalidVarType).Context("a"),
+			err:          errors.EgoError(errors.ErrInvalidVarType).Context("a"),
 		},
 		{
 			name:         "store of unknown variable",
@@ -650,7 +650,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
 			want:         int32(55),
-			err:          errors.New(errors.ErrUnknownIdentifier).Context("a"),
+			err:          errors.EgoError(errors.ErrUnknownIdentifier).Context("a"),
 		},
 	}
 
@@ -683,7 +683,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -743,14 +743,14 @@ func Test_loadByteCode(t *testing.T) {
 			name:  "variable not found",
 			arg:   "a",
 			stack: []interface{}{},
-			err:   errors.New(errors.ErrUnknownIdentifier).Context("a"),
+			err:   errors.EgoError(errors.ErrUnknownIdentifier).Context("a"),
 			want:  int32(55),
 		},
 		{
 			name:  "variable name invalid",
 			arg:   "",
 			stack: []interface{}{},
-			err:   errors.New(errors.ErrInvalidIdentifier).Context(""),
+			err:   errors.EgoError(errors.ErrInvalidIdentifier).Context(""),
 			want:  int32(55),
 		},
 	}
@@ -779,7 +779,7 @@ func Test_loadByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -801,7 +801,7 @@ func Test_loadByteCode(t *testing.T) {
 
 			v, err := c.Pop()
 
-			if !errors.Nil(err) {
+			if err != nil {
 				t.Errorf("%s() error popping value from stack: %v", name, tt.arg)
 			}
 
@@ -817,7 +817,7 @@ func Test_explodeByteCode(t *testing.T) {
 		name  string
 		value interface{}
 		want  map[string]interface{}
-		err   *errors.EgoError
+		err   error
 	}{
 		{
 			name: "simple map explosion",
@@ -833,16 +833,16 @@ func Test_explodeByteCode(t *testing.T) {
 				1: byte(1),
 				2: "frobozz",
 			}),
-			err: errors.New(errors.ErrWrongMapKeyType),
+			err: errors.EgoError(errors.ErrWrongMapKeyType),
 		},
 		{
 			name:  "not a map",
 			value: "not a map",
-			err:   errors.New(errors.ErrInvalidType),
+			err:   errors.EgoError(errors.ErrInvalidType),
 		},
 		{
 			name: "empty stack",
-			err:  errors.New(errors.ErrStackUnderflow),
+			err:  errors.EgoError(errors.ErrStackUnderflow),
 		},
 	}
 
@@ -857,7 +857,7 @@ func Test_explodeByteCode(t *testing.T) {
 		}
 
 		err := explodeByteCode(c, nil)
-		if !errors.Nil(err) {
+		if err != nil {
 			e1 := nilError
 			e2 := nilError
 

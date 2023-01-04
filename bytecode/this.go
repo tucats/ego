@@ -15,7 +15,7 @@ import (
 // up a call, to be retrieved later by the body of the call. IF there
 // is no name operand, assume the top stack value is to be used, and
 // synthesize a name for it.
-func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
+func setThisByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if i == nil {
@@ -40,7 +40,7 @@ func setThisByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // loadThisByteCode implements the LoadThis opcode. This combines the
 // functionality of the Load followed by the SetThis opcodes.
-func loadThisByteCode(c *Context, i interface{}) *errors.EgoError {
+func loadThisByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier)
@@ -66,7 +66,7 @@ func loadThisByteCode(c *Context, i interface{}) *errors.EgoError {
 // get the top-most item from the "this" stack and store it in the
 // named value. This is done as part of prologue of a function that
 // has a receiver.
-func getThisByteCode(c *Context, i interface{}) *errors.EgoError {
+func getThisByteCode(c *Context, i interface{}) error {
 	this := datatypes.GetString(i)
 
 	if v, ok := c.popThis(); ok {

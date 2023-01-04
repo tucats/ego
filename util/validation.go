@@ -23,52 +23,52 @@ const (
 // ValidateParameters checks the parameters in a previously-parsed URL against a map
 // describing the expected parameters and types. IF there is no error, the function
 // returns nil, else an error describing the first parameter found that was invalid.
-func ValidateParameters(u *url.URL, validation map[string]string) *errors.EgoError {
+func ValidateParameters(u *url.URL, validation map[string]string) error {
 	parameters := u.Query()
 	for name, values := range parameters {
 		if typeString, ok := validation[name]; ok {
 			switch strings.ToLower(typeString) {
 			case FlagParameterType:
 				if len(values) != 1 {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
 				if values[0] != "" {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
 			case IntParameterType:
 				if len(values) != 1 {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
 				if _, ok := strconv.Atoi(datatypes.GetString(values[0])); ok != nil {
-					return errors.New(errors.ErrInvalidInteger).Context(name)
+					return errors.EgoError(errors.ErrInvalidInteger).Context(name)
 				}
 
 			case BoolParameterType:
 				if len(values) > 1 {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
 				if len(values) == 1 && datatypes.GetString(values[0]) != "" {
 					if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
-						return errors.New(errors.ErrInvalidBooleanValue).Context(name)
+						return errors.EgoError(errors.ErrInvalidBooleanValue).Context(name)
 					}
 				}
 
 			case defs.Any, StringParameterType:
 				if len(values) != 1 {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
 			case ListParameterType:
 				if len(values) == 0 || values[0] == "" {
-					return errors.New(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 			}
 		} else {
-			return errors.New(errors.ErrInvalidKeyword).Context(name)
+			return errors.EgoError(errors.ErrInvalidKeyword).Context(name)
 		}
 	}
 
@@ -92,7 +92,7 @@ func InList(s string, test ...string) bool {
 // are always accepted, as well as additional types provided as paraameters to
 // this function call.  The result is a nil error value if the media type is
 // valid, else an error indicating that there was an invalid media type found.
-func AcceptedMediaType(r *http.Request, validList []string) *errors.EgoError {
+func AcceptedMediaType(r *http.Request, validList []string) error {
 	mediaTypes := r.Header["Accept"]
 
 	for _, mediaType := range mediaTypes {
@@ -111,7 +111,7 @@ func AcceptedMediaType(r *http.Request, validList []string) *errors.EgoError {
 		// If not, verify that the media type is in the optional list of additional
 		// accepted media types.
 		if !InList(mediaType, validList...) {
-			return errors.New(errors.ErrInvalidMediaType).Context(mediaType)
+			return errors.EgoError(errors.ErrInvalidMediaType).Context(mediaType)
 		}
 	}
 

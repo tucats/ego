@@ -35,10 +35,10 @@ const DiscardedVariableName = "_"
 // considered a read-only variable, so if the stack
 // contains a map then that map is marked with the
 // metadata indicator that it is readonly.
-func storeByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeByteCode(c *Context, i interface{}) error {
 	var value interface{}
 
-	var err *errors.EgoError
+	var err error
 
 	var name string
 
@@ -49,7 +49,7 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 		name = datatypes.GetString(i)
 
 		value, err = c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
@@ -65,11 +65,9 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err = c.checkType(name, value)
-	if errors.Nil(err) {
+	if err == nil {
 		err = c.symbolSet(name, value)
-	}
-
-	if !errors.Nil(err) {
+	} else {
 		return c.newError(err)
 	}
 
@@ -89,10 +87,10 @@ func storeByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // StoreChan instruction processor.
-func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeChanByteCode(c *Context, i interface{}) error {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -119,7 +117,7 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 			err = c.newError(errors.ErrUnknownIdentifier).Context(x)
 		}
 
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
@@ -153,9 +151,9 @@ func storeChanByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // storeGlobalByteCode instruction processor.
-func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeGlobalByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -167,7 +165,7 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 	varname := datatypes.GetString(i)
 
 	err = c.symbols.Root().SetAlways(varname, v)
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(err)
 	}
 
@@ -188,7 +186,7 @@ func storeGlobalByteCode(c *Context, i interface{}) *errors.EgoError {
 
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
-func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeViaPointerByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
@@ -322,12 +320,12 @@ func storeViaPointerByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // storeAlwaysByteCode instruction processor.
-func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeAlwaysByteCode(c *Context, i interface{}) error {
 	var v interface{}
 
 	var symbolName string
 
-	var err *errors.EgoError
+	var err error
 
 	if array, ok := i.([]interface{}); ok && len(array) == 2 {
 		symbolName = datatypes.GetString(array[0])
@@ -336,7 +334,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 		symbolName = datatypes.GetString(i)
 
 		v, err = c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -346,7 +344,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	err = c.symbolSetAlways(symbolName, v)
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(err)
 	}
 
@@ -366,7 +364,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // loadByteCode instruction processor.
-func loadByteCode(c *Context, i interface{}) *errors.EgoError {
+func loadByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier).Context(name)
@@ -385,13 +383,13 @@ func loadByteCode(c *Context, i interface{}) *errors.EgoError {
 // explodeByteCode implements Explode. This accepts a struct on the top of
 // the stack, and creates local variables for each of the members of the
 // struct by their name.
-func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func explodeByteCode(c *Context, i interface{}) error {
+	var err error
 
 	var v interface{}
 
 	v, err = c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -412,11 +410,11 @@ func explodeByteCode(c *Context, i interface{}) *errors.EgoError {
 				v, _, _ := m.Get(k)
 
 				err = c.symbolSetAlways(datatypes.GetString(k), v)
-				if !errors.Nil(err) {
+				if err != nil {
 					break
 				}
 			}
-			if errors.Nil(err) {
+			if err == nil {
 				return c.stackPush(empty)
 			}
 		}

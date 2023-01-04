@@ -14,7 +14,7 @@ import (
 func Test_stopByteCode(t *testing.T) {
 	ctx := &Context{running: true}
 
-	if e := stopByteCode(ctx, nil); !e.Equal(errors.ErrStop) {
+	if e := stopByteCode(ctx, nil); !e.(*errors.EgoErrorMsg).Equal(errors.ErrStop) {
 		t.Errorf("stopByteCode unexpected error %v", e)
 	}
 
@@ -34,9 +34,9 @@ func Test_panicByteCode(t *testing.T) {
 	// the panic only returns an error rather than abending.
 	settings.Set(defs.RuntimePanicsSetting, "false")
 
-	e := panicByteCode(ctx, nil)
+	e := panicByteCode(ctx, "panic")
 
-	if e.GetContext() != "panic" {
+	if e.(*errors.EgoErrorMsg).GetContext() != "panic" {
 		t.Errorf("panicByteCode wrong context %v", e)
 	}
 }
@@ -48,7 +48,7 @@ func Test_typeCast(t *testing.T) {
 		t    *datatypes.Type
 		v    interface{}
 		want interface{}
-		err  *errors.EgoError
+		err  error
 	}{
 		{
 			name: "cast int to string",
@@ -83,7 +83,7 @@ func Test_typeCast(t *testing.T) {
 		_ = ctx.stackPush(tt.v)
 
 		err := callByteCode(ctx, 1)
-		if !errors.Nil(err) {
+		if err != nil {
 			e1 := nilError
 			e2 := nilError
 
@@ -105,7 +105,7 @@ func Test_typeCast(t *testing.T) {
 		}
 
 		v, err := ctx.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			t.Errorf("%s() pop error: %v", name, err)
 		}
 
@@ -234,7 +234,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 	_ = ctx.stackPush(true)
 
 	e = branchTrueByteCode(ctx, 20)
-	if !e.Equal(errors.ErrInvalidBytecodeAddress) {
+	if !e.(*errors.EgoErrorMsg).Equal(errors.ErrInvalidBytecodeAddress) {
 		t.Errorf("branchFalseByteCode unexpected error %v", e)
 	}
 
@@ -283,7 +283,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 	_ = ctx.stackPush(true)
 
 	e = branchTrueByteCode(ctx, 20)
-	if !e.Equal(errors.ErrInvalidBytecodeAddress) {
+	if !e.(*errors.EgoErrorMsg).Equal(errors.ErrInvalidBytecodeAddress) {
 		t.Errorf("branchTrueByteCode unexpected error %v", e)
 	}
 

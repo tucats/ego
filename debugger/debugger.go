@@ -19,22 +19,22 @@ var breakAt = i18n.L("break.at")
 
 // Run a context but allow the debugger to take control as
 // needed.
-func Run(c *bytecode.Context) *errors.EgoError {
+func Run(c *bytecode.Context) error {
 	return RunFrom(c, 0)
 }
 
-func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
-	var err *errors.EgoError
+func RunFrom(c *bytecode.Context, pc int) error {
+	var err error
 
 	c.SetPC(pc)
 
-	for errors.Nil(err) {
+	for err == nil {
 		err = c.Resume()
-		if err.Is(errors.ErrSignalDebugger) {
+		if errors.Equals(err, errors.ErrSignalDebugger) {
 			err = Debugger(c)
 		}
 
-		if !c.IsRunning() || err.Is(errors.ErrStop) {
+		if !c.IsRunning() || errors.Equals(err, errors.ErrStop) {
 			return nil
 		}
 	}
@@ -43,8 +43,8 @@ func RunFrom(c *bytecode.Context, pc int) *errors.EgoError {
 }
 
 // This is called on AtLine to offer the chance for the debugger to take control.
-func Debugger(c *bytecode.Context) *errors.EgoError {
-	var err *errors.EgoError
+func Debugger(c *bytecode.Context) error {
+	var err error
 
 	line := c.GetLine()
 	text := ""
@@ -95,7 +95,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 		}
 
 		// We have a command now in the tokens buffer.
-		if errors.Nil(err) {
+		if err == nil {
 			t := tokens.Peek(1)
 			switch t.Spelling() {
 			case "help":
@@ -128,7 +128,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 
 				default:
 					prompt = true
-					err = errors.New(errors.ErrInvalidStepType).Context(tokens.Peek(2))
+					err = errors.EgoError(errors.ErrInvalidStepType).Context(tokens.Peek(2))
 
 					c.SetSingleStep(false)
 				}
@@ -150,7 +150,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				ui.SetLogger(ui.TraceLogger, false)
 
 				err = compiler.Run("debugger", s, t2)
-				if err.Is(errors.ErrStop) {
+				if errors.Equals(err, errors.ErrStop) {
 					err = nil
 				}
 
@@ -160,13 +160,13 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = Break(c, tokens)
 
 			case "exit":
-				return errors.New(errors.ErrStop)
+				return errors.EgoError(errors.ErrStop)
 
 			default:
-				err = errors.New(errors.ErrInvalidDebugCommand).Context(t)
+				err = errors.EgoError(errors.ErrInvalidDebugCommand).Context(t)
 			}
 
-			if !errors.Nil(err) && !err.Is(errors.ErrStop) && !err.Is(errors.ErrStepOver) {
+			if err != nil && !errors.Equals(err, errors.ErrStop) && !errors.Equals(err, errors.ErrStepOver) {
 				ui.Say("msg.debug.error", map[string]interface{}{
 					"err": err,
 				})
@@ -174,7 +174,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 				err = nil
 			}
 
-			if err.Is(errors.ErrStop) {
+			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 				prompt = false
 			}
@@ -184,7 +184,7 @@ func Debugger(c *bytecode.Context) *errors.EgoError {
 	return err
 }
 
-func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool) *errors.EgoError {
+func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool) error {
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
 	t2 := tokenizer.New(text)
@@ -195,7 +195,7 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 	ui.SetLogger(ui.TraceLogger, allowTrace)
 
 	err := compiler.Run("debugger", s, t2)
-	if err.Is(errors.ErrStop) {
+	if errors.Equals(err, errors.ErrStop) {
 		err = nil
 	}
 

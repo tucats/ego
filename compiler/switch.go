@@ -8,7 +8,7 @@ import (
 )
 
 // compileSwitch compiles a switch statement.
-func (c *Compiler) compileSwitch() *errors.EgoError {
+func (c *Compiler) compileSwitch() error {
 	var defaultBlock *bytecode.ByteCode
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
@@ -35,7 +35,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 		tx, err := c.Expression()
 		c.flags.disallowStructInits = false
 
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -64,7 +64,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 
 			for c.t.Peek(1) != tokenizer.CaseToken && c.t.Peek(1) != tokenizer.BlockEndToken {
 				err := c.compileStatement()
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 			}
@@ -82,7 +82,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			}
 
 			cx, err := c.Expression()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -104,7 +104,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 			}
 
 			if fallThrough > 0 {
-				if err := c.b.SetAddressHere(fallThrough); !errors.Nil(err) {
+				if err := c.b.SetAddressHere(fallThrough); err != nil {
 					return c.newError(err)
 				}
 
@@ -117,7 +117,7 @@ func (c *Compiler) compileSwitch() *errors.EgoError {
 				tokenizer.FallthroughToken,
 				tokenizer.BlockEndToken) {
 				err := c.compileStatement()
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 			}

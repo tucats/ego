@@ -16,8 +16,8 @@ import (
 // stack. Note that LoadIndex cannot be used to lcoate a package member,
 // that can only be done using the Member opcoode. This is used to detect
 // when an (illegal) attempt is made to write to a package member.
-func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func loadIndexByteCode(c *Context, i interface{}) error {
+	var err error
 
 	var index interface{}
 
@@ -25,13 +25,13 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		index = i
 	} else {
 		index, err = c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
 
 	array, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -62,7 +62,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 			if count, ok := next.Operand.(int); ok && count == 2 && (next.Operation == StackCheck) {
 				found := false
 
-				if v, found, err = a.Get(index); errors.Nil(err) {
+				if v, found, err = a.Get(index); err == nil {
 					_ = c.stackPush(NewStackMarker("results"))
 					_ = c.stackPush(found)
 					err = c.stackPush(v)
@@ -72,7 +72,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		if !twoValues {
-			if v, _, err = a.Get(index); errors.Nil(err) {
+			if v, _, err = a.Get(index); err == nil {
 				err = c.stackPush(v)
 			}
 		}
@@ -82,7 +82,7 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		var datum interface{}
 
 		datum, err = a.Receive()
-		if errors.Nil(err) {
+		if err == nil {
 			err = c.stackPush(datum)
 		}
 
@@ -119,19 +119,19 @@ func loadIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // loadSliceByteCode instruction processor.
-func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
+func loadSliceByteCode(c *Context, i interface{}) error {
 	index2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	index1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	array, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 		subscript2 := datatypes.GetInt(index2)
 
 		v, err := a.GetSliceAsArray(subscript1, subscript2)
-		if errors.Nil(err) {
+		if err == nil {
 			err = c.stackPush(v)
 		}
 
@@ -173,10 +173,10 @@ func loadSliceByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // storeIndexByteCode instruction processor.
-func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeIndexByteCode(c *Context, i interface{}) error {
 	var index interface{}
 
-	var err *errors.EgoError
+	var err error
 
 	// If the index value is in the parameter, then use that, else get
 	// it from the stack.
@@ -184,18 +184,18 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		index = i
 	} else {
 		index, err = c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
 
 	destination, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -223,7 +223,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 			switch oldItem.(type) {
 			// These types cannot be written to.
 			case *ByteCode,
-				func(*symbols.SymbolTable, []interface{}) (interface{}, *errors.EgoError),
+				func(*symbols.SymbolTable, []interface{}) (interface{}, error),
 				ConstantWrapper:
 				// Tell the caller nope...
 				return c.newError(errors.ErrReadOnlyValue, a.Name()+"."+name)
@@ -249,19 +249,19 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		a.DefineFunction(datatypes.GetString(index), v)
 
 	case *datatypes.EgoMap:
-		if _, err = a.Set(index, v); errors.Nil(err) {
+		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
 
-		if !errors.Nil(err) {
-			return errors.New(err).In(c.GetModuleName()).At(c.GetLine(), 0)
+		if err != nil {
+			return errors.EgoError(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
 	case *datatypes.EgoStruct:
 		key := datatypes.GetString(index)
 
 		err = a.Set(key, v)
-		if !errors.Nil(err) {
+		if err != nil {
 			return c.newError(err)
 		}
 
@@ -282,7 +282,7 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 		}
 
 		err = a.Set(subscript, v)
-		if errors.Nil(err) {
+		if err == nil {
 			err = c.stackPush(a)
 		}
 
@@ -313,19 +313,19 @@ func storeIndexByteCode(c *Context, i interface{}) *errors.EgoError {
 }
 
 // storeIntoByteCode instruction processor.
-func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
+func storeIntoByteCode(c *Context, i interface{}) error {
 	index, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	destination, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -335,11 +335,11 @@ func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := destination.(type) {
 	case *datatypes.EgoMap:
-		if _, err = a.Set(index, v); errors.Nil(err) {
+		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
 
-		if !errors.Nil(err) {
+		if err != nil {
 			return c.newError(err)
 		}
 
@@ -350,11 +350,11 @@ func storeIntoByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func flattenByteCode(c *Context, i interface{}) *errors.EgoError {
+func flattenByteCode(c *Context, i interface{}) error {
 	c.argCountDelta = 0
 
 	v, err := c.Pop()
-	if errors.Nil(err) {
+	if err == nil {
 		if IsStackMarker(v) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -55,7 +54,7 @@ func TestFunctionLen(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Length(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLen() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -117,7 +116,7 @@ func TestFunctionSort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Sort(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSort() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -167,7 +166,7 @@ func TestFunctionMembers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Members(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMembers() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -239,7 +238,7 @@ func TestReflect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Reflect(tt.args.s, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Reflect() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -278,7 +277,7 @@ func TestStrLen(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := StrLen(nil, tt.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -335,7 +334,7 @@ func TestLength(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Length(nil, tt.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Length() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

@@ -39,10 +39,10 @@ type Range struct {
 // pushed on a stack in the runtime context where it
 // can be accessed by the RangeNext opcode. The stack
 // allows nested for...range statements.
-func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
+func rangeInitByteCode(c *Context, i interface{}) error {
 	var v interface{}
 
-	var err *errors.EgoError
+	var err error
 
 	r := Range{}
 
@@ -54,13 +54,13 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 			err = c.symbols.Create(r.indexName)
 		}
 
-		if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+		if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 			err = c.symbols.Create(r.valueName)
 		}
 	}
 
-	if errors.Nil(err) {
-		if v, err = c.Pop(); errors.Nil(err) {
+	if err == nil {
+		if v, err = c.Pop(); err == nil {
 			if IsStackMarker(v) {
 				return c.newError(errors.ErrFunctionReturnedVoid)
 			}
@@ -126,8 +126,8 @@ func rangeInitByteCode(c *Context, i interface{}) *errors.EgoError {
 //     The value (map member, array index, channel)
 //     is stored in the value variable. The index
 //     number is also stored in the index variable.
-func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func rangeNextByteCode(c *Context, i interface{}) error {
+	var err error
 
 	destination := datatypes.GetInt(i)
 
@@ -149,7 +149,7 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 					err = c.symbols.Set(r.valueName, string(value))
 				}
 
@@ -169,11 +169,11 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 					var value interface{}
 
 					ok := false
-					if value, ok, err = actual.Get(key); ok && errors.Nil(err) {
+					if value, ok, err = actual.Get(key); ok && err == nil {
 						err = c.symbols.Set(r.valueName, value)
 					} else {
 						// If the key was deleted inside the loop, we set the value to nil
@@ -192,11 +192,11 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				datum, err = actual.Receive()
-				if errors.Nil(err) {
+				if err == nil {
 					if r.indexName != "" && r.indexName != DiscardedVariableName {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
-					if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+					if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 						err = c.symbols.Set(r.valueName, datum)
 					}
 
@@ -216,11 +216,11 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 					var d interface{}
 
 					d, err = actual.Get(r.index)
-					if errors.Nil(err) {
+					if err == nil {
 						err = c.symbols.Set(r.valueName, d)
 					}
 				}
@@ -235,7 +235,7 @@ func rangeNextByteCode(c *Context, i interface{}) *errors.EgoError {
 				if r.indexName != "" && r.indexName != DiscardedVariableName {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if errors.Nil(err) && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
 					err = c.symbols.Set(r.valueName, actual[r.index])
 				}
 				r.index++

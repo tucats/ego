@@ -40,13 +40,13 @@ func (t *Table) ShowRowNumbers(flag bool) *Table {
 
 // SetMinimumWidth specifies the minimum width of a column. The column number is
 // always zero-based.
-func (t *Table) SetMinimumWidth(n int, w int) *errors.EgoError {
+func (t *Table) SetMinimumWidth(n int, w int) error {
 	if n < 0 || n >= t.columnCount {
-		return errors.New(errors.ErrInvalidColumnNumber).Context(n)
+		return errors.EgoError(errors.ErrInvalidColumnNumber).Context(n)
 	}
 
 	if w < 0 {
-		return errors.New(errors.ErrInvalidColumnWidth).Context(w)
+		return errors.EgoError(errors.ErrInvalidColumnWidth).Context(w)
 	}
 
 	if w > t.maxWidth[n] {
@@ -58,9 +58,9 @@ func (t *Table) SetMinimumWidth(n int, w int) *errors.EgoError {
 
 // SetStartingRow specifies the first row of the table to be
 // printed. A value less than zero is an error.
-func (t *Table) SetStartingRow(s int) *errors.EgoError {
+func (t *Table) SetStartingRow(s int) error {
 	if s < 1 {
-		return errors.New(errors.ErrInvalidRowNumber).Context(s)
+		return errors.EgoError(errors.ErrInvalidRowNumber).Context(s)
 	}
 
 	t.startingRow = s - 1
@@ -69,9 +69,9 @@ func (t *Table) SetStartingRow(s int) *errors.EgoError {
 }
 
 // SetSpacing specifies the spaces between columns in output.
-func (t *Table) SetSpacing(s int) *errors.EgoError {
+func (t *Table) SetSpacing(s int) error {
 	if s < 0 {
-		return errors.New(errors.ErrInvalidSpacing).Context(s)
+		return errors.EgoError(errors.ErrInvalidSpacing).Context(s)
 	}
 
 	var buffer strings.Builder
@@ -86,11 +86,11 @@ func (t *Table) SetSpacing(s int) *errors.EgoError {
 }
 
 // SetIndent specifies the spaces to indent each heading and row.
-func (t *Table) SetIndent(s int) *errors.EgoError {
+func (t *Table) SetIndent(s int) error {
 	var buffer strings.Builder
 
 	if s < 0 {
-		return errors.New(errors.ErrInvalidSpacing).Context(s)
+		return errors.EgoError(errors.ErrInvalidSpacing).Context(s)
 	}
 
 	for i := 0; i < s; i++ {
@@ -104,9 +104,9 @@ func (t *Table) SetIndent(s int) *errors.EgoError {
 
 // SetAlignment sets the alignment for a given column. Column
 // numbers are zero-based.
-func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
+func (t *Table) SetAlignment(column int, alignment int) error {
 	if column < 0 || column >= t.columnCount {
-		return errors.New(errors.ErrInvalidColumnNumber).Context(column)
+		return errors.EgoError(errors.ErrInvalidColumnNumber).Context(column)
 	}
 
 	switch alignment {
@@ -120,7 +120,7 @@ func (t *Table) SetAlignment(column int, alignment int) *errors.EgoError {
 		t.alignment[column] = AlignmentCenter
 
 	default:
-		return errors.New(errors.ErrAlignment).Context(alignment)
+		return errors.EgoError(errors.ErrAlignment).Context(alignment)
 	}
 
 	return nil

@@ -15,17 +15,17 @@ import (
 )
 
 // Lower implements the lower() function.
-func Lower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Lower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToLower(datatypes.GetString(args[0])), nil
 }
 
 // Upper implements the upper() function.
-func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToUpper(datatypes.GetString(args[0])), nil
 }
 
 // Left implements the left() function.
-func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	count := 0
@@ -50,7 +50,7 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // Right implements the right() function.
-func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var charPos int
 
 	var b strings.Builder
@@ -79,7 +79,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // Index implements the index() function.
-func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
 	case *datatypes.EgoArray:
 		for i := 0; i < arg.Len(); i++ {
@@ -114,7 +114,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // Substring implements the substring() function.
-func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := datatypes.GetString(args[0])
 
 	p1 := datatypes.GetInt(args[1]) // Starting character position
@@ -158,7 +158,7 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *
 }
 
 // Format implements the strings.format() function.
-func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return "", nil
 	}
@@ -172,7 +172,7 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 // Chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
-func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -196,7 +196,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 // Ints implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
-func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -221,7 +221,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoE
 // ToString implements the strings.string() function, which accepts an array
 // of items and converts it to a single long string of each item. Normally , this is
 // an array of characters.
-func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for _, v := range args {
@@ -239,7 +239,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			b.WriteRune(rune(a))
 
 		default:
-			return nil, errors.New(errors.ErrArgumentCount).In("String()")
+			return nil, errors.EgoError(errors.ErrArgumentCount).In("String()")
 		}
 	}
 
@@ -247,16 +247,16 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 }
 
 // Template implements the strings.template() function.
-func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	if len(args) == 0 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Template()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Template()")
 	}
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.New(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(args[0]).String())
+		return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -267,17 +267,17 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				return nil, errors.New(errors.ErrInvalidTemplateName).In("Template()").Context(templateNode.Name)
+				return nil, errors.EgoError(errors.ErrInvalidTemplateName).In("Template()").Context(templateNode.Name)
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.New(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(tv).String())
+				return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(tv).String())
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
-			if !errors.Nil(err) {
-				return nil, errors.New(err)
+			if err != nil {
+				return nil, errors.EgoError(err)
 			}
 		}
 	}
@@ -294,10 +294,14 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 		}
 	}
 
-	return r.String(), errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return r.String(), err
 }
 
-func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := datatypes.GetString(args[0])
 	maxWidth := datatypes.GetInt(args[1])
 
@@ -325,7 +329,7 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *e
 
 // Split splits a string into lines separated by a newline. Optionally
 // a different delimiter can be supplied as the second argument.
-func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v []string
 
 	src := datatypes.GetString(args[0])
@@ -350,7 +354,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 	for i, n := range v {
 		err := r.Set(i, n)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, errors.EgoError(err)
 		}
 	}
 
@@ -358,13 +362,13 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 }
 
 // Tokenize splits a string into tokens.
-func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := datatypes.GetString(args[0])
 	t := tokenizer.New(src)
 
 	r := datatypes.NewArray(&datatypes.StringType, len(t.Tokens))
 
-	var err *errors.EgoError
+	var err error
 
 	for i, n := range t.Tokens {
 		err = r.Set(i, n)
@@ -378,7 +382,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
-func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 
 	patternMap, match := ParseURLPattern(datatypes.GetString(args[0]), datatypes.GetString(args[1]))
@@ -467,7 +471,7 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 }
 
 // Wrapper around strings.Compare().
-func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 	b := datatypes.GetString(args[1])
 
@@ -475,7 +479,7 @@ func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // Wrapper around strings.Contains().
-func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 	b := datatypes.GetString(args[1])
 
@@ -483,7 +487,7 @@ func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.
 }
 
 // Wrapper around strings.Contains().
-func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 	b := datatypes.GetString(args[1])
 
@@ -491,7 +495,7 @@ func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, *erro
 }
 
 // Wrapper around strings.Count().
-func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 	b := datatypes.GetString(args[1])
 
@@ -499,7 +503,7 @@ func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 }
 
 // Wrapper around strings.EqualFold().
-func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 	b := datatypes.GetString(args[1])
 
@@ -507,7 +511,7 @@ func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // Wrapper around strings.Fields().
-func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := datatypes.GetString(args[0])
 
 	fields := strings.Fields(a)
@@ -522,10 +526,10 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 }
 
 // Wrapper around strings.Join().
-func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	elemArray, ok := args[0].(*datatypes.EgoArray)
 	if !ok {
-		return nil, errors.New(errors.ErrArgumentType).Context("Join()")
+		return nil, errors.EgoError(errors.ErrArgumentType).Context("Join()")
 	}
 
 	separator := datatypes.GetString(args[1])

@@ -12,14 +12,14 @@ import (
 // the stack (the first must be a string and the second a
 // map) and indexes into the map to get the matching value
 // and puts back on the stack.
-func memberByteCode(c *Context, i interface{}) *errors.EgoError {
+func memberByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if i != nil {
 		name = datatypes.GetString(i)
 	} else {
 		v, err := c.Pop()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -31,7 +31,7 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	}
 
 	m, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -119,8 +119,8 @@ func memberByteCode(c *Context, i interface{}) *errors.EgoError {
 	return nil
 }
 
-func storeBytecodeByteCode(c *Context, i interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func storeBytecodeByteCode(c *Context, i interface{}) error {
+	var err error
 
 	var v interface{}
 

@@ -33,12 +33,12 @@ func initCommandTypeDef() {
 	}
 }
 
-func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initCommandTypeDef()
 
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
 	}
 
 	// Let's build the Ego instance of exec.Cmd
@@ -66,23 +66,23 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return result, nil
 }
 
-func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).Context("LookPath")
+		return nil, errors.EgoError(errors.ErrArgumentCount).Context("LookPath")
 	}
 
 	path, err := exec.LookPath(datatypes.GetString(args[0]))
 	if err != nil {
-		return "", errors.New(err).Context("LookPath")
+		return "", errors.EgoError(err).Context("LookPath")
 	}
 
 	return path, nil
 }
 
-func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure
@@ -149,7 +149,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.New(e)
+		return nil, errors.EgoError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")
@@ -165,10 +165,10 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return nil, nil
 }
 
-func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure
@@ -235,7 +235,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.New(e)
+		return nil, errors.EgoError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

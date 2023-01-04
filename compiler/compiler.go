@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -175,7 +174,7 @@ func (c *Compiler) Disasm(f bool) *Compiler {
 // CompileString turns a string into a compilation unit. This is a helper function
 // around the Compile() operation that removes the need for the caller
 // to provide a tokenizer.
-func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, *errors.EgoError) {
+func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, error) {
 	t := tokenizer.New(source)
 
 	return c.Compile(name, t)
@@ -183,7 +182,7 @@ func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode
 
 // Compile starts a compilation unit, and returns a bytecode
 // of the compiled material.
-func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, *errors.EgoError) {
+func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteCode, error) {
 	c.b = bytecode.New(name)
 	c.t = t
 
@@ -191,7 +190,7 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 
 	for !c.t.AtEnd() {
 		err := c.compileStatement()
-		if !errors.Nil(err) {
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -371,7 +370,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // parameter indicates if all available packages (including those
 // found in the ego path) are imported, versus just essential
 // packages like "util".
-func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError {
+func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	ui.Debug(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
 
 	// We do not want to dump tokens during import processing (there are a lot)
@@ -426,13 +425,13 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) *errors.EgoError
 	savedT := c.t
 	savedSource := c.SourceFile
 
-	var firstError *errors.EgoError
+	var firstError error
 
 	for _, packageName := range sortedPackageNames {
 		text := fmt.Sprintf("import \"%s\"", packageName)
 
 		_, err := c.CompileString(packageName, text)
-		if errors.Nil(err) {
+		if err == nil {
 			firstError = err
 		}
 	}

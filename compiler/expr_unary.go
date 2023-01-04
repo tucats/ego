@@ -2,11 +2,10 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) unary() *errors.EgoError {
+func (c *Compiler) unary() error {
 	// Check for unary negation or not before passing into top-level diadic operators.
 	t := c.t.Peek(1)
 	switch t {
@@ -14,7 +13,7 @@ func (c *Compiler) unary() *errors.EgoError {
 		c.t.Advance(1)
 
 		err := c.unary()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -61,7 +60,7 @@ func (c *Compiler) unary() *errors.EgoError {
 		c.t.Advance(1)
 
 		err := c.unary()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

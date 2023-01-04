@@ -154,13 +154,13 @@ func (b *ByteCode) Mark() int {
 
 // SetAddressHere sets the current address as the target of the marked
 // instruction.
-func (b *ByteCode) SetAddressHere(mark int) *errors.EgoError {
+func (b *ByteCode) SetAddressHere(mark int) error {
 	return b.SetAddress(mark, b.emitPos)
 }
 
 // SetAddress sets the given value as the target of the marked
 // instruction.
-func (b *ByteCode) SetAddress(mark int, address int) *errors.EgoError {
+func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.emitPos || mark < 0 {
 		return b.NewError(errors.ErrInvalidBytecodeAddress)
 	}
@@ -199,7 +199,7 @@ func (b *ByteCode) GetInstruction(pos int) *Instruction {
 }
 
 // Run generates a one-time context for executing this bytecode.
-func (b *ByteCode) Run(s *symbols.SymbolTable) *errors.EgoError {
+func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 	c := NewContext(s, b)
 
 	return c.Run()
@@ -207,11 +207,11 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) *errors.EgoError {
 
 // Call generates a one-time context for executing this bytecode,
 // and returns a value as well as an error.
-func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
+func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 	c := NewContext(s, b)
 
 	err := c.Run()
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -239,14 +239,14 @@ func (b *ByteCode) Remove(n int) {
 
 // NewError creates a new ByteCodeErr using the message string and any
 // optional arguments that are formatted using the message string.
-func (b *ByteCode) NewError(err error, args ...interface{}) *errors.EgoError {
-	r := errors.New(err)
+func (b *ByteCode) NewError(err error, args ...interface{}) error {
+	newErr := errors.EgoError(err)
 
 	if len(args) > 0 {
-		_ = r.Context(args[0])
+		_ = newErr.Context(args[0])
 	}
 
-	return r
+	return newErr
 }
 
 func (b *ByteCode) ClearLineNumbers() {

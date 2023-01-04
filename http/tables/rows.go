@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -22,7 +21,7 @@ import (
 // deleted and the tale is empty. If filter(s) are applied, only the matching rows
 // are deleted. The function returns the number of rows deleted.
 func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
+	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); e != nil {
 		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
@@ -33,7 +32,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   datatypes.StringTypeName,
-	}); !errors.Nil(invalid) {
+	}); invalid != nil {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
@@ -110,7 +109,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -119,18 +118,18 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	if e := util.AcceptedMediaType(r, nil); !errors.Nil(e) {
+	if e := util.AcceptedMediaType(r, nil); e != nil {
 		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if validationErr := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName:     datatypes.StringTypeName,
 		defs.AbstractParameterName: datatypes.BoolTypeName,
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); validationErr != nil {
+		util.ErrorResponse(w, sessionID, validationErr.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -167,7 +166,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		tableName, _ = fullName(user, tableName)
 
 		columns, err = getColumnInfo(db, user, tableName, sessionID)
-		if !errors.Nil(err) {
+		if err != nil {
 			util.ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 
 			return
@@ -265,7 +264,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 
 			tableName, e := tableNameFromRequest(r)
-			if !errors.Nil(e) {
+			if e != nil {
 				util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 				return
@@ -322,7 +321,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -334,14 +333,14 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	tableName, _ = fullName(user, tableName)
 
-	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.AbstractRowSetMediaType}); !errors.Nil(e) {
+	if e := util.AcceptedMediaType(r, []string{defs.RowSetMediaType, defs.AbstractRowSetMediaType}); e != nil {
 		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if validateErr := util.ValidateParameters(r.URL, map[string]string{
 		defs.StartParameterName:    datatypes.IntTypeName,
 		defs.LimitParameterName:    datatypes.IntTypeName,
 		defs.ColumnParameterName:   "list",
@@ -349,8 +348,8 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		defs.AbstractParameterName: datatypes.BoolTypeName,
 		defs.FilterParameterName:   defs.Any,
 		defs.UserParameterName:     datatypes.StringTypeName,
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); validateErr != nil {
+		util.ErrorResponse(w, sessionID, validateErr.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -464,18 +463,18 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	tableName, _ = fullName(user, tableName)
 	count := 0
 
-	if e := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); !errors.Nil(e) {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+	if err := util.AcceptedMediaType(r, []string{defs.RowCountMediaType}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 	}
 
 	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName:   defs.Any,
 		defs.UserParameterName:     datatypes.StringTypeName,
 		defs.ColumnParameterName:   datatypes.StringTypeName,
 		defs.AbstractParameterName: datatypes.BoolTypeName,
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -510,7 +509,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			// remove the ones from the column parameter. This builds a list of columns
 			// that are excluded.
 			columns, err := getColumnInfo(db, user, tableName, sessionID)
-			if !errors.Nil(err) {
+			if err != nil {
 				util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 				return
@@ -637,14 +636,14 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 		}
 
-		if errors.Nil(err) {
+		if err == nil {
 			err = tx.Commit()
 		} else {
 			_ = tx.Rollback()
 		}
 	}
 
-	if errors.Nil(err) {
+	if err == nil {
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
 			util.ErrorResponse(w, sessionID, "no matching rows found", http.StatusNotFound)
 

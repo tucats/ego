@@ -5,7 +5,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -34,14 +33,14 @@ var helpText = [][]string{
 	{"step return", i18n.T("help.step.return")},
 }
 
-func Help() *errors.EgoError {
+func Help() error {
 	table, err := tables.New([]string{i18n.L("Command"), i18n.L("Description")})
 
 	for _, helpItem := range helpText {
 		err = table.AddRow(helpItem)
 	}
 
-	if errors.Nil(err) {
+	if err == nil {
 		fmt.Println(i18n.L("debug.commands"))
 
 		_ = table.ShowUnderlines(false).ShowHeadings(false).SetIndent(defaultHelpIndent)

@@ -23,7 +23,7 @@ const (
 	filterParseError = "==error== "
 )
 
-func TableList(c *cli.Context) *errors.EgoError {
+func TableList(c *cli.Context) error {
 	resp := defs.TableInfo{}
 
 	rowCounts := true
@@ -46,7 +46,7 @@ func TableList(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			if rowCounts {
 				t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns"), i18n.L("Rows")})
@@ -75,17 +75,21 @@ func TableList(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
-func TableShow(c *cli.Context) *errors.EgoError {
+func TableShow(c *cli.Context) error {
 	resp := defs.TableColumnsInfo{}
 	table := c.GetParameter(0)
 
 	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
 	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{
 				i18n.L("Name"),
@@ -107,10 +111,14 @@ func TableShow(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
-func TableDrop(c *cli.Context) *errors.EgoError {
+func TableDrop(c *cli.Context) error {
 	var count int
 
 	var err error
@@ -128,7 +136,7 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 		urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
 		err = runtime.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
-		if errors.Nil(err) {
+		if err == nil {
 			count++
 
 			ui.Say("msg.table.deleted", map[string]interface{}{"name": table})
@@ -139,14 +147,14 @@ func TableDrop(c *cli.Context) *errors.EgoError {
 
 	if err == nil && count > 1 {
 		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
-	} else if !errors.Nil(err) {
-		return errors.New(err)
+	} else if err != nil {
+		return errors.EgoError(err)
 	}
 
 	return nil
 }
 
-func TableContents(c *cli.Context) *errors.EgoError {
+func TableContents(c *cli.Context) error {
 	resp := defs.DBRowSet{}
 	table := c.GetParameter(0)
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
@@ -179,14 +187,18 @@ func TableContents(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
-	if errors.Nil(err) {
+	if err == nil {
 		err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
-func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) *errors.EgoError {
+func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) error {
 	if ui.OutputFormat == ui.TextFormat {
 		if len(resp.Rows) == 0 {
 			ui.Say("msg.table.empty.rowset")
@@ -231,7 +243,7 @@ func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) *errors
 	return nil
 }
 
-func TableInsert(c *cli.Context) *errors.EgoError {
+func TableInsert(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 	payload := map[string]interface{}{}
@@ -242,12 +254,12 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		err = json.Unmarshal(b, &payload)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 	}
 
@@ -263,14 +275,14 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		// Get the column name, and confirm that it's an identifier.
 		column := t.Next()
 		if !column.IsIdentifier() {
-			return errors.New(errors.ErrInvalidIdentifier).Context(column)
+			return errors.EgoError(errors.ErrInvalidIdentifier).Context(column)
 		}
 
 		columnName := column.Spelling()
 
 		// Must be followed by a "=" token
 		if !t.IsNext(tokenizer.AssignToken) {
-			return errors.New(errors.ErrMissingAssignment)
+			return errors.EgoError(errors.ErrMissingAssignment)
 		}
 
 		// Rest of the string is handled without regard for
@@ -298,7 +310,7 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 	urlString := runtime.URLBuilder(defs.TablesRowsPath, table).String()
 
 	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		ui.Say("msg.tables.insert.count", map[string]interface{}{
 			"count": resp.Count,
 			"name":  table,
@@ -307,10 +319,14 @@ func TableInsert(c *cli.Context) *errors.EgoError {
 		return nil
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
-func TableCreate(c *cli.Context) *errors.EgoError {
+func TableCreate(c *cli.Context) error {
 	table := c.GetParameter(0)
 	fields := map[string]defs.DBColumn{}
 	payload := make([]defs.DBColumn, 0)
@@ -326,12 +342,12 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		err = json.Unmarshal(b, &payload)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		// Move the info read in to a map so we can replace fields from
@@ -353,19 +369,19 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		column := t.Next()
 
 		if !t.IsNext(tokenizer.ColonToken) {
-			return errors.New(errors.ErrInvalidColumnDefinition).Context(columnDefText)
+			return errors.EgoError(errors.ErrInvalidColumnDefinition).Context(columnDefText)
 		}
 
 		columnName := column.Spelling()
 
 		// If we've already defined this one, complain
 		if _, ok := defined[columnName]; ok {
-			return errors.New(errors.ErrDuplicateColumnName).Context(columnName)
+			return errors.EgoError(errors.ErrDuplicateColumnName).Context(columnName)
 		}
 
 		columnType := t.Next()
 		if !columnType.IsIdentifier() {
-			return errors.New(errors.ErrInvalidType).Context(columnType)
+			return errors.EgoError(errors.ErrInvalidType).Context(columnType)
 		}
 
 		columnTypeName := columnType.Spelling()
@@ -380,7 +396,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		}
 
 		if !found {
-			return errors.New(errors.ErrInvalidType).Context(columnTypeName)
+			return errors.EgoError(errors.ErrInvalidType).Context(columnTypeName)
 		}
 
 		for t.IsNext(tokenizer.CommaToken) {
@@ -393,7 +409,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 				columnInfo.Nullable = true
 
 			default:
-				return errors.New(errors.ErrInvalidKeyword).Context(flag)
+				return errors.EgoError(errors.ErrInvalidKeyword).Context(flag)
 			}
 		}
 
@@ -426,7 +442,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 		&resp,
 		defs.TableAgent)
 
-	if errors.Nil(err) {
+	if err == nil {
 		ui.Say("msg.table.created", map[string]interface{}{
 			"name":  table,
 			"count": len(payload),
@@ -436,7 +452,7 @@ func TableCreate(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func TableUpdate(c *cli.Context) *errors.EgoError {
+func TableUpdate(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 
@@ -452,7 +468,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		column := t.NextText()
 
 		if !t.IsNext(tokenizer.AssignToken) {
-			return errors.New(errors.ErrMissingAssignment)
+			return errors.EgoError(errors.ErrMissingAssignment)
 		}
 
 		value := t.Remainder()
@@ -489,7 +505,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 		defs.TableAgent,
 		defs.RowCountMediaType)
 
-	if errors.Nil(err) {
+	if err == nil {
 		ui.Say("msg.table.update.count", map[string]interface{}{
 			"name":  table,
 			"count": len(payload),
@@ -499,7 +515,7 @@ func TableUpdate(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func TableDelete(c *cli.Context) *errors.EgoError {
+func TableDelete(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.GetParameter(0)
 
@@ -517,7 +533,7 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			if resp.Count == 0 {
 				ui.Say("msg.table.deleted.no.rows")
@@ -531,7 +547,11 @@ func TableDelete(c *cli.Context) *errors.EgoError {
 		}
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 func makeFilter(filters []string) string {
@@ -636,7 +656,7 @@ func makeFilter(filters []string) string {
 }
 
 // TableSQL executes arbitrary SQL against the server.
-func TableSQL(c *cli.Context) *errors.EgoError {
+func TableSQL(c *cli.Context) error {
 	var sql string
 
 	showRowNumbers := c.Boolean("row-numbers")
@@ -655,7 +675,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		if len(sql) > 0 {
@@ -684,7 +704,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 		rows := defs.DBRowSet{}
 
 		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -693,7 +713,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 		resp := defs.DBRowCount{}
 
 		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -709,7 +729,7 @@ func TableSQL(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-func TablePermissions(c *cli.Context) *errors.EgoError {
+func TablePermissions(c *cli.Context) error {
 	permissions := defs.AllPermissionResponse{}
 	url := runtime.URLBuilder(defs.TablesPermissionsPath)
 
@@ -719,7 +739,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{
 				i18n.L("User"),
@@ -745,7 +765,7 @@ func TablePermissions(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func TableGrant(c *cli.Context) *errors.EgoError {
+func TableGrant(c *cli.Context) error {
 	permissions, _ := c.StringList("permission")
 	table := c.GetParameter(0)
 	result := defs.PermissionObject{}
@@ -756,20 +776,20 @@ func TableGrant(c *cli.Context) *errors.EgoError {
 	}
 
 	err := runtime.Exchange(url.String(), "PUT", permissions, &result, defs.TableAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		printPermissionObject(result)
 	}
 
 	return err
 }
 
-func TableShowPermission(c *cli.Context) *errors.EgoError {
+func TableShowPermission(c *cli.Context) error {
 	table := c.GetParameter(0)
 	result := defs.PermissionObject{}
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 
 	err := runtime.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
-	if errors.Nil(err) {
+	if err == nil {
 		printPermissionObject(result)
 	}
 

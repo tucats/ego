@@ -81,7 +81,7 @@ func Test_arrayByteCode(t *testing.T) {
 			name:   "untyped static (invalid) array",
 			arg:    3,
 			stack:  []interface{}{byte(3), "55", float64(3.5)},
-			err:    errors.New(errors.ErrInvalidType).Context("string"),
+			err:    errors.EgoError(errors.ErrInvalidType).Context("string"),
 			static: true,
 			want:   datatypes.NewArrayFromArray(&datatypes.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
 		},
@@ -96,7 +96,7 @@ func Test_arrayByteCode(t *testing.T) {
 			name:  "stack underflow",
 			arg:   3,
 			stack: []interface{}{"test", float64(3.5)},
-			err:   errors.New(errors.ErrStackUnderflow),
+			err:   errors.EgoError(errors.ErrStackUnderflow),
 			want:  datatypes.NewArrayFromArray(&datatypes.InterfaceType, []interface{}{"test", float64(3.5)}),
 		},
 	}
@@ -119,7 +119,7 @@ func Test_arrayByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -141,7 +141,7 @@ func Test_arrayByteCode(t *testing.T) {
 
 			v, err := c.Pop()
 
-			if !errors.Nil(err) {
+			if err != nil {
 				t.Errorf("%s() stack error %v", name, err)
 			}
 
@@ -183,7 +183,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:  "Missing key type",
 			arg:   4,
 			stack: []interface{}{},
-			err:   errors.New(errors.ErrStackUnderflow),
+			err:   errors.EgoError(errors.ErrStackUnderflow),
 			want:  datatypes.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -192,7 +192,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			stack: []interface{}{
 				&datatypes.StringType, // Key type
 			},
-			err:  errors.New(errors.ErrStackUnderflow),
+			err:  errors.EgoError(errors.ErrStackUnderflow),
 			want: datatypes.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -205,7 +205,7 @@ func Test_makeMapByteCode(t *testing.T) {
 				&datatypes.IntType,    // Value type
 				&datatypes.StringType, // Key type
 			},
-			err:  errors.New(errors.ErrStackUnderflow),
+			err:  errors.EgoError(errors.ErrStackUnderflow),
 			want: datatypes.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -219,7 +219,7 @@ func Test_makeMapByteCode(t *testing.T) {
 				&datatypes.IntType,    // Value type
 				&datatypes.StringType, // Key type
 			},
-			err:  errors.New(errors.ErrStackUnderflow),
+			err:  errors.EgoError(errors.ErrStackUnderflow),
 			want: datatypes.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 	}
@@ -242,7 +242,7 @@ func Test_makeMapByteCode(t *testing.T) {
 
 			err := target(c, tt.arg)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				e1 := nilError
 				e2 := nilError
 
@@ -264,7 +264,7 @@ func Test_makeMapByteCode(t *testing.T) {
 
 			v, err := c.Pop()
 
-			if !errors.Nil(err) {
+			if err != nil {
 				t.Errorf("%s() stack error %v", name, err)
 			}
 

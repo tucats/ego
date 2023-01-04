@@ -136,7 +136,7 @@ func (a *EgoArray) ValueType() *Type {
 // Validate checks that all the members of the array are of a given
 // type. This is used to validate anonymous arrays for use as a typed
 // array.
-func (a *EgoArray) Validate(kind *Type) *errors.EgoError {
+func (a *EgoArray) Validate(kind *Type) error {
 	if kind.IsType(&InterfaceType) {
 		return nil
 	}
@@ -146,12 +146,12 @@ func (a *EgoArray) Validate(kind *Type) *errors.EgoError {
 	// array member
 	if a.valueType.Kind() == ByteType.kind {
 		if !kind.IsIntegerType() {
-			return errors.New(errors.ErrWrongArrayValueType)
+			return errors.EgoError(errors.ErrWrongArrayValueType)
 		}
 	} else {
 		for _, v := range a.data {
 			if !IsType(v, kind) {
-				return errors.New(errors.ErrWrongArrayValueType)
+				return errors.EgoError(errors.ErrWrongArrayValueType)
 			}
 		}
 	}
@@ -176,19 +176,19 @@ func (a *EgoArray) Immutable(b bool) *EgoArray {
 
 // Get retrieves a member of the array. If the array index is out-of-bounds
 // for the array size, an error is returned.
-func (a *EgoArray) Get(i interface{}) (interface{}, *errors.EgoError) {
+func (a *EgoArray) Get(i interface{}) (interface{}, error) {
 	index := getInt(i)
 
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
-			return nil, errors.New(errors.ErrArrayBounds)
+			return nil, errors.EgoError(errors.ErrArrayBounds)
 		}
 
 		return a.bytes[index], nil
 	}
 
 	if index < 0 || index >= len(a.data) {
-		return nil, errors.New(errors.ErrArrayBounds)
+		return nil, errors.EgoError(errors.ErrArrayBounds)
 	}
 
 	return a.data[index], nil
@@ -208,14 +208,14 @@ func (a *EgoArray) Len() int {
 // given type. If the array already has a base type, you cannot set a new
 // one. This (along with the Validate() function) can be used to convert
 // an anonymous array to a typed array.
-func (a *EgoArray) SetType(i *Type) *errors.EgoError {
+func (a *EgoArray) SetType(i *Type) error {
 	if a.valueType.IsType(&InterfaceType) {
 		a.valueType = i
 
 		return nil
 	}
 
-	return errors.New(errors.ErrImmutableArray)
+	return errors.EgoError(errors.ErrImmutableArray)
 }
 
 // Force the size of the array. Existing values are retained if the
@@ -249,11 +249,11 @@ func (a *EgoArray) SetSize(size int) *EgoArray {
 // The array index must be within the size of the array. If the array is a
 // typed array, the type must match the array type. The value can handle
 // conversion of integer and float types to fit the target array base type.
-func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
+func (a *EgoArray) Set(i interface{}, value interface{}) error {
 	v := value
 
 	if a.immutable > 0 {
-		return errors.New(errors.ErrImmutableArray)
+		return errors.EgoError(errors.ErrImmutableArray)
 	}
 
 	index := getInt(i)
@@ -262,11 +262,11 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	// the Ego array.
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
-			return errors.New(errors.ErrArrayBounds)
+			return errors.EgoError(errors.ErrArrayBounds)
 		}
 	} else {
 		if index < 0 || index >= len(a.data) {
-			return errors.New(errors.ErrArrayBounds)
+			return errors.EgoError(errors.ErrArrayBounds)
 		}
 	}
 
@@ -304,7 +304,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) *errors.EgoError {
 	// Now, ensure it's of the right type for this array. As always, special case
 	// for []byte arrays.
 	if a.valueType.Kind() == ByteKind && !TypeOf(v).IsIntegerType() {
-		return errors.New(errors.ErrWrongArrayValueType)
+		return errors.EgoError(errors.ErrWrongArrayValueType)
 	}
 
 	if a.valueType.Kind() == ByteKind {
@@ -376,9 +376,9 @@ func (a *EgoArray) String() string {
 // Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
-func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
+func (a *EgoArray) GetSlice(first, last int) ([]interface{}, error) {
 	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
-		return nil, errors.New(errors.ErrArrayBounds)
+		return nil, errors.EgoError(errors.ErrArrayBounds)
 	}
 
 	// If it's a []byte we must build an Ego slide from the native bytes.
@@ -399,13 +399,13 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, *errors.EgoError) {
 // Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
-func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, *errors.EgoError) {
+func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, error) {
 	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
-		return nil, errors.New(errors.ErrArrayBounds)
+		return nil, errors.EgoError(errors.ErrArrayBounds)
 	}
 
 	slice, err := a.GetSlice(first, last)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -482,13 +482,13 @@ func getInt(i interface{}) int {
 // must be a valid array index. The return value is nil if no error
 // occurs, else an error if the index is out-of-bounds or the array
 // is marked as immutable.
-func (a *EgoArray) Delete(i int) *errors.EgoError {
+func (a *EgoArray) Delete(i int) error {
 	if i >= len(a.data) || i < 0 {
-		return errors.New(errors.ErrArrayBounds)
+		return errors.EgoError(errors.ErrArrayBounds)
 	}
 
 	if a.immutable != 0 {
-		return errors.New(errors.ErrImmutableArray)
+		return errors.EgoError(errors.ErrImmutableArray)
 	}
 
 	if a.valueType.Kind() == ByteType.kind {
@@ -504,8 +504,8 @@ func (a *EgoArray) Delete(i int) *errors.EgoError {
 // sort functions or the native sort.Slice function to do the sort. This
 // can only be performed on an array of scalar types (no structs, arrays,
 // or maps).
-func (a *EgoArray) Sort() *errors.EgoError {
-	var err *errors.EgoError
+func (a *EgoArray) Sort() error {
+	var err error
 
 	switch a.valueType.kind {
 	case StringType.kind:
@@ -551,7 +551,7 @@ func (a *EgoArray) Sort() *errors.EgoError {
 				a.data[i] = v
 
 			default:
-				return errors.New(errors.ErrInvalidType).Context("sort")
+				return errors.EgoError(errors.ErrInvalidType).Context("sort")
 			}
 		}
 
@@ -572,12 +572,12 @@ func (a *EgoArray) Sort() *errors.EgoError {
 				a.data[i] = v
 
 			default:
-				return errors.New(errors.ErrInvalidType).Context("sort")
+				return errors.EgoError(errors.ErrInvalidType).Context("sort")
 			}
 		}
 
 	default:
-		err = errors.New(errors.ErrArgumentType)
+		err = errors.EgoError(errors.ErrArgumentType)
 	}
 
 	return err
@@ -605,7 +605,7 @@ func (a EgoArray) MarshalJSON() ([]byte, error) {
 
 			jsonBytes, err := json.Marshal(v)
 			if err != nil {
-				return nil, errors.New(err)
+				return nil, errors.EgoError(err)
 			}
 
 			b.WriteString(string(jsonBytes))

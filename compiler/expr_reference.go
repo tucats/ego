@@ -8,10 +8,10 @@ import (
 )
 
 // reference parses a structure or array reference.
-func (c *Compiler) reference() *errors.EgoError {
+func (c *Compiler) reference() error {
 	// Parse the function call or exprssion atom
 	err := c.expressionAtom()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -37,7 +37,7 @@ func (c *Compiler) reference() *errors.EgoError {
 				c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 				err := c.expressionAtom()
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 
@@ -53,7 +53,7 @@ func (c *Compiler) reference() *errors.EgoError {
 			c.t.Advance(1)
 
 			err := c.functionCall()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -86,7 +86,7 @@ func (c *Compiler) reference() *errors.EgoError {
 					c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
 
 					err := c.expressionAtom()
-					if !errors.Nil(err) {
+					if err != nil {
 						return err
 					}
 
@@ -110,7 +110,7 @@ func (c *Compiler) reference() *errors.EgoError {
 				c.b.Emit(bytecode.Push, 0)
 			} else {
 				err := c.conditional()
-				if !errors.Nil(err) {
+				if err != nil {
 					return err
 				}
 			}
@@ -128,7 +128,7 @@ func (c *Compiler) reference() *errors.EgoError {
 					c.b.Emit(bytecode.Call, 1)
 				} else {
 					err := c.conditional()
-					if !errors.Nil(err) {
+					if err != nil {
 						return err
 					}
 				}

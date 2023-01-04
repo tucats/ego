@@ -203,7 +203,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	var compilerInstance *compiler.Compiler
 
-	var err *errors.EgoError
+	var err error
 
 	var tokens *tokenizer.Tokenizer
 
@@ -224,7 +224,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ServiceCacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
-		if !errors.Nil(err) {
+		if err != nil {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			ServiceCacheMutex.Unlock()
 
@@ -243,12 +243,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		compilerInstance.AddStandard(symbolTable)
 
 		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
-		if !errors.Nil(err) {
+		if err != nil {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
 		}
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
-		if !errors.Nil(err) {
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			ServiceCacheMutex.Unlock()
@@ -258,14 +258,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If it compiled successfully and we are caching, then put
 		// it in the cache.
-		if errors.Nil(err) && MaxCachedEntries > 0 {
+		if err == nil && MaxCachedEntries > 0 {
 			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)
 		}
 
 		ServiceCacheMutex.Unlock()
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 
@@ -291,7 +291,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		credentials := defs.Credentials{}
 
 		err := json.NewDecoder(r.Body).Decode(&credentials)
-		if errors.Nil(err) && credentials.Username != "" && credentials.Password != "" {
+		if err == nil && credentials.Username != "" && credentials.Password != "" {
 			// Create the authorization header from the payload
 			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			r.Header.Set("Authorization", authorization)
@@ -395,14 +395,14 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		err = ctx.Run()
 	}
 
-	if err.Is(errors.ErrStop) {
+	if errors.Equals(err, errors.ErrStop) {
 		err = nil
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
-	if !errors.Nil(err) {
+	if err != nil {
 		ServiceCacheMutex.Lock()
 		delete(ServiceCache, endpoint)
 		ServiceCacheMutex.Unlock()
@@ -420,7 +420,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 

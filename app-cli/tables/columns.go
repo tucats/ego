@@ -28,16 +28,16 @@ func (t *Table) GetHeadings() []string {
 
 // SetColumnOrder accepts a list of column positions and uses it
 // to set the order in which columns of output are printed.
-func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
+func (t *Table) SetColumnOrder(order []int) error {
 	if len(order) == 0 {
-		return errors.New(errors.ErrEmptyColumnList)
+		return errors.EgoError(errors.ErrEmptyColumnList)
 	}
 
 	newOrder := make([]int, len(order))
 
 	for n, v := range order {
 		if v < 1 || v > t.columnCount {
-			return errors.New(errors.ErrInvalidColumnNumber).Context(v)
+			return errors.EgoError(errors.ErrInvalidColumnNumber).Context(v)
 		}
 
 		newOrder[n] = v - 1
@@ -50,9 +50,9 @@ func (t *Table) SetColumnOrder(order []int) *errors.EgoError {
 
 // SetColumnOrderByName accepts a list of column positions and uses it
 // to set the order in which columns of output are printed.
-func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
+func (t *Table) SetColumnOrderByName(order []string) error {
 	if len(order) == 0 {
-		return errors.New(errors.ErrEmptyColumnList)
+		return errors.EgoError(errors.ErrEmptyColumnList)
 	}
 
 	newOrder := make([]int, len(order))
@@ -60,7 +60,7 @@ func (t *Table) SetColumnOrderByName(order []string) *errors.EgoError {
 	for n, name := range order {
 		v, found := t.FindColumn(name)
 		if !found {
-			return errors.New(errors.ErrInvalidColumnName).Context(name)
+			return errors.EgoError(errors.ErrInvalidColumnName).Context(name)
 		}
 
 		newOrder[n] = v

@@ -8,7 +8,7 @@ import (
 
 // compileTry compiles the try statement which allows the program to catch error
 // conditions instead of stopping execution on an error.
-func (c *Compiler) compileTry() *errors.EgoError {
+func (c *Compiler) compileTry() error {
 	// Generate start of a try block.
 	b1 := c.b.Mark()
 
@@ -16,7 +16,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 
 	// Statement to try
 	err := c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -46,7 +46,7 @@ func (c *Compiler) compileTry() *errors.EgoError {
 	}
 
 	err = c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block

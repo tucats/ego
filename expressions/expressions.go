@@ -5,29 +5,27 @@
 //
 // The general pattern of use is:
 //
-//    e := expressions.New().WithText("expression string")
-//    v, err := e.Eval(symbols.SymbolTable)
+//	   e := expressions.New().WithText("expression string")
+//	   v, err := e.Eval(symbols.SymbolTable)
 //
-//	If the expression is to be evaluated only once, then you can simplify
-//	the evaluation to:
+//		If the expression is to be evaluated only once, then you can simplify
+//		the evaluation to:
 //
-//    v, err := expressions.Evaluate("expr string", *symbols.SymbolTable)
+//	   v, err := expressions.Evaluate("expr string", *symbols.SymbolTable)
 //
-//  The value is returned as an opaque interface{} type. You can use the
-//  following helper functions to retrieve the value from the interface,
-//  and coerce the type if possible.
+//	 The value is returned as an opaque interface{} type. You can use the
+//	 following helper functions to retrieve the value from the interface,
+//	 and coerce the type if possible.
 //
-//    i := GetInt(v)
-//    f := GetFloat(v)
-//    s := GetString(v)
-//    b := GetBool(v)
-//
+//	   i := GetInt(v)
+//	   f := GetFloat(v)
+//	   s := GetString(v)
+//	   b := GetBool(v)
 package expressions
 
 import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -37,7 +35,7 @@ type Expression struct {
 	t   *tokenizer.Tokenizer
 	b   *bytecode.ByteCode
 	c   bool
-	err *errors.EgoError
+	err error
 }
 
 // New creates a new Expression object.
@@ -91,7 +89,7 @@ func (e *Expression) WithBytecode(b *bytecode.ByteCode) *Expression {
 }
 
 // Error returns the last error seen on the expression object.
-func (e *Expression) Error() *errors.EgoError {
+func (e *Expression) Error() error {
 	return e.err
 }
 
@@ -107,6 +105,6 @@ func (e *Expression) GetBytecode() *bytecode.ByteCode {
 
 // Evaluate is a helper function for the case where a string is to
 // be evaluated once and the value returned.
-func Evaluate(expr string, s *symbols.SymbolTable) (interface{}, *errors.EgoError) {
+func Evaluate(expr string, s *symbols.SymbolTable) (interface{}, error) {
 	return New().WithText(expr).Eval(s)
 }

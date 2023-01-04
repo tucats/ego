@@ -14,10 +14,10 @@ import (
 
 // Exec implements the util.Exec() function. This should be replaced with a proper
 // emulation of the Go command object type in the future.
-func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err *errors.EgoError) {
+func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err error) {
 	// Is this function authorized?
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation).Context("Exec")
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Exec")
 	}
 
 	// Get the arguments as a string array
@@ -40,7 +40,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err *
 	cmd.Stdout = &out
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.New(e)
+		return nil, errors.EgoError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

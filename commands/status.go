@@ -11,14 +11,13 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 )
 
 // Status displays the status of a running server if it exists.
-func Status(c *cli.Context) *errors.EgoError {
+func Status(c *cli.Context) error {
 	// If there is a parameter, it's the server address to query.
 	addr := "localhost"
 	if c.GetParameterCount() > 0 {
@@ -33,7 +32,7 @@ func Status(c *cli.Context) *errors.EgoError {
 	msg := i18n.M("server.not.running")
 
 	status, err := server.ReadPidFile(c)
-	if errors.Nil(err) {
+	if err == nil {
 		if server.IsRunning(status.PID) {
 			msg = fmt.Sprintf("UP (%s) %s %s",
 				i18n.M("server.status", map[string]interface{}{
@@ -51,7 +50,7 @@ func Status(c *cli.Context) *errors.EgoError {
 
 	if ui.OutputFormat == ui.TextFormat {
 		fmt.Printf("%s\n", msg)
-	} else if errors.Nil(err) {
+	} else if err == nil {
 		if ui.OutputFormat == ui.JSONIndentedFormat {
 			b, _ := json.MarshalIndent(status, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			fmt.Print(string(b))
@@ -69,11 +68,11 @@ func Status(c *cli.Context) *errors.EgoError {
 }
 
 // Ping a remote server's "up" service to see its status.
-func remoteStatus(addr string) *errors.EgoError {
+func remoteStatus(addr string) error {
 	resp := defs.RemoteStatusResponse{}
 
 	name, err := ResolveServerName(addr)
-	if !errors.Nil(err) {
+	if err != nil {
 		// This is not a good idea, comparing against text literal.
 		// However, not sure how else to do it at this point, since the error
 		// contains data about connection, etc. that we don't want to use in
@@ -101,7 +100,7 @@ func remoteStatus(addr string) *errors.EgoError {
 	}
 
 	err = runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.StatusAgent)
-	if !errors.Nil(err) {
+	if err != nil {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")
 		} else {

@@ -22,12 +22,12 @@ import (
 )
 
 // TestAction is the command handler for the ego TEST command.
-func TestAction(c *cli.Context) *errors.EgoError {
+func TestAction(c *cli.Context) error {
 	var text string
 
-	var err *errors.EgoError
+	var err error
 
-	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
+	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
 
@@ -90,7 +90,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	// Now use the list of locations given to build an expanded list of files
 	for _, fileOrPath := range locations {
 		files, err := functions.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -99,7 +99,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 	for _, fileOrPath := range fileList {
 		text, err = ReadFile(fileOrPath)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -121,7 +121,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 		comp.SetInteractive(true)
 
 		b, err := comp.Compile(name, t)
-		if !errors.Nil(err) {
+		if err != nil {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
@@ -133,7 +133,7 @@ func TestAction(c *cli.Context) *errors.EgoError {
 
 				// Always autoimport
 				err := comp.AutoImport(true, symbolTable)
-				if !errors.Nil(err) {
+				if err != nil {
 					msg := fmt.Sprintf("%s\n", i18n.E("auto.import", map[string]interface{}{
 						"err": err.Error(),
 					}))
@@ -159,11 +159,11 @@ func TestAction(c *cli.Context) *errors.EgoError {
 			}
 
 			err = ctx.Run()
-			if err.Is(errors.ErrStop) {
+			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
 
-			if !errors.Nil(err) {
+			if err != nil {
 				exitValue = 2
 				msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
@@ -173,25 +173,25 @@ func TestAction(c *cli.Context) *errors.EgoError {
 	}
 
 	if exitValue > 0 {
-		return errors.New(errors.ErrTerminatedWithErrors)
+		return errors.EgoError(errors.ErrTerminatedWithErrors)
 	}
 
 	return nil
 }
 
 // ReadDirectory reads all the files in a directory into a single string.
-func ReadDirectory(name string) (string, *errors.EgoError) {
+func ReadDirectory(name string) (string, error) {
 	var b strings.Builder
 
 	dirname := name
 
 	fi, err := ioutil.ReadDir(dirname)
-	if !errors.Nil(err) {
+	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			ui.Debug(ui.DebugLogger, "+++ No such directory")
 		}
 
-		return "", errors.New(err)
+		return "", errors.EgoError(err)
 	}
 
 	ui.Debug(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
@@ -211,7 +211,7 @@ func ReadDirectory(name string) (string, *errors.EgoError) {
 			fileName := filepath.Join(dirname, f.Name())
 
 			t, err := ReadFile(fileName)
-			if !errors.Nil(err) {
+			if err != nil {
 				return "", err
 			}
 
@@ -224,9 +224,9 @@ func ReadDirectory(name string) (string, *errors.EgoError) {
 }
 
 // ReadFile reads the text from a file into a string.
-func ReadFile(name string) (string, *errors.EgoError) {
+func ReadFile(name string) (string, error) {
 	s, err := ReadDirectory(name)
-	if errors.Nil(err) {
+	if err == nil {
 		return s, nil
 	}
 
@@ -242,7 +242,7 @@ func ReadFile(name string) (string, *errors.EgoError) {
 
 			content, e2 = ioutil.ReadFile(fn)
 			if e2 != nil {
-				return "", errors.New(e2)
+				return "", errors.EgoError(e2)
 			}
 		}
 	}

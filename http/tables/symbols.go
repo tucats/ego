@@ -17,8 +17,8 @@ const (
 
 // For a given task, apply the symbols to the various fields and data values
 // in the task.
-func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) *errors.EgoError {
-	var err *errors.EgoError
+func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) error {
+	var err error
 
 	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -29,14 +29,14 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 	if syms != nil && len(syms.Symbols) > 0 {
 		// Allow substitutions in the table name
 		task.Table, err = applySymbolsToString(sessionID, task.Table, syms, "Table name")
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
 		// Allow subsitutions in the filter list
 		for n := 0; n < len(task.Filters); n++ {
 			task.Filters[n], err = applySymbolsToString(sessionID, task.Filters[n], syms, "Filter")
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 		}
@@ -44,14 +44,14 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 		// Allow substitutions in the column list
 		for n := 0; n < len(task.Columns); n++ {
 			task.Columns[n], err = applySymbolsToString(sessionID, task.Columns[n], syms, "Column selector")
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 		}
 
 		// Allow substitutions in the sql command
 		task.SQL, err = applySymbolsToString(sessionID, task.SQL, syms, "SQL statement")
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -66,7 +66,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 			oldKey := key
 
 			newKey, err := applySymbolsToString(sessionID, key, syms, "Column name")
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -77,7 +77,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 			}
 
 			task.Data[newKey], err = applySymbolsToItem(sessionID, value, syms, "Column value")
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 		}
@@ -86,7 +86,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 	// Allow subtitutions of the condition tests as well as the values
 	for n := 0; n < len(task.Errors); n++ {
 		newConditionString, err := applySymbolsToString(sessionID, task.Errors[n].Condition, syms, "Condition")
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -100,7 +100,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 
 // If the item passed is a string of the form {{name}} then the symbol with
 // the matching name is substituted for this value, if found.
-func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable, label string) (interface{}, *errors.EgoError) {
+func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable, label string) (interface{}, error) {
 	if symbols == nil || symbols.Symbols == nil {
 		return input, nil
 	}
@@ -113,7 +113,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 			input = value
 			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
-			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)
+			return "", errors.EgoError(errors.ErrNoSuchTXSymbol).Context(key)
 		}
 	}
 
@@ -127,7 +127,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 // so if the symbol is a string, the input string may still need to include quotes
 // around the target to ensure that it is still represented as a string value in
 // a filter expresion, for example.
-func applySymbolsToString(sessionID int32, input string, syms *symbolTable, label string) (string, *errors.EgoError) {
+func applySymbolsToString(sessionID int32, input string, syms *symbolTable, label string) (string, error) {
 	if syms == nil || len(syms.Symbols) == 0 {
 		return input, nil
 	}
@@ -156,10 +156,10 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
 
 		if key != "" {
-			return "", errors.New(errors.ErrNoSuchTXSymbol).Context(key)
+			return "", errors.EgoError(errors.ErrNoSuchTXSymbol).Context(key)
 		}
 
-		return "", errors.New(errors.ErrNoSuchTXSymbol)
+		return "", errors.EgoError(errors.ErrNoSuchTXSymbol)
 	}
 
 	return input, nil

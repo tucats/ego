@@ -4,7 +4,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-func AddressOf(v interface{}) (interface{}, *errors.EgoError) {
+func AddressOf(v interface{}) (interface{}, error) {
 	switch actual := v.(type) {
 	case bool:
 		return &actual, nil
@@ -37,7 +37,7 @@ func AddressOf(v interface{}) (interface{}, *errors.EgoError) {
 	}
 }
 
-func Dereference(v interface{}) (interface{}, *errors.EgoError) {
+func Dereference(v interface{}) (interface{}, error) {
 	switch actual := v.(type) {
 	case *interface{}:
 		return *actual, nil
@@ -67,6 +67,6 @@ func Dereference(v interface{}) (interface{}, *errors.EgoError) {
 		return *actual, nil
 
 	default:
-		return nil, errors.New(errors.ErrNotAPointer)
+		return nil, errors.EgoError(errors.ErrNotAPointer)
 	}
 }

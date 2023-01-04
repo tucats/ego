@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/errors"
 )
 
 func TestCompiler_ReadDirectory(t *testing.T) {
@@ -36,7 +35,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Compiler{}
 			got, err := c.directoryContents(tt.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Compiler.ReadDirectory() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

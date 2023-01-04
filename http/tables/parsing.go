@@ -208,8 +208,8 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 		term, e := filterClause(tokens, dialect)
-		if !errors.Nil(e) {
-			return "", e
+		if e != nil {
+			return "", errors.EgoError(e)
 		}
 
 		valueCount := 0
@@ -221,8 +221,8 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			valueCount++
 
 			value, e := filterClause(tokens, dialect)
-			if !errors.Nil(e) {
-				return "", e
+			if e != nil {
+				return "", errors.EgoError(e)
 			}
 
 			switch dialect {
@@ -245,7 +245,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 		if !tokens.IsNext(tokenizer.EndOfListToken) {
-			return "", errors.New(errors.ErrMissingParenthesis)
+			return "", errors.EgoError(errors.ErrMissingParenthesis)
 		}
 
 		return result.String(), nil
@@ -306,7 +306,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 	default:
-		return "", errors.New(errors.ErrUnexpectedToken).Context(operator)
+		return "", errors.EgoError(errors.ErrUnexpectedToken).Context(operator)
 	}
 
 	if prefix != "" {
@@ -321,10 +321,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			result.WriteString(term)
 			if !tokens.IsNext(tokenizer.CommaToken) {
 				if termCount < 2 {
-					return "", errors.New(errors.ErrInvalidList)
+					return "", errors.EgoError(errors.ErrInvalidList)
 				}
 				if termCount > 2 && !listAllowed {
-					return "", errors.New(errors.ErrInvalidList)
+					return "", errors.EgoError(errors.ErrInvalidList)
 				}
 
 				break
@@ -339,7 +339,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	}
 
 	if !tokens.IsNext(tokenizer.EndOfListToken) {
-		return "", errors.New(errors.ErrMissingParenthesis)
+		return "", errors.EgoError(errors.ErrMissingParenthesis)
 	}
 
 	return result.String(), nil
@@ -821,13 +821,13 @@ func keywordMatch(k string, list ...string) bool {
 	return false
 }
 
-func tableNameFromRequest(r *http.Request) (string, *errors.EgoError) {
+func tableNameFromRequest(r *http.Request) (string, error) {
 	u, _ := url.Parse(r.URL.Path)
 
 	return tableNameFromURL(u)
 }
 
-func tableNameFromURL(u *url.URL) (string, *errors.EgoError) {
+func tableNameFromURL(u *url.URL) (string, error) {
 	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return "", errors.NewMessage("Invalid URL").Context(u.Path)

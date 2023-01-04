@@ -8,12 +8,12 @@ import (
 // on the runtime context. The current module name and line number
 // from the context are stored in the new error object, along with
 // the message and context.
-func (c *Context) newError(err error, context ...interface{}) *errors.EgoError {
-	if errors.Nil(err) {
+func (c *Context) newError(err error, context ...interface{}) *errors.EgoErrorMsg {
+	if err == nil {
 		return nil
 	}
 
-	r := errors.New(err).In(c.Name).At(c.GetLine(), 0)
+	r := errors.EgoError(err).In(c.Name).At(c.GetLine(), 0)
 
 	if len(context) > 0 {
 		_ = r.Context(context[0])

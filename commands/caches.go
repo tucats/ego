@@ -20,14 +20,14 @@ import (
 // that the current cache size, the next attempt to load a new service into the cache
 // will result in discarding the oldest cache entries until the cache is the correct
 // size. You must be an admin user with a valid token to perform this command.
-func SetCacheSize(c *cli.Context) *errors.EgoError {
+func SetCacheSize(c *cli.Context) error {
 	if c.GetParameterCount() == 0 {
-		return errors.New(errors.ErrCacheSizeNotSpecified)
+		return errors.EgoError(errors.ErrCacheSizeNotSpecified)
 	}
 
 	size, err := strconv.Atoi(c.GetParameter(0))
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	cacheStatus := defs.CacheResponse{
@@ -35,8 +35,8 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 	}
 
 	err = runtime.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
-	if !errors.Nil(err) {
-		return errors.New(err)
+	if err != nil {
+		return errors.EgoError(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
@@ -53,11 +53,11 @@ func SetCacheSize(c *cli.Context) *errors.EgoError {
 // requests require that the service code be reloaded from disk. This is often
 // used when making changes to a service, to quickly force the server to pick up
 // the changes. You must be an admin user with a valid token to perform this command.
-func FlushServerCaches(c *cli.Context) *errors.EgoError {
+func FlushServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -83,11 +83,11 @@ func FlushServerCaches(c *cli.Context) *errors.EgoError {
 // the server's cache of previously-compiled service programs. The current and maximum
 // size of the cache, and the endpoints that are cached are listed. You must be an
 // admin user with a valid token to perform this command.
-func ListServerCaches(c *cli.Context) *errors.EgoError {
+func ListServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
 	err := runtime.Exchange(defs.AdminCachesPath, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

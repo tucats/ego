@@ -108,14 +108,14 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
-func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
+func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	// Does it already exist and is it readonly? IF so, fail
 	attr, ok := s.Symbols[name]
 	if ok && attr.Readonly {
-		return errors.New(errors.ErrReadOnlyValue).Context(name)
+		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 	}
 
 	if !ok {
@@ -141,7 +141,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) *errors.EgoError {
 // This code locates the symbol anywhere in the scope tree and sets its
 // value. It returns nil if this was successful, else a symbol-not-found
 // error is reported.
-func (s *SymbolTable) SetReadOnly(name string, flag bool) *errors.EgoError {
+func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 	syms := s
 
 	for syms != nil {
@@ -162,13 +162,13 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) *errors.EgoError {
 		}
 	}
 
-	return errors.New(errors.ErrUnknownSymbol).Context(name)
+	return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
 }
 
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
+func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -216,7 +216,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) *errors.EgoError {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr SymbolAttribute) *errors.EgoError {
+func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr SymbolAttribute) error {
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -263,7 +263,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 }
 
 // Set stores a symbol value in the table where it was found.
-func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
+func (s *SymbolTable) Set(name string, v interface{}) error {
 	var old interface{}
 
 	s.mutex.Lock()
@@ -273,21 +273,21 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 	if found {
 		// Of the value exists and is readonly, we can do no more.
 		if attr.Readonly {
-			return errors.New(errors.ErrReadOnlyValue).Context(name)
+			return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 		}
 
 		// Check to be sure this isn't a restricted (function code) type
 		// that we are not allowed to write over, ever.
 		old = s.GetValue(attr.Slot)
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return errors.New(errors.ErrReadOnlyValue).Context(name)
+			return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 		}
 	}
 
 	if !found {
 		// If there are no more tables, we have an error.
 		if s.IsRoot() {
-			return errors.New(errors.ErrUnknownSymbol).Context(name)
+			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
 		return s.Parent.Set(name, v)
@@ -317,9 +317,9 @@ func (s *SymbolTable) Set(name string, v interface{}) *errors.EgoError {
 // up the parent tree until you find the symbol to delete. If the always
 // flag is set, this deletes even if the name is marked as a readonly
 // variable ("_" as the first character).
-func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
+func (s *SymbolTable) Delete(name string, always bool) error {
 	if len(name) == 0 {
-		return errors.New(errors.ErrInvalidSymbolName)
+		return errors.EgoError(errors.ErrInvalidSymbolName)
 	}
 
 	s.mutex.Lock()
@@ -328,14 +328,14 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 	attr, f := s.Symbols[name]
 	if !f {
 		if s.IsRoot() {
-			return errors.New(errors.ErrUnknownSymbol).Context(name)
+			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
 		}
 
 		return s.Parent.Delete(name, always)
 	}
 
 	if !always && attr.Readonly {
-		return errors.New(errors.ErrReadOnlyValue).Context(name)
+		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 	}
 
 	delete(s.Symbols, name)
@@ -349,16 +349,16 @@ func (s *SymbolTable) Delete(name string, always bool) *errors.EgoError {
 }
 
 // Create creates a symbol name in the table.
-func (s *SymbolTable) Create(name string) *errors.EgoError {
+func (s *SymbolTable) Create(name string) error {
 	if len(name) == 0 {
-		return errors.New(errors.ErrInvalidSymbolName)
+		return errors.EgoError(errors.ErrInvalidSymbolName)
 	}
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	if _, found := s.Symbols[name]; found {
-		return errors.New(errors.ErrSymbolExists).Context(name)
+		return errors.EgoError(errors.ErrSymbolExists).Context(name)
 	}
 
 	s.Symbols[name] = &SymbolAttribute{

@@ -60,7 +60,7 @@ func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 	return px, false
 }
 
-func importByteCode(c *Context, i interface{}) *errors.EgoError {
+func importByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	pkg, ok := GetPackage(name)
@@ -96,7 +96,7 @@ func importByteCode(c *Context, i interface{}) *errors.EgoError {
 	return c.symbolSetAlways(name, pkg)
 }
 
-func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
+func pushPackageByteCode(c *Context, i interface{}) error {
 	name := datatypes.GetString(i)
 
 	// Are we already in this package? Happens when a directory of package
@@ -135,7 +135,7 @@ func pushPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 // package. The current (package-specific) symbol table is drained
 // and any visible names are copied into the package structure, which
 // is then saved in the package cache.
-func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
+func popPackageByteCode(c *Context, i interface{}) error {
 	size := len(c.packageStack)
 	if size == 0 {
 		return c.newError(errors.ErrMissingPackageStatement)
@@ -200,7 +200,5 @@ func popPackageByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	// Reset the active symbol table to the state before we processed
 	// the package.
-	c.popSymbolTable()
-
-	return nil
+	return c.popSymbolTable()
 }

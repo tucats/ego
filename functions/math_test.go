@@ -3,8 +3,6 @@ package functions
 import (
 	"reflect"
 	"testing"
-
-	"github.com/tucats/ego/errors"
 )
 
 func TestFunctionMin(t *testing.T) {
@@ -56,7 +54,7 @@ func TestFunctionMin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Min(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMin() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -117,7 +115,7 @@ func TestFunctionMax(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Max(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMax() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
@@ -178,7 +176,7 @@ func TestFunctionSum(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Sum(nil, tt.args.args)
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSum() error = %v, wantErr %v", err, tt.wantErr)
 
 				return

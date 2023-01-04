@@ -13,7 +13,7 @@ func TestNewContext(t *testing.T) {
 	b := New("context test")
 
 	e := s.SetAlways("foo", 1)
-	if !errors.Nil(e) {
+	if e != nil {
 		t.Errorf("Unexpected error setting symbol: %v", e)
 	}
 
@@ -43,7 +43,7 @@ func TestNewContext(t *testing.T) {
 	}
 
 	e = c.constantSet("xyzzy", "frobozz")
-	if !errors.Nil(e) {
+	if e != nil {
 		t.Errorf("Unexpected constant set error: %v", e)
 	}
 

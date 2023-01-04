@@ -2,20 +2,18 @@ package tables
 
 import (
 	"strings"
-
-	"github.com/tucats/ego/errors"
 )
 
 // NewCSV creates a new table using a single string with comma-separated
 // heading names. These typically correspond to the first row in a CSV
 // data file.
-func NewCSV(h string) (*Table, *errors.EgoError) {
+func NewCSV(h string) (*Table, error) {
 	return New(CsvSplit(h))
 }
 
 // AddCSVRow addsa  row to an existing table, where the row is expressed
 // as a string with comma-separated values.
-func (t *Table) AddCSVRow(items string) *errors.EgoError {
+func (t *Table) AddCSVRow(items string) error {
 	return t.AddRow(CsvSplit(items))
 }
 

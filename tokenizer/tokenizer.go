@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/errors"
 )
 
 // Tokenizer is an instance of a tokenized string.
@@ -417,7 +416,7 @@ func InList(s Token, test ...Token) bool {
 // the string is improperly formed.
 func unQuote(input string) string {
 	result, err := strconv.Unquote(input)
-	if !errors.Nil(err) {
+	if err != nil {
 		return input
 	}
 

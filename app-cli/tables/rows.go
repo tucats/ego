@@ -8,9 +8,9 @@ import (
 
 // AddRow adds a row to an existing table using an array of string objects,
 // where each object represents a column of the data.
-func (t *Table) AddRow(row []string) *errors.EgoError {
+func (t *Table) AddRow(row []string) error {
 	if len(row) != t.columnCount {
-		return errors.New(errors.ErrColumnCount).Context(len(row))
+		return errors.EgoError(errors.ErrColumnCount).Context(len(row))
 	}
 
 	// Update the maximum row width based on this new row info. Count
@@ -36,9 +36,9 @@ func (t *Table) AddRow(row []string) *errors.EgoError {
 // AddRowItems adds a row to an existing table using individual parameters.
 // Each parameter is converted to a string representation, and the set of all
 // formatted values are added to the table as a row.
-func (t *Table) AddRowItems(items ...interface{}) *errors.EgoError {
+func (t *Table) AddRowItems(items ...interface{}) error {
 	if len(items) != t.columnCount {
-		return errors.New(errors.ErrColumnCount).Context(len(items))
+		return errors.EgoError(errors.ErrColumnCount).Context(len(items))
 	}
 
 	row := make([]string, t.columnCount)

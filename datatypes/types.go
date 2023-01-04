@@ -94,9 +94,9 @@ var validationLock sync.Mutex
 
 // ValidateFunctions compares the functions for a given type against
 // the functions for an associated interface definition.
-func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
+func (t Type) ValidateFunctions(i *Type) error {
 	if i.kind != TypeKind || i.valueType == nil {
-		return errors.New(errors.ErrArgumentType)
+		return errors.EgoError(errors.ErrArgumentType)
 	}
 
 	// Sadly, multple threads using the same type could have a collision in
@@ -116,20 +116,20 @@ func (t Type) ValidateFunctions(i *Type) *errors.EgoError {
 	for k, bc1 := range m1 {
 		f1, _ := bc1.(*FunctionDeclaration)
 		if f1 == nil {
-			return errors.New(errors.ErrMissingInterface).Context(k)
+			return errors.EgoError(errors.ErrMissingInterface).Context(k)
 		}
 
 		if bc2, ok := m2[k]; ok {
 			f2 := GetDeclaration(bc2)
 			if f2 == nil {
-				return errors.New(errors.ErrMissingInterface).Context(f1.String())
+				return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
 			}
 
 			if f1.String() != f2.String() {
-				return errors.New(errors.ErrMissingInterface).Context(f1.String())
+				return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
 			}
 		} else {
-			return errors.New(errors.ErrMissingInterface).Context(f1.String())
+			return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
 		}
 	}
 
@@ -506,18 +506,18 @@ func (t Type) FieldNames() []string {
 
 // Retrieve the type of a field by name. The current type must
 // be a structure type, and the field name must exist.
-func (t Type) Field(name string) (*Type, *errors.EgoError) {
+func (t Type) Field(name string) (*Type, error) {
 	if t.kind != StructKind {
-		return &UndefinedType, errors.New(errors.ErrInvalidStruct)
+		return &UndefinedType, errors.EgoError(errors.ErrInvalidStruct)
 	}
 
 	if t.fields == nil {
-		return &UndefinedType, errors.New(errors.ErrInvalidField)
+		return &UndefinedType, errors.EgoError(errors.ErrInvalidField)
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return &UndefinedType, errors.New(errors.ErrInvalidField)
+		return &UndefinedType, errors.EgoError(errors.ErrInvalidField)
 	}
 
 	return ofType, nil
@@ -827,8 +827,8 @@ func IsNil(v interface{}) bool {
 	}
 
 	// Is it a nil error message?
-	if err, ok := v.(*errors.EgoError); ok {
-		return errors.Nil(err)
+	if err, ok := v.(error); ok {
+		return err == nil
 	}
 
 	// If it's not a pointer, then it can't be nil

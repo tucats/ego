@@ -370,10 +370,10 @@ func TestNew(t *testing.T) {
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)
-			if err.Is(errors.ErrStop) {
+			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
-			if !errors.Nil(err) && tt.want != nil {
+			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {
 				if array, ok := v1.(*datatypes.EgoArray); ok {

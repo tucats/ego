@@ -5,8 +5,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
-	"github.com/tucats/ego/errors"
 )
 
 // Coerce returns the value after it has been converted to the type of the
@@ -53,7 +51,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			}
 
 			st, err := strconv.Atoi(value)
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil
 			}
 
@@ -96,7 +94,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			}
 
 			st, err := strconv.Atoi(value)
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil
 			}
 
@@ -133,7 +131,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			}
 
 			st, err := strconv.Atoi(value)
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil
 			}
 
@@ -176,7 +174,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			}
 
 			st, err := strconv.Atoi(value)
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil
 			}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) typeEmitter(name string) *errors.EgoError {
+func (c *Compiler) typeEmitter(name string) error {
 	typeInfo, err := c.typeCompiler(name)
 	if err == nil {
 		c.b.Emit(bytecode.Push, typeInfo)
@@ -17,7 +17,7 @@ func (c *Compiler) typeEmitter(name string) *errors.EgoError {
 	return err
 }
 
-func (c *Compiler) typeCompiler(name string) (*datatypes.Type, *errors.EgoError) {
+func (c *Compiler) typeCompiler(name string) (*datatypes.Type, error) {
 	if _, found := c.Types[name]; found {
 		return &datatypes.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
 	}
@@ -33,7 +33,7 @@ func (c *Compiler) typeCompiler(name string) (*datatypes.Type, *errors.EgoError)
 	return typeInfo, nil
 }
 
-func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *errors.EgoError) {
+func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, error) {
 	found := false
 
 	if !anonymous {
@@ -72,7 +72,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, *err
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			f, err := c.parseFunctionDeclaration()
-			if !errors.Nil(err) {
+			if err != nil {
 				return &datatypes.UndefinedType, err
 			}
 

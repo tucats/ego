@@ -27,7 +27,7 @@ import (
 //     this form _requires_ that there be at least one break
 //     statement inside the loop, which algorithmically stops
 //     the loop
-func (c *Compiler) compileFor() *errors.EgoError {
+func (c *Compiler) compileFor() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingExpression)
 	}
@@ -61,7 +61,7 @@ func (c *Compiler) compileFor() *errors.EgoError {
 	}
 
 	indexStore, err := c.assignmentTarget()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (c *Compiler) loopStackPop() {
 
 // Compile a simple for{} loop with no conditional or range. The
 // loop body must contain a break statement or an error is reported.
-func (c *Compiler) simpleFor() *errors.EgoError {
+func (c *Compiler) simpleFor() error {
 	// Make a new scope and emit the test expression.
 	c.loopStackPush(forLoopType)
 
@@ -118,7 +118,7 @@ func (c *Compiler) simpleFor() *errors.EgoError {
 
 	// Compile loop body
 	err := c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -145,9 +145,9 @@ func (c *Compiler) simpleFor() *errors.EgoError {
 
 // Compile a conditional for-loop that runs as long as the condition
 // is true.
-func (c *Compiler) conditionalFor() *errors.EgoError {
+func (c *Compiler) conditionalFor() error {
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(errors.ErrMissingForLoopInitializer)
 	}
 
@@ -185,7 +185,7 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 	stmts := c.statementCount
 
 	err = c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 	// If we didn't emit anything other than
@@ -227,13 +227,13 @@ func (c *Compiler) conditionalFor() *errors.EgoError {
 // Compile a for-loop that is expressed by a range. The index variable name
 // and value variable names are provided. If not specified by the user, they
 // are empty strings.
-func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
+func (c *Compiler) rangeFor(indexName, valueName string) error {
 	c.loopStackPush(rangeLoopType)
 
 	// For a range, the index and value targets must be simple names, and cannot
 	// be real lvalues. The actual thing we range is on the stack.
 	bc, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return c.newError(err)
 	}
 
@@ -248,7 +248,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 
 	// Loop body
 	err = c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -284,7 +284,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) *errors.EgoError {
 
 // Compile a for loop using iterations with initializer, conditional, and
 // iterator expressions before the function body.
-func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) *errors.EgoError {
+func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecode.ByteCode) error {
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
 	if indexName == tokenizer.EmptyToken.Spelling() && valueName != tokenizer.EmptyToken.Spelling() {
@@ -295,7 +295,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	// The expression is the initial value of the loop.
 	initializerCode, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -309,7 +309,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Now get the condition clause that tells us if the loop
 	// is still executing.
 	condition, err := c.Expression()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -321,7 +321,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// (nominally the index) to eventually trigger the
 	// loop condition.
 	incrementStore, err := c.assignmentTarget()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -355,7 +355,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		}
 
 		incrementCode, err = c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
@@ -372,7 +372,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	// Loop body goes next
 	err = c.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -401,7 +401,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the breaks list
 // in the compiler context.
-func (c *Compiler) compileBreak() *errors.EgoError {
+func (c *Compiler) compileBreak() error {
 	if c.loops == nil {
 		return c.newError(errors.ErrInvalidLoopControl)
 	}
@@ -418,7 +418,7 @@ func (c *Compiler) compileBreak() *errors.EgoError {
 // destination is fixed up when the loop compilation finishes.
 // As such, the address of the fixup is added to the continues list
 // in the compiler context.
-func (c *Compiler) compileContinue() *errors.EgoError {
+func (c *Compiler) compileContinue() error {
 	if c.loops == nil {
 		return c.newError(errors.ErrInvalidLoopControl)
 	}

@@ -24,15 +24,15 @@ import (
 )
 
 // RunAction is the command handler for the ego CLI.
-func RunAction(c *cli.Context) *errors.EgoError {
+func RunAction(c *cli.Context) error {
 	if logFile, found := c.String("log"); found {
 		err := ui.OpenLogFile(logFile, false)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
 
-	if err := runtime.InitProfileDefaults(); !errors.Nil(err) {
+	if err := runtime.InitProfileDefaults(); err != nil {
 		return err
 	}
 
@@ -114,12 +114,12 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		} else {
 			// Otherwise, use the parameter as a filename
 			content, err := ioutil.ReadFile(fileName)
-			if !errors.Nil(err) {
+			if err != nil {
 				var e2 error
 
 				content, e2 = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
-				if !errors.Nil(e2) {
-					return errors.New(err).Context(fileName)
+				if e2 != nil {
+					return errors.EgoError(err).Context(fileName)
 				}
 			}
 
@@ -260,10 +260,10 @@ func RunAction(c *cli.Context) *errors.EgoError {
 			comp.SetRoot(&symbols.RootSymbolTable)
 
 			err := comp.AutoImport(autoImport, symbolTable)
-			if !errors.Nil(err) {
+			if err != nil {
 				ui.Log(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
-				return errors.New(errors.ErrStop)
+				return errors.EgoError(errors.ErrStop)
 			}
 
 			comp.AddPackageToSymbols(symbolTable)
@@ -271,7 +271,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 		}
 
 		b, err := comp.Compile(mainName, t)
-		if !errors.Nil(err) {
+		if err != nil {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
@@ -299,11 +299,11 @@ func RunAction(c *cli.Context) *errors.EgoError {
 				err = ctx.Run()
 			}
 
-			if err.Is(errors.ErrStop) {
+			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
 
-			if !errors.Nil(err) {
+			if err != nil {
 				exitValue = 2
 				msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
 
@@ -325,7 +325,7 @@ func RunAction(c *cli.Context) *errors.EgoError {
 	}
 
 	if exitValue > 0 {
-		return errors.New(errors.ErrTerminatedWithErrors)
+		return errors.EgoError(errors.ErrTerminatedWithErrors)
 	}
 
 	return nil

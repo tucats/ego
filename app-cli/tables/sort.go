@@ -10,9 +10,9 @@ import (
 // SortRows sorts the existing table rows. The column to sort by is specified by
 // ordinal position (zero-based). The ascending flag is true if the sort is to be
 // in ascending order, and false if a descending sort is required.
-func (t *Table) SortRows(column int, ascending bool) *errors.EgoError {
+func (t *Table) SortRows(column int, ascending bool) error {
 	if column < 0 || column >= t.columnCount {
-		return errors.New(errors.ErrInvalidColumnNumber).Context(column)
+		return errors.EgoError(errors.ErrInvalidColumnNumber).Context(column)
 	}
 
 	sort.SliceStable(t.rows, func(i, j int) bool {
@@ -28,7 +28,7 @@ func (t *Table) SortRows(column int, ascending bool) *errors.EgoError {
 
 // SetOrderBy sets the name of the column that should be used for
 // sorting the output data.
-func (t *Table) SetOrderBy(name string) *errors.EgoError {
+func (t *Table) SetOrderBy(name string) error {
 	ascending := true
 
 	if name[0] == '~' {
@@ -45,5 +45,5 @@ func (t *Table) SetOrderBy(name string) *errors.EgoError {
 		}
 	}
 
-	return errors.New(errors.ErrInvalidColumnName).Context(name)
+	return errors.EgoError(errors.ErrInvalidColumnName).Context(name)
 }

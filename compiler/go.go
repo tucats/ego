@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) compileGo() *errors.EgoError {
+func (c *Compiler) compileGo() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
 		return c.newError(errors.ErrMissingFunction)
 	}
@@ -40,7 +40,7 @@ func (c *Compiler) compileGo() *errors.EgoError {
 
 	for c.t.Peek(1) != tokenizer.EndOfListToken {
 		err := c.conditional()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

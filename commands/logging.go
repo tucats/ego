@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/runtime"
 )
 
-func Logging(c *cli.Context) *errors.EgoError {
+func Logging(c *cli.Context) error {
 	addr := settings.Get(defs.ApplicationServerSetting)
 	if addr == "" {
 		addr = settings.Get(defs.LogonServerSetting)
@@ -37,7 +37,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 	}
 
 	_, err := ResolveServerName(addr)
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -50,7 +50,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		count := defs.DBRowCount{}
 
 		err := runtime.Exchange(u.String(), http.MethodDelete, nil, &count, defs.AdminAgent)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -72,7 +72,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
 				if logger < 0 {
-					return errors.New(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
+					return errors.EgoError(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
 				}
 
 				if logger == ui.ServerLogger {
@@ -89,11 +89,11 @@ func Logging(c *cli.Context) *errors.EgoError {
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
 				if logger < 0 || logger == ui.ServerLogger {
-					return errors.New(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
+					return errors.EgoError(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
 				}
 
 				if _, ok := loggers.Loggers[loggerName]; ok {
-					return errors.New(errors.ErrLoggerConflict).Context(loggerName)
+					return errors.EgoError(errors.ErrLoggerConflict).Context(loggerName)
 				}
 
 				loggers.Loggers[loggerName] = false
@@ -102,7 +102,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 
 		// Send the update, get a reply
 		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
@@ -112,7 +112,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 	if showStatus || fileOnly {
 		// No changes, just ask for status
 		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	} else {
@@ -131,7 +131,7 @@ func Logging(c *cli.Context) *errors.EgoError {
 		lines := defs.LogTextResponse{}
 
 		err := runtime.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

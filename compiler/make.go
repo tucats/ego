@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) makeInvocation() *errors.EgoError {
+func (c *Compiler) makeInvocation() error {
 	if !c.t.IsNext(tokenizer.MakeToken) {
 		return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
 	}
@@ -54,7 +54,7 @@ func (c *Compiler) makeInvocation() *errors.EgoError {
 	c.b.Append(bc)
 	c.b.Emit(bytecode.Call, 2)
 
-	if errors.Nil(err) && !c.t.IsNext(tokenizer.EndOfListToken) {
+	if err == nil && !c.t.IsNext(tokenizer.EndOfListToken) {
 		err = c.newError(errors.ErrMissingParenthesis)
 	}
 

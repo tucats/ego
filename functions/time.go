@@ -28,14 +28,14 @@ func initializeType() {
 }
 
 // TimeNow implements time.now().
-func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()
 
 	return MakeTime(&t), nil
 }
 
 // TimeParse time.Parse().
-func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := datatypes.GetString(args[0])
 	fmt := basicLayout
 
@@ -44,23 +44,23 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	}
 
 	t, err := time.Parse(fmt, str)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	return MakeTime(&t), nil
 }
 
 // TimeAdd implements time.duration().
-func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Add()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Add()")
 	}
 
 	t, err := getTime(s)
-	if errors.Nil(err) {
+	if err == nil {
 		d, err := time.ParseDuration(datatypes.GetString(args[0]))
-		if errors.Nil(err) {
+		if err == nil {
 			t2 := t.Add(d)
 
 			return MakeTime(&t2), nil
@@ -71,15 +71,15 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // TimeSub implements time.duration().
-func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Sub()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Sub()")
 	}
 
 	t, err := getTime(s)
-	if errors.Nil(err) {
+	if err == nil {
 		d, err := getTimeV(args[0])
-		if errors.Nil(err) && d != nil {
+		if err == nil && d != nil {
 			t2 := t.Sub(*d)
 
 			return t2.String(), nil
@@ -90,13 +90,13 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // TimeFormat implements time.Format().
-func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Format()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Format()")
 	}
 
 	t, err := getTime(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -106,13 +106,13 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 }
 
 // TimeSleep implements time.SleepUntil().
-func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Sleep()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Sleep()")
 	}
 
 	t, err := getTime(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -123,13 +123,13 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // TimeFormat implements time.Format().
-func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.New(errors.ErrArgumentCount).In("String()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("String()")
 	}
 
 	t, err := getTime(s)
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -138,14 +138,14 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	return t.Format(layout), nil
 }
 
-func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount).In("Since()")
+		return nil, errors.EgoError(errors.ErrArgumentCount).In("Since()")
 	}
 
 	// Get the time value stored in the argument
 	t, err := getTimeV(args[0])
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -157,17 +157,17 @@ func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 
 // getTime looks in the symbol table for the "this" receiver, and
 // extracts the time value from it.
-func getTime(symbols *symbols.SymbolTable) (*time.Time, *errors.EgoError) {
+func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 	if t, ok := symbols.Get("__this"); ok {
 		return getTimeV(t)
 	}
 
-	return nil, errors.New(errors.ErrNoFunctionReceiver).In("time function")
+	return nil, errors.EgoError(errors.ErrNoFunctionReceiver).In("time function")
 }
 
 // getTimeV extracts a time.Time value from an Ego time
 // object, by looking in the [time] member.
-func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
+func getTimeV(timeV interface{}) (*time.Time, error) {
 	if m, ok := timeV.(*datatypes.EgoStruct); ok {
 		if tv, ok := m.Get("time"); ok {
 			if tp, ok := tv.(*time.Time); ok {
@@ -176,7 +176,7 @@ func getTimeV(timeV interface{}) (*time.Time, *errors.EgoError) {
 		}
 	}
 
-	return nil, errors.New(errors.ErrNoFunctionReceiver).In("time function")
+	return nil, errors.EgoError(errors.ErrNoFunctionReceiver).In("time function")
 }
 
 // Make a time object with the given time value.

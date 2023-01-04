@@ -52,11 +52,11 @@ func main() {
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
-	if !errors.Nil(err) {
+	if err != nil {
 		msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 		os.Stderr.Write([]byte(msg))
 
-		if value := err.GetContext(); value != nil {
+		if value := err.(*errors.EgoErrorMsg).GetContext(); value != nil {
 			errorCode := 1
 
 			if _, ok := value.(string); !ok {

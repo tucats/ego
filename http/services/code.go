@@ -65,7 +65,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	comp.LowercaseIdentifiers = settings.GetBool(defs.CaseNormalizedSetting)
 
 	b, err := comp.Compile("code", t)
-	if !errors.Nil(err) {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 	} else {
@@ -73,7 +73,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		comp.AddStandard(symbolTable)
 
 		err := comp.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
-		if !errors.Nil(err) {
+		if err != nil {
 			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: %v", err)
 		}
 
@@ -82,11 +82,11 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		ctx.EnableConsoleOutput(false)
 
 		err = ctx.Run()
-		if err.Is(errors.ErrStop) {
+		if errors.Equals(err, errors.ErrStop) {
 			err = nil
 		}
 
-		if !errors.Nil(err) {
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 		} else {

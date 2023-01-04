@@ -6,13 +6,13 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-func (c *Compiler) functionCall() *errors.EgoError {
+func (c *Compiler) functionCall() error {
 	// Note, caller already consumed the opening paren
 	argc := 0
 
 	for c.t.Peek(1) != tokenizer.EndOfListToken {
 		err := c.conditional()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
@@ -54,10 +54,10 @@ func (c *Compiler) functionCall() *errors.EgoError {
 
 // functionOrReference compiles a function call. The value of the
 // function has been pushed to the top of the stack.
-func (c *Compiler) functionOrReference() *errors.EgoError {
+func (c *Compiler) functionOrReference() error {
 	// Get the atom
 	err := c.reference()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

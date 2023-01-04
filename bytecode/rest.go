@@ -20,7 +20,7 @@ import (
 // variable _authenticated whose value was set during REST service initialization.
 // The operand determines what kind of authentication is required; i.e. via token
 // or username or either, and whether the user must be an admin (root) user.
-func authByteCode(c *Context, i interface{}) *errors.EgoError {
+func authByteCode(c *Context, i interface{}) error {
 	var user, pass, token string
 
 	if _, ok := c.symbolGet("_authenticated"); !ok {
@@ -129,9 +129,9 @@ func authByteCode(c *Context, i interface{}) *errors.EgoError {
 // Generate a response body for a REST service. If the current media type is JSON, then the
 // top of stack is formatted as JSON, otherwise it is formatted as text, and written to the
 // response.
-func responseByteCode(c *Context, i interface{}) *errors.EgoError {
+func responseByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

@@ -2,8 +2,6 @@ package tables
 
 import (
 	"testing"
-
-	"github.com/tucats/ego/errors"
 )
 
 func Test_applySymbolsToString(t *testing.T) {
@@ -58,7 +56,7 @@ func Test_applySymbolsToString(t *testing.T) {
 				t.Errorf("applySymbolsToString() got = %v, want %v", got, tt.want)
 			}
 
-			if errors.Nil(got1) == tt.fails {
+			if (got1 == nil) == tt.fails {
 				t.Errorf("applySymbolsToString() unexpected error %v, expected error = %v", got1, tt.fails)
 			}
 		})

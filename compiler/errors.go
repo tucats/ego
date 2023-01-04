@@ -6,7 +6,7 @@ import (
 )
 
 // newError generates a new compiler error.
-func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoError {
+func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg {
 	p := c.t.TokenP
 	if p < 0 {
 		p = 0
@@ -22,7 +22,7 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoError {
 		token = datatypes.GetString(args[0])
 	}
 
-	e := errors.New(err).Context(token)
+	e := errors.EgoError(err).Context(token)
 
 	if c.PackageName != "" {
 		e = e.In(c.PackageName)

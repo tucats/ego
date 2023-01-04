@@ -12,11 +12,11 @@ import (
 )
 
 // Printf implements fmt.printf() and is a wrapper around the native Go function.
-func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	length := 0
 
 	str, err := Sprintf(s, args)
-	if errors.Nil(err) {
+	if err == nil {
 		length, _ = fmt.Printf("%s", datatypes.GetString(str))
 	}
 
@@ -24,7 +24,7 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 }
 
 // Sprintf implements fmt.sprintf() and is a wrapper around the native Go function.
-func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return 0, nil
 	}
@@ -39,7 +39,7 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 }
 
 // Print implements fmt.Print() and is a wrapper around the native Go function.
-func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -52,11 +52,15 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 	text, e2 := fmt.Printf("%s", b.String())
 
-	return text, errors.New(e2)
+	if e2 != nil {
+		e2 = errors.EgoError(e2)
+	}
+
+	return text, e2
 }
 
 // Println implements fmt.Println() and is a wrapper around the native Go function.
-func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -69,7 +73,11 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 
 	text, e2 := fmt.Printf("%s\n", b.String())
 
-	return text, errors.New(e2)
+	if e2 != nil {
+		e2 = errors.EgoError(e2)
+	}
+
+	return text, e2
 }
 
 // FormatAsString will attempt to use the String() function of the
@@ -78,7 +86,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 	if m, ok := v.(*datatypes.EgoStruct); ok {
 		if f := m.GetType().Function("String"); f != nil {
-			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError)); ok {
+			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				_ = local.SetAlways("__this", v)
 
@@ -94,7 +102,7 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 	return datatypes.FormatUnquoted(v)
 }
 
-func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	dataString := datatypes.GetString(args[0])
 	formatString := datatypes.GetString(args[1])
 
@@ -103,7 +111,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 
 	for i, v := range args[2:] {
 		if datatypes.TypeOfPointer(v).IsUndefined() {
-			return nil, errors.New(errors.ErrNotAPointer)
+			return nil, errors.EgoError(errors.ErrNotAPointer)
 		}
 
 		if content, ok := v.(*interface{}); ok {
@@ -114,7 +122,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
 	if err != nil {
-		return 0, errors.New(err).Context("Sscanf()")
+		return 0, errors.EgoError(err).Context("Sscanf()")
 	}
 
 	// Stride over the return value pointers, assigning as many
@@ -130,8 +138,8 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Eg
 	return len(items), nil
 }
 
-func scanner(data, format string) ([]interface{}, *errors.EgoError) {
-	var err *errors.EgoError
+func scanner(data, format string) ([]interface{}, error) {
+	var err error
 
 	result := make([]interface{}, 0)
 
@@ -148,7 +156,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 			// Must only be supported format string. TODO We do not allow width
 			// specifications yet.
 			if !util.InList(token.Spelling(), "s", "t", "f", "d", "v") {
-				return result, errors.New(errors.ErrInvalidFormatVerb)
+				return result, errors.EgoError(errors.ErrInvalidFormatVerb)
 			}
 
 			// Add to the previous token
@@ -177,7 +185,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%v", &v)
 			if e != nil {
-				err = errors.New(e).Context("Sscanf()")
+				err = errors.EgoError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -193,7 +201,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%t", &v)
 			if e != nil {
-				err = errors.New(e).Context("Sscanf()")
+				err = errors.EgoError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -206,7 +214,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%f", &v)
 			if e != nil {
-				err = errors.New(e).Context("Sscanf()")
+				err = errors.EgoError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -219,7 +227,7 @@ func scanner(data, format string) ([]interface{}, *errors.EgoError) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%d", &v)
 			if e != nil {
-				err = errors.New(e).Context("Sscanf()")
+				err = errors.EgoError(e).Context("Sscanf()")
 				parsing = false
 
 				break

@@ -18,8 +18,8 @@ type parameter struct {
 // compileFunctionDefinition compiles a function definition. The literal flag indicates if
 // this is a function literal, which is pushed on the stack, or a non-literal
 // which is added to the symbol table dictionary.
-func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
-	var err *errors.EgoError
+func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
+	var err error
 
 	coercions := []*bytecode.ByteCode{}
 	thisName := tokenizer.EmptyToken
@@ -49,13 +49,13 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 		c.t.Set(savedPos)
 
 		functionName, thisName, receiverType, byValue, err = c.parseFunctionName()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 	}
 	// The function name must be followed by a parameter declaration
 	parameters, hasVarArgs, err := c.parseParameterDeclaration()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -136,7 +136,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 			wasVoid = true
 		} else {
 			k, err := c.typeDeclaration()
-			if !errors.Nil(err) {
+			if err != nil {
 				return err
 			}
 
@@ -182,7 +182,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) *errors.EgoError {
 	}
 
 	err = cx.compileRequiredBlock()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -247,8 +247,8 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 
 // parseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *errors.EgoError) {
-	var err *errors.EgoError
+func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, error) {
+	var err error
 
 	// Can't have side effects added to current bytecode, so save that off and
 	// ensure we put it back when done.
@@ -265,7 +265,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	}
 
 	funcName, _, _, _, err := c.parseFunctionName()
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	} else {
 		funcDef.Name = funcName.Spelling()
@@ -275,7 +275,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	// we ignore these, but later will copy them into a proper function definition
 	// object when we have them.
 	paramList, _, err := c.parseParameterDeclaration()
-	if !errors.Nil(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -295,7 +295,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 	// should be done better, later on.
 	for {
 		theType, err := c.parseType("", false)
-		if !errors.Nil(err) {
+		if err != nil {
 			break
 		}
 
@@ -324,7 +324,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, *
 // Parse the function name clause, which can contain a receiver declaration
 // (including  the name of the "this" variable, it's type name, and whether it
 // is by value vs. by reference) as well as the actual function name itself.
-func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName tokenizer.Token, typeName tokenizer.Token, byValue bool, err *errors.EgoError) {
+func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName tokenizer.Token, typeName tokenizer.Token, byValue bool, err error) {
 	functionName = c.t.Next()
 	byValue = true
 	thisName = tokenizer.EmptyToken
@@ -347,18 +347,18 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 			err = c.newError(errors.ErrInvalidSymbolName, thisName)
 		}
 
-		if !errors.Nil(err) && !typeName.IsIdentifier() {
+		if err != nil && !typeName.IsIdentifier() {
 			err = c.newError(errors.ErrInvalidSymbolName, typeName)
 		}
 
 		// Must end with a closing paren for the receiver declaration.
-		if !errors.Nil(err) || !c.t.IsNext(tokenizer.EndOfListToken) {
+		if err != nil || !c.t.IsNext(tokenizer.EndOfListToken) {
 			err = c.newError(errors.ErrMissingParenthesis)
 		}
 
 		// Last, but not least, the function name follows the optional
 		// receiver name.
-		if errors.Nil(err) {
+		if err == nil {
 			functionName = c.t.Next()
 		}
 	}
@@ -378,7 +378,7 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 // parenthesis with each parameter name and a required type declaration that
 // follows it. This is returned as the parameters value, which is an array for
 // each parameter and it's type.
-func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err *errors.EgoError) {
+func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err error) {
 	parameters = []parameter{}
 	hasVarArgs = false
 
@@ -407,7 +407,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			// is the "zero value" for the declared type.
 			theType, err := c.parseType("", false)
 
-			if !errors.Nil(err) {
+			if err != nil {
 				return nil, false, c.newError(err)
 			}
 

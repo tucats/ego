@@ -10,11 +10,10 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 )
 
-func InitProfileDefaults() *errors.EgoError {
-	var err *errors.EgoError
+func InitProfileDefaults() error {
+	var err error
 
 	egopath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 

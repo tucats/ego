@@ -24,7 +24,7 @@ type This struct {
 
 type TryInfo struct {
 	addr    int
-	catches []*errors.EgoError
+	catches []error
 }
 
 // This value is updated atomically during context creation.
@@ -81,7 +81,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// normally off, but can be set by a global variable (which is
 	// ultimately set by a profile setting or CLI option).
 	static := false
-	if s, ok := s.Get("__static_data_types"); ok {
+	if s, found := s.Get("__static_data_types"); found {
 		static = datatypes.GetBool(s)
 	}
 
@@ -152,13 +152,15 @@ func (c *Context) SetFullSymbolScope(b bool) *Context {
 
 // SetPC sets the program counter (PC) which indicates the
 // next instruction number to execute.
-func (c *Context) SetPC(pc int) {
+func (c *Context) SetPC(pc int) *Context {
 	c.programCounter = pc
+
+	return c
 }
 
 // SetGlobal stores a value in a the global symbol table that is
 // at the top of the symbol table chain.
-func (c *Context) SetGlobal(name string, value interface{}) *errors.EgoError {
+func (c *Context) SetGlobal(name string, value interface{}) error {
 	return c.symbols.Root().Set(name, value)
 }
 
@@ -168,8 +170,7 @@ func (c *Context) EnableConsoleOutput(flag bool) *Context {
 	ui.Debug(ui.AppLogger, ">>> Console output set to %v", flag)
 
 	if !flag {
-		var b strings.Builder
-		c.output = &b
+		c.output = &strings.Builder{}
 	} else {
 		c.output = nil
 	}
@@ -189,15 +190,10 @@ func (c *Context) GetOutput() string {
 	return ""
 }
 
-// SetTracing turns tracing on or off for the current context. When
+// Tracing returns the trace status of the current context. When
 // tracing is on, each time an instruction is executed, the current
 // instruction and the top few items on the stack are printed to
 // the console.
-func (c *Context) SetTracing(b bool) {
-	c.tracing = true
-	ui.SetLogger(ui.TraceLogger, true)
-}
-
 func (c *Context) Tracing() bool {
 	return ui.IsActive(ui.TraceLogger)
 }
@@ -220,21 +216,27 @@ func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 
 // AppendSymbols appends a symbol table to the current context.
 // This is used to add in compiler maps, for example.
-func (c *Context) AppendSymbols(s *symbols.SymbolTable) {
+func (c *Context) AppendSymbols(s *symbols.SymbolTable) *Context {
 	for k, v := range s.Symbols {
 		_ = c.symbols.SetAlways(k, v)
 	}
+
+	return c
 }
 
 // SetByteCode attaches a new bytecode object to the current run context.
-func (c *Context) SetByteCode(b *ByteCode) {
+func (c *Context) SetByteCode(b *ByteCode) *Context {
 	c.bc = b
+
+	return c
 }
 
 // SetSingleStep enables or disables single-step mode. This has no
 // effect if debugging is not active.
-func (c *Context) SetSingleStep(b bool) {
+func (c *Context) SetSingleStep(b bool) *Context {
 	c.singleStep = b
+
+	return c
 }
 
 // SingleStep retrieves the current single-step setting for this
@@ -246,8 +248,10 @@ func (c *Context) SingleStep() bool {
 
 // SetStepOver determines if single step operations step over a
 // function call, or step into it.
-func (c *Context) SetStepOver(b bool) {
+func (c *Context) SetStepOver(b bool) *Context {
 	c.stepOver = b
+
+	return c
 }
 
 // GetModuleName returns the name of the current module (typically
@@ -257,7 +261,7 @@ func (c *Context) GetModuleName() string {
 }
 
 // Pop removes the top-most item from the stack.
-func (c *Context) Pop() (interface{}, *errors.EgoError) {
+func (c *Context) Pop() (interface{}, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
 		return nil, c.newError(errors.ErrStackUnderflow)
 	}
@@ -311,7 +315,7 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 }
 
 // constantSet is a helper function to define a constant value.
-func (c *Context) constantSet(name string, v interface{}) *errors.EgoError {
+func (c *Context) constantSet(name string, v interface{}) error {
 	return c.symbols.SetConstant(name, v)
 }
 
@@ -330,28 +334,28 @@ func (c *Context) symbolGet(name string) (interface{}, bool) {
 
 // symbolSet is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) symbolSet(name string, value interface{}) *errors.EgoError {
+func (c *Context) symbolSet(name string, value interface{}) error {
 	return c.symbols.Set(name, value)
 }
 
 // symbolSetAlways is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) symbolSetAlways(name string, value interface{}) *errors.EgoError {
+func (c *Context) symbolSetAlways(name string, value interface{}) error {
 	return c.symbols.SetAlways(name, value)
 }
 
 // symbolDelete deletes a symbol from the current context.
-func (c *Context) symbolDelete(name string) *errors.EgoError {
+func (c *Context) symbolDelete(name string) error {
 	return c.symbols.Delete(name, false)
 }
 
 // symbolCreate creates a symbol.
-func (c *Context) symbolCreate(name string) *errors.EgoError {
+func (c *Context) symbolCreate(name string) error {
 	return c.symbols.Create(name)
 }
 
 // stackPush puts a new items on the stack.
-func (c *Context) stackPush(v interface{}) *errors.EgoError {
+func (c *Context) stackPush(v interface{}) error {
 	if c.stackPointer >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
@@ -369,8 +373,8 @@ func (c *Context) stackPush(v interface{}) *errors.EgoError {
 // Otherwise, the symbol name is used to look up the current value (if
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
-func (c *Context) checkType(name string, value interface{}) *errors.EgoError {
-	var err *errors.EgoError
+func (c *Context) checkType(name string, value interface{}) error {
+	var err error
 
 	if !c.Static || value == nil {
 		return err
@@ -393,15 +397,15 @@ func (c *Context) Result() interface{} {
 	return c.result
 }
 
-func (c *Context) popSymbolTable() {
+func (c *Context) popSymbolTable() error {
 	if c.symbols.IsRoot() {
 		ui.Debug(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
 
-		return
+		return errors.EgoError(errors.ErrInternalCompiler).Context("Attempt to pop root table")
 	}
 
 	if c.symbols == c.symbols.Parent {
-		panic("SYMBOL TABLE CYCLE ERROR")
+		return errors.EgoError(errors.ErrInternalCompiler).Context("Symbol Table Cycle Error")
 	}
 
 	name := c.symbols.Name
@@ -417,4 +421,6 @@ func (c *Context) popSymbolTable() {
 
 	ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 		c.threadID, name, c.symbols.Name)
+
+	return nil
 }

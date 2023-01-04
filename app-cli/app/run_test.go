@@ -47,11 +47,11 @@ var testGrammar1 = []cli.Option{
 	},
 }
 
-func testAction0(c *cli.Context) *errors.EgoError {
+func testAction0(c *cli.Context) error {
 	return nil
 }
 
-func testAction1(c *cli.Context) *errors.EgoError {
+func testAction1(c *cli.Context) error {
 	v, _ := c.String("explode")
 	fmt.Printf("Found the option value %s\n", v)
 
@@ -62,7 +62,7 @@ func testAction1(c *cli.Context) *errors.EgoError {
 	return nil
 }
 
-func testAction2(c *cli.Context) *errors.EgoError {
+func testAction2(c *cli.Context) error {
 	v, _ := c.Integer("count")
 	fmt.Printf("Found the option value %v\n", v)
 
@@ -193,7 +193,7 @@ func TestRun(t *testing.T) {
 			app.SetCopyright("(c) 2020 Tom Cole. All rights reserved.")
 			app.SetVersion(1, 1, 0)
 
-			if err := app.Run(tt.args.grammar, tt.args.args); (!errors.Nil(err)) != tt.wantErr {
+			if err := app.Run(tt.args.grammar, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

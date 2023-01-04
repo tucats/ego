@@ -13,13 +13,13 @@ import (
 
 // Restart stops and then starts a server, using the information
 // from the previous start that was stored in the pidfile.
-func Restart(c *cli.Context) *errors.EgoError {
+func Restart(c *cli.Context) error {
 	var proc *os.Process
 
 	var e2 error
 
 	status, err := server.ReadPidFile(c)
-	if errors.Nil(err) {
+	if err == nil {
 		proc, e2 = os.FindProcess(status.PID)
 		if e2 == nil {
 			e2 = proc.Kill()
@@ -32,13 +32,13 @@ func Restart(c *cli.Context) *errors.EgoError {
 		}
 
 		if e2 != nil {
-			err = errors.New(e2)
+			err = errors.EgoError(e2)
 		}
 	}
 
 	_ = server.RemovePidFile(c)
 
-	if errors.Nil(err) {
+	if err == nil {
 		args := status.Args
 
 		// Set up the new ID. If there was one already (because this might be
@@ -66,7 +66,7 @@ func Restart(c *cli.Context) *errors.EgoError {
 
 		// Launch the new process
 		pid, err := runExec(args[0], args)
-		if errors.Nil(err) {
+		if err == nil {
 			status.PID = pid
 			status.LogID = logID
 			status.Args = args
@@ -84,7 +84,11 @@ func Restart(c *cli.Context) *errors.EgoError {
 			_ = server.RemovePidFile(c)
 		}
 
-		return errors.New(err)
+		if err != nil {
+			err = errors.EgoError(err)
+		}
+
+		return err
 	}
 
 	return err

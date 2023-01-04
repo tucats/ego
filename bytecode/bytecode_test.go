@@ -150,7 +150,7 @@ func TestByteCode_SetAddress(t *testing.T) {
 		b.Emit(Stop)
 		e1 := b.SetAddressHere(savedMark)
 
-		if !errors.Nil(e1) {
+		if e1 != nil {
 			t.Errorf("Unexpected error from setAddressHere: %v", e1)
 		}
 

@@ -30,7 +30,7 @@ type App struct {
 	Version     string
 	BuildTime   string
 	Context     *cli.Context
-	Action      func(c *cli.Context) *errors.EgoError
+	Action      func(c *cli.Context) error
 }
 
 // New creates a new instance of an application context, given the name of the
@@ -77,8 +77,7 @@ func (app *App) SetCopyright(s string) *App {
 func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
-	t, e := time.Parse("20060102150405", s)
-	if errors.Nil(e) {
+	if t, err := time.Parse("20060102150405", s); err == nil {
 		_ = symbols.RootSymbolTable.SetAlways("_buildtime", functions.MakeTime(&t))
 	} else {
 		_ = symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
@@ -90,13 +89,13 @@ func (app *App) SetBuildTime(s string) *App {
 // Parse runs a grammar, and then calls the provided action routine. It is typically
 // used in cases where there are no subcommands, and an action should be run after
 // parsing options.
-func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) *errors.EgoError) *errors.EgoError {
+func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Context) error) error {
 	app.Action = action
 
 	return app.Run(grammar, args)
 }
 
-func (app *App) SetDefaultAction(f func(c *cli.Context) *errors.EgoError) *App {
+func (app *App) SetDefaultAction(f func(c *cli.Context) error) *App {
 	app.Action = f
 
 	return app
@@ -105,7 +104,7 @@ func (app *App) SetDefaultAction(f func(c *cli.Context) *errors.EgoError) *App {
 // Run runs a grammar given a set of arguments in the current
 // applciation. The grammar must declare action routines for the
 // various subcommands, which will be executed by the parser.
-func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
+func (app *App) Run(grammar []cli.Option, args []string) error {
 	app.Context = &cli.Context{
 		Description: app.Description,
 		Copyright:   app.Copyright,
@@ -144,7 +143,7 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 	platform.SetReadonly(true)
 	_ = symbols.RootSymbolTable.SetWithAttributes("_platform", platform, symbols.SymbolAttribute{Readonly: true})
 
-	if err := SetDefaultLoggers(); !errors.Nil(err) {
+	if err := SetDefaultLoggers(); err != nil {
 		return err
 	}
 
@@ -153,7 +152,7 @@ func (app *App) Run(grammar []cli.Option, args []string) *errors.EgoError {
 
 // Enable the loggers that are set using the EGO_DEFAULT_LOOGGERS
 // environment variable.
-func SetDefaultLoggers() *errors.EgoError {
+func SetDefaultLoggers() error {
 	logList := os.Getenv(defs.EgoDefaultLogging)
 	if strings.TrimSpace(logList) == "" {
 		return nil
@@ -166,7 +165,7 @@ func SetDefaultLoggers() *errors.EgoError {
 		if trimmedName != "" {
 			logger := ui.Logger(trimmedName)
 			if logger < 0 {
-				return errors.New(errors.ErrInvalidLoggerName).Context(trimmedName)
+				return errors.EgoError(errors.ErrInvalidLoggerName).Context(trimmedName)
 			}
 
 			ui.SetLogger(logger, true)

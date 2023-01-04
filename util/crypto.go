@@ -12,9 +12,9 @@ import (
 )
 
 // Encrypt encrypts a string using a password.
-func Encrypt(data, password string) (string, *errors.EgoError) {
+func Encrypt(data, password string) (string, error) {
 	b, err := encrypt([]byte(data), password)
-	if !errors.Nil(err) {
+	if err != nil {
 		return "", err
 	}
 
@@ -22,9 +22,9 @@ func Encrypt(data, password string) (string, *errors.EgoError) {
 }
 
 // Decrypt decrypts a string using a password.
-func Decrypt(data, password string) (string, *errors.EgoError) {
+func Decrypt(data, password string) (string, error) {
 	b, err := decrypt([]byte(data), password)
-	if !errors.Nil(err) {
+	if err != nil {
 		return "", err
 	}
 
@@ -41,18 +41,18 @@ func Hash(key string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func encrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
+func encrypt(data []byte, passphrase string) ([]byte, error) {
 	block, _ := aes.NewCipher([]byte(Hash(passphrase)))
 
 	gcm, err := cipher.NewGCM(block)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 
-	if _, err = io.ReadFull(rand.Reader, nonce); !errors.Nil(err) {
-		return nil, errors.New(err)
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
@@ -60,17 +60,17 @@ func encrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
 	return ciphertext, nil
 }
 
-func decrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
+func decrypt(data []byte, passphrase string) ([]byte, error) {
 	key := []byte(Hash(passphrase))
-	block, err := aes.NewCipher(key)
 
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	nonceSize := gcm.NonceSize()
@@ -81,8 +81,8 @@ func decrypt(data []byte, passphrase string) ([]byte, *errors.EgoError) {
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if !errors.Nil(err) {
-		return nil, errors.New(err)
+	if err != nil {
+		return nil, errors.EgoError(err)
 	}
 
 	return plaintext, nil

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 )
 
 func TestCompileTypeSpec(t *testing.T) {
@@ -49,7 +48,7 @@ func TestCompileTypeSpec(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := CompileTypeSpec(tt.name)
-			if !errors.Nil(err) {
+			if err != nil {
 				t.Errorf("CompileTypeSpec() error %v", err)
 			} else {
 				if !reflect.DeepEqual(got, tt.want) {

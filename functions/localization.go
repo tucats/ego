@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	language := os.Getenv("LANG")
 
 	if pos := strings.Index(language, "_"); pos > 0 {
@@ -25,7 +25,7 @@ func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 	return language, nil
 }
 
-func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
 	property := datatypes.GetString(args[0])
 
@@ -50,7 +50,7 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 				parameters[field] = datatypes.GetString(value)
 			}
 		} else if value != nil {
-			return nil, errors.New(errors.ErrArgumentType)
+			return nil, errors.EgoError(errors.ErrArgumentType)
 		}
 	}
 
@@ -92,14 +92,14 @@ func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.Ego
 
 			t, e := t.Parse(msgString)
 			if e != nil {
-				return nil, errors.New(e)
+				return nil, errors.EgoError(e)
 			}
 
 			var r bytes.Buffer
 
 			e = t.Execute(&r, parameters)
 			if e != nil {
-				return nil, errors.New(e)
+				return nil, errors.EgoError(e)
 			}
 
 			return r.String(), nil

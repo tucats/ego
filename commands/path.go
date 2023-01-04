@@ -9,11 +9,10 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 )
 
 // PathAction is the command handler for the ego PATH command.
-func PathAction(c *cli.Context) *errors.EgoError {
+func PathAction(c *cli.Context) error {
 	// If there is already an environment variable, use that. Else get the
 	// preference setting.
 	p := os.Getenv(defs.EgoPathEnv)

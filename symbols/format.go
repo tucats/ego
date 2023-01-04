@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/datatypes"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -71,7 +70,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 			for _, k := range keys {
 				k2, _ := actual.Get(k)
-				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError)); ok {
+				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 					hasBuiltins = true
 					omitType = true
 				}
@@ -83,7 +82,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 				continue
 			}
 
-		case func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError):
+		case func(*SymbolTable, []interface{}) (interface{}, error):
 			if !includeBuiltins {
 				omitThisSymbol = true
 			}
@@ -186,7 +185,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 			for _, k := range keys {
 				k2, _ := actual.Get(k)
-				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError)); ok {
+				if _, ok := k2.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 					hasBuiltins = true
 				}
 			}
@@ -197,7 +196,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 				continue
 			}
 
-		case func(*SymbolTable, []interface{}) (interface{}, *errors.EgoError):
+		case func(*SymbolTable, []interface{}) (interface{}, error):
 			if !includeBuiltins {
 				omitThisSymbol = true
 			}

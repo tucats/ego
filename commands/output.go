@@ -14,7 +14,7 @@ import (
 // behaves identically to the ui.Say() operataor, including allowing a
 // format string with substitution values) as well as JSON output in
 // standard or indented formats.
-func commandOutput(thing ...interface{}) *errors.EgoError {
+func commandOutput(thing ...interface{}) error {
 	switch ui.OutputFormat {
 	case ui.TextFormat:
 		var msg string
@@ -32,12 +32,12 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 
 	case ui.JSONFormat:
 		if len(thing) > 1 {
-			return errors.New(errors.ErrArgumentCount)
+			return errors.EgoError(errors.ErrArgumentCount)
 		}
 
 		b, err := json.Marshal(thing[0])
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		ui.Say("%s", string(b))
@@ -46,12 +46,12 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 
 	case ui.JSONIndentedFormat:
 		if len(thing) > 1 {
-			return errors.New(errors.ErrArgumentCount)
+			return errors.EgoError(errors.ErrArgumentCount)
 		}
 
 		b, err := json.MarshalIndent(thing[0], ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		if err != nil {
-			return errors.New(err)
+			return errors.EgoError(err)
 		}
 
 		ui.Say("%s", string(b))
@@ -59,6 +59,6 @@ func commandOutput(thing ...interface{}) *errors.EgoError {
 		return nil
 
 	default:
-		return errors.New(errors.ErrInvalidOutputFormat)
+		return errors.EgoError(errors.ErrInvalidOutputFormat)
 	}
 }

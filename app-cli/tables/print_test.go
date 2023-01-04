@@ -184,8 +184,5 @@ func TestTable_paginateText(t *testing.T) {
 		)
 
 		_ = tb.Print(ui.TextFormat)
-		//if !errors.Nil(e) {
-		//	t.Error(e)
-		//}
 	})
 }

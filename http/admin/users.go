@@ -11,7 +11,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	auth "github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -52,7 +51,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	} else {
 		name = strings.TrimPrefix(r.URL.Path, defs.AdminUsersPath)
 		if name != "" {
-			if ud, ok := auth.AuthService.ReadUser(name, false); errors.Nil(ok) {
+			if ud, err := auth.AuthService.ReadUser(name, false); err == nil {
 				u = ud
 			}
 
@@ -60,7 +59,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		}
 	}
 
-	if errors.Nil(err) {
+	if err == nil {
 		s := symbols.NewSymbolTable(r.URL.Path)
 
 		_ = s.SetAlways("_superuser", true)
@@ -87,9 +86,9 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			var response defs.User
 
 			_, err = auth.SetUser(s, []interface{}{args})
-			if errors.Nil(err) {
+			if err == nil {
 				u, err = auth.AuthService.ReadUser(name, false)
-				if errors.Nil(err) {
+				if err == nil {
 					u.Name = name
 					response = u
 				} else {
@@ -99,7 +98,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				}
 			}
 
-			if errors.Nil(err) {
+			if err == nil {
 				w.Header().Add(contentTypeHeader, defs.UserMediaType)
 				w.WriteHeader(http.StatusOK)
 
@@ -179,8 +178,8 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 }
 
 func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *symbols.SymbolTable) (bool, int) {
-	u, exists := auth.AuthService.ReadUser(name, false)
-	if !errors.Nil(exists) {
+	u, userErr := auth.AuthService.ReadUser(name, false)
+	if userErr != nil {
 		msg := fmt.Sprintf("No username entry for '%s'", name)
 
 		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
@@ -192,7 +191,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 	response := u
 
 	v, err := auth.DeleteUser(s, []interface{}{u.Name})
-	if !errors.Nil(err) || !datatypes.GetBool(v) {
+	if err != nil || !datatypes.GetBool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)
@@ -200,7 +199,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 		return true, http.StatusNotFound
 	}
 
-	if errors.Nil(err) {
+	if err == nil {
 		b, _ := json.Marshal(response)
 
 		w.Header().Add(contentTypeHeader, defs.UserMediaType)

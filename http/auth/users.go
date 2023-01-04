@@ -17,11 +17,11 @@ import (
 )
 
 type UserIOService interface {
-	ReadUser(name string, doNotLog bool) (defs.User, *errors.EgoError)
-	WriteUser(user defs.User) *errors.EgoError
-	DeleteUser(name string) *errors.EgoError
+	ReadUser(name string, doNotLog bool) (defs.User, error)
+	WriteUser(user defs.User) error
+	DeleteUser(name string) error
 	ListUsers() map[string]defs.User
-	Flush() *errors.EgoError
+	Flush() error
 }
 
 var AuthService UserIOService
@@ -30,7 +30,7 @@ var userDatabaseFile = ""
 
 // loadUserDatabase uses command line options to locate and load the authorized users
 // database, or initialize it to a helpful default.
-func LoadUserDatabase(c *cli.Context) *errors.EgoError {
+func LoadUserDatabase(c *cli.Context) error {
 	defaultUser := "admin"
 	defaultPassword := "password"
 
@@ -54,7 +54,7 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 		userDatabaseFile = defs.DefaultUserdataFileName
 	}
 
-	var err *errors.EgoError
+	var err error
 
 	if !ui.IsActive(ui.AuthLogger) {
 		ui.Debug(ui.ServerLogger, "Initializing credentials and authorizations")
@@ -81,8 +81,8 @@ func LoadUserDatabase(c *cli.Context) *errors.EgoError {
 	return err
 }
 
-func defineCredentialService(path, user, password string) (UserIOService, *errors.EgoError) {
-	var err *errors.EgoError
+func defineCredentialService(path, user, password string) (UserIOService, error) {
+	var err error
 
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
 
@@ -97,12 +97,12 @@ func defineCredentialService(path, user, password string) (UserIOService, *error
 
 // setPermission sets a given permission string to true for a given user. Returns an error
 // if the username does not exist.
-func setPermission(user, privilege string, enabled bool) *errors.EgoError {
-	var err *errors.EgoError
+func setPermission(user, privilege string, enabled bool) error {
+	var err error
 
 	privname := strings.ToLower(privilege)
 
-	if u, err := AuthService.ReadUser(user, false); errors.Nil(err) {
+	if u, err := AuthService.ReadUser(user, false); err == nil {
 		if u.Permissions == nil {
 			u.Permissions = []string{"logon"}
 		}
@@ -126,18 +126,18 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 		}
 
 		err = AuthService.WriteUser(u)
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
 		err = AuthService.Flush()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 
 		ui.Debug(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		return errors.New(errors.ErrNoSuchUser).Context(user)
+		return errors.EgoError(errors.ErrNoSuchUser).Context(user)
 	}
 
 	return err
@@ -148,7 +148,7 @@ func setPermission(user, privilege string, enabled bool) *errors.EgoError {
 func GetPermission(user, privilege string) bool {
 	privname := strings.ToLower(privilege)
 
-	if u, ok := AuthService.ReadUser(user, false); errors.Nil(ok) {
+	if u, err := AuthService.ReadUser(user, false); err == nil {
 		pn := findPermission(u, privname)
 
 		return (pn >= 0)
@@ -177,7 +177,7 @@ func findPermission(u defs.User, perm string) int {
 func ValidatePassword(user, pass string) bool {
 	ok := false
 
-	if u, userExists := AuthService.ReadUser(user, false); errors.Nil(userExists) {
+	if u, userExists := AuthService.ReadUser(user, false); userExists == nil {
 		realPass := u.Password
 		// If the password in the database is quoted, do a local hash
 		if strings.HasPrefix(realPass, "{") && strings.HasSuffix(realPass, "}") {
@@ -214,7 +214,7 @@ func HashString(s string) string {
 // Authenticated implements the Authenticated(user,pass) function. This accepts a username
 // and password string, and determines if they are authenticated using the
 // users database.
-func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var user, pass string
 
 	// If there are no arguments, then we look for the _user and _password
@@ -229,7 +229,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 		}
 	} else {
 		if len(args) != 2 {
-			return false, errors.New(errors.ErrArgumentCount)
+			return false, errors.EgoError(errors.ErrArgumentCount)
 		}
 
 		user = datatypes.GetString(args[0])
@@ -242,11 +242,11 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, *er
 
 // Permission implements the Permission(user,priv) function. It returns
 // a boolean value indicating if the given username has the given permission.
-func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var user, priv string
 
 	if len(args) != 2 {
-		return false, errors.New(errors.ErrArgumentCount)
+		return false, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	user = datatypes.GetString(args[0])
@@ -259,8 +259,8 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 // SetUser implements the SetUser() function. For the super user, this function
 // can be used to update user data in the persistent use database for the Ego
 // web server.
-func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
-	var err *errors.EgoError
+func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	var err error
 
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
@@ -270,13 +270,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 	}
 
 	if !superUser {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation)
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	if u, ok := args[0].(*datatypes.EgoMap); ok {
@@ -286,7 +286,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 		}
 
 		r, ok := AuthService.ReadUser(name, false)
-		if !errors.Nil(ok) {
+		if ok != nil {
 			r = defs.User{
 				Name:        name,
 				ID:          uuid.New(),
@@ -325,7 +325,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // DeleteUser implements the DeleteUser() function. For a privileged user,
 // this will delete a record from the persistent user database. Returns true
 // if the name was deleted, else false if it was not a valid username.
-func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
@@ -334,19 +334,19 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 	}
 
 	if !superUser {
-		return nil, errors.New(errors.ErrNoPrivilegeForOperation)
+		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation)
 	}
 
 	// There must be one parameter, which is the username
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
-	if _, ok := AuthService.ReadUser(name, false); errors.Nil(ok) {
+	if _, ok := AuthService.ReadUser(name, false); ok == nil {
 		err := AuthService.DeleteUser(name)
-		if !errors.Nil(err) {
+		if err != nil {
 			return false, err
 		}
 
@@ -358,17 +358,17 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *error
 
 // GetUser implements the GetUser() function. This returns a struct defining the
 // persisted information about an existing user in the user database.
-func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
-		return nil, errors.New(errors.ErrArgumentCount)
+		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
 	r := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 	name := strings.ToLower(datatypes.GetString(args[0]))
 
 	t, ok := AuthService.ReadUser(name, false)
-	if !errors.Nil(ok) {
+	if ok != nil {
 		return r, nil
 	}
 
@@ -389,7 +389,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.E
 // the various ways the token was considered invalid.
 func ValidateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
-	if !errors.Nil(err) {
+	if err != nil {
 		ui.Debug(ui.AuthLogger, "Token validation error: "+err.Error())
 	}
 

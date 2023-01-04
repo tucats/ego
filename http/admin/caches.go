@@ -8,7 +8,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/assets"
 	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/util"
@@ -34,11 +33,11 @@ func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		_, _ = buf.ReadFrom(r.Body)
 
 		err := json.Unmarshal(buf.Bytes(), &result)
-		if errors.Nil(err) {
+		if err == nil {
 			services.MaxCachedEntries = result.Limit
 		}
 
-		if !errors.Nil(err) {
+		if err != nil {
 			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 			return http.StatusBadRequest

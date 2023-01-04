@@ -69,7 +69,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 
 // callFramePop retrieves the call frame information from the stack, and updates
 // the current bytecode context to reflect the previously-stored state.
-func (c *Context) callFramePop() *errors.EgoError {
+func (c *Context) callFramePop() error {
 	// First, is there stuff on the stack we want to preserve?
 	topOfStackSlice := []interface{}{}
 
@@ -82,7 +82,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 	c.stackPointer = c.framePointer
 	cx, err := c.Pop()
 
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (c *Context) callFramePop() *errors.EgoError {
 			if _, ok := pkg.(*datatypes.EgoStruct); ok {
 				ui.Log(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
 
-				return errors.New(errors.ErrStop)
+				return errors.EgoError(errors.ErrStop)
 			}
 
 			if m, ok := pkg.(*datatypes.EgoPackage); ok {

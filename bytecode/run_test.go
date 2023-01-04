@@ -311,10 +311,10 @@ func TestByteCode_Run(t *testing.T) {
 			functions.AddBuiltins(c.symbols)
 
 			err := c.Run()
-			if err.Is(errors.ErrStop) {
+			if errors.Equals(err, errors.ErrStop) {
 				err = nil
 			}
-			if (!errors.Nil(err)) != tt.wantErr {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("ByteCode.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if c.running {
@@ -322,7 +322,7 @@ func TestByteCode_Run(t *testing.T) {
 			}
 			if tt.fields.result != nil {
 				v, err := c.Pop()
-				if !errors.Nil(err) && !tt.wantErr {
+				if err != nil && !tt.wantErr {
 					t.Error("ByteCode Run() unexpected " + err.Error())
 				}
 				if !reflect.DeepEqual(tt.fields.result, v) {

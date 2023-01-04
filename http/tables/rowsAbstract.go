@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -19,11 +18,11 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 	var err error
 
 	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName:     "string",
 		defs.AbstractParameterName: "bool",
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -53,7 +52,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 			tableName, _ = fullName(user, tableName)
 
 			columns, err = getColumnInfo(db, user, tableName, sessionID)
-			if !errors.Nil(err) {
+			if err != nil {
 				util.ErrorResponse(w, sessionID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
 
 				return
@@ -180,7 +179,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		return
 	}
 
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, "insert error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -201,7 +200,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 		defs.FilterParameterName:   defs.Any,
 		defs.UserParameterName:     "string",
 		defs.AbstractParameterName: "bool",
-	}); !errors.Nil(invalid) {
+	}); invalid != nil {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
@@ -299,7 +298,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		defs.FilterParameterName: defs.Any,
 		defs.UserParameterName:   "string",
 		defs.ColumnParameterName: "string",
-	}); !errors.Nil(invalid) {
+	}); invalid != nil {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
 		return
@@ -379,14 +378,14 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 			}
 		}
 
-		if errors.Nil(err) {
+		if err == nil {
 			err = tx.Commit()
 		} else {
 			_ = tx.Rollback()
 		}
 	}
 
-	if errors.Nil(err) {
+	if err == nil {
 		result := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(sessionID),
 			Count:      count,

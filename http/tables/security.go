@@ -231,7 +231,7 @@ func GrantPermissions(user string, hasAdminPermission bool, tableName string, se
 
 	err = grantPermissions(sessionID, db, user, table, buff.String())
 
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -416,7 +416,7 @@ func doCreateTablePermissions(sessionID int32, db *sql.DB, user, table string, p
 	return true
 }
 
-func grantPermissions(sessionID int32, db *sql.DB, user string, table string, permissions string) *errors.EgoError {
+func grantPermissions(sessionID int32, db *sql.DB, user string, table string, permissions string) error {
 	// Decompose the permissions list
 	permissionNames := strings.Split(permissions, ",")
 	tableName, _ := fullName(user, table)
@@ -427,7 +427,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, stripQuotes(user), stripQuotes(tableName))
 	if err != nil {
-		return errors.New(err).Context(user + ":" + tableName)
+		return errors.EgoError(err).Context(user + ":" + tableName)
 	}
 
 	defer rows.Close()
@@ -492,7 +492,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	}
 
 	if err != nil {
-		return errors.New(err).Context(context)
+		return errors.EgoError(err).Context(context)
 	}
 
 	return nil

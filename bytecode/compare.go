@@ -18,15 +18,15 @@ import (
 // and a type-specific test for equality is done.
 // If the values are equal, then true is pushed
 // back on the stack, else false.
-func equalByteCode(c *Context, i interface{}) *errors.EgoError {
+func equalByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -48,13 +48,13 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := v1.(type) {
 	case nil:
-		if e2, ok := v2.(*errors.EgoError); ok {
+		if e2, ok := v2.(error); ok {
 			r = errors.Nil(e2)
 		} else {
 			r = (v2 == nil)
 		}
 
-	case *errors.EgoError:
+	case *errors.EgoErrorMsg:
 		r = a.Equal(v2)
 
 	case *datatypes.EgoStruct:
@@ -120,15 +120,15 @@ func equalByteCode(c *Context, i interface{}) *errors.EgoError {
 // and a type-specific test for equality is done.
 // If the values are not equal, then true is pushed
 // back on the stack, else false.
-func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
+func notEqualByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -146,13 +146,9 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 
 	switch a := v1.(type) {
 	case nil:
-		if e2, ok := v2.(*errors.EgoError); ok {
-			r = !errors.Nil(e2)
-		} else {
-			r = (v2 != nil)
-		}
+		r = (v2 != nil)
 
-	case *errors.EgoError:
+	case *errors.EgoErrorMsg:
 		r = !a.Equal(v2)
 
 	case error:
@@ -208,15 +204,15 @@ func notEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 // If the top value is greater than the second
 // value, then true is pushed back on the stack,
 // else false.
-func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
+func greaterThanByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -276,15 +272,15 @@ func greaterThanByteCode(c *Context, i interface{}) *errors.EgoError {
 // If the top value is greater than or equal to the
 // second value, then true is pushed back on the stack,
 // else false.
-func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
+func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -342,15 +338,15 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
 // If the top value is less than the second
 // value, then true is pushed back on the stack,
 // else false.
-func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
+func lessThanByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
@@ -411,15 +407,15 @@ func lessThanByteCode(c *Context, i interface{}) *errors.EgoError {
 // If the top value is less than or equal to the
 // second value, then true is pushed back on the
 // stack, else false.
-func lessThanOrEqualByteCode(c *Context, i interface{}) *errors.EgoError {
+func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 	// Terms pushed in reverse order.
 	v2, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	v1, err := c.Pop()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 

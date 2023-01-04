@@ -9,7 +9,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
 
@@ -81,7 +80,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		return http.StatusOK
 
 	case http.MethodDelete:
-		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); !errors.Nil(err) {
+		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); err != nil {
 			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 			return http.StatusBadRequest

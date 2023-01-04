@@ -2,11 +2,10 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/errors"
 )
 
 // compileExit handles the exit statement compilation.
-func (c *Compiler) compileExit() *errors.EgoError {
+func (c *Compiler) compileExit() error {
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
 
@@ -14,7 +13,7 @@ func (c *Compiler) compileExit() *errors.EgoError {
 
 	if !c.isStatementEnd() {
 		bc, err := c.Expression()
-		if !errors.Nil(err) {
+		if err != nil {
 			return err
 		}
 

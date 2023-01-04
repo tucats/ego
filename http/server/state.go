@@ -42,9 +42,9 @@ var NextSessionID int32
 // process, which validates if it actually exists.
 func IsRunning(pid int) bool {
 	proc, err := os.FindProcess(pid)
-	if errors.Nil(err) {
+	if err == nil {
 		err := proc.Signal(syscall.Signal(0))
-		if errors.Nil(err) {
+		if err == nil {
 			return true
 		}
 	}
@@ -55,29 +55,33 @@ func IsRunning(pid int) bool {
 // RemovePidFile removes the existing pid file, regardless of
 // the server state. Don't call this unless you know the server
 // has stopped!
-func RemovePidFile(c *cli.Context) *errors.EgoError {
-	return errors.New(os.Remove(getPidFileName((c))))
+func RemovePidFile(c *cli.Context) error {
+	return errors.EgoError(os.Remove(getPidFileName((c))))
 }
 
 // ReadPidFile reads the active pid file (if found) and returns
 // it's contents converted to a ServerStatus object.
-func ReadPidFile(c *cli.Context) (*defs.ServerStatus, *errors.EgoError) {
+func ReadPidFile(c *cli.Context) (*defs.ServerStatus, error) {
 	var status = defs.ServerStatus{}
 
 	b, err := ioutil.ReadFile(getPidFileName(c))
-	if errors.Nil(err) {
+	if err == nil {
 		err = json.Unmarshal(b, &status)
 		status.ServerInfo = util.MakeServerInfo(0)
 		status.ServerInfo.Version = defs.APIVersion
 	}
 
-	return &status, errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return &status, err
 }
 
 // WritePidFile creates (or replaces) the pid file with the current
 // server status. It also forces the file to be read/write only for
 // the server process owner.
-func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
+func WritePidFile(c *cli.Context, status defs.ServerStatus) error {
 	fn := getPidFileName(c)
 	status.Started = time.Now()
 	status.ServerInfo.Version = defs.APIVersion
@@ -86,11 +90,15 @@ func WritePidFile(c *cli.Context, status defs.ServerStatus) *errors.EgoError {
 	b, _ := json.MarshalIndent(status, "", "  ")
 
 	err := ioutil.WriteFile(fn, b, 0600)
-	if errors.Nil(err) {
+	if err == nil {
 		err = os.Chmod(fn, 0600)
 	}
 
-	return errors.New(err)
+	if err != nil {
+		err = errors.EgoError(err)
+	}
+
+	return err
 }
 
 // Use the --port specifiation, if any, to create a platform-specific

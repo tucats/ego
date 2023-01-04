@@ -10,7 +10,6 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -35,11 +34,11 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	statements := []string{}
 
 	err := json.Unmarshal([]byte(body), &statements)
-	if !errors.Nil(err) {
+	if err != nil {
 		statement := ""
 
 		err := json.Unmarshal([]byte(body), &statement)
-		if !errors.Nil(err) {
+		if err != nil {
 			util.ErrorResponse(w, sessionID, "Invalid SQL payload: "+err.Error(), http.StatusBadRequest)
 
 			return
@@ -90,7 +89,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 
 	// We always do this under control of a transaction, so set that up now.
 	db, err := OpenDB(sessionID, user, "")
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -99,7 +98,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 	}
 
 	tx, err := db.Begin()
-	if !errors.Nil(err) {
+	if err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -151,7 +150,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 				}
 			}
 
-			if !errors.Nil(err) {
+			if err != nil {
 				break
 			}
 		}

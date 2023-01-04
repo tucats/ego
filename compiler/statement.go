@@ -9,7 +9,7 @@ import (
 )
 
 // compileStatement compiles a single statement.
-func (c *Compiler) compileStatement() *errors.EgoError {
+func (c *Compiler) compileStatement() error {
 	// We just eat statement separators and empty blocks, and also
 	// terminate processing when we hit the end of the token stream
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
@@ -270,20 +270,20 @@ func (c *Compiler) isFunctionCall() bool {
 	return false
 }
 
-func (c *Compiler) compilePanic() *errors.EgoError {
+func (c *Compiler) compilePanic() error {
 	if !c.t.IsNext(tokenizer.StartOfListToken) {
-		return errors.New(errors.ErrMissingParenthesis)
+		return errors.EgoError(errors.ErrMissingParenthesis)
 	}
 
 	err := c.expressionAtom()
-	if !errors.Nil(err) {
+	if err != nil {
 		return err
 	}
 
 	c.b.Emit(bytecode.Panic)
 
 	if !c.t.IsNext(tokenizer.EndOfListToken) {
-		return errors.New(errors.ErrMissingParenthesis)
+		return errors.EgoError(errors.ErrMissingParenthesis)
 	}
 
 	return nil

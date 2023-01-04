@@ -23,23 +23,22 @@ const UnexpectedNilPointerError = "Unexpected nil database object pointer"
 func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	if e := util.AcceptedMediaType(r, []string{defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType}); !errors.Nil(e) {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+	if err := util.AcceptedMediaType(r, []string{defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	// Verify that there are no parameters
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	db, err := OpenDB(sessionID, user, "")
-
 	if err == nil && db != nil {
 		tableName, _ = fullName(user, tableName)
 
@@ -158,17 +157,17 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 // ReadTable reads the metadata for a given table, and returns it as an array
 // of column names and types.
 func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if e := util.AcceptedMediaType(r, []string{defs.TableMetadataMediaType}); !errors.Nil(e) {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+	if err := util.AcceptedMediaType(r, []string{defs.TableMetadataMediaType}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	// Verify that there are no parameters
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -235,7 +234,9 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		ui.Debug(ui.SQLLogger, "[%d] Read nullable query: %s", sessionID, util.SessionLog(sessionID, q))
 
-		nrows, err := db.Query(q)
+		var nrows *sql.Rows
+
+		nrows, err = db.Query(q)
 		if err != nil {
 			util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
 
@@ -265,7 +266,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 
 		// Get standard column names an type info.
 		columns, e2 := getColumnInfo(db, user, tableName, sessionID)
-		if errors.Nil(e2) {
+		if e2 == nil {
 			// Determine which columns are nullable
 			for n, column := range columns {
 				columns[n].Nullable = nullableColumns[column.Name]
@@ -294,7 +295,9 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			return
 		}
 
-		err = e2
+		if e2 != nil {
+			err = errors.EgoError(e2)
+		}
 	}
 
 	msg := fmt.Sprintf("database table metadata error, %s", strings.TrimPrefix(err.Error(), "pq: "))
@@ -312,7 +315,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 	util.ErrorResponse(w, sessionID, msg, status)
 }
 
-func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) ([]defs.DBColumn, *errors.EgoError) {
+func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 	name, _ := fullName(user, tableName)
 
@@ -359,7 +362,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 	}
 
 	if err != nil {
-		return columns, errors.New(err)
+		return columns, errors.EgoError(err)
 	}
 
 	return columns, nil
@@ -367,17 +370,17 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 
 // DeleteTable will delete a database table from the user's schema.
 func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if e := util.AcceptedMediaType(r, []string{}); !errors.Nil(e) {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+	if err := util.AcceptedMediaType(r, []string{}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
 	// Verify that there are no parameters
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.UserParameterName: "string",
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -423,8 +426,8 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 
 // ListTables will list all the tables for the given user.
 func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWriter, r *http.Request) {
-	if e := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); !errors.Nil(e) {
-		util.ErrorResponse(w, sessionID, e.Error(), http.StatusBadRequest)
+	if err := util.AcceptedMediaType(r, []string{defs.TablesMediaType}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -437,13 +440,13 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 	}
 
 	// Verify that the parameters are valid, if given.
-	if invalid := util.ValidateParameters(r.URL, map[string]string{
+	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.StartParameterName:    "int",
 		defs.LimitParameterName:    "int",
 		defs.UserParameterName:     "string",
 		defs.RowCountParameterName: "bool",
-	}); !errors.Nil(invalid) {
-		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
+	}); err != nil {
+		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -525,7 +528,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 					ui.Debug(ui.SQLLogger, "[%d] Row count query: %s", sessionID, q)
 
 					result, e2 := db.Query(q)
-					if !errors.Nil(e2) {
+					if e2 != nil {
 						util.ErrorResponse(w, sessionID, e2.Error(), http.StatusInternalServerError)
 
 						return

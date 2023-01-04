@@ -10,7 +10,7 @@ import (
 )
 
 // Min implements the min() function.
-func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
 	}
@@ -20,7 +20,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	for _, v := range args[1:] {
 		v = datatypes.Coerce(v, r)
 		if v == nil {
-			return nil, errors.New(errors.ErrInvalidType).In("min()")
+			return nil, errors.EgoError(errors.ErrInvalidType).In("min()")
 		}
 
 		switch rv := r.(type) {
@@ -44,7 +44,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 				r = v
 			}
 		default:
-			return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(rv).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(rv).String())
 		}
 	}
 
@@ -52,7 +52,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // Max implements the max() function.
-func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
 	}
@@ -62,7 +62,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 	for _, xv := range args[1:] {
 		v := datatypes.Coerce(xv, r)
 		if v == nil {
-			return nil, errors.New(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(r).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(r).String())
 		}
 
 		switch rr := r.(type) {
@@ -87,7 +87,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			}
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(rr).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(rr).String())
 		}
 	}
 
@@ -95,13 +95,13 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // Sum implements the sum() function.
-func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := args[0]
 
 	for _, addendV := range args[1:] {
 		addend := datatypes.Coerce(addendV, base)
 		if addend == nil {
-			return nil, errors.New(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(addendV).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(addendV).String())
 		}
 
 		switch rv := addend.(type) {
@@ -130,7 +130,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 			base = base.(string) + addend.(string)
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(rv).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(rv).String())
 		}
 	}
 
@@ -138,29 +138,29 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 }
 
 // Sqrt implements the sqrt() function.
-func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := datatypes.GetFloat64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function.
-func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := datatypes.GetFloat64(args[0])
 
 	return math.Abs(f), nil
 }
 
 // Log is the log() function.
-func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return math.Log(datatypes.GetFloat64(args[0])), nil
 }
 
 // Random implmeents the math.Random function.
-func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	max := datatypes.GetInt(args[0])
 	if max <= 0 {
-		return nil, errors.New(errors.ErrInvalidFunctionArgument).Context(max)
+		return nil, errors.EgoError(errors.ErrInvalidFunctionArgument).Context(max)
 	}
 
 	return rand.Intn(max), nil

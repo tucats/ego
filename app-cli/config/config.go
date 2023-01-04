@@ -84,12 +84,12 @@ var Grammar = []cli.Option{
 }
 
 // ShowAction Displays the current contents of the active configuration.
-func ShowAction(c *cli.Context) *errors.EgoError {
+func ShowAction(c *cli.Context) error {
 	// Is the user asking for a single value?
 	if c.GetParameterCount() > 0 {
 		key := c.GetParameter(0)
 		if !settings.Exists(key) {
-			return errors.New(errors.ErrNoSuchProfileKey).Context(key)
+			return errors.EgoError(errors.ErrNoSuchProfileKey).Context(key)
 		}
 
 		fmt.Println(settings.Get(key))
@@ -118,7 +118,7 @@ func ShowAction(c *cli.Context) *errors.EgoError {
 }
 
 // ListAction Displays the current contents of the active configuration.
-func ListAction(c *cli.Context) *errors.EgoError {
+func ListAction(c *cli.Context) error {
 	t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Description")})
 
 	for k, v := range settings.Configurations {
@@ -136,7 +136,7 @@ func ListAction(c *cli.Context) *errors.EgoError {
 }
 
 // SetOutputAction is the action handler for the set-output subcommand.
-func SetOutputAction(c *cli.Context) *errors.EgoError {
+func SetOutputAction(c *cli.Context) error {
 	if c.GetParameterCount() == 1 {
 		outputType := c.GetParameter(0)
 		if util.InList(outputType,
@@ -148,14 +148,14 @@ func SetOutputAction(c *cli.Context) *errors.EgoError {
 			return nil
 		}
 
-		return errors.New(errors.ErrInvalidOutputFormat).Context(outputType)
+		return errors.EgoError(errors.ErrInvalidOutputFormat).Context(outputType)
 	}
 
-	return errors.New(errors.ErrMissingOutputType)
+	return errors.EgoError(errors.ErrMissingOutputType)
 }
 
 // SetAction uses the first two parameters as a key and value.
-func SetAction(c *cli.Context) *errors.EgoError {
+func SetAction(c *cli.Context) error {
 	// Generic --key and --value specification.
 	key := c.GetParameter(0)
 	value := defs.True
@@ -166,7 +166,7 @@ func SetAction(c *cli.Context) *errors.EgoError {
 	}
 
 	// Sanity check -- if it is a privileged setting, is it valid?
-	if invalidKeyError := validateKey(key); !errors.Nil(invalidKeyError) {
+	if invalidKeyError := validateKey(key); invalidKeyError != nil {
 		return invalidKeyError
 	}
 
@@ -180,17 +180,17 @@ func SetAction(c *cli.Context) *errors.EgoError {
 }
 
 // DeleteAction deletes a named key value.
-func DeleteAction(c *cli.Context) *errors.EgoError {
-	var err *errors.EgoError
+func DeleteAction(c *cli.Context) error {
+	var err error
 
 	key := c.GetParameter(0)
 
 	// Sanity check -- if it is a privileged setting, is it valid?
-	if err = validateKey(key); !errors.Nil(err) {
+	if err = validateKey(key); err != nil {
 		return err
 	}
 
-	if err = settings.Delete(key); !errors.Nil(err) {
+	if err = settings.Delete(key); err != nil {
 		if c.Boolean("force") {
 			err = nil
 		}
@@ -204,11 +204,11 @@ func DeleteAction(c *cli.Context) *errors.EgoError {
 }
 
 // DeleteProfileAction deletes a named profile.
-func DeleteProfileAction(c *cli.Context) *errors.EgoError {
+func DeleteProfileAction(c *cli.Context) error {
 	name := c.GetParameter(0)
 
 	err := settings.DeleteProfile(name)
-	if errors.Nil(err) {
+	if err == nil {
 		ui.Say("%s", i18n.M("config.deleted", map[string]interface{}{"name": name}))
 
 		return nil
@@ -218,7 +218,7 @@ func DeleteProfileAction(c *cli.Context) *errors.EgoError {
 }
 
 // SetDescriptionAction sets the profile description string.
-func SetDescriptionAction(c *cli.Context) *errors.EgoError {
+func SetDescriptionAction(c *cli.Context) error {
 	config := settings.Configurations[settings.ProfileName]
 	config.Description = c.GetParameter(0)
 	settings.Configurations[settings.ProfileName] = config
@@ -229,15 +229,15 @@ func SetDescriptionAction(c *cli.Context) *errors.EgoError {
 
 // Determine if a key is allowed to be updated by the CLI. This rule
 // applies to keys with the privileged key prefix ("ego.").
-func validateKey(key string) *errors.EgoError {
+func validateKey(key string) error {
 	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
 		allowed, found := defs.ValidSettings[key]
 		if !found {
-			return errors.New(errors.ErrInvalidConfigName)
+			return errors.EgoError(errors.ErrInvalidConfigName)
 		}
 
 		if !allowed {
-			return errors.New(errors.ErrNoPrivilegeForOperation)
+			return errors.EgoError(errors.ErrNoPrivilegeForOperation)
 		}
 	}
 

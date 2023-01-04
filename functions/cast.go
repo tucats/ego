@@ -19,7 +19,7 @@ import (
 const MaxDeepCopyDepth = 100
 
 // Normalize coerces a value to match the type of a model value.
-func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := datatypes.Normalize(args[0], args[1])
 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
@@ -29,7 +29,7 @@ func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors
 // or a string type name is given, the "zero value" for that type
 // is returned. For an array, struct, or map, a recursive copy is
 // done of the members to a new object which is returned.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Is the type an integer? If so it's a type
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {
@@ -55,7 +55,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("new()").Context(typeValue)
+			return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(typeValue)
 		}
 	}
 
@@ -96,7 +96,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 			return float64(0), nil
 
 		default:
-			return nil, errors.New(errors.ErrInvalidType).In("new()").Context(typeValue)
+			return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(typeValue)
 		}
 	}
 
@@ -132,13 +132,13 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
-		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context(nil)
+		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context(nil)
 
 	case symbols.SymbolTable:
-		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context("symbol table")
+		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-		return nil, errors.New(errors.ErrInvalidValue).In("new()").Context("builtin function")
+		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context("builtin function")
 
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
@@ -180,7 +180,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoEr
 		}
 
 	default:
-		return nil, errors.New(errors.ErrInvalidType).In("new()").Context(v)
+		return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(v)
 	}
 
 	return r, nil
@@ -272,12 +272,9 @@ func DeepCopy(source interface{}, depth int) interface{} {
 // Compiler-generate casting; generally always array types. This is used to
 // convert numeric arrays to a different kind of array, to convert a string
 // to an array of integer (rune) values, etc.
-func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *errors.EgoError) {
+func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Target kind is the last parameter
 	kind := datatypes.GetType(args[len(args)-1])
-	//	if !kind.IsArray() {
-	//		return nil, errors.New(errors.ErrInvalidType)
-	//	}
 
 	source := args[0]
 	if len(args) > 2 {
@@ -352,7 +349,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 				_ = r.Set(i, datatypes.GetString(v))
 
 			default:
-				return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
+				return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 			}
 		}
 
@@ -385,6 +382,6 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, *err
 			return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
 		}
 
-		return nil, errors.New(errors.ErrInvalidType).Context(datatypes.TypeOf(source).String())
+		return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(source).String())
 	}
 }

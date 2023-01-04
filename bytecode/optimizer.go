@@ -7,7 +7,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -43,7 +42,7 @@ type Optimization struct {
 }
 
 // Optimize runs a peep-hold optimizer over the bytecode.
-func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
+func (b *ByteCode) Optimize(count int) (int, error) {
 	startingSize := b.emitPos
 
 	// Figure out the maximum pattern size, since we'll need this for backing
@@ -218,7 +217,7 @@ func (b *ByteCode) Optimize(count int) (int, *errors.EgoError) {
 	return count, nil
 }
 
-func (b *ByteCode) executeFragment(start, end int) (interface{}, *errors.EgoError) {
+func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
 	fragment := New("code fragment")
 
 	for idx := start; idx < end; idx++ {
