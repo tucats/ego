@@ -160,7 +160,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 
 	first := true
 	// Copy all the upper-case ("external") symbols names to the package level.
-	for k := range c.symbols.Symbols {
+	for _, k := range c.symbols.Names() {
 		if !strings.HasPrefix(k, "__") && util.HasCapitalizedName(k) {
 			v, attr, _ := c.symbols.GetWithAttributes(k)
 
@@ -190,7 +190,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	// symbols that aren't hidden values used by Ego itself.
 	s := symbols.NewSymbolTable("package " + pkgdef.name + " local values")
 
-	for k := range c.symbols.Symbols {
+	for _, k := range c.symbols.Names() {
 		if !strings.HasPrefix(k, "__") {
 			v, _ := c.symbols.Get(k)
 

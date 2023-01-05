@@ -100,9 +100,11 @@ func (c *Context) callFramePop() error {
 			}
 
 			if m, ok := pkg.(*datatypes.EgoPackage); ok {
-				for k, v := range packageSymbols.Symbols {
+				for _, k := range packageSymbols.Names() {
 					if util.HasCapitalizedName(k) {
-						m.Set(k, packageSymbols.GetValue(v.Slot))
+						pkgSymbol, _ := packageSymbols.Get(k)
+
+						m.Set(k, pkgSymbol)
 					}
 				}
 			}

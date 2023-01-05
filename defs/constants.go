@@ -248,6 +248,11 @@ const (
 	ByteCodeReflectionTypeString = "<*bytecode.ByteCode Value>"
 )
 
+const (
+	Line   = "__line"
+	Module = "__module"
+)
+
 // ValidSettings describes the list of valid settings, and whether they can be set by the
 // command line.
 var ValidSettings map[string]bool = map[string]bool{

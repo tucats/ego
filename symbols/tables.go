@@ -33,9 +33,9 @@ type SymbolTable struct {
 	Package       string
 	Parent        *SymbolTable
 	Symbols       map[string]*SymbolAttribute
-	Values        []*[]interface{}
+	values        []*[]interface{}
 	ID            uuid.UUID
-	ValueSize     int
+	size          int
 	ScopeBoundary bool
 	isRoot        bool
 	mutex         sync.RWMutex
@@ -91,6 +91,18 @@ func (s *SymbolTable) Lock() {
 
 func (s *SymbolTable) Unlock() {
 	s.mutex.Unlock()
+}
+
+func (s *SymbolTable) Names() []string {
+	result := make([]string, s.size)
+	index := 0
+
+	for k := range s.Symbols {
+		result[index] = k
+		index++
+	}
+
+	return result
 }
 
 // Find the root table for this symbol table.

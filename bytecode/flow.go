@@ -62,8 +62,8 @@ func atLineByteCode(c *Context, i interface{}) error {
 
 	c.line = datatypes.GetInt(i)
 	c.stepOver = false
-	c.symbols.SetAlways("__line", c.line)
-	c.symbols.SetAlways("__module", c.bc.Name)
+	c.symbols.SetAlways(defs.Line, c.line)
+	c.symbols.SetAlways(defs.Module, c.bc.Name)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {

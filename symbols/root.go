@@ -43,8 +43,8 @@ var RootSymbolTable = SymbolTable{
 	Parent:        nil,
 	ScopeBoundary: true,
 	Symbols:       rootNames,
-	ValueSize:     len(rootNames),
-	Values:        rootValues,
+	size:          len(rootNames),
+	values:        rootValues,
 	isRoot:        true,
 }
 

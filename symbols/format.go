@@ -22,7 +22,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	}
 
 	b.WriteString(fmt.Sprintf(" (%d/%d):\n",
-		s.ValueSize, len(s.Values)))
+		s.size, len(s.values)))
 
 	// Iterate over the members to get a list of the keys. Discard invisible
 	// items.

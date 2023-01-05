@@ -35,11 +35,11 @@ func (s *SymbolTable) initializeValues() {
 		s.Symbols = map[string]*SymbolAttribute{}
 	}
 
-	if s.Values == nil {
+	if s.values == nil {
 		bin := make([]interface{}, SymbolAllocationSize)
-		s.Values = make([]*[]interface{}, 1)
-		s.Values[0] = &bin
-		s.ValueSize = 0
+		s.values = make([]*[]interface{}, 1)
+		s.values[0] = &bin
+		s.size = 0
 	}
 }
 
@@ -54,15 +54,15 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 	// maximum value list size gives the slot number within the selected
 	// bin number.
 	bin := index / SymbolAllocationSize
-	for bin >= len(s.Values) {
+	for bin >= len(s.values) {
 		newBin := make([]interface{}, SymbolAllocationSize)
-		s.Values = append(s.Values, &newBin)
+		s.values = append(s.values, &newBin)
 
 		ui.Debug(ui.SymbolLogger, "%s, create new value bin", s.Name)
 	}
 
 	slot := index % SymbolAllocationSize
-	(*s.Values[bin])[slot] = v
+	(*s.values[bin])[slot] = v
 }
 
 // Given an index, retrieve a value from the Values list.
@@ -74,11 +74,11 @@ func (s *SymbolTable) GetValue(index int) interface{} {
 	bin := index / SymbolAllocationSize
 	slot := index % SymbolAllocationSize
 
-	if bin >= len(s.Values) {
+	if bin >= len(s.values) {
 		return nil
 	}
 
-	return (*s.Values[bin])[slot]
+	return (*s.values[bin])[slot]
 }
 
 // Given an index, return the address of the value in that
@@ -91,9 +91,9 @@ func (s *SymbolTable) AddressOfValue(index int) *interface{} {
 	bin := index / SymbolAllocationSize
 	slot := index % SymbolAllocationSize
 
-	if bin >= len(s.Values) {
+	if bin >= len(s.values) {
 		return nil
 	}
 
-	return &(*s.Values[bin])[slot]
+	return &(*s.values[bin])[slot]
 }

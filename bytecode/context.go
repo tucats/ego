@@ -217,7 +217,8 @@ func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 // AppendSymbols appends a symbol table to the current context.
 // This is used to add in compiler maps, for example.
 func (c *Context) AppendSymbols(s *symbols.SymbolTable) *Context {
-	for k, v := range s.Symbols {
+	for _, k := range s.Names() {
+		v, _ := s.Get(k)
 		c.symbols.SetAlways(k, v)
 	}
 

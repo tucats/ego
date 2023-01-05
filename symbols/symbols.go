@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -98,10 +99,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		return s.Parent.GetAddress(name)
 	}
 
-	if ui.IsActive(ui.SymbolLogger) {
-		ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)",
-			s.Name, s.ID, name)
-	}
+	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.ID, name)
 
 	return v, found
 }
@@ -120,10 +118,10 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 
 	if !ok {
 		attr = &SymbolAttribute{
-			Slot:     s.ValueSize,
+			Slot:     s.size,
 			Readonly: true,
 		}
-		s.ValueSize++
+		s.size++
 		s.Symbols[name] = attr
 	}
 
@@ -188,9 +186,9 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	// IF this doesn't exist, allocate more space in the values array
 	attr, ok := symbolTable.Symbols[name]
 	if !ok {
-		attr = &SymbolAttribute{Slot: s.ValueSize}
+		attr = &SymbolAttribute{Slot: s.size}
 		symbolTable.Symbols[name] = attr
-		s.ValueSize++
+		s.size++
 	}
 
 	if readOnly {
@@ -199,7 +197,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 
 	symbolTable.SetValue(attr.Slot, v)
 
-	if ui.IsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
+	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -233,10 +231,10 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	// add it to the symbol table slot.
 	attr, ok := symbolTable.Symbols[name]
 	if !ok {
-		attr = &SymbolAttribute{Slot: s.ValueSize}
+		attr = &SymbolAttribute{Slot: s.size}
 		symbolTable.Symbols[name] = attr
 
-		s.ValueSize++
+		s.size++
 	}
 
 	// Copy the attributes other than slot from the new attribute
@@ -246,7 +244,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	// Store the value, and update the symbol table entry.
 	symbolTable.SetValue(attr.Slot, v)
 
-	if ui.IsActive(ui.SymbolLogger) && name != "__line" && name != "__module" {
+	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
 		valueString := datatypes.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -360,16 +358,16 @@ func (s *SymbolTable) Create(name string) error {
 	}
 
 	s.Symbols[name] = &SymbolAttribute{
-		Slot:     s.ValueSize,
+		Slot:     s.size,
 		Readonly: false,
 	}
 
-	s.SetValue(s.ValueSize, nil)
-	s.ValueSize++
+	s.SetValue(s.size, nil)
+	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
-			s.Name, s.ID, name, s.ValueSize-1)
+			s.Name, s.ID, name, s.size-1)
 	}
 
 	return nil
@@ -387,7 +385,7 @@ func (s *SymbolTable) IsConstant(name string) bool {
 
 	if !s.IsRoot() {
 		return s.Parent.IsConstant(name)
-	} else {
-		return false
 	}
+
+	return false
 }
