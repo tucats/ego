@@ -30,10 +30,10 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")
-	_ = symbolTable.SetAlways("__exec_mode", "server")
+	symbolTable.SetAlways("__exec_mode", "server")
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
+	symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	u := r.URL.Query()
 	args := map[string]interface{}{}
@@ -48,7 +48,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 		args[k] = va
 	}
 
-	_ = symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(args))
+	symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(args))
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)

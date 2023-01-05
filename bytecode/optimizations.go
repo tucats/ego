@@ -1,12 +1,12 @@
 package bytecode
 
-var Optimizations = []Optimization{
+var Optimizations = []optimization{
 	{
 		Description: "Load followed by SetThis",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Load,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 			{
 				Operation: SetThis,
@@ -16,46 +16,46 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: LoadThis,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 		},
 	},
 	{
 		Description: "Collapse constant push and createandstore",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value"},
+				Operand:   placeholder{Name: "value"},
 			},
 			{
 				Operation: CreateAndStore,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 		},
 		Replacement: []Instruction{
 			{
 				Operation: CreateAndStore,
 				Operand: []interface{}{
-					OptimizerToken{Name: "name"},
-					OptimizerToken{Name: "value"},
+					placeholder{Name: "name"},
+					placeholder{Name: "value"},
 				},
 			},
 		},
 	},
 	{
 		Description: "Unnecessary stack marker for constant store",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
 				Operand:   NewStackMarker("let"),
 			},
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "constant"},
+				Operand:   placeholder{Name: "constant"},
 			},
 			{
 				Operation: CreateAndStore,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 			{
 				Operation: DropToMarker,
@@ -65,57 +65,57 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "constant"},
+				Operand:   placeholder{Name: "constant"},
 			},
 			{
 				Operation: CreateAndStore,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 		},
 	},
 	{
 		Description: "Sequential PopScope",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: PopScope,
-				Operand:   OptimizerToken{Name: "count1", Operation: OptCount, Register: 1},
+				Operand:   placeholder{Name: "count1", Operation: OptCount, Register: 1},
 			},
 			{
 				Operation: PopScope,
-				Operand:   OptimizerToken{Name: "count2", Operation: OptCount, Register: 1},
+				Operand:   placeholder{Name: "count2", Operation: OptCount, Register: 1},
 			},
 		},
 		Replacement: []Instruction{
 			{
 				Operation: PopScope,
-				Operand:   OptimizerToken{Name: "count", Operation: OptRead, Register: 1},
+				Operand:   placeholder{Name: "count", Operation: OptRead, Register: 1},
 			},
 		},
 	}, {
 		Description: "Create and store",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: SymbolCreate,
-				Operand:   OptimizerToken{Name: "symbolName"},
+				Operand:   placeholder{Name: "symbolName"},
 			},
 			{
 				Operation: Store,
-				Operand:   OptimizerToken{Name: "symbolName"},
+				Operand:   placeholder{Name: "symbolName"},
 			},
 		},
 		Replacement: []Instruction{
 			{
 				Operation: CreateAndStore,
-				Operand:   OptimizerToken{Name: "symbolName"},
+				Operand:   placeholder{Name: "symbolName"},
 			},
 		},
 	},
 	{
 		Description: "Push and Storeindex",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value"},
+				Operand:   placeholder{Name: "value"},
 			},
 			{
 				Operation: StoreIndex,
@@ -124,42 +124,42 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: StoreIndex,
-				Operand:   OptimizerToken{Name: "value"},
+				Operand:   placeholder{Name: "value"},
 			},
 		},
 	},
 	{
 		Description: "Constant storeAlways",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "value"},
+				Operand:   placeholder{Name: "value"},
 			},
 			{
 				Operation: StoreAlways,
-				Operand:   OptimizerToken{Name: "name"},
+				Operand:   placeholder{Name: "name"},
 			},
 		},
 		Replacement: []Instruction{
 			{
 				Operation: StoreAlways,
 				Operand: []interface{}{
-					OptimizerToken{Name: "name"},
-					OptimizerToken{Name: "value"},
+					placeholder{Name: "name"},
+					placeholder{Name: "value"},
 				},
 			},
 		},
 	},
 	{
 		Description: "Constant addition fold",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v1"},
+				Operand:   placeholder{Name: "v1"},
 			},
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v2"},
+				Operand:   placeholder{Name: "v2"},
 			},
 			{
 				Operation: Add,
@@ -168,20 +168,20 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "sum", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "sum", Operation: OptRunConstantFragment},
 			},
 		},
 	},
 	{
 		Description: "Constant subtraction fold",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v1"},
+				Operand:   placeholder{Name: "v1"},
 			},
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v2"},
+				Operand:   placeholder{Name: "v2"},
 			},
 			{
 				Operation: Sub,
@@ -190,20 +190,20 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "difference", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "difference", Operation: OptRunConstantFragment},
 			},
 		},
 	},
 	{
 		Description: "Constant multiplication fold",
-		Source: []Instruction{
+		Pattern: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v1"},
+				Operand:   placeholder{Name: "v1"},
 			},
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "v2"},
+				Operand:   placeholder{Name: "v2"},
 			},
 			{
 				Operation: Mul,
@@ -212,7 +212,7 @@ var Optimizations = []Optimization{
 		Replacement: []Instruction{
 			{
 				Operation: Push,
-				Operand:   OptimizerToken{Name: "product", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "product", Operation: OptRunConstantFragment},
 			},
 		},
 	},

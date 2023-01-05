@@ -90,7 +90,7 @@ func RunServer(c *cli.Context) error {
 
 	defs.ServerInstanceID, found = c.String("session-uuid")
 	if found {
-		_ = symbols.RootSymbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
+		symbols.RootSymbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get("_server_instance")
 		defs.ServerInstanceID = datatypes.GetString(s)
@@ -100,7 +100,7 @@ func RunServer(c *cli.Context) error {
 
 	debugPath, _ := c.String("debug-endpoint")
 	if len(debugPath) > 0 {
-		_ = symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
+		symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}
 
 	ui.Debug(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
@@ -159,7 +159,7 @@ func RunServer(c *cli.Context) error {
 	}
 
 	// Starting with the path root, recursively scan for service definitions.
-	_ = symbols.RootSymbolTable.SetAlways("__paths", []string{})
+	symbols.RootSymbolTable.SetAlways("__paths", []string{})
 
 	err := services.DefineLibHandlers(server.PathRoot, "/services")
 	if err != nil {

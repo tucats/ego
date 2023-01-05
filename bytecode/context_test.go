@@ -12,10 +12,7 @@ func TestNewContext(t *testing.T) {
 	s := symbols.NewSymbolTable("context test")
 	b := New("context test")
 
-	e := s.SetAlways("foo", 1)
-	if e != nil {
-		t.Errorf("Unexpected error setting symbol: %v", e)
-	}
+	s.SetAlways("foo", 1)
 
 	b.Emit(AtLine, 100)
 	b.Emit(Load, "foo")
@@ -42,7 +39,7 @@ func TestNewContext(t *testing.T) {
 		t.Error("stack not empty before run")
 	}
 
-	e = c.constantSet("xyzzy", "frobozz")
+	e := c.constantSet("xyzzy", "frobozz")
 	if e != nil {
 		t.Errorf("Unexpected constant set error: %v", e)
 	}

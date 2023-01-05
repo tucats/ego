@@ -30,22 +30,21 @@ func printByteCode(c *Context, i interface{}) error {
 	}
 
 	for n := 0; n < count; n = n + 1 {
-		v, err := c.Pop()
+		value, err := c.Pop()
 		if err != nil {
 			return err
 		}
 
-		if IsStackMarker(v) {
+		if IsStackMarker(value) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
 		s := ""
 
-		switch vv := v.(type) {
+		switch actualValue := value.(type) {
 		case *datatypes.EgoArray:
 			// Is this an array of a single type that is a structure?
-			valueType := vv.ValueType()
-
+			valueType := actualValue.ValueType()
 			isStruct := valueType.Kind() == datatypes.StructKind
 			isStructType := valueType.Kind() == datatypes.TypeKind && valueType.BaseType().Kind() == datatypes.StructKind
 
@@ -60,9 +59,9 @@ func printByteCode(c *Context, i interface{}) error {
 
 				t, _ := tables.New(columns)
 
-				for i := 0; i < vv.Len(); i++ {
-					rowV, _ := vv.Get(i)
-					row := rowV.(*datatypes.EgoStruct)
+				for i := 0; i < actualValue.Len(); i++ {
+					rowValue, _ := actualValue.Get(i)
+					row := rowValue.(*datatypes.EgoStruct)
 
 					rowItems := []string{}
 
@@ -76,9 +75,9 @@ func printByteCode(c *Context, i interface{}) error {
 
 				s = strings.Join(t.FormatText(), "\n")
 			} else {
-				r := make([]string, vv.Len())
+				r := make([]string, actualValue.Len())
 				for n := 0; n < len(r); n++ {
-					vvv, _ := vv.Get(n)
+					vvv, _ := actualValue.Get(n)
 					r[n] = datatypes.GetString(vvv)
 				}
 
@@ -86,16 +85,16 @@ func printByteCode(c *Context, i interface{}) error {
 			}
 
 		case *datatypes.EgoPackage:
-			s = formats.PackageAsString(vv)
+			s = formats.PackageAsString(actualValue)
 
 		case *datatypes.EgoStruct:
-			s = formats.StructAsString(vv)
+			s = formats.StructAsString(actualValue)
 
 		case *datatypes.EgoMap:
-			s = formats.MapAsString(vv)
+			s = formats.MapAsString(actualValue)
 
 		default:
-			s = datatypes.FormatUnquoted(v)
+			s = datatypes.FormatUnquoted(value)
 		}
 
 		if c.output == nil {
@@ -126,16 +125,18 @@ func logByteCode(c *Context, i interface{}) error {
 		class = ui.Logger(datatypes.GetString(i))
 	}
 
-	if class < 0 {
+	if class <= ui.NoSuchLogger {
 		return c.newError(errors.ErrInvalidLoggerName).Context(i)
 	}
 
 	msg, err := c.Pop()
-	if err == nil {
-		ui.Debug(class, "%v", msg)
+	if err != nil {
+		return err
 	}
 
-	return err
+	ui.Debug(class, "%v", msg)
+
+	return nil
 }
 
 // sayByteCode instruction processor. If the operand is true, output the string as-is,
@@ -193,6 +194,8 @@ func templateByteCode(c *Context, i interface{}) error {
 		t, e2 := template.New(name).Parse(datatypes.GetString(t))
 		if e2 == nil {
 			err = c.stackPush(t)
+		} else {
+			err = c.newError(e2)
 		}
 	}
 
@@ -213,12 +216,13 @@ func fromFileByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	b, err := ioutil.ReadFile(datatypes.GetString(i))
-	if err == nil {
+	if b, err := ioutil.ReadFile(datatypes.GetString(i)); err == nil {
 		c.tokenizer = tokenizer.New(string(b))
-	}
 
-	return errors.EgoError(err)
+		return nil
+	} else {
+		return errors.EgoError(err)
+	}
 }
 
 func timerByteCode(c *Context, i interface{}) error {
@@ -227,6 +231,8 @@ func timerByteCode(c *Context, i interface{}) error {
 	case 0:
 		t := time.Now()
 		c.timerStack = append(c.timerStack, t)
+
+		return nil
 
 	case 1:
 		timerStack := len(c.timerStack)
@@ -253,11 +259,9 @@ func timerByteCode(c *Context, i interface{}) error {
 
 		msText := fmt.Sprintf("%4.3f%s", float64(ms)/1000.0, unit)
 
-		_ = c.stackPush(msText)
+		return c.stackPush(msText)
 
 	default:
-		return c.newError(errors.ErrInvalidTimer)
+		return c.newError(errors.ErrInvalidTimer).Context(mode)
 	}
-
-	return nil
 }

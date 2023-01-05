@@ -54,10 +54,10 @@ func TestAction(c *cli.Context) error {
 	}
 
 	// Add test-specific functions and values
-	_ = symbolTable.SetAlways("eval", runtime.Eval)
-	_ = symbolTable.SetAlways("table", runtime.Table)
-	_ = symbolTable.SetAlways("__exec_mode", "test")
-	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
+	symbolTable.SetAlways("eval", runtime.Eval)
+	symbolTable.SetAlways("table", runtime.Table)
+	symbolTable.SetAlways("__exec_mode", "test")
+	symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	runtime.AddBuiltinPackages(symbolTable)
 

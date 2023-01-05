@@ -8,20 +8,19 @@ import (
 
 // Instruction contains the information about a single bytecode.
 type Instruction struct {
-	Operation OpcodeID
+	Operation Opcode
 	Operand   interface{}
 }
 
 func (i Instruction) String() string {
-	name, found := instructionNames[i.Operation]
+	name, found := opcodeNames[i.Operation]
 	if !found {
 		name = fmt.Sprintf("Unknown(%d)", i.Operation)
 	}
 
-	operand := ""
 	if i.Operand != nil {
-		operand = " " + datatypes.Format(i.Operand)
+		return name + " " + datatypes.Format(i.Operand)
 	}
 
-	return name + operand
+	return name
 }

@@ -215,11 +215,11 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					evalSymbols := syms.NewRootSymbolTable("transaction task condition")
 
 					for k, v := range symbols.Symbols {
-						_ = evalSymbols.SetAlways(k, v)
+						evalSymbols.SetAlways(k, v)
 					}
 
-					_ = evalSymbols.SetAlways("_rows_", count)
-					_ = evalSymbols.SetAlways("_all_rows_", rowsAffected)
+					evalSymbols.SetAlways("_rows_", count)
+					evalSymbols.SetAlways("_all_rows_", rowsAffected)
 
 					result, err := expressions.New().WithText(condition).Eval(evalSymbols)
 					if err != nil {

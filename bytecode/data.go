@@ -164,10 +164,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	// Get the name.
 	varname := datatypes.GetString(i)
 
-	err = c.symbols.Root().SetAlways(varname, v)
-	if err != nil {
-		return c.newError(err)
-	}
+	c.symbols.Root().SetAlways(varname, v)
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
@@ -343,9 +340,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	if err = c.symbolSetAlways(symbolName, v); err != nil {
-		return c.newError(err)
-	}
+	c.symbolSetAlways(symbolName, v)
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
@@ -406,10 +401,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 				empty = false
 				v, _, _ := m.Get(k)
 
-				err = c.symbolSetAlways(datatypes.GetString(k), v)
-				if err != nil {
-					break
-				}
+				c.symbolSetAlways(datatypes.GetString(k), v)
 			}
 
 			if err == nil {

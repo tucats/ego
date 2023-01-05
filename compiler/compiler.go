@@ -240,14 +240,14 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 			added = true
 
 			if pkgname == "" && c.s != nil {
-				_ = syms.SetAlways(name, f.F)
+				syms.SetAlways(name, f.F)
 				pkg.Set(name, f.F)
 			} else {
 				if f.F != nil {
-					_ = syms.SetAlways(name, f.F)
+					syms.SetAlways(name, f.F)
 					pkg.Set(name, f.F)
 				} else {
-					_ = syms.SetAlways(name, f.V)
+					syms.SetAlways(name, f.V)
 					pkg.Set(name, f.V)
 				}
 			}
@@ -348,7 +348,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 		datatypes.SetMetadata(m, datatypes.ReadonlyMDKey, true)
 
 		if packageName != "" {
-			_ = s.SetAlways(packageName, m)
+			s.SetAlways(packageName, m)
 		}
 	}
 }

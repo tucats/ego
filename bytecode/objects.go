@@ -68,11 +68,8 @@ func memberByteCode(c *Context, i interface{}) error {
 			if symV, ok := mv.Get(datatypes.SymbolsMDKey); ok {
 				syms := symV.(*symbols.SymbolTable)
 
-				v, ok := syms.Get(name)
-				if ok {
-					_ = c.stackPush(v)
-
-					return nil
+				if v, ok := syms.Get(name); ok {
+					return c.stackPush(v)
 				}
 			}
 		}
@@ -83,16 +80,15 @@ func memberByteCode(c *Context, i interface{}) error {
 		v, found = mv.Get(name)
 		if !found {
 			// Okay, could it be a function based on the type of this object?
-			fv := tt.Function(name)
-			if fv == nil {
+			if fv := tt.Function(name); fv == nil {
 				return c.newError(errors.ErrUnknownPackageMember).Context(name)
+			} else {
+				v = fv
 			}
-
-			v = fv
 		}
 
 		// Special case; if the value being retrieved is a constant, unwrap it.
-		if vconst, ok := v.(ConstantWrapper); ok {
+		if vconst, ok := v.(constantWrapper); ok {
 			v = vconst.Value
 		}
 
@@ -114,9 +110,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidStructOrPackage).Context(datatypes.TypeOf(v).String())
 	}
 
-	_ = c.stackPush(v)
-
-	return nil
+	return c.stackPush(v)
 }
 
 func storeBytecodeByteCode(c *Context, i interface{}) error {
@@ -131,7 +125,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 
 		if bc, ok := v.(*ByteCode); ok {
 			bc.Name = datatypes.GetString(i)
-			err = c.symbols.SetAlways(bc.Name, bc)
+			c.symbols.SetAlways(bc.Name, bc)
 		} else {
 			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 		}

@@ -39,7 +39,7 @@ type Context struct {
 	tokenizer            *tokenizer.Tokenizer
 	stack                []interface{}
 	tryStack             []TryInfo
-	rangeStack           []*Range
+	rangeStack           []*rangeDefinition
 	timerStack           []time.Time
 	thisStack            []This
 	packageStack         []packageDef
@@ -109,7 +109,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
 		packageStack:         make([]packageDef, 0),
 		tryStack:             make([]TryInfo, 0),
-		rangeStack:           make([]*Range, 0),
+		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),
 		tracing:              false,
 	}
@@ -218,7 +218,7 @@ func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 // This is used to add in compiler maps, for example.
 func (c *Context) AppendSymbols(s *symbols.SymbolTable) *Context {
 	for k, v := range s.Symbols {
-		_ = c.symbols.SetAlways(k, v)
+		c.symbols.SetAlways(k, v)
 	}
 
 	return c
@@ -340,8 +340,8 @@ func (c *Context) symbolSet(name string, value interface{}) error {
 
 // symbolSetAlways is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) symbolSetAlways(name string, value interface{}) error {
-	return c.symbols.SetAlways(name, value)
+func (c *Context) symbolSetAlways(name string, value interface{}) {
+	c.symbols.SetAlways(name, value)
 }
 
 // symbolDelete deletes a symbol from the current context.

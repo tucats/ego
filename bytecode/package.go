@@ -17,7 +17,7 @@ type packageDef struct {
 
 // Note there are reflection dependencies on the name of the
 // field; it must be named "Value".
-type ConstantWrapper struct {
+type constantWrapper struct {
 	Value interface{}
 }
 
@@ -29,7 +29,7 @@ func CopyPackagesToSymbols(s *symbols.SymbolTable) {
 	defer packageCacheLock.Unlock()
 
 	for k, v := range packageCache {
-		_ = s.SetAlways(k, v)
+		s.SetAlways(k, v)
 	}
 }
 
@@ -45,19 +45,20 @@ func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()
 
-	p, ok := packageCache[name]
-	if ok {
+	// Is this one we've already processed? IF so, return the
+	// cached value.
+	if p, ok := packageCache[name]; ok {
 		return p, true
 	}
 
 	// No such package already defined, so let's create one and store a new
 	// empty symbol table for it's use.
-	px := datatypes.NewPackage(name)
-	px.Set(datatypes.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
+	pkg := datatypes.NewPackage(name)
+	pkg.Set(datatypes.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
 
-	packageCache[name] = px
+	packageCache[name] = pkg
 
-	return px, false
+	return pkg, false
 }
 
 func importByteCode(c *Context, i interface{}) error {
@@ -82,8 +83,7 @@ func importByteCode(c *Context, i interface{}) error {
 	// If the package table isn't already in the tree, inject if it
 	// there is one.
 	if !alreadyFound {
-		symV, found := pkg.Get(datatypes.SymbolsMDKey)
-		if found {
+		if symV, found := pkg.Get(datatypes.SymbolsMDKey); found {
 			sym := symV.(*symbols.SymbolTable)
 			sym.Package = name
 
@@ -93,7 +93,9 @@ func importByteCode(c *Context, i interface{}) error {
 	}
 
 	// Finally, store the entire package definition by name as well.
-	return c.symbolSetAlways(name, pkg)
+	c.symbolSetAlways(name, pkg)
+
+	return nil
 }
 
 func pushPackageByteCode(c *Context, i interface{}) error {
@@ -101,9 +103,7 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 
 	// Are we already in this package? Happens when a directory of package
 	// files are concatenated together...
-
 	if len(c.packageStack) > 0 && c.packageStack[len(c.packageStack)-1].name == name {
-		//ui.Debug(ui.CompilerLogger, "+++ Already processing package %s, not pushed", name)
 		return nil
 	}
 
@@ -116,6 +116,8 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 	// as a package (from a previous import or autoimport) re-use it
 	pkg, _ := GetPackage(name)
 
+	// Define a symbol table to be used with the package. If there
+	// already is one for this package, use it. Else create a new one.
 	var syms *symbols.SymbolTable
 
 	if symV, ok := pkg.Get(datatypes.SymbolsMDKey); ok {
@@ -173,8 +175,8 @@ func popPackageByteCode(c *Context, i interface{}) error {
 			// If it was readonly, and not already in a constant wrapper,
 			// wrap it as a constant now.
 			if attr.Readonly {
-				if _, ok := v.(ConstantWrapper); !ok {
-					pkg.Set(k, ConstantWrapper{v})
+				if _, ok := v.(constantWrapper); !ok {
+					pkg.Set(k, constantWrapper{v})
 				} else {
 					pkg.Set(k, v)
 				}
@@ -192,7 +194,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 		if !strings.HasPrefix(k, "__") {
 			v, _ := c.symbols.Get(k)
 
-			_ = s.SetAlways(k, v)
+			s.SetAlways(k, v)
 		}
 	}
 

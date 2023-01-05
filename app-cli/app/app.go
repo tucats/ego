@@ -56,7 +56,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 		app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
 	}
 
-	_ = symbols.RootSymbolTable.SetAlways("_version", app.Version)
+	symbols.RootSymbolTable.SetAlways("_version", app.Version)
 
 	return app
 }
@@ -65,7 +65,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 // help output.
 func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
-	_ = symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
+	symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
 
 	return app
 }
@@ -78,9 +78,9 @@ func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {
-		_ = symbols.RootSymbolTable.SetAlways("_buildtime", functions.MakeTime(&t))
+		symbols.RootSymbolTable.SetAlways("_buildtime", functions.MakeTime(&t))
 	} else {
-		_ = symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
+		symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
 	}
 
 	return app

@@ -88,7 +88,7 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 		if f := m.GetType().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
-				_ = local.SetAlways("__this", v)
+				local.SetAlways("__this", v)
 
 				if si, err := fmt(local, []interface{}{}); err == nil {
 					if str, ok := si.(string); ok {

@@ -23,14 +23,14 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
 
-	_ = s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
+	s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
 		"Command":               NewCommand,
 		"LookPath":              LookPath,
 		datatypes.TypeMDKey:     datatypes.Package("exec"),
 		datatypes.ReadonlyMDKey: true,
 	}))
 
-	_ = s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
+	s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
 		"New":                   RestNew,
 		"Status":                RestStatusMessage,
 		"ParseURL":              RestParseURL,
@@ -38,7 +38,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		datatypes.ReadonlyMDKey: true,
 	}))
 
-	_ = s.SetAlways("db", datatypes.NewPackageFromMap("db", map[string]interface{}{
+	s.SetAlways("db", datatypes.NewPackageFromMap("db", map[string]interface{}{
 		"New":                   DBNew,
 		datatypes.TypeMDKey:     datatypes.Package("db"),
 		datatypes.ReadonlyMDKey: true,
@@ -56,7 +56,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	utilPkg.Set("SymbolTables", SymbolTables)
 	_ = s.Root().SetWithAttributes("util", utilPkg, symbols.SymbolAttribute{Readonly: true})
 
-	_ = s.SetAlways("tables", datatypes.NewPackageFromMap("tables", map[string]interface{}{
+	s.SetAlways("tables", datatypes.NewPackageFromMap("tables", map[string]interface{}{
 		"New":                   TableNew,
 		datatypes.TypeMDKey:     datatypes.Package("tables"),
 		datatypes.ReadonlyMDKey: true,

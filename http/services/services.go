@@ -101,17 +101,17 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
-	_ = symbolTable.SetAlways("_pid", os.Getpid())
-	_ = symbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
-	_ = symbolTable.SetAlways("_session", int(sessionID))
-	_ = symbolTable.SetAlways("_method", r.Method)
-	_ = symbolTable.SetAlways("__exec_mode", "server")
-	_ = symbolTable.SetAlways("_version", server.Version)
-	_ = symbolTable.SetAlways("_start_time", server.StartTime)
-	_ = symbolTable.SetAlways("_requestor", requestor)
+	symbolTable.SetAlways("_pid", os.Getpid())
+	symbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
+	symbolTable.SetAlways("_session", int(sessionID))
+	symbolTable.SetAlways("_method", r.Method)
+	symbolTable.SetAlways("__exec_mode", "server")
+	symbolTable.SetAlways("_version", server.Version)
+	symbolTable.SetAlways("_start_time", server.StartTime)
+	symbolTable.SetAlways("_requestor", requestor)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	_ = symbolTable.SetAlways("__static_data_types", staticTypes)
+	symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
@@ -126,16 +126,16 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		parameterStruct[k] = values
 	}
 
-	_ = symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(parameterStruct))
+	symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(parameterStruct))
 
 	// Setup additional builtins and supporting values needed for REST service execution
-	_ = symbolTable.SetAlways("eval", runtime.Eval)
-	_ = symbolTable.SetAlways("authenticated", auth.Authenticated)
-	_ = symbolTable.SetAlways("permission", auth.Permission)
-	_ = symbolTable.SetAlways("setuser", auth.SetUser)
-	_ = symbolTable.SetAlways("getuser", auth.GetUser)
-	_ = symbolTable.SetAlways("deleteuser", auth.DeleteUser)
-	_ = symbolTable.SetAlways("_rest_response", nil)
+	symbolTable.SetAlways("eval", runtime.Eval)
+	symbolTable.SetAlways("authenticated", auth.Authenticated)
+	symbolTable.SetAlways("permission", auth.Permission)
+	symbolTable.SetAlways("setuser", auth.SetUser)
+	symbolTable.SetAlways("getuser", auth.GetUser)
+	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
+	symbolTable.SetAlways("_rest_response", nil)
 	runtime.AddBuiltinPackages(symbolTable)
 
 	// Put all the headers where they can be accessed as well. The authorization
@@ -159,8 +159,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = symbolTable.SetAlways("_headers", datatypes.NewMapFromMap(headers))
-	_ = symbolTable.SetAlways("_json", isJSON)
+	symbolTable.SetAlways("_headers", datatypes.NewMapFromMap(headers))
+	symbolTable.SetAlways("_json", isJSON)
 
 	path := r.URL.Path
 	if path[:1] == "/" {
@@ -179,10 +179,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create symbols describing the URL we were given for this service call.
-	_ = symbolTable.SetAlways("_url", r.URL.String())
-	_ = symbolTable.SetAlways("_path_endpoint", endpoint)
-	_ = symbolTable.SetAlways("_path", "/"+path)
-	_ = symbolTable.SetAlways("_path_suffix", pathSuffix)
+	symbolTable.SetAlways("_url", r.URL.String())
+	symbolTable.SetAlways("_path_endpoint", endpoint)
+	symbolTable.SetAlways("_path", "/"+path)
+	symbolTable.SetAlways("_path_suffix", pathSuffix)
 
 	// Now that we know the actual endpoint, see if this is the endpoint
 	// we are debugging?
@@ -279,8 +279,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := ""
 	pass := ""
-	_ = symbolTable.SetAlways("_token", "")
-	_ = symbolTable.SetAlways("_token_valid", false)
+
+	symbolTable.SetAlways("_token", "")
+	symbolTable.SetAlways("_token_valid", false)
 
 	authorization := r.Header.Get("Authorization")
 
@@ -313,8 +314,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// attempt to validate it.
 		token := strings.TrimSpace(authorization[len(defs.AuthScheme):])
 		authenticatedCredentials = auth.ValidateToken(token)
-		_ = symbolTable.SetAlways("_token", token)
-		_ = symbolTable.SetAlways("_token_valid", authenticatedCredentials)
+
+		symbolTable.SetAlways("_token", token)
+		symbolTable.SetAlways("_token_valid", authenticatedCredentials)
+
 		user = auth.TokenUser(token)
 
 		// If doing INFO logging, make a neutered version of the token showing
@@ -349,8 +352,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
 
-		_ = symbolTable.SetAlways("_token", "")
-		_ = symbolTable.SetAlways("_token_valid", false)
+		symbolTable.SetAlways("_token", "")
+		symbolTable.SetAlways("_token_valid", false)
 
 		valid := CredentialInvalidMessage
 		if authenticatedCredentials {
@@ -366,17 +369,18 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the rest of the credentials status information we've accumulated.
-	_ = symbolTable.SetAlways("_user", user)
-	_ = symbolTable.SetAlways("_password", pass)
-	_ = symbolTable.SetAlways("_authenticated", authenticatedCredentials)
-	_ = symbolTable.SetAlways("_rest_status", http.StatusOK)
-	_ = symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
+	symbolTable.SetAlways("_user", user)
+	symbolTable.SetAlways("_password", pass)
+	symbolTable.SetAlways("_authenticated", authenticatedCredentials)
+	symbolTable.SetAlways("_rest_status", http.StatusOK)
+	symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
 
 	// Get the body of the request as a string
 	byteBuffer := new(bytes.Buffer)
 	_, _ = byteBuffer.ReadFrom(r.Body)
 	bodyText := byteBuffer.String()
-	_ = symbolTable.SetAlways("_body", bodyText)
+
+	symbolTable.SetAlways("_body", bodyText)
 
 	// Add the standard non-package function into this symbol table
 	compilerInstance.AddStandard(symbolTable)

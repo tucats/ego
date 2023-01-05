@@ -17,7 +17,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 		}
 
 		c.Static = datatypes.GetBool(v)
-		err = c.symbols.SetAlways("__static_data_types", c.Static)
+		c.symbols.SetAlways("__static_data_types", c.Static)
 	}
 
 	return err

@@ -76,7 +76,7 @@ func TestStructImpl(t *testing.T) {
 				symbols:      symbols.NewSymbolTable("test bench"),
 			}
 
-			_ = ctx.symbols.SetAlways("usertype", typeDef)
+			ctx.symbols.SetAlways("usertype", typeDef)
 
 			err := structByteCode(ctx, tt.arg)
 			if (err != nil) != tt.wantErr {

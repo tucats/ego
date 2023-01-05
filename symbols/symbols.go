@@ -168,7 +168,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 // SetAlways stores a symbol value in the local table. No value in
 // any parent table is affected. This can be used for functions and
 // readonly values.
-func (s *SymbolTable) SetAlways(name string, v interface{}) error {
+func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -209,8 +209,6 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) error {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
 			s.Name, s.ID, quotedName, attr.Slot, valueString)
 	}
-
-	return nil
 }
 
 // SetAlways stores a symbol value in the local table. No value in

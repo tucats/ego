@@ -5,11 +5,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Range describes what we know about the (current) for..range loop. This
+// rangeDefinition describes what we know about the (current) for..range loop. This
 // is created by the RangeInit instruction and pushed on a stack in the
 // context. The RangeNext instruction uses this information to advance
 // through the range, and determine when the range is exhausted.
-type Range struct {
+type rangeDefinition struct {
 	indexName string
 	valueName string
 	value     interface{}
@@ -44,7 +44,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 
 	var err error
 
-	r := Range{}
+	r := rangeDefinition{}
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
 		r.indexName = datatypes.GetString(list[0])

@@ -62,8 +62,8 @@ func atLineByteCode(c *Context, i interface{}) error {
 
 	c.line = datatypes.GetInt(i)
 	c.stepOver = false
-	_ = c.symbols.SetAlways("__line", c.line)
-	_ = c.symbols.SetAlways("__module", c.bc.Name)
+	c.symbols.SetAlways("__line", c.line)
+	c.symbols.SetAlways("__module", c.bc.Name)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
@@ -130,13 +130,13 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get destination
-	address := datatypes.GetInt(i)
-	if address < 0 || address > c.bc.emitPos {
-		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
-	}
 
-	if datatypes.GetBool(v) {
-		c.programCounter = address
+	if address := datatypes.GetInt(i); address < 0 || address > c.bc.emitPos {
+		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
+	} else {
+		if datatypes.GetBool(v) {
+			c.programCounter = address
+		}
 	}
 
 	return nil
@@ -157,7 +157,7 @@ func localCallByteCode(c *Context, i interface{}) error {
 }
 
 func goByteCode(c *Context, i interface{}) error {
-	argc := i.(int) + c.argCountDelta
+	argc := datatypes.GetInt(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -172,20 +172,19 @@ func goByteCode(c *Context, i interface{}) error {
 		args[(argc-n)-1] = v
 	}
 
-	fx, err := c.Pop()
-	if err != nil {
+	if fx, err := c.Pop(); err != nil {
 		return err
+	} else {
+		fName := datatypes.GetString(fx)
+
+		// Launch the function call as a separate thread.
+		ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
+		waitGroup.Add(1)
+
+		go GoRoutine(fName, c, args)
+
+		return nil
 	}
-
-	fName := datatypes.GetString(fx)
-
-	// Launch the function call as a separate thread.
-	ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
-	waitGroup.Add(1)
-
-	go GoRoutine(fName, c, args)
-
-	return nil
 }
 
 // callByteCode instruction processor calls a function (which can have
@@ -197,14 +196,14 @@ func goByteCode(c *Context, i interface{}) error {
 func callByteCode(c *Context, i interface{}) error {
 	var err error
 
-	var funcPointer interface{}
+	var functionPointer interface{}
 
 	var result interface{}
 
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
 	// Normally, this value is zero.
-	argc := i.(int) + c.argCountDelta
+	argc := datatypes.GetInt(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -224,24 +223,24 @@ func callByteCode(c *Context, i interface{}) error {
 	}
 
 	// Function value is last item on stack
-	funcPointer, err = c.Pop()
+	functionPointer, err = c.Pop()
 	if err != nil {
 		return err
 	}
 
-	if funcPointer == nil {
+	if functionPointer == nil {
 		return c.newError(errors.ErrInvalidFunctionCall).Context("<nil>")
 	}
 
-	if IsStackMarker(funcPointer) {
+	if IsStackMarker(functionPointer) {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Depends on the type here as to what we call...
-	switch af := funcPointer.(type) {
+	switch function := functionPointer.(type) {
 	case *datatypes.Type:
 		// Calls to a type are really an attempt to cast the value.
-		args = append(args, af)
+		args = append(args, function)
 
 		v, err := functions.InternalCast(c.symbols, args)
 		if err == nil {
@@ -257,7 +256,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// IF we're not doing full symbol scope, and the function we're
 		// calling isn't "main", then find the correct parent that limits
 		// scope visibility.
-		if !c.fullSymbolScope && af.Name != defs.Main {
+		if !c.fullSymbolScope && function.Name != defs.Main {
 			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
 				parentTable = parentTable.Parent
 			}
@@ -267,37 +266,38 @@ func callByteCode(c *Context, i interface{}) error {
 		// new child table. Otherwise, wire up the table so the package
 		// table becomes the function call table. Note that in the latter
 		// case, this must be done _after_ the call frame is recorded.
-		funcSymbols := c.getPackageSymbols()
-		if funcSymbols == nil {
+		functionSymbols := c.getPackageSymbols()
+		if functionSymbols == nil {
 			ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 				c.threadID, c.symbols.Name, parentTable.Name)
 
-			c.callframePush("function "+af.Name, af, 0, true)
+			c.callframePush("function "+function.Name, function, 0, true)
 		} else {
 			parentTable = c.symbols
-			c.callframePush("function "+af.Name, af, 0, false)
-			funcSymbols.Name = "pkg func " + af.Name
-			funcSymbols.Parent = parentTable
 
-			funcSymbols.ScopeBoundary = true
-			c.symbols = funcSymbols
+			c.callframePush("function "+function.Name, function, 0, false)
+
+			functionSymbols.Name = "pkg func " + function.Name
+			functionSymbols.Parent = parentTable
+			functionSymbols.ScopeBoundary = true
+			c.symbols = functionSymbols
 		}
 
 		// Recode the argument list as a native array
-		_ = c.symbolSetAlways("__args", datatypes.NewArrayFromArray(&datatypes.InterfaceType, args))
+		c.symbolSetAlways("__args", datatypes.NewArrayFromArray(&datatypes.InterfaceType, args))
 
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
 		// code. Examples include the functions for waitgroup and mutex objects.
-		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
+		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
 
 		if v, ok := c.popThis(); ok {
-			_ = funcSymbols.SetAlways("__this", v)
+			funcSymbols.SetAlways("__this", v)
 		}
 
-		result, err = af(funcSymbols, args)
+		result, err = function(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
 			_ = c.stackPush(NewStackMarker("results"))
@@ -311,27 +311,24 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.newError(err).In(functions.FindName(af))
+			err = c.newError(err).In(functions.FindName(function))
 		}
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
 		// First, can we check the argument count on behalf of the caller?
-		df := functions.FindFunction(af)
-		functionName := runtime.FuncForPC(reflect.ValueOf(af).Pointer()).Name()
+		functionDefinition := functions.FindFunction(function)
+		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 
 		// See if it is a builtin function that needs visibility to the entire
 		// symbol stack without binding the scope to the parent of the current
 		// stack.
 		fullSymbolVisibility := c.fullSymbolScope
+		if functionDefinition != nil {
+			fullSymbolVisibility = fullSymbolVisibility || functionDefinition.FullScope
 
-		if df != nil {
-			fullSymbolVisibility = fullSymbolVisibility || df.FullScope
-		}
-
-		if df != nil {
-			if len(args) < df.Min || len(args) > df.Max {
-				name := functions.FindName(af)
+			if len(args) < functionDefinition.Min || len(args) > functionDefinition.Max {
+				name := functions.FindName(function)
 
 				return c.newError(errors.ErrArgumentCount).Context(name)
 			}
@@ -347,22 +344,22 @@ func callByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
-		funcSymbols.ScopeBoundary = true
+		functionSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
+		functionSymbols.ScopeBoundary = true
 
 		// Is this builtin one that requires a "this" variable? If so, get it from
 		// the "this" stack.
 		if v, ok := c.popThis(); ok {
-			_ = funcSymbols.SetAlways("__this", v)
+			functionSymbols.SetAlways("__this", v)
 		}
 
-		result, err = af(funcSymbols, args)
+		result, err = function(functionSymbols, args)
 
-		if r, ok := result.(functions.MultiValueReturn); ok {
+		if results, ok := result.(functions.MultiValueReturn); ok {
 			_ = c.stackPush(NewStackMarker("results"))
 
-			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.stackPush(r.Value[i])
+			for i := len(results.Value) - 1; i >= 0; i = i - 1 {
+				_ = c.stackPush(results.Value[i])
 			}
 
 			return nil
@@ -370,7 +367,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 		// If there was an error but this function allows it, then
 		// just push the result values
-		if df != nil && df.ErrReturn {
+		if functionDefinition != nil && functionDefinition.ErrReturn {
 			_ = c.stackPush(NewStackMarker("results"))
 			_ = c.stackPush(err)
 			_ = c.stackPush(result)
@@ -381,25 +378,23 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.newError(err).In(functions.FindName(af))
+			err = c.newError(err).In(functions.FindName(function))
 		}
 
 	case error:
 		return c.newError(errors.ErrUnusedErrorReturn)
 
 	default:
-		return c.newError(errors.ErrInvalidFunctionCall).Context(af)
+		return c.newError(errors.ErrInvalidFunctionCall).Context(function)
 	}
 
-	if err != nil {
-		return err
+	// IF no problems and there's a result value, push it on the
+	// stack now.
+	if err == nil && result != nil {
+		err = c.stackPush(result)
 	}
 
-	if result != nil {
-		_ = c.stackPush(result)
-	}
-
-	return nil
+	return err
 }
 
 // returnByteCode implements the return opcode which returns from a called function
@@ -435,7 +430,7 @@ func returnByteCode(c *Context, i interface{}) error {
 
 	// If FP is zero, there are no frames; this is a return from the main source
 	// of the program or service.
-	if c.framePointer > 0 && err == nil {
+	if c.framePointer > 0 {
 		// Use the frame pointer to reset the stack and retrieve the
 		// runtime state.
 		err = c.callFramePop()
@@ -466,41 +461,41 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	max := 0
 	name := "function call"
 
-	switch v := i.(type) {
+	switch operand := i.(type) {
 	case []interface{}:
-		if len(v) < 2 || len(v) > 3 {
+		if len(operand) < 2 || len(operand) > 3 {
 			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
-		min = datatypes.GetInt(v[0])
-		max = datatypes.GetInt(v[1])
+		min = datatypes.GetInt(operand[0])
+		max = datatypes.GetInt(operand[1])
 
-		if len(v) == 3 {
-			name = datatypes.GetString(v[2])
+		if len(operand) == 3 {
+			name = datatypes.GetString(operand[2])
 		}
 
 	case int:
-		if v >= 0 {
-			min = v
-			max = v
+		if operand >= 0 {
+			min = operand
+			max = operand
 		} else {
 			min = 0
-			max = -v
+			max = -operand
 		}
 
 	case []int:
-		if len(v) != 2 {
+		if len(operand) != 2 {
 			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
-		min = v[0]
-		max = v[1]
+		min = operand[0]
+		max = operand[1]
 
 	default:
 		return c.newError(errors.ErrArgumentTypeCheck)
 	}
 
-	v, found := c.symbolGet("__args")
+	args, found := c.symbolGet("__args")
 	if !found {
 		return c.newError(errors.ErrArgumentTypeCheck)
 	}
@@ -508,19 +503,19 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	// Do the actual compare. Note that if we ended up with a negative
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
-	if va, ok := v.(*datatypes.EgoArray); ok {
+	if array, ok := args.(*datatypes.EgoArray); ok {
 		if max < 0 {
-			max = va.Len()
+			max = array.Len()
 		}
 
-		if va.Len() < min || va.Len() > max {
+		if array.Len() < min || array.Len() > max {
 			return c.newError(errors.ErrArgumentCount).In(name)
 		}
-	} else {
-		return c.newError(errors.ErrArgumentTypeCheck)
+
+		return nil
 	}
 
-	return nil
+	return c.newError(errors.ErrArgumentTypeCheck)
 }
 
 // See if the top of the "this" stack is a package, and if so return
@@ -530,10 +525,10 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 		return nil
 	}
 
-	v := c.thisStack[len(c.thisStack)-1]
+	this := c.thisStack[len(c.thisStack)-1]
 
-	if m, ok := v.value.(*datatypes.EgoPackage); ok {
-		if s, ok := datatypes.GetMetadata(m, datatypes.SymbolsMDKey); ok {
+	if pkg, ok := this.value.(*datatypes.EgoPackage); ok {
+		if s, ok := datatypes.GetMetadata(pkg, datatypes.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package) {
 					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package)
@@ -574,9 +569,8 @@ func waitByteCode(c *Context, i interface{}) error {
 
 func modeCheckBytecode(c *Context, i interface{}) error {
 	mode, found := c.symbols.Get("__exec_mode")
-	valid := found && (datatypes.GetString(i) == datatypes.GetString(mode))
 
-	if valid {
+	if found && (datatypes.GetString(i) == datatypes.GetString(mode)) {
 		return nil
 	}
 
@@ -593,12 +587,11 @@ func entryPointByteCode(c *Context, i interface{}) error {
 		entryPointName = datatypes.GetString(v)
 	}
 
-	entryPoint, found := c.symbolGet(entryPointName)
-	if !found {
-		return c.newError(errors.ErrUndefinedEntrypoint).Context(entryPointName)
+	if entryPoint, found := c.symbolGet(entryPointName); found {
+		_ = c.stackPush(entryPoint)
+
+		return callByteCode(c, 0)
 	}
 
-	_ = c.stackPush(entryPoint)
-
-	return callByteCode(c, 0)
+	return c.newError(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 }

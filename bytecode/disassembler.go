@@ -54,11 +54,11 @@ var maxInstructionNameWidth = 0
 
 // FormatInstruction formats a single instruction as a string.
 func FormatInstruction(i Instruction) string {
-	opname, found := instructionNames[i.Operation]
+	opname, found := opcodeNames[i.Operation]
 
 	// What is the maximum opcode name length?
 	if maxInstructionNameWidth == 0 {
-		for _, k := range instructionNames {
+		for _, k := range opcodeNames {
 			if len(k) > maxInstructionNameWidth {
 				maxInstructionNameWidth = len(k)
 			}
@@ -96,7 +96,7 @@ func Format(opcodes []Instruction) string {
 			b.WriteRune(',')
 		}
 
-		opname, found := instructionNames[i.Operation]
+		opname, found := opcodeNames[i.Operation]
 		if !found {
 			opname = fmt.Sprintf("Unknown %d", i.Operation)
 		}

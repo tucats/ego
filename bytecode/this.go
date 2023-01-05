@@ -26,7 +26,7 @@ func setThisByteCode(c *Context, i interface{}) error {
 
 		_ = c.stackPush(v)
 		name = datatypes.GenerateName()
-		_ = c.symbolSetAlways(name, v)
+		c.symbolSetAlways(name, v)
 	} else {
 		name = datatypes.GetString(i)
 	}
@@ -53,7 +53,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 
 	_ = c.stackPush(v)
 	name = datatypes.GenerateName()
-	_ = c.symbolSetAlways(name, v)
+	c.symbolSetAlways(name, v)
 
 	if v, ok := c.symbolGet(name); ok {
 		c.pushThis(name, v)
@@ -70,7 +70,7 @@ func getThisByteCode(c *Context, i interface{}) error {
 	this := datatypes.GetString(i)
 
 	if v, ok := c.popThis(); ok {
-		return c.symbolSetAlways(this, v)
+		c.symbolSetAlways(this, v)
 	}
 
 	return nil

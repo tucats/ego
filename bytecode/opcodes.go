@@ -17,12 +17,12 @@ package bytecode
  */
 
 // Constant describing instruction opcodes.
-type OpcodeID int
+type Opcode int
 
 const (
-	Stop   OpcodeID = 0
-	AtLine          = iota + BuiltinInstructions
-	Add    OpcodeID = iota
+	Stop Opcode = iota // Stop must be the zero-th item.
+	AtLine
+	Add
 	AddressOf
 	And
 	ArgCheck
@@ -111,20 +111,21 @@ const (
 	// operand must be present and is an integer instruction
 	// address in the bytecode array. These instructions are
 	// patched with offsets when code is appended.
-	BranchInstructions = iota + BranchInstruction
+	//
+	// The first one in this list MIUST be BranchInstructions,
+	// as it marks the start of the branch instructions, which
+	// are instructions that can reference a bytecode address
+	// as the operand.
+	BranchInstructions
 	Branch
 	BranchTrue
 	BranchFalse
 	LocalCall
 	RangeNext
 	Try
-
-	// After this value, additional user branch instructions
-	// can be defined.
-	UserBranchInstructions
 )
 
-var instructionNames = map[OpcodeID]string{
+var opcodeNames = map[Opcode]string{
 	Add:                "Add",
 	AddressOf:          "AddressOf",
 	And:                "And",

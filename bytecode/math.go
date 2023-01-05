@@ -26,7 +26,7 @@ import (
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) error {
 	if datatypes.GetBool(i) {
-		return NotImpl(c, i)
+		return notByteCode(c, i)
 	}
 
 	v, err := c.Pop()
@@ -45,25 +45,25 @@ func negateByteCode(c *Context, i interface{}) error {
 
 	switch value := v.(type) {
 	case bool:
-		_ = c.stackPush(!value)
+		return c.stackPush(!value)
 
 	case byte:
-		_ = c.stackPush(-value)
+		return c.stackPush(-value)
 
 	case int32:
-		_ = c.stackPush(-value)
+		return c.stackPush(-value)
 
 	case int:
-		_ = c.stackPush(-value)
+		return c.stackPush(-value)
 
 	case int64:
-		_ = c.stackPush(-value)
+		return c.stackPush(-value)
 
 	case float32:
-		_ = c.stackPush(float32(0.0) - value)
+		return c.stackPush(float32(0.0) - value)
 
 	case float64:
-		_ = c.stackPush(0.0 - value)
+		return c.stackPush(0.0 - value)
 
 	case string:
 		length := 0
@@ -77,7 +77,8 @@ func negateByteCode(c *Context, i interface{}) error {
 		}
 
 		result := string(runes)
-		_ = c.stackPush(result)
+
+		return c.stackPush(result)
 
 	case *datatypes.EgoArray:
 		// Create an array in inverse order.
@@ -88,18 +89,16 @@ func negateByteCode(c *Context, i interface{}) error {
 			_ = r.Set(value.Len()-n-1, d)
 		}
 
-		_ = c.stackPush(r)
+		return c.stackPush(r)
 
 	default:
 		return c.newError(errors.ErrInvalidType)
 	}
-
-	return nil
 }
 
-// NotImpl instruction processor pops the top stack
+// notByteCode instruction processor pops the top stack
 // item and pushes it's boolean NOT value.
-func NotImpl(c *Context, i interface{}) error {
+func notByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err
@@ -116,22 +115,20 @@ func NotImpl(c *Context, i interface{}) error {
 
 	switch value := v.(type) {
 	case bool:
-		_ = c.stackPush(!value)
+		return c.stackPush(!value)
 
 	case byte, int32, int, int64:
-		_ = c.stackPush(value == 0)
+		return c.stackPush(value == 0)
 
 	case float32:
-		_ = c.stackPush(value == float32(0))
+		return c.stackPush(value == float32(0))
 
 	case float64:
-		_ = c.stackPush(value == float64(0))
+		return c.stackPush(value == float64(0))
 
 	default:
 		return c.newError(errors.ErrInvalidType)
 	}
-
-	return nil
 }
 
 // addByteCode bytecode instruction processor. This removes the top two
@@ -574,9 +571,8 @@ func bitAndByteCode(c *Context, i interface{}) error {
 	}
 
 	result := datatypes.GetInt(v1) & datatypes.GetInt(v2)
-	_ = c.stackPush(result)
 
-	return nil
+	return c.stackPush(result)
 }
 
 func bitOrByteCode(c *Context, i interface{}) error {
@@ -600,9 +596,8 @@ func bitOrByteCode(c *Context, i interface{}) error {
 	}
 
 	result := datatypes.GetInt(v1) | datatypes.GetInt(v2)
-	_ = c.stackPush(result)
 
-	return nil
+	return c.stackPush(result)
 }
 
 func bitShiftByteCode(c *Context, i interface{}) error {
@@ -638,7 +633,5 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 		value = value >> shift
 	}
 
-	_ = c.stackPush(value)
-
-	return nil
+	return c.stackPush(value)
 }

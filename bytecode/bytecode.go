@@ -20,15 +20,6 @@ const InitialOpcodeSize = 20
 // InitialStackSize is the initial stack size.
 const InitialStackSize = 50
 
-// BranchInstruction is the minimum value for a branch instruction, which has
-// special meaning during relocation and linking.
-const BranchInstruction = 2000
-
-// BuiltinInstructions defines the lowest number (other than Stop) of the
-// builtin instructions provided by the bytecode package. User instructions
-// are added between 1 and this value.
-const BuiltinInstructions = BranchInstruction - 1000
-
 // ErrorVariableName is the name of the local variable created for a
 // catch-block of a try/catch construct. The variable contains an error.
 const ErrorVariableName = "_error"
@@ -64,7 +55,7 @@ func New(name string) *ByteCode {
 // Emit emits a single instruction. The opcode is required, and can optionally
 // be followed by an instruction operand (based on whichever instruction)
 // is issued.
-func (b *ByteCode) Emit(opcode OpcodeID, operands ...interface{}) {
+func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 	// If the output capacity is too small, expand it.
 	if b.emitPos >= len(b.instructions) {
 		b.instructions = append(b.instructions, make([]Instruction, GrowOpcodesBy)...)
@@ -125,23 +116,7 @@ func (b *ByteCode) Seal() *ByteCode {
 	// there are no optimizations to be performed. @tomcole check
 	// to see if this is ever necessary...
 	if useOptimizer {
-		count := 0
-
-		// If static optimizations are allowed, we have to run the
-		// optimizer repeatedly until it finds no more optimizations.
-		// If we are not using the static optimizer, then we need only
-		// run the peep-hole optimizer once.
-		if staticOptimizations {
-			for {
-				if newCount, _ := b.Optimize(count); count == newCount {
-					break
-				} else {
-					count = newCount
-				}
-			}
-		} else {
-			_, _ = b.Optimize(0)
-		}
+		_, _ = b.optimize(0)
 	}
 
 	return b

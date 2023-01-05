@@ -27,29 +27,29 @@ const (
 	OptRunConstantFragment
 )
 
-type OptimizerToken struct {
+type placeholder struct {
 	Name      string
 	Operation OptimizerOperation
 	Register  int
 	Value     interface{}
 }
 
-type Optimization struct {
+type optimization struct {
 	Description string
 	Debug       bool
-	Source      []Instruction
+	Pattern     []Instruction
 	Replacement []Instruction
 }
 
-// Optimize runs a peep-hold optimizer over the bytecode.
-func (b *ByteCode) Optimize(count int) (int, error) {
+// optimize runs a peep-hold optimizer over the bytecode.
+func (b *ByteCode) optimize(count int) (int, error) {
 	startingSize := b.emitPos
 
 	// Figure out the maximum pattern size, since we'll need this for backing
 	// up the bytecode scanner after each patch operation.
 	maxPatternSize := 0
 	for _, optimization := range Optimizations {
-		if max := len(optimization.Source); max > maxPatternSize {
+		if max := len(optimization.Pattern); max > maxPatternSize {
 			maxPatternSize = max
 		}
 	}
@@ -61,7 +61,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 
 		// Scan over all the available optimizations.
 		for _, optimization := range Optimizations {
-			operandValues := map[string]OptimizerToken{}
+			operandValues := map[string]placeholder{}
 			registers := make([]interface{}, 5)
 			found = true
 
@@ -70,7 +70,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 			for _, i := range b.instructions {
 				if i.Operation > BranchInstructions {
 					destination := datatypes.GetInt(i.Operand)
-					if destination >= idx && destination < idx+len(optimization.Source) {
+					if destination >= idx && destination < idx+len(optimization.Pattern) {
 						found = false
 
 						break
@@ -84,7 +84,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 
 			// Search each instruction in the pattern to see if it matches
 			// with the instruction stream we are positioned at.
-			for sourceIdx, sourceInstruction := range optimization.Source {
+			for sourceIdx, sourceInstruction := range optimization.Pattern {
 				if b.emitPos <= idx+sourceIdx {
 					found = false
 
@@ -113,7 +113,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 					continue
 				}
 
-				if token, ok := sourceInstruction.Operand.(OptimizerToken); ok {
+				if token, ok := sourceInstruction.Operand.(placeholder); ok {
 					value, inMap := operandValues[token.Name]
 					if inMap {
 						if value.Value == i.Operand {
@@ -136,7 +136,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 							registers[token.Register] = i.Operand
 						}
 
-						operandValues[token.Name] = OptimizerToken{Name: token.Name, Value: i.Operand}
+						operandValues[token.Name] = placeholder{Name: token.Name, Value: i.Operand}
 					}
 				}
 			}
@@ -156,10 +156,10 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 				for _, replacement := range optimization.Replacement {
 					newInstruction := replacement
 
-					if token, ok := replacement.Operand.(OptimizerToken); ok {
+					if token, ok := replacement.Operand.(placeholder); ok {
 						switch token.Operation {
 						case OptRunConstantFragment:
-							v, _ := b.executeFragment(idx, idx+len(optimization.Source))
+							v, _ := b.executeFragment(idx, idx+len(optimization.Pattern))
 							newInstruction.Operand = v
 
 						case OptRead:
@@ -177,7 +177,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 						newArray := []interface{}{}
 
 						for _, item := range tokenArray {
-							if token, ok := item.(OptimizerToken); ok {
+							if token, ok := item.(placeholder); ok {
 								newArray = append(newArray, operandValues[token.Name].Value)
 							} else {
 								newArray = append(newArray, item)
@@ -190,7 +190,7 @@ func (b *ByteCode) Optimize(count int) (int, error) {
 					replacements = append(replacements, newInstruction)
 				}
 
-				b.Patch(idx, len(optimization.Source), replacements)
+				b.Patch(idx, len(optimization.Pattern), replacements)
 
 				// Back up the pointer and continue, since we may now be part of
 				// a previous pattern.

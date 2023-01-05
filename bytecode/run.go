@@ -16,7 +16,7 @@ import (
 type OpcodeHandler func(b *Context, i interface{}) error
 
 // DispatchMap is a map that is used to locate the function for an opcode.
-type DispatchMap map[OpcodeID]OpcodeHandler
+type DispatchMap map[Opcode]OpcodeHandler
 
 var dispatch DispatchMap
 var dispatchMux sync.Mutex
@@ -142,7 +142,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				c.tryStack[len(c.tryStack)-1].addr = 0
 
 				// Implicit pop-scope done here.
-				_ = c.symbols.SetAlways(ErrorVariableName, err)
+				c.symbols.SetAlways(ErrorVariableName, err)
 
 				if ui.IsActive(ui.TraceLogger) {
 					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)

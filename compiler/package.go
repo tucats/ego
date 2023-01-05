@@ -204,10 +204,7 @@ func (c *Compiler) compileImport() error {
 				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
 			}
 
-			err2 := symbols.RootSymbolTable.SetAlways(filePath, pkgData)
-			if !errors.Nil(err2) {
-				return err2
-			}
+			symbols.RootSymbolTable.SetAlways(filePath, pkgData)
 		}
 
 		// Now that the package is in the cache, add the instruction to the active

@@ -62,7 +62,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	if err == nil {
 		s := symbols.NewSymbolTable(r.URL.Path)
 
-		_ = s.SetAlways("_superuser", true)
+		s.SetAlways("_superuser", true)
 
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER

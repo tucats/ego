@@ -55,7 +55,7 @@ func DefineLibHandlers(root, subpath string) error {
 		if pathList, ok := symbols.RootSymbolTable.Get("__paths"); ok {
 			if px, ok := pathList.([]string); ok {
 				px = append(px, path)
-				_ = symbols.RootSymbolTable.SetAlways("__paths", px)
+				symbols.RootSymbolTable.SetAlways("__paths", px)
 			}
 		}
 

@@ -50,9 +50,11 @@ var RootSymbolTable = SymbolTable{
 
 // SetGlobal sets a symbol value in the global symbol table.
 func (s *SymbolTable) SetGlobal(name string, value interface{}) error {
-	_ = RootSymbolTable.Create(name)
+	err := RootSymbolTable.Create(name)
 
-	return RootSymbolTable.SetAlways(name, value)
+	RootSymbolTable.SetAlways(name, value)
+
+	return err
 }
 
 // IsRoot determines if the current symbol table is the root table, or

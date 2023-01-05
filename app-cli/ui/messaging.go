@@ -31,6 +31,8 @@ const (
 
 	JSONIndentPrefix = ""
 	JSONIndentSpacer = "   "
+
+	NoSuchLogger = -1
 )
 
 // OutputFormat is the default output format if not overridden by a global option
@@ -149,7 +151,7 @@ func Logger(loggerName string) int {
 
 	Log(InternalLogger, "ERROR: Invalid Logger() class name %s", loggerName)
 
-	return -1
+	return NoSuchLogger
 }
 
 // SetLogger enables or disables a logger.
