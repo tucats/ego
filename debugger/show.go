@@ -80,11 +80,11 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 				idx = fmt.Sprintf("%5d", depth)
 			}
 
-			fmt.Printf("\t%s:  %s, %d %s\n", idx, symbolTable.Name, len(symbolTable.Symbols), i18n.L("symbols"))
+			fmt.Printf("\t%s:  %s, %d %s\n", idx, symbolTable.Name, symbolTable.Size(), i18n.L("symbols"))
 
 			depth++
 
-			symbolTable = symbolTable.Parent
+			symbolTable = symbolTable.Parent()
 		}
 
 	case "source":

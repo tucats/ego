@@ -28,7 +28,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	// items.
 	keys := make([]string, 0)
 
-	for k := range s.Symbols {
+	for k := range s.symbols {
 		if !strings.HasPrefix(k, datatypes.MetadataPrefix) && !strings.HasPrefix(k, "$") {
 			keys = append(keys, k)
 		}
@@ -43,7 +43,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.GetValue(s.Symbols[k].Slot)
+		v := s.GetValue(s.symbols[k].Slot)
 		omitType := false
 		omitThisSymbol := false
 
@@ -125,8 +125,8 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		b.WriteString("\n")
 	}
 
-	if s.Parent != nil {
-		sp := s.Parent.Format(includeBuiltins)
+	if s.parent != nil {
+		sp := s.parent.Format(includeBuiltins)
 
 		b.WriteString("\n")
 		b.WriteString(sp)
@@ -143,7 +143,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 	// items.
 	keys := make([]string, 0)
 
-	for k := range s.Symbols {
+	for k := range s.symbols {
 		if !strings.HasPrefix(k, datatypes.MetadataPrefix) && !strings.HasPrefix(k, "$") {
 			keys = append(keys, k)
 		}
@@ -158,7 +158,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		attr := s.Symbols[k]
+		attr := s.symbols[k]
 		v := s.GetValue(attr.Slot)
 		omitThisSymbol := false
 

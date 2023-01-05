@@ -40,9 +40,9 @@ var rootValues = []*[]interface{}{
 // by the initialized structures above.
 var RootSymbolTable = SymbolTable{
 	Name:          "root",
-	Parent:        nil,
-	ScopeBoundary: true,
-	Symbols:       rootNames,
+	parent:        nil,
+	scopeBoundary: true,
+	symbols:       rootNames,
 	size:          len(rootNames),
 	values:        rootValues,
 	isRoot:        true,
@@ -64,5 +64,5 @@ func (s *SymbolTable) IsRoot() bool {
 		return true
 	}
 
-	return s.Parent == nil
+	return s.parent == nil
 }

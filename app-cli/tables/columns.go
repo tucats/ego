@@ -6,11 +6,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// FindColumn returns the column number for a named column. The boolean return
+// Column returns the column number for a named column. The boolean return
 // value indicates if the value was found, if true then the integer result is a
 // zero-based column number.
-func (t *Table) FindColumn(name string) (int, bool) {
-	for n, v := range t.columns {
+func (t *Table) Column(name string) (int, bool) {
+	for n, v := range t.names {
 		if strings.EqualFold(v, name) {
 			return n, true
 		}
@@ -23,7 +23,7 @@ func (t *Table) FindColumn(name string) (int, bool) {
 // in the table. This can be used to validate a name against
 // the list of headings, for example.
 func (t *Table) GetHeadings() []string {
-	return t.columns
+	return t.names
 }
 
 // SetColumnOrder accepts a list of column positions and uses it
@@ -58,7 +58,7 @@ func (t *Table) SetColumnOrderByName(order []string) error {
 	newOrder := make([]int, len(order))
 
 	for n, name := range order {
-		v, found := t.FindColumn(name)
+		v, found := t.Column(name)
 		if !found {
 			return errors.EgoError(errors.ErrInvalidColumnName).Context(name)
 		}

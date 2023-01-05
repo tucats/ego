@@ -30,7 +30,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	// We start counting scope one level above the scope created just for
 	// the function call (which will always be empty).
 	scopeLevel := 0
-	syms := s.Parent
+	syms := s.Parent()
 
 	// Prepare the column names. If a specific scope was NOT requested, we add
 	// columns for the scope and table names in the output.
@@ -41,7 +41,9 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	t, _ := tables.New(append(scopeColumns, []string{"Symbol", "Type", "Readonly", "Value"}...))
 
-	_ = t.SetAlignment(0, tables.AlignmentCenter)
+	if index, found := t.Column("Scope"); found {
+		_ = t.SetAlignment(index, tables.AlignmentCenter)
+	}
 
 	for syms != nil {
 		// If a specific scope was requested and we never found it,
@@ -51,7 +53,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 				return nil, errors.EgoError(errors.ErrInvalidScopeLevel).Context(selectedScope)
 			}
 
-			syms = syms.Parent
+			syms = syms.Parent()
 			scopeLevel++
 
 			continue
@@ -99,7 +101,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 		scopeLevel++
 
-		syms = syms.Parent
+		syms = syms.Parent()
 	}
 
 	t.ShowHeadings(true).ShowUnderlines(true)
@@ -155,22 +157,22 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	result := datatypes.NewArray(t, 0)
 	depth := 0
-	p := s.Parent
+	p := s.Parent()
 
 	for p != nil {
 		item := datatypes.NewStructFromMap(map[string]interface{}{
 			"depth": depth,
 			"name":  p.Name,
-			"id":    p.ID.String(),
+			"id":    p.ID().String(),
 			"root":  p.IsRoot(),
-			"size":  len(p.Symbols),
+			"size":  p.Size(),
 		})
 
 		result.Append(item)
 
 		depth++
 
-		p = p.Parent
+		p = p.Parent()
 	}
 
 	return result, nil

@@ -184,7 +184,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 							return nil, errors.EgoError(errors.ErrInvalidField)
 						}
 
-						p, ok := t.FindColumn(k)
+						p, ok := t.Column(k)
 						if ok {
 							values[p] = datatypes.GetString(v)
 						}
@@ -229,7 +229,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				heading = heading[1:]
 			}
 
-			pos, found := t.FindColumn(heading)
+			pos, found := t.Column(heading)
 			if !found {
 				err = errors.EgoError(errors.ErrInvalidColumnName).Context(heading)
 			} else {
@@ -286,7 +286,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		column := 0
 
 		if columnName, ok := args[0].(string); ok {
-			column, ok = t.FindColumn(columnName)
+			column, ok = t.Column(columnName)
 			if !ok {
 				err = errors.EgoError(errors.ErrInvalidColumnName).Context(columnName)
 

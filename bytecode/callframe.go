@@ -56,7 +56,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 	c.framePointer = c.stackPointer
 	c.result = nil
 	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols)
-	c.symbols.ScopeBoundary = boundary
+	c.symbols.SetScopeBoundary(boundary)
 	c.bc = bc
 	c.programCounter = pc
 
@@ -88,9 +88,9 @@ func (c *Context) callFramePop() error {
 
 	// Before we toss away this, check to see if there are package symbols
 	// that need updating in the package object.
-	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
-		packageSymbols := c.symbols.Parent
-		packageName := c.symbols.Parent.Package
+	if c.symbols.Parent() != nil && c.symbols.Parent().Package() != "" {
+		packageSymbols := c.symbols.Parent()
+		packageName := c.symbols.Parent().Package()
 
 		if pkg, ok := c.symbols.Root().Get(packageName); ok {
 			if _, ok := pkg.(*datatypes.EgoStruct); ok {

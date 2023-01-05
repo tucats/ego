@@ -119,7 +119,7 @@ func (t *Table) FormatJSON() string {
 		buffer.WriteRune('{')
 
 		for ith, i := range t.columnOrder {
-			header := t.columns[i]
+			header := t.names[i]
 
 			if ith > 0 {
 				buffer.WriteRune(',')
@@ -264,7 +264,7 @@ func (t *Table) paginateText() []string {
 
 			first = false
 
-			headers[headerIndex].WriteString(AlignText(t.columns[n], t.maxWidth[n], t.alignment[n]))
+			headers[headerIndex].WriteString(AlignText(t.names[n], t.maxWidth[n], t.alignment[n]))
 			headers[headerIndex].WriteString(t.spacing)
 		}
 	}
@@ -412,7 +412,7 @@ func (t *Table) FormatText() []string {
 		}
 
 		for _, n := range t.columnOrder {
-			buffer.WriteString(AlignText(t.columns[n], t.maxWidth[n], t.alignment[n]))
+			buffer.WriteString(AlignText(t.names[n], t.maxWidth[n], t.alignment[n]))
 			buffer.WriteString(t.spacing)
 		}
 

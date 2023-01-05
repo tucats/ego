@@ -433,7 +433,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 	var result []string
 
 	// Scan over the symbol table. Skip hidden symbols.
-	for k := range s.Symbols {
+	for _, k := range s.Names() {
 		if strings.HasPrefix(k, "__") {
 			continue
 		}
@@ -449,8 +449,8 @@ func makePackageList(s *symbols.SymbolTable) []string {
 	// If there is a parent table, repeat the operation
 	// with the parent table, appending those results to
 	// our own.
-	if s.Parent != nil {
-		px := makePackageList(s.Parent)
+	if s.Parent() != nil {
+		px := makePackageList(s.Parent())
 		if len(px) > 0 {
 			result = append(result, px...)
 		}

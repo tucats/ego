@@ -21,7 +21,7 @@ const passwordPromptPrefix = "password~"
 // AddBuiltinPackages adds in the pre-defined package receivers
 // for things like the table and rest systems.
 func AddBuiltinPackages(s *symbols.SymbolTable) {
-	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID)
+	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
 	s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
 		"Command":               NewCommand,

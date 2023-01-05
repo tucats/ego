@@ -186,7 +186,7 @@ func TestTable_AddRow(t *testing.T) {
 			table: Table{
 				rowLimit:       -1,
 				columnCount:    1,
-				columns:        []string{"simple"},
+				names:          []string{"simple"},
 				maxWidth:       []int{6},
 				alignment:      []int{AlignmentLeft},
 				spacing:        "    ",
@@ -203,7 +203,7 @@ func TestTable_AddRow(t *testing.T) {
 			want: Table{
 				rowLimit:       -1,
 				columnCount:    1,
-				columns:        []string{"simple"},
+				names:          []string{"simple"},
 				maxWidth:       []int{6},
 				alignment:      []int{AlignmentLeft},
 				spacing:        "    ",
@@ -221,7 +221,7 @@ func TestTable_AddRow(t *testing.T) {
 			table: Table{
 				rowLimit:       -1,
 				columnCount:    3,
-				columns:        []string{"simple", "test", "table"},
+				names:          []string{"simple", "test", "table"},
 				maxWidth:       []int{6, 4, 5},
 				alignment:      []int{AlignmentLeft, AlignmentLeft, AlignmentLeft},
 				spacing:        "    ",
@@ -238,7 +238,7 @@ func TestTable_AddRow(t *testing.T) {
 			want: Table{
 				rowLimit:       -1,
 				columnCount:    3,
-				columns:        []string{"simple", "test", "table"},
+				names:          []string{"simple", "test", "table"},
 				maxWidth:       []int{6, 6, 5},
 				alignment:      []int{AlignmentLeft, AlignmentLeft, AlignmentLeft},
 				spacing:        "    ",
@@ -256,7 +256,7 @@ func TestTable_AddRow(t *testing.T) {
 			table: Table{
 				rowLimit:       -1,
 				columnCount:    3,
-				columns:        []string{"simple", "test", "table"},
+				names:          []string{"simple", "test", "table"},
 				maxWidth:       []int{6, 4, 5},
 				alignment:      []int{AlignmentLeft, AlignmentLeft, AlignmentLeft},
 				spacing:        "    ",
@@ -273,7 +273,7 @@ func TestTable_AddRow(t *testing.T) {
 			want: Table{
 				rowLimit:       -1,
 				columnCount:    3,
-				columns:        []string{"simple", "test", "table"},
+				names:          []string{"simple", "test", "table"},
 				maxWidth:       []int{6, 4, 5},
 				alignment:      []int{AlignmentLeft, AlignmentLeft, AlignmentLeft},
 				spacing:        "    ",

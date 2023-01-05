@@ -19,7 +19,7 @@ const (
 // Table is the wrapper object around a table to be printed.
 type Table struct {
 	rows           [][]string
-	columns        []string
+	names          []string
 	alignment      []int
 	maxWidth       []int
 	columnOrder    []int
@@ -49,7 +49,7 @@ func New(headings []string) (*Table, error) {
 
 	t.rowLimit = -1
 	t.columnCount = len(headings)
-	t.columns = headings
+	t.names = headings
 	t.maxWidth = make([]int, t.columnCount)
 	t.alignment = make([]int, t.columnCount)
 	t.columnOrder = make([]int, t.columnCount)
@@ -69,7 +69,7 @@ func New(headings []string) (*Table, error) {
 		}
 
 		t.maxWidth[n] = realLen
-		t.columns[n] = h
+		t.names[n] = h
 		t.alignment[n] = AlignmentLeft
 		t.columnOrder[n] = n
 	}

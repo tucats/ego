@@ -72,8 +72,8 @@ func importByteCode(c *Context, i interface{}) error {
 	// Do we already have the local symbol table in the tree?
 	alreadyFound := false
 
-	for s := c.symbols; s != nil; s = s.Parent {
-		if s.Package == name {
+	for s := c.symbols; s != nil; s = s.Parent() {
+		if s.Package() == name {
 			alreadyFound = true
 
 			break
@@ -85,9 +85,9 @@ func importByteCode(c *Context, i interface{}) error {
 	if !alreadyFound {
 		if symV, found := pkg.Get(datatypes.SymbolsMDKey); found {
 			sym := symV.(*symbols.SymbolTable)
-			sym.Package = name
+			sym.SetPackage(name)
 
-			sym.Parent = c.symbols
+			sym.SetParent(c.symbols)
 			c.symbols = sym
 		}
 	}
@@ -127,7 +127,8 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 	}
 
 	syms.SetParent(c.symbols)
-	syms.Package = name
+	syms.SetPackage(name)
+
 	c.symbols = syms
 
 	return nil

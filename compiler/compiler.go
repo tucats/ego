@@ -111,7 +111,7 @@ func New(name string) *Compiler {
 // web service handlers as they have per-call instances of root.
 func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
 	c.RootTable = s
-	c.s.Parent = s
+	c.s.SetParent(s)
 
 	return c
 }
@@ -266,7 +266,7 @@ func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
 		return false
 	}
 
-	ui.Debug(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID)
+	ui.Debug(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID())
 
 	for name, f := range functions.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
@@ -313,7 +313,7 @@ var packageMerge sync.Mutex
 // AddPackageToSymbols adds all the defined packages for this compilation
 // to the given symbol table.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
-	ui.Debug(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID)
+	ui.Debug(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 

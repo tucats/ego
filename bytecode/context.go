@@ -405,19 +405,19 @@ func (c *Context) popSymbolTable() error {
 		return errors.EgoError(errors.ErrInternalCompiler).Context("Attempt to pop root table")
 	}
 
-	if c.symbols == c.symbols.Parent {
+	if c.symbols == c.symbols.Parent() {
 		return errors.EgoError(errors.ErrInternalCompiler).Context("Symbol Table Cycle Error")
 	}
 
 	name := c.symbols.Name
-	c.symbols = c.symbols.Parent
+	c.symbols = c.symbols.Parent()
 
 	for strings.HasPrefix(c.symbols.Name, "pkg func ") {
 		if c.symbols.IsRoot() {
 			break
 		}
 
-		c.symbols = c.symbols.Parent
+		c.symbols = c.symbols.Parent()
 	}
 
 	ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",

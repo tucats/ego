@@ -44,7 +44,7 @@ func Test_applySymbolsToString(t *testing.T) {
 		// TODO: Add test cases.
 	}
 
-	syms := symbolTable{Symbols: map[string]interface{}{
+	syms := symbolTable{symbols: map[string]interface{}{
 		"foo": 42,
 		"bar": "Tom",
 	}}

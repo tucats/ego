@@ -257,8 +257,8 @@ func callByteCode(c *Context, i interface{}) error {
 		// calling isn't "main", then find the correct parent that limits
 		// scope visibility.
 		if !c.fullSymbolScope && function.Name != defs.Main {
-			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
-				parentTable = parentTable.Parent
+			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
+				parentTable = parentTable.Parent()
 			}
 		}
 
@@ -278,8 +278,8 @@ func callByteCode(c *Context, i interface{}) error {
 			c.callframePush("function "+function.Name, function, 0, false)
 
 			functionSymbols.Name = "pkg func " + function.Name
-			functionSymbols.Parent = parentTable
-			functionSymbols.ScopeBoundary = true
+			functionSymbols.SetParent(parentTable)
+			functionSymbols.SetScopeBoundary(true)
 			c.symbols = functionSymbols
 		}
 
@@ -339,13 +339,13 @@ func callByteCode(c *Context, i interface{}) error {
 		parentTable := c.symbols
 
 		if !fullSymbolVisibility {
-			for !parentTable.ScopeBoundary && parentTable.Parent != nil {
-				parentTable = parentTable.Parent
+			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
+				parentTable = parentTable.Parent()
 			}
 		}
 
 		functionSymbols := symbols.NewChildSymbolTable("builtin "+functionName, parentTable)
-		functionSymbols.ScopeBoundary = true
+		functionSymbols.SetScopeBoundary(true)
 
 		// Is this builtin one that requires a "this" variable? If so, get it from
 		// the "this" stack.
@@ -530,8 +530,8 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 	if pkg, ok := this.value.(*datatypes.EgoPackage); ok {
 		if s, ok := datatypes.GetMetadata(pkg, datatypes.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
-				if !c.inPackageSymbolTable(table.Package) {
-					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package)
+				if !c.inPackageSymbolTable(table.Package()) {
+					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())
 
 					return table
 				}
@@ -547,11 +547,11 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 func (c *Context) inPackageSymbolTable(name string) bool {
 	p := c.symbols
 	for p != nil {
-		if p.Package == name {
+		if p.Package() == name {
 			return true
 		}
 
-		p = p.Parent
+		p = p.Parent()
 	}
 
 	return false

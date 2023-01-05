@@ -31,8 +31,8 @@ import "github.com/tucats/ego/app-cli/ui"
 // create the Values array with it's address. If the bin map is
 // nil, create it as well.
 func (s *SymbolTable) initializeValues() {
-	if s.Symbols == nil {
-		s.Symbols = map[string]*SymbolAttribute{}
+	if s.symbols == nil {
+		s.symbols = map[string]*SymbolAttribute{}
 	}
 
 	if s.values == nil {

@@ -123,12 +123,12 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	}
 
 	sp := c.symbols
-	for sp.Parent != nil {
+	for sp.Parent() != nil {
 		if _, found := sp.Get(n); found {
 			return nil
 		}
 
-		sp = sp.Parent
+		sp = sp.Parent()
 	}
 
 	err := c.symbols.Create(n)
@@ -175,9 +175,9 @@ func constantByteCode(c *Context, i interface{}) error {
 func (c *Context) syncPackageSymbols() error {
 	// Before we toss away this, check to see if there are package symbols
 	// that need updating in the package object.
-	if c.symbols.Parent != nil && c.symbols.Parent.Package != "" {
-		packageSymbols := c.symbols.Parent
-		pkgname := c.symbols.Parent.Package
+	if c.symbols.Parent() != nil && c.symbols.Parent().Package() != "" {
+		packageSymbols := c.symbols.Parent()
+		pkgname := c.symbols.Parent().Package()
 
 		if err := c.popSymbolTable(); err != nil {
 			return errors.EgoError(err)

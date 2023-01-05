@@ -20,13 +20,13 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	attr, found := s.Symbols[name]
+	attr, found := s.symbols[name]
 	if found {
 		v = s.GetValue(attr.Slot)
 	}
 
 	if !found && !s.IsRoot() {
-		return s.Parent.Get(name)
+		return s.parent.Get(name)
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
@@ -42,7 +42,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.ID.String(), quotedName, attr.Slot, status)
+			s.Name, s.id.String(), quotedName, attr.Slot, status)
 	}
 
 	return v, found
@@ -56,13 +56,13 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	attr, found := s.Symbols[name]
+	attr, found := s.symbols[name]
 	if found {
 		v = s.GetValue(attr.Slot)
 	}
 
 	if !found && !s.IsRoot() {
-		return s.Parent.GetWithAttributes(name)
+		return s.parent.GetWithAttributes(name)
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
@@ -76,7 +76,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.ID.String(), quotedName, attr.Slot, status)
+			s.Name, s.id.String(), quotedName, attr.Slot, status)
 	}
 
 	return v, attr, found
@@ -90,16 +90,16 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	attr, found := s.Symbols[name]
+	attr, found := s.symbols[name]
 	if found {
 		v = s.AddressOfValue(attr.Slot)
 	}
 
 	if !found && !s.IsRoot() {
-		return s.Parent.GetAddress(name)
+		return s.parent.GetAddress(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.ID, name)
+	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
 
 	return v, found
 }
@@ -111,7 +111,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	defer s.mutex.Unlock()
 
 	// Does it already exist and is it readonly? IF so, fail
-	attr, ok := s.Symbols[name]
+	attr, ok := s.symbols[name]
 	if ok && attr.Readonly {
 		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 	}
@@ -122,14 +122,14 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 			Readonly: true,
 		}
 		s.size++
-		s.Symbols[name] = attr
+		s.symbols[name] = attr
 	}
 
 	s.SetValue(attr.Slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
-			s.Name, s.ID, name, datatypes.Format(v))
+			s.Name, s.id, name, datatypes.Format(v))
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 	syms := s
 
 	for syms != nil {
-		attr, found := syms.Symbols[name]
+		attr, found := syms.symbols[name]
 		if found {
 			attr.Readonly = flag
 
@@ -154,7 +154,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		}
 
 		if !syms.IsRoot() {
-			syms = syms.Parent
+			syms = syms.parent
 		} else {
 			break
 		}
@@ -173,8 +173,8 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	symbolTable := s
 
 	if name == "_rest_response" {
-		for symbolTable.Parent != nil && symbolTable.Parent.Parent != nil {
-			symbolTable = symbolTable.Parent
+		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
+			symbolTable = symbolTable.parent
 		}
 	}
 
@@ -184,10 +184,10 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	readOnly := strings.HasPrefix(name, "_")
 
 	// IF this doesn't exist, allocate more space in the values array
-	attr, ok := symbolTable.Symbols[name]
+	attr, ok := symbolTable.symbols[name]
 	if !ok {
 		attr = &SymbolAttribute{Slot: s.size}
-		symbolTable.Symbols[name] = attr
+		symbolTable.symbols[name] = attr
 		s.size++
 	}
 
@@ -205,7 +205,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
-			s.Name, s.ID, quotedName, attr.Slot, valueString)
+			s.Name, s.id, quotedName, attr.Slot, valueString)
 	}
 }
 
@@ -219,8 +219,8 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	symbolTable := s
 
 	if name == "_rest_response" {
-		for symbolTable.Parent != nil && symbolTable.Parent.Parent != nil {
-			symbolTable = symbolTable.Parent
+		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
+			symbolTable = symbolTable.parent
 		}
 	}
 
@@ -229,10 +229,10 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 
 	// IF this doesn't exist, allocate more space in the values array, and
 	// add it to the symbol table slot.
-	attr, ok := symbolTable.Symbols[name]
+	attr, ok := symbolTable.symbols[name]
 	if !ok {
 		attr = &SymbolAttribute{Slot: s.size}
-		symbolTable.Symbols[name] = attr
+		symbolTable.symbols[name] = attr
 
 		s.size++
 	}
@@ -252,7 +252,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
-			s.Name, s.ID, quotedName, attr.Slot, valueString, attr.Readonly)
+			s.Name, s.id, quotedName, attr.Slot, valueString, attr.Readonly)
 	}
 
 	return nil
@@ -265,7 +265,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	attr, found := s.Symbols[name]
+	attr, found := s.symbols[name]
 	if found {
 		// Of the value exists and is readonly, we can do no more.
 		if attr.Readonly {
@@ -286,7 +286,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
-		return s.Parent.Set(name, v)
+		return s.parent.Set(name, v)
 	}
 
 	s.SetValue(attr.Slot, v)
@@ -303,7 +303,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
-			s.Name, s.ID, quotedName, attr.Slot, valueString)
+			s.Name, s.id, quotedName, attr.Slot, valueString)
 	}
 
 	return nil
@@ -321,24 +321,24 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	attr, f := s.Symbols[name]
+	attr, f := s.symbols[name]
 	if !f {
 		if s.IsRoot() {
 			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
 		}
 
-		return s.Parent.Delete(name, always)
+		return s.parent.Delete(name, always)
 	}
 
 	if !always && attr.Readonly {
 		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
 	}
 
-	delete(s.Symbols, name)
+	delete(s.symbols, name)
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
-			s.Name, s.ID, name)
+			s.Name, s.id, name)
 	}
 
 	return nil
@@ -353,11 +353,11 @@ func (s *SymbolTable) Create(name string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if _, found := s.Symbols[name]; found {
+	if _, found := s.symbols[name]; found {
 		return errors.EgoError(errors.ErrSymbolExists).Context(name)
 	}
 
-	s.Symbols[name] = &SymbolAttribute{
+	s.symbols[name] = &SymbolAttribute{
 		Slot:     s.size,
 		Readonly: false,
 	}
@@ -367,7 +367,7 @@ func (s *SymbolTable) Create(name string) error {
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
-			s.Name, s.ID, name, s.size-1)
+			s.Name, s.id, name, s.size-1)
 	}
 
 	return nil
@@ -378,13 +378,13 @@ func (s *SymbolTable) IsConstant(name string) bool {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	attr, found := s.Symbols[name]
+	attr, found := s.symbols[name]
 	if found {
 		return attr.Readonly
 	}
 
 	if !s.IsRoot() {
-		return s.Parent.IsConstant(name)
+		return s.parent.IsConstant(name)
 	}
 
 	return false

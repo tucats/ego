@@ -39,7 +39,7 @@ type TxOperation struct {
 }
 
 type symbolTable struct {
-	Symbols map[string]interface{}
+	symbols map[string]interface{}
 }
 
 const (
@@ -129,7 +129,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	// Access the database and execute the transaction operations
 	rowsAffected := 0
 	httpStatus := http.StatusOK
-	symbols := symbolTable{Symbols: map[string]interface{}{}}
+	symbols := symbolTable{symbols: map[string]interface{}{}}
 
 	db, err := OpenDB(sessionID, user, "")
 	if err == nil && db != nil {
@@ -214,7 +214,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					// being managed for this transaction.
 					evalSymbols := syms.NewRootSymbolTable("transaction task condition")
 
-					for k, v := range symbols.Symbols {
+					for k, v := range symbols.symbols {
 						evalSymbols.SetAlways(k, v)
 					}
 
@@ -273,7 +273,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		// Was there a result set in the symbol table? If so, we're returning
 		// a rowset type.
-		if result, ok := symbols.Symbols[resultSetSymbolName]; ok {
+		if result, ok := symbols.symbols[resultSetSymbolName]; ok {
 			if rows, ok := result.([]map[string]interface{}); ok {
 				r := defs.DBRowSet{
 					ServerInfo: util.MakeServerInfo(sessionID),
@@ -336,11 +336,11 @@ func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) 
 	msg := strings.Builder{}
 
 	for key, value := range task.Data {
-		if symbols.Symbols == nil {
-			symbols.Symbols = map[string]interface{}{}
+		if symbols.symbols == nil {
+			symbols.symbols = map[string]interface{}{}
 		}
 
-		symbols.Symbols[key] = value
+		symbols.symbols[key] = value
 
 		msg.WriteString(key)
 		msg.WriteString(": ")
@@ -389,10 +389,10 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperati
 func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	// If the symbol table doesn't exist, create it. If it does, delete any
 	// previous result set (to quote the Highlander, "there can be only one.")
-	if syms == nil || len(syms.Symbols) == 0 {
-		*syms = symbolTable{Symbols: map[string]interface{}{}}
+	if syms == nil || len(syms.symbols) == 0 {
+		*syms = symbolTable{symbols: map[string]interface{}{}}
 	} else {
-		delete(syms.Symbols, resultSetSymbolName)
+		delete(syms.symbols, resultSetSymbolName)
 	}
 
 	var rows *sql.Rows
@@ -430,7 +430,7 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms 
 			}
 		}
 
-		syms.Symbols[resultSetSymbolName] = result
+		syms.symbols[resultSetSymbolName] = result
 
 		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
 	} else {
@@ -483,8 +483,8 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 	rowCount := 0
 	status := http.StatusOK
 
-	if syms == nil || len(syms.Symbols) == 0 {
-		*syms = symbolTable{Symbols: map[string]interface{}{}}
+	if syms == nil || len(syms.symbols) == 0 {
+		*syms = symbolTable{symbols: map[string]interface{}{}}
 	}
 
 	rows, err = db.Query(q)
@@ -510,7 +510,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 				msg := strings.Builder{}
 
 				for i, v := range row {
-					syms.Symbols[columnNames[i]] = v
+					syms.symbols[columnNames[i]] = v
 
 					if msg.Len() > 0 {
 						msg.WriteString(", ")

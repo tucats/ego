@@ -17,18 +17,18 @@ func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 
 	t := SymbolTable{
 		Name:          s.Name,
-		Package:       s.Package,
-		Parent:        s.Parent,
-		Symbols:       map[string]*SymbolAttribute{},
+		forPackage:    s.forPackage,
+		parent:        s.parent,
+		symbols:       map[string]*SymbolAttribute{},
 		values:        s.values,
-		ID:            uuid.New(),
+		id:            uuid.New(),
 		size:          s.size,
-		ScopeBoundary: true,
+		scopeBoundary: true,
 		isRoot:        true,
 	}
 
-	for k, v := range s.Symbols {
-		t.Symbols[k] = v
+	for k, v := range s.symbols {
+		t.symbols[k] = v
 	}
 
 	return &t
@@ -41,7 +41,7 @@ func (s *SymbolTable) GetPackages(source *SymbolTable) (count int) {
 		return
 	}
 
-	for k, attributes := range source.Symbols {
+	for k, attributes := range source.symbols {
 		v := source.GetValue(attributes.Slot)
 		if p, ok := v.(*datatypes.EgoPackage); ok {
 			s.SetAlways(k, p)

@@ -26,7 +26,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 	}
 
 	// Process any substittions to filters, column names, or data values
-	if syms != nil && len(syms.Symbols) > 0 {
+	if syms != nil && len(syms.symbols) > 0 {
 		// Allow substitutions in the table name
 		task.Table, err = applySymbolsToString(sessionID, task.Table, syms, "Table name")
 		if err != nil {
@@ -101,7 +101,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 // If the item passed is a string of the form {{name}} then the symbol with
 // the matching name is substituted for this value, if found.
 func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable, label string) (interface{}, error) {
-	if symbols == nil || symbols.Symbols == nil {
+	if symbols == nil || symbols.symbols == nil {
 		return input, nil
 	}
 
@@ -109,7 +109,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 	if strings.HasPrefix(stringRepresentation, symbolPrefix) && strings.HasSuffix(stringRepresentation, symbolSuffix) {
 		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, symbolSuffix), symbolPrefix)
 
-		if value, ok := symbols.Symbols[key]; ok {
+		if value, ok := symbols.symbols[key]; ok {
 			input = value
 			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
@@ -128,11 +128,11 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 // around the target to ensure that it is still represented as a string value in
 // a filter expresion, for example.
 func applySymbolsToString(sessionID int32, input string, syms *symbolTable, label string) (string, error) {
-	if syms == nil || len(syms.Symbols) == 0 {
+	if syms == nil || len(syms.symbols) == 0 {
 		return input, nil
 	}
 
-	for k, v := range syms.Symbols {
+	for k, v := range syms.symbols {
 		search := symbolPrefix + k + symbolSuffix
 		replace := datatypes.GetString(v)
 		oldInput := input

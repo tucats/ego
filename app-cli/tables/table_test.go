@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 			want: &Table{
 				rowLimit:       -1,
 				columnCount:    1,
-				columns:        []string{"simple"},
+				names:          []string{"simple"},
 				maxWidth:       []int{6},
 				alignment:      []int{AlignmentLeft},
 				spacing:        "    ",
@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 			want: &Table{
 				rowLimit:       -1,
 				columnCount:    3,
-				columns:        []string{"simple", "test", "table"},
+				names:          []string{"simple", "test", "table"},
 				maxWidth:       []int{6, 4, 5},
 				alignment:      []int{AlignmentLeft, AlignmentLeft, AlignmentLeft},
 				columnOrder:    []int{0, 1, 2},
@@ -102,7 +102,7 @@ func TestNewCSV(t *testing.T) {
 				h: "First",
 			},
 			want: Table{
-				columns: []string{"First"},
+				names: []string{"First"},
 			},
 			wantErr: false,
 		},
@@ -112,7 +112,7 @@ func TestNewCSV(t *testing.T) {
 				h: "First,Second",
 			},
 			want: Table{
-				columns: []string{"First", "Second"},
+				names: []string{"First", "Second"},
 			},
 			wantErr: false,
 		},
@@ -122,7 +122,7 @@ func TestNewCSV(t *testing.T) {
 				h: "First,,Third",
 			},
 			want: Table{
-				columns: []string{"First", "", "Third"},
+				names: []string{"First", "", "Third"},
 			},
 			wantErr: false,
 		},
@@ -132,7 +132,7 @@ func TestNewCSV(t *testing.T) {
 				h: "First, Second  ",
 			},
 			want: Table{
-				columns: []string{"First", "Second"},
+				names: []string{"First", "Second"},
 			},
 			wantErr: false,
 		},
@@ -142,7 +142,7 @@ func TestNewCSV(t *testing.T) {
 				h: "\"Name,Age\",Size",
 			},
 			want: Table{
-				columns: []string{"Name,Age", "Size"},
+				names: []string{"Name,Age", "Size"},
 			},
 			wantErr: false,
 		},
@@ -155,7 +155,7 @@ func TestNewCSV(t *testing.T) {
 
 				return
 			}
-			if !reflect.DeepEqual(got.columns, tt.want.columns) {
+			if !reflect.DeepEqual(got.names, tt.want.names) {
 				t.Errorf("NewCSV() = %v, want %v", got, tt.want)
 			}
 		})

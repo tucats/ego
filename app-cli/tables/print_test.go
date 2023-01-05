@@ -81,7 +81,7 @@ func TestTable_FormatJSON(t *testing.T) {
 				orderBy:        tt.fields.orderBy,
 				ascending:      tt.fields.ascending,
 				rows:           tt.fields.rows,
-				columns:        tt.fields.columns,
+				names:          tt.fields.columns,
 				columnOrder:    tt.fields.columnOrder,
 				alignment:      tt.fields.alignment,
 				maxWidth:       tt.fields.maxWidth,
