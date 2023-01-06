@@ -145,7 +145,7 @@ func CompileTypeSpec(source string) (*datatypes.Type, error) {
 
 // For a given package and type name, get the underlying type.
 func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type, bool) {
-	if p, found := c.packages.packages[packageName]; found {
+	if p, found := c.packages[packageName]; found {
 		if t, found := p.Get(typeName); found {
 			if theType, ok := t.(*datatypes.Type); ok {
 				return theType, true

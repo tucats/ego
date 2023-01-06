@@ -253,12 +253,12 @@ func (t *Tokenizer) NextText() string {
 
 // Peek looks ahead at the next token without advancing the pointer.
 func (t *Tokenizer) Peek(offset int) Token {
-	pos := t.TokenP + (offset - 1)
-	if pos >= len(t.Tokens) {
+	position := t.TokenP + (offset - 1)
+	if position >= len(t.Tokens) || position < 0 {
 		return EndOfTokens
 	}
 
-	return t.Tokens[pos]
+	return t.Tokens[position]
 }
 
 // Peek looks ahead at the next token without advancing the pointer.

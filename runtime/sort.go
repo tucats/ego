@@ -33,8 +33,8 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	// Coerce the name of the bytecode to represent that it is the
 	// anonymous compare function value. We only do this if it is
 	// actually anonymous.
-	if fn.Name() == "" {
-		fn.SetName("<anon>")
+	if fn.Name == "" {
+		fn.Name = "<anon>"
 	}
 
 	// Reusable context that will handle each callback.

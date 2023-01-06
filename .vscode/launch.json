@@ -80,7 +80,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "-d", "optimizer", "run", "test.ego"]
+            "args": [ "-d", "trace", "run", "test.ego"]
         },
         {
             "name": "Debug test.ego",

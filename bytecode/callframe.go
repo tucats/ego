@@ -33,6 +33,15 @@ type CallFrame struct {
 	fp            int
 }
 
+func (f CallFrame) String() string {
+	name := f.Module
+	if name == "" {
+		name = "<anon>"
+	}
+
+	return fmt.Sprintf("%s:%d", name, f.Line)
+}
+
 // callframePush pushes a single object on the stack that represents the state of
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
@@ -45,7 +54,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		thisStack:  c.thisStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
-		Module:     c.bc.name,
+		Module:     c.bc.Name,
 		Line:       c.line,
 		blockDepth: c.blockDepth,
 	})

@@ -63,7 +63,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	c.line = datatypes.GetInt(i)
 	c.stepOver = false
 	c.symbols.SetAlways(defs.Line, c.line)
-	c.symbols.SetAlways(defs.Module, c.bc.name)
+	c.symbols.SetAlways(defs.Module, c.bc.Name)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
@@ -256,7 +256,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// IF we're not doing full symbol scope, and the function we're
 		// calling isn't "main", then find the correct parent that limits
 		// scope visibility.
-		if !c.fullSymbolScope && function.name != defs.Main {
+		if !c.fullSymbolScope && function.Name != defs.Main {
 			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
 				parentTable = parentTable.Parent()
 			}
@@ -271,13 +271,13 @@ func callByteCode(c *Context, i interface{}) error {
 			ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 				c.threadID, c.symbols.Name, parentTable.Name)
 
-			c.callframePush("function "+function.name, function, 0, true)
+			c.callframePush("function "+function.Name, function, 0, true)
 		} else {
 			parentTable = c.symbols
 
-			c.callframePush("function "+function.name, function, 0, false)
+			c.callframePush("function "+function.Name, function, 0, false)
 
-			functionSymbols.Name = "pkg func " + function.name
+			functionSymbols.Name = "pkg func " + function.Name
 			functionSymbols.SetParent(parentTable)
 			functionSymbols.SetScopeBoundary(true)
 			c.symbols = functionSymbols

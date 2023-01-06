@@ -32,12 +32,23 @@ var firstOptimizerLogMessage = true
 
 // ByteCode contains the context of the execution of a bytecode stream. Note that
 // there is a dependency in format.go on the name of the "Declaration" variable.
+// PLEASE NOTE that Name must be exported because reflection is used to format
+// opaque pointers to bytecodes in the low-level formatter.
 type ByteCode struct {
-	name         string
+	Name         string
 	instructions []instruction
 	nextAddress  int
 	Declaration  *datatypes.FunctionDeclaration
 	sealed       bool
+}
+
+func (b *ByteCode) String() string {
+	fd := datatypes.GetDeclaration(b)
+	if fd != nil {
+		return fd.String()
+	}
+
+	return b.Name + "()"
 }
 
 // New generates and initializes a new bytecode.
@@ -47,26 +58,13 @@ func New(name string) *ByteCode {
 	}
 
 	bc := ByteCode{
-		name:         name,
+		Name:         name,
 		instructions: make([]instruction, initialOpcodeSize),
 		nextAddress:  0,
 		sealed:       false,
 	}
 
 	return &bc
-}
-
-// Name retrieves the name of this bytecode object, usually the
-// function name or filename that was compiled.
-func (b *ByteCode) Name() string {
-	return b.name
-}
-
-// SetName sets the bytecode name.
-func (b *ByteCode) SetName(name string) *ByteCode {
-	b.name = name
-
-	return b
 }
 
 // EmitAT emits a single instruction. The opcode is required, and can optionally

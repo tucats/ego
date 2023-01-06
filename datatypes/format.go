@@ -203,19 +203,7 @@ func Format(element interface{}) string {
 		if vv.Kind() == reflect.Ptr {
 			ts := vv.String()
 			if ts == defs.ByteCodeReflectionTypeString {
-				e := reflect.ValueOf(v).Elem()
-
-				name := fmt.Sprintf("%v", e.FieldByName("Name").Interface())
-				if name == "" {
-					name = "<anon>"
-				}
-
-				fd := GetDeclaration(v)
-				if fd != nil {
-					return fd.String()
-				}
-
-				return name + "()"
+				return fmt.Sprintf("%v", v)
 			}
 
 			return fmt.Sprintf("ptr %s", ts)
@@ -226,19 +214,7 @@ func Format(element interface{}) string {
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
-			e := reflect.ValueOf(v).FieldByName("Module")
-			module := fmt.Sprintf("%v", e.Interface())
-			e = reflect.ValueOf(v).FieldByName("Line")
-			line := GetInt(e.Interface())
-
-			return fmt.Sprintf("F<%s:%d>", module, line)
-		}
-
-		if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
-			e := reflect.ValueOf(v).FieldByName("Value")
-			name := fmt.Sprintf("%v", e.Interface())
-
-			return fmt.Sprintf("Constant %s", Format(name))
+			return fmt.Sprintf("F<%v>", v)
 		}
 
 		// If it's a slice of an interface array, used to pass compound

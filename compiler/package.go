@@ -119,9 +119,9 @@ func (c *Compiler) compileImport() error {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
-			c.packages.mutex.Lock()
-			c.packages.packages[packageName] = datatypes.NewPackage(fileName.Spelling())
-			c.packages.mutex.Unlock()
+			c.packageMutex.Lock()
+			c.packages[packageName] = datatypes.NewPackage(fileName.Spelling())
+			c.packageMutex.Unlock()
 		}
 
 		// Read the imported object as a file path if we haven't already done this

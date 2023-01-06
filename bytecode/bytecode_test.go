@@ -12,7 +12,7 @@ func TestByteCode_New(t *testing.T) {
 		b := New("testing")
 
 		want := ByteCode{
-			name:         "testing",
+			Name:         "testing",
 			instructions: make([]instruction, initialOpcodeSize),
 			nextAddress:  0,
 		}
@@ -82,7 +82,7 @@ func TestByteCode_Emit2(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				name:         tt.fields.Name,
+				Name:         tt.fields.Name,
 				instructions: tt.fields.opcodes,
 				nextAddress:  tt.fields.emitPos,
 			}
@@ -108,7 +108,7 @@ func TestByteCode_Emit2(t *testing.T) {
 func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 	t.Run("emit with array", func(t *testing.T) {
 		b := &ByteCode{
-			name:         "emit with array of operands",
+			Name:         "emit with array of operands",
 			instructions: []instruction{},
 			nextAddress:  0,
 		}
@@ -139,7 +139,7 @@ func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 func TestByteCode_SetAddress(t *testing.T) {
 	t.Run("emit with array", func(t *testing.T) {
 		b := &ByteCode{
-			name:         "setAddress",
+			Name:         "setAddress",
 			instructions: []instruction{},
 			nextAddress:  0,
 		}
@@ -243,7 +243,7 @@ func TestByteCode_Append(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				name:         tt.fields.Name,
+				Name:         tt.fields.Name,
 				instructions: tt.fields.opcodes,
 				nextAddress:  tt.fields.emitPos,
 			}

@@ -34,12 +34,6 @@ type loop struct {
 	continues []int
 }
 
-// packageDictionary is a list of packages each with a function dictionary.
-type packageDictionary struct {
-	mutex    sync.Mutex
-	packages map[string]*datatypes.EgoPackage
-}
-
 // flagSet contains flags that generally identify the state of
 // the compiler at any given moment. For example, when parsing
 // something like a switch conditional value, the value cannot
@@ -61,7 +55,8 @@ type Compiler struct {
 	coercions             []*bytecode.ByteCode
 	constants             []string
 	deferQueue            []int
-	packages              packageDictionary
+	packages              map[string]*datatypes.EgoPackage
+	packageMutex          sync.Mutex
 	types                 map[string]*datatypes.Type
 	functionDepth         int
 	blockDepth            int
@@ -76,16 +71,14 @@ type Compiler struct {
 // New creates a new compiler instance.
 func New(name string) *Compiler {
 	cInstance := Compiler{
-		b:          nil,
-		t:          nil,
-		s:          symbols.NewRootSymbolTable(name),
-		constants:  make([]string, 0),
-		deferQueue: make([]int, 0),
-		types:      map[string]*datatypes.Type{},
-		packages: packageDictionary{
-			mutex:    sync.Mutex{},
-			packages: map[string]*datatypes.EgoPackage{},
-		},
+		b:                     nil,
+		t:                     nil,
+		s:                     symbols.NewRootSymbolTable(name),
+		constants:             make([]string, 0),
+		deferQueue:            make([]int, 0),
+		types:                 map[string]*datatypes.Type{},
+		packageMutex:          sync.Mutex{},
+		packages:              map[string]*datatypes.EgoPackage{},
 		normalizedIdentifiers: false,
 		flags: flagSet{
 			extensionsEnabled: settings.GetBool(defs.ExtensionsEnabledSetting),
@@ -339,7 +332,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
-	for packageName, packageDictionary := range c.packages.packages {
+	for packageName, packageDictionary := range c.packages {
 		// Skip over any metadata
 		if strings.HasPrefix(packageName, datatypes.MetadataPrefix) {
 			continue
@@ -485,6 +478,7 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		rootTable:             c.s.Clone(withLock),
 		coercions:             c.coercions,
 		constants:             c.constants,
+		packageMutex:          sync.Mutex{},
 		deferQueue:            []int{},
 		normalizedIdentifiers: c.normalizedIdentifiers,
 		flags: flagSet{
@@ -493,30 +487,27 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		exitEnabled: c.exitEnabled,
 	}
 
-	packages := packageDictionary{
-		mutex:    sync.Mutex{},
-		packages: map[string]*datatypes.EgoPackage{},
-	}
+	packages := map[string]*datatypes.EgoPackage{}
 
-	c.packages.mutex.Lock()
-	defer c.packages.mutex.Unlock()
+	c.packageMutex.Lock()
+	defer c.packageMutex.Unlock()
 
-	for n, m := range c.packages.packages {
-		packData := datatypes.NewPackage(n)
+	for n, m := range c.packages {
+		packageDef := datatypes.NewPackage(n)
 
 		keys := m.Keys()
 		for _, k := range keys {
 			v, _ := m.Get(k)
-			packData.Set(k, v)
+			packageDef.Set(k, v)
 		}
 
-		packages.packages[n] = packData
+		packages[n] = packageDef
 	}
 
 	// Put the newly created data in the copy of the compiler, with
 	// it's own mutex
-	cx.packages.mutex = sync.Mutex{}
-	cx.packages.packages = packages.packages
+	cx.packageMutex = sync.Mutex{}
+	cx.packages = packages
 
 	return &cx
 }
