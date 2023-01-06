@@ -8,6 +8,15 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
+// Define the types of for loops we can compile. This determines how to
+// handle increment and end-of-range tests.
+const (
+	indexLoopType       = 1
+	rangeLoopType       = 2
+	forLoopType         = 3
+	conditionalLoopType = 4
+)
+
 // compileFor compiles the loop statement. This has four syntax types that
 // can be specified.
 //
@@ -88,11 +97,11 @@ func (c *Compiler) compileFor() error {
 // this loop body.  A break or continue _only_ applies to the loop scope
 // in which it occurs.
 func (c *Compiler) loopStackPush(loopType int) {
-	loop := Loop{
-		Type:      loopType,
+	loop := loop{
+		loopType:  loopType,
 		breaks:    make([]int, 0),
 		continues: make([]int, 0),
-		Parent:    c.loops,
+		parent:    c.loops,
 	}
 	c.loops = &loop
 }
@@ -100,7 +109,7 @@ func (c *Compiler) loopStackPush(loopType int) {
 // loopStackPop discards the top-most loop context on the loop stack.
 func (c *Compiler) loopStackPop() {
 	if c.loops != nil {
-		c.loops = c.loops.Parent
+		c.loops = c.loops.parent
 	} else {
 		ui.Debug(ui.TraceLogger, "=== loop stack empty")
 	}

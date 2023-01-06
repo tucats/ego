@@ -29,11 +29,11 @@ func (c *Compiler) compilePackage() error {
 
 	name = c.normalizeToken(name)
 
-	if (c.PackageName != "") && (c.PackageName != name.Spelling()) {
+	if (c.activePackageName != "") && (c.activePackageName != name.Spelling()) {
 		return c.newError(errors.ErrPackageRedefinition)
 	}
 
-	c.PackageName = name.Spelling()
+	c.activePackageName = name.Spelling()
 
 	c.b.Emit(bytecode.PushPackage, name)
 
@@ -95,43 +95,43 @@ func (c *Compiler) compileImport() error {
 		}
 
 		packageName = strings.ToLower(packageName)
-		pkgData, _ := bytecode.GetPackage(packageName)
+		packageDef, _ := bytecode.GetPackage(packageName)
 
-		wasBuiltin := pkgData.Builtins()
-		wasImported := pkgData.Imported()
+		wasBuiltin := packageDef.Builtins()
+		wasImported := packageDef.Imported()
 
 		ui.Debug(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
 		// If this is an import of the package we're currently importing, no work to do.
-		if packageName == c.PackageName {
+		if packageName == c.activePackageName {
 			continue
 		}
 
-		if !pkgData.Builtins() {
-			pkgData.SetBuiltins(c.AddBuiltins(packageName))
+		if !packageDef.Builtins() {
+			packageDef.SetBuiltins(c.AddBuiltins(packageName))
 
 			ui.Debug(ui.CompilerLogger, "+++ Added builtins for package "+fileName.Spelling())
 		} else {
 			ui.Debug(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName.Spelling())
 		}
 
-		if !pkgData.Builtins() {
+		if !packageDef.Builtins() {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
-			c.packages.Mutex.Lock()
-			c.packages.Package[packageName] = datatypes.NewPackage(fileName.Spelling())
-			c.packages.Mutex.Unlock()
+			c.packages.mutex.Lock()
+			c.packages.packages[packageName] = datatypes.NewPackage(fileName.Spelling())
+			c.packages.mutex.Unlock()
 		}
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
-		if !pkgData.Imported() {
+		if !packageDef.Imported() {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
-				if pkgData.Builtins() {
+				if packageDef.Builtins() {
 					c.t.Advance(1)
 
 					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {
@@ -147,10 +147,10 @@ func (c *Compiler) compileImport() error {
 
 			ui.Debug(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + filePath).SetRoot(c.RootTable).SetTestMode(c.testMode)
+			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.testMode)
 			importCompiler.b = bytecode.New("import " + filePath)
 			importCompiler.t = tokenizer.New(text)
-			importCompiler.PackageName = packageName
+			importCompiler.activePackageName = packageName
 
 			for !importCompiler.t.AtEnd() {
 				err := importCompiler.compileStatement()
@@ -173,24 +173,24 @@ func (c *Compiler) compileImport() error {
 
 			// The import will have generate code that must be run to actually register
 			// package contents.
-			importSymbols := symbols.NewChildSymbolTable("import "+fileName.Spelling(), c.RootTable)
+			importSymbols := symbols.NewChildSymbolTable("import "+fileName.Spelling(), c.rootTable)
 			ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
 			if err = ctx.Run(); !errors.Equals(err, errors.ErrStop) {
 				break
 			}
 
-			pkgData.SetImported(true)
+			packageDef.SetImported(true)
 		} else {
 			ui.Debug(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
 		}
 
 		// Rewrite the package if we've added stuff to it.
-		if wasImported != pkgData.Imported() || wasBuiltin != pkgData.Builtins() {
+		if wasImported != packageDef.Imported() || wasBuiltin != packageDef.Builtins() {
 			if ui.IsActive(ui.CompilerLogger) {
 				ui.Debug(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 
-				keys := pkgData.Keys()
+				keys := packageDef.Keys()
 				keyString := ""
 
 				for idx, k := range keys {
@@ -204,7 +204,7 @@ func (c *Compiler) compileImport() error {
 				ui.Debug(ui.CompilerLogger, "+++ package keys: %s", keyString)
 			}
 
-			symbols.RootSymbolTable.SetAlways(filePath, pkgData)
+			symbols.RootSymbolTable.SetAlways(filePath, packageDef)
 		}
 
 		// Now that the package is in the cache, add the instruction to the active
@@ -267,7 +267,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 	}
 
 	if e2 == nil {
-		c.SourceFile = fn
+		c.sourceFile = fn
 	}
 
 	// Convert []byte to string
@@ -280,7 +280,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 
 	r := os.Getenv(defs.EgoPathEnv)
 	if r == "" {
-		r = settings.Get(EgoPathSetting)
+		r = settings.Get(defs.EgoPathSetting)
 	}
 
 	r = filepath.Join(r, defs.LibPathName)

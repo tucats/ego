@@ -34,7 +34,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 
 			name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 
-			ft, err := base.Field(name.Spelling())
+			fieldType, err := base.Field(name.Spelling())
 			if err != nil {
 				return err
 			}
@@ -43,7 +43,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 				return c.newError(errors.ErrMissingColon)
 			}
 
-			err = c.compileInitializer(ft)
+			err = c.compileInitializer(fieldType)
 			if err != nil {
 				return err
 			}
@@ -129,6 +129,8 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 			}
 		}
 
+		// Emit the type as the final datum, and then emit the instruction
+		// that will construct the array from the type and stack items.
 		c.b.Emit(bytecode.Push, base.BaseType())
 		c.b.Emit(bytecode.MakeArray, count)
 

@@ -30,7 +30,7 @@ func (c *Compiler) isAssignmentTarget() bool {
 	}
 
 	// Let's look ahead to see if it contains any of the tell-tale
-	// characters that indicate an lvalue. This does not say if it
+	// tokens that indicate an lvalue. This does not determine if it
 	// is a valid/correct lvalue. We also stop searching at some point.
 	for i := 2; i < 100; i = i + 1 {
 		t := c.t.Peek(i)
@@ -223,10 +223,10 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 // storagebytecode, convert the last operation to a Store which writes
 // the value back.
 func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
-	ops := bc.Opcodes()
-
 	address := bc.Mark() - 1
-	if address > 0 && ops[address].Operation == bytecode.LoadIndex && ops[address].Operand == nil {
+	instruction := bc.Instruction(address)
+
+	if address > 0 && instruction.Operation == bytecode.LoadIndex && instruction.Operand == nil {
 		bc.EmitAt(address, bytecode.StoreIndex)
 	} else {
 		if isChan {
@@ -247,12 +247,12 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 	if term == tokenizer.StartOfArrayToken {
 		c.t.Advance(1)
 
-		ix, err := c.Expression()
+		expression, err := c.Expression()
 		if err != nil {
 			return err
 		}
 
-		bc.Append(ix)
+		bc.Append(expression)
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
 			return c.newError(errors.ErrMissingBracket)

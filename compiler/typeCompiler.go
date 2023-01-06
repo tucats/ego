@@ -18,7 +18,7 @@ func (c *Compiler) typeEmitter(name string) error {
 }
 
 func (c *Compiler) typeCompiler(name string) (*datatypes.Type, error) {
-	if _, found := c.Types[name]; found {
+	if _, found := c.types[name]; found {
 		return &datatypes.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
 	}
 
@@ -28,7 +28,7 @@ func (c *Compiler) typeCompiler(name string) (*datatypes.Type, error) {
 	}
 
 	typeInfo := datatypes.TypeDefinition(name, baseType)
-	c.Types[name] = typeInfo
+	c.types[name] = typeInfo
 
 	return typeInfo, nil
 }
@@ -40,7 +40,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 		// Is it a previously defined type?
 		typeName := c.t.Peek(1)
 		if typeName.IsIdentifier() {
-			if t, ok := c.Types[typeName.Spelling()]; ok {
+			if t, ok := c.types[typeName.Spelling()]; ok {
 				c.t.Advance(1)
 
 				return t, nil
@@ -141,7 +141,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 
 			// Is the name actually a type that we embed? If so, get the base type and iterate
 			// over its fields, copying them into our current structure definition.
-			if typeData, found := c.Types[name.Spelling()]; found {
+			if typeData, found := c.types[name.Spelling()]; found {
 				embedType(t, typeData)
 				c.t.IsNext(tokenizer.CommaToken)
 
@@ -213,7 +213,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 	// User type known to this compilation?
 	typeName := c.t.Peek(1)
 
-	if t, found := c.Types[typeName.Spelling()]; found {
+	if t, found := c.types[typeName.Spelling()]; found {
 		c.t.Advance(1)
 
 		return t, nil

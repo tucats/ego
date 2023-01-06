@@ -96,7 +96,7 @@ func (c *Compiler) parseTypeSpec() (*datatypes.Type, error) {
 
 	// Is it a type we already know about?
 	typeName := c.t.Peek(1)
-	if typeDef, ok := c.Types[typeName.Spelling()]; ok {
+	if typeDef, ok := c.types[typeName.Spelling()]; ok {
 		c.t.Advance(1)
 
 		return typeDef, nil
@@ -145,7 +145,7 @@ func CompileTypeSpec(source string) (*datatypes.Type, error) {
 
 // For a given package and type name, get the underlying type.
 func (c *Compiler) GetPackageType(packageName, typeName string) (*datatypes.Type, bool) {
-	if p, found := c.packages.Package[packageName]; found {
+	if p, found := c.packages.packages[packageName]; found {
 		if t, found := p.Get(typeName); found {
 			if theType, ok := t.(*datatypes.Type); ok {
 				return theType, true

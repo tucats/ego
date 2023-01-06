@@ -16,27 +16,17 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-const (
-	indexLoopType       = 1
-	rangeLoopType       = 2
-	forLoopType         = 3
-	conditionalLoopType = 4
-
-	ExtensionsSetting = "ego.compiler.extensions"
-	EgoPathSetting    = defs.EgoPathSetting
-)
-
-// RequiredPackages is the list of packages that are always imported, regardless
+// requiredPackages is the list of packages that are always imported, regardless
 // of user import statements or auto-import profile settings.
-var RequiredPackages []string = []string{
+var requiredPackages []string = []string{
 	"os",
 	"profile",
 }
 
-// Loop is a structure that defines a loop type.
-type Loop struct {
-	Parent *Loop
-	Type   int
+// loop is a structure that defines a loop type.
+type loop struct {
+	parent   *loop
+	loopType int
 	// Fixup locations for break or continue statements in a
 	// loop. These are the addresses that must be fixed up with
 	// a target address pointing to exit point or start of the loop.
@@ -44,43 +34,43 @@ type Loop struct {
 	continues []int
 }
 
-// PackageDictionary is a list of packages each with a function dictionary.
-type PackageDictionary struct {
-	Mutex   sync.Mutex
-	Package map[string]*datatypes.EgoPackage
+// packageDictionary is a list of packages each with a function dictionary.
+type packageDictionary struct {
+	mutex    sync.Mutex
+	packages map[string]*datatypes.EgoPackage
 }
 
-// FlagSet contains flags that generally identify the state of
+// flagSet contains flags that generally identify the state of
 // the compiler at any given moment. For example, when parsing
 // something like a switch conditional value, the value cannot
 // be a struct initializer, though that is allowed elsewhere.
-type FlagSet struct {
+type flagSet struct {
 	disallowStructInits bool
 	extensionsEnabled   bool
 }
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
-	PackageName          string
-	SourceFile           string
-	b                    *bytecode.ByteCode
-	t                    *tokenizer.Tokenizer
-	s                    *symbols.SymbolTable
-	RootTable            *symbols.SymbolTable
-	loops                *Loop
-	coercions            []*bytecode.ByteCode
-	constants            []string
-	deferQueue           []int
-	packages             PackageDictionary
-	Types                map[string]*datatypes.Type
-	functionDepth        int
-	blockDepth           int
-	statementCount       int
-	disasm               bool
-	testMode             bool
-	LowercaseIdentifiers bool
-	flags                FlagSet // Use to hold parser state flags
-	exitEnabled          bool    // Only true in interactive mode
+	activePackageName     string
+	sourceFile            string
+	b                     *bytecode.ByteCode
+	t                     *tokenizer.Tokenizer
+	s                     *symbols.SymbolTable
+	rootTable             *symbols.SymbolTable
+	loops                 *loop
+	coercions             []*bytecode.ByteCode
+	constants             []string
+	deferQueue            []int
+	packages              packageDictionary
+	types                 map[string]*datatypes.Type
+	functionDepth         int
+	blockDepth            int
+	statementCount        int
+	disasm                bool
+	testMode              bool
+	normalizedIdentifiers bool
+	flags                 flagSet // Use to hold parser state flags
+	exitEnabled           bool    // Only true in interactive mode
 }
 
 // New creates a new compiler instance.
@@ -91,42 +81,65 @@ func New(name string) *Compiler {
 		s:          symbols.NewRootSymbolTable(name),
 		constants:  make([]string, 0),
 		deferQueue: make([]int, 0),
-		Types:      map[string]*datatypes.Type{},
-		packages: PackageDictionary{
-			Mutex:   sync.Mutex{},
-			Package: map[string]*datatypes.EgoPackage{},
+		types:      map[string]*datatypes.Type{},
+		packages: packageDictionary{
+			mutex:    sync.Mutex{},
+			packages: map[string]*datatypes.EgoPackage{},
 		},
-		LowercaseIdentifiers: false,
-		flags: FlagSet{
-			extensionsEnabled: settings.GetBool(ExtensionsSetting),
+		normalizedIdentifiers: false,
+		flags: flagSet{
+			extensionsEnabled: settings.GetBool(defs.ExtensionsEnabledSetting),
 		},
-		RootTable: &symbols.RootSymbolTable,
+		rootTable: &symbols.RootSymbolTable,
 	}
 
 	return &cInstance
 }
 
+// NormalizedIdentifiers returns true if this instance of the compiler is folding
+// all identifiers to a common (lower) case.
+func (c *Compiler) NormalizedIdentifiers() bool {
+	return c.normalizedIdentifiers
+}
+
+// SetNormalizedIdentifiers sets the flag indicating if this compiler instance is
+// folding all identifiers to a common case. This function supports attribute
+// chaining for a compiler instance.
+func (c *Compiler) SetNormalizedIdentifiers(flag bool) *Compiler {
+	c.normalizedIdentifiers = flag
+
+	return c
+}
+
 // Override the default root symbol table for this compilation. This determines
 // where package names are stored/found, for example. This is overridden by the
-// web service handlers as they have per-call instances of root.
+// web service handlers as they have per-call instances of root. This function
+// supports attribute chaining for a compiler instance.
 func (c *Compiler) SetRoot(s *symbols.SymbolTable) *Compiler {
-	c.RootTable = s
+	c.rootTable = s
 	c.s.SetParent(s)
 
 	return c
 }
 
-// If set to true, the compiler allows the EXIT statement.
+// If set to true, the compiler allows the "exit" statement. This function supports
+// attribute chaining for a compiler instance.
 func (c *Compiler) ExitEnabled(b bool) *Compiler {
 	c.exitEnabled = b
 
 	return c
 }
 
+// TesetMode returns whether the compiler is being used under control
+// of the Ego "test" command, which has slightly different rules for
+// block constructs.
 func (c *Compiler) TestMode() bool {
 	return c.testMode
 }
 
+// SetTestMode is used to set the test mode indicator for the compiler.
+// This is set to true only when running in Ego "test" mode. This
+// function supports attribute chaining for a compiler instance.
 func (c *Compiler) SetTestMode(b bool) *Compiler {
 	c.testMode = b
 
@@ -135,6 +148,7 @@ func (c *Compiler) SetTestMode(b bool) *Compiler {
 
 // Set the given symbol table as the default symbol table for
 // compilation. This mostly affects how builtins are processed.
+// This function supports attribute chaining for a compiler instance.
 func (c *Compiler) WithSymbols(s *symbols.SymbolTable) *Compiler {
 	c.s = s
 
@@ -142,29 +156,31 @@ func (c *Compiler) WithSymbols(s *symbols.SymbolTable) *Compiler {
 }
 
 // If set to true, the compiler allows the PRINT, TRY/CATCH, etc. statements.
+// This function supports attribute chaining for a compiler instance.
 func (c *Compiler) ExtensionsEnabled(b bool) *Compiler {
 	c.flags.extensionsEnabled = b
 
 	return c
 }
 
-// WithTokens supplies the token stream to a compiler.
+// WithTokens supplies the token stream to a compiler. This function supports
+// attribute chaining for a compiler instance.
 func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 	c.t = t
 
 	return c
 }
 
-// WithNormalization sets the normalization flag and can be chained
-// onto a compiler.New...() operation.
+// WithNormalization sets the normalization flag. This function supports
+// attribute chaining for a compiler instance.
 func (c *Compiler) WithNormalization(f bool) *Compiler {
-	c.LowercaseIdentifiers = f
+	c.normalizedIdentifiers = f
 
 	return c
 }
 
-// Disasm sets the disassembler flag and can be chained
-// onto a compiler.New...() operation.
+// Disasm sets the disassembler flag.This function supports
+// attribute chaining for a compiler instance.
 func (c *Compiler) Disasm(f bool) *Compiler {
 	c.disasm = f
 
@@ -285,7 +301,7 @@ func (c *Compiler) Get(name string) (interface{}, bool) {
 // normalize performs case-normalization based on the current
 // compiler settings.
 func (c *Compiler) normalize(name string) string {
-	if c.LowercaseIdentifiers {
+	if c.normalizedIdentifiers {
 		return strings.ToLower(name)
 	}
 
@@ -295,29 +311,35 @@ func (c *Compiler) normalize(name string) string {
 // normalizeToken performs case-normalization based on the current
 // compiler settings for an identifier token.
 func (c *Compiler) normalizeToken(t tokenizer.Token) tokenizer.Token {
-	if t.IsIdentifier() && c.LowercaseIdentifiers {
+	if t.IsIdentifier() && c.normalizedIdentifiers {
 		return tokenizer.NewIdentifierToken(strings.ToLower(t.Spelling()))
 	}
 
 	return t
 }
 
-func (c *Compiler) SetInteractive(b bool) {
+// SetInteractive indicates if the compilation is happening in interactive
+// (i.e. REPL) mode. This function supports attribute chaining for a compiler
+// instance.
+func (c *Compiler) SetInteractive(b bool) *Compiler {
 	if b {
 		c.functionDepth++
 	}
+
+	return c
 }
 
 var packageMerge sync.Mutex
 
 // AddPackageToSymbols adds all the defined packages for this compilation
-// to the given symbol table.
-func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
+// to the given symbol table. This function supports attribute chaining
+// for a compiler instance.
+func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 	ui.Debug(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
-	for packageName, packageDictionary := range c.packages.Package {
+	for packageName, packageDictionary := range c.packages.packages {
 		// Skip over any metadata
 		if strings.HasPrefix(packageName, datatypes.MetadataPrefix) {
 			continue
@@ -351,6 +373,8 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) {
 			s.SetAlways(packageName, m)
 		}
 	}
+
+	return c
 }
 
 // isStatementEnd returns true when the next token is
@@ -407,7 +431,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			}
 		}
 	} else {
-		for _, p := range RequiredPackages {
+		for _, p := range requiredPackages {
 			uniqueNames[p] = true
 		}
 	}
@@ -423,7 +447,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	savedBC := c.b
 	savedT := c.t
-	savedSource := c.SourceFile
+	savedSource := c.sourceFile
 
 	var firstError error
 
@@ -438,7 +462,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 
 	c.b = savedBC
 	c.t = savedT
-	c.SourceFile = savedSource
+	c.sourceFile = savedSource
 
 	// Finally, traverse the package cache to move the symbols to the
 	// given symbol table
@@ -448,33 +472,36 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	return firstError
 }
 
+// Clone makes a new copy of the current compiler. The withLock flag
+// indicates if the clone should respect symbol table locking. This
+// function supports attribute chaining for a compiler instance.
 func (c *Compiler) Clone(withLock bool) *Compiler {
 	cx := Compiler{
-		PackageName:          c.PackageName,
-		SourceFile:           c.SourceFile,
-		b:                    c.b,
-		t:                    c.t,
-		s:                    c.s.Clone(withLock),
-		RootTable:            c.s.Clone(withLock),
-		coercions:            c.coercions,
-		constants:            c.constants,
-		deferQueue:           []int{},
-		LowercaseIdentifiers: c.LowercaseIdentifiers,
-		flags: FlagSet{
+		activePackageName:     c.activePackageName,
+		sourceFile:            c.sourceFile,
+		b:                     c.b,
+		t:                     c.t,
+		s:                     c.s.Clone(withLock),
+		rootTable:             c.s.Clone(withLock),
+		coercions:             c.coercions,
+		constants:             c.constants,
+		deferQueue:            []int{},
+		normalizedIdentifiers: c.normalizedIdentifiers,
+		flags: flagSet{
 			extensionsEnabled: c.flags.extensionsEnabled,
 		},
 		exitEnabled: c.exitEnabled,
 	}
 
-	packages := PackageDictionary{
-		Mutex:   sync.Mutex{},
-		Package: map[string]*datatypes.EgoPackage{},
+	packages := packageDictionary{
+		mutex:    sync.Mutex{},
+		packages: map[string]*datatypes.EgoPackage{},
 	}
 
-	c.packages.Mutex.Lock()
-	defer c.packages.Mutex.Unlock()
+	c.packages.mutex.Lock()
+	defer c.packages.mutex.Unlock()
 
-	for n, m := range c.packages.Package {
+	for n, m := range c.packages.packages {
 		packData := datatypes.NewPackage(n)
 
 		keys := m.Keys()
@@ -483,13 +510,13 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 			packData.Set(k, v)
 		}
 
-		packages.Package[n] = packData
+		packages.packages[n] = packData
 	}
 
 	// Put the newly created data in the copy of the compiler, with
 	// it's own mutex
-	cx.packages.Mutex = sync.Mutex{}
-	cx.packages.Package = packages.Package
+	cx.packages.mutex = sync.Mutex{}
+	cx.packages.packages = packages.packages
 
 	return &cx
 }

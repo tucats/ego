@@ -9,14 +9,14 @@ import (
 )
 
 // Given a string, compile and execute it immediately.
-func RunString(name string, s *symbols.SymbolTable, stmt string) error {
-	return Run(name, s, tokenizer.New(stmt))
+func RunString(name string, s *symbols.SymbolTable, programText string) error {
+	return Run(name, s, tokenizer.New(programText))
 }
 
-// Given a token stream, compile and execute it immediately.
+// Given a token stream, compile and execute it immediately. Note that language
+// extensions are always enabled for this kind of execution mode.
 func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
-	c := New(name)
-	c.ExtensionsEnabled(true)
+	c := New(name).ExtensionsEnabled(true)
 
 	oldState := defs.True
 	if !settings.GetBool(defs.ExtensionsEnabledSetting) {

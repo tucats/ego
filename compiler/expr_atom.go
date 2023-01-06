@@ -44,11 +44,6 @@ func (c *Compiler) expressionAtom() error {
 		t = tokenizer.NewIntegerToken(strconv.Itoa(octalValue))
 	}
 
-	// Is this the make() function?
-	if t == tokenizer.MakeToken && c.t.Peek(2) == tokenizer.StartOfListToken {
-		return c.makeInvocation()
-	}
-
 	// Is this the "nil" constant?
 	if t == tokenizer.NilToken {
 		c.t.Advance(1)

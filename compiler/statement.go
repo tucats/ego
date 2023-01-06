@@ -69,7 +69,8 @@ func (c *Compiler) compileStatement() error {
 	// handler (which assumes the leading verb has already been consumed)
 	verb := c.t.Next()
 
-	// First, check the statements that can appear anywhere.
+	// First, check for the statements that can appear outside or inside
+	// a block.
 	switch verb {
 	case tokenizer.ConstToken:
 		return c.compileConst()
@@ -173,7 +174,7 @@ func (c *Compiler) isFunctionCall() bool {
 			return true
 		}
 
-		// Is this a reserved word or delimiter punctuation? IF so we've shot past the statement
+		// Is this a reserved word or delimiter punctuation? If so we've shot past the statement
 		if subexpr == 0 && tokenizer.InList(t,
 			tokenizer.SemicolonToken,
 			tokenizer.DirectiveToken,
@@ -222,9 +223,9 @@ func (c *Compiler) isFunctionCall() bool {
 				return false
 			}
 
-			pos++
-
 			lastWasSymbol = true
+
+			pos++
 
 			continue
 		} else {
@@ -270,21 +271,3 @@ func (c *Compiler) isFunctionCall() bool {
 	return false
 }
 
-func (c *Compiler) compilePanic() error {
-	if !c.t.IsNext(tokenizer.StartOfListToken) {
-		return errors.EgoError(errors.ErrMissingParenthesis)
-	}
-
-	err := c.expressionAtom()
-	if err != nil {
-		return err
-	}
-
-	c.b.Emit(bytecode.Panic)
-
-	if !c.t.IsNext(tokenizer.EndOfListToken) {
-		return errors.EgoError(errors.ErrMissingParenthesis)
-	}
-
-	return nil
-}

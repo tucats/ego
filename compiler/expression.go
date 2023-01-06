@@ -13,19 +13,18 @@ import (
 //
 // From the golang doc, operator precedence is:
 //
-//  Precedence    Operator
-//	5             *  /  %  <<  >>  &  &^
-//	4             +  -  |  ^
-//	3             ==  !=  <  <=  >  >=
-//	2             &&
-//	1             ||
-
+//	 Precedence    Operator
+//		5             *  /  %  <<  >>  &  &^
+//		4             +  -  |  ^
+//		3             ==  !=  <  <=  >  >=
+//		2             &&
+//		1             ||
 func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx := New("expression eval")
 	cx.t = c.t
 	cx.flags = c.flags
 	cx.b = bytecode.New("subexpression")
-	cx.Types = c.Types
+	cx.types = c.types
 
 	err := cx.conditional()
 	if err == nil {

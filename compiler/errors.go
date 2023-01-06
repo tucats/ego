@@ -24,15 +24,15 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg 
 
 	e := errors.EgoError(err).Context(token)
 
-	if c.PackageName != "" {
-		e = e.In(c.PackageName)
-	} else if c.SourceFile != "" {
-		e = e.In(c.SourceFile)
+	if c.activePackageName != "" {
+		e = e.In(c.activePackageName)
+	} else if c.sourceFile != "" {
+		e = e.In(c.sourceFile)
 	}
 
 	// Get the context info if possible.
 	if p >= 0 && p < len(c.t.Line) && p < len(c.t.Pos) {
-		e = e.In(c.PackageName).At(c.t.Line[p], c.t.Pos[p])
+		e = e.In(c.activePackageName).At(c.t.Line[p], c.t.Pos[p])
 	}
 
 	return e

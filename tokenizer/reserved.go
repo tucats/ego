@@ -2,99 +2,284 @@ package tokenizer
 
 // Symbolic names for each string token value.
 var (
-	AssertToken              = NewReservedToken("assert")
-	BoolToken                = NewTypeToken("bool")
-	BlockBeginToken          = NewSpecialToken("{")
-	BlockEndToken            = NewSpecialToken("}")
-	BreakToken               = NewReservedToken("break")
-	ByteToken                = NewTypeToken("byte")
-	CallToken                = NewReservedToken("call")
-	CaseToken                = NewIdentifierToken("case")
-	CatchToken               = NewReservedToken("catch")
-	ChanToken                = NewTypeToken("chan")
-	ClearToken               = NewIdentifierToken("clear")
-	ConstToken               = NewReservedToken("const")
-	ContinueToken            = NewReservedToken("continue")
-	DataBeginToken           = NewSpecialToken("{")
-	DataEndToken             = NewSpecialToken("}")
-	DefaultToken             = NewIdentifierToken("default")
-	DeferToken               = NewReservedToken("defer")
-	DirectiveToken           = NewSpecialToken("@")
-	ElseToken                = NewReservedToken("else")
-	EmptyBlockToken          = NewSpecialToken("{}")
-	EmptyInitializerToken    = NewSpecialToken("{}")
-	EmptyInterfaceToken      = NewTypeToken("interface{}")
-	ExitToken                = NewReservedToken("exit")
-	FallthroughToken         = NewReservedToken("fallthrough")
-	Float32Token             = NewTypeToken("float32")
-	Float64Token             = NewTypeToken("float64")
-	ForToken                 = NewReservedToken("for")
-	FuncToken                = NewReservedToken("func")
-	GoToken                  = NewReservedToken("go")
-	IfToken                  = NewReservedToken("if")
-	IntToken                 = NewTypeToken("int")
-	Int32Token               = NewTypeToken("int32")
-	Int64Token               = NewTypeToken("int64")
-	InterfaceToken           = NewIdentifierToken("interface")
-	ImportToken              = NewReservedToken("import")
-	MakeToken                = NewReservedToken("make")
-	MapToken                 = NewTypeToken("map")
-	NilToken                 = NewReservedToken("nil")
-	PackageToken             = NewReservedToken("package")
-	PanicToken               = NewReservedToken("panic")
-	PrintToken               = NewReservedToken("print")
-	RangeToken               = NewIdentifierToken("range")
-	ReturnToken              = NewReservedToken("return")
-	StringToken              = NewTypeToken("string")
-	StructToken              = NewTypeToken("struct")
-	SwitchToken              = NewReservedToken("switch")
-	TestToken                = NewIdentifierToken("test")
-	TypeToken                = NewReservedToken("type")
-	TryToken                 = NewReservedToken("try")
-	VarToken                 = NewReservedToken("var")
-	WhenToken                = NewIdentifierToken("when")
-	SemicolonToken           = NewSpecialToken(";")
-	ColonToken               = NewSpecialToken(":")
-	DefineToken              = NewSpecialToken(":=")
-	AssignToken              = NewSpecialToken("=")
-	CommaToken               = NewSpecialToken(",")
-	EqualsToken              = NewSpecialToken("==")
-	GreaterThanToken         = NewSpecialToken(">")
+	// "assert" token.
+	AssertToken = NewReservedToken("assert")
+
+	// "bool" token.
+	BoolToken = NewTypeToken("bool")
+
+	// "{" token.
+	BlockBeginToken = NewSpecialToken("{")
+
+	// "}" token.
+	BlockEndToken = NewSpecialToken("}")
+
+	// "break" token.
+	BreakToken = NewReservedToken("break")
+
+	// "byte" token.
+	ByteToken = NewTypeToken("byte")
+
+	// "call" token.
+	CallToken = NewReservedToken("call")
+
+	// "case" token.
+	CaseToken = NewIdentifierToken("case")
+
+	// "catch" token.
+	CatchToken = NewReservedToken("catch")
+
+	// "chan"  token.
+	ChanToken = NewTypeToken("chan")
+
+	// "clear" token.
+	ClearToken = NewIdentifierToken("clear")
+
+	// "const" token.
+	ConstToken = NewReservedToken("const")
+
+	// "continue"  token.
+	ContinueToken = NewReservedToken("continue")
+
+	// "{" token.
+	DataBeginToken = NewSpecialToken("{")
+
+	// "}" token.
+	DataEndToken = NewSpecialToken("}")
+
+	// "default" token.
+	DefaultToken = NewIdentifierToken("default")
+
+	// "defer" token.
+	DeferToken = NewReservedToken("defer")
+
+	// "@" token.
+	DirectiveToken = NewSpecialToken("@")
+
+	// "else" token.
+	ElseToken = NewReservedToken("else")
+
+	// "{}" token.
+	EmptyBlockToken = NewSpecialToken("{}")
+
+	// "{}" token.
+	EmptyInitializerToken = NewSpecialToken("{}")
+
+	// "interface{}" token.
+	EmptyInterfaceToken = NewTypeToken("interface{}")
+
+	// "exit" token.
+	ExitToken = NewReservedToken("exit")
+
+	// "fallthrough" token.
+	FallthroughToken = NewReservedToken("fallthrough")
+
+	// "float32" token.
+	Float32Token = NewTypeToken("float32")
+
+	// "float64" token.
+	Float64Token = NewTypeToken("float64")
+
+	// "for" token.
+	ForToken = NewReservedToken("for")
+
+	// "func" token.
+	FuncToken = NewReservedToken("func")
+
+	// "go" token.
+	GoToken = NewReservedToken("go")
+
+	// "if" token.
+	IfToken = NewReservedToken("if")
+
+	// "int" token.
+	IntToken = NewTypeToken("int")
+
+	// "int32"  token.
+	Int32Token = NewTypeToken("int32")
+
+	// "int64" token.
+	Int64Token = NewTypeToken("int64")
+
+	// "interface"  token.
+	InterfaceToken = NewIdentifierToken("interface")
+
+	// "import" token.
+	ImportToken = NewReservedToken("import")
+
+	// "make" token.
+	MakeToken = NewReservedToken("make")
+
+	// "map" token.
+	MapToken = NewTypeToken("map")
+
+	// "nil" token.
+	NilToken = NewReservedToken("nil")
+
+	// "package" token.
+	PackageToken = NewReservedToken("package")
+
+	// "panic" token.
+	PanicToken = NewReservedToken("panic")
+
+	// "print" token.
+	PrintToken = NewReservedToken("print")
+
+	// "range" token.
+	RangeToken = NewIdentifierToken("range")
+
+	// "return" token.
+	ReturnToken = NewReservedToken("return")
+
+	// "string" token.
+	StringToken = NewTypeToken("string")
+
+	// "struct" token.
+	StructToken = NewTypeToken("struct")
+
+	// "switch" token.
+	SwitchToken = NewReservedToken("switch")
+
+	// "test" token.
+	TestToken = NewIdentifierToken("test")
+
+	// "type" token.
+	TypeToken = NewReservedToken("type")
+
+	// "try" token.
+	TryToken = NewReservedToken("try")
+
+	// "var" token.
+	VarToken = NewReservedToken("var")
+
+	// "when" token.
+	WhenToken = NewIdentifierToken("when")
+
+	// ";" token.
+	SemicolonToken = NewSpecialToken(";")
+
+	// ":" token.
+	ColonToken = NewSpecialToken(":")
+
+	// ":=" token.
+	DefineToken = NewSpecialToken(":=")
+
+	// "=" token.
+	AssignToken = NewSpecialToken("=")
+
+	// "," token.
+	CommaToken = NewSpecialToken(",")
+
+	// "==" token.
+	EqualsToken = NewSpecialToken("==")
+
+	// ">" token.
+	GreaterThanToken = NewSpecialToken(">")
+
+	// ">=" token.
 	GreaterThanOrEqualsToken = NewSpecialToken(">=")
-	LessThanToken            = NewSpecialToken("<")
-	LessThanOrEqualsToken    = NewSpecialToken("<=")
-	ShiftLeftToken           = NewSpecialToken("<<")
-	ShiftRightToken          = NewSpecialToken(">>")
-	NotToken                 = NewSpecialToken("!")
-	NotEqualsToken           = NewSpecialToken("!=")
-	ModuloToken              = NewSpecialToken("%")
-	ExponentToken            = NewSpecialToken("^")
-	AddToken                 = NewSpecialToken("+")
-	SubtractToken            = NewSpecialToken("-")
-	MultiplyToken            = NewSpecialToken("*")
-	DivideToken              = NewSpecialToken("/")
-	PointerToken             = NewSpecialToken("*")
-	AddressToken             = NewSpecialToken("&")
-	AndToken                 = NewSpecialToken("&")
-	OrToken                  = NewSpecialToken("|")
-	BooleanAndToken          = NewSpecialToken("&&")
-	BooleanOrToken           = NewSpecialToken("||")
-	AddAssignToken           = NewSpecialToken("+=")
-	SubtractAssignToken      = NewSpecialToken("-=")
-	MultiplyAssignToken      = NewSpecialToken("*=")
-	DivideAssignToken        = NewSpecialToken("/=")
-	IncrementToken           = NewSpecialToken("++")
-	DecrementToken           = NewSpecialToken("--")
-	DotToken                 = NewSpecialToken(".")
-	VariadicToken            = NewSpecialToken("...")
-	ChannelReceiveToken      = NewSpecialToken("<-")
-	StartOfListToken         = NewSpecialToken("(")
-	EndOfListToken           = NewSpecialToken(")")
-	StartOfArrayToken        = NewSpecialToken("[")
-	EndOfArrayToken          = NewSpecialToken("]")
-	OptionalToken            = NewSpecialToken("?")
-	EmptyToken               = NewSpecialToken("")
-	NegateToken              = NewSpecialToken("-")
+
+	// "<" token.
+	LessThanToken = NewSpecialToken("<")
+
+	// "<=" token.
+	LessThanOrEqualsToken = NewSpecialToken("<=")
+
+	// "<<" token.
+	ShiftLeftToken = NewSpecialToken("<<")
+
+	// ">>" token.
+	ShiftRightToken = NewSpecialToken(">>")
+
+	// "!" token.
+	NotToken = NewSpecialToken("!")
+
+	// "!=" token.
+	NotEqualsToken = NewSpecialToken("!=")
+
+	// "%" token.
+	ModuloToken = NewSpecialToken("%")
+
+	// "^" token.
+	ExponentToken = NewSpecialToken("^")
+
+	// "+" token.
+	AddToken = NewSpecialToken("+")
+
+	// "-" token.
+	SubtractToken = NewSpecialToken("-")
+
+	// "*" token.
+	MultiplyToken = NewSpecialToken("*")
+
+	// "/" token.
+	DivideToken = NewSpecialToken("/")
+
+	// "*" token.
+	PointerToken = NewSpecialToken("*")
+
+	// '&" token.
+	AddressToken = NewSpecialToken("&")
+
+	// "&" token.
+	AndToken = NewSpecialToken("&")
+
+	// "|" token.
+	OrToken = NewSpecialToken("|")
+
+	// "&&" token.
+	BooleanAndToken = NewSpecialToken("&&")
+
+	// "||" token.
+	BooleanOrToken = NewSpecialToken("||")
+
+	// "+=" token.
+	AddAssignToken = NewSpecialToken("+=")
+
+	// "-=" token.
+	SubtractAssignToken = NewSpecialToken("-=")
+
+	// "*=" token.
+	MultiplyAssignToken = NewSpecialToken("*=")
+
+	// "/=" token.
+	DivideAssignToken = NewSpecialToken("/=")
+
+	// "++" token.
+	IncrementToken = NewSpecialToken("++")
+
+	// "--" token.
+	DecrementToken = NewSpecialToken("--")
+
+	// "." token.
+	DotToken = NewSpecialToken(".")
+
+	// "..." token.
+	VariadicToken = NewSpecialToken("...")
+
+	// "<-" token.
+	ChannelReceiveToken = NewSpecialToken("<-")
+
+	// "(" token.
+	StartOfListToken = NewSpecialToken("(")
+
+	// ")"" token.
+	EndOfListToken = NewSpecialToken(")")
+
+	// "[" token.
+	StartOfArrayToken = NewSpecialToken("[")
+
+	// "]" token.
+	EndOfArrayToken = NewSpecialToken("]")
+
+	// "?" token.
+	OptionalToken = NewSpecialToken("?")
+
+	// Empty token.
+	EmptyToken = NewSpecialToken("")
+
+	// "-" token.
+	NegateToken = NewSpecialToken("-")
 )
 
 // TypeTokens is a list of tokens that represent type names.

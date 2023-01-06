@@ -17,6 +17,12 @@ func (c *Compiler) compileReturn() error {
 		c.b.Emit(bytecode.DropToMarker, dm)
 	}
 
+	// The defer queue was processed, so zero it out. This prevents
+	// carry-over to outer block scopes.
+	c.deferQueue = []int{}
+
+	// Start processing return expressions (there can be multiple
+	// return values).
 	returnExpressions := []*bytecode.ByteCode{}
 	hasReturnValue := false
 	returnCount := 0
