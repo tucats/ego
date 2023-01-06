@@ -18,14 +18,14 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		usingRange = true
 	}
 
-	end := b.emitPos
+	end := b.nextAddress
 	if len(ranges) > 1 {
 		end = ranges[1]
 	}
 
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
-			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
+			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
 		}
 
 		scopePad := 0
@@ -53,7 +53,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 var maxInstructionNameWidth = 0
 
 // FormatInstruction formats a single instruction as a string.
-func FormatInstruction(i Instruction) string {
+func FormatInstruction(i instruction) string {
 	opname, found := opcodeNames[i.Operation]
 
 	// What is the maximum opcode name length?
@@ -86,7 +86,7 @@ func FormatInstruction(i Instruction) string {
 }
 
 // Format formats an array of bytecodes.
-func Format(opcodes []Instruction) string {
+func Format(opcodes []instruction) string {
 	var b strings.Builder
 
 	b.WriteRune('[')

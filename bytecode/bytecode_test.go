@@ -12,9 +12,9 @@ func TestByteCode_New(t *testing.T) {
 		b := New("testing")
 
 		want := ByteCode{
-			Name:         "testing",
-			instructions: make([]Instruction, InitialOpcodeSize),
-			emitPos:      0,
+			name:         "testing",
+			instructions: make([]instruction, initialOpcodeSize),
+			nextAddress:  0,
 		}
 		if !reflect.DeepEqual(*b, want) {
 			t.Error("new() did not return expected object")
@@ -25,32 +25,32 @@ func TestByteCode_New(t *testing.T) {
 func TestByteCode_Emit2(t *testing.T) {
 	type fields struct {
 		Name    string
-		opcodes []Instruction
+		opcodes []instruction
 		emitPos int
 	}
 
 	type args struct {
-		emit []Instruction
+		emit []instruction
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    []Instruction
+		want    []instruction
 		emitPos int
 	}{
 		{
 			name: "first emit",
 			fields: fields{
-				opcodes: []Instruction{},
+				opcodes: []instruction{},
 			},
 			args: args{
-				emit: []Instruction{
+				emit: []instruction{
 					{Push, 33},
 				},
 			},
-			want: []Instruction{
+			want: []instruction{
 				{Push, 33},
 			},
 			emitPos: 1,
@@ -58,17 +58,17 @@ func TestByteCode_Emit2(t *testing.T) {
 		{
 			name: "multiple emit",
 			fields: fields{
-				opcodes: []Instruction{},
+				opcodes: []instruction{},
 			},
 			args: args{
-				emit: []Instruction{
+				emit: []instruction{
 					{Push, 33},
 					{Push, "stuff"},
 					{Operation: Add},
 					{Operation: Stop},
 				},
 			},
-			want: []Instruction{
+			want: []instruction{
 				{Push, 33},
 				{Push, "stuff"},
 				{Operation: Add},
@@ -82,9 +82,9 @@ func TestByteCode_Emit2(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:         tt.fields.Name,
+				name:         tt.fields.Name,
 				instructions: tt.fields.opcodes,
-				emitPos:      tt.fields.emitPos,
+				nextAddress:  tt.fields.emitPos,
 			}
 			for _, i := range tt.args.emit {
 				b.Emit(i.Operation, i.Operand)
@@ -97,7 +97,7 @@ func TestByteCode_Emit2(t *testing.T) {
 			}
 
 			for n, i := range b.instructions {
-				if n < b.emitPos && i != tt.want[n] {
+				if n < b.nextAddress && i != tt.want[n] {
 					t.Error("opcode mismatch")
 				}
 			}
@@ -108,9 +108,9 @@ func TestByteCode_Emit2(t *testing.T) {
 func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 	t.Run("emit with array", func(t *testing.T) {
 		b := &ByteCode{
-			Name:         "emit with array of operands",
-			instructions: []Instruction{},
-			emitPos:      0,
+			name:         "emit with array of operands",
+			instructions: []instruction{},
+			nextAddress:  0,
 		}
 
 		b.Emit(ArgCheck, 10, 20, "foobar")
@@ -119,15 +119,15 @@ func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 		b.Append(nil)
 
 		// GetInstruction with invalid index
-		i := b.GetInstruction(500)
+		i := b.Instruction(500)
 		if i != nil {
 			t.Errorf("expected nil, got: %v", i)
 		}
 
 		// GetInstruction with valid index
-		i = b.GetInstruction(0)
+		i = b.Instruction(0)
 
-		if !reflect.DeepEqual(i, &Instruction{
+		if !reflect.DeepEqual(i, &instruction{
 			Operand:   []interface{}{10, 20, "foobar"},
 			Operation: ArgCheck,
 		}) {
@@ -139,9 +139,9 @@ func TestByteCode_EmitArrayOfOperands(t *testing.T) {
 func TestByteCode_SetAddress(t *testing.T) {
 	t.Run("emit with array", func(t *testing.T) {
 		b := &ByteCode{
-			Name:         "setAddress",
-			instructions: []Instruction{},
-			emitPos:      0,
+			name:         "setAddress",
+			instructions: []instruction{},
+			nextAddress:  0,
 		}
 
 		savedMark := b.Mark()
@@ -155,7 +155,7 @@ func TestByteCode_SetAddress(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(b.instructions[0],
-			Instruction{
+			instruction{
 				Operation: Branch,
 				Operand:   2,
 			}) {
@@ -172,7 +172,7 @@ func TestByteCode_SetAddress(t *testing.T) {
 func TestByteCode_Append(t *testing.T) {
 	type fields struct {
 		Name    string
-		opcodes []Instruction
+		opcodes []instruction
 		emitPos int
 	}
 
@@ -184,13 +184,13 @@ func TestByteCode_Append(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []Instruction
+		want    []instruction
 		wantPos int
 	}{
 		{
 			name: "simple append",
 			fields: fields{
-				opcodes: []Instruction{
+				opcodes: []instruction{
 					{Push, 0},
 					{Push, 0},
 				},
@@ -198,13 +198,13 @@ func TestByteCode_Append(t *testing.T) {
 			},
 			args: args{
 				a: &ByteCode{
-					instructions: []Instruction{
+					instructions: []instruction{
 						{Add, nil},
 					},
-					emitPos: 1,
+					nextAddress: 1,
 				},
 			},
-			want: []Instruction{
+			want: []instruction{
 				{Push, 0},
 				{Push, 0},
 				{Add, nil},
@@ -214,7 +214,7 @@ func TestByteCode_Append(t *testing.T) {
 		{
 			name: "branch append",
 			fields: fields{
-				opcodes: []Instruction{
+				opcodes: []instruction{
 					{Push, 11},
 					{Push, 22},
 				},
@@ -222,14 +222,14 @@ func TestByteCode_Append(t *testing.T) {
 			},
 			args: args{
 				a: &ByteCode{
-					instructions: []Instruction{
+					instructions: []instruction{
 						{Branch, 2}, // Must be updated
 						{Add, nil},
 					},
-					emitPos: 2,
+					nextAddress: 2,
 				},
 			},
-			want: []Instruction{
+			want: []instruction{
 				{Push, 11},
 				{Push, 22},
 				{Branch, 4}, // Updated from new offset
@@ -243,13 +243,13 @@ func TestByteCode_Append(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:         tt.fields.Name,
+				name:         tt.fields.Name,
 				instructions: tt.fields.opcodes,
-				emitPos:      tt.fields.emitPos,
+				nextAddress:  tt.fields.emitPos,
 			}
 			b.Append(tt.args.a)
-			if tt.wantPos != b.emitPos {
-				t.Errorf("Append() wrong emitPos, got %d, want %d", b.emitPos, tt.wantPos)
+			if tt.wantPos != b.nextAddress {
+				t.Errorf("Append() wrong emitPos, got %d, want %d", b.nextAddress, tt.wantPos)
 			}
 			// Check the slice of intentionally emitted opcodes (array may be larger)
 			if !reflect.DeepEqual(tt.want, b.instructions[:tt.wantPos]) {

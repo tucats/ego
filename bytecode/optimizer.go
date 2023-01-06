@@ -37,13 +37,13 @@ type placeholder struct {
 type optimization struct {
 	Description string
 	Debug       bool
-	Pattern     []Instruction
-	Replacement []Instruction
+	Pattern     []instruction
+	Replacement []instruction
 }
 
 // optimize runs a peep-hold optimizer over the bytecode.
 func (b *ByteCode) optimize(count int) (int, error) {
-	startingSize := b.emitPos
+	startingSize := b.nextAddress
 
 	// Figure out the maximum pattern size, since we'll need this for backing
 	// up the bytecode scanner after each patch operation.
@@ -56,7 +56,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 	// Starting at each sequential bytecode, see if any of the patterns
 	// match.
-	for idx := 0; idx < b.emitPos; idx++ {
+	for idx := 0; idx < b.nextAddress; idx++ {
 		found := false
 
 		// Scan over all the available optimizations.
@@ -85,7 +85,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Search each instruction in the pattern to see if it matches
 			// with the instruction stream we are positioned at.
 			for sourceIdx, sourceInstruction := range optimization.Pattern {
-				if b.emitPos <= idx+sourceIdx {
+				if b.nextAddress <= idx+sourceIdx {
 					found = false
 
 					// This optimization can't fit because we're too near the end
@@ -103,7 +103,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 				}
 
 				// Debugging trap for optimization in "main"
-				if sourceIdx == 0 && optimization.Debug && b.Name == defs.Main {
+				if sourceIdx == 0 && optimization.Debug && b.name == defs.Main {
 					fmt.Printf("DEBUG breakpoint for %s, first operand = %v\n", optimization.Description, i.Operand)
 				}
 
@@ -144,14 +144,14 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Does this optimization match?
 			if found {
 				if count == 0 && ui.IsActive(ui.OptimizerLogger) {
-					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.Name)
+					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.name)
 				}
 
-				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.Name, optimization.Description)
+				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.name, optimization.Description)
 
 				// Make a copy of the replacements, with the token values from the
 				// source stream inserted as appropriate.
-				replacements := []Instruction{}
+				replacements := []instruction{}
 
 				for _, replacement := range optimization.Replacement {
 					newInstruction := replacement
@@ -209,8 +209,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 		count += b.constantStructOptimizer()
 	}
 
-	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.emitPos != startingSize {
-		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.emitPos)
+	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.nextAddress != startingSize {
+		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.nextAddress)
 		ui.Debug(ui.OptimizerLogger, "")
 	}
 
@@ -235,7 +235,7 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
 	return c.Pop()
 }
 
-func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
+func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	offset := deleteSize - len(insert)
 	savedBytecodeLoggerState := ui.IsActive(ui.ByteCodeLogger)
 
@@ -264,7 +264,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 	}
 
 	b.instructions = instructions
-	b.emitPos = b.emitPos - offset
+	b.nextAddress = b.nextAddress - offset
 
 	if ui.IsActive(ui.OptimizerLogger) {
 		ui.SetLogger(ui.ByteCodeLogger, true)
@@ -276,7 +276,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []Instruction) {
 func (b *ByteCode) constantStructOptimizer() int {
 	count := 0
 
-	for idx := 0; idx < b.emitPos; idx++ {
+	for idx := 0; idx < b.nextAddress; idx++ {
 		i := b.instructions[idx]
 
 		if i.Operation != Struct {
@@ -305,14 +305,14 @@ func (b *ByteCode) constantStructOptimizer() int {
 		if areConstant {
 			v, _ := b.executeFragment(idx-fieldCount*2, idx)
 
-			b.Patch(idx-fieldCount*2, fieldCount*2+1, []Instruction{
+			b.Patch(idx-fieldCount*2, fieldCount*2+1, []instruction{
 				{
 					Operation: Push,
 					Operand:   v,
 				},
 			})
 
-			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.Name)
+			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.name)
 
 			count++
 		}

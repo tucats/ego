@@ -74,7 +74,7 @@ type Context struct {
 func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	name := ""
 	if b != nil {
-		name = b.Name
+		name = b.name
 	}
 
 	// Determine whether static data typing is in effect. This is
@@ -96,7 +96,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		threadID:             atomic.AddInt32(&nextThreadID, 1),
 		bc:                   b,
 		programCounter:       0,
-		stack:                make([]interface{}, InitialStackSize),
+		stack:                make([]interface{}, initialStackSize),
 		stackPointer:         0,
 		framePointer:         0,
 		running:              false,
@@ -258,7 +258,7 @@ func (c *Context) SetStepOver(b bool) *Context {
 // GetModuleName returns the name of the current module (typically
 // the function name or program name).
 func (c *Context) GetModuleName() string {
-	return c.bc.Name
+	return c.bc.name
 }
 
 // Pop removes the top-most item from the stack.

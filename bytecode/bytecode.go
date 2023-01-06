@@ -10,19 +10,19 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// GrowOpcodesBy indicates the number of elements to add to the
+// growthIncrement indicates the number of elements to add to the
 // opcode array when storage is exhausted in the current array.
-const GrowOpcodesBy = 50
+const growthIncrement = 50
 
-// InitialOpcodeSize is the initial size of the emit buffer.
-const InitialOpcodeSize = 20
+// initialOpcodeSize is the initial size of the emit buffer.
+const initialOpcodeSize = 20
 
-// InitialStackSize is the initial stack size.
-const InitialStackSize = 50
+// initialStackSize is the initial stack size.
+const initialStackSize = 50
 
 // ErrorVariableName is the name of the local variable created for a
 // catch-block of a try/catch construct. The variable contains an error.
-const ErrorVariableName = "_error"
+const ErrorVariableName = "__error"
 
 // firstOptimizerLogMessage is a flag that indicates if this is the first time the
 // optimizer is being invoked, but has been turned off by configuration, and
@@ -33,35 +33,54 @@ var firstOptimizerLogMessage = true
 // ByteCode contains the context of the execution of a bytecode stream. Note that
 // there is a dependency in format.go on the name of the "Declaration" variable.
 type ByteCode struct {
-	Name         string
-	instructions []Instruction
-	emitPos      int
+	name         string
+	instructions []instruction
+	nextAddress  int
 	Declaration  *datatypes.FunctionDeclaration
 	sealed       bool
 }
 
 // New generates and initializes a new bytecode.
 func New(name string) *ByteCode {
+	if name == "" {
+		name = "<anon>"
+	}
+
 	bc := ByteCode{
-		Name:         name,
-		instructions: make([]Instruction, InitialOpcodeSize),
-		emitPos:      0,
+		name:         name,
+		instructions: make([]instruction, initialOpcodeSize),
+		nextAddress:  0,
 		sealed:       false,
 	}
 
 	return &bc
 }
 
-// Emit emits a single instruction. The opcode is required, and can optionally
+// Name retrieves the name of this bytecode object, usually the
+// function name or filename that was compiled.
+func (b *ByteCode) Name() string {
+	return b.name
+}
+
+// SetName sets the bytecode name.
+func (b *ByteCode) SetName(name string) *ByteCode {
+	b.name = name
+
+	return b
+}
+
+// EmitAT emits a single instruction. The opcode is required, and can optionally
 // be followed by an instruction operand (based on whichever instruction)
-// is issued.
-func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
+// is issued. This stores the instruction at the given location in the bytecode
+// array, but does not affect the emit position unless this operation required
+// expanding the bytecode storage.
+func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 	// If the output capacity is too small, expand it.
-	if b.emitPos >= len(b.instructions) {
-		b.instructions = append(b.instructions, make([]Instruction, GrowOpcodesBy)...)
+	for address >= len(b.instructions) {
+		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
 	}
 
-	i := Instruction{Operation: opcode}
+	i := instruction{Operation: opcode}
 
 	// If there is one operand, store that in the instruction. If
 	// there are multiple operands, make them into an array.
@@ -87,8 +106,47 @@ func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 		}
 	}
 
-	b.instructions[b.emitPos] = i
-	b.emitPos = b.emitPos + 1
+	b.instructions[address] = i
+	b.sealed = false
+}
+
+// Emit emits a single instruction. The opcode is required, and can optionally
+// be followed by an instruction operand (based on whichever instruction)
+// is issued.
+func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
+	// If the output capacity is too small, expand it.
+	if b.nextAddress >= len(b.instructions) {
+		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
+	}
+
+	i := instruction{Operation: opcode}
+
+	// If there is one operand, store that in the instruction. If
+	// there are multiple operands, make them into an array.
+	if len(operands) > 0 {
+		if len(operands) > 1 {
+			i.Operand = operands
+		} else {
+			i.Operand = operands[0]
+		}
+	}
+
+	// If the operand is a token, use the spelling of the token
+	// as the value. If it's an integer or floating point value,
+	// convert the token to a value.
+	if t, ok := i.Operand.(tokenizer.Token); ok {
+		text := t.Spelling()
+		if t.IsClass(tokenizer.IntegerTokenClass) {
+			i.Operand = datatypes.GetInt(text)
+		} else if t.IsClass(tokenizer.FloatTokenClass) {
+			i.Operand = datatypes.GetFloat64(text)
+		} else {
+			i.Operand = text
+		}
+	}
+
+	b.instructions[b.nextAddress] = i
+	b.nextAddress = b.nextAddress + 1
 	b.sealed = false
 }
 
@@ -102,7 +160,7 @@ func (b *ByteCode) Seal() *ByteCode {
 
 	b.sealed = true
 
-	b.instructions = b.instructions[:b.emitPos]
+	b.instructions = b.instructions[:b.nextAddress]
 
 	useOptimizer := settings.GetBool(defs.OptimizerSetting)
 
@@ -122,22 +180,27 @@ func (b *ByteCode) Seal() *ByteCode {
 	return b
 }
 
-// Mark returns the address of the instruction about to be emitted.
+// Mark returns the address of the next instruction to be emitted. Use
+// this BERFORE a call to Emit() if using it for branch address fixups
+// later.
 func (b *ByteCode) Mark() int {
-	return b.emitPos
+	return b.nextAddress
 }
 
-// SetAddressHere sets the current address as the target of the marked
-// instruction.
+// SetAddressHere sets the current address as the detination of the
+// instruction at the marked location. This is used for address
+// fixups, typically for forward branches.
 func (b *ByteCode) SetAddressHere(mark int) error {
-	return b.SetAddress(mark, b.emitPos)
+	return b.SetAddress(mark, b.nextAddress)
 }
 
 // SetAddress sets the given value as the target of the marked
-// instruction.
+// instruction. This is often used when an address has been
+// saved and we need to update a branch destination, usually
+// for a backwards branch operation.
 func (b *ByteCode) SetAddress(mark int, address int) error {
-	if mark > b.emitPos || mark < 0 {
-		return b.NewError(errors.ErrInvalidBytecodeAddress)
+	if mark > b.nextAddress || mark < 0 {
+		return errors.EgoError(errors.ErrInvalidBytecodeAddress)
 	}
 
 	i := b.instructions[mark]
@@ -148,32 +211,37 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 }
 
 // Append appends another bytecode set to the current bytecode,
-// and updates all the link references.
+// and updates all the branch references within that code to
+// reflect the new base locaation for the code segment.
 func (b *ByteCode) Append(a *ByteCode) {
 	if a == nil {
 		return
 	}
 
-	base := b.emitPos
+	base := b.nextAddress
 
-	for _, i := range a.instructions[:a.emitPos] {
+	for _, i := range a.instructions[:a.nextAddress] {
 		if i.Operation > BranchInstructions {
 			i.Operand = datatypes.GetInt(i.Operand) + base
 		}
 
 		b.Emit(i.Operation, i.Operand)
 	}
+
+	b.sealed = false
 }
 
-func (b *ByteCode) GetInstruction(pos int) *Instruction {
-	if pos < 0 || pos >= len(b.instructions) {
+// Instruction retrieves the instruction at the given address.
+func (b *ByteCode) Instruction(address int) *instruction {
+	if address < 0 || address >= len(b.instructions) {
 		return nil
 	}
 
-	return &(b.instructions[pos])
+	return &(b.instructions[address])
 }
 
-// Run generates a one-time context for executing this bytecode.
+// Run generates a one-time context for executing this bytecode,
+// and then executes the code.
 func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 	c := NewContext(s, b)
 
@@ -181,7 +249,8 @@ func (b *ByteCode) Run(s *symbols.SymbolTable) error {
 }
 
 // Call generates a one-time context for executing this bytecode,
-// and returns a value as well as an error.
+// and returns a value as well as an error condition if there was
+// one from executing the code.
 func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 	c := NewContext(s, b)
 
@@ -194,36 +263,28 @@ func (b *ByteCode) Call(s *symbols.SymbolTable) (interface{}, error) {
 }
 
 // Opcodes returns the opcode list for this bytecode array.
-func (b *ByteCode) Opcodes() []Instruction {
-	return b.instructions[:b.emitPos]
+func (b *ByteCode) Opcodes() []instruction {
+	return b.instructions[:b.nextAddress]
 }
 
-// Remove removes an instruction from the bytecode. The position is either
-// >= 0 in which case it is absent, else if it is < 0 it is the offset
-// from the end of the bytecode.
-func (b *ByteCode) Remove(n int) {
-	if n >= 0 {
-		b.instructions = append(b.instructions[:n], b.instructions[n+1:]...)
+// Remove removes an instruction from the bytecode. The address is
+// >= 0 it is the absolute address of the instruction to remove.
+// Otherwise, it is the offset from the end of the bytecode to remove.
+func (b *ByteCode) Remove(address int) {
+	if address >= 0 {
+		b.instructions = append(b.instructions[:address], b.instructions[address+1:]...)
 	} else {
-		n = b.emitPos - n
-		b.instructions = append(b.instructions[:n], b.instructions[n+1:]...)
+		offset := b.nextAddress - address
+		b.instructions = append(b.instructions[:offset], b.instructions[offset+1:]...)
 	}
 
-	b.emitPos = b.emitPos - 1
+	b.nextAddress = b.nextAddress - 1
 }
 
-// NewError creates a new ByteCodeErr using the message string and any
-// optional arguments that are formatted using the message string.
-func (b *ByteCode) NewError(err error, args ...interface{}) error {
-	newErr := errors.EgoError(err)
-
-	if len(args) > 0 {
-		_ = newErr.Context(args[0])
-	}
-
-	return newErr
-}
-
+// ClearLineNumbers scans the bytecode and removes the AtLine numbers
+// in the code so far. This is done when the @line directive resets the
+// line number; all previous line numbers are no longer valid and are
+// set to zero.
 func (b *ByteCode) ClearLineNumbers() {
 	for n, i := range b.instructions {
 		if n == len(b.instructions)-1 {

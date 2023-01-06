@@ -63,7 +63,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	c.line = datatypes.GetInt(i)
 	c.stepOver = false
 	c.symbols.SetAlways(defs.Line, c.line)
-	c.symbols.SetAlways(defs.Module, c.bc.Name)
+	c.symbols.SetAlways(defs.Module, c.bc.name)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
@@ -95,7 +95,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 
 	// Get destination
 	address := datatypes.GetInt(i)
-	if address < 0 || address > c.bc.emitPos {
+	if address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
@@ -110,7 +110,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 // the operand.
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
-	if address := datatypes.GetInt(i); address < 0 || address > c.bc.emitPos {
+	if address := datatypes.GetInt(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
@@ -131,7 +131,7 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 
 	// Get destination
 
-	if address := datatypes.GetInt(i); address < 0 || address > c.bc.emitPos {
+	if address := datatypes.GetInt(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		if datatypes.GetBool(v) {
@@ -256,7 +256,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// IF we're not doing full symbol scope, and the function we're
 		// calling isn't "main", then find the correct parent that limits
 		// scope visibility.
-		if !c.fullSymbolScope && function.Name != defs.Main {
+		if !c.fullSymbolScope && function.name != defs.Main {
 			for !parentTable.ScopeBoundary() && parentTable.Parent() != nil {
 				parentTable = parentTable.Parent()
 			}
@@ -271,13 +271,13 @@ func callByteCode(c *Context, i interface{}) error {
 			ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 				c.threadID, c.symbols.Name, parentTable.Name)
 
-			c.callframePush("function "+function.Name, function, 0, true)
+			c.callframePush("function "+function.name, function, 0, true)
 		} else {
 			parentTable = c.symbols
 
-			c.callframePush("function "+function.Name, function, 0, false)
+			c.callframePush("function "+function.name, function, 0, false)
 
-			functionSymbols.Name = "pkg func " + function.Name
+			functionSymbols.Name = "pkg func " + function.name
 			functionSymbols.SetParent(parentTable)
 			functionSymbols.SetScopeBoundary(true)
 			c.symbols = functionSymbols

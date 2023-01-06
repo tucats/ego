@@ -31,7 +31,7 @@ func TestNewContext(t *testing.T) {
 		t.Error("bytecode not set")
 	}
 
-	if len(c.stack) != InitialStackSize {
+	if len(c.stack) != initialStackSize {
 		t.Error("stack not sized correctly")
 	}
 

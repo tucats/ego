@@ -55,7 +55,7 @@ func (c *Compiler) compileReturn() error {
 		// If there are multiple return values, start with pushing
 		// a unique marker value.
 		if len(returnExpressions) > 1 {
-			c.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name, returnCount))
+			c.b.Emit(bytecode.Push, bytecode.NewStackMarker(c.b.Name(), returnCount))
 		}
 
 		for i := len(returnExpressions) - 1; i >= 0; i = i - 1 {

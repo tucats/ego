@@ -72,8 +72,8 @@ func Test_typeCast(t *testing.T) {
 			symbols:        symbols.NewSymbolTable("cast test"),
 			programCounter: 1,
 			bc: &ByteCode{
-				instructions: make([]Instruction, 5),
-				emitPos:      5,
+				instructions: make([]instruction, 5),
+				nextAddress:  5,
 			},
 		}
 
@@ -128,8 +128,8 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 		symbols:        symbols.NewSymbolTable(symbolTableName),
 		programCounter: 1,
 		bc: &ByteCode{
-			instructions: make([]Instruction, 5),
-			emitPos:      5,
+			instructions: make([]instruction, 5),
+			nextAddress:  5,
 		},
 	}
 
@@ -201,8 +201,8 @@ func Test_branchFalseByteCode(t *testing.T) {
 		running:        true,
 		programCounter: 1,
 		bc: &ByteCode{
-			instructions: make([]Instruction, 5),
-			emitPos:      5,
+			instructions: make([]instruction, 5),
+			nextAddress:  5,
 		},
 	}
 
@@ -250,8 +250,8 @@ func Test_branchTrueByteCode(t *testing.T) {
 		running:        true,
 		programCounter: 1,
 		bc: &ByteCode{
-			instructions: make([]Instruction, 5),
-			emitPos:      5,
+			instructions: make([]instruction, 5),
+			nextAddress:  5,
 		},
 	}
 

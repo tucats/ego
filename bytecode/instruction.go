@@ -6,13 +6,13 @@ import (
 	"github.com/tucats/ego/datatypes"
 )
 
-// Instruction contains the information about a single bytecode.
-type Instruction struct {
+// instruction contains the information about a single bytecode.
+type instruction struct {
 	Operation Opcode
 	Operand   interface{}
 }
 
-func (i Instruction) String() string {
+func (i instruction) String() string {
 	name, found := opcodeNames[i.Operation]
 	if !found {
 		name = fmt.Sprintf("Unknown(%d)", i.Operation)

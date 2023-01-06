@@ -45,7 +45,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		thisStack:  c.thisStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
-		Module:     c.bc.Name,
+		Module:     c.bc.name,
 		Line:       c.line,
 		blockDepth: c.blockDepth,
 	})

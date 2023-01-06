@@ -3,7 +3,7 @@ package bytecode
 var Optimizations = []optimization{
 	{
 		Description: "Load followed by SetThis",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Load,
 				Operand:   placeholder{Name: "name"},
@@ -13,7 +13,7 @@ var Optimizations = []optimization{
 				Operand:   nil,
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: LoadThis,
 				Operand:   placeholder{Name: "name"},
@@ -22,7 +22,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Collapse constant push and createandstore",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "value"},
@@ -32,7 +32,7 @@ var Optimizations = []optimization{
 				Operand:   placeholder{Name: "name"},
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: CreateAndStore,
 				Operand: []interface{}{
@@ -44,7 +44,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Unnecessary stack marker for constant store",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   NewStackMarker("let"),
@@ -62,7 +62,7 @@ var Optimizations = []optimization{
 				Operand:   NewStackMarker("let"),
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "constant"},
@@ -75,7 +75,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Sequential PopScope",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: PopScope,
 				Operand:   placeholder{Name: "count1", Operation: OptCount, Register: 1},
@@ -85,7 +85,7 @@ var Optimizations = []optimization{
 				Operand:   placeholder{Name: "count2", Operation: OptCount, Register: 1},
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: PopScope,
 				Operand:   placeholder{Name: "count", Operation: OptRead, Register: 1},
@@ -93,7 +93,7 @@ var Optimizations = []optimization{
 		},
 	}, {
 		Description: "Create and store",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: SymbolCreate,
 				Operand:   placeholder{Name: "symbolName"},
@@ -103,7 +103,7 @@ var Optimizations = []optimization{
 				Operand:   placeholder{Name: "symbolName"},
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: CreateAndStore,
 				Operand:   placeholder{Name: "symbolName"},
@@ -112,7 +112,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Push and Storeindex",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "value"},
@@ -121,7 +121,7 @@ var Optimizations = []optimization{
 				Operation: StoreIndex,
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: StoreIndex,
 				Operand:   placeholder{Name: "value"},
@@ -130,7 +130,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Constant storeAlways",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "value"},
@@ -140,7 +140,7 @@ var Optimizations = []optimization{
 				Operand:   placeholder{Name: "name"},
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: StoreAlways,
 				Operand: []interface{}{
@@ -152,7 +152,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Constant addition fold",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "v1"},
@@ -165,7 +165,7 @@ var Optimizations = []optimization{
 				Operation: Add,
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "sum", Operation: OptRunConstantFragment},
@@ -174,7 +174,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Constant subtraction fold",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "v1"},
@@ -187,7 +187,7 @@ var Optimizations = []optimization{
 				Operation: Sub,
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "difference", Operation: OptRunConstantFragment},
@@ -196,7 +196,7 @@ var Optimizations = []optimization{
 	},
 	{
 		Description: "Constant multiplication fold",
-		Pattern: []Instruction{
+		Pattern: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "v1"},
@@ -209,7 +209,7 @@ var Optimizations = []optimization{
 				Operation: Mul,
 			},
 		},
-		Replacement: []Instruction{
+		Replacement: []instruction{
 			{
 				Operation: Push,
 				Operand:   placeholder{Name: "product", Operation: OptRunConstantFragment},

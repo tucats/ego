@@ -254,7 +254,7 @@ func (b ByteCode) NeedsCoerce(kind *datatypes.Type) bool {
 		return false
 	}
 
-	i := b.GetInstruction(pos - 1)
+	i := b.Instruction(pos - 1)
 	if i == nil {
 		return false
 	}

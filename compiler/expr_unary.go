@@ -21,7 +21,7 @@ func (c *Compiler) unary() error {
 		// or a float64, then just update the instruction with the negative
 		// of it's value. Otherwise, we'll emit an explicit Negate.
 		addr := c.b.Mark() - 1
-		i := c.b.GetInstruction(c.b.Mark() - 1)
+		i := c.b.Instruction(c.b.Mark() - 1)
 
 		if i.Operation == bytecode.Push {
 			switch v := i.Operand.(type) {

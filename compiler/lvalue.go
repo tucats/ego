@@ -223,14 +223,11 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 // storagebytecode, convert the last operation to a Store which writes
 // the value back.
 func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
-	// Is the last operation in the stack referecing
-	// a parent object? If so, convert the last one to
-	// a store operation.
 	ops := bc.Opcodes()
 
-	opsPos := bc.Mark() - 1
-	if opsPos > 0 && ops[opsPos].Operation == bytecode.LoadIndex && ops[opsPos].Operand == nil {
-		ops[opsPos] = bytecode.Instruction{Operation: bytecode.StoreIndex, Operand: nil}
+	address := bc.Mark() - 1
+	if address > 0 && ops[address].Operation == bytecode.LoadIndex && ops[address].Operand == nil {
+		bc.EmitAt(address, bytecode.StoreIndex)
 	} else {
 		if isChan {
 			bc.Emit(bytecode.StoreChan, name)
