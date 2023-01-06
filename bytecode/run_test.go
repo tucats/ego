@@ -301,7 +301,7 @@ func TestByteCode_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &ByteCode{
-				Name:         tt.fields.Name,
+				name:         tt.fields.Name,
 				instructions: tt.fields.opcodes,
 				nextAddress:  tt.fields.emitPos,
 			}

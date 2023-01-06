@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -36,7 +37,7 @@ type CallFrame struct {
 func (f CallFrame) String() string {
 	name := f.Module
 	if name == "" {
-		name = "<anon>"
+		name = defs.Anon
 	}
 
 	return fmt.Sprintf("%s:%d", name, f.Line)
@@ -54,7 +55,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		thisStack:  c.thisStack,
 		pc:         c.programCounter,
 		fp:         c.framePointer,
-		Module:     c.bc.Name,
+		Module:     c.bc.name,
 		Line:       c.line,
 		blockDepth: c.blockDepth,
 	})

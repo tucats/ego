@@ -35,30 +35,58 @@ var firstOptimizerLogMessage = true
 // PLEASE NOTE that Name must be exported because reflection is used to format
 // opaque pointers to bytecodes in the low-level formatter.
 type ByteCode struct {
-	Name         string
+	name         string
 	instructions []instruction
 	nextAddress  int
-	Declaration  *datatypes.FunctionDeclaration
+	declaration  *datatypes.FunctionDeclaration
 	sealed       bool
 }
 
+// String formats a bytecode as a function declaration string.
 func (b *ByteCode) String() string {
-	fd := datatypes.GetDeclaration(b)
-	if fd != nil {
-		return fd.String()
+	if b.declaration != nil {
+		return b.declaration.String()
 	}
 
-	return b.Name + "()"
+	return b.name + "()"
+}
+
+// Return the declaration object from the bytecode. This is primarily
+// used in routines that format information about the bytecode. If you
+// change the name of this function, you will also need to update the
+// MethodByName() calls for this same function name.
+func (b *ByteCode) Declaration() *datatypes.FunctionDeclaration {
+	return b.declaration
+}
+
+func (b *ByteCode) SetDeclaration(fd *datatypes.FunctionDeclaration) *ByteCode {
+	b.declaration = fd
+
+	return b
+}
+
+func (b *ByteCode) Name() string {
+	if b.name == "" {
+		return defs.Anon
+	}
+
+	return b.name
+}
+
+func (b *ByteCode) SetName(name string) *ByteCode {
+	b.name = name
+
+	return b
 }
 
 // New generates and initializes a new bytecode.
 func New(name string) *ByteCode {
 	if name == "" {
-		name = "<anon>"
+		name = defs.Anon
 	}
 
 	bc := ByteCode{
-		Name:         name,
+		name:         name,
 		instructions: make([]instruction, initialOpcodeSize),
 		nextAddress:  0,
 		sealed:       false,

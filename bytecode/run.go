@@ -28,7 +28,7 @@ const GrowStackBy = 50
 
 func (c *Context) GetName() string {
 	if c.bc != nil {
-		return c.bc.Name
+		return c.bc.name
 	}
 
 	return defs.Main

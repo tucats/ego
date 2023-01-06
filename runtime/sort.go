@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -33,8 +34,8 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	// Coerce the name of the bytecode to represent that it is the
 	// anonymous compare function value. We only do this if it is
 	// actually anonymous.
-	if fn.Name == "" {
-		fn.Name = "<anon>"
+	if fn.Name() == "" {
+		fn.SetName(defs.Anon)
 	}
 
 	// Reusable context that will handle each callback.

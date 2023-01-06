@@ -120,7 +120,7 @@ func (t Type) ValidateFunctions(i *Type) error {
 		}
 
 		if bc2, ok := m2[k]; ok {
-			f2 := GetDeclaration(bc2)
+			f2, _ := bc2.(*FunctionDeclaration)
 			if f2 == nil {
 				return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
 			}
@@ -488,10 +488,17 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 }
 
 // Return a list of all the fieldnames for the type. The array is empty if
-// this is not a struct type.
+// this is not a struct or a struct type.
 func (t Type) FieldNames() []string {
 	keys := make([]string, 0)
-	if t.kind != StructKind {
+
+	// If it's a type but isn't a struct type, we're done.
+	if (t.kind == TypeKind) && (t.valueType.kind != StructKind) {
+		return keys
+	}
+
+	// Otherwise, if it isn't a struct at all, we're done.
+	if t.kind != StructKind && t.kind != TypeKind {
 		return keys
 	}
 

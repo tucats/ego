@@ -103,7 +103,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 				}
 
 				// Debugging trap for optimization in "main"
-				if sourceIdx == 0 && optimization.Debug && b.Name == defs.Main {
+				if sourceIdx == 0 && optimization.Debug && b.name == defs.Main {
 					fmt.Printf("DEBUG breakpoint for %s, first operand = %v\n", optimization.Description, i.Operand)
 				}
 
@@ -144,10 +144,10 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Does this optimization match?
 			if found {
 				if count == 0 && ui.IsActive(ui.OptimizerLogger) {
-					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.Name)
+					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.name)
 				}
 
-				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.Name, optimization.Description)
+				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.name, optimization.Description)
 
 				// Make a copy of the replacements, with the token values from the
 				// source stream inserted as appropriate.
@@ -312,7 +312,7 @@ func (b *ByteCode) constantStructOptimizer() int {
 				},
 			})
 
-			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.Name)
+			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.name)
 
 			count++
 		}

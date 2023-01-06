@@ -34,7 +34,8 @@ const EgoFilenameExtension = ".ego"
 // the 'tables' REST API.
 const RowIDName = "_row_id_"
 
-const PanicMessagePrefix = "!"
+// This is the name for objects that otherwise have no name.
+const Anon = "<anon>"
 
 // This section describes the profile keys used by Ego.
 const (

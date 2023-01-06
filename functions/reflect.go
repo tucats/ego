@@ -46,14 +46,16 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if ts == defs.ByteCodeReflectionTypeString {
 			switch v := args[0].(type) {
 			default:
-				e := reflect.ValueOf(v).Elem()
+				r := reflect.ValueOf(v).MethodByName("String").Call([]reflect.Value{})
+				str := r[0].Interface().(string)
 
-				name, ok := e.FieldByName("Name").Interface().(string)
-				if !ok || len(name) == 0 {
-					name = "<anonymous>"
+				name := strings.Split(str, "(")[0]
+				if name == "" {
+					name = defs.Anon
 				}
 
-				fd, _ := e.FieldByName("Declaration").Interface().(*datatypes.FunctionDeclaration)
+				r = reflect.ValueOf(v).MethodByName("Declaration").Call([]reflect.Value{})
+				fd, _ := r[0].Interface().(*datatypes.FunctionDeclaration)
 
 				return datatypes.NewStructFromMap(map[string]interface{}{
 					datatypes.TypeMDName:     "func",

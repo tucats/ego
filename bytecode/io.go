@@ -54,7 +54,10 @@ func printByteCode(c *Context, i interface{}) error {
 				if isStruct {
 					columns = valueType.FieldNames()
 				} else {
-					columns = valueType.BaseType().FieldNames()
+					columns = valueType.FieldNames()
+					if len(columns) == 0 {
+						columns = valueType.BaseType().FieldNames()
+					}
 				}
 
 				t, _ := tables.New(columns)

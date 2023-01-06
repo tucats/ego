@@ -25,7 +25,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
-			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.Name)
+			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
 		}
 
 		scopePad := 0

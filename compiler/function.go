@@ -63,12 +63,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		return c.newError(errors.ErrMissingFunctionBody)
 	}
 	// Create a new bytecode object which will hold the function
-	// generated code.
-	b := bytecode.New(functionName.Spelling())
-
-	// Store the function declaration metadata (if any) in the
-	// bytecode we're generating.
-	b.Declaration = fd
+	// generated code. Store the function declaration metadata
+	// (if any) in the bytecode we're generating.
+	b := bytecode.New(functionName.Spelling()).SetDeclaration(fd)
 
 	// If we know our source file, copy it to the new bytecode.
 	if c.sourceFile != "" {

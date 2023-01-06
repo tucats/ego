@@ -213,7 +213,8 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 				t.Errorf("%s() couldn't find symbol %v", name, symbolName)
 			}
 
-			fb.Name = symbolName
+			fb.SetName(symbolName)
+
 			if !reflect.DeepEqual(v, fb) {
 				t.Errorf("%s() got %v, want %v", name, v, fb)
 			}

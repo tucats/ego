@@ -1,10 +1,7 @@
 package datatypes
 
 import (
-	"reflect"
 	"strings"
-
-	"github.com/tucats/ego/defs"
 )
 
 type FunctionParameter struct {
@@ -127,34 +124,4 @@ func (f FunctionDeclaration) String() string {
 	}
 
 	return r.String()
-}
-
-// GetDeclaration returns the embedded function declaration from a
-// bytecode stream, if any. It has to use reflection (ick) to do this
-// because my package structure needs work and I haven't found a way to
-// do this without creating import cycles.
-func GetDeclaration(bc interface{}) *FunctionDeclaration {
-	vv := reflect.ValueOf(bc)
-	ts := vv.String()
-
-	// If it's a bytecode.Bytecode pointer, use reflection to get the
-	// Name field value and use that with the name. A function literal
-	// will have no name.
-	//
-	// Note this introduces a dependency on the names of items in the
-	// ByteCode object; the bytecode declaration *must* be named
-	// "Declaration".
-	if vv.Kind() == reflect.Ptr {
-		if ts == defs.ByteCodeReflectionTypeString {
-			switch v := bc.(type) {
-			default:
-				e := reflect.ValueOf(v).Elem()
-				fd, _ := e.FieldByName("Declaration").Interface().(*FunctionDeclaration)
-
-				return fd
-			}
-		}
-	}
-
-	return nil
 }

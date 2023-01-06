@@ -185,7 +185,7 @@ func Format(element interface{}) string {
 			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 
 			if name == "" {
-				name = "<anon>"
+				name = defs.Anon
 			}
 
 			if d := dictionary[name]; d != "" {

@@ -124,8 +124,8 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 		}
 
 		if bc, ok := v.(*ByteCode); ok {
-			bc.Name = datatypes.GetString(i)
-			c.symbols.SetAlways(bc.Name, bc)
+			bc.name = datatypes.GetString(i)
+			c.symbols.SetAlways(bc.name, bc)
 		} else {
 			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
 		}
