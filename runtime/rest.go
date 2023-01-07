@@ -26,10 +26,10 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// The default file name for the server certificate.
+// ServerCertificateFile is the default file name for the server certificate.
 var ServerCertificateFile = envDefault("EGO_CERT_FILE", "https-server.crt")
 
-// The default file name for the server key.
+// ServerKeyFile is the default file name for the server key.
 var ServerKeyFile = envDefault("EGO_KEY_FILE", "https-server.key")
 
 // Max number of times we will chase a redirect before failing.
@@ -772,27 +772,34 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	if token := settings.Get(defs.LogonTokenSetting); token != "" {
-		// Let's check to see if it's expired already... Note we skip this if the
-		// agent string is "status".
-		if !strings.EqualFold(agentType, defs.StatusAgent) {
-			if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
-				expireTime, err := time.Parse(time.UnixDate, expirationString)
-				if err != nil {
-					return errors.EgoError(err)
-				}
+	// Unless this is a "heartbeat" check, let's verify that the authentication token is
+	// still valid. Note that hearbeat doesn't require a token, so we shouldn't complain
+	// if the old one is expired.
+	if endpoint == defs.AdminHeartbeatPath {
+		ui.Debug(ui.RestLogger, "Heartbeat does not require token")
+	} else {
+		if token := settings.Get(defs.LogonTokenSetting); token != "" {
+			// Let's check to see if it's expired already... Note we skip this if the
+			// agent string is "status".
+			if !strings.EqualFold(agentType, defs.StatusAgent) {
+				if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
+					expireTime, err := time.Parse(time.UnixDate, expirationString)
+					if err != nil {
+						return errors.EgoError(err)
+					}
 
-				now := time.Since(expireTime)
-				if now > 0 {
-					ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
+					now := time.Since(expireTime)
+					if now > 0 {
+						ui.Say("Your login has expired. Use the ego logon command to login again to %s", settings.Get(defs.LogonServerSetting))
 
-					os.Exit(1)
+						os.Exit(1)
+					}
 				}
 			}
-		}
 
-		client.SetAuthToken(token)
-		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
+			client.SetAuthToken(token)
+			ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
+		}
 	}
 
 	// If we haven't ever set up the TLS configuration, let's do so now. This is a serialized

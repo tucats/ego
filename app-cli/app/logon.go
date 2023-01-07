@@ -214,7 +214,6 @@ func resolveServerName(name string) (string, error) {
 
 	normalizedName := strings.ToLower(name)
 	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {
-		//normalizedName = "https://" + name
 		hasScheme = false
 	}
 
