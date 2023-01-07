@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,6 +55,8 @@ func Start(c *cli.Context) error {
 	// arguments to the server, so restarts will still work in the
 	// future if the default changes.
 	if !isInsecure && settings.GetBool(defs.InsecureServerSetting) {
+		fmt.Println("Warning: server will start in insecure mode")
+
 		args = append(args, "-k")
 	}
 
