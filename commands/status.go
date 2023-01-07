@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
@@ -18,8 +19,17 @@ import (
 
 // Status displays the status of a running server if it exists.
 func Status(c *cli.Context) error {
-	// If there is a parameter, it's the server address to query.
-	addr, _ := os.Hostname()
+	// If there is a parameter, it's the server address to query. If there isn't
+	// try the application server, and if not specified, the login server. If neither
+	// is present in the configuration, default to the current hostname (last resort)
+	addr := settings.Get(defs.ApplicationServerSetting)
+	if addr == "" {
+		addr = settings.Get(defs.LogonServerSetting)
+	}
+
+	if addr == "" {
+		addr, _ = os.Hostname()
+	}
 
 	if c.GetParameterCount() > 0 {
 		addr = c.GetParameter(0)
