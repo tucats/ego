@@ -219,8 +219,6 @@ func RunServer(c *cli.Context) error {
 	go server.LogMemoryStatistics()
 	go server.LogRequestCounts()
 
-	var e2 error
-
 	secure := true
 
 	if settings.GetBool(defs.InsecureServerSetting) {
@@ -234,18 +232,24 @@ func RunServer(c *cli.Context) error {
 	if !secure {
 		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
-		e2 = http.ListenAndServe(addr, nil)
+		err = http.ListenAndServe(addr, nil)
 	} else {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		e2 = http.ListenAndServeTLS(addr, "https-server.crt", "https-server.key", nil)
+		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerCertificateFile)
+		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerKeyFile)
+
+		ui.Debug(ui.ServerLogger, "**   cert file: %s", certFile)
+		ui.Debug(ui.ServerLogger, "**   key  file: %s", keyFile)
+
+		err = http.ListenAndServeTLS(addr, certFile, keyFile, nil)
 	}
 
-	if e2 != nil {
-		e2 = errors.EgoError(e2)
+	if err != nil {
+		err = errors.EgoError(err)
 	}
 
-	return e2
+	return err
 }
 
 // Normalize a database name. If it's postgres, we don't touch it. If it's

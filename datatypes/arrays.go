@@ -341,7 +341,7 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) *EgoArray {
 
 // Generate a type description string for this array.
 func (a *EgoArray) TypeString() string {
-	return fmt.Sprintf("[]%s", a.valueType.String())
+	return fmt.Sprintf("[]%s", a.valueType)
 }
 
 // Make a string representation of the array suitable for display.
