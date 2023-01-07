@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -29,7 +30,7 @@ type StackMarker struct {
 // supplied label and optional list of datu.
 func NewStackMarker(label string, values ...interface{}) StackMarker {
 	if label == "" {
-		label = "anon"
+		label = defs.Anon
 	}
 
 	return StackMarker{
@@ -58,9 +59,6 @@ func IsStackMarker(i interface{}, values ...string) bool {
 	if !ok {
 		return false
 	}
-
-	// Log that we hit a marker
-	ui.Debug(ui.TraceLogger, "                 >>> Unexpected marker found: %s", marker)
 
 	if len(values) == 0 {
 		return ok
