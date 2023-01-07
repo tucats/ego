@@ -1,6 +1,10 @@
 package functions
 
 import (
+	"reflect"
+	"runtime"
+	"strings"
+
 	"github.com/tucats/ego/datatypes"
 	"github.com/tucats/ego/symbols"
 )
@@ -106,4 +110,13 @@ func getNativeThis(s *symbols.SymbolTable) interface{} {
 	}
 
 	return t
+}
+
+func GetName(f NativeFunction) string {
+	// Native functions are methods on actual Go objects that we surface to Ego
+	// code. Examples include the functions for waitgroup and mutex objects.
+	functionName := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
+
+	return functionName
 }

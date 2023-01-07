@@ -289,8 +289,7 @@ func callByteCode(c *Context, i interface{}) error {
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
 		// code. Examples include the functions for waitgroup and mutex objects.
-		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
-		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
+		functionName := functions.GetName(function)
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
 
 		if v, ok := c.popThis(); ok {
