@@ -2,10 +2,12 @@ package app
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -54,6 +56,8 @@ var LogonGrammar = []cli.Option{
 // stored in the user's active profile where it can be accessed by
 // other Ego commands as needed.
 func Logon(c *cli.Context) error {
+	var err error
+
 	// Do we know where the logon server is? Start with the default from
 	// the profile, but if it was explicitly set on the command line, use
 	// the command line item and update the saved profile setting.
@@ -61,7 +65,7 @@ func Logon(c *cli.Context) error {
 	if c.WasFound("logon-server") {
 		url, _ = c.String("logon-server")
 
-		if url, err := resolveServerName(url); err != nil {
+		if url, err = resolveServerName(url); err != nil {
 			return err
 		} else {
 			settings.Set(defs.LogonServerSetting, url)
@@ -70,6 +74,8 @@ func Logon(c *cli.Context) error {
 
 	if url == "" {
 		return errors.EgoError(errors.ErrNoLogonServer)
+	} else {
+		ui.Debug(ui.RestLogger, "Logon URL is %s", url)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -91,9 +97,34 @@ func Logon(c *cli.Context) error {
 	// generate a request. The request is made using the logon agent info.
 	// Finall, call the endpoint.
 	restClient := resty.New().SetDisableWarn(true)
+
+	// If insecure is specified, then skip verification for TLS
+	var tlsConf *tls.Config
+
 	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
-		restClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+
+		ui.Debug(ui.RestLogger, "Skipping client verification of server")
+	} else {
+		// Is there a server cert file we can/should be using?
+		filename := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerCertificateFile)
+		if b, err := os.ReadFile(filename); err == nil {
+			ui.Debug(ui.RestLogger, "Reading server certificate file %s", filename)
+
+			roots := x509.NewCertPool()
+
+			ok := roots.AppendCertsFromPEM(b)
+			if !ok {
+				ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
+			} else {
+				tlsConf = &tls.Config{RootCAs: roots}
+			}
+		} else {
+			ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
+		}
 	}
+
+	restClient.SetTLSClientConfig(tlsConf)
 
 	req := restClient.NewRequest()
 	req.Body = defs.Credentials{Username: user, Password: pass}
@@ -108,6 +139,11 @@ func Logon(c *cli.Context) error {
 	runtime.AddAgent(req, defs.LogonAgent)
 
 	r, err := req.Post(url)
+	if err != nil {
+		ui.Debug(ui.RestLogger, "REST POST %s; failed %v", url, err)
+
+		return errors.EgoError(err)
+	}
 
 	ui.Debug(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
 
@@ -178,7 +214,7 @@ func resolveServerName(name string) (string, error) {
 
 	normalizedName := strings.ToLower(name)
 	if !strings.HasPrefix(normalizedName, "https://") && !strings.HasPrefix(normalizedName, "http://") {
-		normalizedName = "https://" + name
+		//normalizedName = "https://" + name
 		hasScheme = false
 	}
 

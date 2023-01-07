@@ -19,7 +19,8 @@ import (
 // Status displays the status of a running server if it exists.
 func Status(c *cli.Context) error {
 	// If there is a parameter, it's the server address to query.
-	addr := "localhost"
+	addr, _ := os.Hostname()
+
 	if c.GetParameterCount() > 0 {
 		addr = c.GetParameter(0)
 	}

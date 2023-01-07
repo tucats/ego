@@ -2,11 +2,13 @@ package runtime
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -23,6 +25,12 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
+
+// The default file name for the server certificate.
+var ServerCertificateFile = envDefault("EGO_CERT_FILE", "https-server.crt")
+
+// The default file name for the server key.
+var ServerKeyFile = envDefault("EGO_KEY_FILE", "https-server.key")
 
 // Max number of times we will chase a redirect before failing.
 const MaxRedirectCount = 10
@@ -87,6 +95,9 @@ var httpStatusCodeMessages = map[int]string{
 	http.StatusServiceUnavailable:           "Unavailable",
 }
 
+var tlsConfiguration *tls.Config
+var tlsConfigurationMutex sync.Mutex
+
 // Map key names for parsing a URL.
 const (
 	urlSchemeElement   = "urlScheme"
@@ -99,6 +110,17 @@ const (
 
 var restType *datatypes.Type
 var restTypeLock sync.Mutex
+
+// Get an environment variable value. If it is not present (or empty) then use
+// the provided default value as the result.
+func envDefault(name, defaultValue string) string {
+	result := os.Getenv(name)
+	if result == "" {
+		result = defaultValue
+	}
+
+	return result
+}
 
 func AllowInsecure(flag bool) {
 	allowInsecure = flag
@@ -773,9 +795,42 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
 	}
 
-	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
-		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	// If we haven't ever set up the TLS configuration, let's do so now. This is a serialized
+	// operation, so for most use cases, the existing TLS configuration is used. For the first
+	// case, we will either set up an insecure TLS (not recommended) or will use the CRT and
+	// KEY files found in the EGO PATH if present. If no cert files found, then it assumes it
+	// should just use the native certs.
+	tlsConfigurationMutex.Lock()
+
+	if tlsConfiguration == nil {
+		// If insecure is specified, then skip verification for TLS
+		if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
+			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
+
+			ui.Debug(ui.RestLogger, "Skipping client verification of server")
+		} else {
+			// Is there a server cert file we can/should be using?
+			filename := filepath.Join(settings.Get(defs.EgoPathSetting), ServerCertificateFile)
+			if b, err := os.ReadFile(filename); err == nil {
+				ui.Debug(ui.RestLogger, "Using server certificate file %s", filename)
+
+				roots := x509.NewCertPool()
+
+				ok := roots.AppendCertsFromPEM(b)
+				if !ok {
+					ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
+				} else {
+					tlsConfiguration = &tls.Config{RootCAs: roots}
+				}
+			} else {
+				ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
+			}
+		}
 	}
+
+	tlsConfigurationMutex.Unlock()
+
+	client.SetTLSClientConfig(tlsConfiguration)
 
 	r := client.NewRequest()
 
@@ -813,63 +868,71 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	resp, err = r.Execute(method, url)
-	status := resp.StatusCode()
+	if err != nil {
+		ui.Debug(ui.RestLogger, "REST failed, %v", err)
 
-	ui.Debug(ui.RestLogger, "Status: %d", status)
-
-	if err == nil && status != http.StatusOK && response == nil {
-		return errors.EgoError(errors.ErrHTTP).Context(status)
+		return errors.EgoError(err)
 	}
 
-	if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
-		ui.Debug(ui.RestLogger, "Reply media type: %s", replyMedia)
-	}
+	if err == nil {
+		status := resp.StatusCode()
 
-	// If there was an error, and the runtime rest automatic error handling is enabled,
-	// try to find the message text in the response, and if found, form an error response
-	// to the local caller using that text.
-	if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
-		errorResponse := map[string]interface{}{}
+		ui.Debug(ui.RestLogger, "Status: %d", status)
 
-		err := json.Unmarshal(resp.Body(), &errorResponse)
-		if err == nil {
-			if msg, found := errorResponse["msg"]; found {
-				ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+		if err == nil && status != http.StatusOK && response == nil {
+			return errors.EgoError(errors.ErrHTTP).Context(status)
+		}
 
-				return errors.NewMessage(datatypes.GetString(msg))
-			}
+		if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
+			ui.Debug(ui.RestLogger, "Reply media type: %s", replyMedia)
+		}
 
-			if msg, found := errorResponse["message"]; found {
-				ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+		// If there was an error, and the runtime rest automatic error handling is enabled,
+		// try to find the message text in the response, and if found, form an error response
+		// to the local caller using that text.
+		if (status < 200 || status > 299) && settings.GetBool(defs.RestClientErrorSetting) {
+			errorResponse := map[string]interface{}{}
 
-				return errors.NewMessage(datatypes.GetString(msg))
+			err := json.Unmarshal(resp.Body(), &errorResponse)
+			if err == nil {
+				if msg, found := errorResponse["msg"]; found {
+					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+
+					return errors.NewMessage(datatypes.GetString(msg))
+				}
+
+				if msg, found := errorResponse["message"]; found {
+					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+
+					return errors.NewMessage(datatypes.GetString(msg))
+				}
 			}
 		}
-	}
 
-	if err == nil && response != nil {
-		body := string(resp.Body())
-		if body != "" {
-			if !util.InList(body[0:1], "{", "[", "\"") {
-				r := defs.RestStatusResponse{
-					Status:  resp.StatusCode(),
-					Message: strings.TrimSuffix(body, "\n"),
+		if err == nil && response != nil {
+			body := string(resp.Body())
+			if body != "" {
+				if !util.InList(body[0:1], "{", "[", "\"") {
+					r := defs.RestStatusResponse{
+						Status:  resp.StatusCode(),
+						Message: strings.TrimSuffix(body, "\n"),
+					}
+					b, _ := json.Marshal(r)
+					body = string(b)
 				}
-				b, _ := json.Marshal(r)
-				body = string(b)
-			}
 
-			err = json.Unmarshal([]byte(body), response)
-			if err == nil && ui.IsActive(ui.RestLogger) {
-				responseBytes, _ := json.MarshalIndent(response, "", "  ")
+				err = json.Unmarshal([]byte(body), response)
+				if err == nil && ui.IsActive(ui.RestLogger) {
+					responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-				ui.Debug(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
-			}
+					ui.Debug(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+				}
 
-			if err == nil && status != http.StatusOK {
-				if m, ok := response.(map[string]interface{}); ok {
-					if msg, ok := m["Message"]; ok {
-						err = errors.NewMessage(datatypes.GetString(msg))
+				if err == nil && status != http.StatusOK {
+					if m, ok := response.(map[string]interface{}); ok {
+						if msg, ok := m["Message"]; ok {
+							err = errors.NewMessage(datatypes.GetString(msg))
+						}
 					}
 				}
 			}
