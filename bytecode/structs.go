@@ -224,7 +224,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			// These types cannot be written to.
 			case *ByteCode,
 				func(*symbols.SymbolTable, []interface{}) (interface{}, error),
-				constantWrapper:
+				ConstantWrapper:
 				// Tell the caller nope...
 				return c.newError(errors.ErrReadOnlyValue, a.Name()+"."+name)
 			}
@@ -237,7 +237,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 			existingValue, found := syms.Get(name)
 			if found {
-				if _, ok := existingValue.(constantWrapper); ok {
+				if _, ok := existingValue.(ConstantWrapper); ok {
 					return c.newError(errors.ErrInvalidConstant, a.Name()+"."+name)
 				}
 			}

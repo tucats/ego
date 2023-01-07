@@ -88,7 +88,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		// Special case; if the value being retrieved is a constant, unwrap it.
-		if vconst, ok := v.(constantWrapper); ok {
+		if vconst, ok := v.(ConstantWrapper); ok {
 			v = vconst.Value
 		}
 

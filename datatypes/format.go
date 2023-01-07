@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -50,6 +51,9 @@ func Format(element interface{}) string {
 	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
 	case *sync.Mutex:
 		return "sync.Mutex{}"
+
+	case *time.Time:
+		return v.String()
 
 	case Channel:
 		return v.String()
@@ -215,6 +219,10 @@ func Format(element interface{}) string {
 
 		if strings.HasPrefix(vv.String(), "<bytecode.CallFrame") {
 			return fmt.Sprintf("F<%v>", v)
+		}
+
+		if strings.HasPrefix(vv.String(), "<bytecode.ConstantWrapper") {
+			return fmt.Sprintf("%v", v)
 		}
 
 		// If it's a slice of an interface array, used to pass compound
