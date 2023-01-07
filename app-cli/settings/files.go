@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,9 @@ import (
 // ProfileDirectory is the name of the invisible directory that is created
 // in the user's home directory to host configuration data.
 const ProfileDirectory = ".org.fernwood"
+
+// Default permission for the ProfileDirectory and the ProfileFile.
+const securePermission = 0700
 
 // DefaultConfiguration is a localized string that contains the
 // local text for "Default configuration".
@@ -70,15 +74,9 @@ func Load(application string, name string) error {
 		return errors.EgoError(err)
 	}
 
-	var path strings.Builder
+	path := filepath.Join(home, ProfileDirectory, ProfileFile)
 
-	path.WriteString(home)
-	path.WriteRune(os.PathSeparator)
-	path.WriteString(ProfileDirectory)
-	path.WriteRune(os.PathSeparator)
-	path.WriteString(ProfileFile)
-
-	configFile, err := os.Open(path.String())
+	configFile, err := os.Open(path)
 	if err != nil {
 		return errors.EgoError(err)
 	}
@@ -122,23 +120,17 @@ func Save() error {
 	}
 
 	// Does the directory exist?
-	var path strings.Builder
-
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return errors.EgoError(err)
 	}
 
-	path.WriteString(home)
-	path.WriteRune(os.PathSeparator)
-	path.WriteString(ProfileDirectory)
-
-	if _, err := os.Stat(path.String()); os.IsNotExist(err) {
-		_ = os.MkdirAll(path.String(), os.ModePerm)
+	path := filepath.Join(home, ProfileDirectory)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		_ = os.MkdirAll(path, securePermission)
 	}
 
-	path.WriteRune(os.PathSeparator)
-	path.WriteString(ProfileFile)
+	path = filepath.Join(path, ProfileFile)
 
 	// Make sure every configuration has an id
 	for n := range Configurations {
@@ -152,7 +144,7 @@ func Save() error {
 	}
 
 	byteBuffer, _ := json.MarshalIndent(&Configurations, "", "  ")
-	err = ioutil.WriteFile(path.String(), byteBuffer, os.ModePerm)
+	err = ioutil.WriteFile(path, byteBuffer, securePermission)
 
 	if err != nil {
 		err = errors.EgoError(err)
