@@ -38,6 +38,13 @@ const MaxRedirectCount = 10
 // Do we allow outbound REST calls with invalid/insecure certificates?
 var allowInsecure = false
 
+// openServices is a list of endpoing paths that do not require the
+// addition of an authorization token.
+var openServices = []string{
+	defs.ServicesUpPath,
+	defs.AdminHeartbeatPath,
+}
+
 // This maps HTTP status codes to a message string.
 var httpStatusCodeMessages = map[int]string{
 	http.StatusContinue:                     "Continue",
@@ -772,11 +779,10 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
-	// Unless this is a "heartbeat" check, let's verify that the authentication token is
-	// still valid. Note that hearbeat doesn't require a token, so we shouldn't complain
-	// if the old one is expired.
-	if endpoint == defs.AdminHeartbeatPath {
-		ui.Debug(ui.RestLogger, "Heartbeat does not require token")
+	// Unless this is a open (un-authenticate) service, let's verify that the
+	// authentication token is still valid.
+	if util.InList(endpoint, openServices...) {
+		ui.Debug(ui.RestLogger, "Endpoint %s does not require token", endpoint)
 	} else {
 		if token := settings.Get(defs.LogonTokenSetting); token != "" {
 			// Let's check to see if it's expired already... Note we skip this if the
@@ -798,46 +804,15 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			}
 
 			client.SetAuthToken(token)
-			ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:10])
+			ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
 		}
 	}
 
-	// If we haven't ever set up the TLS configuration, let's do so now. This is a serialized
-	// operation, so for most use cases, the existing TLS configuration is used. For the first
-	// case, we will either set up an insecure TLS (not recommended) or will use the CRT and
-	// KEY files found in the EGO PATH if present. If no cert files found, then it assumes it
-	// should just use the native certs.
-	tlsConfigurationMutex.Lock()
-
-	if tlsConfiguration == nil {
-		// If insecure is specified, then skip verification for TLS
-		if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
-			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
-
-			ui.Debug(ui.RestLogger, "Skipping client verification of server")
-		} else {
-			// Is there a server cert file we can/should be using?
-			filename := filepath.Join(settings.Get(defs.EgoPathSetting), ServerCertificateFile)
-			if b, err := os.ReadFile(filename); err == nil {
-				ui.Debug(ui.RestLogger, "Using server certificate file %s", filename)
-
-				roots := x509.NewCertPool()
-
-				ok := roots.AppendCertsFromPEM(b)
-				if !ok {
-					ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
-				} else {
-					tlsConfiguration = &tls.Config{RootCAs: roots}
-				}
-			} else {
-				ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
-			}
-		}
+	if config, err := GetTLSConfiguration(); err != nil {
+		return err
+	} else {
+		client.SetTLSClientConfig(config)
 	}
-
-	tlsConfigurationMutex.Unlock()
-
-	client.SetTLSClientConfig(tlsConfiguration)
 
 	r := client.NewRequest()
 
@@ -965,4 +940,49 @@ func AddAgent(r *resty.Request, agentType string) {
 
 	r.Header.Add("User-Agent", agent)
 	ui.Debug(ui.RestLogger, "User agent: %s", agent)
+}
+
+func GetTLSConfiguration() (*tls.Config, error) {
+	// If we haven't ever set up the TLS configuration, let's do so now. This is a serialized
+	// operation, so for most use cases, the existing TLS configuration is used. For the first
+	// case, we will either set up an insecure TLS (not recommended) or will use the CRT and
+	// KEY files found in the EGO PATH if present. If no cert files found, then it assumes it
+	// should just use the native certs.
+	tlsConfigurationMutex.Lock()
+
+	if tlsConfiguration == nil {
+		kind := "using certificate file"
+
+		// If insecure is specified, then skip verification for TLS
+		if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
+			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
+			kind = "skipping server verification"
+		} else {
+			// Is there a server cert file we can/should be using?
+			filename := filepath.Join(settings.Get(defs.EgoPathSetting), ServerCertificateFile)
+			if b, err := os.ReadFile(filename); err == nil {
+				kind = kind + " " + filename
+				roots := x509.NewCertPool()
+
+				ok := roots.AppendCertsFromPEM(b)
+				if !ok {
+					ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
+
+					return nil, errors.EgoError(errors.ErrCertificateParseError).Context(filename)
+				} else {
+					tlsConfiguration = &tls.Config{RootCAs: roots}
+				}
+			} else {
+				ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
+
+				return nil, errors.EgoError(err)
+			}
+		}
+
+		ui.Debug(ui.RestLogger, "Client TLS %s", kind)
+	}
+
+	tlsConfigurationMutex.Unlock()
+
+	return tlsConfiguration, nil
 }

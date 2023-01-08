@@ -221,6 +221,9 @@ var Messages = map[string]map[string]string{
 	"error.catch": {
 		"en": "missing 'catch' clause",
 	},
+	"cert.parse.err": {
+		"en": "error parsing certficate file",
+	},
 	"error.channel.assignment": {
 		"en": "invalid use of assignment list for channel",
 	},

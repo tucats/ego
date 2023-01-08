@@ -1,13 +1,9 @@
 package app
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/go-resty/resty"
@@ -98,33 +94,11 @@ func Logon(c *cli.Context) error {
 	// Finall, call the endpoint.
 	restClient := resty.New().SetDisableWarn(true)
 
-	// If insecure is specified, then skip verification for TLS
-	var tlsConf *tls.Config
-
-	if os.Getenv("EGO_INSECURE_CLIENT") == defs.True {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-
-		ui.Debug(ui.RestLogger, "Skipping client verification of server")
+	if tlsConf, err := runtime.GetTLSConfiguration(); err != nil {
+		return err
 	} else {
-		// Is there a server cert file we can/should be using?
-		filename := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerCertificateFile)
-		if b, err := os.ReadFile(filename); err == nil {
-			ui.Debug(ui.RestLogger, "Reading server certificate file %s", filename)
-
-			roots := x509.NewCertPool()
-
-			ok := roots.AppendCertsFromPEM(b)
-			if !ok {
-				ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
-			} else {
-				tlsConf = &tls.Config{RootCAs: roots}
-			}
-		} else {
-			ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
-		}
+		restClient.SetTLSClientConfig(tlsConf)
 	}
-
-	restClient.SetTLSClientConfig(tlsConf)
 
 	req := restClient.NewRequest()
 	req.Body = defs.Credentials{Username: user, Password: pass}
