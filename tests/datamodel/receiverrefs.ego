@@ -1,0 +1,35 @@
+@test "datamodel: receivers by value and reference"
+
+// This is testing that when a receiver is not by pointer,
+// so a copy of the object is created, we are copying all
+// the info needed to resolve type-based methods?
+
+
+{
+    type Employee  struct{
+        name struct {
+            first string
+            last string
+            }
+        age  int
+    }
+
+    func (c Employee) Fullname() string { 
+        return c.name.first + " " + c.name.last 
+    }
+
+    func (c *Employee) Setname(f string, l string)  {
+        c.name = {first:f, last:l}
+    }
+
+    func (c Employee) greet() string {
+        return "Greetings, " + c.Fullname()
+    }
+
+    var e Employee
+    e.Setname("Tom", "Cole")
+    @assert e.greet() == "Greetings, Tom Cole"
+    
+}
+
+@pass

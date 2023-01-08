@@ -224,6 +224,8 @@ func (s EgoStruct) Copy() *EgoStruct {
 	result.readonly = s.readonly
 	result.static = s.static
 	result.strongTyping = s.strongTyping
+	result.typeDef = s.typeDef
+	result.typeName = s.typeName
 
 	return result
 }
