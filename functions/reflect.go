@@ -265,6 +265,16 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return "unknown", nil
 		}
 
+		vv := reflect.ValueOf(v)
+		if vv.Kind() == reflect.Ptr {
+			ts := vv.String()
+			if ts == defs.ByteCodeReflectionTypeString {
+				return "func", nil
+			}
+
+			return fmt.Sprintf("ptr %s", ts), nil
+		}
+
 		return tt.String(), nil
 	}
 }
