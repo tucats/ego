@@ -1,0 +1,24 @@
+// Demo simple use of tables
+
+func main() {
+    // Make a new table with two columns, "Name" and "Age"
+    t := tables.New("Name", "Age")
+
+    // Add rows by including the explicit values for each column.
+    t.AddRow("Tom", 55)
+    t.AddRow("Susan", 56)
+
+    // You can also add a structure whose fields indicate which
+    // table column they are assigned to.
+    t.AddRow({ Name:"Bob", Age:12})
+
+    // Age is a number, so lets right-align this. Options are "center",
+    // "rigth", or "left"
+    t.Align("Age", "right")
+
+    // Sort the table by Name
+    t.Sort("Name")
+
+    // Print the table.
+    t.Print()
+}

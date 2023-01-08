@@ -89,6 +89,10 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
 func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	var tx *sql.Tx
 
 	d, tx, err := getDBClient(s)
@@ -110,8 +114,12 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// DBCommit implements the Commit() db function.
+// DBRollback implements the Rollback() db function.
 func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
@@ -136,6 +144,10 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // DBCommit implements the Commit() db function.
 func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	var tx *sql.Tx
 
 	_, tx, err := getDBClient(s)
@@ -181,6 +193,10 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 // DBClose closes the database connection, frees up any resources held, and resets the
 // handle contents to prevent re-using the connection.
 func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	_, tx, err := getDBClient(s)
 	if err != nil {
 		return nil, err
@@ -207,6 +223,10 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DBQuery executes a query, with optional parameter substitution, and returns the
 // entire result set as an array.
 func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) == 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	db, tx, err := getDBClient(s)
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -309,6 +329,10 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DBExecute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
 func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) == 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	db, tx, e2 := getDBClient(s)
 	if e2 != nil {
 		return nil, e2

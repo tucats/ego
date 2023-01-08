@@ -4,7 +4,7 @@ package util
 
 func DumpPackages() {
    packages := util.Packages()
-   t := tables.New("Package", "Member")
+   t := tables.New("Package", "Member", "Value")
    
    t.Pagination(0,0)
    
@@ -13,11 +13,19 @@ func DumpPackages() {
       m := members(util.Eval(v))
       
       for _, n := range m {
-         t.AddRow(p, n)
+         fn := v + "." + n
+         d := util.Eval(fn)
+         sd := string(d)
+         if len(sd) > 50 {
+            sd = sd[:47] + "..."
+         }
+         
+         t.AddRow(p, n, sd)
+         
          p = ""
       }
       
-      t.AddRow("","")
+      t.AddRow("","", "")
    }
    
    t.Print()

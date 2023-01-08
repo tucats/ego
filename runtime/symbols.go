@@ -27,6 +27,10 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		json = strings.EqualFold(datatypes.GetString(args[1]), "json")
 	}
 
+	if len(args) > 2 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	// We start counting scope one level above the scope created just for
 	// the function call (which will always be empty).
 	scopeLevel := 0

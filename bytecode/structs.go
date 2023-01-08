@@ -140,6 +140,20 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := array.(type) {
+	case string:
+		subscript1 := datatypes.GetInt(index1)
+		subscript2 := datatypes.GetInt(index2)
+
+		if subscript2 > len(a) || subscript2 < 0 {
+			return errors.EgoError(errors.ErrInvalidSliceIndex).Context(subscript2)
+		}
+
+		if subscript1 < 0 || subscript1 > subscript2 {
+			return errors.EgoError(errors.ErrInvalidSliceIndex).Context(subscript1)
+		}
+
+		return c.stackPush(a[subscript1:subscript2])
+
 	case *datatypes.EgoArray:
 		subscript1 := datatypes.GetInt(index1)
 		subscript2 := datatypes.GetInt(index2)

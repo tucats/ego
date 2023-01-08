@@ -132,6 +132,10 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TableClose closes the table handle, and releases any memory resources
 // being held by the table.
 func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	_, err := getTable(s)
 	if err != nil {
 		return nil, err
@@ -169,6 +173,10 @@ func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
 func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) == 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {
@@ -325,6 +333,10 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TablePrint prints a table to the default output, in the default --output-format
 // type (text or json).
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
@@ -341,6 +353,10 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // TableString formats a table as a string in the default output.
 func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {

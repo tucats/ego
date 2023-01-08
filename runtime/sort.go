@@ -16,6 +16,10 @@ import (
 // package here in the runtime package, and are manually added to the dictionary when the
 // run command is invoked.
 func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 2 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	array, ok := args[0].(*datatypes.EgoArray)
 	if !ok {
 		return nil, errors.EgoError(errors.ErrArgumentType)

@@ -33,6 +33,10 @@ func initDBRowsTypeDef() {
 // DBQueryRows executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
 func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) == 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	db, tx, err := getDBClient(s)
 	if err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
@@ -73,6 +77,10 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	this := getThisStruct(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 
@@ -87,6 +95,10 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	this := getThisStruct(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	result := make([]interface{}, 0)
@@ -106,6 +118,10 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	this := getThisStruct(s)
 	if this == nil {
 		return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
@@ -120,6 +136,10 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	this := getThisStruct(s)
 	if this == nil {
 		return nil, errors.EgoError(errors.ErrNoFunctionReceiver)

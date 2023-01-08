@@ -16,6 +16,10 @@ import (
 
 // ReadFile reads a file contents into a string value.
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+	}
+
 	name := datatypes.GetString(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -33,6 +37,10 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 2 {
+		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+	}
+
 	fileName := sandboxName(datatypes.GetString(args[0]))
 
 	if a, ok := args[1].(*datatypes.EgoArray); ok {
@@ -58,6 +66,10 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 // DeleteFile deletes a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+	}
+
 	fileName := datatypes.GetString(args[0])
 	fileName = sandboxName(fileName)
 
@@ -71,6 +83,10 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // Expand expands a list of file or path names into a list of files.
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 2 {
+		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+	}
+
 	path := datatypes.GetString(args[0])
 	ext := ""
 
@@ -91,7 +107,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, err
 }
 
-// ExpandPath is used to expand a path into a list of fie names. This is
+// ExpandPath is used to expand a path into a list of file names. This is
 // also used elsewhere to product path lists, so it must be an exported
 // symbol.
 func ExpandPath(path, ext string) ([]string, error) {
@@ -166,12 +182,23 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// This is the generic close() which can be used to close a channel, and maybe
-// later other items as well.
+// This is the generic close() which can be used to close a channel or a file,
+// and maybe later other items as well.
 func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
 	case *datatypes.Channel:
 		return arg.Close(), nil
+
+	case *datatypes.EgoStruct:
+		switch arg.TypeString() {
+		case "io.File":
+			s.SetAlways("__this", arg)
+
+			return Close(s, []interface{}{})
+
+		default:
+			return nil, errors.EgoError(errors.ErrInvalidType).In("close()").Context(arg.TypeString())
+		}
 
 	default:
 		return nil, errors.EgoError(errors.ErrInvalidType).In("CloseAny()")

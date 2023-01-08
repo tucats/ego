@@ -11,7 +11,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+	}
+
 	language := os.Getenv("LANG")
 
 	if pos := strings.Index(language, "_"); pos > 0 {
@@ -25,7 +29,7 @@ func i18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return language, nil
 }
 
-func i18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
 	property := datatypes.GetString(args[0])
 

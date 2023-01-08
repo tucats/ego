@@ -166,6 +166,10 @@ func initializeRestType() {
 
 // RestNew implements the New() rest function.
 func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 0 && len(args) != 2 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	client := resty.New()
 
 	if len(args) == 2 {
@@ -314,6 +318,10 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 }
 
 func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	c, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -335,6 +343,10 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // This is the default mode for HTTPS connections. During debugging, you may wish to
 // turn this off when using self-generated certificates.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -359,6 +371,10 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // protocol/host/port information once, and then have each Get(), Post(), etc. call
 // just specify the endpoint.
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	_, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -381,6 +397,10 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // RestDebug implements the Debug() rest function. This specifies a boolean value that
 // enables or disables debug logging for the client.
 func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -446,6 +466,10 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // type that the REST service expects. In it's simplest form, this can be "application/text"
 // for free text responses, or "application/json" for JSON data payloads.
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	_, err := getClient(s)
 	if err != nil {
 		return nil, err

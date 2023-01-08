@@ -32,11 +32,13 @@ func Format(element interface{}) string {
 	}
 
 	switch v := element.(type) {
+	// Built-in types
 	case Type:
-		return "T(" + v.String() + v.FunctionNameList() + ")"
+		return v.String() + v.FunctionNameList() + " type"
 
+	// User types
 	case *Type:
-		return "T(" + "*" + v.String() + v.FunctionNameList() + ")"
+		return v.String() + v.FunctionNameList()
 
 	// Naked WaitGroup is a model for a type
 	case sync.WaitGroup:

@@ -104,6 +104,10 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 // Prompt implements the prompt() function, which uses the console
 // reader.
 func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) > 1 {
+		return nil, errors.EgoError(errors.ErrArgumentCount)
+	}
+
 	prompt := ""
 	if len(args) > 0 {
 		prompt = datatypes.GetString(args[0])

@@ -204,6 +204,21 @@ func (t Type) TypeString() string {
 	return t.String()
 }
 
+// FullTypeString returns the type by name but also includes the
+// full underlying type definition.
+func (t Type) ShortTypeString() string {
+	if t.kind == TypeKind {
+		name := t.name
+		if t.pkg != "" {
+			name = t.pkg + "." + name
+		}
+
+		return name
+	}
+
+	return t.String()
+}
+
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	switch t.kind {

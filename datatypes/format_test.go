@@ -16,12 +16,12 @@ func TestFormat(t *testing.T) {
 		{
 			name: "struct type",
 			arg:  TypeDefinition("bang", &StructType),
-			want: "T(*bang struct)",
+			want: "bang struct",
 		},
 		{
 			name: "struct",
-			arg:  StructType,
-			want: "T(struct)",
+			arg:  &StructType,
+			want: "struct",
 		},
 		{
 			name: "array",
@@ -31,7 +31,7 @@ func TestFormat(t *testing.T) {
 		{
 			name: "array type",
 			arg:  Array(&IntType),
-			want: "T(*[]int)",
+			want: "[]int",
 		},
 
 		// TODO: Add test cases.
