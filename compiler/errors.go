@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -19,7 +19,7 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg 
 	token := ""
 
 	if len(args) > 0 {
-		token = datatypes.String(args[0])
+		token = data.String(args[0])
 	}
 
 	e := errors.EgoError(err).Context(token)

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -136,22 +136,22 @@ func Test_negateByteCode(t *testing.T) {
 		{
 			name: "negate (reverse) an array",
 			arg:  nil,
-			stack: []interface{}{datatypes.NewArrayFromArray(
-				&datatypes.StringType,
+			stack: []interface{}{data.NewArrayFromArray(
+				&data.StringType,
 				[]interface{}{-1, 2})},
-			want: datatypes.NewArrayFromArray(
-				&datatypes.StringType,
+			want: data.NewArrayFromArray(
+				&data.StringType,
 				[]interface{}{2, -1}),
 		},
 		{
 			name: "negate (reverse) a map",
 			arg:  nil,
-			stack: []interface{}{datatypes.NewMapFromMap(map[string]int32{
+			stack: []interface{}{data.NewMapFromMap(map[string]int32{
 				"foo": int32(5),
 				"bar": int32(-3),
 			})},
-			want: datatypes.NewArrayFromArray(
-				&datatypes.StringType,
+			want: data.NewArrayFromArray(
+				&data.StringType,
 				[]interface{}{2, -1}),
 			err: errors.ErrInvalidType,
 		},
@@ -304,12 +304,12 @@ func Test_addByteCode(t *testing.T) {
 			arg:  nil,
 			stack: []interface{}{
 				"xyzzy",
-				datatypes.NewArrayFromArray(
-					&datatypes.StringType,
+				data.NewArrayFromArray(
+					&data.StringType,
 					[]interface{}{"foo", "bar"}),
 			},
-			want: datatypes.NewArrayFromArray(
-				&datatypes.StringType,
+			want: data.NewArrayFromArray(
+				&data.StringType,
 				[]interface{}{"foo", "bar", "xyzzy"}),
 			err: errors.EgoError(errors.ErrInvalidType).Context("interface{}"),
 		},
@@ -449,8 +449,8 @@ func Test_andByteCode(t *testing.T) {
 			arg:  nil,
 			stack: []interface{}{
 				"xyzzy",
-				datatypes.NewArrayFromArray(
-					&datatypes.StringType,
+				data.NewArrayFromArray(
+					&data.StringType,
 					[]interface{}{"arrays are invalid but cast as", "false"}),
 			},
 			want: false,
@@ -592,8 +592,8 @@ func Test_orByteCode(t *testing.T) {
 			arg:  nil,
 			stack: []interface{}{
 				"true",
-				datatypes.NewArrayFromArray(
-					&datatypes.StringType,
+				data.NewArrayFromArray(
+					&data.StringType,
 					[]interface{}{"arrays are invalid but cast as", "false"}),
 			},
 			want: true,

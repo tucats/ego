@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/common-nighthawk/go-figure"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -15,11 +15,11 @@ var fontSet []string
 func BlockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initFonts()
 
-	msg := datatypes.String(args[0])
+	msg := data.String(args[0])
 
 	fontName := "standard"
 	if len(args) > 1 {
-		fontName = datatypes.String(args[1])
+		fontName = data.String(args[1])
 	}
 
 	if !isFont(fontName) {
@@ -34,7 +34,7 @@ func BlockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func BlockFonts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initFonts()
 
-	result := datatypes.NewArray(&datatypes.StringType, len(fontSet))
+	result := data.NewArray(&data.StringType, len(fontSet))
 
 	for idx, name := range fontSet {
 		_ = result.Set(idx, name)

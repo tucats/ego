@@ -13,7 +13,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -116,26 +116,26 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	}
 
 	// Create the platform definition symbols
-	platformType := datatypes.Structure(
-		datatypes.Field{
+	platformType := data.Structure(
+		data.Field{
 			Name: "os",
-			Type: &datatypes.StringType,
+			Type: &data.StringType,
 		},
-		datatypes.Field{
+		data.Field{
 			Name: "arch",
-			Type: &datatypes.StringType,
+			Type: &data.StringType,
 		},
-		datatypes.Field{
+		data.Field{
 			Name: "go",
-			Type: &datatypes.StringType,
+			Type: &data.StringType,
 		},
-		datatypes.Field{
+		data.Field{
 			Name: "cpus",
-			Type: &datatypes.IntType,
+			Type: &data.IntType,
 		},
 	)
 
-	platform := datatypes.NewStruct(platformType)
+	platform := data.NewStruct(platformType)
 	_ = platform.Set("go", runtime.Version())
 	_ = platform.Set("os", runtime.GOOS)
 	_ = platform.Set("arch", runtime.GOARCH)

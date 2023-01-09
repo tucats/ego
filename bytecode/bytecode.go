@@ -3,7 +3,7 @@ package bytecode
 import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -38,7 +38,7 @@ type ByteCode struct {
 	name         string
 	instructions []instruction
 	nextAddress  int
-	declaration  *datatypes.FunctionDeclaration
+	declaration  *data.FunctionDeclaration
 	sealed       bool
 }
 
@@ -55,11 +55,11 @@ func (b *ByteCode) String() string {
 // used in routines that format information about the bytecode. If you
 // change the name of this function, you will also need to update the
 // MethodByName() calls for this same function name.
-func (b *ByteCode) Declaration() *datatypes.FunctionDeclaration {
+func (b *ByteCode) Declaration() *data.FunctionDeclaration {
 	return b.declaration
 }
 
-func (b *ByteCode) SetDeclaration(fd *datatypes.FunctionDeclaration) *ByteCode {
+func (b *ByteCode) SetDeclaration(fd *data.FunctionDeclaration) *ByteCode {
 	b.declaration = fd
 
 	return b
@@ -124,9 +124,9 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 	if t, ok := i.Operand.(tokenizer.Token); ok {
 		text := t.Spelling()
 		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = datatypes.Int(text)
+			i.Operand = data.Int(text)
 		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = datatypes.Float64(text)
+			i.Operand = data.Float64(text)
 		} else {
 			i.Operand = text
 		}
@@ -163,9 +163,9 @@ func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 	if t, ok := i.Operand.(tokenizer.Token); ok {
 		text := t.Spelling()
 		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = datatypes.Int(text)
+			i.Operand = data.Int(text)
 		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = datatypes.Float64(text)
+			i.Operand = data.Float64(text)
 		} else {
 			i.Operand = text
 		}
@@ -248,7 +248,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 	for _, i := range a.instructions[:a.nextAddress] {
 		if i.Operation > BranchInstructions {
-			i.Operand = datatypes.Int(i.Operand) + base
+			i.Operand = data.Int(i.Operand) + base
 		}
 
 		b.Emit(i.Operation, i.Operand)

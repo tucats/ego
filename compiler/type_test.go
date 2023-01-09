@@ -4,43 +4,43 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 func TestCompileTypeSpec(t *testing.T) {
 	tests := []struct {
 		name string
-		want *datatypes.Type
+		want *data.Type
 	}{
 		{
 			name: "int",
-			want: &datatypes.IntType,
+			want: &data.IntType,
 		},
 		{
 			name: "float64",
-			want: &datatypes.Float64Type,
+			want: &data.Float64Type,
 		},
 		{
 			name: "string",
-			want: &datatypes.StringType,
+			want: &data.StringType,
 		},
 		{
 			name: "*int",
-			want: datatypes.Pointer(&datatypes.IntType),
+			want: data.Pointer(&data.IntType),
 		},
 		{
 			name: "[]string",
-			want: datatypes.Array(&datatypes.StringType),
+			want: data.Array(&data.StringType),
 		},
 		{
 			name: "struct { name int }",
-			want: datatypes.Structure(datatypes.Field{Name: "name", Type: &datatypes.IntType}),
+			want: data.Structure(data.Field{Name: "name", Type: &data.IntType}),
 		},
 		{
 			name: "struct { name string, age int }",
-			want: datatypes.Structure(
-				datatypes.Field{Name: "name", Type: &datatypes.StringType},
-				datatypes.Field{Name: "age", Type: &datatypes.IntType},
+			want: data.Structure(
+				data.Field{Name: "name", Type: &data.StringType},
+				data.Field{Name: "age", Type: &data.IntType},
 			),
 		},
 		// TODO: Add test cases.

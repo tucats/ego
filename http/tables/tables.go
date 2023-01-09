@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
@@ -457,7 +457,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 	v := r.URL.Query()[defs.RowCountParameterName]
 	if len(v) == 1 {
-		includeRowCounts = datatypes.Bool(v[0])
+		includeRowCounts = data.Bool(v[0])
 	}
 
 	db, err := OpenDB(sessionID, user, "")

@@ -39,7 +39,7 @@ Here is a trivial example of generating bytecode and executing it.
 
     // Retrieve the last value and extract a string 
     v, err := b.Pop()
-    fmt.Printf("The result is %s\n", datatypes.GetString(v))
+    fmt.Printf("The result is %s\n", data.GetString(v))
 
 This creates a new bytecode stream, and then adds instructions to it. These instructions would nominally
 be added by a parser. The `Emit()` function emits an instruction with only one value, the opcode. The

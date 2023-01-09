@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -366,7 +366,7 @@ func TestNew(t *testing.T) {
 			s.SetAlways("name", "Tom")
 			s.SetAlways("b", true)
 			s.SetAlways("roman12", "XII")
-			s.SetAlways("a", datatypes.NewArrayFromArray(&datatypes.InterfaceType, []interface{}{1, "tom", 33., false}))
+			s.SetAlways("a", data.NewArrayFromArray(&data.InterfaceType, []interface{}{1, "tom", 33., false}))
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)
@@ -376,7 +376,7 @@ func TestNew(t *testing.T) {
 			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {
-				if array, ok := v1.(*datatypes.EgoArray); ok {
+				if array, ok := v1.(*data.EgoArray); ok {
 					if !reflect.DeepEqual(array.BaseArray(), tt.want) {
 						t.Errorf("Expression test, got %v, want %v", v1, tt.want)
 					}

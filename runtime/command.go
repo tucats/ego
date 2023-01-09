@@ -8,13 +8,13 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
-var commandTypeDef *datatypes.Type
+var commandTypeDef *data.Type
 var commandTypeDefLock sync.Mutex
 
 func initCommandTypeDef() {
@@ -42,11 +42,11 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	// Let's build the Ego instance of exec.Cmd
-	result := datatypes.NewStruct(commandTypeDef)
+	result := data.NewStruct(commandTypeDef)
 
 	strArray := make([]string, len(args))
 	for n, v := range args {
-		strArray[n] = datatypes.String(v)
+		strArray[n] = data.String(v)
 	}
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
@@ -56,7 +56,7 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	_ = result.Set("Path", cmd.Path)
 
 	// Also store away the native argument list as an Ego array
-	a := datatypes.NewArray(&datatypes.StringType, len(cmd.Args))
+	a := data.NewArray(&data.StringType, len(cmd.Args))
 	for n, v := range cmd.Args {
 		_ = a.Set(n, v)
 	}
@@ -71,7 +71,7 @@ func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount).Context("LookPath")
 	}
 
-	path, err := exec.LookPath(datatypes.String(args[0]))
+	path, err := exec.LookPath(data.String(args[0]))
 	if err != nil {
 		return "", errors.EgoError(err).Context("LookPath")
 	}
@@ -94,26 +94,26 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if str, ok := cmdStruct.Get("Stdin"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Stdin = strings.NewReader(s)
 	}
 
 	if str, ok := cmdStruct.Get("Path"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Path = s
 	}
 
 	if str, ok := cmdStruct.Get("dir"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Dir = s
 	}
 
 	if argArray, ok := cmdStruct.Get("Args"); ok {
-		if args, ok := argArray.(*datatypes.EgoArray); ok {
+		if args, ok := argArray.(*data.EgoArray); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.String(v)
+				r[n] = data.String(v)
 			}
 
 			cmd.Args = r
@@ -121,11 +121,11 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if argArray, ok := cmdStruct.Get("Env"); ok {
-		if args, ok := argArray.(*datatypes.EgoArray); ok {
+		if args, ok := argArray.(*data.EgoArray); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.String(v)
+				r[n] = data.String(v)
 			}
 
 			cmd.Env = r
@@ -136,11 +136,11 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	cmd.Stdout = &out
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {
-		if strArray, ok := a.(*datatypes.EgoArray); ok {
+		if strArray, ok := a.(*data.EgoArray); ok {
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)
-				strs[n] = datatypes.String(v)
+				strs[n] = data.String(v)
 			}
 
 			buffer := strings.Join(strs, "\n")
@@ -159,7 +159,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		resultArray[n] = v
 	}
 
-	result := datatypes.NewArrayFromArray(&datatypes.StringType, resultArray)
+	result := data.NewArrayFromArray(&data.StringType, resultArray)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return nil, nil
@@ -184,26 +184,26 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if str, ok := cmdStruct.Get("Stdin"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Stdin = strings.NewReader(s)
 	}
 
 	if str, ok := cmdStruct.Get("Path"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Path = s
 	}
 
 	if str, ok := cmdStruct.Get("dir"); ok {
-		s := datatypes.String(str)
+		s := data.String(str)
 		cmd.Dir = s
 	}
 
 	if argArray, ok := cmdStruct.Get("Args"); ok {
-		if args, ok := argArray.(*datatypes.EgoArray); ok {
+		if args, ok := argArray.(*data.EgoArray); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.String(v)
+				r[n] = data.String(v)
 			}
 
 			cmd.Args = r
@@ -211,11 +211,11 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if argArray, ok := cmdStruct.Get("Env"); ok {
-		if args, ok := argArray.(*datatypes.EgoArray); ok {
+		if args, ok := argArray.(*data.EgoArray); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.String(v)
+				r[n] = data.String(v)
 			}
 
 			cmd.Env = r
@@ -226,11 +226,11 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	cmd.Stdout = &out
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {
-		if strArray, ok := a.(*datatypes.EgoArray); ok {
+		if strArray, ok := a.(*data.EgoArray); ok {
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)
-				strs[n] = datatypes.String(v)
+				strs[n] = data.String(v)
 			}
 
 			buffer := strings.Join(strs, "\n")
@@ -249,7 +249,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		resultArray[n] = v
 	}
 
-	result := datatypes.NewArrayFromArray(&datatypes.StringType, resultArray)
+	result := data.NewArrayFromArray(&data.StringType, resultArray)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return result, nil

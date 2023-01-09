@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -17,23 +17,23 @@ func (c *Compiler) typeEmitter(name string) error {
 	return err
 }
 
-func (c *Compiler) typeCompiler(name string) (*datatypes.Type, error) {
+func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 	if _, found := c.types[name]; found {
-		return &datatypes.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
+		return &data.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
 	}
 
 	baseType, err := c.parseType(name, false)
 	if err != nil {
-		return &datatypes.UndefinedType, err
+		return &data.UndefinedType, err
 	}
 
-	typeInfo := datatypes.TypeDefinition(name, baseType)
+	typeInfo := data.TypeDefinition(name, baseType)
 	c.types[name] = typeInfo
 
 	return typeInfo, nil
 }
 
-func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, error) {
+func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	found := false
 
 	if !anonymous {
@@ -54,26 +54,26 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 	if c.t.Peek(1) == tokenizer.EmptyInterfaceToken {
 		c.t.Advance(1)
 
-		return &datatypes.InterfaceType, nil
+		return &data.InterfaceType, nil
 	}
 
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.EmptyInitializerToken {
 		c.t.Advance(2)
 
-		return &datatypes.InterfaceType, nil
+		return &data.InterfaceType, nil
 	}
 
 	// Interfaces
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.DataBeginToken {
 		c.t.Advance(2)
 
-		t := datatypes.NewInterfaceType(name)
+		t := data.NewInterfaceType(name)
 
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			f, err := c.parseFunctionDeclaration()
 			if err != nil {
-				return &datatypes.UndefinedType, err
+				return &data.UndefinedType, err
 			}
 
 			t.DefineFunction(f.Name, f)
@@ -88,30 +88,30 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 
 		keyType, err := c.parseType("", false)
 		if err != nil {
-			return &datatypes.UndefinedType, err
+			return &data.UndefinedType, err
 		}
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return &datatypes.UndefinedType, c.newError(errors.ErrMissingBracket)
+			return &data.UndefinedType, c.newError(errors.ErrMissingBracket)
 		}
 
 		valueType, err := c.parseType("", false)
 		if err != nil {
-			return &datatypes.UndefinedType, err
+			return &data.UndefinedType, err
 		}
 
-		return datatypes.Map(keyType, valueType), nil
+		return data.Map(keyType, valueType), nil
 	}
 
 	// Structures
 	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
-		t := datatypes.Structure()
+		t := data.Structure()
 		c.t.Advance(2)
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			name := c.t.Next()
 			if !name.IsIdentifier() {
-				return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
+				return &data.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.
@@ -123,9 +123,9 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 				// look to see if this is a known type. If so, copy the embedded fields to
 				// the newly created type we're working on.
 				if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
-					if pkg, ok := pkgData.(*datatypes.EgoPackage); ok {
+					if pkg, ok := pkgData.(*data.EgoPackage); ok {
 						if typeInterface, ok := pkg.Get(name.Spelling()); ok {
-							if typeData, ok := typeInterface.(*datatypes.Type); ok {
+							if typeData, ok := typeInterface.(*data.Type); ok {
 								embedType(t, typeData)
 
 								// Skip past the tokens and any optional trailing comma
@@ -158,7 +158,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 			for c.t.IsNext(tokenizer.CommaToken) {
 				nextField := c.t.Next()
 				if !nextField.IsIdentifier() {
-					return &datatypes.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
+					return &data.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
 				}
 
 				fieldNames = append(fieldNames, nextField.Spelling())
@@ -166,7 +166,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 
 			fieldType, err := c.parseType("", false)
 			if err != nil {
-				return &datatypes.UndefinedType, err
+				return &data.UndefinedType, err
 			}
 
 			for _, fieldName := range fieldNames {
@@ -185,14 +185,14 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 
 		valueType, err := c.parseType("", false)
 		if err != nil {
-			return &datatypes.UndefinedType, err
+			return &data.UndefinedType, err
 		}
 
-		return datatypes.Array(valueType), nil
+		return data.Array(valueType), nil
 	}
 
 	// Known base types?
-	for _, typeDeclaration := range datatypes.TypeDeclarations {
+	for _, typeDeclaration := range data.TypeDeclarations {
 		found = true
 
 		for idx, token := range typeDeclaration.Tokens {
@@ -234,13 +234,13 @@ func (c *Compiler) parseType(name string, anonymous bool) (*datatypes.Type, erro
 		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
 	}
 
-	return &datatypes.UndefinedType, c.newError(errors.ErrUnknownType, typeNameSpelling)
+	return &data.UndefinedType, c.newError(errors.ErrUnknownType, typeNameSpelling)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.
-func embedType(newType *datatypes.Type, embeddedType *datatypes.Type) {
+func embedType(newType *data.Type, embeddedType *data.Type) {
 	baseType := embeddedType.BaseType()
-	if baseType.Kind() == datatypes.StructKind {
+	if baseType.Kind() == data.StructKind {
 		fieldNames := baseType.FieldNames()
 		for _, fieldName := range fieldNames {
 			fieldType, _ := baseType.Field(fieldName)

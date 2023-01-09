@@ -18,7 +18,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -115,7 +115,7 @@ const (
 	urlQueryElmeent    = "urlQuery"
 )
 
-var restType *datatypes.Type
+var restType *data.Type
 var restTypeLock sync.Mutex
 
 // Get an environment variable value. If it is not present (or empty) then use
@@ -173,8 +173,8 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client := resty.New()
 
 	if len(args) == 2 {
-		username := datatypes.String(args[0])
-		password := datatypes.String(args[1])
+		username := data.String(args[0])
+		password := data.String(args[1])
 
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
@@ -188,7 +188,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initializeRestType()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: allowInsecure})
 
-	r := datatypes.NewStruct(restType)
+	r := data.NewStruct(restType)
 
 	_ = r.Set(clientFieldName, client)
 	_ = r.Set(mediaTypeFieldName, defs.JSONMediaType)
@@ -202,9 +202,9 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // utility function that prepends the base URL for this instance
 // of a rest service to the supplied URL string. If there is
 // no base URL defined, then nothing is changed.
-func applyBaseURL(url string, this *datatypes.EgoStruct) string {
+func applyBaseURL(url string, this *data.EgoStruct) string {
 	if b, ok := this.Get(baseURLFieldName); ok {
-		base := datatypes.String(b)
+		base := data.String(b)
 		if base == "" {
 			return url
 		}
@@ -226,7 +226,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	urlString := datatypes.String(args[0])
+	urlString := data.String(args[0])
 
 	url, err := url.Parse(urlString)
 	if err != nil {
@@ -242,7 +242,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		var valid bool
 
 		path := url.Path
-		templateString := datatypes.String(args[1])
+		templateString := data.String(args[1])
 
 		// Scan the URL and the template, and bulid a map of the parts.
 		urlParts, valid = functions.ParseURLPattern(path, templateString)
@@ -295,13 +295,13 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				values[i] = j
 			}
 
-			query[key] = datatypes.NewArrayFromArray(&datatypes.StringType, values)
+			query[key] = data.NewArrayFromArray(&data.StringType, values)
 		}
 
-		urlParts[urlQueryElmeent] = datatypes.NewMapFromMap(query)
+		urlParts[urlQueryElmeent] = data.NewMapFromMap(query)
 	}
 
-	return datatypes.NewStructFromMap(urlParts), nil
+	return data.NewStructFromMap(urlParts), nil
 }
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -309,7 +309,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	code := datatypes.Int(args[0])
+	code := data.Int(args[0])
 	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil
 	}
@@ -356,7 +356,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	verify := allowInsecure
 
 	if len(args) == 1 {
-		verify = datatypes.Bool(args[0])
+		verify = data.Bool(args[0])
 	}
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
@@ -384,7 +384,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := ""
 
 	if len(args) > 0 {
-		base = datatypes.String(args[0])
+		base = data.String(args[0])
 	} else {
 		base = settings.Get(defs.LogonServerSetting)
 	}
@@ -408,7 +408,7 @@ func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	this := getThisStruct(s)
 
-	flag := datatypes.Bool((args[0]))
+	flag := data.Bool((args[0]))
 	r.SetDebug(flag)
 
 	return this, nil
@@ -429,8 +429,8 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	user := datatypes.String(args[0])
-	pass := datatypes.String(args[1])
+	user := data.String(args[0])
+	pass := data.String(args[1])
 
 	r.SetBasicAuth(user, pass)
 
@@ -454,7 +454,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	token := settings.Get(defs.LogonTokenSetting)
 
 	if len(args) > 0 {
-		token = datatypes.String(args[0])
+		token = data.String(args[0])
 	}
 
 	r.SetAuthToken(token)
@@ -476,7 +476,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	this := getThisStruct(s)
-	media := datatypes.String(args[0])
+	media := data.String(args[0])
 	this.SetAlways(mediaTypeFieldName, media)
 
 	return this, nil
@@ -500,12 +500,12 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	url := applyBaseURL(datatypes.String(args[0]), this)
+	url := applyBaseURL(data.String(args[0]), this)
 	r := client.NewRequest()
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.String(media)
+		ms := data.String(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content-Type", ms)
@@ -537,10 +537,10 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		// For well-known complex types, make them Ego-native versions.
 		switch actual := jsonResponse.(type) {
 		case map[string]interface{}:
-			jsonResponse = datatypes.NewMapFromMap(actual)
+			jsonResponse = data.NewMapFromMap(actual)
 
 		case []interface{}:
-			jsonResponse = datatypes.NewArrayFromArray(&datatypes.InterfaceType, actual)
+			jsonResponse = data.NewArrayFromArray(&data.InterfaceType, actual)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -555,12 +555,12 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // fetchCookies extracts the cookies from the response, and format them as an Ego array
 // of structs.
-func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray {
+func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.EgoArray {
 	cookies := r.Cookies()
-	result := datatypes.NewArray(&datatypes.InterfaceType, len(cookies))
+	result := data.NewArray(&data.InterfaceType, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
+		cookie := data.NewMap(&data.StringType, &data.InterfaceType)
 
 		_, _ = cookie.Set("expires", v.Expires.String())
 		_, _ = cookie.Set("name", v.Name)
@@ -575,8 +575,8 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *datatypes.EgoArray
 
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
-func headerMap(response *resty.Response) *datatypes.EgoMap {
-	headers := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
+func headerMap(response *resty.Response) *data.EgoMap {
+	headers := data.NewMap(&data.StringType, &data.InterfaceType)
 
 	for k, v := range response.Header() {
 		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))
@@ -601,7 +601,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client.SetRedirectPolicy()
 
 	this := getThisStruct(s)
-	url := applyBaseURL(datatypes.String(args[0]), this)
+	url := applyBaseURL(data.String(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -610,7 +610,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := datatypes.String(mt)
+		media := data.String(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
@@ -625,7 +625,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.String(media)
+		ms := data.String(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
 
 		r.Header.Add("Accept", ms)
@@ -679,7 +679,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	this := getThisStruct(s)
-	url := applyBaseURL(datatypes.String(args[0]), this)
+	url := applyBaseURL(data.String(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -688,7 +688,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := datatypes.String(mt)
+		media := data.String(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
@@ -703,7 +703,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.String(media)
+		ms := data.String(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 
 		r.Header.Add("Accept", ms)
@@ -748,7 +748,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // the native client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*datatypes.EgoStruct); ok {
+		if gc, ok := g.(*data.EgoStruct); ok {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*resty.Client); ok {
 					if cp == nil {
@@ -766,13 +766,13 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThisStruct(s *symbols.SymbolTable) *datatypes.EgoStruct {
+func getThisStruct(s *symbols.SymbolTable) *data.EgoStruct {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil
 	}
 
-	this, ok := t.(*datatypes.EgoStruct)
+	this, ok := t.(*data.EgoStruct)
 	if !ok {
 		return nil
 	}
@@ -904,13 +904,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if msg, found := errorResponse["msg"]; found {
 					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(datatypes.String(msg))
+					return errors.NewMessage(data.String(msg))
 				}
 
 				if msg, found := errorResponse["message"]; found {
 					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(datatypes.String(msg))
+					return errors.NewMessage(data.String(msg))
 				}
 			}
 		}
@@ -937,7 +937,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if err == nil && status != http.StatusOK {
 					if m, ok := response.(map[string]interface{}); ok {
 						if msg, ok := m["Message"]; ok {
-							err = errors.NewMessage(datatypes.String(msg))
+							err = errors.NewMessage(data.String(msg))
 						}
 					}
 				}
@@ -956,7 +956,7 @@ func AddAgent(r *resty.Request, agentType string) {
 	var version string
 
 	if x, found := symbols.RootSymbolTable.Get("_version"); found {
-		version = datatypes.String(x)
+		version = data.String(x)
 	}
 
 	platform := runtime.Version() + ", " + runtime.GOOS + ", " + runtime.GOARCH

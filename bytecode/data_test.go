@@ -5,15 +5,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 func TestStructImpl(t *testing.T) {
-	typeDef := datatypes.TypeDefinition("usertype", datatypes.Structure(
-		datatypes.Field{Name: "active", Type: datatypes.BoolType},
-		datatypes.Field{Name: "test", Type: &datatypes.IntType},
+	typeDef := data.TypeDefinition("usertype", data.Structure(
+		data.Field{Name: "active", Type: data.BoolType},
+		data.Field{Name: "test", Type: &data.IntType},
 	))
 
 	tests := []struct {
@@ -27,8 +27,8 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member incomplete test",
 			arg:   2,
-			stack: []interface{}{typeDef, datatypes.TypeMDKey, true, "active"},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			stack: []interface{}{typeDef, data.TypeMDKey, true, "active"},
+			want: data.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,
 			}).SetStatic(true).AsType(typeDef),
@@ -39,7 +39,7 @@ func TestStructImpl(t *testing.T) {
 			name:  "one member test",
 			arg:   1,
 			stack: []interface{}{123, "test"},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			want: data.NewStructFromMap(map[string]interface{}{
 				"test": 123,
 			}).SetStatic(true),
 			wantErr: false,
@@ -48,7 +48,7 @@ func TestStructImpl(t *testing.T) {
 			name:  "two member test",
 			arg:   2,
 			stack: []interface{}{true, "active", 123, "test"},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			want: data.NewStructFromMap(map[string]interface{}{
 				"test":   123,
 				"active": true,
 			}).SetStatic(true),
@@ -57,8 +57,8 @@ func TestStructImpl(t *testing.T) {
 		{
 			name:  "two member invalid static test",
 			arg:   3,
-			stack: []interface{}{typeDef, datatypes.TypeMDKey, true, "invalid", 123, "test"},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			stack: []interface{}{typeDef, data.TypeMDKey, true, "invalid", 123, "test"},
+			want: data.NewStructFromMap(map[string]interface{}{
 				"active": true,
 				"test":   0,
 			}).SetStatic(true).AsType(typeDef),
@@ -169,7 +169,7 @@ func Test_storeByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.String(tt.arg)
+		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -210,7 +210,7 @@ func Test_storeByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.String(tt.arg))
+			v, found := c.symbols.Get(data.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
@@ -296,7 +296,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.String(tt.arg)
+		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -337,7 +337,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.String(tt.arg))
+			v, found := c.symbols.Get(data.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
@@ -425,7 +425,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		syms := symbols.NewChildSymbolTable("testing", root)
 
 		bc := ByteCode{}
-		varname := datatypes.String(tt.arg)
+		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -466,7 +466,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := root.Get(datatypes.String(tt.arg))
+			v, found := root.Get(data.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in root symbol table: %v", name, tt.arg)
@@ -657,7 +657,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.String(tt.arg)
+		varname := data.String(tt.arg)
 
 		if tt.debug {
 			fmt.Println("DEBUG")
@@ -672,7 +672,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 
 		if tt.initialValue != nil {
 			_ = c.symbolCreate(varname)
-			ptr, _ := datatypes.AddressOf(tt.initialValue)
+			ptr, _ := data.AddressOf(tt.initialValue)
 			_ = c.symbolSet(varname, ptr)
 		}
 
@@ -703,13 +703,13 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.String(tt.arg))
+			v, found := c.symbols.Get(data.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
 			}
 
-			v, _ = datatypes.Dereference(v)
+			v, _ = data.Dereference(v)
 			if !reflect.DeepEqual(v, tt.want) {
 				t.Errorf("%s() got %v, want %v", name, v, tt.want)
 			}
@@ -758,7 +758,7 @@ func Test_loadByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.String(tt.arg)
+		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -821,7 +821,7 @@ func Test_explodeByteCode(t *testing.T) {
 	}{
 		{
 			name: "simple map explosion",
-			value: datatypes.NewMapFromMap(map[string]interface{}{
+			value: data.NewMapFromMap(map[string]interface{}{
 				"foo": byte(1),
 				"bar": "frobozz",
 			}),
@@ -829,7 +829,7 @@ func Test_explodeByteCode(t *testing.T) {
 		},
 		{
 			name: "wrong map key type",
-			value: datatypes.NewMapFromMap(map[int]interface{}{
+			value: data.NewMapFromMap(map[int]interface{}{
 				1: byte(1),
 				2: "frobozz",
 			}),

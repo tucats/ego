@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 import (
 	"github.com/tucats/ego/errors"

@@ -3,7 +3,7 @@ package bytecode
 import (
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 func TestComparisons(t *testing.T) {
@@ -96,22 +96,22 @@ func TestComparisons(t *testing.T) {
 		},
 		{
 			name: "array equality",
-			v1:   datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{5, 2, 6}),
-			v2:   datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{5, 2, 6}),
+			v1:   data.NewArrayFromArray(&data.IntType, []interface{}{5, 2, 6}),
+			v2:   data.NewArrayFromArray(&data.IntType, []interface{}{5, 2, 6}),
 			r:    true,
 			f:    equalByteCode, i: nil, err: false,
 		},
 		{
 			name: "array inequality due to type",
-			v1:   datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{5, 2, 6}),
-			v2:   datatypes.NewArrayFromArray(&datatypes.Float64Type, []interface{}{5, 2, 6}),
+			v1:   data.NewArrayFromArray(&data.IntType, []interface{}{5, 2, 6}),
+			v2:   data.NewArrayFromArray(&data.Float64Type, []interface{}{5, 2, 6}),
 			r:    false,
 			f:    equalByteCode, i: nil, err: false,
 		},
 		{
 			name: "array inequality due to values",
-			v1:   datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{5, 2, 6}),
-			v2:   datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{5, 6, 2}),
+			v1:   data.NewArrayFromArray(&data.IntType, []interface{}{5, 2, 6}),
+			v2:   data.NewArrayFromArray(&data.IntType, []interface{}{5, 6, 2}),
 			r:    false,
 			f:    equalByteCode, i: nil, err: false,
 		},

@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/http/admin"
@@ -93,7 +93,7 @@ func RunServer(c *cli.Context) error {
 		symbols.RootSymbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get("_server_instance")
-		defs.ServerInstanceID = datatypes.String(s)
+		defs.ServerInstanceID = data.String(s)
 	}
 
 	server.Version = c.Version

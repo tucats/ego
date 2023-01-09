@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -17,7 +17,7 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	str, err := Sprintf(s, args)
 	if err == nil {
-		length, _ = fmt.Printf("%s", datatypes.String(str))
+		length, _ = fmt.Printf("%s", data.String(str))
 	}
 
 	return length, err
@@ -29,7 +29,7 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return 0, nil
 	}
 
-	fmtString := datatypes.String(args[0])
+	fmtString := data.String(args[0])
 
 	if len(args) == 1 {
 		return fmtString, nil
@@ -84,7 +84,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // object type passed in, if it is a typed struct.  Otherwise, it
 // just returns the Unquoted format value.
 func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
-	if m, ok := v.(*datatypes.EgoStruct); ok {
+	if m, ok := v.(*data.EgoStruct); ok {
 		if f := m.GetType().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
@@ -99,18 +99,18 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 		}
 	}
 
-	return datatypes.FormatUnquoted(v)
+	return data.FormatUnquoted(v)
 }
 
 func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	dataString := datatypes.String(args[0])
-	formatString := datatypes.String(args[1])
+	dataString := data.String(args[0])
+	formatString := data.String(args[1])
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
 	pointerList := make([]*interface{}, len(args)-2)
 
 	for i, v := range args[2:] {
-		if datatypes.TypeOfPointer(v).IsUndefined() {
+		if data.TypeOfPointer(v).IsUndefined() {
 			return nil, errors.EgoError(errors.ErrNotAPointer)
 		}
 

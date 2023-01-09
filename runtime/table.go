@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -23,7 +23,7 @@ type column struct {
 
 type Row []interface{}
 
-var tableTypeDef *datatypes.Type
+var tableTypeDef *data.Type
 var tableTypeDefLock sync.Mutex
 
 func initTableTypeDef() {
@@ -63,17 +63,17 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	headings := []string{}
 
 	for _, h := range args {
-		if list, ok := h.(*datatypes.EgoArray); ok {
+		if list, ok := h.(*data.EgoArray); ok {
 			for idx := 0; idx < list.Len(); idx++ {
 				str, _ := list.Get(idx)
-				headings = append(headings, datatypes.String(str))
+				headings = append(headings, data.String(str))
 			}
 		} else if list, ok := h.([]interface{}); ok {
 			for _, hh := range list {
-				headings = append(headings, datatypes.String(hh))
+				headings = append(headings, data.String(hh))
 			}
 		} else {
-			headings = append(headings, datatypes.String(h))
+			headings = append(headings, data.String(h))
 		}
 	}
 
@@ -113,7 +113,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Move the string array of headings into a native array type, which can
 	// be read by the caller.
-	headingsArray := datatypes.NewArray(&datatypes.StringType, len(headings))
+	headingsArray := data.NewArray(&data.StringType, len(headings))
 
 	for i, h := range headings {
 		_ = headingsArray.Set(i, h)
@@ -121,7 +121,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	initTableTypeDef()
 
-	result := datatypes.NewStruct(tableTypeDef)
+	result := data.NewStruct(tableTypeDef)
 	result.SetAlways(tableFieldName, t)
 	result.SetAlways(headingsFieldName, headingsArray)
 	result.SetReadonly(true)
@@ -154,8 +154,8 @@ func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 		return nil, errors.EgoError(errors.ErrInvalidVariableArguments)
 	}
 
-	h := datatypes.Int(args[0])
-	w := datatypes.Int(args[1])
+	h := data.Int(args[0])
+	w := data.Int(args[1])
 
 	t, err := getTable(s)
 	if err != nil {
@@ -180,7 +180,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {
-			if m, ok := args[0].(*datatypes.EgoStruct); ok {
+			if m, ok := args[0].(*data.EgoStruct); ok {
 				if len(args) > 1 {
 					err = errors.EgoError(errors.ErrArgumentCount)
 				} else {
@@ -194,7 +194,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 						p, ok := t.Column(k)
 						if ok {
-							values[p] = datatypes.String(v)
+							values[p] = data.String(v)
 						}
 					}
 
@@ -231,7 +231,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			v := args[i]
 			ascending := true
 
-			heading := datatypes.String(v)
+			heading := data.String(v)
 			if strings.HasPrefix(heading, "~") {
 				ascending = false
 				heading = heading[1:]
@@ -266,12 +266,12 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		lines := true
 
 		if len(args) > 0 {
-			headings = datatypes.Bool(args[0])
+			headings = data.Bool(args[0])
 			lines = headings
 		}
 
 		if len(args) > 1 {
-			lines = datatypes.Bool(args[1])
+			lines = data.Bool(args[1])
 		}
 
 		t.ShowHeadings(headings)
@@ -301,7 +301,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 				return err, err
 			}
 		} else {
-			column = datatypes.Int(args[0])
+			column = data.Int(args[0])
 		}
 
 		mode := tables.AlignmentLeft
@@ -340,7 +340,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = datatypes.String(args[0])
+		fmt = data.String(args[0])
 	}
 
 	t, err := getTable(s)
@@ -360,7 +360,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = datatypes.String(args[0])
+		fmt = data.String(args[0])
 	}
 
 	t, err := getTable(s)
@@ -376,7 +376,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*datatypes.EgoStruct); ok {
+		if gc, ok := g.(*data.EgoStruct); ok {
 			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {
@@ -401,17 +401,17 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	includeHeadings := true
 
 	if len(args) == 2 {
-		includeHeadings = datatypes.Bool(args[1])
+		includeHeadings = data.Bool(args[1])
 	}
 
 	// Scan over the first data element to pick up the column names and types
-	a := datatypes.GetNativeArray(args[0])
+	a := data.GetNativeArray(args[0])
 	if len(a) == 0 {
 		return nil, errors.EgoError(errors.ErrInvalidResultSetType)
 	}
 
 	// Make a list of the sort key names
-	row := datatypes.GetNativeMap(a[0])
+	row := data.GetNativeMap(a[0])
 	keys := []string{}
 
 	for k := range row {
@@ -437,14 +437,14 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	// Scan all rows to get maximum length values
 	for _, r := range a {
-		row := datatypes.GetNativeMap(r)
+		row := data.GetNativeMap(r)
 
 		for n := 0; n < len(columns); n = n + 1 {
 			c := columns[n]
 
 			v, ok := row[c.Name]
 			if ok {
-				width := len(datatypes.FormatUnquoted(v))
+				width := len(data.FormatUnquoted(v))
 				if width > c.FormattedWidth {
 					c.FormattedWidth = width
 					columns[n] = c
@@ -489,7 +489,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	// Loop over the rows and fill in the values
 	for _, r := range a {
-		row := datatypes.GetNativeMap(r)
+		row := data.GetNativeMap(r)
 
 		var b strings.Builder
 

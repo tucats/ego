@@ -1,7 +1,7 @@
 package bytecode
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -16,7 +16,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if i != nil {
-		name = datatypes.String(i)
+		name = data.String(i)
 	} else {
 		v, err := c.Pop()
 		if err != nil {
@@ -27,7 +27,7 @@ func memberByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		name = datatypes.String(v)
+		name = data.String(v)
 	}
 
 	m, err := c.Pop()
@@ -44,28 +44,28 @@ func memberByteCode(c *Context, i interface{}) error {
 	found := false
 
 	switch mv := m.(type) {
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		v, _, err = mv.Get(name)
 		if err != nil {
 			return err
 		}
 
-	case *datatypes.EgoStruct:
+	case *data.EgoStruct:
 		// Could be a structure member, or a request to fetch a receiver function.
 		v, found = mv.Get(name)
 		if !found {
-			v = datatypes.TypeOf(mv).Function(name)
+			v = data.TypeOf(mv).Function(name)
 		}
 
 		if v == nil {
 			return c.newError(errors.ErrUnknownMember).Context(name)
 		}
 
-	case *datatypes.EgoPackage:
+	case *data.EgoPackage:
 		// First, see if it's a variable in the symbol table for the package, assuming
 		// it starts with an uppercase letter.
 		if util.HasCapitalizedName(name) {
-			if symV, ok := mv.Get(datatypes.SymbolsMDKey); ok {
+			if symV, ok := mv.Get(data.SymbolsMDKey); ok {
 				syms := symV.(*symbols.SymbolTable)
 
 				if v, ok := syms.Get(name); ok {
@@ -74,7 +74,7 @@ func memberByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		tt := datatypes.TypeOf(mv)
+		tt := data.TypeOf(mv)
 
 		// See if it's one of the items within the package store.
 		v, found = mv.Get(name)
@@ -97,7 +97,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	default:
 		// Is it a native type? If so, see if there is a function for it
 		// with the given name. If so, push that as if it was a builtin.
-		kind := datatypes.TypeOf(mv)
+		kind := data.TypeOf(mv)
 
 		fn := functions.FindNativeFunction(kind, name)
 		if fn != nil {
@@ -107,7 +107,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		// Nothing we can do something with, so bail
-		return c.newError(errors.ErrInvalidStructOrPackage).Context(datatypes.TypeOf(v).String())
+		return c.newError(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
 	}
 
 	return c.stackPush(v)
@@ -124,10 +124,10 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 		}
 
 		if bc, ok := v.(*ByteCode); ok {
-			bc.name = datatypes.String(i)
+			bc.name = data.String(i)
 			c.symbols.SetAlways(bc.name, bc)
 		} else {
-			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
+			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 		}
 	}
 

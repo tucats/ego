@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -38,8 +38,8 @@ func TestFunctionLen(t *testing.T) {
 			name: "array length",
 			args: args{
 				[]interface{}{
-					datatypes.NewArrayFromArray(
-						&datatypes.InterfaceType,
+					data.NewArrayFromArray(
+						&data.InterfaceType,
 						[]interface{}{
 							true,
 							3.14,
@@ -94,20 +94,20 @@ func TestFunctionSort(t *testing.T) {
 		{
 			name: "integer sort",
 			args: args{[]interface{}{
-				datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{55, 2, 18})},
+				data.NewArrayFromArray(&data.IntType, []interface{}{55, 2, 18})},
 			},
 			want: []interface{}{2, 18, 55},
 		},
 		{
 			name: "float64 sort",
 			args: args{[]interface{}{
-				datatypes.NewArrayFromArray(&datatypes.Float64Type, []interface{}{55.0, 2, 18.5})}},
+				data.NewArrayFromArray(&data.Float64Type, []interface{}{55.0, 2, 18.5})}},
 			want: []interface{}{2.0, 18.5, 55.0},
 		},
 		{
 			name: "string sort",
 			args: args{[]interface{}{
-				datatypes.NewArrayFromArray(&datatypes.StringType, []interface{}{"pony", "cake", "unicorn", 5})}},
+				data.NewArrayFromArray(&data.StringType, []interface{}{"pony", "cake", "unicorn", 5})}},
 			want: []interface{}{"5", "cake", "pony", "unicorn"},
 		},
 		// TODO: Add test cases.
@@ -121,7 +121,7 @@ func TestFunctionSort(t *testing.T) {
 
 				return
 			}
-			gotArray, ok := got.(*datatypes.EgoArray)
+			gotArray, ok := got.(*data.EgoArray)
 			if !ok || !reflect.DeepEqual(gotArray.BaseArray(), tt.want) {
 				t.Errorf("FunctionSort() = %v, want %v", got, tt.want)
 			}
@@ -143,16 +143,16 @@ func TestFunctionMembers(t *testing.T) {
 		{
 			name: "simple struct",
 			args: args{[]interface{}{
-				datatypes.NewStructFromMap(
+				data.NewStructFromMap(
 					map[string]interface{}{"name": "Tom", "age": 55},
 				),
 			}},
-			want: datatypes.NewArrayFromArray(&datatypes.StringType, []interface{}{"age", "name"}),
+			want: data.NewArrayFromArray(&data.StringType, []interface{}{"age", "name"}),
 		},
 		{
 			name: "empty struct",
-			args: args{[]interface{}{datatypes.NewStruct(&datatypes.StructType)}},
-			want: datatypes.NewArrayFromArray(&datatypes.StringType, []interface{}{}),
+			args: args{[]interface{}{data.NewStruct(&data.StructType)}},
+			want: data.NewArrayFromArray(&data.StringType, []interface{}{}),
 		},
 		{
 			name:    "wrong type struct",
@@ -195,27 +195,27 @@ func TestReflect(t *testing.T) {
 			args: args{
 				s: nil,
 				args: []interface{}{
-					datatypes.NewStructFromMap(map[string]interface{}{
+					data.NewStructFromMap(map[string]interface{}{
 						"name": "Tom",
 						"age":  55,
 					}),
 				},
 			},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			want: data.NewStructFromMap(map[string]interface{}{
 				"basetype": "struct{age int, name string}",
 				"type":     "struct{age int, name string}",
 				"native":   true,
 				"readonly": false,
 				"static":   true,
 				"istype":   false,
-				"members":  datatypes.NewArrayFromArray(&datatypes.StringType, []interface{}{"age", "name"}),
+				"members":  data.NewArrayFromArray(&data.StringType, []interface{}{"age", "name"}),
 			}),
 			wantErr: false,
 		},
 		{
 			name: "simple integer value",
 			args: args{s: nil, args: []interface{}{33}},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			want: data.NewStructFromMap(map[string]interface{}{
 				"basetype": "int",
 				"type":     "int",
 				"istype":   false,
@@ -225,7 +225,7 @@ func TestReflect(t *testing.T) {
 		{
 			name: "simple string value",
 			args: args{s: nil, args: []interface{}{"stuff"}},
-			want: datatypes.NewStructFromMap(map[string]interface{}{
+			want: data.NewStructFromMap(map[string]interface{}{
 				"basetype": "string",
 				"type":     "string",
 				"istype":   false,
@@ -309,14 +309,14 @@ func TestLength(t *testing.T) {
 		{
 			name: "simple array",
 			args: []interface{}{
-				datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{1, 2, 3, 4}),
+				data.NewArrayFromArray(&data.IntType, []interface{}{1, 2, 3, 4}),
 			},
 			want: 4,
 		},
 		{
 			name: "simple map",
 			args: []interface{}{
-				datatypes.NewMapFromMap(
+				data.NewMapFromMap(
 					map[string]interface{}{
 						"name": "Bob",
 						"age":  35,

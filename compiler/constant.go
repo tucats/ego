@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -42,7 +42,7 @@ func (c *Compiler) compileConst() error {
 		// is not truly constant. We keep a list of all constant values found by this compiler
 		// instance.
 		for _, i := range vx.Opcodes() {
-			if i.Operation == bytecode.Load && !util.InList(datatypes.String(i.Operand), c.constants...) {
+			if i.Operation == bytecode.Load && !util.InList(data.String(i.Operand), c.constants...) {
 				return c.newError(errors.ErrInvalidConstant)
 			}
 		}

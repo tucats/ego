@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -34,7 +34,7 @@ func (c *Compiler) reference() error {
 			colon := c.t.Peek(3)
 
 			if name.IsIdentifier() && colon == tokenizer.ColonToken {
-				c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
+				c.b.Emit(bytecode.Push, data.TypeMDKey)
 
 				err := c.expressionAtom()
 				if err != nil {
@@ -43,7 +43,7 @@ func (c *Compiler) reference() error {
 
 				i := c.b.Opcodes()
 				ix := i[len(i)-1]
-				ix.Operand = datatypes.Int(ix.Operand) + 1 // __type
+				ix.Operand = data.Int(ix.Operand) + 1 // __type
 				i[len(i)-1] = ix
 			} else {
 				parsing = false
@@ -83,7 +83,7 @@ func (c *Compiler) reference() error {
 			} else {
 				// Is it a generator for a type?
 				if c.t.Peek(1) == tokenizer.DataBeginToken && c.t.Peek(2).IsIdentifier() && c.t.Peek(3) == tokenizer.ColonToken {
-					c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
+					c.b.Emit(bytecode.Push, data.TypeMDKey)
 
 					err := c.expressionAtom()
 					if err != nil {
@@ -92,7 +92,7 @@ func (c *Compiler) reference() error {
 
 					i := c.b.Opcodes()
 					ix := i[len(i)-1]
-					ix.Operand = datatypes.Int(ix.Operand) + 1 // __type and
+					ix.Operand = data.Int(ix.Operand) + 1 // __type and
 					i[len(i)-1] = ix
 
 					return nil

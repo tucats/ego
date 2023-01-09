@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/util"
 )
@@ -31,7 +31,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	// Verify that the parameters are valid, if given.
 	if invalid := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   datatypes.StringTypeName,
+		defs.UserParameterName:   data.StringTypeName,
 	}); invalid != nil {
 		util.ErrorResponse(w, sessionID, invalid.Error(), http.StatusBadRequest)
 
@@ -126,8 +126,8 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	// Verify that the parameters are valid, if given.
 	if validationErr := util.ValidateParameters(r.URL, map[string]string{
-		defs.UserParameterName:     datatypes.StringTypeName,
-		defs.AbstractParameterName: datatypes.BoolTypeName,
+		defs.UserParameterName:     data.StringTypeName,
+		defs.AbstractParameterName: data.BoolTypeName,
 	}); validationErr != nil {
 		util.ErrorResponse(w, sessionID, validationErr.Error(), http.StatusBadRequest)
 
@@ -257,7 +257,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
 				if keywordMatch(column.Type, "time", "date", "timestamp") {
-					text := strings.TrimPrefix(strings.TrimSuffix(datatypes.String(v), "\""), "\"")
+					text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
 					ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
 				}
@@ -341,13 +341,13 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 
 	// Verify that the parameters are valid, if given.
 	if validateErr := util.ValidateParameters(r.URL, map[string]string{
-		defs.StartParameterName:    datatypes.IntTypeName,
-		defs.LimitParameterName:    datatypes.IntTypeName,
+		defs.StartParameterName:    data.IntTypeName,
+		defs.LimitParameterName:    data.IntTypeName,
 		defs.ColumnParameterName:   "list",
 		defs.SortParameterName:     "list",
-		defs.AbstractParameterName: datatypes.BoolTypeName,
+		defs.AbstractParameterName: data.BoolTypeName,
 		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     datatypes.StringTypeName,
+		defs.UserParameterName:     data.StringTypeName,
 	}); validateErr != nil {
 		util.ErrorResponse(w, sessionID, validateErr.Error(), http.StatusBadRequest)
 
@@ -470,9 +470,9 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 	// Verify that the parameters are valid, if given.
 	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName:   defs.Any,
-		defs.UserParameterName:     datatypes.StringTypeName,
-		defs.ColumnParameterName:   datatypes.StringTypeName,
-		defs.AbstractParameterName: datatypes.BoolTypeName,
+		defs.UserParameterName:     data.StringTypeName,
+		defs.ColumnParameterName:   data.StringTypeName,
+		defs.AbstractParameterName: data.BoolTypeName,
 	}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
@@ -591,11 +591,11 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		tx, _ := db.Begin()
 
 		// Loop over the row set doing the update
-		for _, data := range rowSet.Rows {
+		for _, rowData := range rowSet.Rows {
 			hasRowID := false
 
-			if v, found := data[defs.RowIDName]; found {
-				if datatypes.String(v) != "" {
+			if v, found := rowData[defs.RowIDName]; found {
+				if data.String(v) != "" {
 					hasRowID = true
 				}
 			}
@@ -606,13 +606,13 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				}
 
 				if excluded {
-					delete(data, key)
+					delete(rowData, key)
 				}
 			}
 
-			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
+			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, rowData)
 
-			q, values := formUpdateQuery(r.URL, user, data)
+			q, values := formUpdateQuery(r.URL, user, rowData)
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
 				util.ErrorResponse(w, sessionID, filterErrorMessage(q), http.StatusBadRequest)
 
@@ -706,12 +706,12 @@ func useAbstract(r *http.Request) bool {
 				return true
 			}
 
-			if len(v) == 1 && datatypes.String(v[0]) == "" {
+			if len(v) == 1 && data.String(v[0]) == "" {
 				return true
 			}
 
 			if len(v) == 1 {
-				flag = datatypes.Bool(v[0])
+				flag = data.Bool(v[0])
 			}
 
 			ui.Debug(ui.RestLogger, "Abstract parameter value: %v", flag)

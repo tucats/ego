@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -44,7 +44,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 func popScopeByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
-		count = datatypes.Int(i)
+		count = data.Int(i)
 	}
 
 	for count > 0 {
@@ -77,11 +77,11 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	wasList := false
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
-		name = datatypes.String(operands[0])
+		name = data.String(operands[0])
 		value = operands[1]
 		wasList = true
 	} else {
-		name = datatypes.String(i)
+		name = data.String(i)
 	}
 
 	if c.symbolIsConstant(name) {
@@ -102,7 +102,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 
 // symbolCreateByteCode instruction processor.
 func symbolCreateByteCode(c *Context, i interface{}) error {
-	n := datatypes.String(i)
+	n := data.String(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -117,7 +117,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 
 // symbolCreateIfByteCode instruction processor.
 func symbolCreateIfByteCode(c *Context, i interface{}) error {
-	n := datatypes.String(i)
+	n := data.String(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -141,7 +141,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 
 // symbolDeleteByteCode instruction processor.
 func symbolDeleteByteCode(c *Context, i interface{}) error {
-	n := datatypes.String(i)
+	n := data.String(i)
 
 	err := c.symbolDelete(n)
 	if err != nil {
@@ -162,7 +162,7 @@ func constantByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
-	varname := datatypes.String(i)
+	varname := data.String(i)
 
 	err = c.constantSet(varname, v)
 	if err != nil {
@@ -184,7 +184,7 @@ func (c *Context) syncPackageSymbols() error {
 		}
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
-			if m, ok := pkg.(*datatypes.EgoPackage); ok {
+			if m, ok := pkg.(*data.EgoPackage); ok {
 				for _, k := range packageSymbols.Names() {
 					if util.HasCapitalizedName(k) {
 						v, _ := packageSymbols.Get(k)

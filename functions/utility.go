@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 // Sleep implements util.sleep().
 func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	duration, err := time.ParseDuration(datatypes.String(args[0]))
+	duration, err := time.ParseDuration(data.String(args[0]))
 	if err == nil {
 		time.Sleep(duration)
 	} else {
@@ -27,7 +27,7 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // ProfileGet implements the profile.get() function.
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	key := datatypes.String(args[0])
+	key := data.String(args[0])
 
 	return settings.Get(key), nil
 }
@@ -40,7 +40,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		return nil, errors.EgoError(errors.ErrArgumentCount).In("Set()")
 	}
 
-	key := datatypes.String(args[0])
+	key := data.String(args[0])
 	isEgoSetting := strings.HasPrefix(key, "ego.")
 
 	// Quick check here. The key must already exist if it's one of the
@@ -56,7 +56,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	mode := "interactive"
 	if modeValue, found := symbols.Get("__exec_mode"); found {
-		mode = datatypes.String(modeValue)
+		mode = data.String(modeValue)
 	}
 
 	if mode != "test" &&
@@ -68,7 +68,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
-	value := datatypes.String(args[1])
+	value := data.String(args[1])
 	if value == "" {
 		err = settings.Delete(key)
 	} else {
@@ -100,7 +100,7 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		result[i] = key
 	}
 
-	return datatypes.NewArrayFromArray(&datatypes.StringType, result), nil
+	return data.NewArrayFromArray(&data.StringType, result), nil
 }
 
 // Length implements the len() function.
@@ -111,7 +111,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	switch arg := args[0].(type) {
 	// For a channel, it's length either zero if it's drained, or bottomless
-	case *datatypes.Channel:
+	case *data.Channel:
 		size := int(math.MaxInt32)
 		if arg.IsEmpty() {
 			size = 0
@@ -119,23 +119,23 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		return size, nil
 
-	case *datatypes.EgoArray:
+	case *data.EgoArray:
 		return arg.Len(), nil
 
 	case error:
 		return len(arg.Error()), nil
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		return len(arg.Keys()), nil
 
-	case *datatypes.EgoPackage:
-		return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(arg).String())
+	case *data.EgoPackage:
+		return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(arg).String())
 
 	case nil:
 		return 0, nil
 
 	default:
-		v := datatypes.Coerce(args[0], "")
+		v := data.Coerce(args[0], "")
 		if v == nil {
 			return 0, nil
 		}
@@ -148,7 +148,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // bytes like len() does.
 func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 
 	for range v {
 		count++
@@ -160,7 +160,7 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // GetEnv implements the util.getenv() function which reads
 // an environment variable from the os.
 func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return os.Getenv(datatypes.String(args[0])), nil
+	return os.Getenv(data.String(args[0])), nil
 }
 
 // GetMode implements the util.Mode() function which reports the runtime mode.
@@ -176,8 +176,8 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Members gets an array of the names of the fields in a structure.
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
-	case *datatypes.EgoMap:
-		keys := datatypes.NewArray(&datatypes.StringType, 0)
+	case *data.EgoMap:
+		keys := data.NewArray(&data.StringType, 0)
 		keyList := v.Keys()
 
 		for i, v := range keyList {
@@ -188,14 +188,14 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 		return keys, nil
 
-	case *datatypes.EgoStruct:
+	case *data.EgoStruct:
 		return v.FieldNamesArray(), nil
 
-	case *datatypes.EgoPackage:
-		keys := datatypes.NewArray(&datatypes.StringType, 0)
+	case *data.EgoPackage:
+		keys := data.NewArray(&data.StringType, 0)
 
 		for _, k := range v.Keys() {
-			if !strings.HasPrefix(k, datatypes.MetadataPrefix) {
+			if !strings.HasPrefix(k, data.MetadataPrefix) {
 				keys.Append(k)
 			}
 		}
@@ -218,7 +218,7 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	switch v := args[0].(type) {
 	case bool, byte, int32, int, int64, float32, float64:
-		os.Exit(datatypes.Int(args[0]))
+		os.Exit(data.Int(args[0]))
 
 	case string:
 		return nil, errors.NewMessage(v)
@@ -246,10 +246,10 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := make([]interface{}, 0)
-	kind := &datatypes.InterfaceType
+	kind := &data.InterfaceType
 
 	for i, j := range args {
-		if array, ok := j.(*datatypes.EgoArray); ok && i == 0 {
+		if array, ok := j.(*data.EgoArray); ok && i == 0 {
 			if !kind.IsInterface() {
 				if err := array.Validate(kind); err != nil {
 					return nil, err
@@ -264,14 +264,14 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)
 		} else {
-			if !kind.IsInterface() && !datatypes.TypeOf(j).IsType(kind) {
+			if !kind.IsInterface() && !data.TypeOf(j).IsType(kind) {
 				return nil, errors.EgoError(errors.ErrWrongArrayValueType).In("append()")
 			}
 			result = append(result, j)
 		}
 	}
 
-	return datatypes.NewArrayFromArray(kind, result), nil
+	return data.NewArrayFromArray(kind, result), nil
 }
 
 // Delete can be used three ways. To delete a member from a structure, to delete
@@ -293,13 +293,13 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case string:
 		return nil, s.Delete(v, false)
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		_, err := v.Delete(args[1])
 
 		return v, err
 
-	case *datatypes.EgoArray:
-		i := datatypes.Int(args[1])
+	case *data.EgoArray:
+		i := data.Int(args[1])
 		err := v.Delete(i)
 
 		return v, err
@@ -314,7 +314,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, found := s.Get("__cli_args")
 	if !found {
-		r = datatypes.NewArray(&datatypes.StringType, 0)
+		r = data.NewArray(&data.StringType, 0)
 	}
 
 	return r, nil
@@ -324,12 +324,12 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // array type (using the Go native version), and the second argument is the size.
 func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	kind := args[0]
-	size := datatypes.Int(args[1])
+	size := data.Int(args[1])
 
 	// if it's an Ego type, get the model for the type.
-	if v, ok := kind.(*datatypes.Type); ok {
-		kind = datatypes.InstanceOfType(v)
-	} else if egoArray, ok := kind.(*datatypes.EgoArray); ok {
+	if v, ok := kind.(*data.Type); ok {
+		kind = data.InstanceOfType(v)
+	} else if egoArray, ok := kind.(*data.EgoArray); ok {
 		return egoArray.Make(size), nil
 	}
 
@@ -344,10 +344,10 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If the model is a type we know about, let's go ahead and populate the array
 	// with specific values.
 	switch v := kind.(type) {
-	case *datatypes.Channel:
-		return datatypes.NewChannel(size), nil
+	case *data.Channel:
+		return data.NewChannel(size), nil
 
-	case *datatypes.EgoArray:
+	case *data.EgoArray:
 		return v.Make(size), nil
 
 	case []int, int:
@@ -389,7 +389,7 @@ func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result["system"] = bToMb(m.Sys)
 	result["gc"] = int(m.NumGC)
 
-	return datatypes.NewStructFromMap(result), nil
+	return data.NewStructFromMap(result), nil
 }
 
 func bToMb(b uint64) float64 {
@@ -411,7 +411,7 @@ func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Now scan over the list of now-unique names and make an Ego array
 	// out of the values.
-	packages := datatypes.NewArray(&datatypes.StringType, 0)
+	packages := data.NewArray(&data.StringType, 0)
 	for name := range uniqueNames {
 		packages.Append(name)
 	}
@@ -441,7 +441,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 		// Get the symbol. IF it is a package, add it's name
 		// to our list.
 		v, _ := s.Get(k)
-		if p, ok := v.(*datatypes.EgoPackage); ok {
+		if p, ok := v.(*data.EgoPackage); ok {
 			result = append(result, p.Name())
 		}
 	}

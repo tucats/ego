@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -41,7 +41,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-				if _, ok := strconv.Atoi(datatypes.String(values[0])); ok != nil {
+				if _, ok := strconv.Atoi(data.String(values[0])); ok != nil {
 					return errors.EgoError(errors.ErrInvalidInteger).Context(name)
 				}
 
@@ -50,7 +50,7 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
 				}
 
-				if len(values) == 1 && datatypes.String(values[0]) != "" {
+				if len(values) == 1 && data.String(values[0]) != "" {
 					if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
 						return errors.EgoError(errors.ErrInvalidBooleanValue).Context(name)
 					}

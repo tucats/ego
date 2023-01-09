@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -34,7 +34,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		attr = &SymbolAttribute{}
 
 		if found {
-			status = datatypes.Format(v)
+			status = data.Format(v)
 			if len(status) > 60 {
 				status = status[:57] + "..."
 			}
@@ -68,7 +68,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 	if ui.IsActive(ui.SymbolLogger) {
 		status := "<not found>"
 		if found {
-			status = datatypes.Format(v)
+			status = data.Format(v)
 			if len(status) > 60 {
 				status = status[:57] + "..."
 			}
@@ -129,7 +129,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
-			s.Name, s.id, name, datatypes.Format(v))
+			s.Name, s.id, name, data.Format(v))
 	}
 
 	return nil
@@ -198,7 +198,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	symbolTable.SetValue(attr.Slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
-		valueString := datatypes.Format(v)
+		valueString := data.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
 		}
@@ -245,7 +245,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	symbolTable.SetValue(attr.Slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
-		valueString := datatypes.Format(v)
+		valueString := data.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
 		}
@@ -296,7 +296,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		valueString := datatypes.Format(v)
+		valueString := data.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
 		}

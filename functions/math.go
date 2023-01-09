@@ -4,7 +4,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -18,19 +18,19 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	r := args[0]
 
 	for _, v := range args[1:] {
-		v = datatypes.Coerce(v, r)
+		v = data.Coerce(v, r)
 		if v == nil {
 			return nil, errors.EgoError(errors.ErrInvalidType).In("min()")
 		}
 
 		switch rv := r.(type) {
 		case byte, int32, int, int64:
-			if datatypes.Int(v) < datatypes.Int(r) {
+			if data.Int(v) < data.Int(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if datatypes.Float64(v) < datatypes.Float64(r) {
+			if data.Float64(v) < data.Float64(r) {
 				r = v
 			}
 
@@ -44,7 +44,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				r = v
 			}
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(rv).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(rv).String())
 		}
 	}
 
@@ -60,19 +60,19 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	r := args[0]
 
 	for _, xv := range args[1:] {
-		v := datatypes.Coerce(xv, r)
+		v := data.Coerce(xv, r)
 		if v == nil {
-			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(r).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(data.TypeOf(r).String())
 		}
 
 		switch rr := r.(type) {
 		case byte, int32, int, int64:
-			if datatypes.Int(v) > datatypes.Int(r) {
+			if data.Int(v) > data.Int(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if datatypes.Float64(v) > datatypes.Float64(r) {
+			if data.Float64(v) > data.Float64(r) {
 				r = v
 			}
 
@@ -87,7 +87,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			}
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(datatypes.TypeOf(rr).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(data.TypeOf(rr).String())
 		}
 	}
 
@@ -99,9 +99,9 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	base := args[0]
 
 	for _, addendV := range args[1:] {
-		addend := datatypes.Coerce(addendV, base)
+		addend := data.Coerce(addendV, base)
 		if addend == nil {
-			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(addendV).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(data.TypeOf(addendV).String())
 		}
 
 		switch rv := addend.(type) {
@@ -130,7 +130,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			base = base.(string) + addend.(string)
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(datatypes.TypeOf(rv).String())
+			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(data.TypeOf(rv).String())
 		}
 	}
 
@@ -139,26 +139,26 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 // Sqrt implements the sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := datatypes.Float64(args[0])
+	f := data.Float64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := datatypes.Float64(args[0])
+	f := data.Float64(args[0])
 
 	return math.Abs(f), nil
 }
 
 // Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return math.Log(datatypes.Float64(args[0])), nil
+	return math.Log(data.Float64(args[0])), nil
 }
 
 // Random implmeents the math.Random function.
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	max := datatypes.Int(args[0])
+	max := data.Int(args[0])
 	if max <= 0 {
 		return nil, errors.EgoError(errors.ErrInvalidFunctionArgument).Context(max)
 	}

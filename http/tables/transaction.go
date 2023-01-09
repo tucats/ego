@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
@@ -68,7 +68,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 	// Verify that the parameters are valid, if given.
 	if err := util.ValidateParameters(r.URL, map[string]string{
 		defs.FilterParameterName: defs.Any,
-		defs.UserParameterName:   datatypes.StringTypeName,
+		defs.UserParameterName:   data.StringTypeName,
 	}); err != nil {
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
@@ -230,7 +230,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 						return
 					}
 
-					if datatypes.Bool(result) {
+					if data.Bool(result) {
 						_ = tx.Rollback()
 
 						ui.Debug(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
@@ -344,7 +344,7 @@ func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) 
 
 		msg.WriteString(key)
 		msg.WriteString(": ")
-		msg.WriteString(datatypes.String(value))
+		msg.WriteString(data.String(value))
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
@@ -518,7 +518,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 
 					msg.WriteString(columnNames[i])
 					msg.WriteString("=")
-					msg.WriteString(datatypes.String(v))
+					msg.WriteString(data.String(v))
 				}
 
 				ui.Debug(ui.TableLogger, "[%d] Read table to set symbols: %s", sessionID, msg.String())
@@ -869,7 +869,7 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 		// If it's one of the date/time values, make sure it is wrapped in single qutoes.
 		if keywordMatch(column.Type, "time", "date", "timestamp") {
-			text := strings.TrimPrefix(strings.TrimSuffix(datatypes.String(v), "\""), "\"")
+			text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
 			ui.Debug(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
 		}

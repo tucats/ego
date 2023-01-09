@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 import (
 	"encoding/json"
@@ -22,8 +22,8 @@ type EgoMap struct {
 }
 
 // Generate a new map value. The caller must supply the data type codes for the expected
-// key and value types (such as datatypes.StringType or datatypes.FloatType). You can also
-// use datatypes.InterfaceType for a type value, which means any type is accepted. The
+// key and value types (such as data.StringType or data.FloatType). You can also
+// use data.InterfaceType for a type value, which means any type is accepted. The
 // result is an initialized map that you can begin to store or read values from.
 func NewMap(keyType, valueType *Type) *EgoMap {
 	return &EgoMap{

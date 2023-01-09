@@ -3,7 +3,7 @@ package compiler
 import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -350,7 +350,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// If increment mode was used, then the increment is just to add (or subtract)
 	// 1 from the value.
 	if autoMode != bytecode.Load {
-		t := datatypes.String(incrementStore.Instruction(0).Operand)
+		t := data.String(incrementStore.Instruction(0).Operand)
 		incrementCode = bytecode.New("auto")
 
 		incrementCode.Emit(bytecode.Load, t)

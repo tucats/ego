@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -29,7 +29,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 	keys := make([]string, 0)
 
 	for k := range s.symbols {
-		if !strings.HasPrefix(k, datatypes.MetadataPrefix) && !strings.HasPrefix(k, "$") {
+		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
 			keys = append(keys, k)
 		}
 	}
@@ -47,22 +47,22 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		omitType := false
 		omitThisSymbol := false
 
-		dt := datatypes.TypeOf(v)
+		dt := data.TypeOf(v)
 		typeString := dt.String()
 
 		switch actual := v.(type) {
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoArray:
+		case *data.EgoArray:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoPackage:
-			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
-				typeString = datatypes.String(tsx)
+		case *data.EgoPackage:
+			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
+				typeString = data.String(tsx)
 			}
 
 			hasBuiltins := false
@@ -119,7 +119,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		if k == "_password" || k == "_token" {
 			b.WriteString("\"******\"")
 		} else {
-			b.WriteString(datatypes.Format(v))
+			b.WriteString(data.Format(v))
 		}
 
 		b.WriteString("\n")
@@ -144,7 +144,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 	keys := make([]string, 0)
 
 	for k := range s.symbols {
-		if !strings.HasPrefix(k, datatypes.MetadataPrefix) && !strings.HasPrefix(k, "$") {
+		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
 			keys = append(keys, k)
 		}
 	}
@@ -162,22 +162,22 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		v := s.GetValue(attr.Slot)
 		omitThisSymbol := false
 
-		dt := datatypes.TypeOf(v)
+		dt := data.TypeOf(v)
 		typeString := dt.String()
 
 		switch actual := v.(type) {
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoArray:
+		case *data.EgoArray:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			typeString = actual.TypeString()
 
-		case *datatypes.EgoPackage:
-			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
-				typeString = datatypes.String(tsx)
+		case *data.EgoPackage:
+			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
+				typeString = data.String(tsx)
 			}
 
 			hasBuiltins := false
@@ -223,8 +223,8 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			v = "\"******\""
 		}
 
-		row[2] = datatypes.String(attr.Readonly)
-		row[3] = datatypes.Format(v)
+		row[2] = data.String(attr.Readonly)
+		row[3] = data.Format(v)
 		rows = append(rows, row)
 	}
 

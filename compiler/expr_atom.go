@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -55,7 +55,7 @@ func (c *Compiler) expressionAtom() error {
 	// Is an empty struct?
 	if t == tokenizer.EmptyInitializerToken {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, datatypes.NewStruct(&datatypes.StructType).SetStatic(false))
+		c.b.Emit(bytecode.Push, data.NewStruct(&data.StructType).SetStatic(false))
 
 		return nil
 	}
@@ -81,7 +81,7 @@ func (c *Compiler) expressionAtom() error {
 				return err
 			}
 
-			tempName := datatypes.GenerateName()
+			tempName := data.GenerateName()
 
 			c.b.Emit(bytecode.StoreAlways, tempName)
 			c.b.Emit(bytecode.AddressOf, tempName)
@@ -105,7 +105,7 @@ func (c *Compiler) expressionAtom() error {
 				return err
 			}
 
-			tempName := datatypes.GenerateName()
+			tempName := data.GenerateName()
 
 			c.b.Emit(bytecode.StoreAlways, tempName)
 			c.b.Emit(bytecode.DeRef, tempName)

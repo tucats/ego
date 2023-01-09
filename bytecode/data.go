@@ -1,7 +1,7 @@
 package bytecode
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -43,10 +43,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
-		name = datatypes.String(operands[0])
+		name = data.String(operands[0])
 		value = operands[1]
 	} else {
-		name = datatypes.String(i)
+		name = data.String(i)
 
 		value, err = c.Pop()
 		if err != nil {
@@ -75,10 +75,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(name) > 1 && name[0:1] == DiscardedVariableName {
 		switch a := value.(type) {
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			a.ImmutableKeys(true)
 
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -100,14 +100,14 @@ func storeChanByteCode(c *Context, i interface{}) error {
 
 	sourceChan := false
 
-	if _, ok := v.(*datatypes.Channel); ok {
+	if _, ok := v.(*data.Channel); ok {
 		sourceChan = true
 	}
 
 	// Get the name that is to be used on the other side. If the other item is
 	// already known to be a channel, then create this variable (with a nil value)
 	// so it can receive the channel info regardless of its type.
-	varname := datatypes.String(i)
+	varname := data.String(i)
 
 	x, found := c.symbolGet(varname)
 	if !found {
@@ -123,7 +123,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	destChan := false
-	if _, ok := x.(*datatypes.Channel); ok {
+	if _, ok := x.(*data.Channel); ok {
 		destChan = true
 	}
 
@@ -134,13 +134,13 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	var datum interface{}
 
 	if sourceChan {
-		datum, err = v.(*datatypes.Channel).Receive()
+		datum, err = v.(*data.Channel).Receive()
 	} else {
 		datum = v
 	}
 
 	if destChan {
-		err = x.(*datatypes.Channel).Send(datum)
+		err = x.(*data.Channel).Send(datum)
 	} else {
 		if varname != DiscardedVariableName {
 			err = c.symbolSet(varname, datum)
@@ -162,7 +162,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get the name.
-	varname := datatypes.String(i)
+	varname := data.String(i)
 
 	c.symbols.Root().SetAlways(varname, v)
 
@@ -170,10 +170,10 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
-		case datatypes.EgoMap:
+		case data.EgoMap:
 			a.ImmutableKeys(true)
 
-		case datatypes.EgoStruct:
+		case data.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -184,7 +184,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
 func storeViaPointerByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 
 	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
 		return c.newError(errors.ErrInvalidIdentifier)
@@ -195,7 +195,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	if datatypes.IsNil(dest) {
+	if data.IsNil(dest) {
 		return c.newError(errors.ErrNilPointerReference).Context(name)
 	}
 
@@ -215,7 +215,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *bool:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, true)
+			d = data.Coerce(src, true)
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -225,7 +225,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *byte:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, byte(1))
+			d = data.Coerce(src, byte(1))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -235,7 +235,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *int32:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, int32(1))
+			d = data.Coerce(src, int32(1))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -245,7 +245,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *int:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, int(1))
+			d = data.Coerce(src, int(1))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -255,7 +255,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *int64:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, int64(1))
+			d = data.Coerce(src, int64(1))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -265,7 +265,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *float64:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, float64(0))
+			d = data.Coerce(src, float64(0))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -275,7 +275,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *float32:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, float32(0))
+			d = data.Coerce(src, float32(0))
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
@@ -285,26 +285,26 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *string:
 		d := src
 		if !c.Static {
-			d = datatypes.Coerce(src, "")
+			d = data.Coerce(src, "")
 		} else if _, ok := d.(string); !ok {
 			return c.newError(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(string)
 
-	case *datatypes.EgoArray:
-		*actual, ok = src.(datatypes.EgoArray)
+	case *data.EgoArray:
+		*actual, ok = src.(data.EgoArray)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
-	case *datatypes.EgoMap:
-		*actual, ok = src.(datatypes.EgoMap)
+	case *data.EgoMap:
+		*actual, ok = src.(data.EgoMap)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
 
-	case **datatypes.Channel:
-		*actual, ok = src.(*datatypes.Channel)
+	case **data.Channel:
+		*actual, ok = src.(*data.Channel)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
@@ -325,10 +325,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	var err error
 
 	if array, ok := i.([]interface{}); ok && len(array) == 2 {
-		symbolName = datatypes.String(array[0])
+		symbolName = data.String(array[0])
 		v = array[1]
 	} else {
-		symbolName = datatypes.String(i)
+		symbolName = data.String(i)
 
 		v, err = c.Pop()
 		if err != nil {
@@ -346,10 +346,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(symbolName) > 1 && symbolName[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			a.ImmutableKeys(true)
 
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			a.SetReadonly(true)
 		}
 	}
@@ -359,7 +359,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 
 // loadByteCode instruction processor.
 func loadByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier).Context(name)
 	}
@@ -391,8 +391,8 @@ func explodeByteCode(c *Context, i interface{}) error {
 
 	empty := true
 
-	if m, ok := v.(*datatypes.EgoMap); ok {
-		if m.KeyType().Kind() != datatypes.StringKind {
+	if m, ok := v.(*data.EgoMap); ok {
+		if m.KeyType().Kind() != data.StringKind {
 			err = c.newError(errors.ErrWrongMapKeyType)
 		} else {
 			keys := m.Keys()
@@ -401,7 +401,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 				empty = false
 				v, _, _ := m.Get(k)
 
-				c.symbolSetAlways(datatypes.String(k), v)
+				c.symbolSetAlways(data.String(k), v)
 			}
 
 			if err == nil {
@@ -409,7 +409,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 			}
 		}
 	} else {
-		err = c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
+		err = c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 	}
 
 	return err

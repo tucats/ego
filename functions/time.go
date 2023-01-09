@@ -3,21 +3,21 @@ package functions
 import (
 	"time"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
-var timeType *datatypes.Type
+var timeType *data.Type
 
 func initializeType() {
 	if timeType == nil {
-		structType := datatypes.Structure()
-		structType.DefineField("time", &datatypes.InterfaceType)
+		structType := data.Structure()
+		structType.DefineField("time", &data.InterfaceType)
 
-		t := datatypes.TypeDefinition("time.Time", structType)
+		t := data.TypeDefinition("time.Time", structType)
 		t.DefineFunction("Add", TimeAdd)
 		t.DefineFunction("Format", TimeFormat)
 		t.DefineFunction("SleepUntil", TimeSleep)
@@ -36,11 +36,11 @@ func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // TimeParse time.Parse().
 func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str := datatypes.String(args[0])
+	str := data.String(args[0])
 	fmt := basicLayout
 
 	if len(args) > 1 {
-		fmt = datatypes.String(args[1])
+		fmt = data.String(args[1])
 	}
 
 	t, err := time.Parse(fmt, str)
@@ -59,7 +59,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	t, err := getTime(s)
 	if err == nil {
-		d, err := time.ParseDuration(datatypes.String(args[0]))
+		d, err := time.ParseDuration(data.String(args[0]))
 		if err == nil {
 			t2 := t.Add(d)
 
@@ -100,7 +100,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 
-	layout := datatypes.String(args[0])
+	layout := data.String(args[0])
 
 	return t.Format(layout), nil
 }
@@ -168,7 +168,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 // getTimeV extracts a time.Time value from an Ego time
 // object, by looking in the [time] member.
 func getTimeV(timeV interface{}) (*time.Time, error) {
-	if m, ok := timeV.(*datatypes.EgoStruct); ok {
+	if m, ok := timeV.(*data.EgoStruct); ok {
 		if tv, ok := m.Get("time"); ok {
 			if tp, ok := tv.(*time.Time); ok {
 				return tp, nil
@@ -183,7 +183,7 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 func MakeTime(t *time.Time) interface{} {
 	initializeType()
 
-	r := datatypes.NewStruct(timeType)
+	r := data.NewStruct(timeType)
 	_ = r.Set("time", t)
 
 	r.SetReadonly(true)

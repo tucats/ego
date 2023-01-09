@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 import (
 	"sort"
@@ -679,8 +679,8 @@ func IsNumeric(i interface{}) bool {
 }
 
 // TypeOf accepts an interface of arbitrary Ego or native data type,
-// and returns the associated type specification, such as datatypes.intKind
-// or datatypes.stringKind.
+// and returns the associated type specification, such as data.intKind
+// or data.stringKind.
 func TypeOf(i interface{}) *Type {
 	switch v := i.(type) {
 	case Type:

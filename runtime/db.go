@@ -8,7 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -18,7 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var dbTypeDef *datatypes.Type
+var dbTypeDef *data.Type
 var dbTypeDefLock sync.Mutex
 
 func initDBTypeDef() {
@@ -52,7 +52,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initDBTypeDef()
 
 	// Get the connection string, which MUST be in URL format.
-	connStr := datatypes.String(args[0])
+	connStr := data.String(args[0])
 
 	url, err := url.Parse(connStr)
 	if err != nil {
@@ -75,7 +75,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
 
-	result := datatypes.NewStruct(dbTypeDef)
+	result := data.NewStruct(dbTypeDef)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(constrFieldName, connStr)
 	result.SetAlways(asStructFieldName, false)
@@ -185,7 +185,7 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 
 	this := getThisStruct(s)
-	this.SetAlways(asStructFieldName, datatypes.Bool(args[0]))
+	this.SetAlways(asStructFieldName, data.Bool(args[0]))
 
 	return this, nil
 }
@@ -233,14 +233,14 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	this := getThisStruct(s)
-	asStruct := datatypes.Bool(this.GetAlways(asStructFieldName))
+	asStruct := data.Bool(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
 
 	var rows *sql.Rows
 
 	var e2 error
 
-	query := datatypes.String(args[0])
+	query := data.String(args[0])
 	ui.Debug(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
@@ -311,11 +311,11 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Need to convert the results from a slice to an actual array
 	this.SetAlways(rowCountFieldName, size)
-	r := datatypes.NewArray(&datatypes.InterfaceType, size)
+	r := data.NewArray(&data.InterfaceType, size)
 
 	if asStruct {
 		for i, v := range mapResult {
-			r.SetAlways(i, datatypes.NewStructFromMap(v))
+			r.SetAlways(i, data.NewStructFromMap(v))
 		}
 	} else {
 		for i, v := range arrayResult {
@@ -342,7 +342,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	var err error
 
-	query := datatypes.String(args[0])
+	query := data.String(args[0])
 
 	ui.Debug(ui.DBLogger, "Executing: %s", query)
 
@@ -378,7 +378,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // the native client object.
 func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*datatypes.EgoStruct); ok {
+		if gc, ok := g.(*data.EgoStruct); ok {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {

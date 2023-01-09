@@ -6,13 +6,13 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
-var dbRowsTypeDef *datatypes.Type
+var dbRowsTypeDef *data.Type
 var dbRowsTypeDefLock sync.Mutex
 
 func initDBRowsTypeDef() {
@@ -45,7 +45,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	this := getThisStruct(s)
 	this.SetAlways(rowCountFieldName, -1)
 
-	query := datatypes.String(args[0])
+	query := data.String(args[0])
 
 	var rows *sql.Rows
 
@@ -67,7 +67,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	initDBRowsTypeDef()
 
-	result := datatypes.NewStruct(dbRowsTypeDef)
+	result := data.NewStruct(dbRowsTypeDef)
 	result.SetAlways(rowsFieldName, rows)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(dbFieldName, this)
@@ -146,8 +146,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
-	db := this.GetAlways(dbFieldName).(*datatypes.EgoStruct)
-	asStruct := datatypes.Bool(db.GetAlways(asStructFieldName))
+	db := this.GetAlways(dbFieldName).(*data.EgoStruct)
+	asStruct := data.Bool(db.GetAlways(asStructFieldName))
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)
@@ -169,8 +169,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			rowMap[v] = rowValues[i]
 		}
 
-		return functions.MultiValueReturn{Value: []interface{}{datatypes.NewMapFromMap(rowMap), nil}}, nil
+		return functions.MultiValueReturn{Value: []interface{}{data.NewMapFromMap(rowMap), nil}}, nil
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{datatypes.NewArrayFromArray(&datatypes.InterfaceType, rowValues), nil}}, nil
+	return functions.MultiValueReturn{Value: []interface{}{data.NewArrayFromArray(&data.InterfaceType, rowValues), nil}}, nil
 }

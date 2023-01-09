@@ -1,7 +1,7 @@
 package tokenizer
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 // Token defines a single token from the lexical scanning operation.
@@ -87,15 +87,15 @@ func (t Token) String() string {
 }
 
 func (t Token) Integer() int64 {
-	return datatypes.Int64(t.spelling)
+	return data.Int64(t.spelling)
 }
 
 func (t Token) Float() float64 {
-	return datatypes.Float64(t.spelling)
+	return data.Float64(t.spelling)
 }
 
 func (t Token) Boolean() bool {
-	return datatypes.Bool(t.spelling)
+	return data.Bool(t.spelling)
 }
 
 func (t Token) Spelling() string {

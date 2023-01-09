@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
@@ -55,9 +55,9 @@ type Compiler struct {
 	coercions             []*bytecode.ByteCode
 	constants             []string
 	deferQueue            []int
-	packages              map[string]*datatypes.EgoPackage
+	packages              map[string]*data.EgoPackage
 	packageMutex          sync.Mutex
-	types                 map[string]*datatypes.Type
+	types                 map[string]*data.Type
 	functionDepth         int
 	blockDepth            int
 	statementCount        int
@@ -76,9 +76,9 @@ func New(name string) *Compiler {
 		s:                     symbols.NewRootSymbolTable(name),
 		constants:             make([]string, 0),
 		deferQueue:            make([]int, 0),
-		types:                 map[string]*datatypes.Type{},
+		types:                 map[string]*data.Type{},
 		packageMutex:          sync.Mutex{},
-		packages:              map[string]*datatypes.EgoPackage{},
+		packages:              map[string]*data.EgoPackage{},
 		normalizedIdentifiers: false,
 		flags: flagSet{
 			extensionsEnabled: settings.GetBool(defs.ExtensionsEnabledSetting),
@@ -213,7 +213,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	added := false
 
 	pkg, _ := bytecode.GetPackage(pkgname)
-	symV, _ := pkg.Get(datatypes.SymbolsMDKey)
+	symV, _ := pkg.Get(data.SymbolsMDKey)
 	syms := symV.(*symbols.SymbolTable)
 
 	ui.Debug(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
@@ -334,11 +334,11 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 
 	for packageName, packageDictionary := range c.packages {
 		// Skip over any metadata
-		if strings.HasPrefix(packageName, datatypes.MetadataPrefix) {
+		if strings.HasPrefix(packageName, data.MetadataPrefix) {
 			continue
 		}
 
-		m := datatypes.NewPackage(packageName)
+		m := data.NewPackage(packageName)
 		keys := packageDictionary.Keys()
 
 		for _, k := range keys {
@@ -359,8 +359,8 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 		}
 		// Make sure the package is marked as readonly so the user can't modify
 		// any function definitions, etc. that are built in.
-		datatypes.SetMetadata(m, datatypes.TypeMDKey, datatypes.Package(packageName))
-		datatypes.SetMetadata(m, datatypes.ReadonlyMDKey, true)
+		data.SetMetadata(m, data.TypeMDKey, data.Package(packageName))
+		data.SetMetadata(m, data.ReadonlyMDKey, true)
 
 		if packageName != "" {
 			s.SetAlways(packageName, m)
@@ -487,13 +487,13 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		exitEnabled: c.exitEnabled,
 	}
 
-	packages := map[string]*datatypes.EgoPackage{}
+	packages := map[string]*data.EgoPackage{}
 
 	c.packageMutex.Lock()
 	defer c.packageMutex.Unlock()
 
 	for n, m := range c.packages {
-		packageDef := datatypes.NewPackage(n)
+		packageDef := data.NewPackage(n)
 
 		keys := m.Keys()
 		for _, k := range keys {

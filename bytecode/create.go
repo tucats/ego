@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -34,22 +34,22 @@ import (
 // and type. If the operand was 1, then the values of each
 // element of the array are set to the initial value.
 func makeArrayByteCode(c *Context, i interface{}) error {
-	var baseType *datatypes.Type
+	var baseType *data.Type
 
-	count := datatypes.Int(i)
+	count := data.Int(i)
 
 	if v, err := c.Pop(); err == nil {
 		if IsStackMarker(v) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		baseType = datatypes.TypeOf(v)
+		baseType = data.TypeOf(v)
 	}
 
 	isInt := baseType.IsIntegerType()
 	isFloat := baseType.IsFloatType()
 
-	a := datatypes.NewArray(baseType, count)
+	a := data.NewArray(baseType, count)
 
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
@@ -57,7 +57,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 				return c.newError(errors.ErrFunctionReturnedVoid)
 			}
 
-			t := datatypes.TypeOf(v)
+			t := data.TypeOf(v)
 
 			// If we are initializing any integer or float array, coerce the
 			// value to the correct type as long as the value is also an integer
@@ -106,17 +106,17 @@ func arrayByteCode(c *Context, i interface{}) error {
 
 	var count int
 
-	var kind *datatypes.Type
+	var kind *data.Type
 
 	if args, ok := i.([]interface{}); ok {
-		count = datatypes.Int(args[0])
-		kind = datatypes.TypeOf(args[1])
+		count = data.Int(args[0])
+		kind = data.TypeOf(args[1])
 	} else {
-		count = datatypes.Int(i)
-		kind = datatypes.Array(&datatypes.InterfaceType)
+		count = data.Int(i)
+		kind = data.Array(&data.InterfaceType)
 	}
 
-	array := datatypes.NewArray(kind.BaseType(), count)
+	array := data.NewArray(kind.BaseType(), count)
 
 	for n := 0; n < count; n++ {
 		v, err := c.Pop()
@@ -132,10 +132,10 @@ func arrayByteCode(c *Context, i interface{}) error {
 		if c.Static {
 			if n == 0 {
 				arrayType = reflect.TypeOf(v)
-				_ = array.SetType(datatypes.TypeOf(v))
+				_ = array.SetType(data.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
+					return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 				}
 			}
 		}
@@ -171,7 +171,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 //
 // Items on the stack are pulled off in pairs representing a
 // string containing the field name, and an arbitrary value.
-// Any field names that start with datatypes.MetadataPrefix ("__")
+// Any field names that start with data.MetadataPrefix ("__")
 // are considered metadata and are stored as metadata in the
 // resulting structure. This allows type names, etc. to be added
 // to the struct definition
@@ -179,10 +179,10 @@ func arrayByteCode(c *Context, i interface{}) error {
 func structByteCode(c *Context, i interface{}) error {
 	var model interface{}
 
-	count := datatypes.Int(i)
+	count := data.Int(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
-	typeInfo := &datatypes.StructType
+	typeInfo := &data.StructType
 	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and
@@ -193,8 +193,8 @@ func structByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		name := datatypes.String(nx)
-		if !strings.HasPrefix(name, datatypes.MetadataPrefix) {
+		name := data.String(nx)
+		if !strings.HasPrefix(name, data.MetadataPrefix) {
 			fields = append(fields, name)
 		}
 
@@ -208,8 +208,8 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
-		if name == datatypes.TypeMDKey {
-			if t, ok := value.(*datatypes.Type); ok {
+		if name == data.TypeMDKey {
+			if t, ok := value.(*data.Type); ok {
 				typeInfo = t
 				model = t.InstanceOf(t)
 				typeName = t.Name()
@@ -225,11 +225,11 @@ func structByteCode(c *Context, i interface{}) error {
 
 	if model != nil {
 		switch model := model.(type) {
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			// Check all the fields in the new value to ensure they
 			// are valid.
 			for k := range m {
-				if _, found := model.Get(k); !strings.HasPrefix(k, datatypes.MetadataPrefix) && !found {
+				if _, found := model.Get(k); !strings.HasPrefix(k, data.MetadataPrefix) && !found {
 					return c.newError(errors.ErrInvalidField, k)
 				}
 			}
@@ -259,14 +259,14 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 	} else {
 		// No type, default it to a struct.
-		t := datatypes.Structure()
+		t := data.Structure()
 		for _, name := range fields {
-			t.DefineField(name, datatypes.TypeOf(m[name]))
+			t.DefineField(name, data.TypeOf(m[name]))
 		}
 	}
 
 	// Put the newly created instance of a struct on the stack.
-	structure := datatypes.NewStructFromMap(m)
+	structure := data.NewStructFromMap(m)
 
 	if typeName != "" {
 		structure.AsType(typeInfo)
@@ -295,14 +295,14 @@ func structByteCode(c *Context, i interface{}) error {
 // Create a new map. The argument is the number of key/value
 // pairs on the stack, preceded by the key and value types.
 func makeMapByteCode(c *Context, i interface{}) error {
-	count := datatypes.Int(i)
+	count := data.Int(i)
 
 	v, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
-	keyType := datatypes.TypeOf(v)
+	keyType := data.TypeOf(v)
 
 	v, err = c.Pop()
 	if err != nil {
@@ -313,9 +313,9 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
-	valueType := datatypes.TypeOf(v)
+	valueType := data.TypeOf(v)
 
-	m := datatypes.NewMap(keyType, valueType)
+	m := data.NewMap(keyType, valueType)
 
 	for i := 0; i < count; i++ {
 		v, err := c.Pop()

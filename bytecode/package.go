@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -22,7 +22,7 @@ type ConstantWrapper struct {
 	Value interface{}
 }
 
-var packageCache = map[string]*datatypes.EgoPackage{}
+var packageCache = map[string]*data.EgoPackage{}
 var packageCacheLock sync.RWMutex
 
 func CopyPackagesToSymbols(s *symbols.SymbolTable) {
@@ -37,7 +37,7 @@ func CopyPackagesToSymbols(s *symbols.SymbolTable) {
 // String generates a human-readable string describing the value
 // in the constant wrapper.
 func (w ConstantWrapper) String() string {
-	return fmt.Sprintf("%s <read only>", datatypes.Format(w.Value))
+	return fmt.Sprintf("%s <read only>", data.Format(w.Value))
 }
 
 func IsPackage(name string) bool {
@@ -48,7 +48,7 @@ func IsPackage(name string) bool {
 
 	return found
 }
-func GetPackage(name string) (*datatypes.EgoPackage, bool) {
+func GetPackage(name string) (*data.EgoPackage, bool) {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()
 
@@ -60,8 +60,8 @@ func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 
 	// No such package already defined, so let's create one and store a new
 	// empty symbol table for it's use.
-	pkg := datatypes.NewPackage(name)
-	pkg.Set(datatypes.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
+	pkg := data.NewPackage(name)
+	pkg.Set(data.SymbolsMDKey, symbols.NewSymbolTable("package "+name))
 
 	packageCache[name] = pkg
 
@@ -69,7 +69,7 @@ func GetPackage(name string) (*datatypes.EgoPackage, bool) {
 }
 
 func importByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 
 	pkg, ok := GetPackage(name)
 	if !ok {
@@ -90,7 +90,7 @@ func importByteCode(c *Context, i interface{}) error {
 	// If the package table isn't already in the tree, inject if it
 	// there is one.
 	if !alreadyFound {
-		if symV, found := pkg.Get(datatypes.SymbolsMDKey); found {
+		if symV, found := pkg.Get(data.SymbolsMDKey); found {
 			sym := symV.(*symbols.SymbolTable)
 			sym.SetPackage(name)
 
@@ -106,7 +106,7 @@ func importByteCode(c *Context, i interface{}) error {
 }
 
 func pushPackageByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 
 	// Are we already in this package? Happens when a directory of package
 	// files are concatenated together...
@@ -127,7 +127,7 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 	// already is one for this package, use it. Else create a new one.
 	var syms *symbols.SymbolTable
 
-	if symV, ok := pkg.Get(datatypes.SymbolsMDKey); ok {
+	if symV, ok := pkg.Get(data.SymbolsMDKey); ok {
 		syms = symV.(*symbols.SymbolTable)
 	} else {
 		syms = symbols.NewSymbolTable("package " + name)
@@ -156,7 +156,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	c.packageStack = c.packageStack[:size-1]
 
 	// Verify that we're on the right package.
-	if pkgdef.name != datatypes.String(i) {
+	if pkgdef.name != data.String(i) {
 		return c.newError(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
 	}
 
@@ -206,7 +206,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	pkg.Set(datatypes.SymbolsMDKey, s)
+	pkg.Set(data.SymbolsMDKey, s)
 
 	// Reset the active symbol table to the state before we processed
 	// the package.

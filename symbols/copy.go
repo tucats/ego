@@ -2,7 +2,7 @@ package symbols
 
 import (
 	"github.com/google/uuid"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 // Make a copy of the symbol table, retaining the same values
@@ -43,7 +43,7 @@ func (s *SymbolTable) GetPackages(source *SymbolTable) (count int) {
 
 	for k, attributes := range source.symbols {
 		v := source.GetValue(attributes.Slot)
-		if p, ok := v.(*datatypes.EgoPackage); ok {
+		if p, ok := v.(*data.EgoPackage); ok {
 			s.SetAlways(k, p)
 
 			count++

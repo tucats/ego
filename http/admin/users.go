@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	auth "github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/symbols"
@@ -67,7 +67,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		switch strings.ToUpper(r.Method) {
 		// UPDATE OR CREATE A USER
 		case http.MethodPost:
-			args := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
+			args := data.NewMap(&data.StringType, &data.InterfaceType)
 			_, _ = args.Set("name", u.Name)
 			_, _ = args.Set("password", u.Password)
 
@@ -191,7 +191,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 	response := u
 
 	v, err := auth.DeleteUser(s, []interface{}{u.Name})
-	if err != nil || !datatypes.Bool(v) {
+	if err != nil || !data.Bool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)

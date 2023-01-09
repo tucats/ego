@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/util"
 )
@@ -105,7 +105,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 		return input, nil
 	}
 
-	stringRepresentation := datatypes.String(input)
+	stringRepresentation := data.String(input)
 	if strings.HasPrefix(stringRepresentation, symbolPrefix) && strings.HasSuffix(stringRepresentation, symbolSuffix) {
 		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, symbolSuffix), symbolPrefix)
 
@@ -134,7 +134,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 
 	for k, v := range syms.symbols {
 		search := symbolPrefix + k + symbolSuffix
-		replace := datatypes.String(v)
+		replace := data.String(v)
 		oldInput := input
 		input = strings.ReplaceAll(input, search, replace)
 

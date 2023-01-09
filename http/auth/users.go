@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -221,19 +221,19 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	// variables and use those. Otherwise, fetch them as the two parameters.
 	if len(args) == 0 {
 		if ux, ok := s.Get("_user"); ok {
-			user = datatypes.String(ux)
+			user = data.String(ux)
 		}
 
 		if px, ok := s.Get("_password"); ok {
-			pass = datatypes.String(px)
+			pass = data.String(px)
 		}
 	} else {
 		if len(args) != 2 {
 			return false, errors.EgoError(errors.ErrArgumentCount)
 		}
 
-		user = datatypes.String(args[0])
-		pass = datatypes.String(args[1])
+		user = data.String(args[0])
+		pass = data.String(args[1])
 	}
 
 	// If the user exists and the password matches then valid.
@@ -249,8 +249,8 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return false, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	user = datatypes.String(args[0])
-	priv = strings.ToUpper(datatypes.String(args[1]))
+	user = data.String(args[0])
+	priv = strings.ToUpper(data.String(args[1]))
 
 	// If the user exists and the privilege exists, return it's status
 	return GetPermission(user, priv), nil
@@ -266,7 +266,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	superUser := false
 
 	if s, ok := s.Get("_superuser"); ok {
-		superUser = datatypes.Bool(s)
+		superUser = data.Bool(s)
 	}
 
 	if !superUser {
@@ -279,10 +279,10 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	if u, ok := args[0].(*datatypes.EgoMap); ok {
+	if u, ok := args[0].(*data.EgoMap); ok {
 		name := ""
 		if n, ok, _ := u.Get("name"); ok {
-			name = strings.ToLower(datatypes.String(n))
+			name = strings.ToLower(data.String(n))
 		}
 
 		r, ok := AuthService.ReadUser(name, false)
@@ -295,7 +295,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 		if n, ok, _ := u.Get("password"); ok {
-			r.Password = HashString(datatypes.String(n))
+			r.Password = HashString(data.String(n))
 		}
 
 		if n, ok, _ := u.Get("permissions"); ok {
@@ -304,7 +304,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					r.Permissions = []string{}
 
 					for _, p := range m {
-						permissionName := datatypes.String(p)
+						permissionName := data.String(p)
 						if permissionName != "." {
 							r.Permissions = append(r.Permissions, permissionName)
 						}
@@ -330,7 +330,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	superUser := false
 
 	if s, ok := s.Get("_superuser"); ok {
-		superUser = datatypes.Bool(s)
+		superUser = data.Bool(s)
 	}
 
 	if !superUser {
@@ -342,7 +342,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	name := strings.ToLower(datatypes.String(args[0]))
+	name := strings.ToLower(data.String(args[0]))
 
 	if _, ok := AuthService.ReadUser(name, false); ok == nil {
 		err := AuthService.DeleteUser(name)
@@ -364,15 +364,15 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	r := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
-	name := strings.ToLower(datatypes.String(args[0]))
+	r := data.NewMap(&data.StringType, &data.InterfaceType)
+	name := strings.ToLower(data.String(args[0]))
 
 	t, ok := AuthService.ReadUser(name, false)
 	if ok != nil {
 		return r, nil
 	}
 
-	permArray := datatypes.NewArray(&datatypes.StringType, len(t.Permissions))
+	permArray := data.NewArray(&data.StringType, len(t.Permissions))
 	for i, perm := range t.Permissions {
 		permArray.SetAlways(i, perm)
 	}
@@ -400,11 +400,11 @@ func ValidateToken(t string) bool {
 // the user field.
 func TokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
-	if datatypes.Bool(v) {
+	if data.Bool(v) {
 		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
-		if m, ok := t.(*datatypes.EgoStruct); ok {
+		if m, ok := t.(*data.EgoStruct); ok {
 			if n, ok := m.Get("name"); ok {
-				return datatypes.String(n)
+				return data.String(n)
 			}
 		}
 	}

@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -28,7 +28,7 @@ func (c *Compiler) compileAssignment() error {
 	}
 
 	if autoMode != bytecode.NoOperation {
-		t := datatypes.String(storeLValue.Instruction(0).Operand)
+		t := data.String(storeLValue.Instruction(0).Operand)
 
 		c.b.Emit(bytecode.Load, t)
 		c.b.Emit(bytecode.Push, 1)

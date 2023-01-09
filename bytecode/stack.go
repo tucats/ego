@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	data "github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -69,8 +69,8 @@ func IsStackMarker(i interface{}, values ...string) bool {
 			return true
 		}
 
-		for _, data := range marker.values {
-			if strings.EqualFold(value, datatypes.String(data)) {
+		for _, datum := range marker.values {
+			if strings.EqualFold(value, data.String(datum)) {
 				return true
 			}
 		}
@@ -141,7 +141,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) error {
 // used to verify that multiple return-values on the stack
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) error {
-	if count := datatypes.Int(i); c.stackPointer <= count {
+	if count := data.Int(i); c.stackPointer <= count {
 		return c.newError(errors.ErrReturnValueCount)
 	} else {
 		// The marker is an instance of a StackMarker object.
@@ -166,7 +166,7 @@ func pushByteCode(c *Context, i interface{}) error {
 func dropByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
-		count = datatypes.Int(i)
+		count = data.Int(i)
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -199,7 +199,7 @@ func dupByteCode(c *Context, i interface{}) error {
 // the ToS, while 1 means read the second item and make a dup on the
 // stack of that value, etc.
 func readStackByteCode(c *Context, i interface{}) error {
-	idx := datatypes.Int(i)
+	idx := data.Int(i)
 	if idx < 0 {
 		idx = -idx
 	}
@@ -258,13 +258,13 @@ func copyByteCode(c *Context, i interface{}) error {
 
 func getVarArgsByteCode(c *Context, i interface{}) error {
 	err := c.newError(errors.ErrInvalidVariableArguments)
-	argPos := datatypes.Int(i)
+	argPos := data.Int(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {
-		if args, ok := arrayV.(*datatypes.EgoArray); ok {
+		if args, ok := arrayV.(*data.EgoArray); ok {
 			// If no more args in the list to satisfy, push empty array
 			if args.Len() < argPos {
-				r := datatypes.NewArray(&datatypes.InterfaceType, 0)
+				r := data.NewArray(&data.InterfaceType, 0)
 
 				return c.stackPush(r)
 			}
@@ -274,7 +274,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 				return err
 			}
 
-			return c.stackPush(datatypes.NewArrayFromArray(&datatypes.InterfaceType, value))
+			return c.stackPush(data.NewArrayFromArray(&data.InterfaceType, value))
 		}
 	}
 

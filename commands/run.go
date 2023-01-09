@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -335,7 +335,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
-	args := datatypes.NewArrayFromArray(&datatypes.StringType, programArgs)
+	args := data.NewArrayFromArray(&data.StringType, programArgs)
 	symbolTable.SetAlways("__cli_args", args)
 	symbolTable.SetAlways("__static_data_types", staticTypes)
 

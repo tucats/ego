@@ -1,7 +1,7 @@
 package bytecode
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -47,8 +47,8 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 	r := rangeDefinition{}
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
-		r.indexName = datatypes.String(list[0])
-		r.valueName = datatypes.String(list[1])
+		r.indexName = data.String(list[0])
+		r.valueName = data.String(list[1])
 
 		if r.indexName != "" && r.indexName != DiscardedVariableName {
 			err = c.symbols.Create(r.indexName)
@@ -80,14 +80,14 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 				r.keySet = keySet
 				r.runes = runes
 
-			case *datatypes.EgoMap:
+			case *data.EgoMap:
 				r.keySet = actual.Keys()
 				actual.ImmutableKeys(true)
 
-			case *datatypes.EgoArray:
+			case *data.EgoArray:
 				actual.Immutable(true)
 
-			case *datatypes.Channel:
+			case *data.Channel:
 				// No further init required
 
 			case []interface{}:
@@ -129,7 +129,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 func rangeNextByteCode(c *Context, i interface{}) error {
 	var err error
 
-	destination := datatypes.Int(i)
+	destination := data.Int(i)
 
 	if stackSize := len(c.rangeStack); stackSize == 0 {
 		c.programCounter = destination
@@ -156,7 +156,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				r.index++
 			}
 
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			if r.index >= len(r.keySet) {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
@@ -184,7 +184,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				r.index++
 			}
 
-		case *datatypes.Channel:
+		case *data.Channel:
 			var datum interface{}
 
 			if actual.IsEmpty() {
@@ -207,7 +207,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				}
 			}
 
-		case *datatypes.EgoArray:
+		case *data.EgoArray:
 			if r.index >= actual.Len() {
 				c.programCounter = destination
 				actual.Immutable(false)

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -25,7 +25,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field",
 			arg:  "foo",
-			stack: []interface{}{datatypes.NewStructFromMap(map[string]interface{}{
+			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -34,7 +34,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field not found",
 			arg:  "zork",
-			stack: []interface{}{datatypes.NewStructFromMap(map[string]interface{}{
+			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -44,7 +44,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "struct field with name on stack",
 			arg:  nil,
-			stack: []interface{}{datatypes.NewStructFromMap(map[string]interface{}{
+			stack: []interface{}{data.NewStructFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			}), "foo"},
@@ -67,7 +67,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "map key",
 			arg:  "foo",
-			stack: []interface{}{datatypes.NewMapFromMap(map[string]interface{}{
+			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -76,7 +76,7 @@ func Test_memberByteCode(t *testing.T) {
 		{
 			name: "map key not found",
 			arg:  "zork",
-			stack: []interface{}{datatypes.NewMapFromMap(map[string]interface{}{
+			stack: []interface{}{data.NewMapFromMap(map[string]interface{}{
 				"foo": 55,
 				"bar": 42,
 			})},
@@ -206,7 +206,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			}
 
 			// We should be able to retrieve the stored bytecode from the symbol table.
-			symbolName := datatypes.String(tt.arg)
+			symbolName := data.String(tt.arg)
 
 			v, found := syms.Get(symbolName)
 			if !found {

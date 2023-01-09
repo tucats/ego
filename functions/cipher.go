@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -33,13 +33,13 @@ type AuthToken struct {
 // as a 32-character string containing the hexadecimal hash value. Hashes
 // are irreversible.
 func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return util.Hash(datatypes.String(args[0])), nil
+	return util.Hash(data.String(args[0])), nil
 }
 
 // Encrypt implements the cipher.Encrypt() function. This takes a string value and
 // a string key, and encrypts the string using the key.
 func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	b, err := util.Encrypt(datatypes.String(args[0]), datatypes.String(args[1]))
+	b, err := util.Encrypt(data.String(args[0]), data.String(args[1]))
 	if err != nil {
 		return b, err
 	}
@@ -52,12 +52,12 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // using the given key, an empty string is returned. It is an error if the string does
 // not contain a valid hexadecimal character string.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	b, err := hex.DecodeString(datatypes.String(args[0]))
+	b, err := hex.DecodeString(data.String(args[0]))
 	if err != nil {
 		return nil, errors.EgoError(err)
 	}
 
-	return util.Decrypt(string(b), datatypes.String(args[1]))
+	return util.Decrypt(string(b), data.String(args[1]))
 }
 
 // Validate determines if a token is valid and returns true/false.
@@ -66,11 +66,11 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	reportErr := false
 	if len(args) > 1 {
-		reportErr = datatypes.Bool(args[1])
+		reportErr = data.Bool(args[1])
 	}
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(datatypes.String(args[0]))
+	b, err := hex.DecodeString(data.String(args[0]))
 	if err != nil {
 		if reportErr {
 			return false, errors.EgoError(err)
@@ -128,7 +128,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(datatypes.String(args[0]))
+	b, err := hex.DecodeString(data.String(args[0]))
 	if err != nil {
 		return nil, errors.EgoError(err)
 	}
@@ -170,7 +170,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.EgoError(err)
 	}
 
-	return datatypes.NewStructFromMap(r), err
+	return data.NewStructFromMap(r), err
 }
 
 // CreateToken creates a new token with a username and a data payload.
@@ -180,19 +180,19 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
 	t := AuthToken{
-		Name:    datatypes.String(args[0]),
+		Name:    data.String(args[0]),
 		TokenID: uuid.New(),
 	}
 
 	if len(args) == 2 {
-		t.Data = datatypes.String(args[1])
+		t.Data = data.String(args[1])
 	}
 
 	// Get the session ID of the current Ego program and add it to
 	// the token. A token can only be validated on the same system
 	// that created it.
 	if session, ok := s.Get("_server_instance"); ok {
-		t.AuthID, err = uuid.Parse(datatypes.String(session))
+		t.AuthID, err = uuid.Parse(data.String(session))
 		if err != nil {
 			return nil, errors.EgoError(err)
 		}
@@ -246,7 +246,7 @@ func getTokenKey() string {
 func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	n := 32
 	if len(args) > 0 {
-		n = datatypes.Int(args[0])
+		n = data.Int(args[0])
 	}
 
 	b := make([]byte, n)
@@ -264,7 +264,7 @@ func EncodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	text := datatypes.String(args[0])
+	text := data.String(args[0])
 
 	return base64.StdEncoding.EncodeToString([]byte(text)), nil
 }
@@ -275,7 +275,7 @@ func DecodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	text := datatypes.String(args[0])
+	text := data.String(args[0])
 
 	b, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {

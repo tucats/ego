@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/http/auth"
@@ -170,16 +170,16 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/transaction")
 	}
 
-	if !valid || !datatypes.Bool(urlParts["tables"]) {
+	if !valid || !data.Bool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
 		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
 
-	tableName := datatypes.String(urlParts["table"])
-	rows := datatypes.Bool(urlParts["rows"])
-	perms := datatypes.Bool(urlParts["permissions"])
+	tableName := data.String(urlParts["table"])
+	rows := data.Bool(urlParts["rows"])
+	perms := data.Bool(urlParts["permissions"])
 	transaction := strings.EqualFold(tableName, "@transaction")
 
 	if transaction {

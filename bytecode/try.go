@@ -1,7 +1,7 @@
 package bytecode
 
 import (
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
@@ -28,7 +28,7 @@ var catchSets = [][]error{
 // tryByteCode instruction processor.
 func tryByteCode(c *Context, i interface{}) error {
 	try := TryInfo{
-		addr:    datatypes.Int(i),
+		addr:    data.Int(i),
 		catches: make([]error, 0),
 	}
 	c.tryStack = append(c.tryStack, try)
@@ -73,7 +73,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 		try.catches = append(try.catches, errors.NewMessage(i))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(i).String())
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(i).String())
 	}
 
 	c.tryStack[len(c.tryStack)-1] = try

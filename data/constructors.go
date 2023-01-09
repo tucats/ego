@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 // Prebuilt definitions for each given type.
 

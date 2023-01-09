@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -594,7 +594,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	}
 
 	// Get the table name and filter list
-	table, _ := fullName(user, datatypes.String(tableItem))
+	table, _ := fullName(user, data.String(tableItem))
 
 	var result strings.Builder
 
@@ -641,7 +641,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
 	if id, found := items[defs.RowIDName]; found {
-		idString := datatypes.String(id)
+		idString := data.String(id)
 		if idString != "" {
 			if where == "" {
 				where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
@@ -720,7 +720,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table, wasFullyQualified := fullName(user, datatypes.String(tableItem))
+	table, wasFullyQualified := fullName(user, data.String(tableItem))
 	// This is a multipart name. You must be an administrator to do this
 	if !wasFullyQualified && !hasAdminPrivileges {
 		util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
@@ -746,7 +746,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	if !hasRowID {
 		items = append(items, defs.DBColumn{
 			Name: defs.RowIDName,
-			Type: datatypes.StringTypeName,
+			Type: data.StringTypeName,
 		})
 	}
 
@@ -780,16 +780,16 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 // mapColumnType converts native Ego types into the equivalent Postgres data types.
 func mapColumnType(native string) string {
 	types := map[string]string{
-		datatypes.StringTypeName: "CHAR VARYING",
-		datatypes.Int32TypeName:  "INT32",
-		datatypes.IntTypeName:    "INT",
-		datatypes.BoolTypeName:   "BOOLEAN",
-		"boolean":                "BOOLEAN",
-		"float32":                "REAL",
-		"float64":                "DOUBLE PRECISION",
-		"timestamp":              "TIMESTAMP WITH TIME ZONE",
-		"time":                   "TIME",
-		"date":                   "DATE",
+		data.StringTypeName: "CHAR VARYING",
+		data.Int32TypeName:  "INT32",
+		data.IntTypeName:    "INT",
+		data.BoolTypeName:   "BOOLEAN",
+		"boolean":           "BOOLEAN",
+		"float32":           "REAL",
+		"float64":           "DOUBLE PRECISION",
+		"timestamp":         "TIMESTAMP WITH TIME ZONE",
+		"time":              "TIME",
+		"date":              "DATE",
 	}
 
 	native = strings.ToLower(native)
@@ -838,5 +838,5 @@ func tableNameFromURL(u *url.URL) (string, error) {
 		return "", errors.NewMessage("Missing table name in URL").Context(u.Path)
 	}
 
-	return datatypes.String(tableItem), nil
+	return data.String(tableItem), nil
 }

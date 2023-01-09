@@ -8,7 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -20,7 +20,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	name := datatypes.String(args[0])
+	name := data.String(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
 	}
@@ -32,7 +32,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(err)
 	}
 
-	return datatypes.NewArray(&datatypes.ByteType, 0).Append(content), nil
+	return data.NewArray(&data.ByteType, 0).Append(content), nil
 }
 
 // WriteFile writes a string to a file.
@@ -41,10 +41,10 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	fileName := sandboxName(datatypes.String(args[0]))
+	fileName := sandboxName(data.String(args[0]))
 
-	if a, ok := args[1].(*datatypes.EgoArray); ok {
-		if a.ValueType().Kind() == datatypes.ByteKind {
+	if a, ok := args[1].(*data.EgoArray); ok {
+		if a.ValueType().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
 				err = errors.EgoError(err)
@@ -54,7 +54,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		}
 	}
 
-	text := datatypes.String(args[1])
+	text := data.String(args[1])
 
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
@@ -70,7 +70,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	fileName := datatypes.String(args[0])
+	fileName := data.String(args[0])
 	fileName = sandboxName(fileName)
 
 	err := os.Remove(fileName)
@@ -87,18 +87,18 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	path := datatypes.String(args[0])
+	path := data.String(args[0])
 	ext := ""
 
 	if len(args) > 1 {
-		ext = datatypes.String(args[1])
+		ext = data.String(args[1])
 	}
 
 	path = sandboxName(path)
 	list, err := ExpandPath(path, ext)
 
 	// Rewrap as an Ego array
-	result := datatypes.NewArray(&datatypes.StringType, 0)
+	result := data.NewArray(&data.StringType, 0)
 
 	for _, item := range list {
 		result.Append(item)
@@ -157,8 +157,8 @@ func ExpandPath(path, ext string) ([]string, error) {
 
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path := datatypes.String(args[0])
-	result := datatypes.NewArray(&datatypes.InterfaceType, 0)
+	path := data.String(args[0])
+	result := data.NewArray(&data.InterfaceType, 0)
 
 	path = sandboxName(path)
 
@@ -168,7 +168,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	for _, file := range files {
-		entry := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
+		entry := data.NewMap(&data.StringType, &data.InterfaceType)
 
 		_, _ = entry.Set("name", file.Name())
 		_, _ = entry.Set("directory", file.IsDir())
@@ -186,10 +186,10 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // and maybe later other items as well.
 func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
-	case *datatypes.Channel:
+	case *data.Channel:
 		return arg.Close(), nil
 
-	case *datatypes.EgoStruct:
+	case *data.EgoStruct:
 		switch arg.TypeString() {
 		case "io.File":
 			s.SetAlways("__this", arg)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -37,12 +37,12 @@ func panicByteCode(c *Context, i interface{}) error {
 	c.running = false
 
 	if i != nil {
-		panicMessage = datatypes.String(i)
+		panicMessage = data.String(i)
 	} else {
 		if v, err := c.Pop(); err != nil {
 			return err
 		} else {
-			panicMessage = datatypes.String(v)
+			panicMessage = data.String(v)
 		}
 	}
 
@@ -60,7 +60,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	c.line = datatypes.Int(i)
+	c.line = data.Int(i)
 	c.stepOver = false
 	c.symbols.SetAlways(defs.Line, c.line)
 	c.symbols.SetAlways(defs.Module, c.bc.name)
@@ -94,12 +94,12 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get destination
-	address := datatypes.Int(i)
+	address := data.Int(i)
 	if address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
-	if !datatypes.Bool(v) {
+	if !data.Bool(v) {
 		c.programCounter = address
 	}
 
@@ -110,7 +110,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 // the operand.
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
-	if address := datatypes.Int(i); address < 0 || address > c.bc.nextAddress {
+	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
@@ -131,10 +131,10 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 
 	// Get destination
 
-	if address := datatypes.Int(i); address < 0 || address > c.bc.nextAddress {
+	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
-		if datatypes.Bool(v) {
+		if data.Bool(v) {
 			c.programCounter = address
 		}
 	}
@@ -151,13 +151,13 @@ func localCallByteCode(c *Context, i interface{}) error {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
-	c.callframePush("defer", c.bc, datatypes.Int(i), false)
+	c.callframePush("defer", c.bc, data.Int(i), false)
 
 	return nil
 }
 
 func goByteCode(c *Context, i interface{}) error {
-	argc := datatypes.Int(i) + c.argCountDelta
+	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -175,7 +175,7 @@ func goByteCode(c *Context, i interface{}) error {
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
-		fName := datatypes.String(fx)
+		fName := data.String(fx)
 
 		// Launch the function call as a separate thread.
 		ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
@@ -203,7 +203,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
 	// Normally, this value is zero.
-	argc := datatypes.Int(i) + c.argCountDelta
+	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -238,7 +238,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 	// Depends on the type here as to what we call...
 	switch function := functionPointer.(type) {
-	case *datatypes.Type:
+	case *data.Type:
 		// Calls to a type are really an attempt to cast the value.
 		args = append(args, function)
 
@@ -284,7 +284,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// Recode the argument list as a native array
-		c.symbolSetAlways("__args", datatypes.NewArrayFromArray(&datatypes.InterfaceType, args))
+		c.symbolSetAlways("__args", data.NewArrayFromArray(&data.InterfaceType, args))
 
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
@@ -466,11 +466,11 @@ func argCheckByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
-		min = datatypes.Int(operand[0])
-		max = datatypes.Int(operand[1])
+		min = data.Int(operand[0])
+		max = data.Int(operand[1])
 
 		if len(operand) == 3 {
-			name = datatypes.String(operand[2])
+			name = data.String(operand[2])
 		}
 
 	case int:
@@ -502,7 +502,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	// Do the actual compare. Note that if we ended up with a negative
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
-	if array, ok := args.(*datatypes.EgoArray); ok {
+	if array, ok := args.(*data.EgoArray); ok {
 		if max < 0 {
 			max = array.Len()
 		}
@@ -526,8 +526,8 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 
 	this := c.thisStack[len(c.thisStack)-1]
 
-	if pkg, ok := this.value.(*datatypes.EgoPackage); ok {
-		if s, ok := datatypes.GetMetadata(pkg, datatypes.SymbolsMDKey); ok {
+	if pkg, ok := this.value.(*data.EgoPackage); ok {
+		if s, ok := data.GetMetadata(pkg, data.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package()) {
 					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())
@@ -569,7 +569,7 @@ func waitByteCode(c *Context, i interface{}) error {
 func modeCheckBytecode(c *Context, i interface{}) error {
 	mode, found := c.symbols.Get("__exec_mode")
 
-	if found && (datatypes.String(i) == datatypes.String(mode)) {
+	if found && (data.String(i) == data.String(mode)) {
 		return nil
 	}
 
@@ -580,10 +580,10 @@ func entryPointByteCode(c *Context, i interface{}) error {
 	var entryPointName string
 
 	if i != nil {
-		entryPointName = datatypes.String(i)
+		entryPointName = data.String(i)
 	} else {
 		v, _ := c.Pop()
-		entryPointName = datatypes.String(v)
+		entryPointName = data.String(v)
 	}
 
 	if entryPoint, found := c.symbolGet(entryPointName); found {

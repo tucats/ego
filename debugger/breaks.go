@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
@@ -296,7 +296,7 @@ func EvaluateBreakpoint(c *bytecode.Context) bool {
 			if err == nil {
 				if v, err := ctx.Pop(); err == nil {
 					//fmt.Printf("Break expression result = %v\n", v)
-					prompt = datatypes.Bool(v)
+					prompt = data.Bool(v)
 					if prompt {
 						b.hit++
 					} else {

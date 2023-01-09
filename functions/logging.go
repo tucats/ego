@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -14,8 +14,8 @@ import (
 // an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
 func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := strings.TrimSpace(datatypes.String(args[0]))
-	enabled := datatypes.Bool(args[1])
+	name := strings.TrimSpace(data.String(args[0]))
+	enabled := data.Bool(args[1])
 
 	loggerID := ui.Logger(name)
 	if loggerID <= 0 {
@@ -32,11 +32,11 @@ func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 // LogTail implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
 func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	count := datatypes.Int(args[0])
+	count := data.Int(args[0])
 	filter := 0
 
 	if len(args) > 1 {
-		filter = datatypes.Int(args[1])
+		filter = data.Int(args[1])
 	}
 
 	lines := ui.Tail(count, filter)
@@ -50,5 +50,5 @@ func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		xLines[i] = j
 	}
 
-	return datatypes.NewArrayFromArray(&datatypes.StringType, xLines), nil
+	return data.NewArrayFromArray(&data.StringType, xLines), nil
 }

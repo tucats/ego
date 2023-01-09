@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -20,7 +20,7 @@ const MaxDeepCopyDepth = 100
 
 // Normalize coerces a value to match the type of a model value.
 func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v1, v2 := datatypes.Normalize(args[0], args[1])
+	v1, v2 := data.Normalize(args[0], args[1])
 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
 }
@@ -60,39 +60,39 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Is it an actual type?
-	if typeValue, ok := args[0].(*datatypes.Type); ok {
+	if typeValue, ok := args[0].(*data.Type); ok {
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
-	if typeValue, ok := args[0].(*datatypes.Type); ok {
+	if typeValue, ok := args[0].(*data.Type); ok {
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
 	// Is the type an string? If so it's a type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
-		case datatypes.ByteType.Name():
+		case data.ByteType.Name():
 			return byte(0), nil
 
-		case datatypes.Int32TypeName:
+		case data.Int32TypeName:
 			return int32(0), nil
 
-		case datatypes.Int64TypeName:
+		case data.Int64TypeName:
 			return int64(0), nil
 
-		case datatypes.IntTypeName:
+		case data.IntTypeName:
 			return 0, nil
 
-		case datatypes.StringTypeName:
+		case data.StringTypeName:
 			return "", nil
 
-		case datatypes.BoolType.Name():
+		case data.BoolType.Name():
 			return false, nil
 
-		case datatypes.Float32TypeName:
+		case data.Float32TypeName:
 			return float32(0), nil
 
-		case datatypes.Float64TypeName:
+		case data.Float64TypeName:
 			return float64(0), nil
 
 		default:
@@ -106,24 +106,24 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// make a new waitgroup object.
 	switch args[0].(type) {
 	case sync.WaitGroup:
-		return datatypes.InstanceOfType(&datatypes.WaitGroupType), nil
+		return data.InstanceOfType(&data.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
 	// cast attempt will yield a warning on invalid mutex copy operation.
 	switch args[0].(type) {
 	case sync.Mutex:
-		return datatypes.InstanceOfType(&datatypes.MutexType), nil
+		return data.InstanceOfType(&data.MutexType), nil
 	}
 
 	// If it's a channel, just return the value
-	if typeValue, ok := args[0].(*datatypes.Channel); ok {
+	if typeValue, ok := args[0].(*data.Channel); ok {
 		return typeValue, nil
 	}
 
 	// If it's a native struct, it has it's own deep copy.
-	if structValue, ok := args[0].(*datatypes.EgoStruct); ok {
-		return datatypes.DeepCopy(structValue), nil
+	if structValue, ok := args[0].(*data.EgoStruct); ok {
+		return data.DeepCopy(structValue), nil
 	}
 
 	// Otherwise, make a deep copy of the item.
@@ -143,15 +143,15 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
 
-	case *datatypes.EgoPackage:
+	case *data.EgoPackage:
 		// Create the replica count if needed, and update it.
 		replica := 0
 
-		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
-			replica = datatypes.Int(replicaX) + 1
+		if replicaX, ok := data.GetMetadata(v, data.ReplicaMDKey); ok {
+			replica = data.Int(replicaX) + 1
 		}
 
-		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
+		data.SetMetadata(v, data.ReplicaMDKey, replica)
 
 		dropList := []string{}
 
@@ -229,11 +229,11 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *datatypes.EgoStruct:
+	case *data.EgoStruct:
 		return v.Copy()
 
-	case *datatypes.EgoArray:
-		r := datatypes.NewArray(v.ValueType(), v.Len())
+	case *data.EgoArray:
+		r := data.NewArray(v.ValueType(), v.Len())
 
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
@@ -243,8 +243,8 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *datatypes.EgoMap:
-		r := datatypes.NewMap(v.KeyType(), v.ValueType())
+	case *data.EgoMap:
+		r := data.NewMap(v.KeyType(), v.ValueType())
 
 		for _, k := range v.Keys() {
 			d, _, _ := v.Get(k)
@@ -253,8 +253,8 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *datatypes.EgoPackage:
-		r := datatypes.EgoPackage{}
+	case *data.EgoPackage:
+		r := data.EgoPackage{}
 		keys := v.Keys()
 
 		for _, k := range keys {
@@ -274,24 +274,24 @@ func DeepCopy(source interface{}, depth int) interface{} {
 // to an array of integer (rune) values, etc.
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Target kind is the last parameter
-	kind := datatypes.TypeOf(args[len(args)-1])
+	kind := data.TypeOf(args[len(args)-1])
 
 	source := args[0]
 	if len(args) > 2 {
-		source = datatypes.NewArrayFromArray(&datatypes.InterfaceType, args[:len(args)-1])
+		source = data.NewArrayFromArray(&data.InterfaceType, args[:len(args)-1])
 	}
 
-	if kind.IsKind(datatypes.StringKind) {
+	if kind.IsKind(data.StringKind) {
 		r := strings.Builder{}
 
 		// If the source is an array of integers, treat them as runes to re-assemble.
-		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
+		if actual, ok := source.(*data.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(rune(datatypes.Int(ch) & math.MaxInt32))
+				r.WriteRune(rune(data.Int(ch) & math.MaxInt32))
 			}
 		} else {
-			str := datatypes.FormatUnquoted(source)
+			str := data.FormatUnquoted(source)
 			r.WriteString(str)
 		}
 
@@ -300,64 +300,64 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	switch actual := source.(type) {
 	// Conversion of one array type to another
-	case *datatypes.EgoArray:
+	case *data.EgoArray:
 		if kind.IsType(actual.ValueType()) {
 			return actual, nil
 		}
 
-		if kind.IsKind(datatypes.StringKind) &&
+		if kind.IsKind(data.StringKind) &&
 			(actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(datatypes.Int32(ch) & math.MaxInt32)
+				r.WriteRune(data.Int32(ch) & math.MaxInt32)
 			}
 
 			return r.String(), nil
 		}
 
 		elementKind := *kind.BaseType()
-		r := datatypes.NewArray(kind.BaseType(), actual.Len())
+		r := data.NewArray(kind.BaseType(), actual.Len())
 
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
 
 			switch elementKind.Kind() {
-			case datatypes.BoolKind:
-				_ = r.Set(i, datatypes.Bool(v))
+			case data.BoolKind:
+				_ = r.Set(i, data.Bool(v))
 
-			case datatypes.ByteKind:
-				_ = r.Set(i, datatypes.Byte(v))
+			case data.ByteKind:
+				_ = r.Set(i, data.Byte(v))
 
-			case datatypes.Int32Kind:
-				_ = r.Set(i, datatypes.Int32(v))
+			case data.Int32Kind:
+				_ = r.Set(i, data.Int32(v))
 
-			case datatypes.IntKind:
-				_ = r.Set(i, datatypes.Int(v))
+			case data.IntKind:
+				_ = r.Set(i, data.Int(v))
 
-			case datatypes.Int64Kind:
-				_ = r.Set(i, datatypes.Int64(v))
+			case data.Int64Kind:
+				_ = r.Set(i, data.Int64(v))
 
-			case datatypes.Float32Kind:
-				_ = r.Set(i, datatypes.Float32(v))
+			case data.Float32Kind:
+				_ = r.Set(i, data.Float32(v))
 
-			case datatypes.Float64Kind:
-				_ = r.Set(i, datatypes.Float64(v))
+			case data.Float64Kind:
+				_ = r.Set(i, data.Float64(v))
 
-			case datatypes.StringKind:
-				_ = r.Set(i, datatypes.String(v))
+			case data.StringKind:
+				_ = r.Set(i, data.String(v))
 
 			default:
-				return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())
+				return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 			}
 		}
 
 		return r, nil
 
 	case string:
-		if kind.IsType(datatypes.Array(&datatypes.IntType)) {
-			r := datatypes.NewArray(&datatypes.IntType, 0)
+		if kind.IsType(data.Array(&data.IntType)) {
+			r := data.NewArray(&data.IntType, 0)
 
 			for _, rune := range actual {
 				r.Append(int(rune))
@@ -366,22 +366,22 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return r, nil
 		}
 
-		return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
+		return data.Coerce(source, data.InstanceOfType(kind)), nil
 
 	default:
 		if kind.IsArray() {
-			r := datatypes.NewArray(kind.BaseType(), 1)
-			value := datatypes.Coerce(source, datatypes.InstanceOfType(kind.BaseType()))
+			r := data.NewArray(kind.BaseType(), 1)
+			value := data.Coerce(source, data.InstanceOfType(kind.BaseType()))
 			_ = r.Set(0, value)
 
 			return r, nil
 		}
 
-		v := datatypes.Coerce(source, datatypes.InstanceOfType(kind))
+		v := data.Coerce(source, data.InstanceOfType(kind))
 		if v != nil {
-			return datatypes.Coerce(source, datatypes.InstanceOfType(kind)), nil
+			return data.Coerce(source, data.InstanceOfType(kind)), nil
 		}
 
-		return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(source).String())
+		return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(source).String())
 	}
 }

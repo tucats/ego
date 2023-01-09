@@ -9,7 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/formats"
 	"github.com/tucats/ego/tokenizer"
@@ -26,7 +26,7 @@ import (
 func printByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
-		count = datatypes.Int(i)
+		count = data.Int(i)
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -42,11 +42,11 @@ func printByteCode(c *Context, i interface{}) error {
 		s := ""
 
 		switch actualValue := value.(type) {
-		case *datatypes.EgoArray:
+		case *data.EgoArray:
 			// Is this an array of a single type that is a structure?
 			valueType := actualValue.ValueType()
-			isStruct := valueType.Kind() == datatypes.StructKind
-			isStructType := valueType.Kind() == datatypes.TypeKind && valueType.BaseType().Kind() == datatypes.StructKind
+			isStruct := valueType.Kind() == data.StructKind
+			isStructType := valueType.Kind() == data.TypeKind && valueType.BaseType().Kind() == data.StructKind
 
 			if isStruct || isStructType {
 				var columns []string
@@ -64,13 +64,13 @@ func printByteCode(c *Context, i interface{}) error {
 
 				for i := 0; i < actualValue.Len(); i++ {
 					rowValue, _ := actualValue.Get(i)
-					row := rowValue.(*datatypes.EgoStruct)
+					row := rowValue.(*data.EgoStruct)
 
 					rowItems := []string{}
 
 					for _, key := range columns {
 						v := row.GetAlways(key)
-						rowItems = append(rowItems, datatypes.String(v))
+						rowItems = append(rowItems, data.String(v))
 					}
 
 					_ = t.AddRow(rowItems)
@@ -81,23 +81,23 @@ func printByteCode(c *Context, i interface{}) error {
 				r := make([]string, actualValue.Len())
 				for n := 0; n < len(r); n++ {
 					vvv, _ := actualValue.Get(n)
-					r[n] = datatypes.String(vvv)
+					r[n] = data.String(vvv)
 				}
 
 				s = strings.Join(r, "\n")
 			}
 
-		case *datatypes.EgoPackage:
+		case *data.EgoPackage:
 			s = formats.PackageAsString(actualValue)
 
-		case *datatypes.EgoStruct:
+		case *data.EgoStruct:
 			s = formats.StructAsString(actualValue)
 
-		case *datatypes.EgoMap:
+		case *data.EgoMap:
 			s = formats.MapAsString(actualValue)
 
 		default:
-			s = datatypes.FormatUnquoted(value)
+			s = data.FormatUnquoted(value)
 		}
 
 		if c.output == nil {
@@ -125,7 +125,7 @@ func logByteCode(c *Context, i interface{}) error {
 	if id, ok := i.(int); ok {
 		class = id
 	} else {
-		class = ui.Logger(datatypes.String(i))
+		class = ui.Logger(data.String(i))
 	}
 
 	if class <= ui.NoSuchLogger {
@@ -157,7 +157,7 @@ func sayByteCode(c *Context, i interface{}) error {
 	}
 
 	fmt := "%s\n"
-	if datatypes.Bool(i) && len(msg) > 0 {
+	if data.Bool(i) && len(msg) > 0 {
 		fmt = "%s"
 	}
 
@@ -186,7 +186,7 @@ func newlineByteCode(c *Context, i interface{}) error {
 // templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
 func templateByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 
 	t, err := c.Pop()
 	if err == nil {
@@ -194,7 +194,7 @@ func templateByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		t, e2 := template.New(name).Parse(datatypes.String(t))
+		t, e2 := template.New(name).Parse(data.String(t))
 		if e2 == nil {
 			err = c.stackPush(t)
 		} else {
@@ -219,7 +219,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	if b, err := ioutil.ReadFile(datatypes.String(i)); err == nil {
+	if b, err := ioutil.ReadFile(data.String(i)); err == nil {
 		c.tokenizer = tokenizer.New(string(b))
 
 		return nil
@@ -229,7 +229,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 }
 
 func timerByteCode(c *Context, i interface{}) error {
-	mode := datatypes.Int(i)
+	mode := data.Int(i)
 	switch mode {
 	case 0:
 		t := time.Now()

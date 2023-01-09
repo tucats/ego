@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 // Common metadata keys.
 const (

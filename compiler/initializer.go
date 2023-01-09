@@ -2,14 +2,14 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
 
 // Compile an initializer, given a type definition. This can be a literal
 // initializer in braces or a simple value.
-func (c *Compiler) compileInitializer(t *datatypes.Type) error {
+func (c *Compiler) compileInitializer(t *data.Type) error {
 	if !c.t.IsNext(tokenizer.DataBeginToken) {
 		// It's not an initializer constant, but it could still be an expression. Try the
 		// top-level expression compiler.
@@ -22,7 +22,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 	}
 
 	switch base.Kind() {
-	case datatypes.StructKind:
+	case data.StructKind:
 		count := 0
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
@@ -63,12 +63,12 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 		}
 
 		c.b.Emit(bytecode.Push, t)
-		c.b.Emit(bytecode.Push, datatypes.TypeMDKey)
+		c.b.Emit(bytecode.Push, data.TypeMDKey)
 		c.b.Emit(bytecode.Struct, count+1)
 
 		return nil
 
-	case datatypes.MapKind:
+	case data.MapKind:
 		count := 0
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
@@ -108,7 +108,7 @@ func (c *Compiler) compileInitializer(t *datatypes.Type) error {
 
 		return nil
 
-	case datatypes.ArrayKind:
+	case data.ArrayKind:
 		count := 0
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -12,7 +12,7 @@ import (
 // Descriptor of each parameter in the parameter list.
 type parameter struct {
 	name string
-	kind *datatypes.Type
+	kind *data.Type
 }
 
 // compileFunctionDefinition compiles a function definition. The literal flag indicates if
@@ -27,7 +27,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	receiverType := tokenizer.EmptyToken
 	byValue := false
 
-	var fd *datatypes.FunctionDeclaration
+	var fd *data.FunctionDeclaration
 
 	// Increment the function depth for the time we're on this particular function,
 	// and decrement it when we are done.
@@ -103,7 +103,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		// is this the end of the fixed list? If so, emit the instruction that scoops
 		// up the remaining arguments and stores them as an array value.  Otherwise,
 		// generate code to extract the argument value by index number.
-		if parameter.kind.IsKind(datatypes.VarArgsKind) {
+		if parameter.kind.IsKind(data.VarArgsKind) {
 			b.Emit(bytecode.GetVarArgs, index)
 		} else {
 			b.Emit(bytecode.Load, "__args")
@@ -112,7 +112,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 		// If this argument is not interface{} or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
-		if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(datatypes.VarArgsKind) {
+		if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
 			b.Emit(bytecode.RequiredType, parameter.kind)
 		}
 		// Generate code to store the value on top of the stack into the local
@@ -137,7 +137,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 				return err
 			}
 
-			coercion.Emit(bytecode.Coerce, datatypes.TypeOf(k))
+			coercion.Emit(bytecode.Coerce, data.TypeOf(k))
 		}
 
 		if !wasVoid {
@@ -244,7 +244,7 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 
 // parseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, error) {
+func (c *Compiler) parseFunctionDeclaration() (*data.FunctionDeclaration, error) {
 	var err error
 
 	// Can't have side effects added to current bytecode, so save that off and
@@ -253,7 +253,7 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, e
 	savedBytecode := c.b
 	defer restoreByteCode(c, savedBytecode)
 
-	funcDef := datatypes.FunctionDeclaration{}
+	funcDef := data.FunctionDeclaration{}
 
 	// Start with the function name,  which must be a valid
 	// symbol name.
@@ -276,9 +276,9 @@ func (c *Compiler) parseFunctionDeclaration() (*datatypes.FunctionDeclaration, e
 		return nil, err
 	}
 
-	funcDef.Parameters = make([]datatypes.FunctionParameter, len(paramList))
+	funcDef.Parameters = make([]data.FunctionParameter, len(paramList))
 	for i, p := range paramList {
-		funcDef.Parameters[i] = datatypes.FunctionParameter{
+		funcDef.Parameters[i] = data.FunctionParameter{
 			Name:     p.name,
 			ParmType: p.kind,
 		}
@@ -387,7 +387,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				return parameters, hasVarArgs, c.newError(errors.ErrMissingParenthesis)
 			}
 
-			p := parameter{kind: &datatypes.UndefinedType}
+			p := parameter{kind: &data.UndefinedType}
 
 			name := c.t.Next()
 			if name.IsIdentifier() {
@@ -409,7 +409,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			}
 
 			if hasVarArgs {
-				p.kind = &datatypes.VarArgsType
+				p.kind = &data.VarArgsType
 			} else {
 				p.kind = theType
 			}

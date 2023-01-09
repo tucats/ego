@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -20,7 +20,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	array, ok := args[0].(*datatypes.EgoArray)
+	array, ok := args[0].(*data.EgoArray)
 	if !ok {
 		return nil, errors.EgoError(errors.ErrArgumentType)
 	}
@@ -50,7 +50,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	// the two native arguments
 	sort.Slice(array.BaseArray(), func(i, j int) bool {
 		// Set the i,j variables as the current function arguments
-		sliceSymbols.SetAlways("__args", datatypes.NewArrayFromArray(&datatypes.IntType, []interface{}{i, j}))
+		sliceSymbols.SetAlways("__args", data.NewArrayFromArray(&data.IntType, []interface{}{i, j}))
 
 		// Run the comparator function
 		if err := ctx.RunFromAddress(0); err != nil {
@@ -62,7 +62,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		}
 
 		// Return the result as this function's value.
-		return datatypes.Bool(ctx.Result())
+		return data.Bool(ctx.Result())
 	})
 
 	return array, funcError

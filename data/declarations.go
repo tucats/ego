@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 // This defines the token structure for various type declarations, including a model of that
 // type and the type designation.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/commands"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
@@ -60,7 +60,7 @@ func main() {
 			errorCode := 1
 
 			if _, ok := value.(string); !ok {
-				errorCode = datatypes.Int(value)
+				errorCode = data.Int(value)
 			}
 
 			if errorCode == 0 {

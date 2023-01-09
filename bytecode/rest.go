@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
@@ -27,23 +27,23 @@ func authByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrNotAService)
 	}
 
-	kind := datatypes.String(i)
+	kind := data.String(i)
 
 	if v, ok := c.symbolGet("_user"); ok {
-		user = datatypes.String(v)
+		user = data.String(v)
 	}
 
 	if v, ok := c.symbolGet("_password"); ok {
-		pass = datatypes.String(v)
+		pass = data.String(v)
 	}
 
 	if v, ok := c.symbolGet("_token"); ok {
-		token = datatypes.String(v)
+		token = data.String(v)
 	}
 
 	tokenValid := false
 	if v, ok := c.symbolGet("_token_valid"); ok {
-		tokenValid = datatypes.Bool(v)
+		tokenValid = data.Bool(v)
 	}
 
 	// Before we do anything else, if we don't have a username/password
@@ -91,7 +91,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_authenticated"); ok {
-			isAuth = datatypes.Bool(v)
+			isAuth = data.Bool(v)
 		}
 
 		if !isAuth {
@@ -110,7 +110,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_superuser"); ok {
-			isAuth = datatypes.Bool(v)
+			isAuth = data.Bool(v)
 		}
 
 		if !isAuth {
@@ -141,13 +141,13 @@ func responseByteCode(c *Context, i interface{}) error {
 
 	isJSON := false
 	if v, ok := c.symbols.Get("_json"); ok {
-		isJSON = datatypes.Bool(v)
+		isJSON = data.Bool(v)
 	}
 
 	if isJSON {
 		c.symbols.Root().SetAlways("_rest_response", v)
 	} else {
-		if b, ok := v.(*datatypes.EgoArray); ok {
+		if b, ok := v.(*data.EgoArray); ok {
 			if bs := b.GetBytes(); bs != nil {
 				writeResponse(c, string(bs)+"\n")
 
@@ -155,7 +155,7 @@ func responseByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		writeResponse(c, datatypes.FormatUnquoted(v)+"\n")
+		writeResponse(c, data.FormatUnquoted(v)+"\n")
 	}
 
 	return nil
@@ -163,16 +163,16 @@ func responseByteCode(c *Context, i interface{}) error {
 
 func writeStatus(c *Context, status int) {
 	responseSymbol, _ := c.symbolGet("$response")
-	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+	if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
 		_ = responseStruct.SetAlways("Status", status)
 	}
 }
 
 func writeResponse(c *Context, output string) {
 	responseSymbol, _ := c.symbolGet("$response")
-	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+	if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 
-		_ = responseStruct.SetAlways("Buffer", datatypes.String(bufferValue)+output)
+		_ = responseStruct.SetAlways("Buffer", data.String(bufferValue)+output)
 	}
 }

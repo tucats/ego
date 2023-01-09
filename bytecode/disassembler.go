@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
@@ -70,7 +70,7 @@ func FormatInstruction(i instruction) string {
 	}
 
 	opname = (opname + strings.Repeat(" ", maxInstructionNameWidth))[:maxInstructionNameWidth]
-	f := datatypes.Format(i.Operand)
+	f := data.Format(i.Operand)
 	f = strings.ReplaceAll(f, "\n", "\\n")
 	f = strings.ReplaceAll(f, "\t", "\\t")
 
@@ -101,7 +101,7 @@ func Format(opcodes []instruction) string {
 			opname = fmt.Sprintf("Unknown %d", i.Operation)
 		}
 
-		f := datatypes.Format(i.Operand)
+		f := data.Format(i.Operand)
 		if i.Operand == nil {
 			f = ""
 		}

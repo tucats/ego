@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -24,7 +24,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err e
 	argStrings := make([]string, 0)
 
 	for _, arg := range args {
-		s := datatypes.String(arg)
+		s := data.String(arg)
 		argStrings = append(argStrings, s)
 	}
 
@@ -50,7 +50,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err e
 		resultArray[n] = v
 	}
 
-	result = datatypes.NewArrayFromArray(&datatypes.StringType, resultArray)
+	result = data.NewArrayFromArray(&data.StringType, resultArray)
 
 	return result, err
 }

@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
@@ -25,7 +25,7 @@ type FunctionDefinition struct {
 	FullScope bool
 	F         interface{}
 	V         interface{}
-	D         *datatypes.FunctionDeclaration
+	D         *data.FunctionDeclaration
 }
 
 // MultiValueReturn is a type used to return a list of values from a builtin
@@ -53,16 +53,16 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"len": {
 		Min: 1,
 		Max: 1,
-		D: &datatypes.FunctionDeclaration{
+		D: &data.FunctionDeclaration{
 			Name: "len",
-			Parameters: []datatypes.FunctionParameter{
+			Parameters: []data.FunctionParameter{
 				{
 					Name:     "any",
-					ParmType: &datatypes.InterfaceType,
+					ParmType: &data.InterfaceType,
 				},
 			},
-			ReturnTypes: []*datatypes.Type{
-				&datatypes.IntType,
+			ReturnTypes: []*data.Type{
+				&data.IntType,
 			},
 		},
 		F: Length,
@@ -204,10 +204,10 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			// is just a struct containing where each member is a function
 			// definition.
 
-			pkg := datatypes.NewPackage(d.Pkg)
+			pkg := data.NewPackage(d.Pkg)
 
 			if p, found := symbolTable.Root().Get(d.Pkg); found {
-				if pp, ok := p.(*datatypes.EgoPackage); ok {
+				if pp, ok := p.(*data.EgoPackage); ok {
 					pkg = pp
 				}
 			} else {
@@ -225,8 +225,8 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			} else {
 				pkg.Set(n, d.F)
 
-				datatypes.SetMetadata(pkg, datatypes.TypeMDKey, datatypes.Package(d.Pkg))
-				datatypes.SetMetadata(pkg, datatypes.ReadonlyMDKey, true)
+				data.SetMetadata(pkg, data.TypeMDKey, data.Package(d.Pkg))
+				data.SetMetadata(pkg, data.ReadonlyMDKey, true)
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
 				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
@@ -307,7 +307,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
-		if p, ok := pkg.(*datatypes.EgoPackage); ok {
+		if p, ok := pkg.(*data.EgoPackage); ok {
 			p.Set(fd.Name, fd.F)
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/symbols"
 )
@@ -69,7 +69,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// cannot be optimized.
 			for _, i := range b.instructions {
 				if i.Operation > BranchInstructions {
-					destination := datatypes.Int(i.Operand)
+					destination := data.Int(i.Operand)
 					if destination >= idx && destination < idx+len(optimization.Pattern) {
 						found = false
 
@@ -128,9 +128,9 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						case OptCount:
 							increment := 1
 							if i.Operand != nil {
-								increment = datatypes.Int(i.Operand)
+								increment = data.Int(i.Operand)
 							}
-							registers[token.Register] = datatypes.Int(registers[token.Register]) + increment
+							registers[token.Register] = data.Int(registers[token.Register]) + increment
 
 						case OptStore:
 							registers[token.Register] = i.Operand
@@ -256,7 +256,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	// Scan the instructions with destinations after the insertion and update jump offsets
 	for i := 0; i < len(instructions); i++ {
 		if instructions[i].Operation > BranchInstructions {
-			destination := datatypes.Int(instructions[i].Operand)
+			destination := data.Int(instructions[i].Operand)
 			if destination > start {
 				instructions[i].Operand = destination - offset
 			}
@@ -283,7 +283,7 @@ func (b *ByteCode) constantStructOptimizer() int {
 			continue
 		}
 
-		fieldCount := datatypes.Int(i.Operand)
+		fieldCount := data.Int(i.Operand)
 
 		// Bogus count, let it be caught at runtime.
 		if idx-fieldCount < 0 {

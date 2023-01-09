@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 )
@@ -25,10 +25,10 @@ func setThisByteCode(c *Context, i interface{}) error {
 		}
 
 		_ = c.stackPush(v)
-		name = datatypes.GenerateName()
+		name = data.GenerateName()
 		c.symbolSetAlways(name, v)
 	} else {
-		name = datatypes.String(i)
+		name = data.String(i)
 	}
 
 	if v, ok := c.symbolGet(name); ok {
@@ -41,7 +41,7 @@ func setThisByteCode(c *Context, i interface{}) error {
 // loadThisByteCode implements the LoadThis opcode. This combines the
 // functionality of the Load followed by the SetThis opcodes.
 func loadThisByteCode(c *Context, i interface{}) error {
-	name := datatypes.String(i)
+	name := data.String(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier)
 	}
@@ -52,7 +52,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 	}
 
 	_ = c.stackPush(v)
-	name = datatypes.GenerateName()
+	name = data.GenerateName()
 	c.symbolSetAlways(name, v)
 
 	if v, ok := c.symbolGet(name); ok {
@@ -67,7 +67,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 // named value. This is done as part of prologue of a function that
 // has a receiver.
 func getThisByteCode(c *Context, i interface{}) error {
-	this := datatypes.String(i)
+	this := data.String(i)
 
 	if v, ok := c.popThis(); ok {
 		c.symbolSetAlways(this, v)

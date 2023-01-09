@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -20,11 +20,11 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	json := false
 
 	if len(args) > 0 {
-		selectedScope = datatypes.Int(args[0])
+		selectedScope = data.Int(args[0])
 	}
 
 	if len(args) > 1 {
-		json = strings.EqualFold(datatypes.String(args[1]), "json")
+		json = strings.EqualFold(data.String(args[1]), "json")
 	}
 
 	if len(args) > 2 {
@@ -120,12 +120,12 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Get retrieves a value from the package structure by name. It returns the value and
 // a boolean value indicating if it was found. The flag is true if the package has been
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
-func GetPackageSymbols(p *datatypes.EgoPackage) *symbols.SymbolTable {
+func GetPackageSymbols(p *data.EgoPackage) *symbols.SymbolTable {
 	if p == nil {
 		return nil
 	}
 
-	symV, found := p.Get(datatypes.SymbolsMDKey)
+	symV, found := p.Get(data.SymbolsMDKey)
 	if found {
 		if syms, ok := symV.(*symbols.SymbolTable); ok {
 			return syms
@@ -159,12 +159,12 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.EgoError(err)
 	}
 
-	result := datatypes.NewArray(t, 0)
+	result := data.NewArray(t, 0)
 	depth := 0
 	p := s.Parent()
 
 	for p != nil {
-		item := datatypes.NewStructFromMap(map[string]interface{}{
+		item := data.NewStructFromMap(map[string]interface{}{
 			"depth": depth,
 			"name":  p.Name,
 			"id":    p.ID().String(),

@@ -100,7 +100,7 @@ the supplied values (which will be type-coerced to be floats):
     func sum( args []interface{})(interface{},  *EgoError) {
         result := 0
         for _, v := range args {
-            result = result + datatypes.GetInt(v)
+            result = result + data.GetInt(v)
         }
         return result, nil
     }

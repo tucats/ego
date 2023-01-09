@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -20,7 +20,7 @@ func (c *Compiler) compileSwitch() error {
 
 	next := 0
 	fixups := make([]int, 0)
-	t := datatypes.GenerateName()
+	t := data.GenerateName()
 
 	// The switch value cannot contain a struct initializer
 	// that doesn't include a derefernce after it. This

@@ -1,4 +1,4 @@
-package datatypes
+package data
 
 // Handle generic formatting chores for all data types.
 

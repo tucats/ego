@@ -3,7 +3,7 @@ package bytecode
 import (
 	"fmt"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 )
 
 // instruction contains the information about a single bytecode.
@@ -19,7 +19,7 @@ func (i instruction) String() string {
 	}
 
 	if i.Operand != nil {
-		return name + " " + datatypes.Format(i.Operand)
+		return name + " " + data.Format(i.Operand)
 	}
 
 	return name

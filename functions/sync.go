@@ -3,7 +3,7 @@ package functions
 import (
 	"sync"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -52,7 +52,7 @@ func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	this := getNativeThis(s)
 	if wg, ok := this.(*sync.WaitGroup); ok {
-		count := datatypes.Int(args[0])
+		count := data.Int(args[0])
 		wg.Add(count)
 
 		return nil, nil

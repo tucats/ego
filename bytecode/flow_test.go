@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -45,20 +45,20 @@ func Test_typeCast(t *testing.T) {
 	name := "call to a type"
 	tests := []struct {
 		name string
-		t    *datatypes.Type
+		t    *data.Type
 		v    interface{}
 		want interface{}
 		err  error
 	}{
 		{
 			name: "cast int to string",
-			t:    &datatypes.StringType,
+			t:    &data.StringType,
 			v:    55,
 			want: "55",
 		},
 		{
 			name: "cast bool to string",
-			t:    &datatypes.StringType,
+			t:    &data.StringType,
 			v:    true,
 			want: "true",
 		},
@@ -189,7 +189,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 		t.Errorf("localCallByteCode unexpected pop error: %v", e)
 	}
 
-	if datatypes.String(d) != uninterestingValue {
+	if data.String(d) != uninterestingValue {
 		t.Errorf("localCallByteCode wrong TOS value: %#v", d)
 	}
 }

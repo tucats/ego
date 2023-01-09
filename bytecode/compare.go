@@ -3,7 +3,7 @@ package bytecode
 import (
 	"reflect"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -35,12 +35,12 @@ func equalByteCode(c *Context, i interface{}) error {
 	}
 
 	// If both are nil, then they match.
-	if datatypes.IsNil(v1) && datatypes.IsNil(v2) {
+	if data.IsNil(v1) && data.IsNil(v2) {
 		return c.stackPush(true)
 	}
 
 	// Otherwise, if either one is nil, there is no match
-	if datatypes.IsNil(v1) || datatypes.IsNil(v2) {
+	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.stackPush(false)
 	}
 
@@ -57,20 +57,20 @@ func equalByteCode(c *Context, i interface{}) error {
 	case *errors.EgoErrorMsg:
 		r = a.Equal(v2)
 
-	case *datatypes.EgoStruct:
-		a2, ok := v2.(*datatypes.EgoStruct)
+	case *data.EgoStruct:
+		a2, ok := v2.(*data.EgoStruct)
 		if ok {
 			r = reflect.DeepEqual(a, a2)
 		} else {
 			r = false
 		}
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		r = reflect.DeepEqual(v1, v2)
 
-	case *datatypes.EgoArray:
+	case *data.EgoArray:
 		switch b := v2.(type) {
-		case *datatypes.EgoArray:
+		case *data.EgoArray:
 			r = a.DeepEqual(b)
 
 		default:
@@ -78,7 +78,7 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 		if v1 == nil && v2 == nil {
 			r = true
 		} else {
@@ -87,7 +87,7 @@ func equalByteCode(c *Context, i interface{}) error {
 				r = false
 
 			case byte, int32, int, int64:
-				r = datatypes.Int64(v1) == datatypes.Int64(v2)
+				r = data.Int64(v1) == data.Int64(v2)
 
 			case float64:
 				r = v1.(float64) == v2.(float64)
@@ -137,8 +137,8 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	}
 
 	// IF only one side is nil, they are not equal by definition.
-	if !datatypes.IsNil(v1) && datatypes.IsNil(v2) ||
-		datatypes.IsNil(v1) && !datatypes.IsNil(v2) {
+	if !data.IsNil(v1) && data.IsNil(v2) ||
+		data.IsNil(v1) && !data.IsNil(v2) {
 		return c.stackPush(true)
 	}
 
@@ -154,24 +154,24 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	case error:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case datatypes.EgoMap:
+	case data.EgoMap:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case datatypes.EgoArray:
+	case data.EgoArray:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case datatypes.EgoStruct:
+	case data.EgoStruct:
 		r = !reflect.DeepEqual(v1, v2)
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case nil:
 			r = false
 
 		case byte, int32, int, int64:
-			r = datatypes.Int64(v1) != datatypes.Int64(v2)
+			r = data.Int64(v1) != data.Int64(v2)
 
 		case float32:
 			r = v1.(float32) != v2.(float32)
@@ -229,15 +229,15 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *datatypes.EgoMap, *datatypes.EgoStruct, *datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = datatypes.Int64(v1) > datatypes.Int64(v2)
+			r = data.Int64(v1) > data.Int64(v2)
 
 		case float32:
 			r = v1.(float32) > v2.(float32)
@@ -249,7 +249,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 			r = v1.(string) > v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -297,15 +297,15 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *datatypes.EgoMap, *datatypes.EgoStruct, *datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = datatypes.Int64(v1) >= datatypes.Int64(v2)
+			r = data.Int64(v1) >= data.Int64(v2)
 
 		case float32:
 			r = v1.(float32) >= v2.(float32)
@@ -317,7 +317,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 			r = v1.(string) >= v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -365,15 +365,15 @@ func lessThanByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *datatypes.EgoMap, *datatypes.EgoStruct, *datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = datatypes.Int64(v1) < datatypes.Int64(v2)
+			r = data.Int64(v1) < data.Int64(v2)
 
 		case float32:
 			r = v1.(float32) < v2.(float32)
@@ -385,7 +385,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 			r = v1.(string) < v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -432,14 +432,14 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *datatypes.EgoMap, *datatypes.EgoStruct, *datatypes.EgoPackage, *datatypes.EgoArray:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = datatypes.Normalize(v1, v2)
+		v1, v2 = data.Normalize(v1, v2)
 		switch v1.(type) {
 		case byte, int32, int, int64:
-			r = datatypes.Int64(v1) <= datatypes.Int64(v2)
+			r = data.Int64(v1) <= data.Int64(v2)
 
 		case float32:
 			r = v1.(float32) <= v2.(float32)
@@ -451,7 +451,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 			r = v1.(string) <= v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v1).String())
+			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -120,7 +120,7 @@ func (c *Compiler) compileImport() error {
 			// if it was already processed once.
 			ui.Debug(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
 			c.packageMutex.Lock()
-			c.packages[packageName] = datatypes.NewPackage(fileName.Spelling())
+			c.packages[packageName] = data.NewPackage(fileName.Spelling())
 			c.packageMutex.Unlock()
 		}
 

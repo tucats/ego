@@ -2,7 +2,7 @@ package compiler
 
 import (
 	bc "github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -19,7 +19,7 @@ func (c *Compiler) compileGo() error {
 
 	// Is it a function constant?
 	if fName == tokenizer.FuncToken {
-		fName = tokenizer.NewIdentifierToken(datatypes.GenerateName())
+		fName = tokenizer.NewIdentifierToken(data.GenerateName())
 
 		// Compile a function literal onto the stack.
 		err := c.compileFunctionDefinition(true)

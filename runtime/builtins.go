@@ -5,7 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
@@ -23,43 +23,43 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
-	s.SetAlways("exec", datatypes.NewPackageFromMap("exec", map[string]interface{}{
-		"Command":               NewCommand,
-		"LookPath":              LookPath,
-		datatypes.TypeMDKey:     datatypes.Package("exec"),
-		datatypes.ReadonlyMDKey: true,
+	s.SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
+		"Command":          NewCommand,
+		"LookPath":         LookPath,
+		data.TypeMDKey:     data.Package("exec"),
+		data.ReadonlyMDKey: true,
 	}))
 
-	s.SetAlways("rest", datatypes.NewPackageFromMap("rest", map[string]interface{}{
-		"New":                   RestNew,
-		"Status":                RestStatusMessage,
-		"ParseURL":              RestParseURL,
-		datatypes.TypeMDKey:     datatypes.Package("rest"),
-		datatypes.ReadonlyMDKey: true,
+	s.SetAlways("rest", data.NewPackageFromMap("rest", map[string]interface{}{
+		"New":              RestNew,
+		"Status":           RestStatusMessage,
+		"ParseURL":         RestParseURL,
+		data.TypeMDKey:     data.Package("rest"),
+		data.ReadonlyMDKey: true,
 	}))
 
-	s.SetAlways("db", datatypes.NewPackageFromMap("db", map[string]interface{}{
-		"New":                   DBNew,
-		datatypes.TypeMDKey:     datatypes.Package("db"),
-		datatypes.ReadonlyMDKey: true,
+	s.SetAlways("db", data.NewPackageFromMap("db", map[string]interface{}{
+		"New":              DBNew,
+		data.TypeMDKey:     data.Package("db"),
+		data.ReadonlyMDKey: true,
 	}))
 
-	var utilPkg *datatypes.EgoPackage
+	var utilPkg *data.EgoPackage
 
 	utilV, found := s.Root().Get("util")
 	if !found {
 		utilPkg, _ = bytecode.GetPackage("util")
 	} else {
-		utilPkg = utilV.(*datatypes.EgoPackage)
+		utilPkg = utilV.(*data.EgoPackage)
 	}
 
 	utilPkg.Set("SymbolTables", SymbolTables)
 	_ = s.Root().SetWithAttributes("util", utilPkg, symbols.SymbolAttribute{Readonly: true})
 
-	s.SetAlways("tables", datatypes.NewPackageFromMap("tables", map[string]interface{}{
-		"New":                   TableNew,
-		datatypes.TypeMDKey:     datatypes.Package("tables"),
-		datatypes.ReadonlyMDKey: true,
+	s.SetAlways("tables", data.NewPackageFromMap("tables", map[string]interface{}{
+		"New":              TableNew,
+		data.TypeMDKey:     data.Package("tables"),
+		data.ReadonlyMDKey: true,
 	}))
 
 	// Add the sort.Slice function, which must live outside
@@ -110,7 +110,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	prompt := ""
 	if len(args) > 0 {
-		prompt = datatypes.String(args[0])
+		prompt = data.String(args[0])
 	}
 
 	var text string
@@ -133,10 +133,10 @@ func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	return expressions.Evaluate(datatypes.String(args[0]), symbols)
+	return expressions.Evaluate(data.String(args[0]), symbols)
 }
 
-func GetDeclaration(fname string) *datatypes.FunctionDeclaration {
+func GetDeclaration(fname string) *data.FunctionDeclaration {
 	if fname == "" {
 		return nil
 	}

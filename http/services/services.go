@@ -21,7 +21,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -126,7 +126,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		parameterStruct[k] = values
 	}
 
-	symbolTable.SetAlways("_parms", datatypes.NewMapFromMap(parameterStruct))
+	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameterStruct))
 
 	// Setup additional builtins and supporting values needed for REST service execution
 	symbolTable.SetAlways("eval", runtime.Eval)
@@ -159,7 +159,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	symbolTable.SetAlways("_headers", datatypes.NewMapFromMap(headers))
+	symbolTable.SetAlways("_headers", data.NewMapFromMap(headers))
 	symbolTable.SetAlways("_json", isJSON)
 
 	path := r.URL.Path
@@ -189,11 +189,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	var debug bool
 
 	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
-		debugPath := datatypes.String(b)
+		debugPath := data.String(b)
 		if debugPath == "/" {
 			debug = true
 		} else {
-			debug = strings.EqualFold(datatypes.String(b), endpoint)
+			debug = strings.EqualFold(data.String(b), endpoint)
 		}
 	}
 
@@ -418,7 +418,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// info to support the browser's attempt to prompt the user.
 	status := http.StatusOK
 	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
-		status = datatypes.Int(statusValue)
+		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
 		}
@@ -453,9 +453,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get("$response")
 		buffer := ""
-		if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
+		if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")
-			buffer = datatypes.String(bufferValue)
+			buffer = data.String(bufferValue)
 		}
 
 		_, _ = io.WriteString(w, buffer)

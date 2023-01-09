@@ -8,7 +8,7 @@ import (
 	"text/template"
 	tparse "text/template/parse"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -16,12 +16,12 @@ import (
 
 // Lower implements the lower() function.
 func Lower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToLower(datatypes.String(args[0])), nil
+	return strings.ToLower(data.String(args[0])), nil
 }
 
 // Upper implements the upper() function.
 func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToUpper(datatypes.String(args[0])), nil
+	return strings.ToUpper(data.String(args[0])), nil
 }
 
 // Left implements the left() function.
@@ -29,9 +29,9 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	var b strings.Builder
 
 	count := 0
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 
-	p := datatypes.Int(args[1])
+	p := data.Int(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -55,9 +55,9 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	var b strings.Builder
 
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 
-	p := datatypes.Int(args[1])
+	p := data.Int(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -81,7 +81,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Index implements the index() function.
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
-	case *datatypes.EgoArray:
+	case *data.EgoArray:
 		for i := 0; i < arg.Len(); i++ {
 			vv, _ := arg.Get(i)
 			if reflect.DeepEqual(vv, args[1]) {
@@ -100,14 +100,14 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 		return -1, nil
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		_, found, err := arg.Get(args[1])
 
 		return found, err
 
 	default:
-		v := datatypes.String(args[0])
-		p := datatypes.String(args[1])
+		v := data.String(args[0])
+		p := data.String(args[1])
 
 		return strings.Index(v, p) + 1, nil
 	}
@@ -115,14 +115,14 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Substring implements the substring() function.
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 
-	p1 := datatypes.Int(args[1]) // Starting character position
+	p1 := data.Int(args[1]) // Starting character position
 	if p1 < 1 {
 		p1 = 1
 	}
 
-	p2 := datatypes.Int(args[2]) // Number of characters
+	p2 := data.Int(args[2]) // Number of characters
 	if p2 == 0 {
 		return "", nil
 	}
@@ -164,10 +164,10 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) == 1 {
-		return datatypes.String(args[0]), nil
+		return data.String(args[0]), nil
 	}
 
-	return fmt.Sprintf(datatypes.String(args[0]), args[1:]...), nil
+	return fmt.Sprintf(data.String(args[0]), args[1:]...), nil
 }
 
 // Chars implements the strings.chars() function. This accepts a string
@@ -177,12 +177,12 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 	for i := range v {
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(&datatypes.StringType, count)
+	r := data.NewArray(&data.StringType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, string(ch))
@@ -201,12 +201,12 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := datatypes.String(args[0])
+	v := data.String(args[0])
 	for i := range v {
 		count = i + 1
 	}
 
-	r := datatypes.NewArray(&datatypes.IntType, count)
+	r := data.NewArray(&data.IntType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, int(ch))
@@ -256,7 +256,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(args[0]).String())
+		return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(data.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -272,7 +272,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(datatypes.TypeOf(tv).String())
+				return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(data.TypeOf(tv).String())
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
@@ -287,7 +287,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		err = tree.Execute(&r, nil)
 	} else {
-		if structure, ok := args[1].(*datatypes.EgoStruct); ok {
+		if structure, ok := args[1].(*data.EgoStruct); ok {
 			err = tree.Execute(&r, structure.ToMap())
 		} else {
 			err = tree.Execute(&r, args[1])
@@ -302,8 +302,8 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := datatypes.String(args[0])
-	maxWidth := datatypes.Int(args[1])
+	name := data.String(args[0])
+	maxWidth := data.Int(args[1])
 
 	if len(name) <= maxWidth {
 		return name, nil
@@ -332,11 +332,11 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, er
 func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v []string
 
-	src := datatypes.String(args[0])
+	src := data.String(args[0])
 	delim := "\n"
 
 	if len(args) > 1 {
-		delim = datatypes.String(args[1])
+		delim = data.String(args[1])
 	}
 
 	// Are we seeing Windows-style line endings? If we are doing a split
@@ -349,7 +349,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// We need to store the result in a native Ego array.
-	r := datatypes.NewArray(&datatypes.StringType, len(v))
+	r := data.NewArray(&data.StringType, len(v))
 
 	for i, n := range v {
 		err := r.Set(i, n)
@@ -363,10 +363,10 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Tokenize splits a string into tokens.
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	src := datatypes.String(args[0])
+	src := data.String(args[0])
 	t := tokenizer.New(src)
 
-	r := datatypes.NewArray(&datatypes.StringType, len(t.Tokens))
+	r := data.NewArray(&data.StringType, len(t.Tokens))
 
 	var err error
 
@@ -383,9 +383,9 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	result := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
+	result := data.NewMap(&data.StringType, &data.InterfaceType)
 
-	patternMap, match := ParseURLPattern(datatypes.String(args[0]), datatypes.String(args[1]))
+	patternMap, match := ParseURLPattern(data.String(args[0]), data.String(args[1]))
 	if !match {
 		return result, nil
 	}
@@ -472,51 +472,51 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 
 // Wrapper around strings.Compare().
 func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
-	b := datatypes.String(args[1])
+	a := data.String(args[0])
+	b := data.String(args[1])
 
 	return strings.Compare(a, b), nil
 }
 
 // Wrapper around strings.Contains().
 func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
-	b := datatypes.String(args[1])
+	a := data.String(args[0])
+	b := data.String(args[1])
 
 	return strings.Contains(a, b), nil
 }
 
 // Wrapper around strings.Contains().
 func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
-	b := datatypes.String(args[1])
+	a := data.String(args[0])
+	b := data.String(args[1])
 
 	return strings.ContainsAny(a, b), nil
 }
 
 // Wrapper around strings.Count().
 func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
-	b := datatypes.String(args[1])
+	a := data.String(args[0])
+	b := data.String(args[1])
 
 	return strings.Count(a, b), nil
 }
 
 // Wrapper around strings.EqualFold().
 func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
-	b := datatypes.String(args[1])
+	a := data.String(args[0])
+	b := data.String(args[1])
 
 	return strings.EqualFold(a, b), nil
 }
 
 // Wrapper around strings.Fields().
 func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.String(args[0])
+	a := data.String(args[0])
 
 	fields := strings.Fields(a)
 
-	result := datatypes.NewArray(&datatypes.StringType, len(fields))
+	result := data.NewArray(&data.StringType, len(fields))
 
 	for idx, f := range fields {
 		_ = result.Set(idx, f)
@@ -527,17 +527,17 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Wrapper around strings.Join().
 func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	elemArray, ok := args[0].(*datatypes.EgoArray)
+	elemArray, ok := args[0].(*data.EgoArray)
 	if !ok {
 		return nil, errors.EgoError(errors.ErrArgumentType).Context("Join()")
 	}
 
-	separator := datatypes.String(args[1])
+	separator := data.String(args[1])
 	elements := make([]string, elemArray.Len())
 
 	for i := 0; i < elemArray.Len(); i++ {
 		element, _ := elemArray.Get(i)
-		elements[i] = datatypes.String(element)
+		elements[i] = data.String(element)
 	}
 
 	return strings.Join(elements, separator), nil

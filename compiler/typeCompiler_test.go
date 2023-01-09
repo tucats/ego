@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -14,7 +14,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 		name     string
 		arg      string
 		typeName string
-		want     *datatypes.Type
+		want     *data.Type
 		wantErr  error
 		debug    bool
 	}{
@@ -22,18 +22,18 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			name:     "map",
 			arg:      "map[string]int",
 			typeName: "type0",
-			want: datatypes.TypeDefinition("type0", datatypes.Map(
-				&datatypes.StringType,
-				&datatypes.IntType)),
+			want: data.TypeDefinition("type0", data.Map(
+				&data.StringType,
+				&data.IntType)),
 			wantErr: nil,
 		},
 		{
 			name:     "struct",
 			arg:      "struct{ age int name string }",
 			typeName: "type1",
-			want: datatypes.TypeDefinition("type1", datatypes.Structure(
-				datatypes.Field{Name: "age", Type: &datatypes.IntType},
-				datatypes.Field{Name: "name", Type: &datatypes.StringType},
+			want: data.TypeDefinition("type1", data.Structure(
+				data.Field{Name: "age", Type: &data.IntType},
+				data.Field{Name: "name", Type: &data.StringType},
 			)),
 			wantErr: nil,
 		},
@@ -41,7 +41,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			name:     "int",
 			arg:      "int",
 			typeName: "type2",
-			want:     datatypes.TypeDefinition("type2", &datatypes.IntType),
+			want:     data.TypeDefinition("type2", &data.IntType),
 			wantErr:  nil,
 		},
 

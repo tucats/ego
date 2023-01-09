@@ -3,7 +3,7 @@ package bytecode
 import (
 	"reflect"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -40,10 +40,10 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := array.(type) {
-	case *datatypes.EgoPackage:
+	case *data.EgoPackage:
 		return c.newError(errors.ErrReadOnlyValue)
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		var v interface{}
 
 		// A bit of a hack here. If this is a map index, and we
@@ -78,7 +78,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		}
 
 	// Reading from a channel ignores the index value.
-	case *datatypes.Channel:
+	case *data.Channel:
 		var datum interface{}
 
 		datum, err = a.Receive()
@@ -86,14 +86,14 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 			err = c.stackPush(datum)
 		}
 
-	case *datatypes.EgoStruct:
-		key := datatypes.String(index)
+	case *data.EgoStruct:
+		key := data.String(index)
 		v, _ := a.Get(key)
 		err = c.stackPush(v)
 		c.lastStruct = a
 
-	case *datatypes.EgoArray:
-		subscript := datatypes.Int(index)
+	case *data.EgoArray:
+		subscript := data.Int(index)
 		if subscript < 0 || subscript >= a.Len() {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
@@ -103,7 +103,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 
 	case []interface{}:
 		// Needed for varars processing
-		subscript := datatypes.Int(index)
+		subscript := data.Int(index)
 		if subscript < 0 || subscript >= len(a) {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
@@ -141,8 +141,8 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 	switch a := array.(type) {
 	case string:
-		subscript1 := datatypes.Int(index1)
-		subscript2 := datatypes.Int(index2)
+		subscript1 := data.Int(index1)
+		subscript2 := data.Int(index2)
 
 		if subscript2 > len(a) || subscript2 < 0 {
 			return errors.EgoError(errors.ErrInvalidSliceIndex).Context(subscript2)
@@ -154,9 +154,9 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 		return c.stackPush(a[subscript1:subscript2])
 
-	case *datatypes.EgoArray:
-		subscript1 := datatypes.Int(index1)
-		subscript2 := datatypes.Int(index2)
+	case *data.EgoArray:
+		subscript1 := data.Int(index1)
+		subscript2 := data.Int(index2)
 
 		v, err := a.GetSliceAsArray(subscript1, subscript2)
 		if err == nil {
@@ -166,12 +166,12 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		return err
 	// Array of objects means we retrieve a slice.
 	case []interface{}:
-		subscript1 := datatypes.Int(index1)
+		subscript1 := data.Int(index1)
 		if subscript1 < 0 || subscript1 >= len(a) {
 			return c.newError(errors.ErrInvalidSliceIndex).Context(subscript1)
 		}
 
-		subscript2 := datatypes.Int(index2)
+		subscript2 := data.Int(index2)
 		if subscript2 < subscript1 || subscript2 >= len(a) {
 			return c.newError(errors.ErrInvalidSliceIndex).Context(subscript2)
 		}
@@ -218,8 +218,8 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := destination.(type) {
-	case *datatypes.EgoPackage:
-		name := datatypes.String(index)
+	case *data.EgoPackage:
+		name := data.String(index)
 
 		// Must be an exported (capitalized) name.
 		if !util.HasCapitalizedName(name) {
@@ -245,7 +245,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		// Get the associated symbol table
-		symV, found := a.Get(datatypes.SymbolsMDKey)
+		symV, found := a.Get(data.SymbolsMDKey)
 		if found {
 			syms := symV.(*symbols.SymbolTable)
 
@@ -259,10 +259,10 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return syms.Set(name, v)
 		}
 
-	case *datatypes.Type:
-		a.DefineFunction(datatypes.String(index), v)
+	case *data.Type:
+		a.DefineFunction(data.String(index), v)
 
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
@@ -271,8 +271,8 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return errors.EgoError(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
-	case *datatypes.EgoStruct:
-		key := datatypes.String(index)
+	case *data.EgoStruct:
+		key := data.String(index)
 
 		err = a.Set(key, v)
 		if err != nil {
@@ -282,8 +282,8 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		_ = c.stackPush(a)
 
 	// Index into array is integer index
-	case *datatypes.EgoArray:
-		subscript := datatypes.Int(index)
+	case *data.EgoArray:
+		subscript := data.Int(index)
 		if subscript < 0 || subscript >= a.Len() {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
@@ -304,7 +304,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	// Index into array is integer index
 	case []interface{}:
-		subscript := datatypes.Int(index)
+		subscript := data.Int(index)
 		if subscript < 0 || subscript >= len(a) {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
 		}
@@ -320,7 +320,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		_ = c.stackPush(a)
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(a).String())
+		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(a).String())
 	}
 
 	return nil
@@ -348,7 +348,7 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := destination.(type) {
-	case *datatypes.EgoMap:
+	case *data.EgoMap:
 		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
@@ -373,7 +373,7 @@ func flattenByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		if array, ok := v.(*datatypes.EgoArray); ok {
+		if array, ok := v.(*data.EgoArray); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)
 				_ = c.stackPush(vv)

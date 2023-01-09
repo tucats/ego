@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/tucats/ego/datatypes"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -31,7 +31,7 @@ func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
-	property := datatypes.String(args[0])
+	property := data.String(args[0])
 
 	language := os.Getenv("LANG")
 
@@ -41,17 +41,17 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) > 1 {
 		value := args[1]
-		if egoMap, ok := value.(*datatypes.EgoMap); ok {
+		if egoMap, ok := value.(*data.EgoMap); ok {
 			keys := egoMap.Keys()
 			for _, key := range keys {
 				value, _, _ := egoMap.Get(key)
-				parameters[datatypes.String(key)] = datatypes.String(value)
+				parameters[data.String(key)] = data.String(value)
 			}
-		} else if egoStruct, ok := value.(*datatypes.EgoStruct); ok {
+		} else if egoStruct, ok := value.(*data.EgoStruct); ok {
 			fields := egoStruct.FieldNames()
 			for _, field := range fields {
 				value := egoStruct.GetAlways(field)
-				parameters[field] = datatypes.String(value)
+				parameters[field] = data.String(value)
 			}
 		} else if value != nil {
 			return nil, errors.EgoError(errors.ErrArgumentType)
@@ -59,7 +59,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) > 2 {
-		language = datatypes.String(args[2])
+		language = data.String(args[2])
 	}
 
 	if language == "" {
@@ -75,7 +75,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Find the language
-	if languages, ok := localizedMap.(*datatypes.EgoStruct); ok {
+	if languages, ok := localizedMap.(*data.EgoStruct); ok {
 		stringMap, found := languages.Get(language)
 		if !found {
 			// If not found, assume english
@@ -85,13 +85,13 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			}
 		}
 
-		if localizedStrings, ok := stringMap.(*datatypes.EgoStruct); ok {
+		if localizedStrings, ok := stringMap.(*data.EgoStruct); ok {
 			message, found := localizedStrings.Get(property)
 			if !found {
 				return property, nil
 			}
 
-			msgString := datatypes.String(message)
+			msgString := data.String(message)
 			t := template.New(property)
 
 			t, e := t.Parse(msgString)
