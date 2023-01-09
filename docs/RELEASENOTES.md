@@ -13,39 +13,38 @@ This release has several main themes:
 
 The changes are expresed in the following sections.
 
-
 #### Language
 
-1.  More fully evolved type system, supporting proper user-generated types.
+1. More fully evolved type system, supporting proper user-generated types.
 
-2.  Types can have receivers (by pointer or by value)
+2. Types can have receivers (by pointer or by value)
 
-3.  Types work correctly when exported from packages.
+3. Types work correctly when exported from packages.
 
-4.  If-statements with assignment supported.
+4. If-statements with assignment supported.
 
-5.  Switch statements with case selectors as expressions
+5. Switch statements with case selectors as expressions
 
-6.  Extended reflect() to return much more information.
+6. Extended reflect() to return much more information.
 
-7.  Better syntax checking (managing of reserved words).
+7. Better syntax checking (managing of reserved words).
 
-8.  Support of slices notation with implied start or end values.
+8. Support of slices notation with implied start or end values.
 
-9.  String length, ranging over a string, and table cell alignment operations are all now unicode-safe.
+9. String length, ranging over a string, and table cell alignment operations are all now unicode-safe.
 
 10. Package global variables.
 
-11.  Allow formatting of a function, which returns it's declaration.
+11. Allow formatting of a function, which returns it's declaration.
 
-12.  The "print" command will attempt to format arrays, structures, and
+12. The "print" command will attempt to format arrays, structures, and
     arrays of structures as a text table.
 
-13.  Support proper localization. Currently supports "en" localizations. This means column headings, error messages, and prompts can be localized. Note that language terms and log messages are not localizable.
+13. Support proper localization. Currently supports "en" localizations. This means column headings, error messages, and prompts can be localized. Note that language terms and log messages are not localizable.
 
-14.  Allow field lists in structure declarations.
+14. Allow field lists in structure declarations.
 
-15.  Allow variable name lists in variable declarations.
+15. Allow variable name lists in variable declarations.
 
 16. Debuggers allows saving and re-loading breakpoint lists.
 
@@ -57,8 +56,6 @@ The changes are expresed in the following sections.
 
 20. Added modulo "%" operator to language.
 
-
-
 #### Server Functionality
 
 1. Support for /tables endpoints which allow basic SQL operations on a
@@ -67,29 +64,28 @@ The changes are expresed in the following sections.
 
 2. Support for TLS in network communications between client and server.
 
-3.  Heartbeat and "UP" service endpoints no longer require authorization token.
+3. Heartbeat and "UP" service endpoints no longer require authorization token.
 
-4.  Additional logging classes. SQL for back-end database operations performed
+4. Additional logging classes. SQL for back-end database operations performed
     by the /tables endpoints, REST for logging REST call activity.
 
-5.  More complete support for media types in rest calls.
+5. More complete support for media types in rest calls.
 
-6.  API versions are returned with all REST payloads.
+6. API versions are returned with all REST payloads.
 
 #### Performance
 
-1.  Types are managed more efficiently in memory.
+1. Types are managed more efficiently in memory.
 
-2.  Added peephole optimier for common bytecode patterns.
+2. Added peephole optimier for common bytecode patterns.
 
-3.  Symbol table made more efficient for managing readonly state.
+3. Symbol table made more efficient for managing readonly state.
 
-4.  Internal package structure simplified, making imports faster.
+4. Internal package structure simplified, making imports faster.
 
 #### Deprecated Features
 
-1.  Gremlin client functionality removed.
-
+1. Gremlin client functionality removed.
 
 ## Ego 1.2 "Jamba Juice"
 
