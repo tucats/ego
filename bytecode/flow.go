@@ -37,12 +37,12 @@ func panicByteCode(c *Context, i interface{}) error {
 	c.running = false
 
 	if i != nil {
-		panicMessage = datatypes.GetString(i)
+		panicMessage = datatypes.String(i)
 	} else {
 		if v, err := c.Pop(); err != nil {
 			return err
 		} else {
-			panicMessage = datatypes.GetString(v)
+			panicMessage = datatypes.String(v)
 		}
 	}
 
@@ -60,7 +60,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	c.line = datatypes.GetInt(i)
+	c.line = datatypes.Int(i)
 	c.stepOver = false
 	c.symbols.SetAlways(defs.Line, c.line)
 	c.symbols.SetAlways(defs.Module, c.bc.name)
@@ -94,12 +94,12 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get destination
-	address := datatypes.GetInt(i)
+	address := datatypes.Int(i)
 	if address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
-	if !datatypes.GetBool(v) {
+	if !datatypes.Bool(v) {
 		c.programCounter = address
 	}
 
@@ -110,7 +110,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 // the operand.
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
-	if address := datatypes.GetInt(i); address < 0 || address > c.bc.nextAddress {
+	if address := datatypes.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
@@ -131,10 +131,10 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 
 	// Get destination
 
-	if address := datatypes.GetInt(i); address < 0 || address > c.bc.nextAddress {
+	if address := datatypes.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
-		if datatypes.GetBool(v) {
+		if datatypes.Bool(v) {
 			c.programCounter = address
 		}
 	}
@@ -151,13 +151,13 @@ func localCallByteCode(c *Context, i interface{}) error {
 	// Make a new symbol table for the function to run with,
 	// and a new execution context. Store the argument list in
 	// the child table.
-	c.callframePush("defer", c.bc, datatypes.GetInt(i), false)
+	c.callframePush("defer", c.bc, datatypes.Int(i), false)
 
 	return nil
 }
 
 func goByteCode(c *Context, i interface{}) error {
-	argc := datatypes.GetInt(i) + c.argCountDelta
+	argc := datatypes.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -175,7 +175,7 @@ func goByteCode(c *Context, i interface{}) error {
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
-		fName := datatypes.GetString(fx)
+		fName := datatypes.String(fx)
 
 		// Launch the function call as a separate thread.
 		ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
@@ -203,7 +203,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
 	// Normally, this value is zero.
-	argc := datatypes.GetInt(i) + c.argCountDelta
+	argc := datatypes.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
 
 	// Arguments are in reverse order on stack.
@@ -466,11 +466,11 @@ func argCheckByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrArgumentTypeCheck)
 		}
 
-		min = datatypes.GetInt(operand[0])
-		max = datatypes.GetInt(operand[1])
+		min = datatypes.Int(operand[0])
+		max = datatypes.Int(operand[1])
 
 		if len(operand) == 3 {
-			name = datatypes.GetString(operand[2])
+			name = datatypes.String(operand[2])
 		}
 
 	case int:
@@ -569,7 +569,7 @@ func waitByteCode(c *Context, i interface{}) error {
 func modeCheckBytecode(c *Context, i interface{}) error {
 	mode, found := c.symbols.Get("__exec_mode")
 
-	if found && (datatypes.GetString(i) == datatypes.GetString(mode)) {
+	if found && (datatypes.String(i) == datatypes.String(mode)) {
 		return nil
 	}
 
@@ -580,10 +580,10 @@ func entryPointByteCode(c *Context, i interface{}) error {
 	var entryPointName string
 
 	if i != nil {
-		entryPointName = datatypes.GetString(i)
+		entryPointName = datatypes.String(i)
 	} else {
 		v, _ := c.Pop()
-		entryPointName = datatypes.GetString(v)
+		entryPointName = datatypes.String(v)
 	}
 
 	if entryPoint, found := c.symbolGet(entryPointName); found {

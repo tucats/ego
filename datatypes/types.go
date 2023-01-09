@@ -683,6 +683,22 @@ func IsNumeric(i interface{}) bool {
 // or datatypes.stringKind.
 func TypeOf(i interface{}) *Type {
 	switch v := i.(type) {
+	case Type:
+		if baseType := v.BaseType(); baseType != nil {
+			return baseType
+		}
+
+		return &v
+
+	case *Type:
+		if v.kind == TypeKind {
+			if baseType := v.BaseType(); baseType != nil {
+				return baseType
+			}
+		}
+
+		return v
+
 	case *interface{}:
 		baseType := TypeOf(*v)
 

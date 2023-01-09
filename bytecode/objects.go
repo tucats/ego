@@ -16,7 +16,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if i != nil {
-		name = datatypes.GetString(i)
+		name = datatypes.String(i)
 	} else {
 		v, err := c.Pop()
 		if err != nil {
@@ -27,7 +27,7 @@ func memberByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		name = datatypes.GetString(v)
+		name = datatypes.String(v)
 	}
 
 	m, err := c.Pop()
@@ -124,7 +124,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 		}
 
 		if bc, ok := v.(*ByteCode); ok {
-			bc.name = datatypes.GetString(i)
+			bc.name = datatypes.String(i)
 			c.symbols.SetAlways(bc.name, bc)
 		} else {
 			return c.newError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())

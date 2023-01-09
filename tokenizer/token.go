@@ -87,15 +87,15 @@ func (t Token) String() string {
 }
 
 func (t Token) Integer() int64 {
-	return datatypes.GetInt64(t.spelling)
+	return datatypes.Int64(t.spelling)
 }
 
 func (t Token) Float() float64 {
-	return datatypes.GetFloat64(t.spelling)
+	return datatypes.Float64(t.spelling)
 }
 
 func (t Token) Boolean() bool {
-	return datatypes.GetBool(t.spelling)
+	return datatypes.Bool(t.spelling)
 }
 
 func (t Token) Spelling() string {

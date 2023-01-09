@@ -56,7 +56,7 @@ func NewArrayFromArray(valueType *Type, source []interface{}) *EgoArray {
 		}
 
 		for n, v := range source {
-			m.bytes[n] = byte(GetInt(v))
+			m.bytes[n] = byte(Int(v))
 		}
 
 		return m
@@ -308,7 +308,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) error {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		i := GetInt32(value)
+		i := Int32(value)
 		a.bytes[index] = byte(i)
 	} else {
 		a.data[index] = v
@@ -331,7 +331,7 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) *EgoArray {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		a.bytes[index] = byte(GetInt(value))
+		a.bytes[index] = byte(Int(value))
 	} else {
 		a.data[index] = value
 	}
@@ -433,7 +433,7 @@ func (a *EgoArray) Append(i interface{}) *EgoArray {
 			}
 		} else {
 			// Otherwise, append the value to the array...
-			v := byte(GetInt32(i))
+			v := byte(Int32(i))
 			a.bytes = append(a.bytes, v)
 		}
 	} else {
@@ -511,7 +511,7 @@ func (a *EgoArray) Sort() error {
 	case StringType.kind:
 		stringArray := make([]string, a.Len())
 		for i, v := range a.data {
-			stringArray[i] = GetString(v)
+			stringArray[i] = String(v)
 		}
 
 		sort.Strings(stringArray)
@@ -531,7 +531,7 @@ func (a *EgoArray) Sort() error {
 	case IntType.kind, Int32Type.kind, Int64Type.kind:
 		integerArray := make([]int64, a.Len())
 		for i, v := range a.data {
-			integerArray[i] = GetInt64(v)
+			integerArray[i] = Int64(v)
 		}
 
 		sort.Slice(integerArray, func(i, j int) bool { return integerArray[i] < integerArray[j] })
@@ -558,7 +558,7 @@ func (a *EgoArray) Sort() error {
 	case Float32Type.kind, Float64Type.kind:
 		floatArray := make([]float64, a.Len())
 		for i, v := range a.data {
-			floatArray[i] = GetFloat64(v)
+			floatArray[i] = Float64(v)
 		}
 
 		sort.Float64s(floatArray)

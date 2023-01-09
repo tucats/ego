@@ -62,7 +62,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 
 		case *datatypes.EgoPackage:
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
-				typeString = datatypes.GetString(tsx)
+				typeString = datatypes.String(tsx)
 			}
 
 			hasBuiltins := false
@@ -177,7 +177,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 		case *datatypes.EgoPackage:
 			if tsx, ok := datatypes.GetMetadata(actual, datatypes.TypeMDKey); ok {
-				typeString = datatypes.GetString(tsx)
+				typeString = datatypes.String(tsx)
 			}
 
 			hasBuiltins := false
@@ -223,7 +223,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			v = "\"******\""
 		}
 
-		row[2] = datatypes.GetString(attr.Readonly)
+		row[2] = datatypes.String(attr.Readonly)
 		row[3] = datatypes.Format(v)
 		rows = append(rows, row)
 	}

@@ -28,7 +28,7 @@ func (c *Compiler) compileAssignment() error {
 	}
 
 	if autoMode != bytecode.NoOperation {
-		t := datatypes.GetString(storeLValue.Instruction(0).Operand)
+		t := datatypes.String(storeLValue.Instruction(0).Operand)
 
 		c.b.Emit(bytecode.Load, t)
 		c.b.Emit(bytecode.Push, 1)

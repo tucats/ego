@@ -9,71 +9,27 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// GetType returns the Type of a given interface object. If the value is a type
-// or a pointer to a type, return that Type. If the interface isn't a type, but
-// is a scalar value, return the Type of the value.
-func GetType(v interface{}) *Type {
-	if t, ok := v.(Type); ok {
-		if t.valueType != nil && t.valueType.kind == InterfaceKind {
-			t = *t.valueType
-		}
-
-		return &t
-	}
-
-	if t, ok := v.(*Type); ok {
-		return t
-	}
-
-	// If it's a value object, return it's type.
-	switch v.(type) {
-	case bool:
-		return BoolType
-
-	case int32:
-		return &Int32Type
-
-	case int:
-		return &IntType
-
-	case int64:
-		return &Int64Type
-
-	case float32:
-		return &Float32Type
-
-	case float64:
-		return &Float64Type
-
-	case string:
-		return &StringType
-	}
-
-	// Who knows what the heck this is...
-	return &UndefinedType
-}
-
-// GetString retrieves the string value of the argument, converting if needed.
-func GetString(v interface{}) string {
+// String retrieves the string value of the argument, converting if needed.
+func String(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
-// GetByte retrieves the byte value of the argument, converting if needed.
-func GetByte(v interface{}) byte {
-	i := GetInt(v)
+// Byte retrieves the byte value of the argument, converting if needed.
+func Byte(v interface{}) byte {
+	i := Int(v)
 
 	return byte(i & math.MaxInt8)
 }
 
-// GetInt32 retrieves the int32 value of the argument, converting if needed.
-func GetInt32(v interface{}) int32 {
-	i := GetInt(v)
+// Int32 retrieves the int32 value of the argument, converting if needed.
+func Int32(v interface{}) int32 {
+	i := Int(v)
 
-	return int32(i)
+	return int32(i & math.MaxInt32)
 }
 
-// GetInt retrieves the int value of the argument, converting if needed.
-func GetInt(v interface{}) int {
+// Int retrieves the int value of the argument, converting if needed.
+func Int(v interface{}) int {
 	result := 0
 
 	switch actual := v.(type) {
@@ -107,8 +63,8 @@ func GetInt(v interface{}) int {
 	return result
 }
 
-// GetInt64 retrieves the int64 value of the argument, converting if needed.
-func GetInt64(v interface{}) int64 {
+// Int64 retrieves the int64 value of the argument, converting if needed.
+func Int64(v interface{}) int64 {
 	var result int64
 
 	switch actual := v.(type) {
@@ -142,8 +98,8 @@ func GetInt64(v interface{}) int64 {
 	return result
 }
 
-// GetFloat64 retrieves the float64 value of the argument, converting if needed.
-func GetFloat64(v interface{}) float64 {
+// Float64 retrieves the float64 value of the argument, converting if needed.
+func Float64(v interface{}) float64 {
 	var result float64
 
 	switch actual := v.(type) {
@@ -174,21 +130,21 @@ func GetFloat64(v interface{}) float64 {
 	return result
 }
 
-// GetFloat32 retrieves the float32 value of the argument, converting if needed.
-func GetFloat32(v interface{}) float32 {
-	f := GetFloat64(v)
+// Float32 retrieves the float32 value of the argument, converting if needed.
+func Float32(v interface{}) float32 {
+	f := Float64(v)
 
 	return float32(f)
 }
 
 // GetString retrieves the boolean value of the argument, converting if needed.
-func GetBool(v interface{}) bool {
+func Bool(v interface{}) bool {
 	switch actual := v.(type) {
 	case byte, int32, int, int64:
-		return GetInt64(v) != 0
+		return Int64(v) != 0
 
 	case float64, float32:
-		return GetFloat64(v) != 0.0
+		return Float64(v) != 0.0
 
 	case bool:
 		return actual

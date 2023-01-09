@@ -191,7 +191,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 	response := u
 
 	v, err := auth.DeleteUser(s, []interface{}{u.Name})
-	if err != nil || !datatypes.GetBool(v) {
+	if err != nil || !datatypes.Bool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		util.ErrorResponse(w, sessionID, msg, http.StatusNotFound)

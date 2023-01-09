@@ -69,7 +69,7 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	t := Structure()
 
 	if value, ok := m[TypeMDKey]; ok {
-		t = GetType(value)
+		t = TypeOf(value)
 	} else {
 		for k, v := range m {
 			t.DefineField(k, TypeOf(v))
@@ -78,12 +78,12 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 
 	static := (len(m) > 0)
 	if value, ok := m[StaticMDKey]; ok {
-		static = GetBool(value)
+		static = Bool(value)
 	}
 
 	readonly := false
 	if value, ok := m[ReadonlyMDKey]; ok {
-		readonly = GetBool(value)
+		readonly = Bool(value)
 	}
 
 	fields := map[string]interface{}{}

@@ -15,9 +15,9 @@ func MapAsString(vv *datatypes.EgoMap) string {
 
 	keys := vv.Keys()
 	for _, key := range keys {
-		keyString := datatypes.GetString(key)
+		keyString := datatypes.String(key)
 		value, _, _ := vv.Get(keyString)
-		valueString := datatypes.GetString(value)
+		valueString := datatypes.String(value)
 		typeString := datatypes.TypeOf(value).TypeString()
 
 		_ = t.AddRow([]string{keyString, typeString, valueString})

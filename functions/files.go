@@ -55,7 +55,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	mode := os.O_RDONLY
 
-	fname, err := filepath.Abs(sandboxName(datatypes.GetString(args[0])))
+	fname, err := filepath.Abs(sandboxName(datatypes.String(args[0])))
 	if err != nil {
 		return nil, errors.EgoError(err)
 	}
@@ -63,7 +63,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	modeValue := "input"
 
 	if len(args) > 1 {
-		modeValue = strings.ToLower(datatypes.GetString(args[1]))
+		modeValue = strings.ToLower(datatypes.String(args[1]))
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
@@ -84,7 +84,7 @@ func OpenFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) > 2 {
-		mask = os.FileMode(datatypes.GetInt(args[2]) & math.MaxInt8)
+		mask = os.FileMode(datatypes.Int(args[2]) & math.MaxInt8)
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)
@@ -115,12 +115,12 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b.WriteString("<file")
 
 	if bx, ok := f.Get(validFieldName); ok {
-		if datatypes.GetBool(bx) {
+		if datatypes.Bool(bx) {
 			b.WriteString("; open")
 			b.WriteString("; name \"")
 
 			if name, ok := f.Get(nameFieldName); ok {
-				b.WriteString(datatypes.GetString(name))
+				b.WriteString(datatypes.String(name))
 			}
 
 			b.WriteString("\"")
@@ -160,7 +160,7 @@ func getThis(s *symbols.SymbolTable) *datatypes.EgoStruct {
 // handle-based function.
 func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	this := getThis(s)
-	if v, ok := this.Get(validFieldName); ok && datatypes.GetBool(v) {
+	if v, ok := this.Get(validFieldName); ok && datatypes.Bool(v) {
 		fh, ok := this.Get(fileFieldName)
 		if ok {
 			f, ok := fh.(*os.File)
@@ -237,7 +237,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	f, err := getFile("WriteString", s)
 	if err == nil {
-		length, e2 = f.WriteString(datatypes.GetString(args[0]) + "\n")
+		length, e2 = f.WriteString(datatypes.String(args[0]) + "\n")
 		if e2 != nil {
 			err = errors.EgoError(e2)
 		}
@@ -284,7 +284,7 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount).In("WriteAt()")
 	}
 
-	offset := datatypes.GetInt(args[1])
+	offset := datatypes.Int(args[1])
 	enc := gob.NewEncoder(&buf)
 
 	err := enc.Encode(args[0])

@@ -263,7 +263,7 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return False
 
 		case byte, int, int32, int64:
-			return fmt.Sprintf("%v", GetInt64(v))
+			return fmt.Sprintf("%v", Int64(v))
 
 		case float32:
 			return fmt.Sprintf("%v", value)
@@ -287,10 +287,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return vv
 
 		case byte, int32, int, int64:
-			return (GetInt64(v) != 0)
+			return (Int64(v) != 0)
 
 		case float32, float64:
-			return GetFloat64(v) != 0.0
+			return Float64(v) != 0.0
 
 		case string:
 			switch strings.TrimSpace(strings.ToLower(vv)) {
@@ -363,25 +363,25 @@ func CoerceType(v interface{}, typeName string) interface{} {
 func (t Type) Coerce(v interface{}) interface{} {
 	switch t.kind {
 	case ByteKind:
-		return GetByte(v)
+		return Byte(v)
 
 	case Int32Kind:
-		return GetInt32(v)
+		return Int32(v)
 
 	case IntKind:
-		return GetInt(v)
+		return Int(v)
 
 	case Int64Kind:
-		return GetInt64(v)
+		return Int64(v)
 
 	case Float64Kind:
-		return GetFloat64(v)
+		return Float64(v)
 
 	case StringKind:
-		return GetString(v)
+		return String(v)
 
 	case BoolKind:
-		return GetBool(v)
+		return Bool(v)
 	}
 
 	return v

@@ -27,7 +27,7 @@ func Sanitize(v interface{}) interface{} {
 			}
 
 			value, _, _ := v.Get(key)
-			result[GetString(key)] = Sanitize(value)
+			result[String(key)] = Sanitize(value)
 		}
 
 		return result

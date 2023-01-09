@@ -34,7 +34,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	}
 
 	// Get the table name and filter list
-	table, _ := fullName(user, datatypes.GetString(tableItem))
+	table, _ := fullName(user, datatypes.String(tableItem))
 
 	var result strings.Builder
 
@@ -66,7 +66,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
 	if hasRowID >= 0 {
-		idString := datatypes.GetString(values[hasRowID])
+		idString := datatypes.String(values[hasRowID])
 		if idString != "" {
 			if where == "" {
 				where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
@@ -100,7 +100,7 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 	}
 
 	// Get the table name.
-	table, _ := fullName(user, datatypes.GetString(tableItem))
+	table, _ := fullName(user, datatypes.String(tableItem))
 
 	var result strings.Builder
 

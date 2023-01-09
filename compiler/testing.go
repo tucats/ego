@@ -88,7 +88,7 @@ func getTestName(s *symbols.SymbolTable) string {
 	if m, ok := s.Get("T"); ok {
 		if testStruct, ok := m.(*datatypes.EgoStruct); ok {
 			if nameString, ok := testStruct.Get("description"); ok {
-				name = datatypes.GetString(nameString)
+				name = datatypes.String(nameString)
 			}
 		}
 	}
@@ -105,9 +105,9 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// The argument could be an array with the boolean value and the
 	// messaging string, or it might just be the boolean.
 	if array, ok := args[0].([]interface{}); ok && len(array) == 2 {
-		b := datatypes.GetBool(array[0])
+		b := datatypes.Bool(array[0])
 		if !b {
-			msg := datatypes.GetString(array[1])
+			msg := datatypes.String(array[1])
 
 			fmt.Println()
 
@@ -119,7 +119,7 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Just the boolean; the string is optionally in the second
 	// argument.
-	b := datatypes.GetBool(args[0])
+	b := datatypes.Bool(args[0])
 	if !b {
 		msg := errors.EgoError(errors.ErrTestingAssert)
 
@@ -145,13 +145,13 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Use the Type() function to get a string representation of the type
 	got, _ := functions.Type(s, args[0:1])
-	expected := datatypes.GetString(args[1])
+	expected := datatypes.String(args[1])
 
 	b := (expected == got)
 	if !b {
 		msg := fmt.Sprintf("T.isType(\"%s\" != \"%s\") failure", got, expected)
 		if len(args) > 2 {
-			msg = datatypes.GetString(args[2])
+			msg = datatypes.String(args[2])
 		}
 
 		return nil, errors.NewMessage(msg).In(getTestName(s))
@@ -166,7 +166,7 @@ func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	msg := "T.fail()"
 
 	if len(args) == 1 {
-		msg = datatypes.GetString(args[0])
+		msg = datatypes.String(args[0])
 	}
 
 	return nil, errors.NewMessage(msg).In(getTestName(s))
@@ -184,7 +184,7 @@ func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) == 2 {
-		return []interface{}{isNil, datatypes.GetString(args[1])}, nil
+		return []interface{}{isNil, datatypes.String(args[1])}, nil
 	}
 
 	return isNil, nil
@@ -202,7 +202,7 @@ func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if len(args) == 2 {
-		return []interface{}{!isNil, datatypes.GetString(args[1])}, nil
+		return []interface{}{!isNil, datatypes.String(args[1])}, nil
 	}
 
 	return !isNil, nil
@@ -215,10 +215,10 @@ func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) == 2 {
-		return []interface{}{datatypes.GetBool(args[0]), datatypes.GetString(args[1])}, nil
+		return []interface{}{datatypes.Bool(args[0]), datatypes.String(args[1])}, nil
 	}
 
-	return datatypes.GetBool(args[0]), nil
+	return datatypes.Bool(args[0]), nil
 }
 
 // TestFalse implements the T.False() function.
@@ -228,10 +228,10 @@ func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	if len(args) == 2 {
-		return []interface{}{!datatypes.GetBool(args[0]), datatypes.GetString(args[1])}, nil
+		return []interface{}{!datatypes.Bool(args[0]), datatypes.String(args[1])}, nil
 	}
 
-	return !datatypes.GetBool(args[0]), nil
+	return !datatypes.Bool(args[0]), nil
 }
 
 // TestEqual implements the T.Equal() function.
@@ -257,7 +257,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	if len(args) == 3 {
-		return []interface{}{b, datatypes.GetString(args[2])}, nil
+		return []interface{}{b, datatypes.String(args[2])}, nil
 	}
 
 	if !b {
@@ -275,7 +275,7 @@ func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	b, err := TestEqual(s, args)
 	if err == nil {
-		return !datatypes.GetBool(b), nil
+		return !datatypes.Bool(b), nil
 	}
 
 	return nil, err

@@ -16,7 +16,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		c.Static = datatypes.GetBool(v)
+		c.Static = datatypes.Bool(v)
 		c.symbols.SetAlways("__static_data_types", c.Static)
 	}
 
@@ -79,7 +79,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 				}
 			}
 		} else {
-			t := datatypes.GetType(i)
+			t := datatypes.TypeOf(i)
 			// If it's not interface type, check it out...
 			if !t.IsInterface() {
 				if t.IsKind(datatypes.ErrorKind) {
@@ -106,28 +106,28 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 				switch t.Kind() {
 				case datatypes.IntKind:
-					v = datatypes.GetInt(v)
+					v = datatypes.Int(v)
 
 				case datatypes.Int32Kind:
-					v = datatypes.GetInt32(v)
+					v = datatypes.Int32(v)
 
 				case datatypes.Int64Kind:
-					v = datatypes.GetInt64(v)
+					v = datatypes.Int64(v)
 
 				case datatypes.BoolKind:
-					v = datatypes.GetBool(v)
+					v = datatypes.Bool(v)
 
 				case datatypes.ByteKind:
-					v = datatypes.GetByte(v)
+					v = datatypes.Byte(v)
 
 				case datatypes.Float32Kind:
-					v = datatypes.GetFloat32(v)
+					v = datatypes.Float32(v)
 
 				case datatypes.Float64Kind:
-					v = datatypes.GetFloat64(v)
+					v = datatypes.Float64(v)
 
 				case datatypes.StringKind:
-					v = datatypes.GetString(v)
+					v = datatypes.String(v)
 				}
 			} else {
 				// It is an interface type, if it's a non-empty interface
@@ -154,7 +154,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	t := datatypes.GetType(i)
+	t := datatypes.TypeOf(i)
 
 	v, err := c.Pop()
 	if err != nil {
@@ -199,30 +199,35 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = vv
 
 	case datatypes.IntKind:
-		v = datatypes.GetInt(v)
+		v = datatypes.Int(v)
 
 	case datatypes.Int32Kind:
-		v = datatypes.GetInt32(v)
+		v = datatypes.Int32(v)
 
 	case datatypes.Int64Kind:
-		v = datatypes.GetInt64(v)
+		v = datatypes.Int64(v)
 
 	case datatypes.BoolKind:
-		v = datatypes.GetBool(v)
+		v = datatypes.Bool(v)
 
 	case datatypes.ByteKind:
-		v = datatypes.GetByte(v)
+		v = datatypes.Byte(v)
 
 	case datatypes.Float32Kind:
-		v = datatypes.GetFloat32(v)
+		v = datatypes.Float32(v)
 
 	case datatypes.Float64Kind:
-		v = datatypes.GetFloat64(v)
+		v = datatypes.Float64(v)
 
 	case datatypes.StringKind:
-		v = datatypes.GetString(v)
+		v = datatypes.String(v)
 
 	default:
+		// If they are alread the same type, no work.
+		if datatypes.TypeOf(v).IsType(t) {
+			return c.stackPush(v)
+		}
+
 		var base []interface{}
 
 		if a, ok := v.(*datatypes.EgoArray); ok {
@@ -267,7 +272,7 @@ func (b ByteCode) NeedsCoerce(kind *datatypes.Type) bool {
 }
 
 func addressOfByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
@@ -278,7 +283,7 @@ func addressOfByteCode(c *Context, i interface{}) error {
 }
 
 func deRefByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {

@@ -36,11 +36,11 @@ func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // TimeParse time.Parse().
 func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str := datatypes.GetString(args[0])
+	str := datatypes.String(args[0])
 	fmt := basicLayout
 
 	if len(args) > 1 {
-		fmt = datatypes.GetString(args[1])
+		fmt = datatypes.String(args[1])
 	}
 
 	t, err := time.Parse(fmt, str)
@@ -59,7 +59,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	t, err := getTime(s)
 	if err == nil {
-		d, err := time.ParseDuration(datatypes.GetString(args[0]))
+		d, err := time.ParseDuration(datatypes.String(args[0]))
 		if err == nil {
 			t2 := t.Add(d)
 
@@ -100,7 +100,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, err
 	}
 
-	layout := datatypes.GetString(args[0])
+	layout := datatypes.String(args[0])
 
 	return t.Format(layout), nil
 }

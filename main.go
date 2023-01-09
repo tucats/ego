@@ -60,7 +60,7 @@ func main() {
 			errorCode := 1
 
 			if _, ok := value.(string); !ok {
-				errorCode = datatypes.GetInt(value)
+				errorCode = datatypes.Int(value)
 			}
 
 			if errorCode == 0 {

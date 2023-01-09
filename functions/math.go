@@ -25,12 +25,12 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 		switch rv := r.(type) {
 		case byte, int32, int, int64:
-			if datatypes.GetInt(v) < datatypes.GetInt(r) {
+			if datatypes.Int(v) < datatypes.Int(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if datatypes.GetFloat64(v) < datatypes.GetFloat64(r) {
+			if datatypes.Float64(v) < datatypes.Float64(r) {
 				r = v
 			}
 
@@ -67,12 +67,12 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 		switch rr := r.(type) {
 		case byte, int32, int, int64:
-			if datatypes.GetInt(v) > datatypes.GetInt(r) {
+			if datatypes.Int(v) > datatypes.Int(r) {
 				r = v
 			}
 
 		case float32, float64:
-			if datatypes.GetFloat64(v) > datatypes.GetFloat64(r) {
+			if datatypes.Float64(v) > datatypes.Float64(r) {
 				r = v
 			}
 
@@ -139,26 +139,26 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 // Sqrt implements the sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := datatypes.GetFloat64(args[0])
+	f := datatypes.Float64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
 // Abs implements the abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := datatypes.GetFloat64(args[0])
+	f := datatypes.Float64(args[0])
 
 	return math.Abs(f), nil
 }
 
 // Log is the log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return math.Log(datatypes.GetFloat64(args[0])), nil
+	return math.Log(datatypes.Float64(args[0])), nil
 }
 
 // Random implmeents the math.Random function.
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	max := datatypes.GetInt(args[0])
+	max := datatypes.Int(args[0])
 	if max <= 0 {
 		return nil, errors.EgoError(errors.ErrInvalidFunctionArgument).Context(max)
 	}

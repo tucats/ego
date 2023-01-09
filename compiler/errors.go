@@ -19,7 +19,7 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg 
 	token := ""
 
 	if len(args) > 0 {
-		token = datatypes.GetString(args[0])
+		token = datatypes.String(args[0])
 	}
 
 	e := errors.EgoError(err).Context(token)

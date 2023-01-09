@@ -15,11 +15,11 @@ var fontSet []string
 func BlockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initFonts()
 
-	msg := datatypes.GetString(args[0])
+	msg := datatypes.String(args[0])
 
 	fontName := "standard"
 	if len(args) > 1 {
-		fontName = datatypes.GetString(args[1])
+		fontName = datatypes.String(args[1])
 	}
 
 	if !isFont(fontName) {

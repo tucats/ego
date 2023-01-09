@@ -169,7 +169,7 @@ func Test_storeByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.GetString(tt.arg)
+		varname := datatypes.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -210,7 +210,7 @@ func Test_storeByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+			v, found := c.symbols.Get(datatypes.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
@@ -296,7 +296,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.GetString(tt.arg)
+		varname := datatypes.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -337,7 +337,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+			v, found := c.symbols.Get(datatypes.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
@@ -425,7 +425,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		syms := symbols.NewChildSymbolTable("testing", root)
 
 		bc := ByteCode{}
-		varname := datatypes.GetString(tt.arg)
+		varname := datatypes.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static
@@ -466,7 +466,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := root.Get(datatypes.GetString(tt.arg))
+			v, found := root.Get(datatypes.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in root symbol table: %v", name, tt.arg)
@@ -657,7 +657,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.GetString(tt.arg)
+		varname := datatypes.String(tt.arg)
 
 		if tt.debug {
 			fmt.Println("DEBUG")
@@ -703,7 +703,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 				t.Errorf("%s() expected error not reported: %v", name, tt.err)
 			}
 
-			v, found := c.symbols.Get(datatypes.GetString(tt.arg))
+			v, found := c.symbols.Get(datatypes.String(tt.arg))
 
 			if !found {
 				t.Errorf("%s() value not in symbol table: %v", name, tt.arg)
@@ -758,7 +758,7 @@ func Test_loadByteCode(t *testing.T) {
 	for _, tt := range tests {
 		syms := symbols.NewSymbolTable("testing")
 		bc := ByteCode{}
-		varname := datatypes.GetString(tt.arg)
+		varname := datatypes.String(tt.arg)
 
 		c := NewContext(syms, &bc)
 		c.Static = tt.static

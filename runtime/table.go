@@ -66,14 +66,14 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if list, ok := h.(*datatypes.EgoArray); ok {
 			for idx := 0; idx < list.Len(); idx++ {
 				str, _ := list.Get(idx)
-				headings = append(headings, datatypes.GetString(str))
+				headings = append(headings, datatypes.String(str))
 			}
 		} else if list, ok := h.([]interface{}); ok {
 			for _, hh := range list {
-				headings = append(headings, datatypes.GetString(hh))
+				headings = append(headings, datatypes.String(hh))
 			}
 		} else {
-			headings = append(headings, datatypes.GetString(h))
+			headings = append(headings, datatypes.String(h))
 		}
 	}
 
@@ -154,8 +154,8 @@ func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 		return nil, errors.EgoError(errors.ErrInvalidVariableArguments)
 	}
 
-	h := datatypes.GetInt(args[0])
-	w := datatypes.GetInt(args[1])
+	h := datatypes.Int(args[0])
+	w := datatypes.Int(args[1])
 
 	t, err := getTable(s)
 	if err != nil {
@@ -194,7 +194,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 						p, ok := t.Column(k)
 						if ok {
-							values[p] = datatypes.GetString(v)
+							values[p] = datatypes.String(v)
 						}
 					}
 
@@ -231,7 +231,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			v := args[i]
 			ascending := true
 
-			heading := datatypes.GetString(v)
+			heading := datatypes.String(v)
 			if strings.HasPrefix(heading, "~") {
 				ascending = false
 				heading = heading[1:]
@@ -266,12 +266,12 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		lines := true
 
 		if len(args) > 0 {
-			headings = datatypes.GetBool(args[0])
+			headings = datatypes.Bool(args[0])
 			lines = headings
 		}
 
 		if len(args) > 1 {
-			lines = datatypes.GetBool(args[1])
+			lines = datatypes.Bool(args[1])
 		}
 
 		t.ShowHeadings(headings)
@@ -301,7 +301,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 				return err, err
 			}
 		} else {
-			column = datatypes.GetInt(args[0])
+			column = datatypes.Int(args[0])
 		}
 
 		mode := tables.AlignmentLeft
@@ -340,7 +340,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = datatypes.GetString(args[0])
+		fmt = datatypes.String(args[0])
 	}
 
 	t, err := getTable(s)
@@ -360,7 +360,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
-		fmt = datatypes.GetString(args[0])
+		fmt = datatypes.String(args[0])
 	}
 
 	t, err := getTable(s)
@@ -401,7 +401,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	includeHeadings := true
 
 	if len(args) == 2 {
-		includeHeadings = datatypes.GetBool(args[1])
+		includeHeadings = datatypes.Bool(args[1])
 	}
 
 	// Scan over the first data element to pick up the column names and types

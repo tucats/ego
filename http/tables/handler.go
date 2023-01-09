@@ -170,16 +170,16 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/transaction")
 	}
 
-	if !valid || !datatypes.GetBool(urlParts["tables"]) {
+	if !valid || !datatypes.Bool(urlParts["tables"]) {
 		msg := "Invalid tables path specified, " + path
 		util.ErrorResponse(w, sessionID, msg, http.StatusBadRequest)
 
 		return
 	}
 
-	tableName := datatypes.GetString(urlParts["table"])
-	rows := datatypes.GetBool(urlParts["rows"])
-	perms := datatypes.GetBool(urlParts["permissions"])
+	tableName := datatypes.String(urlParts["table"])
+	rows := datatypes.Bool(urlParts["rows"])
+	perms := datatypes.Bool(urlParts["permissions"])
 	transaction := strings.EqualFold(tableName, "@transaction")
 
 	if transaction {

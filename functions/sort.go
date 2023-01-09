@@ -164,7 +164,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		intArray := make([]byte, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, datatypes.GetByte(i))
+			intArray = append(intArray, datatypes.Byte(i))
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -181,7 +181,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		intArray := make([]int, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, datatypes.GetInt(i))
+			intArray = append(intArray, datatypes.Int(i))
 		}
 
 		sort.Ints(intArray)
@@ -198,7 +198,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		intArray := make([]int32, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, datatypes.GetInt32(i))
+			intArray = append(intArray, datatypes.Int32(i))
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -215,7 +215,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		intArray := make([]int64, 0)
 
 		for _, i := range array {
-			intArray = append(intArray, datatypes.GetInt64(i))
+			intArray = append(intArray, datatypes.Int64(i))
 		}
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
@@ -232,7 +232,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		floatArray := make([]float32, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, datatypes.GetFloat32(i))
+			floatArray = append(floatArray, datatypes.Float32(i))
 		}
 
 		sort.Slice(floatArray, func(i, j int) bool { return floatArray[i] < floatArray[j] })
@@ -249,7 +249,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		floatArray := make([]float64, 0)
 
 		for _, i := range array {
-			floatArray = append(floatArray, datatypes.GetFloat64(i))
+			floatArray = append(floatArray, datatypes.Float64(i))
 		}
 
 		sort.Float64s(floatArray)
@@ -266,7 +266,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		stringArray := make([]string, 0)
 
 		for _, i := range array {
-			stringArray = append(stringArray, datatypes.GetString(i))
+			stringArray = append(stringArray, datatypes.String(i))
 		}
 
 		sort.Strings(stringArray)

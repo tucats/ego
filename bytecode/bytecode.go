@@ -124,9 +124,9 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 	if t, ok := i.Operand.(tokenizer.Token); ok {
 		text := t.Spelling()
 		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = datatypes.GetInt(text)
+			i.Operand = datatypes.Int(text)
 		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = datatypes.GetFloat64(text)
+			i.Operand = datatypes.Float64(text)
 		} else {
 			i.Operand = text
 		}
@@ -163,9 +163,9 @@ func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 	if t, ok := i.Operand.(tokenizer.Token); ok {
 		text := t.Spelling()
 		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = datatypes.GetInt(text)
+			i.Operand = datatypes.Int(text)
 		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = datatypes.GetFloat64(text)
+			i.Operand = datatypes.Float64(text)
 		} else {
 			i.Operand = text
 		}
@@ -248,7 +248,7 @@ func (b *ByteCode) Append(a *ByteCode) {
 
 	for _, i := range a.instructions[:a.nextAddress] {
 		if i.Operation > BranchInstructions {
-			i.Operand = datatypes.GetInt(i.Operand) + base
+			i.Operand = datatypes.Int(i.Operand) + base
 		}
 
 		b.Emit(i.Operation, i.Operand)

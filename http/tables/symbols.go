@@ -105,7 +105,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 		return input, nil
 	}
 
-	stringRepresentation := datatypes.GetString(input)
+	stringRepresentation := datatypes.String(input)
 	if strings.HasPrefix(stringRepresentation, symbolPrefix) && strings.HasSuffix(stringRepresentation, symbolSuffix) {
 		key := strings.TrimPrefix(strings.TrimSuffix(stringRepresentation, symbolSuffix), symbolPrefix)
 
@@ -134,7 +134,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 
 	for k, v := range syms.symbols {
 		search := symbolPrefix + k + symbolSuffix
-		replace := datatypes.GetString(v)
+		replace := datatypes.String(v)
 		oldInput := input
 		input = strings.ReplaceAll(input, search, replace)
 

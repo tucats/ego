@@ -26,7 +26,7 @@ import (
 func printByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
-		count = datatypes.GetInt(i)
+		count = datatypes.Int(i)
 	}
 
 	for n := 0; n < count; n = n + 1 {
@@ -70,7 +70,7 @@ func printByteCode(c *Context, i interface{}) error {
 
 					for _, key := range columns {
 						v := row.GetAlways(key)
-						rowItems = append(rowItems, datatypes.GetString(v))
+						rowItems = append(rowItems, datatypes.String(v))
 					}
 
 					_ = t.AddRow(rowItems)
@@ -81,7 +81,7 @@ func printByteCode(c *Context, i interface{}) error {
 				r := make([]string, actualValue.Len())
 				for n := 0; n < len(r); n++ {
 					vvv, _ := actualValue.Get(n)
-					r[n] = datatypes.GetString(vvv)
+					r[n] = datatypes.String(vvv)
 				}
 
 				s = strings.Join(r, "\n")
@@ -125,7 +125,7 @@ func logByteCode(c *Context, i interface{}) error {
 	if id, ok := i.(int); ok {
 		class = id
 	} else {
-		class = ui.Logger(datatypes.GetString(i))
+		class = ui.Logger(datatypes.String(i))
 	}
 
 	if class <= ui.NoSuchLogger {
@@ -157,7 +157,7 @@ func sayByteCode(c *Context, i interface{}) error {
 	}
 
 	fmt := "%s\n"
-	if datatypes.GetBool(i) && len(msg) > 0 {
+	if datatypes.Bool(i) && len(msg) > 0 {
 		fmt = "%s"
 	}
 
@@ -186,7 +186,7 @@ func newlineByteCode(c *Context, i interface{}) error {
 // templateByteCode compiles a template string from the stack and stores it in
 // the template manager for the execution context.
 func templateByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 
 	t, err := c.Pop()
 	if err == nil {
@@ -194,7 +194,7 @@ func templateByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		t, e2 := template.New(name).Parse(datatypes.GetString(t))
+		t, e2 := template.New(name).Parse(datatypes.String(t))
 		if e2 == nil {
 			err = c.stackPush(t)
 		} else {
@@ -219,7 +219,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	if b, err := ioutil.ReadFile(datatypes.GetString(i)); err == nil {
+	if b, err := ioutil.ReadFile(datatypes.String(i)); err == nil {
 		c.tokenizer = tokenizer.New(string(b))
 
 		return nil
@@ -229,7 +229,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 }
 
 func timerByteCode(c *Context, i interface{}) error {
-	mode := datatypes.GetInt(i)
+	mode := datatypes.Int(i)
 	switch mode {
 	case 0:
 		t := time.Now()

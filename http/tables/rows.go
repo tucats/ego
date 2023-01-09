@@ -257,7 +257,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 				// If it's one of the date/time values, make sure it is wrapped in single qutoes.
 				if keywordMatch(column.Type, "time", "date", "timestamp") {
-					text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
+					text := strings.TrimPrefix(strings.TrimSuffix(datatypes.String(v), "\""), "\"")
 					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
 					ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
 				}
@@ -595,7 +595,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			hasRowID := false
 
 			if v, found := data[defs.RowIDName]; found {
-				if datatypes.GetString(v) != "" {
+				if datatypes.String(v) != "" {
 					hasRowID = true
 				}
 			}
@@ -706,12 +706,12 @@ func useAbstract(r *http.Request) bool {
 				return true
 			}
 
-			if len(v) == 1 && datatypes.GetString(v[0]) == "" {
+			if len(v) == 1 && datatypes.String(v[0]) == "" {
 				return true
 			}
 
 			if len(v) == 1 {
-				flag = datatypes.GetBool(v[0])
+				flag = datatypes.Bool(v[0])
 			}
 
 			ui.Debug(ui.RestLogger, "Abstract parameter value: %v", flag)

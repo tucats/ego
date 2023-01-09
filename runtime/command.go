@@ -46,7 +46,7 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	strArray := make([]string, len(args))
 	for n, v := range args {
-		strArray[n] = datatypes.GetString(v)
+		strArray[n] = datatypes.String(v)
 	}
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
@@ -71,7 +71,7 @@ func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount).Context("LookPath")
 	}
 
-	path, err := exec.LookPath(datatypes.GetString(args[0]))
+	path, err := exec.LookPath(datatypes.String(args[0]))
 	if err != nil {
 		return "", errors.EgoError(err).Context("LookPath")
 	}
@@ -94,17 +94,17 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if str, ok := cmdStruct.Get("Stdin"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Stdin = strings.NewReader(s)
 	}
 
 	if str, ok := cmdStruct.Get("Path"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Path = s
 	}
 
 	if str, ok := cmdStruct.Get("dir"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Dir = s
 	}
 
@@ -113,7 +113,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.GetString(v)
+				r[n] = datatypes.String(v)
 			}
 
 			cmd.Args = r
@@ -125,7 +125,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.GetString(v)
+				r[n] = datatypes.String(v)
 			}
 
 			cmd.Env = r
@@ -140,7 +140,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)
-				strs[n] = datatypes.GetString(v)
+				strs[n] = datatypes.String(v)
 			}
 
 			buffer := strings.Join(strs, "\n")
@@ -184,17 +184,17 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if str, ok := cmdStruct.Get("Stdin"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Stdin = strings.NewReader(s)
 	}
 
 	if str, ok := cmdStruct.Get("Path"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Path = s
 	}
 
 	if str, ok := cmdStruct.Get("dir"); ok {
-		s := datatypes.GetString(str)
+		s := datatypes.String(str)
 		cmd.Dir = s
 	}
 
@@ -203,7 +203,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.GetString(v)
+				r[n] = datatypes.String(v)
 			}
 
 			cmd.Args = r
@@ -215,7 +215,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
-				r[n] = datatypes.GetString(v)
+				r[n] = datatypes.String(v)
 			}
 
 			cmd.Env = r
@@ -230,7 +230,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)
-				strs[n] = datatypes.GetString(v)
+				strs[n] = datatypes.String(v)
 			}
 
 			buffer := strings.Join(strs, "\n")

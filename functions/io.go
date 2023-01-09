@@ -20,7 +20,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	name := datatypes.GetString(args[0])
+	name := datatypes.String(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
 	}
@@ -41,7 +41,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	fileName := sandboxName(datatypes.GetString(args[0]))
+	fileName := sandboxName(datatypes.String(args[0]))
 
 	if a, ok := args[1].(*datatypes.EgoArray); ok {
 		if a.ValueType().Kind() == datatypes.ByteKind {
@@ -54,7 +54,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		}
 	}
 
-	text := datatypes.GetString(args[1])
+	text := datatypes.String(args[1])
 
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
@@ -70,7 +70,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	fileName := datatypes.GetString(args[0])
+	fileName := datatypes.String(args[0])
 	fileName = sandboxName(fileName)
 
 	err := os.Remove(fileName)
@@ -87,11 +87,11 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrWrongParameterCount)
 	}
 
-	path := datatypes.GetString(args[0])
+	path := datatypes.String(args[0])
 	ext := ""
 
 	if len(args) > 1 {
-		ext = datatypes.GetString(args[1])
+		ext = datatypes.String(args[1])
 	}
 
 	path = sandboxName(path)
@@ -157,7 +157,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path := datatypes.GetString(args[0])
+	path := datatypes.String(args[0])
 	result := datatypes.NewArray(&datatypes.InterfaceType, 0)
 
 	path = sandboxName(path)

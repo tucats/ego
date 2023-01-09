@@ -189,11 +189,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	var debug bool
 
 	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
-		debugPath := datatypes.GetString(b)
+		debugPath := datatypes.String(b)
 		if debugPath == "/" {
 			debug = true
 		} else {
-			debug = strings.EqualFold(datatypes.GetString(b), endpoint)
+			debug = strings.EqualFold(datatypes.String(b), endpoint)
 		}
 	}
 
@@ -418,7 +418,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// info to support the browser's attempt to prompt the user.
 	status := http.StatusOK
 	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
-		status = datatypes.GetInt(statusValue)
+		status = datatypes.Int(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
 		}
@@ -455,7 +455,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		buffer := ""
 		if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")
-			buffer = datatypes.GetString(bufferValue)
+			buffer = datatypes.String(bufferValue)
 		}
 
 		_, _ = io.WriteString(w, buffer)

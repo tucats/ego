@@ -160,7 +160,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		wrappedError := e.Unwrap()
 
 		if e.Is(errors.ErrUserDefined) {
-			text := datatypes.GetString(e.GetContext())
+			text := datatypes.String(e.GetContext())
 
 			return datatypes.NewStructFromMap(map[string]interface{}{
 				datatypes.TypeMDName:     "error",

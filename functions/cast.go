@@ -148,7 +148,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		replica := 0
 
 		if replicaX, ok := datatypes.GetMetadata(v, datatypes.ReplicaMDKey); ok {
-			replica = datatypes.GetInt(replicaX) + 1
+			replica = datatypes.Int(replicaX) + 1
 		}
 
 		datatypes.SetMetadata(v, datatypes.ReplicaMDKey, replica)
@@ -274,7 +274,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 // to an array of integer (rune) values, etc.
 func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Target kind is the last parameter
-	kind := datatypes.GetType(args[len(args)-1])
+	kind := datatypes.TypeOf(args[len(args)-1])
 
 	source := args[0]
 	if len(args) > 2 {
@@ -288,7 +288,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		if actual, ok := source.(*datatypes.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(rune(datatypes.GetInt(ch) & math.MaxInt32))
+				r.WriteRune(rune(datatypes.Int(ch) & math.MaxInt32))
 			}
 		} else {
 			str := datatypes.FormatUnquoted(source)
@@ -311,7 +311,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
-				r.WriteRune(datatypes.GetInt32(ch) & math.MaxInt32)
+				r.WriteRune(datatypes.Int32(ch) & math.MaxInt32)
 			}
 
 			return r.String(), nil
@@ -325,28 +325,28 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 			switch elementKind.Kind() {
 			case datatypes.BoolKind:
-				_ = r.Set(i, datatypes.GetBool(v))
+				_ = r.Set(i, datatypes.Bool(v))
 
 			case datatypes.ByteKind:
-				_ = r.Set(i, datatypes.GetByte(v))
+				_ = r.Set(i, datatypes.Byte(v))
 
 			case datatypes.Int32Kind:
-				_ = r.Set(i, datatypes.GetInt32(v))
+				_ = r.Set(i, datatypes.Int32(v))
 
 			case datatypes.IntKind:
-				_ = r.Set(i, datatypes.GetInt(v))
+				_ = r.Set(i, datatypes.Int(v))
 
 			case datatypes.Int64Kind:
-				_ = r.Set(i, datatypes.GetInt64(v))
+				_ = r.Set(i, datatypes.Int64(v))
 
 			case datatypes.Float32Kind:
-				_ = r.Set(i, datatypes.GetFloat32(v))
+				_ = r.Set(i, datatypes.Float32(v))
 
 			case datatypes.Float64Kind:
-				_ = r.Set(i, datatypes.GetFloat64(v))
+				_ = r.Set(i, datatypes.Float64(v))
 
 			case datatypes.StringKind:
-				_ = r.Set(i, datatypes.GetString(v))
+				_ = r.Set(i, datatypes.String(v))
 
 			default:
 				return nil, errors.EgoError(errors.ErrInvalidType).Context(datatypes.TypeOf(v).String())

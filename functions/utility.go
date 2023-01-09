@@ -15,7 +15,7 @@ import (
 
 // Sleep implements util.sleep().
 func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	duration, err := time.ParseDuration(datatypes.GetString(args[0]))
+	duration, err := time.ParseDuration(datatypes.String(args[0]))
 	if err == nil {
 		time.Sleep(duration)
 	} else {
@@ -27,7 +27,7 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // ProfileGet implements the profile.get() function.
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	key := datatypes.GetString(args[0])
+	key := datatypes.String(args[0])
 
 	return settings.Get(key), nil
 }
@@ -40,7 +40,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		return nil, errors.EgoError(errors.ErrArgumentCount).In("Set()")
 	}
 
-	key := datatypes.GetString(args[0])
+	key := datatypes.String(args[0])
 	isEgoSetting := strings.HasPrefix(key, "ego.")
 
 	// Quick check here. The key must already exist if it's one of the
@@ -56,7 +56,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	mode := "interactive"
 	if modeValue, found := symbols.Get("__exec_mode"); found {
-		mode = datatypes.GetString(modeValue)
+		mode = datatypes.String(modeValue)
 	}
 
 	if mode != "test" &&
@@ -68,7 +68,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
-	value := datatypes.GetString(args[1])
+	value := datatypes.String(args[1])
 	if value == "" {
 		err = settings.Delete(key)
 	} else {
@@ -148,7 +148,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // bytes like len() does.
 func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 
 	for range v {
 		count++
@@ -160,7 +160,7 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // GetEnv implements the util.getenv() function which reads
 // an environment variable from the os.
 func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return os.Getenv(datatypes.GetString(args[0])), nil
+	return os.Getenv(datatypes.String(args[0])), nil
 }
 
 // GetMode implements the util.Mode() function which reports the runtime mode.
@@ -218,7 +218,7 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	switch v := args[0].(type) {
 	case bool, byte, int32, int, int64, float32, float64:
-		os.Exit(datatypes.GetInt(args[0]))
+		os.Exit(datatypes.Int(args[0]))
 
 	case string:
 		return nil, errors.NewMessage(v)
@@ -299,7 +299,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return v, err
 
 	case *datatypes.EgoArray:
-		i := datatypes.GetInt(args[1])
+		i := datatypes.Int(args[1])
 		err := v.Delete(i)
 
 		return v, err
@@ -324,7 +324,7 @@ func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // array type (using the Go native version), and the second argument is the size.
 func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	kind := args[0]
-	size := datatypes.GetInt(args[1])
+	size := datatypes.Int(args[1])
 
 	// if it's an Ego type, get the model for the type.
 	if v, ok := kind.(*datatypes.Type); ok {

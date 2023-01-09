@@ -16,12 +16,12 @@ import (
 
 // Lower implements the lower() function.
 func Lower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToLower(datatypes.GetString(args[0])), nil
+	return strings.ToLower(datatypes.String(args[0])), nil
 }
 
 // Upper implements the upper() function.
 func Upper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToUpper(datatypes.GetString(args[0])), nil
+	return strings.ToUpper(datatypes.String(args[0])), nil
 }
 
 // Left implements the left() function.
@@ -29,9 +29,9 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	var b strings.Builder
 
 	count := 0
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 
-	p := datatypes.GetInt(args[1])
+	p := datatypes.Int(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -55,9 +55,9 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	var b strings.Builder
 
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 
-	p := datatypes.GetInt(args[1])
+	p := datatypes.Int(args[1])
 	if p <= 0 {
 		return "", nil
 	}
@@ -106,8 +106,8 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		return found, err
 
 	default:
-		v := datatypes.GetString(args[0])
-		p := datatypes.GetString(args[1])
+		v := datatypes.String(args[0])
+		p := datatypes.String(args[1])
 
 		return strings.Index(v, p) + 1, nil
 	}
@@ -115,14 +115,14 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Substring implements the substring() function.
 func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 
-	p1 := datatypes.GetInt(args[1]) // Starting character position
+	p1 := datatypes.Int(args[1]) // Starting character position
 	if p1 < 1 {
 		p1 = 1
 	}
 
-	p2 := datatypes.GetInt(args[2]) // Number of characters
+	p2 := datatypes.Int(args[2]) // Number of characters
 	if p2 == 0 {
 		return "", nil
 	}
@@ -164,10 +164,10 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) == 1 {
-		return datatypes.GetString(args[0]), nil
+		return datatypes.String(args[0]), nil
 	}
 
-	return fmt.Sprintf(datatypes.GetString(args[0]), args[1:]...), nil
+	return fmt.Sprintf(datatypes.String(args[0]), args[1:]...), nil
 }
 
 // Chars implements the strings.chars() function. This accepts a string
@@ -177,7 +177,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 	for i := range v {
 		count = i + 1
 	}
@@ -201,7 +201,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := datatypes.GetString(args[0])
+	v := datatypes.String(args[0])
 	for i := range v {
 		count = i + 1
 	}
@@ -302,8 +302,8 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := datatypes.GetString(args[0])
-	maxWidth := datatypes.GetInt(args[1])
+	name := datatypes.String(args[0])
+	maxWidth := datatypes.Int(args[1])
 
 	if len(name) <= maxWidth {
 		return name, nil
@@ -332,11 +332,11 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, er
 func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v []string
 
-	src := datatypes.GetString(args[0])
+	src := datatypes.String(args[0])
 	delim := "\n"
 
 	if len(args) > 1 {
-		delim = datatypes.GetString(args[1])
+		delim = datatypes.String(args[1])
 	}
 
 	// Are we seeing Windows-style line endings? If we are doing a split
@@ -363,7 +363,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Tokenize splits a string into tokens.
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	src := datatypes.GetString(args[0])
+	src := datatypes.String(args[0])
 	t := tokenizer.New(src)
 
 	r := datatypes.NewArray(&datatypes.StringType, len(t.Tokens))
@@ -385,7 +385,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
 
-	patternMap, match := ParseURLPattern(datatypes.GetString(args[0]), datatypes.GetString(args[1]))
+	patternMap, match := ParseURLPattern(datatypes.String(args[0]), datatypes.String(args[1]))
 	if !match {
 		return result, nil
 	}
@@ -472,47 +472,47 @@ func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 
 // Wrapper around strings.Compare().
 func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
-	b := datatypes.GetString(args[1])
+	a := datatypes.String(args[0])
+	b := datatypes.String(args[1])
 
 	return strings.Compare(a, b), nil
 }
 
 // Wrapper around strings.Contains().
 func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
-	b := datatypes.GetString(args[1])
+	a := datatypes.String(args[0])
+	b := datatypes.String(args[1])
 
 	return strings.Contains(a, b), nil
 }
 
 // Wrapper around strings.Contains().
 func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
-	b := datatypes.GetString(args[1])
+	a := datatypes.String(args[0])
+	b := datatypes.String(args[1])
 
 	return strings.ContainsAny(a, b), nil
 }
 
 // Wrapper around strings.Count().
 func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
-	b := datatypes.GetString(args[1])
+	a := datatypes.String(args[0])
+	b := datatypes.String(args[1])
 
 	return strings.Count(a, b), nil
 }
 
 // Wrapper around strings.EqualFold().
 func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
-	b := datatypes.GetString(args[1])
+	a := datatypes.String(args[0])
+	b := datatypes.String(args[1])
 
 	return strings.EqualFold(a, b), nil
 }
 
 // Wrapper around strings.Fields().
 func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := datatypes.GetString(args[0])
+	a := datatypes.String(args[0])
 
 	fields := strings.Fields(a)
 
@@ -532,12 +532,12 @@ func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentType).Context("Join()")
 	}
 
-	separator := datatypes.GetString(args[1])
+	separator := datatypes.String(args[1])
 	elements := make([]string, elemArray.Len())
 
 	for i := 0; i < elemArray.Len(); i++ {
 		element, _ := elemArray.Get(i)
-		elements[i] = datatypes.GetString(element)
+		elements[i] = datatypes.String(element)
 	}
 
 	return strings.Join(elements, separator), nil

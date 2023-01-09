@@ -173,8 +173,8 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client := resty.New()
 
 	if len(args) == 2 {
-		username := datatypes.GetString(args[0])
-		password := datatypes.GetString(args[1])
+		username := datatypes.String(args[0])
+		password := datatypes.String(args[1])
 
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
@@ -204,7 +204,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // no base URL defined, then nothing is changed.
 func applyBaseURL(url string, this *datatypes.EgoStruct) string {
 	if b, ok := this.Get(baseURLFieldName); ok {
-		base := datatypes.GetString(b)
+		base := datatypes.String(b)
 		if base == "" {
 			return url
 		}
@@ -226,7 +226,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	urlString := datatypes.GetString(args[0])
+	urlString := datatypes.String(args[0])
 
 	url, err := url.Parse(urlString)
 	if err != nil {
@@ -242,7 +242,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		var valid bool
 
 		path := url.Path
-		templateString := datatypes.GetString(args[1])
+		templateString := datatypes.String(args[1])
 
 		// Scan the URL and the template, and bulid a map of the parts.
 		urlParts, valid = functions.ParseURLPattern(path, templateString)
@@ -309,7 +309,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	code := datatypes.GetInt(args[0])
+	code := datatypes.Int(args[0])
 	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil
 	}
@@ -356,7 +356,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	verify := allowInsecure
 
 	if len(args) == 1 {
-		verify = datatypes.GetBool(args[0])
+		verify = datatypes.Bool(args[0])
 	}
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: verify})
@@ -384,7 +384,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := ""
 
 	if len(args) > 0 {
-		base = datatypes.GetString(args[0])
+		base = datatypes.String(args[0])
 	} else {
 		base = settings.Get(defs.LogonServerSetting)
 	}
@@ -408,7 +408,7 @@ func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	this := getThisStruct(s)
 
-	flag := datatypes.GetBool((args[0]))
+	flag := datatypes.Bool((args[0]))
 	r.SetDebug(flag)
 
 	return this, nil
@@ -429,8 +429,8 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	user := datatypes.GetString(args[0])
-	pass := datatypes.GetString(args[1])
+	user := datatypes.String(args[0])
+	pass := datatypes.String(args[1])
 
 	r.SetBasicAuth(user, pass)
 
@@ -454,7 +454,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	token := settings.Get(defs.LogonTokenSetting)
 
 	if len(args) > 0 {
-		token = datatypes.GetString(args[0])
+		token = datatypes.String(args[0])
 	}
 
 	r.SetAuthToken(token)
@@ -476,7 +476,7 @@ func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	this := getThisStruct(s)
-	media := datatypes.GetString(args[0])
+	media := datatypes.String(args[0])
 	this.SetAlways(mediaTypeFieldName, media)
 
 	return this, nil
@@ -500,12 +500,12 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	url := applyBaseURL(datatypes.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.String(args[0]), this)
 	r := client.NewRequest()
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.GetString(media)
+		ms := datatypes.String(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 		r.Header.Add("Accept", ms)
 		r.Header.Add("Content-Type", ms)
@@ -601,7 +601,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client.SetRedirectPolicy()
 
 	this := getThisStruct(s)
-	url := applyBaseURL(datatypes.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.String(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -610,7 +610,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := datatypes.GetString(mt)
+		media := datatypes.String(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
@@ -625,7 +625,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.GetString(media)
+		ms := datatypes.String(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
 
 		r.Header.Add("Accept", ms)
@@ -679,7 +679,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	this := getThisStruct(s)
-	url := applyBaseURL(datatypes.GetString(args[0]), this)
+	url := applyBaseURL(datatypes.String(args[0]), this)
 
 	if len(args) > 1 {
 		body = args[1]
@@ -688,7 +688,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// If the media type is json, then convert the value passed
 	// into a json value for the request body.
 	if mt, ok := this.Get(mediaTypeFieldName); ok {
-		media := datatypes.GetString(mt)
+		media := datatypes.String(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
@@ -703,7 +703,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	isJSON := false
 
 	if media, ok := this.Get(mediaTypeFieldName); ok {
-		ms := datatypes.GetString(media)
+		ms := datatypes.String(media)
 		isJSON = (strings.Contains(ms, defs.JSONMediaType))
 
 		r.Header.Add("Accept", ms)
@@ -904,13 +904,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if msg, found := errorResponse["msg"]; found {
 					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(datatypes.GetString(msg))
+					return errors.NewMessage(datatypes.String(msg))
 				}
 
 				if msg, found := errorResponse["message"]; found {
 					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
-					return errors.NewMessage(datatypes.GetString(msg))
+					return errors.NewMessage(datatypes.String(msg))
 				}
 			}
 		}
@@ -937,7 +937,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if err == nil && status != http.StatusOK {
 					if m, ok := response.(map[string]interface{}); ok {
 						if msg, ok := m["Message"]; ok {
-							err = errors.NewMessage(datatypes.GetString(msg))
+							err = errors.NewMessage(datatypes.String(msg))
 						}
 					}
 				}
@@ -956,7 +956,7 @@ func AddAgent(r *resty.Request, agentType string) {
 	var version string
 
 	if x, found := symbols.RootSymbolTable.Get("_version"); found {
-		version = datatypes.GetString(x)
+		version = datatypes.String(x)
 	}
 
 	platform := runtime.Version() + ", " + runtime.GOOS + ", " + runtime.GOARCH

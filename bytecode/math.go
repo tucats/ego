@@ -25,7 +25,7 @@ import (
 // NOT operations instead of a negation, which has narrower
 // rules for how it must be processed.
 func negateByteCode(c *Context, i interface{}) error {
-	if datatypes.GetBool(i) {
+	if datatypes.Bool(i) {
 		return notByteCode(c, i)
 	}
 
@@ -158,7 +158,7 @@ func addByteCode(c *Context, i interface{}) error {
 
 	switch vx := v1.(type) {
 	case error:
-		return c.stackPush(vx.Error() + datatypes.GetString(v2))
+		return c.stackPush(vx.Error() + datatypes.String(v2))
 
 		// All other types are scalar math.
 	default:
@@ -216,7 +216,7 @@ func andByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.stackPush(datatypes.GetBool(v1) && datatypes.GetBool(v2))
+	return c.stackPush(datatypes.Bool(v1) && datatypes.Bool(v2))
 }
 
 // orByteCode bytecode instruction processor.
@@ -240,7 +240,7 @@ func orByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.stackPush(datatypes.GetBool(v1) || datatypes.GetBool(v2))
+	return c.stackPush(datatypes.Bool(v1) || datatypes.Bool(v2))
 }
 
 // subtractByteCode instruction processor removes two items from the
@@ -322,8 +322,8 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	// Special case of multiply of string by integer to repeat string
 	if (datatypes.KindOf(v1) == datatypes.StringKind) &&
 		datatypes.IsNumeric(v2) {
-		str := datatypes.GetString(v1)
-		count := datatypes.GetInt(v2)
+		str := datatypes.String(v1)
+		count := datatypes.Int(v2)
 		r := strings.Repeat(str, count)
 
 		return c.stackPush(r)
@@ -384,8 +384,8 @@ func exponentByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case byte, int32, int, int64:
-		vv1 := datatypes.GetInt64(v1)
-		vv2 := datatypes.GetInt64(v2)
+		vv1 := datatypes.Int64(v1)
+		vv2 := datatypes.Int64(v2)
 
 		if vv2 == 0 {
 			return c.stackPush(0)
@@ -570,7 +570,7 @@ func bitAndByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
-	result := datatypes.GetInt(v1) & datatypes.GetInt(v2)
+	result := datatypes.Int(v1) & datatypes.Int(v2)
 
 	return c.stackPush(result)
 }
@@ -595,7 +595,7 @@ func bitOrByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
-	result := datatypes.GetInt(v1) | datatypes.GetInt(v2)
+	result := datatypes.Int(v1) | datatypes.Int(v2)
 
 	return c.stackPush(result)
 }
@@ -620,8 +620,8 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrInvalidType).Context("nil")
 	}
 
-	shift := datatypes.GetInt(v1)
-	value := datatypes.GetInt(v2)
+	shift := datatypes.Int(v1)
+	value := datatypes.Int(v2)
 
 	if shift < -31 || shift > 31 {
 		return c.newError(errors.ErrInvalidBitShift).Context(shift)

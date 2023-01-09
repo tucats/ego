@@ -43,10 +43,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	var name string
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
-		name = datatypes.GetString(operands[0])
+		name = datatypes.String(operands[0])
 		value = operands[1]
 	} else {
-		name = datatypes.GetString(i)
+		name = datatypes.String(i)
 
 		value, err = c.Pop()
 		if err != nil {
@@ -107,7 +107,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	// Get the name that is to be used on the other side. If the other item is
 	// already known to be a channel, then create this variable (with a nil value)
 	// so it can receive the channel info regardless of its type.
-	varname := datatypes.GetString(i)
+	varname := datatypes.String(i)
 
 	x, found := c.symbolGet(varname)
 	if !found {
@@ -162,7 +162,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	}
 
 	// Get the name.
-	varname := datatypes.GetString(i)
+	varname := datatypes.String(i)
 
 	c.symbols.Root().SetAlways(varname, v)
 
@@ -184,7 +184,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
 func storeViaPointerByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 
 	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
 		return c.newError(errors.ErrInvalidIdentifier)
@@ -325,10 +325,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	var err error
 
 	if array, ok := i.([]interface{}); ok && len(array) == 2 {
-		symbolName = datatypes.GetString(array[0])
+		symbolName = datatypes.String(array[0])
 		v = array[1]
 	} else {
-		symbolName = datatypes.GetString(i)
+		symbolName = datatypes.String(i)
 
 		v, err = c.Pop()
 		if err != nil {
@@ -359,7 +359,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 
 // loadByteCode instruction processor.
 func loadByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier).Context(name)
 	}
@@ -401,7 +401,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 				empty = false
 				v, _, _ := m.Get(k)
 
-				c.symbolSetAlways(datatypes.GetString(k), v)
+				c.symbolSetAlways(datatypes.String(k), v)
 			}
 
 			if err == nil {

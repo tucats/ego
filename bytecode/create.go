@@ -36,14 +36,14 @@ import (
 func makeArrayByteCode(c *Context, i interface{}) error {
 	var baseType *datatypes.Type
 
-	count := datatypes.GetInt(i)
+	count := datatypes.Int(i)
 
 	if v, err := c.Pop(); err == nil {
 		if IsStackMarker(v) {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		baseType = datatypes.GetType(v)
+		baseType = datatypes.TypeOf(v)
 	}
 
 	isInt := baseType.IsIntegerType()
@@ -57,7 +57,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 				return c.newError(errors.ErrFunctionReturnedVoid)
 			}
 
-			t := datatypes.GetType(v)
+			t := datatypes.TypeOf(v)
 
 			// If we are initializing any integer or float array, coerce the
 			// value to the correct type as long as the value is also an integer
@@ -109,10 +109,10 @@ func arrayByteCode(c *Context, i interface{}) error {
 	var kind *datatypes.Type
 
 	if args, ok := i.([]interface{}); ok {
-		count = datatypes.GetInt(args[0])
-		kind = datatypes.GetType(args[1])
+		count = datatypes.Int(args[0])
+		kind = datatypes.TypeOf(args[1])
 	} else {
-		count = datatypes.GetInt(i)
+		count = datatypes.Int(i)
 		kind = datatypes.Array(&datatypes.InterfaceType)
 	}
 
@@ -179,7 +179,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 func structByteCode(c *Context, i interface{}) error {
 	var model interface{}
 
-	count := datatypes.GetInt(i)
+	count := datatypes.Int(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
 	typeInfo := &datatypes.StructType
@@ -193,7 +193,7 @@ func structByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		name := datatypes.GetString(nx)
+		name := datatypes.String(nx)
 		if !strings.HasPrefix(name, datatypes.MetadataPrefix) {
 			fields = append(fields, name)
 		}
@@ -295,14 +295,14 @@ func structByteCode(c *Context, i interface{}) error {
 // Create a new map. The argument is the number of key/value
 // pairs on the stack, preceded by the key and value types.
 func makeMapByteCode(c *Context, i interface{}) error {
-	count := datatypes.GetInt(i)
+	count := datatypes.Int(i)
 
 	v, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
-	keyType := datatypes.GetType(v)
+	keyType := datatypes.TypeOf(v)
 
 	v, err = c.Pop()
 	if err != nil {
@@ -313,7 +313,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
-	valueType := datatypes.GetType(v)
+	valueType := datatypes.TypeOf(v)
 
 	m := datatypes.NewMap(keyType, valueType)
 

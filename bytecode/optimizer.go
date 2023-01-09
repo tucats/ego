@@ -69,7 +69,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// cannot be optimized.
 			for _, i := range b.instructions {
 				if i.Operation > BranchInstructions {
-					destination := datatypes.GetInt(i.Operand)
+					destination := datatypes.Int(i.Operand)
 					if destination >= idx && destination < idx+len(optimization.Pattern) {
 						found = false
 
@@ -128,9 +128,9 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						case OptCount:
 							increment := 1
 							if i.Operand != nil {
-								increment = datatypes.GetInt(i.Operand)
+								increment = datatypes.Int(i.Operand)
 							}
-							registers[token.Register] = datatypes.GetInt(registers[token.Register]) + increment
+							registers[token.Register] = datatypes.Int(registers[token.Register]) + increment
 
 						case OptStore:
 							registers[token.Register] = i.Operand
@@ -256,7 +256,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	// Scan the instructions with destinations after the insertion and update jump offsets
 	for i := 0; i < len(instructions); i++ {
 		if instructions[i].Operation > BranchInstructions {
-			destination := datatypes.GetInt(instructions[i].Operand)
+			destination := datatypes.Int(instructions[i].Operand)
 			if destination > start {
 				instructions[i].Operand = destination - offset
 			}
@@ -283,7 +283,7 @@ func (b *ByteCode) constantStructOptimizer() int {
 			continue
 		}
 
-		fieldCount := datatypes.GetInt(i.Operand)
+		fieldCount := datatypes.Int(i.Operand)
 
 		// Bogus count, let it be caught at runtime.
 		if idx-fieldCount < 0 {

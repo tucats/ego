@@ -230,7 +230,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 						return
 					}
 
-					if datatypes.GetBool(result) {
+					if datatypes.Bool(result) {
 						_ = tx.Rollback()
 
 						ui.Debug(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
@@ -344,7 +344,7 @@ func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) 
 
 		msg.WriteString(key)
 		msg.WriteString(": ")
-		msg.WriteString(datatypes.GetString(value))
+		msg.WriteString(datatypes.String(value))
 	}
 
 	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
@@ -518,7 +518,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 
 					msg.WriteString(columnNames[i])
 					msg.WriteString("=")
-					msg.WriteString(datatypes.GetString(v))
+					msg.WriteString(datatypes.String(v))
 				}
 
 				ui.Debug(ui.TableLogger, "[%d] Read table to set symbols: %s", sessionID, msg.String())
@@ -869,7 +869,7 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 		// If it's one of the date/time values, make sure it is wrapped in single qutoes.
 		if keywordMatch(column.Type, "time", "date", "timestamp") {
-			text := strings.TrimPrefix(strings.TrimSuffix(datatypes.GetString(v), "\""), "\"")
+			text := strings.TrimPrefix(strings.TrimSuffix(datatypes.String(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
 			ui.Debug(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
 		}

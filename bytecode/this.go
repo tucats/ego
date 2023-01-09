@@ -28,7 +28,7 @@ func setThisByteCode(c *Context, i interface{}) error {
 		name = datatypes.GenerateName()
 		c.symbolSetAlways(name, v)
 	} else {
-		name = datatypes.GetString(i)
+		name = datatypes.String(i)
 	}
 
 	if v, ok := c.symbolGet(name); ok {
@@ -41,7 +41,7 @@ func setThisByteCode(c *Context, i interface{}) error {
 // loadThisByteCode implements the LoadThis opcode. This combines the
 // functionality of the Load followed by the SetThis opcodes.
 func loadThisByteCode(c *Context, i interface{}) error {
-	name := datatypes.GetString(i)
+	name := datatypes.String(i)
 	if len(name) == 0 {
 		return c.newError(errors.ErrInvalidIdentifier)
 	}
@@ -67,7 +67,7 @@ func loadThisByteCode(c *Context, i interface{}) error {
 // named value. This is done as part of prologue of a function that
 // has a receiver.
 func getThisByteCode(c *Context, i interface{}) error {
-	this := datatypes.GetString(i)
+	this := datatypes.String(i)
 
 	if v, ok := c.popThis(); ok {
 		c.symbolSetAlways(this, v)

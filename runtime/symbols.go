@@ -20,11 +20,11 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	json := false
 
 	if len(args) > 0 {
-		selectedScope = datatypes.GetInt(args[0])
+		selectedScope = datatypes.Int(args[0])
 	}
 
 	if len(args) > 1 {
-		json = strings.EqualFold(datatypes.GetString(args[1]), "json")
+		json = strings.EqualFold(datatypes.String(args[1]), "json")
 	}
 
 	if len(args) > 2 {

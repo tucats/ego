@@ -44,7 +44,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 func popScopeByteCode(c *Context, i interface{}) error {
 	count := 1
 	if i != nil {
-		count = datatypes.GetInt(i)
+		count = datatypes.Int(i)
 	}
 
 	for count > 0 {
@@ -77,11 +77,11 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	wasList := false
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
-		name = datatypes.GetString(operands[0])
+		name = datatypes.String(operands[0])
 		value = operands[1]
 		wasList = true
 	} else {
-		name = datatypes.GetString(i)
+		name = datatypes.String(i)
 	}
 
 	if c.symbolIsConstant(name) {
@@ -102,7 +102,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 
 // symbolCreateByteCode instruction processor.
 func symbolCreateByteCode(c *Context, i interface{}) error {
-	n := datatypes.GetString(i)
+	n := datatypes.String(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -117,7 +117,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 
 // symbolCreateIfByteCode instruction processor.
 func symbolCreateIfByteCode(c *Context, i interface{}) error {
-	n := datatypes.GetString(i)
+	n := datatypes.String(i)
 	if c.symbolIsConstant(n) {
 		return c.newError(errors.ErrReadOnly)
 	}
@@ -141,7 +141,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 
 // symbolDeleteByteCode instruction processor.
 func symbolDeleteByteCode(c *Context, i interface{}) error {
-	n := datatypes.GetString(i)
+	n := datatypes.String(i)
 
 	err := c.symbolDelete(n)
 	if err != nil {
@@ -162,7 +162,7 @@ func constantByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrFunctionReturnedVoid)
 	}
 
-	varname := datatypes.GetString(i)
+	varname := datatypes.String(i)
 
 	err = c.constantSet(varname, v)
 	if err != nil {

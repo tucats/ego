@@ -16,7 +16,7 @@ func PackageAsString(vv *datatypes.EgoPackage) string {
 
 	keys := vv.Keys()
 	for _, key := range keys {
-		keyString := datatypes.GetString(key)
+		keyString := datatypes.String(key)
 		if strings.HasPrefix(keyString, "__") {
 			continue
 		}

@@ -24,7 +24,7 @@ func UUIDNil(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 // UUIDParse implements the uuid.Parse() function.
 func UUIDParse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	s := datatypes.GetString(args[0])
+	s := datatypes.String(args[0])
 
 	u, err := uuid.Parse(s)
 	if err != nil {

@@ -47,8 +47,8 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 	r := rangeDefinition{}
 
 	if list, ok := i.([]interface{}); ok && len(list) == 2 {
-		r.indexName = datatypes.GetString(list[0])
-		r.valueName = datatypes.GetString(list[1])
+		r.indexName = datatypes.String(list[0])
+		r.valueName = datatypes.String(list[1])
 
 		if r.indexName != "" && r.indexName != DiscardedVariableName {
 			err = c.symbols.Create(r.indexName)
@@ -129,7 +129,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 func rangeNextByteCode(c *Context, i interface{}) error {
 	var err error
 
-	destination := datatypes.GetInt(i)
+	destination := datatypes.Int(i)
 
 	if stackSize := len(c.rangeStack); stackSize == 0 {
 		c.programCounter = destination

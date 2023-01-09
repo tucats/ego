@@ -594,7 +594,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	}
 
 	// Get the table name and filter list
-	table, _ := fullName(user, datatypes.GetString(tableItem))
+	table, _ := fullName(user, datatypes.String(tableItem))
 
 	var result strings.Builder
 
@@ -641,7 +641,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 	// If the items we are updating includes a non-empty rowID, then graft it onto
 	// the filter string.
 	if id, found := items[defs.RowIDName]; found {
-		idString := datatypes.GetString(id)
+		idString := datatypes.String(id)
 		if idString != "" {
 			if where == "" {
 				where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
@@ -720,7 +720,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 
 	// Get the table name. If it doesn't already have a schema part, then assign
 	// the username as the schema.
-	table, wasFullyQualified := fullName(user, datatypes.GetString(tableItem))
+	table, wasFullyQualified := fullName(user, datatypes.String(tableItem))
 	// This is a multipart name. You must be an administrator to do this
 	if !wasFullyQualified && !hasAdminPrivileges {
 		util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
@@ -838,5 +838,5 @@ func tableNameFromURL(u *url.URL) (string, error) {
 		return "", errors.NewMessage("Missing table name in URL").Context(u.Path)
 	}
 
-	return datatypes.GetString(tableItem), nil
+	return datatypes.String(tableItem), nil
 }

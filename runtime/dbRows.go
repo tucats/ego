@@ -45,7 +45,7 @@ func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	this := getThisStruct(s)
 	this.SetAlways(rowCountFieldName, -1)
 
-	query := datatypes.GetString(args[0])
+	query := datatypes.String(args[0])
 
 	var rows *sql.Rows
 
@@ -147,7 +147,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	db := this.GetAlways(dbFieldName).(*datatypes.EgoStruct)
-	asStruct := datatypes.GetBool(db.GetAlways(asStructFieldName))
+	asStruct := datatypes.Bool(db.GetAlways(asStructFieldName))
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()
 	colCount := len(columns)

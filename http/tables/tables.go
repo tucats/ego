@@ -457,7 +457,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 	v := r.URL.Query()[defs.RowCountParameterName]
 	if len(v) == 1 {
-		includeRowCounts = datatypes.GetBool(v[0])
+		includeRowCounts = datatypes.Bool(v[0])
 	}
 
 	db, err := OpenDB(sessionID, user, "")

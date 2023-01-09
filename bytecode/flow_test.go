@@ -189,7 +189,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 		t.Errorf("localCallByteCode unexpected pop error: %v", e)
 	}
 
-	if datatypes.GetString(d) != uninterestingValue {
+	if datatypes.String(d) != uninterestingValue {
 		t.Errorf("localCallByteCode wrong TOS value: %#v", d)
 	}
 }

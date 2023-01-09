@@ -221,19 +221,19 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	// variables and use those. Otherwise, fetch them as the two parameters.
 	if len(args) == 0 {
 		if ux, ok := s.Get("_user"); ok {
-			user = datatypes.GetString(ux)
+			user = datatypes.String(ux)
 		}
 
 		if px, ok := s.Get("_password"); ok {
-			pass = datatypes.GetString(px)
+			pass = datatypes.String(px)
 		}
 	} else {
 		if len(args) != 2 {
 			return false, errors.EgoError(errors.ErrArgumentCount)
 		}
 
-		user = datatypes.GetString(args[0])
-		pass = datatypes.GetString(args[1])
+		user = datatypes.String(args[0])
+		pass = datatypes.String(args[1])
 	}
 
 	// If the user exists and the password matches then valid.
@@ -249,8 +249,8 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return false, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	user = datatypes.GetString(args[0])
-	priv = strings.ToUpper(datatypes.GetString(args[1]))
+	user = datatypes.String(args[0])
+	priv = strings.ToUpper(datatypes.String(args[1]))
 
 	// If the user exists and the privilege exists, return it's status
 	return GetPermission(user, priv), nil
@@ -266,7 +266,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	superUser := false
 
 	if s, ok := s.Get("_superuser"); ok {
-		superUser = datatypes.GetBool(s)
+		superUser = datatypes.Bool(s)
 	}
 
 	if !superUser {
@@ -282,7 +282,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if u, ok := args[0].(*datatypes.EgoMap); ok {
 		name := ""
 		if n, ok, _ := u.Get("name"); ok {
-			name = strings.ToLower(datatypes.GetString(n))
+			name = strings.ToLower(datatypes.String(n))
 		}
 
 		r, ok := AuthService.ReadUser(name, false)
@@ -295,7 +295,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 		if n, ok, _ := u.Get("password"); ok {
-			r.Password = HashString(datatypes.GetString(n))
+			r.Password = HashString(datatypes.String(n))
 		}
 
 		if n, ok, _ := u.Get("permissions"); ok {
@@ -304,7 +304,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					r.Permissions = []string{}
 
 					for _, p := range m {
-						permissionName := datatypes.GetString(p)
+						permissionName := datatypes.String(p)
 						if permissionName != "." {
 							r.Permissions = append(r.Permissions, permissionName)
 						}
@@ -330,7 +330,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	superUser := false
 
 	if s, ok := s.Get("_superuser"); ok {
-		superUser = datatypes.GetBool(s)
+		superUser = datatypes.Bool(s)
 	}
 
 	if !superUser {
@@ -342,7 +342,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	name := strings.ToLower(datatypes.GetString(args[0]))
+	name := strings.ToLower(datatypes.String(args[0]))
 
 	if _, ok := AuthService.ReadUser(name, false); ok == nil {
 		err := AuthService.DeleteUser(name)
@@ -365,7 +365,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	r := datatypes.NewMap(&datatypes.StringType, &datatypes.InterfaceType)
-	name := strings.ToLower(datatypes.GetString(args[0]))
+	name := strings.ToLower(datatypes.String(args[0]))
 
 	t, ok := AuthService.ReadUser(name, false)
 	if ok != nil {
@@ -400,11 +400,11 @@ func ValidateToken(t string) bool {
 // the user field.
 func TokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
-	if datatypes.GetBool(v) {
+	if datatypes.Bool(v) {
 		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
 		if m, ok := t.(*datatypes.EgoStruct); ok {
 			if n, ok := m.Get("name"); ok {
-				return datatypes.GetString(n)
+				return datatypes.String(n)
 			}
 		}
 	}

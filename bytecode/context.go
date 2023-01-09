@@ -82,7 +82,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// ultimately set by a profile setting or CLI option).
 	static := false
 	if s, found := s.Get("__static_data_types"); found {
-		static = datatypes.GetBool(s)
+		static = datatypes.Bool(s)
 	}
 
 	// If we weren't given a table, create an empty temp table.

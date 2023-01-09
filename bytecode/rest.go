@@ -27,23 +27,23 @@ func authByteCode(c *Context, i interface{}) error {
 		return c.newError(errors.ErrNotAService)
 	}
 
-	kind := datatypes.GetString(i)
+	kind := datatypes.String(i)
 
 	if v, ok := c.symbolGet("_user"); ok {
-		user = datatypes.GetString(v)
+		user = datatypes.String(v)
 	}
 
 	if v, ok := c.symbolGet("_password"); ok {
-		pass = datatypes.GetString(v)
+		pass = datatypes.String(v)
 	}
 
 	if v, ok := c.symbolGet("_token"); ok {
-		token = datatypes.GetString(v)
+		token = datatypes.String(v)
 	}
 
 	tokenValid := false
 	if v, ok := c.symbolGet("_token_valid"); ok {
-		tokenValid = datatypes.GetBool(v)
+		tokenValid = datatypes.Bool(v)
 	}
 
 	// Before we do anything else, if we don't have a username/password
@@ -91,7 +91,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_authenticated"); ok {
-			isAuth = datatypes.GetBool(v)
+			isAuth = datatypes.Bool(v)
 		}
 
 		if !isAuth {
@@ -110,7 +110,7 @@ func authByteCode(c *Context, i interface{}) error {
 		isAuth := false
 
 		if v, ok := c.symbolGet("_superuser"); ok {
-			isAuth = datatypes.GetBool(v)
+			isAuth = datatypes.Bool(v)
 		}
 
 		if !isAuth {
@@ -141,7 +141,7 @@ func responseByteCode(c *Context, i interface{}) error {
 
 	isJSON := false
 	if v, ok := c.symbols.Get("_json"); ok {
-		isJSON = datatypes.GetBool(v)
+		isJSON = datatypes.Bool(v)
 	}
 
 	if isJSON {
@@ -173,6 +173,6 @@ func writeResponse(c *Context, output string) {
 	if responseStruct, ok := responseSymbol.(*datatypes.EgoStruct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 
-		_ = responseStruct.SetAlways("Buffer", datatypes.GetString(bufferValue)+output)
+		_ = responseStruct.SetAlways("Buffer", datatypes.String(bufferValue)+output)
 	}
 }

@@ -93,7 +93,7 @@ func RunServer(c *cli.Context) error {
 		symbols.RootSymbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
 	} else {
 		s, _ := symbols.RootSymbolTable.Get("_server_instance")
-		defs.ServerInstanceID = datatypes.GetString(s)
+		defs.ServerInstanceID = datatypes.String(s)
 	}
 
 	server.Version = c.Version

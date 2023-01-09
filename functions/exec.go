@@ -24,7 +24,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err e
 	argStrings := make([]string, 0)
 
 	for _, arg := range args {
-		s := datatypes.GetString(arg)
+		s := datatypes.String(arg)
 		argStrings = append(argStrings, s)
 	}
 

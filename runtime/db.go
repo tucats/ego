@@ -52,7 +52,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	initDBTypeDef()
 
 	// Get the connection string, which MUST be in URL format.
-	connStr := datatypes.GetString(args[0])
+	connStr := datatypes.String(args[0])
 
 	url, err := url.Parse(connStr)
 	if err != nil {
@@ -185,7 +185,7 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 	}
 
 	this := getThisStruct(s)
-	this.SetAlways(asStructFieldName, datatypes.GetBool(args[0]))
+	this.SetAlways(asStructFieldName, datatypes.Bool(args[0]))
 
 	return this, nil
 }
@@ -233,14 +233,14 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	this := getThisStruct(s)
-	asStruct := datatypes.GetBool(this.GetAlways(asStructFieldName))
+	asStruct := datatypes.Bool(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
 
 	var rows *sql.Rows
 
 	var e2 error
 
-	query := datatypes.GetString(args[0])
+	query := datatypes.String(args[0])
 	ui.Debug(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
@@ -342,7 +342,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	var err error
 
-	query := datatypes.GetString(args[0])
+	query := datatypes.String(args[0])
 
 	ui.Debug(ui.DBLogger, "Executing: %s", query)
 

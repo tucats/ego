@@ -104,7 +104,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]string, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetString(k)
+			array[idx] = String(k)
 			idx++
 		}
 
@@ -122,7 +122,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]int, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetInt(k)
+			array[idx] = Int(k)
 			idx++
 		}
 
@@ -140,7 +140,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetFloat64(k)
+			array[idx] = Float64(k)
 			idx++
 		}
 
@@ -158,7 +158,7 @@ func (m *EgoMap) Keys() []interface{} {
 		array := make([]float64, len(m.data))
 
 		for k := range m.data {
-			array[idx] = GetFloat64(k)
+			array[idx] = Float64(k)
 			idx++
 		}
 
@@ -318,7 +318,7 @@ func (m EgoMap) MarshalJSON() ([]byte, error) {
 		}
 
 		v, _, _ := m.Get(k)
-		key := GetString(k)
+		key := String(k)
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {

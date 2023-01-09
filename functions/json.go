@@ -20,7 +20,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	if a, ok := args[0].(*datatypes.EgoArray); ok && a.ValueType().Kind() == datatypes.ByteKind {
 		err = json.Unmarshal(a.GetBytes(), &v)
 	} else {
-		jsonBuffer := datatypes.GetString(args[0])
+		jsonBuffer := datatypes.String(args[0])
 		err = json.Unmarshal([]byte(jsonBuffer), &v)
 	}
 
@@ -188,8 +188,8 @@ func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // JSONMarshalIndent writes a  JSON string from arbitrary data.
 func JSONMarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	prefix := datatypes.GetString(args[1])
-	indent := datatypes.GetString(args[2])
+	prefix := datatypes.String(args[1])
+	indent := datatypes.String(args[2])
 
 	jsonBuffer, err := json.MarshalIndent(datatypes.Sanitize(args[0]), prefix, indent)
 	if err != nil {

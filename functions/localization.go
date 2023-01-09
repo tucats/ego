@@ -31,7 +31,7 @@ func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
-	property := datatypes.GetString(args[0])
+	property := datatypes.String(args[0])
 
 	language := os.Getenv("LANG")
 
@@ -45,13 +45,13 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			keys := egoMap.Keys()
 			for _, key := range keys {
 				value, _, _ := egoMap.Get(key)
-				parameters[datatypes.GetString(key)] = datatypes.GetString(value)
+				parameters[datatypes.String(key)] = datatypes.String(value)
 			}
 		} else if egoStruct, ok := value.(*datatypes.EgoStruct); ok {
 			fields := egoStruct.FieldNames()
 			for _, field := range fields {
 				value := egoStruct.GetAlways(field)
-				parameters[field] = datatypes.GetString(value)
+				parameters[field] = datatypes.String(value)
 			}
 		} else if value != nil {
 			return nil, errors.EgoError(errors.ErrArgumentType)
@@ -59,7 +59,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(args) > 2 {
-		language = datatypes.GetString(args[2])
+		language = datatypes.String(args[2])
 	}
 
 	if language == "" {
@@ -91,7 +91,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				return property, nil
 			}
 
-			msgString := datatypes.GetString(message)
+			msgString := datatypes.String(message)
 			t := template.New(property)
 
 			t, e := t.Parse(msgString)

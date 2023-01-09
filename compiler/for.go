@@ -350,7 +350,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// If increment mode was used, then the increment is just to add (or subtract)
 	// 1 from the value.
 	if autoMode != bytecode.Load {
-		t := datatypes.GetString(incrementStore.Instruction(0).Operand)
+		t := datatypes.String(incrementStore.Instruction(0).Operand)
 		incrementCode = bytecode.New("auto")
 
 		incrementCode.Emit(bytecode.Load, t)

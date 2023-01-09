@@ -17,7 +17,7 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	str, err := Sprintf(s, args)
 	if err == nil {
-		length, _ = fmt.Printf("%s", datatypes.GetString(str))
+		length, _ = fmt.Printf("%s", datatypes.String(str))
 	}
 
 	return length, err
@@ -29,7 +29,7 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return 0, nil
 	}
 
-	fmtString := datatypes.GetString(args[0])
+	fmtString := datatypes.String(args[0])
 
 	if len(args) == 1 {
 		return fmtString, nil
@@ -103,8 +103,8 @@ func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
 }
 
 func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	dataString := datatypes.GetString(args[0])
-	formatString := datatypes.GetString(args[1])
+	dataString := datatypes.String(args[0])
+	formatString := datatypes.String(args[1])
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
 	pointerList := make([]*interface{}, len(args)-2)

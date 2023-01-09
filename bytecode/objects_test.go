@@ -206,7 +206,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			}
 
 			// We should be able to retrieve the stored bytecode from the symbol table.
-			symbolName := datatypes.GetString(tt.arg)
+			symbolName := datatypes.String(tt.arg)
 
 			v, found := syms.Get(symbolName)
 			if !found {

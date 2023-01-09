@@ -110,7 +110,7 @@ func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	prompt := ""
 	if len(args) > 0 {
-		prompt = datatypes.GetString(args[0])
+		prompt = datatypes.String(args[0])
 	}
 
 	var text string
@@ -133,7 +133,7 @@ func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	return expressions.Evaluate(datatypes.GetString(args[0]), symbols)
+	return expressions.Evaluate(datatypes.String(args[0]), symbols)
 }
 
 func GetDeclaration(fname string) *datatypes.FunctionDeclaration {
