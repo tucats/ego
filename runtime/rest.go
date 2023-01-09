@@ -186,7 +186,12 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	initializeRestType()
-	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: allowInsecure})
+
+	if config, err := GetTLSConfiguration(); err != nil {
+		return nil, err
+	} else {
+		client.SetTLSClientConfig(config)
+	}
 
 	r := data.NewStruct(restType)
 

@@ -97,6 +97,9 @@ func (s *SymbolTable) Parent() *SymbolTable {
 // SetParent sets the parent of the currnent table to the provided
 // table.
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.parent = p
 	s.isRoot = (p == nil)
 
@@ -122,12 +125,13 @@ func (s *SymbolTable) ID() uuid.UUID {
 // Names returns an array of strings containing the names of the
 // symbols in the table.
 func (s *SymbolTable) Names() []string {
-	result := make([]string, s.size)
-	index := 0
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	result := []string{}
 
 	for k := range s.symbols {
-		result[index] = k
-		index++
+		result = append(result, k)
 	}
 
 	return result
@@ -149,12 +153,18 @@ func (s *SymbolTable) SetScopeBoundary(flag bool) {
 
 // Size returns the number of symbols in the table.
 func (s *SymbolTable) Size() int {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	return len(s.symbols)
 }
 
 // Root finds the root table for the symbol table, by searching up
 // the tree of tables until it finds the root table.
 func (s *SymbolTable) Root() *SymbolTable {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	st := s
 	for !st.IsRoot() {
 		st = st.parent

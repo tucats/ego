@@ -1,20 +1,26 @@
 
 func client(ch chan, count int ) {
 
+   // Change this to match your test machine that runs an Ego server.
+   host := "https://scout.attlocal.net:8080"
    status := 200
+
    for i := 0; i < count; i++{
-      r := rest.New("admin", "password").Media("text").Base("http://localhost:8080")
+      r := rest.New("admin", "password").Media("text").Base(host)
+
       r.Get("/services/factor/10")
+
       if r.status != 200 {
          status = r.status
       }
    }
+
    ch <- status
 }
 
 func main() int {
 
-   clients := 3
+   clients := 50
    ch := make(chan, clients)
 
    for i := 0; i < clients; i++ {

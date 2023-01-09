@@ -140,6 +140,9 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 // value. It returns nil if this was successful, else a symbol-not-found
 // error is reported.
 func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	syms := s
 
 	for syms != nil {
@@ -178,8 +181,8 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 		}
 	}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	symbolTable.mutex.Lock()
+	defer symbolTable.mutex.Unlock()
 
 	readOnly := strings.HasPrefix(name, "_")
 
@@ -224,8 +227,8 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 		}
 	}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	symbolTable.mutex.Lock()
+	defer symbolTable.mutex.Unlock()
 
 	// IF this doesn't exist, allocate more space in the values array, and
 	// add it to the symbol table slot.
