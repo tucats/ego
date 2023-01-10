@@ -55,7 +55,7 @@ type Compiler struct {
 	coercions             []*bytecode.ByteCode
 	constants             []string
 	deferQueue            []int
-	packages              map[string]*data.EgoPackage
+	packages              map[string]*data.Package
 	packageMutex          sync.Mutex
 	types                 map[string]*data.Type
 	functionDepth         int
@@ -78,7 +78,7 @@ func New(name string) *Compiler {
 		deferQueue:            make([]int, 0),
 		types:                 map[string]*data.Type{},
 		packageMutex:          sync.Mutex{},
-		packages:              map[string]*data.EgoPackage{},
+		packages:              map[string]*data.Package{},
 		normalizedIdentifiers: false,
 		flags: flagSet{
 			extensionsEnabled: settings.GetBool(defs.ExtensionsEnabledSetting),
@@ -359,7 +359,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 		}
 		// Make sure the package is marked as readonly so the user can't modify
 		// any function definitions, etc. that are built in.
-		data.SetMetadata(m, data.TypeMDKey, data.Package(packageName))
+		data.SetMetadata(m, data.TypeMDKey, data.PackageType(packageName))
 		data.SetMetadata(m, data.ReadonlyMDKey, true)
 
 		if packageName != "" {
@@ -487,7 +487,7 @@ func (c *Compiler) Clone(withLock bool) *Compiler {
 		exitEnabled: c.exitEnabled,
 	}
 
-	packages := map[string]*data.EgoPackage{}
+	packages := map[string]*data.Package{}
 
 	c.packageMutex.Lock()
 	defer c.packageMutex.Unlock()

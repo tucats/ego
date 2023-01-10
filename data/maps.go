@@ -11,11 +11,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// EgoMap is a wrapper around a native Go map. The actual map supports interface items
+// Map is a wrapper around a native Go map. The actual map supports interface items
 // for both key and value. The wrapper contains additional information about the expected
 // types for key and value, as well as a counting semaphore to determine if the map
 // should be considered immutable (such as during a for...range loop).
-type EgoMap struct {
+type Map struct {
 	data      map[interface{}]interface{}
 	keyType   *Type
 	valueType *Type
@@ -27,8 +27,8 @@ type EgoMap struct {
 // key and value types (such as data.StringType or data.FloatType). You can also
 // use data.InterfaceType for a type value, which means any type is accepted. The
 // result is an initialized map that you can begin to store or read values from.
-func NewMap(keyType, valueType *Type) *EgoMap {
-	return &EgoMap{
+func NewMap(keyType, valueType *Type) *Map {
+	return &Map{
 		data:      map[interface{}]interface{}{},
 		keyType:   keyType,
 		valueType: valueType,
@@ -38,13 +38,13 @@ func NewMap(keyType, valueType *Type) *EgoMap {
 
 // ValueType returns the integer description of the declared key type for
 // this map.
-func (m *EgoMap) KeyType() *Type {
+func (m *Map) KeyType() *Type {
 	return m.keyType
 }
 
 // ValueType returns the integer description of the declared value type for
 // this map.
-func (m *EgoMap) ValueType() *Type {
+func (m *Map) ValueType() *Type {
 	return m.valueType
 }
 
@@ -52,7 +52,7 @@ func (m *EgoMap) ValueType() *Type {
 // value (true means immutable). Internally, this is actually a counting
 // semaphore, so the calls to ImmutableKeys to set/clear the state must
 // be balanced to prevent having a map that is permanently locked or unlocked.
-func (m *EgoMap) ImmutableKeys(b bool) {
+func (m *Map) ImmutableKeys(b bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -68,7 +68,7 @@ func (m *EgoMap) ImmutableKeys(b bool) {
 // value, or nil if not found. It also returns a flag indicating if the
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
-func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
+func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -85,7 +85,7 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 // with the type declaration for the map. Bad type values result in an error.
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
-func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
+func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -109,7 +109,7 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
 
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
-func (m *EgoMap) Keys() []interface{} {
+func (m *Map) Keys() []interface{} {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -198,7 +198,7 @@ func (m *EgoMap) Keys() []interface{} {
 // Delete will delete a given value from the map based on key. The return
 // value indicates if the value was found (and therefore deleted) versus
 // was not found.
-func (m *EgoMap) Delete(key interface{}) (bool, error) {
+func (m *Map) Delete(key interface{}) (bool, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -220,14 +220,14 @@ func (m *EgoMap) Delete(key interface{}) (bool, error) {
 
 // TypeString produces a human-readable string describing the map type in Ego
 // native terms.
-func (m *EgoMap) TypeString() string {
+func (m *Map) TypeString() string {
 	return fmt.Sprintf("map[%s]%s", m.keyType.String(), m.valueType.String())
 }
 
 // String displays a simplified formatted string value of a map, using the Ego
 // anonymous struct syntax. Key values are not quoted, but data values are if
 // they are strings.
-func (m *EgoMap) String() string {
+func (m *Map) String() string {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -255,7 +255,7 @@ func (m *EgoMap) String() string {
 }
 
 // Type returns a type descriptor for the current map.
-func (m *EgoMap) Type() *Type {
+func (m *Map) Type() *Type {
 	return &Type{
 		name:      "map",
 		kind:      MapKind,
@@ -267,7 +267,7 @@ func (m *EgoMap) Type() *Type {
 // Given a map whose keys and values are simple types (string, int, float64, bool),
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
-func NewMapFromMap(sourceMap interface{}) *EgoMap {
+func NewMapFromMap(sourceMap interface{}) *Map {
 	valueType := &InterfaceType
 	keyType := InterfaceType
 
@@ -291,10 +291,10 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 		valueType = &StringType
 
 	case reflect.Map:
-		valueType = Map(&InterfaceType, &InterfaceType)
+		valueType = MapType(&InterfaceType, &InterfaceType)
 
 	case reflect.Array:
-		valueType = Array(&InterfaceType)
+		valueType = ArrayType(&InterfaceType)
 	}
 
 	switch keyKind {
@@ -325,7 +325,7 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 	return result
 }
 
-func (m *EgoMap) MarshalJSON() ([]byte, error) {
+func (m *Map) MarshalJSON() ([]byte, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 

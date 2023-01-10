@@ -43,7 +43,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", "sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		Pointer(&WaitGroupType),
+		PointerType(&WaitGroupType),
 	},
 	{
 		[]string{"sync", ".", "Mutex"},
@@ -53,7 +53,7 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", "sync", ".", "Mutex"},
 		nil, // Model generated in instance-of
-		Pointer(&MutexType),
+		PointerType(&MutexType),
 	},
 	{
 		[]string{"chan"},
@@ -63,47 +63,47 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"[", "]", ByteTypeName},
 		NewArray(&ByteType, 0),
-		Array(&ByteType),
+		ArrayType(&ByteType),
 	},
 	{
 		[]string{"[", "]", Int32TypeName},
 		NewArray(&Int32Type, 0),
-		Array(&Int32Type),
+		ArrayType(&Int32Type),
 	},
 	{
 		[]string{"[", "]", IntTypeName},
 		NewArray(&IntType, 0),
-		Array(&IntType),
+		ArrayType(&IntType),
 	},
 	{
 		[]string{"[", "]", Int64TypeName},
 		NewArray(&Int64Type, 0),
-		Array(&Int64Type),
+		ArrayType(&Int64Type),
 	},
 	{
 		[]string{"[", "]", BoolTypeName},
 		NewArray(BoolType, 0),
-		Array(BoolType),
+		ArrayType(BoolType),
 	},
 	{
 		[]string{"[", "]", Float64TypeName},
 		NewArray(&Float64Type, 0),
-		Array(&Float64Type),
+		ArrayType(&Float64Type),
 	},
 	{
 		[]string{"[", "]", Float32TypeName},
 		NewArray(&Float32Type, 0),
-		Array(&Float32Type),
+		ArrayType(&Float32Type),
 	},
 	{
 		[]string{"[", "]", StringTypeName},
 		NewArray(&StringType, 0),
-		Array(&StringType),
+		ArrayType(&StringType),
 	},
 	{
 		[]string{"[", "]", InterfaceTypeName},
 		NewArray(&InterfaceType, 0),
-		Array(&InterfaceType),
+		ArrayType(&InterfaceType),
 	},
 	{
 		[]string{BoolTypeName},
@@ -158,51 +158,51 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", BoolTypeName},
 		&boolInterface,
-		Pointer(BoolType),
+		PointerType(BoolType),
 	},
 	{
 		[]string{"*", Int32TypeName},
 		&int32Interface,
-		Pointer(&Int32Type),
+		PointerType(&Int32Type),
 	},
 	{
 		[]string{"*", ByteTypeName},
 		&byteInterface,
-		Pointer(&ByteType),
+		PointerType(&ByteType),
 	},
 	{
 		[]string{"*", IntTypeName},
 		&intInterface,
-		Pointer(&IntType),
+		PointerType(&IntType),
 	},
 	{
 		[]string{"*", Int64TypeName},
 		&int64Interface,
-		Pointer(&Int64Type),
+		PointerType(&Int64Type),
 	},
 	{
 		[]string{"*", Float64TypeName},
 		&float64Interface,
-		Pointer(&Float64Type),
+		PointerType(&Float64Type),
 	},
 	{
 		[]string{"*", Float32TypeName},
 		&float32Interface,
-		Pointer(&Float32Type),
+		PointerType(&Float32Type),
 	},
 	{
 		[]string{"*", StringTypeName},
 		&stringInterface,
-		Pointer(&StringType),
+		PointerType(&StringType),
 	},
 	{
 		[]string{"*", InterfaceTypeName},
 		&interfaceModel,
-		Pointer(&InterfaceType),
+		PointerType(&InterfaceType),
 	},
 	{
 		[]string{"*", "interface", "{}"},
 		&interfaceModel,
-		Pointer(&InterfaceType),
+		PointerType(&InterfaceType),
 	},
 }

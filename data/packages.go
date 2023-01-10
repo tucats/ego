@@ -11,7 +11,7 @@ import (
 
 // This describes the items in a package. Each item could be an arbitrary object
 // (function, data type, etc).
-type EgoPackage struct {
+type Package struct {
 	name     string
 	ID       string
 	imported bool
@@ -25,8 +25,8 @@ type EgoPackage struct {
 var packageLock sync.RWMutex
 
 // NewPackage creates a new, empty package definition.
-func NewPackage(name string) *EgoPackage {
-	pkg := EgoPackage{
+func NewPackage(name string) *Package {
+	pkg := Package{
 		name:  name,
 		ID:    uuid.New().String(),
 		items: map[string]interface{}{},
@@ -37,12 +37,12 @@ func NewPackage(name string) *EgoPackage {
 
 // NewPackageFromMap creates a new package, and then populates it using the provided map.  If the map
 // is a nil value, then an empty package definition is created.
-func NewPackageFromMap(name string, items map[string]interface{}) *EgoPackage {
+func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 	if items == nil {
 		items = map[string]interface{}{}
 	}
 
-	pkg := EgoPackage{
+	pkg := Package{
 		name:  name,
 		ID:    uuid.New().String(),
 		items: items,
@@ -51,29 +51,29 @@ func NewPackageFromMap(name string, items map[string]interface{}) *EgoPackage {
 	return &pkg
 }
 
-func (p *EgoPackage) SetBuiltins(f bool) *EgoPackage {
+func (p *Package) SetBuiltins(f bool) *Package {
 	p.builtins = f
 
 	return p
 }
 
-func (p *EgoPackage) Builtins() bool {
+func (p *Package) Builtins() bool {
 	return p.builtins
 }
 
-func (p *EgoPackage) SetImported(f bool) *EgoPackage {
+func (p *Package) SetImported(f bool) *Package {
 	p.imported = f
 
 	return p
 }
 
-func (p *EgoPackage) Imported() bool {
+func (p *Package) Imported() bool {
 	return p.imported
 }
 
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
 // internal hash map, or an empty hash map.
-func (p *EgoPackage) IsEmpty() bool {
+func (p *Package) IsEmpty() bool {
 	if p == nil {
 		return true
 	}
@@ -86,13 +86,13 @@ func (p *EgoPackage) IsEmpty() bool {
 }
 
 // String formats the package as a string value, to support "%v" operations.
-func (p *EgoPackage) String() string {
+func (p *Package) String() string {
 	return Format(p)
 }
 
 // Delete removes a package from the list. It is not an error if the package does not
 // have a hash map, or the value is not in the hash map.
-func (p *EgoPackage) Delete(name string) {
+func (p *Package) Delete(name string) {
 	packageLock.Lock()
 	defer packageLock.Unlock()
 
@@ -104,7 +104,7 @@ func (p *EgoPackage) Delete(name string) {
 // Keys provides a list of keys for the package as an array of strings. The array will
 // be empty if the package pointer is null, the hash map is uninitialized, or the hash
 // map is empty.
-func (p *EgoPackage) Keys() []string {
+func (p *Package) Keys() []string {
 	packageLock.RLock()
 	defer packageLock.RUnlock()
 
@@ -123,7 +123,7 @@ func (p *EgoPackage) Keys() []string {
 
 // Set sets a given value in the package. If the hash map was not yet initialized,
 // it is created now before setting the value.
-func (p *EgoPackage) Set(key string, value interface{}) {
+func (p *Package) Set(key string, value interface{}) {
 	packageLock.Lock()
 	defer packageLock.Unlock()
 
@@ -150,7 +150,7 @@ func (p *EgoPackage) Set(key string, value interface{}) {
 // Get retrieves a value from the package structure by name. It returns the value and
 // a boolean value indicating if it was found. The flag is true if the package has been
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
-func (p *EgoPackage) Get(key string) (interface{}, bool) {
+func (p *Package) Get(key string) (interface{}, bool) {
 	packageLock.RLock()
 	defer packageLock.RUnlock()
 
@@ -165,7 +165,7 @@ func (p *EgoPackage) Get(key string) (interface{}, bool) {
 
 // Merge adds any entries from a package to the current package that do not already
 // exist.
-func (p *EgoPackage) Merge(source EgoPackage) {
+func (p *Package) Merge(source Package) {
 	keys := source.Keys()
 	for _, key := range keys {
 		if _, found := p.Get(key); !found {
@@ -176,6 +176,6 @@ func (p *EgoPackage) Merge(source EgoPackage) {
 	}
 }
 
-func (p *EgoPackage) Name() string {
+func (p *Package) Name() string {
 	return p.name
 }

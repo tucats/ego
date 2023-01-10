@@ -113,7 +113,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		kind = data.TypeOf(args[1])
 	} else {
 		count = data.Int(i)
-		kind = data.Array(&data.InterfaceType)
+		kind = data.ArrayType(&data.InterfaceType)
 	}
 
 	array := data.NewArray(kind.BaseType(), count)
@@ -225,7 +225,7 @@ func structByteCode(c *Context, i interface{}) error {
 
 	if model != nil {
 		switch model := model.(type) {
-		case *data.EgoStruct:
+		case *data.Struct:
 			// Check all the fields in the new value to ensure they
 			// are valid.
 			for k := range m {
@@ -259,7 +259,7 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 	} else {
 		// No type, default it to a struct.
-		t := data.Structure()
+		t := data.StructureType()
 		for _, name := range fields {
 			t.DefineField(name, data.TypeOf(m[name]))
 		}
@@ -271,6 +271,7 @@ func structByteCode(c *Context, i interface{}) error {
 	if typeName != "" {
 		structure.AsType(typeInfo)
 	}
+
 	// If we are in static mode, or this is a non-empty definition,
 	// mark the structure as having static members. That means you
 	// cannot modify the field names or add/delete fields.

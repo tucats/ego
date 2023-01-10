@@ -26,7 +26,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	s.SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
 		"Command":          NewCommand,
 		"LookPath":         LookPath,
-		data.TypeMDKey:     data.Package("exec"),
+		data.TypeMDKey:     data.PackageType("exec"),
 		data.ReadonlyMDKey: true,
 	}))
 
@@ -34,23 +34,23 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		"New":              RestNew,
 		"Status":           RestStatusMessage,
 		"ParseURL":         RestParseURL,
-		data.TypeMDKey:     data.Package("rest"),
+		data.TypeMDKey:     data.PackageType("rest"),
 		data.ReadonlyMDKey: true,
 	}))
 
 	s.SetAlways("db", data.NewPackageFromMap("db", map[string]interface{}{
 		"New":              DBNew,
-		data.TypeMDKey:     data.Package("db"),
+		data.TypeMDKey:     data.PackageType("db"),
 		data.ReadonlyMDKey: true,
 	}))
 
-	var utilPkg *data.EgoPackage
+	var utilPkg *data.Package
 
 	utilV, found := s.Root().Get("util")
 	if !found {
 		utilPkg, _ = bytecode.GetPackage("util")
 	} else {
-		utilPkg = utilV.(*data.EgoPackage)
+		utilPkg = utilV.(*data.Package)
 	}
 
 	utilPkg.Set("SymbolTables", SymbolTables)
@@ -58,7 +58,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 
 	s.SetAlways("tables", data.NewPackageFromMap("tables", map[string]interface{}{
 		"New":              TableNew,
-		data.TypeMDKey:     data.Package("tables"),
+		data.TypeMDKey:     data.PackageType("tables"),
 		data.ReadonlyMDKey: true,
 	}))
 

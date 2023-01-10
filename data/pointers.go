@@ -22,13 +22,13 @@ func AddressOf(v interface{}) (interface{}, error) {
 		return &actual, nil
 	case string:
 		return &actual, nil
-	case EgoPackage:
+	case Package:
 		return &actual, nil
-	case *EgoStruct:
+	case *Struct:
 		return &actual, nil
-	case *EgoMap:
+	case *Map:
 		return &actual, nil
-	case *EgoArray:
+	case *Array:
 		return &actual, nil
 	case *Channel:
 		return &actual, nil
@@ -57,11 +57,11 @@ func Dereference(v interface{}) (interface{}, error) {
 		return *actual, nil
 	case *string:
 		return *actual, nil
-	case *EgoPackage:
+	case *Package:
 		return *actual, nil
-	case **EgoMap:
+	case **Map:
 		return *actual, nil
-	case **EgoArray:
+	case **Array:
 		return *actual, nil
 	case **Channel:
 		return *actual, nil

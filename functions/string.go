@@ -81,7 +81,7 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Index implements the index() function.
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch arg := args[0].(type) {
-	case *data.EgoArray:
+	case *data.Array:
 		for i := 0; i < arg.Len(); i++ {
 			vv, _ := arg.Get(i)
 			if reflect.DeepEqual(vv, args[1]) {
@@ -100,7 +100,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 		return -1, nil
 
-	case *data.EgoMap:
+	case *data.Map:
 		_, found, err := arg.Get(args[1])
 
 		return found, err
@@ -287,7 +287,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		err = tree.Execute(&r, nil)
 	} else {
-		if structure, ok := args[1].(*data.EgoStruct); ok {
+		if structure, ok := args[1].(*data.Struct); ok {
 			err = tree.Execute(&r, structure.ToMap())
 		} else {
 			err = tree.Execute(&r, args[1])
@@ -527,7 +527,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Wrapper around strings.Join().
 func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	elemArray, ok := args[0].(*data.EgoArray)
+	elemArray, ok := args[0].(*data.Array)
 	if !ok {
 		return nil, errors.EgoError(errors.ErrArgumentType).Context("Join()")
 	}

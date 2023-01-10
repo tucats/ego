@@ -75,10 +75,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(name) > 1 && name[0:1] == DiscardedVariableName {
 		switch a := value.(type) {
-		case *data.EgoMap:
+		case *data.Map:
 			a.ImmutableKeys(true)
 
-		case *data.EgoStruct:
+		case *data.Struct:
 			a.SetReadonly(true)
 		}
 	}
@@ -170,10 +170,10 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
-		case data.EgoMap:
+		case *data.Map:
 			a.ImmutableKeys(true)
 
-		case data.EgoStruct:
+		case *data.Struct:
 			a.SetReadonly(true)
 		}
 	}
@@ -292,8 +292,8 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 		*actual = d.(string)
 
-	case *data.EgoArray:
-		*actual, ok = src.(data.EgoArray)
+	case *data.Array:
+		*actual, ok = src.(data.Array)
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
@@ -341,10 +341,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	// with the embedded readonly flag.
 	if len(symbolName) > 1 && symbolName[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
-		case *data.EgoMap:
+		case *data.Map:
 			a.ImmutableKeys(true)
 
-		case *data.EgoStruct:
+		case *data.Struct:
 			a.SetReadonly(true)
 		}
 	}
@@ -386,7 +386,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 
 	empty := true
 
-	if m, ok := v.(*data.EgoMap); ok {
+	if m, ok := v.(*data.Map); ok {
 		if m.KeyType().Kind() != data.StringKind {
 			err = c.newError(errors.ErrWrongMapKeyType)
 		} else {

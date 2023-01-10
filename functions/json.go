@@ -17,7 +17,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	// Simplest case, []byte input. Otherwise, treat the argument
 	// as a string.
-	if a, ok := args[0].(*data.EgoArray); ok && a.ValueType().Kind() == data.ByteKind {
+	if a, ok := args[0].(*data.Array); ok && a.ValueType().Kind() == data.ByteKind {
 		err = json.Unmarshal(a.GetBytes(), &v)
 	} else {
 		jsonBuffer := data.String(args[0])
@@ -56,7 +56,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	value := *pointer
 
 	// Structure
-	if target, ok := value.(*data.EgoStruct); ok {
+	if target, ok := value.(*data.Struct); ok {
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				err = target.Set(k, v)
@@ -74,7 +74,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	// Map
-	if target, ok := value.(*data.EgoMap); ok {
+	if target, ok := value.(*data.Map); ok {
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
 				_, err = target.Set(k, v)
@@ -92,7 +92,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	// Array
-	if target, ok := value.(*data.EgoArray); ok {
+	if target, ok := value.(*data.Array); ok {
 		if m, ok := v.([]interface{}); ok {
 			// The target data size may be wrong, fix it
 			target.SetSize(len(m))
@@ -134,12 +134,12 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 func Seal(i interface{}) interface{} {
 	switch actualValue := i.(type) {
-	case *data.EgoStruct:
+	case *data.Struct:
 		actualValue.SetStatic(true)
 
 		return actualValue
 
-	case *data.EgoArray:
+	case *data.Array:
 		for i := 0; i <= actualValue.Len(); i++ {
 			element, _ := actualValue.Get(i)
 			actualValue.SetAlways(i, Seal(element))

@@ -54,7 +54,7 @@ func Hostname() string {
 
 // Given a list of strings, convert them to a sorted list in
 // Ego array format.
-func MakeSortedArray(array []string) *data.EgoArray {
+func MakeSortedArray(array []string) *data.Array {
 	sort.Strings(array)
 
 	intermediateArray := make([]interface{}, len(array))

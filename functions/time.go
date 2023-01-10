@@ -14,7 +14,7 @@ var timeType *data.Type
 
 func initializeType() {
 	if timeType == nil {
-		structType := data.Structure()
+		structType := data.StructureType()
 		structType.DefineField("time", &data.InterfaceType)
 
 		t := data.TypeDefinition("time.Time", structType)
@@ -168,7 +168,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 // getTimeV extracts a time.Time value from an Ego time
 // object, by looking in the [time] member.
 func getTimeV(timeV interface{}) (*time.Time, error) {
-	if m, ok := timeV.(*data.EgoStruct); ok {
+	if m, ok := timeV.(*data.Struct); ok {
 		if tv, ok := m.Get("time"); ok {
 			if tp, ok := tv.(*time.Time); ok {
 				return tp, nil

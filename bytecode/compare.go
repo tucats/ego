@@ -57,20 +57,20 @@ func equalByteCode(c *Context, i interface{}) error {
 	case *errors.EgoErrorMsg:
 		r = a.Equal(v2)
 
-	case *data.EgoStruct:
-		a2, ok := v2.(*data.EgoStruct)
+	case *data.Struct:
+		a2, ok := v2.(*data.Struct)
 		if ok {
 			r = reflect.DeepEqual(a, a2)
 		} else {
 			r = false
 		}
 
-	case *data.EgoMap:
+	case *data.Map:
 		r = reflect.DeepEqual(v1, v2)
 
-	case *data.EgoArray:
+	case *data.Array:
 		switch b := v2.(type) {
-		case *data.EgoArray:
+		case *data.Array:
 			r = a.DeepEqual(b)
 
 		default:
@@ -154,13 +154,13 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	case error:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case data.EgoMap:
+	case data.Map:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case data.EgoArray:
+	case data.Array:
 		r = !reflect.DeepEqual(v1, v2)
 
-	case data.EgoStruct:
+	case data.Struct:
 		r = !reflect.DeepEqual(v1, v2)
 
 	default:
@@ -229,7 +229,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+	case *data.Map, *data.Struct, *data.Package, *data.Array:
 		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
@@ -297,7 +297,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+	case *data.Map, *data.Struct, *data.Package, *data.Array:
 		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
@@ -365,7 +365,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+	case *data.Map, *data.Struct, *data.Package, *data.Array:
 		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
@@ -432,7 +432,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 	var r bool
 
 	switch v1.(type) {
-	case *data.EgoMap, *data.EgoStruct, *data.EgoPackage, *data.EgoArray:
+	case *data.Map, *data.Struct, *data.Package, *data.Array:
 		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:

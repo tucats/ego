@@ -103,13 +103,13 @@ func (c *Context) callFramePop() error {
 		packageName := c.symbols.Parent().Package()
 
 		if pkg, ok := c.symbols.Root().Get(packageName); ok {
-			if _, ok := pkg.(*data.EgoStruct); ok {
+			if _, ok := pkg.(*data.Struct); ok {
 				ui.Log(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
 
 				return errors.EgoError(errors.ErrStop)
 			}
 
-			if m, ok := pkg.(*data.EgoPackage); ok {
+			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
 					if util.HasCapitalizedName(k) {
 						pkgSymbol, _ := packageSymbols.Get(k)

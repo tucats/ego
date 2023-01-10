@@ -279,7 +279,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	if u, ok := args[0].(*data.EgoMap); ok {
+	if u, ok := args[0].(*data.Map); ok {
 		name := ""
 		if n, ok, _ := u.Get("name"); ok {
 			name = strings.ToLower(data.String(n))
@@ -402,7 +402,7 @@ func TokenUser(t string) string {
 	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if data.Bool(v) {
 		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
-		if m, ok := t.(*data.EgoStruct); ok {
+		if m, ok := t.(*data.Struct); ok {
 			if n, ok := m.Get("name"); ok {
 				return data.String(n)
 			}

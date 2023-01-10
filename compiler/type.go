@@ -45,14 +45,14 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 		c.t.Advance(1)
 		t, err := c.parseTypeSpec()
 
-		return data.Pointer(t), err
+		return data.PointerType(t), err
 	}
 
 	if c.t.Peek(1) == tokenizer.StartOfArrayToken && c.t.Peek(2) == tokenizer.EndOfArrayToken {
 		c.t.Advance(2)
 		t, err := c.parseTypeSpec()
 
-		return data.Array(t), err
+		return data.ArrayType(t), err
 	}
 
 	if c.t.Peek(1) == tokenizer.MapToken && c.t.Peek(2) == tokenizer.StartOfArrayToken {
@@ -70,7 +70,7 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 			return &data.UndefinedType, err
 		}
 
-		return data.Map(keyType, valueType), nil
+		return data.MapType(keyType, valueType), nil
 	}
 
 	for _, typeDef := range data.TypeDeclarations {
@@ -154,7 +154,7 @@ func (c *Compiler) GetPackageType(packageName, typeName string) (*data.Type, boo
 
 		// It was a package, but without a package body. Already moved to global storage?
 		if pkg, found := c.s.Root().Get(packageName); found {
-			if m, ok := pkg.(*data.EgoPackage); ok {
+			if m, ok := pkg.(*data.Package); ok {
 				if t, found := m.Get(typeName); found {
 					if theType, ok := t.(*data.Type); ok {
 						return theType, true

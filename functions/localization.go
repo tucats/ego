@@ -41,13 +41,13 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	if len(args) > 1 {
 		value := args[1]
-		if egoMap, ok := value.(*data.EgoMap); ok {
+		if egoMap, ok := value.(*data.Map); ok {
 			keys := egoMap.Keys()
 			for _, key := range keys {
 				value, _, _ := egoMap.Get(key)
 				parameters[data.String(key)] = data.String(value)
 			}
-		} else if egoStruct, ok := value.(*data.EgoStruct); ok {
+		} else if egoStruct, ok := value.(*data.Struct); ok {
 			fields := egoStruct.FieldNames()
 			for _, field := range fields {
 				value := egoStruct.GetAlways(field)
@@ -75,7 +75,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Find the language
-	if languages, ok := localizedMap.(*data.EgoStruct); ok {
+	if languages, ok := localizedMap.(*data.Struct); ok {
 		stringMap, found := languages.Get(language)
 		if !found {
 			// If not found, assume english
@@ -85,7 +85,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			}
 		}
 
-		if localizedStrings, ok := stringMap.(*data.EgoStruct); ok {
+		if localizedStrings, ok := stringMap.(*data.Struct); ok {
 			message, found := localizedStrings.Get(property)
 			if !found {
 				return property, nil

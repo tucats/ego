@@ -184,7 +184,7 @@ func (c *Context) syncPackageSymbols() error {
 		}
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {
-			if m, ok := pkg.(*data.EgoPackage); ok {
+			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
 					if util.HasCapitalizedName(k) {
 						v, _ := packageSymbols.Get(k)

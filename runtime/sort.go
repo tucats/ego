@@ -20,7 +20,7 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.EgoError(errors.ErrArgumentCount)
 	}
 
-	array, ok := args[0].(*data.EgoArray)
+	array, ok := args[0].(*data.Array)
 	if !ok {
 		return nil, errors.EgoError(errors.ErrArgumentType)
 	}

@@ -28,7 +28,7 @@ var fileType *data.Type
 
 func initializeFileType() {
 	if fileType == nil {
-		structType := data.Structure()
+		structType := data.StructureType()
 		structType.DefineField(fileFieldName, &data.InterfaceType).
 			DefineField(validFieldName, data.BoolType).
 			DefineField(nameFieldName, &data.StringType).
@@ -142,13 +142,13 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThis(s *symbols.SymbolTable) *data.EgoStruct {
+func getThis(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil
 	}
 
-	this, ok := t.(*data.EgoStruct)
+	this, ok := t.(*data.Struct)
 	if !ok {
 		return nil
 	}

@@ -51,16 +51,16 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 		typeString := dt.String()
 
 		switch actual := v.(type) {
-		case *data.EgoMap:
+		case *data.Map:
 			typeString = actual.TypeString()
 
-		case *data.EgoArray:
+		case *data.Array:
 			typeString = actual.TypeString()
 
-		case *data.EgoStruct:
+		case *data.Struct:
 			typeString = actual.TypeString()
 
-		case *data.EgoPackage:
+		case *data.Package:
 			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
 				typeString = data.String(tsx)
 			}
@@ -166,16 +166,16 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		typeString := dt.String()
 
 		switch actual := v.(type) {
-		case *data.EgoMap:
+		case *data.Map:
 			typeString = actual.TypeString()
 
-		case *data.EgoArray:
+		case *data.Array:
 			typeString = actual.TypeString()
 
-		case *data.EgoStruct:
+		case *data.Struct:
 			typeString = actual.TypeString()
 
-		case *data.EgoPackage:
+		case *data.Package:
 			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
 				typeString = data.String(tsx)
 			}

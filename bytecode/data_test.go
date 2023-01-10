@@ -11,7 +11,7 @@ import (
 )
 
 func TestStructImpl(t *testing.T) {
-	typeDef := data.TypeDefinition("usertype", data.Structure(
+	typeDef := data.TypeDefinition("usertype", data.StructureType(
 		data.Field{Name: "active", Type: data.BoolType},
 		data.Field{Name: "test", Type: &data.IntType},
 	))

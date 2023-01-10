@@ -193,7 +193,7 @@ func DeepCopy(v interface{}) interface{} {
 	case string:
 		return actual
 
-	case *EgoArray:
+	case *Array:
 		size := actual.Len()
 		result := NewArray(actual.valueType, size)
 
@@ -204,7 +204,7 @@ func DeepCopy(v interface{}) interface{} {
 
 		return result
 
-	case *EgoMap:
+	case *Map:
 		result := NewMap(actual.keyType, actual.valueType)
 		keys := actual.Keys()
 
@@ -215,7 +215,7 @@ func DeepCopy(v interface{}) interface{} {
 
 		return result
 
-	case *EgoStruct:
+	case *Struct:
 		result := actual.Copy()
 		result.fields = map[string]interface{}{}
 

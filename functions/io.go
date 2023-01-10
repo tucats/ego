@@ -43,7 +43,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	fileName := sandboxName(data.String(args[0]))
 
-	if a, ok := args[1].(*data.EgoArray); ok {
+	if a, ok := args[1].(*data.Array); ok {
 		if a.ValueType().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
@@ -189,7 +189,7 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case *data.Channel:
 		return arg.Close(), nil
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		switch arg.TypeString() {
 		case "io.File":
 			s.SetAlways("__this", arg)

@@ -20,7 +20,7 @@ var testType *data.Type
 func initTestType() {
 	if testType == nil {
 		t := data.TypeDefinition("Testing",
-			data.Structure(data.Field{
+			data.StructureType(data.Field{
 				Name: "description",
 				Type: &data.StringType,
 			}))
@@ -86,7 +86,7 @@ func getTestName(s *symbols.SymbolTable) string {
 	name := "test"
 
 	if m, ok := s.Get("T"); ok {
-		if testStruct, ok := m.(*data.EgoStruct); ok {
+		if testStruct, ok := m.(*data.Struct); ok {
 			if nameString, ok := testStruct.Get("description"); ok {
 				name = data.String(nameString)
 			}
@@ -243,15 +243,15 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	b := reflect.DeepEqual(args[0], args[1])
 
 	if a1, ok := args[0].([]interface{}); ok {
-		if a2, ok := args[1].(*data.EgoArray); ok {
+		if a2, ok := args[1].(*data.Array); ok {
 			b = reflect.DeepEqual(a1, a2.BaseArray())
 		}
 	} else if a1, ok := args[1].([]interface{}); ok {
-		if a2, ok := args[0].(*data.EgoArray); ok {
+		if a2, ok := args[0].(*data.Array); ok {
 			b = reflect.DeepEqual(a1, a2.BaseArray())
 		}
-	} else if a1, ok := args[0].(*data.EgoArray); ok {
-		if a2, ok := args[1].(*data.EgoArray); ok {
+	} else if a1, ok := args[0].(*data.Array); ok {
+		if a2, ok := args[1].(*data.Array); ok {
 			b = a1.DeepEqual(a2)
 		}
 	}

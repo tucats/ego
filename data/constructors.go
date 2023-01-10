@@ -7,11 +7,6 @@ var UndefinedType = Type{
 	kind: UndefinedKind,
 }
 
-var PackageType = Type{
-	name: PackageTypeName,
-	kind: PackageKind,
-}
-
 var StructType = Type{
 	name: StructTypeName,
 	kind: StructKind,
@@ -112,7 +107,7 @@ var VarArgsType = Type{
 }
 
 // Construct a type that is an array of the given type.
-func Array(t *Type) *Type {
+func ArrayType(t *Type) *Type {
 	return &Type{
 		name:      "[]",
 		kind:      ArrayKind,
@@ -121,7 +116,7 @@ func Array(t *Type) *Type {
 }
 
 // Construct a type that is a pointer to the given type.
-func Pointer(t *Type) *Type {
+func PointerType(t *Type) *Type {
 	return &Type{
 		name:      "*",
 		kind:      PointerKind,
@@ -130,7 +125,7 @@ func Pointer(t *Type) *Type {
 }
 
 // Construct a type that is a map, specifying the key and value types.
-func Map(key, value *Type) *Type {
+func MapType(key, value *Type) *Type {
 	return &Type{
 		name:      "map",
 		kind:      MapKind,
@@ -141,7 +136,7 @@ func Map(key, value *Type) *Type {
 
 // Construct a structure type, with optional field definitions. You
 // can later add additional fields using the AddField method.
-func Structure(fields ...Field) *Type {
+func StructureType(fields ...Field) *Type {
 	t := Type{
 		name:   StructTypeName,
 		kind:   StructKind,
@@ -166,7 +161,7 @@ func TypeDefinition(name string, base *Type) *Type {
 }
 
 // Construct a type for a package of the given name.
-func Package(name string) *Type {
+func PackageType(name string) *Type {
 	return &Type{
 		name:      name,
 		kind:      PackageKind,

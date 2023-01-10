@@ -119,16 +119,16 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		return size, nil
 
-	case *data.EgoArray:
+	case *data.Array:
 		return arg.Len(), nil
 
 	case error:
 		return len(arg.Error()), nil
 
-	case *data.EgoMap:
+	case *data.Map:
 		return len(arg.Keys()), nil
 
-	case *data.EgoPackage:
+	case *data.Package:
 		return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(arg).String())
 
 	case nil:
@@ -176,7 +176,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Members gets an array of the names of the fields in a structure.
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
-	case *data.EgoMap:
+	case *data.Map:
 		keys := data.NewArray(&data.StringType, 0)
 		keyList := v.Keys()
 
@@ -188,10 +188,10 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 		return keys, nil
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		return v.FieldNamesArray(), nil
 
-	case *data.EgoPackage:
+	case *data.Package:
 		keys := data.NewArray(&data.StringType, 0)
 
 		for _, k := range v.Keys() {
@@ -249,7 +249,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	kind := &data.InterfaceType
 
 	for i, j := range args {
-		if array, ok := j.(*data.EgoArray); ok && i == 0 {
+		if array, ok := j.(*data.Array); ok && i == 0 {
 			if !kind.IsInterface() {
 				if err := array.Validate(kind); err != nil {
 					return nil, err
@@ -293,12 +293,12 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case string:
 		return nil, s.Delete(v, false)
 
-	case *data.EgoMap:
+	case *data.Map:
 		_, err := v.Delete(args[1])
 
 		return v, err
 
-	case *data.EgoArray:
+	case *data.Array:
 		i := data.Int(args[1])
 		err := v.Delete(i)
 
@@ -329,7 +329,7 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// if it's an Ego type, get the model for the type.
 	if v, ok := kind.(*data.Type); ok {
 		kind = data.InstanceOfType(v)
-	} else if egoArray, ok := kind.(*data.EgoArray); ok {
+	} else if egoArray, ok := kind.(*data.Array); ok {
 		return egoArray.Make(size), nil
 	}
 
@@ -347,7 +347,7 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case *data.Channel:
 		return data.NewChannel(size), nil
 
-	case *data.EgoArray:
+	case *data.Array:
 		return v.Make(size), nil
 
 	case []int, int:
@@ -441,7 +441,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 		// Get the symbol. IF it is a package, add it's name
 		// to our list.
 		v, _ := s.Get(k)
-		if p, ok := v.(*data.EgoPackage); ok {
+		if p, ok := v.(*data.Package); ok {
 			result = append(result, p.Name())
 		}
 	}

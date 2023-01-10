@@ -40,10 +40,10 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := array.(type) {
-	case *data.EgoPackage:
+	case *data.Package:
 		return c.newError(errors.ErrReadOnlyValue)
 
-	case *data.EgoMap:
+	case *data.Map:
 		var v interface{}
 
 		// A bit of a hack here. If this is a map index, and we
@@ -86,13 +86,13 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 			err = c.stackPush(datum)
 		}
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		key := data.String(index)
 		v, _ := a.Get(key)
 		err = c.stackPush(v)
 		c.lastStruct = a
 
-	case *data.EgoArray:
+	case *data.Array:
 		subscript := data.Int(index)
 		if subscript < 0 || subscript >= a.Len() {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
@@ -154,7 +154,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 		return c.stackPush(a[subscript1:subscript2])
 
-	case *data.EgoArray:
+	case *data.Array:
 		subscript1 := data.Int(index1)
 		subscript2 := data.Int(index2)
 
@@ -218,7 +218,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := destination.(type) {
-	case *data.EgoPackage:
+	case *data.Package:
 		name := data.String(index)
 
 		// Must be an exported (capitalized) name.
@@ -262,7 +262,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 	case *data.Type:
 		a.DefineFunction(data.String(index), v)
 
-	case *data.EgoMap:
+	case *data.Map:
 		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
@@ -271,7 +271,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return errors.EgoError(err).In(c.GetModuleName()).At(c.GetLine(), 0)
 		}
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		key := data.String(index)
 
 		err = a.Set(key, v)
@@ -282,7 +282,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		_ = c.stackPush(a)
 
 	// Index into array is integer index
-	case *data.EgoArray:
+	case *data.Array:
 		subscript := data.Int(index)
 		if subscript < 0 || subscript >= a.Len() {
 			return c.newError(errors.ErrArrayIndex).Context(subscript)
@@ -348,7 +348,7 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 	}
 
 	switch a := destination.(type) {
-	case *data.EgoMap:
+	case *data.Map:
 		if _, err = a.Set(index, v); err == nil {
 			err = c.stackPush(a)
 		}
@@ -373,7 +373,7 @@ func flattenByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrFunctionReturnedVoid)
 		}
 
-		if array, ok := v.(*data.EgoArray); ok {
+		if array, ok := v.(*data.Array); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)
 				_ = c.stackPush(vv)

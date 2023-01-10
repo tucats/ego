@@ -9,13 +9,13 @@ import (
 // values, for example.
 func Sanitize(v interface{}) interface{} {
 	switch v := v.(type) {
-	case *EgoArray:
+	case *Array:
 		return v.data
 
-	case *EgoStruct:
+	case *Struct:
 		return v.fields
 
-	case *EgoMap:
+	case *Map:
 		result := map[string]interface{}{}
 		keys := v.Keys()
 
@@ -32,7 +32,7 @@ func Sanitize(v interface{}) interface{} {
 
 		return result
 
-	case EgoPackage:
+	case Package:
 		result := map[string]interface{}{}
 
 		for _, key := range v.Keys() {

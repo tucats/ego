@@ -376,7 +376,7 @@ func TestNew(t *testing.T) {
 			if err != nil && tt.want != nil {
 				t.Errorf("Expression test, unexpected error %v", err)
 			} else {
-				if array, ok := v1.(*data.EgoArray); ok {
+				if array, ok := v1.(*data.Array); ok {
 					if !reflect.DeepEqual(array.BaseArray(), tt.want) {
 						t.Errorf("Expression test, got %v, want %v", v1, tt.want)
 					}

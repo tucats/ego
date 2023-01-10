@@ -42,7 +42,7 @@ func printByteCode(c *Context, i interface{}) error {
 		s := ""
 
 		switch actualValue := value.(type) {
-		case *data.EgoArray:
+		case *data.Array:
 			// Is this an array of a single type that is a structure?
 			valueType := actualValue.ValueType()
 			isStruct := valueType.Kind() == data.StructKind
@@ -64,7 +64,7 @@ func printByteCode(c *Context, i interface{}) error {
 
 				for i := 0; i < actualValue.Len(); i++ {
 					rowValue, _ := actualValue.Get(i)
-					row := rowValue.(*data.EgoStruct)
+					row := rowValue.(*data.Struct)
 
 					rowItems := []string{}
 
@@ -87,13 +87,13 @@ func printByteCode(c *Context, i interface{}) error {
 				s = strings.Join(r, "\n")
 			}
 
-		case *data.EgoPackage:
+		case *data.Package:
 			s = formats.PackageAsString(actualValue)
 
-		case *data.EgoStruct:
+		case *data.Struct:
 			s = formats.StructAsString(actualValue)
 
-		case *data.EgoMap:
+		case *data.Map:
 			s = formats.MapAsString(actualValue)
 
 		default:

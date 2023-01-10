@@ -63,7 +63,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	headings := []string{}
 
 	for _, h := range args {
-		if list, ok := h.(*data.EgoArray); ok {
+		if list, ok := h.(*data.Array); ok {
 			for idx := 0; idx < list.Len(); idx++ {
 				str, _ := list.Get(idx)
 				headings = append(headings, data.String(str))
@@ -180,7 +180,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {
-			if m, ok := args[0].(*data.EgoStruct); ok {
+			if m, ok := args[0].(*data.Struct); ok {
 				if len(args) > 1 {
 					err = errors.EgoError(errors.ErrArgumentCount)
 				} else {
@@ -376,7 +376,7 @@ func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*data.EgoStruct); ok {
+		if gc, ok := g.(*data.Struct); ok {
 			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {

@@ -10,11 +10,11 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// EgoArray is the representation in native code of an Ego array. This includes
+// Array is the representation in native code of an Ego array. This includes
 // an array of interfaces that contain the actual data items, a base type (which
 // may be InterfaceType if the array is untypted) and a counting semaphore used
 // to track if the array should be considered writable or not.
-type EgoArray struct {
+type Array struct {
 	data      []interface{}
 	bytes     []byte
 	valueType *Type
@@ -24,9 +24,9 @@ type EgoArray struct {
 // Create a new empty array of the given type and size. The values of the array
 // members are all initialized to nil. Note special case for []byte which is stored
 // natively so it can be used with native Go methods that expect a byte array.
-func NewArray(valueType *Type, size int) *EgoArray {
+func NewArray(valueType *Type, size int) *Array {
 	if valueType.kind == ByteKind {
-		m := &EgoArray{
+		m := &Array{
 			bytes:     make([]byte, size),
 			valueType: valueType,
 			immutable: 0,
@@ -35,7 +35,7 @@ func NewArray(valueType *Type, size int) *EgoArray {
 		return m
 	}
 
-	m := &EgoArray{
+	m := &Array{
 		data:      make([]interface{}, size),
 		valueType: valueType,
 		immutable: 0,
@@ -47,9 +47,9 @@ func NewArray(valueType *Type, size int) *EgoArray {
 // NewArrayFromArray accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.
-func NewArrayFromArray(valueType *Type, source []interface{}) *EgoArray {
+func NewArrayFromArray(valueType *Type, source []interface{}) *Array {
 	if valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind {
-		m := &EgoArray{
+		m := &Array{
 			bytes:     make([]byte, len(source)),
 			valueType: valueType,
 			immutable: 0,
@@ -62,7 +62,7 @@ func NewArrayFromArray(valueType *Type, source []interface{}) *EgoArray {
 		return m
 	}
 
-	m := &EgoArray{
+	m := &Array{
 		data:      source,
 		valueType: valueType,
 		immutable: 0,
@@ -74,9 +74,9 @@ func NewArrayFromArray(valueType *Type, source []interface{}) *EgoArray {
 // Make creates a new array patterned off of the type of the receiver array,
 // of the given size. Note special handling for []byte types which creates
 // a native Go array.
-func (a *EgoArray) Make(size int) *EgoArray {
+func (a *Array) Make(size int) *Array {
 	if a.valueType.kind == ArrayKind && a.valueType.BaseType().kind == ByteKind {
-		m := &EgoArray{
+		m := &Array{
 			bytes:     make([]byte, size),
 			valueType: a.valueType,
 			immutable: 0,
@@ -85,7 +85,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 		return m
 	}
 
-	m := &EgoArray{
+	m := &Array{
 		data:      make([]interface{}, size),
 		valueType: a.valueType,
 		immutable: 0,
@@ -102,7 +102,7 @@ func (a *EgoArray) Make(size int) *EgoArray {
 
 // DeepEqual is a recursive compare with another Ego array. The recursive
 // compare is performed on each member of the array.
-func (a *EgoArray) DeepEqual(b *EgoArray) bool {
+func (a *Array) DeepEqual(b *Array) bool {
 	if a.valueType.IsType(&InterfaceType) || b.valueType.IsType(&InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
 	}
@@ -114,7 +114,7 @@ func (a *EgoArray) DeepEqual(b *EgoArray) bool {
 // array members. This is needed for things like sort.Slice(). Note that if its
 // a []byte type, we must convert the native Go array into an []interface{}
 // first...
-func (a *EgoArray) BaseArray() []interface{} {
+func (a *Array) BaseArray() []interface{} {
 	r := a.data
 
 	if a.valueType.kind == ByteKind {
@@ -129,14 +129,14 @@ func (a *EgoArray) BaseArray() []interface{} {
 }
 
 // ValueType returns the base type of the array.
-func (a *EgoArray) ValueType() *Type {
+func (a *Array) ValueType() *Type {
 	return a.valueType
 }
 
 // Validate checks that all the members of the array are of a given
 // type. This is used to validate anonymous arrays for use as a typed
 // array.
-func (a *EgoArray) Validate(kind *Type) error {
+func (a *Array) Validate(kind *Type) error {
 	if kind.IsType(&InterfaceType) {
 		return nil
 	}
@@ -164,7 +164,7 @@ func (a *EgoArray) Validate(kind *Type) error {
 // in it's entirety). Note that this function actually uses a semaphore to
 // track the state, so there must bre an exact match of calls to Immutable(false)
 // as there were to Immutable(true) to allow modifiations to the array.
-func (a *EgoArray) Immutable(b bool) *EgoArray {
+func (a *Array) Immutable(b bool) *Array {
 	if b {
 		a.immutable++
 	} else {
@@ -176,7 +176,7 @@ func (a *EgoArray) Immutable(b bool) *EgoArray {
 
 // Get retrieves a member of the array. If the array index is out-of-bounds
 // for the array size, an error is returned.
-func (a *EgoArray) Get(i interface{}) (interface{}, error) {
+func (a *Array) Get(i interface{}) (interface{}, error) {
 	index := getInt(i)
 
 	if a.valueType.Kind() == ByteKind {
@@ -195,7 +195,7 @@ func (a *EgoArray) Get(i interface{}) (interface{}, error) {
 }
 
 // Len returns the length of the array.
-func (a *EgoArray) Len() int {
+func (a *Array) Len() int {
 	if a.valueType.Kind() == ByteKind {
 		return len(a.bytes)
 	}
@@ -208,7 +208,7 @@ func (a *EgoArray) Len() int {
 // given type. If the array already has a base type, you cannot set a new
 // one. This (along with the Validate() function) can be used to convert
 // an anonymous array to a typed array.
-func (a *EgoArray) SetType(i *Type) error {
+func (a *Array) SetType(i *Type) error {
 	if a.valueType.IsType(&InterfaceType) {
 		a.valueType = i
 
@@ -220,7 +220,7 @@ func (a *EgoArray) SetType(i *Type) error {
 
 // Force the size of the array. Existing values are retained if the
 // array grows; existing values are truncated if the size is reduced.
-func (a *EgoArray) SetSize(size int) *EgoArray {
+func (a *Array) SetSize(size int) *Array {
 	if size < 0 {
 		size = 0
 	}
@@ -249,7 +249,7 @@ func (a *EgoArray) SetSize(size int) *EgoArray {
 // The array index must be within the size of the array. If the array is a
 // typed array, the type must match the array type. The value can handle
 // conversion of integer and float types to fit the target array base type.
-func (a *EgoArray) Set(i interface{}, value interface{}) error {
+func (a *Array) Set(i interface{}, value interface{}) error {
 	v := value
 
 	if a.immutable > 0 {
@@ -320,7 +320,7 @@ func (a *EgoArray) Set(i interface{}, value interface{}) error {
 // Simplified Set() that does no type checking. Used internally to
 // load values into an array that is known to be of the correct
 // kind.
-func (a *EgoArray) SetAlways(i interface{}, value interface{}) *EgoArray {
+func (a *Array) SetAlways(i interface{}, value interface{}) *Array {
 	if a.immutable > 0 {
 		return a
 	}
@@ -340,12 +340,12 @@ func (a *EgoArray) SetAlways(i interface{}, value interface{}) *EgoArray {
 }
 
 // Generate a type description string for this array.
-func (a *EgoArray) TypeString() string {
+func (a *Array) TypeString() string {
 	return fmt.Sprintf("[]%s", a.valueType)
 }
 
 // Make a string representation of the array suitable for display.
-func (a *EgoArray) String() string {
+func (a *Array) String() string {
 	var b strings.Builder
 
 	b.WriteString("[")
@@ -376,7 +376,7 @@ func (a *EgoArray) String() string {
 // Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
-func (a *EgoArray) GetSlice(first, last int) ([]interface{}, error) {
+func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
 		return nil, errors.EgoError(errors.ErrArrayBounds)
 	}
@@ -399,7 +399,7 @@ func (a *EgoArray) GetSlice(first, last int) ([]interface{}, error) {
 // Fetach a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
-func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, error) {
+func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
 		return nil, errors.EgoError(errors.ErrArrayBounds)
 	}
@@ -416,7 +416,7 @@ func (a *EgoArray) GetSliceAsArray(first, last int) (*EgoArray, error) {
 
 // Append an item to the array. If the item being appended is an array itself,
 // we append the elements of the array.
-func (a *EgoArray) Append(i interface{}) *EgoArray {
+func (a *Array) Append(i interface{}) *Array {
 	if i == nil {
 		return a
 	}
@@ -438,7 +438,7 @@ func (a *EgoArray) Append(i interface{}) *EgoArray {
 		}
 	} else {
 		switch v := i.(type) {
-		case *EgoArray:
+		case *Array:
 			a.data = append(a.data, v.data...)
 
 		default:
@@ -451,7 +451,7 @@ func (a *EgoArray) Append(i interface{}) *EgoArray {
 
 // GetBytes returns the native byte array for this array, or nil if this
 // is not a byte array.
-func (a *EgoArray) GetBytes() []byte {
+func (a *Array) GetBytes() []byte {
 	return a.bytes
 }
 
@@ -482,7 +482,7 @@ func getInt(i interface{}) int {
 // must be a valid array index. The return value is nil if no error
 // occurs, else an error if the index is out-of-bounds or the array
 // is marked as immutable.
-func (a *EgoArray) Delete(i int) error {
+func (a *Array) Delete(i int) error {
 	if i >= len(a.data) || i < 0 {
 		return errors.EgoError(errors.ErrArrayBounds)
 	}
@@ -504,7 +504,7 @@ func (a *EgoArray) Delete(i int) error {
 // sort functions or the native sort.Slice function to do the sort. This
 // can only be performed on an array of scalar types (no structs, arrays,
 // or maps).
-func (a *EgoArray) Sort() error {
+func (a *Array) Sort() error {
 	var err error
 
 	switch a.valueType.kind {
@@ -585,7 +585,7 @@ func (a *EgoArray) Sort() error {
 
 // MarshalJSON converts the array representation to valid JSON and returns
 // the data as a byte array.
-func (a EgoArray) MarshalJSON() ([]byte, error) {
+func (a Array) MarshalJSON() ([]byte, error) {
 	b := strings.Builder{}
 	b.WriteString("[")
 

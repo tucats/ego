@@ -378,7 +378,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // the native client object.
 func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*data.EgoStruct); ok {
+		if gc, ok := g.(*data.Struct); ok {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {

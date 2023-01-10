@@ -207,7 +207,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			pkg := data.NewPackage(d.Pkg)
 
 			if p, found := symbolTable.Root().Get(d.Pkg); found {
-				if pp, ok := p.(*data.EgoPackage); ok {
+				if pp, ok := p.(*data.Package); ok {
 					pkg = pp
 				}
 			} else {
@@ -225,7 +225,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 			} else {
 				pkg.Set(n, d.F)
 
-				data.SetMetadata(pkg, data.TypeMDKey, data.Package(d.Pkg))
+				data.SetMetadata(pkg, data.TypeMDKey, data.PackageType(d.Pkg))
 				data.SetMetadata(pkg, data.ReadonlyMDKey, true)
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
@@ -307,7 +307,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Pkg); ok {
-		if p, ok := pkg.(*data.EgoPackage); ok {
+		if p, ok := pkg.(*data.Package); ok {
 			p.Set(fd.Name, fd.F)
 		}
 	}

@@ -30,7 +30,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "array type",
-			arg:  Array(&IntType),
+			arg:  ArrayType(&IntType),
 			want: "[]int",
 		},
 

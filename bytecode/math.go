@@ -80,7 +80,7 @@ func negateByteCode(c *Context, i interface{}) error {
 
 		return c.stackPush(result)
 
-	case *data.EgoArray:
+	case *data.Array:
 		// Create an array in inverse order.
 		r := data.NewArray(value.ValueType(), value.Len())
 

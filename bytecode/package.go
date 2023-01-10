@@ -22,7 +22,7 @@ type ConstantWrapper struct {
 	Value interface{}
 }
 
-var packageCache = map[string]*data.EgoPackage{}
+var packageCache = map[string]*data.Package{}
 var packageCacheLock sync.RWMutex
 
 func CopyPackagesToSymbols(s *symbols.SymbolTable) {
@@ -48,7 +48,7 @@ func IsPackage(name string) bool {
 
 	return found
 }
-func GetPackage(name string) (*data.EgoPackage, bool) {
+func GetPackage(name string) (*data.Package, bool) {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()
 

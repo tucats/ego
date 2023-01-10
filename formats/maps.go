@@ -10,7 +10,7 @@ import (
 
 // MapAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
-func MapAsString(vv *data.EgoMap) string {
+func MapAsString(vv *data.Map) string {
 	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Type"), i18n.L("Value")})
 
 	keys := vv.Keys()

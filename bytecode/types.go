@@ -179,7 +179,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 	case data.StructKind:
 		// Check all the fields in the struct to ensure they exist in the type.
-		vv := v.(*data.EgoStruct)
+		vv := v.(*data.Struct)
 		for _, k := range vv.FieldNames() {
 			_, e2 := t.Field(k)
 			if e2 != nil {
@@ -230,7 +230,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 		var base []interface{}
 
-		if a, ok := v.(*data.EgoArray); ok {
+		if a, ok := v.(*data.Array); ok {
 			base = a.BaseArray()
 		} else {
 			base = v.([]interface{})

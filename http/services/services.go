@@ -453,7 +453,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get("$response")
 		buffer := ""
-		if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
+		if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 			bufferValue, _ := responseStruct.Get("Buffer")
 			buffer = data.String(bufferValue)
 		}

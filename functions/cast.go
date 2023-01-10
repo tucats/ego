@@ -122,7 +122,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// If it's a native struct, it has it's own deep copy.
-	if structValue, ok := args[0].(*data.EgoStruct); ok {
+	if structValue, ok := args[0].(*data.Struct); ok {
 		return data.DeepCopy(structValue), nil
 	}
 
@@ -143,7 +143,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
 
-	case *data.EgoPackage:
+	case *data.Package:
 		// Create the replica count if needed, and update it.
 		replica := 0
 
@@ -229,10 +229,10 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		return v.Copy()
 
-	case *data.EgoArray:
+	case *data.Array:
 		r := data.NewArray(v.ValueType(), v.Len())
 
 		for i := 0; i < v.Len(); i++ {
@@ -243,7 +243,7 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *data.EgoMap:
+	case *data.Map:
 		r := data.NewMap(v.KeyType(), v.ValueType())
 
 		for _, k := range v.Keys() {
@@ -253,8 +253,8 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 		return r
 
-	case *data.EgoPackage:
-		r := data.EgoPackage{}
+	case *data.Package:
+		r := data.Package{}
 		keys := v.Keys()
 
 		for _, k := range keys {
@@ -285,7 +285,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		r := strings.Builder{}
 
 		// If the source is an array of integers, treat them as runes to re-assemble.
-		if actual, ok := source.(*data.EgoArray); ok && actual != nil && actual.ValueType().IsIntegerType() {
+		if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsIntegerType() {
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(rune(data.Int(ch) & math.MaxInt32))
@@ -300,7 +300,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	switch actual := source.(type) {
 	// Conversion of one array type to another
-	case *data.EgoArray:
+	case *data.Array:
 		if kind.IsType(actual.ValueType()) {
 			return actual, nil
 		}
@@ -356,7 +356,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return r, nil
 
 	case string:
-		if kind.IsType(data.Array(&data.IntType)) {
+		if kind.IsType(data.ArrayType(&data.IntType)) {
 			r := data.NewArray(&data.IntType, 0)
 
 			for _, rune := range actual {

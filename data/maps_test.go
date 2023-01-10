@@ -13,12 +13,12 @@ func TestNewMapFromMap(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *EgoMap
+		want *Map
 	}{
 		{
 			name: "int map",
 			args: args{v: map[string]int{"tom": 15, "sue": 19}},
-			want: &EgoMap{
+			want: &Map{
 				keyType:   &StringType,
 				valueType: &IntType,
 				immutable: 0,

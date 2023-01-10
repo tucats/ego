@@ -207,7 +207,7 @@ func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // utility function that prepends the base URL for this instance
 // of a rest service to the supplied URL string. If there is
 // no base URL defined, then nothing is changed.
-func applyBaseURL(url string, this *data.EgoStruct) string {
+func applyBaseURL(url string, this *data.Struct) string {
 	if b, ok := this.Get(baseURLFieldName); ok {
 		base := data.String(b)
 		if base == "" {
@@ -560,7 +560,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // fetchCookies extracts the cookies from the response, and format them as an Ego array
 // of structs.
-func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.EgoArray {
+func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.Array {
 	cookies := r.Cookies()
 	result := data.NewArray(&data.InterfaceType, len(cookies))
 
@@ -580,7 +580,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.EgoArray {
 
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
-func headerMap(response *resty.Response) *data.EgoMap {
+func headerMap(response *resty.Response) *data.Map {
 	headers := data.NewMap(&data.StringType, &data.InterfaceType)
 
 	for k, v := range response.Header() {
@@ -753,7 +753,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // the native client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 	if g, ok := symbols.Get("__this"); ok {
-		if gc, ok := g.(*data.EgoStruct); ok {
+		if gc, ok := g.(*data.Struct); ok {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*resty.Client); ok {
 					if cp == nil {
@@ -771,13 +771,13 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThisStruct(s *symbols.SymbolTable) *data.EgoStruct {
+func getThisStruct(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get("__this")
 	if !ok {
 		return nil
 	}
 
-	this, ok := t.(*data.EgoStruct)
+	this, ok := t.(*data.Struct)
 	if !ok {
 		return nil
 	}

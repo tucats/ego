@@ -109,7 +109,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if argArray, ok := cmdStruct.Get("Args"); ok {
-		if args, ok := argArray.(*data.EgoArray); ok {
+		if args, ok := argArray.(*data.Array); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
@@ -121,7 +121,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if argArray, ok := cmdStruct.Get("Env"); ok {
-		if args, ok := argArray.(*data.EgoArray); ok {
+		if args, ok := argArray.(*data.Array); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
@@ -136,7 +136,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	cmd.Stdout = &out
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {
-		if strArray, ok := a.(*data.EgoArray); ok {
+		if strArray, ok := a.(*data.Array); ok {
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)
@@ -199,7 +199,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if argArray, ok := cmdStruct.Get("Args"); ok {
-		if args, ok := argArray.(*data.EgoArray); ok {
+		if args, ok := argArray.(*data.Array); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
@@ -211,7 +211,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if argArray, ok := cmdStruct.Get("Env"); ok {
-		if args, ok := argArray.(*data.EgoArray); ok {
+		if args, ok := argArray.(*data.Array); ok {
 			r := make([]string, args.Len())
 			for n := 0; n < len(r); n++ {
 				v, _ := args.Get(n)
@@ -226,7 +226,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	cmd.Stdout = &out
 
 	if a, ok := cmdStruct.Get("Stdin"); ok {
-		if strArray, ok := a.(*data.EgoArray); ok {
+		if strArray, ok := a.(*data.Array); ok {
 			strs := make([]string, strArray.Len())
 			for n := 0; n < len(strs); n++ {
 				v, _ := strArray.Get(n)

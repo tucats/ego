@@ -147,7 +147,7 @@ func responseByteCode(c *Context, i interface{}) error {
 	if isJSON {
 		c.symbols.Root().SetAlways("_rest_response", v)
 	} else {
-		if b, ok := v.(*data.EgoArray); ok {
+		if b, ok := v.(*data.Array); ok {
 			if bs := b.GetBytes(); bs != nil {
 				writeResponse(c, string(bs)+"\n")
 
@@ -163,14 +163,14 @@ func responseByteCode(c *Context, i interface{}) error {
 
 func writeStatus(c *Context, status int) {
 	responseSymbol, _ := c.symbolGet("$response")
-	if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
+	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		_ = responseStruct.SetAlways("Status", status)
 	}
 }
 
 func writeResponse(c *Context, output string) {
 	responseSymbol, _ := c.symbolGet("$response")
-	if responseStruct, ok := responseSymbol.(*data.EgoStruct); ok {
+	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 
 		_ = responseStruct.SetAlways("Buffer", data.String(bufferValue)+output)

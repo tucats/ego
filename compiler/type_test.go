@@ -26,19 +26,19 @@ func TestCompileTypeSpec(t *testing.T) {
 		},
 		{
 			name: "*int",
-			want: data.Pointer(&data.IntType),
+			want: data.PointerType(&data.IntType),
 		},
 		{
 			name: "[]string",
-			want: data.Array(&data.StringType),
+			want: data.ArrayType(&data.StringType),
 		},
 		{
 			name: "struct { name int }",
-			want: data.Structure(data.Field{Name: "name", Type: &data.IntType}),
+			want: data.StructureType(data.Field{Name: "name", Type: &data.IntType}),
 		},
 		{
 			name: "struct { name string, age int }",
-			want: data.Structure(
+			want: data.StructureType(
 				data.Field{Name: "name", Type: &data.StringType},
 				data.Field{Name: "age", Type: &data.IntType},
 			),

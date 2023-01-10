@@ -44,13 +44,13 @@ func memberByteCode(c *Context, i interface{}) error {
 	found := false
 
 	switch mv := m.(type) {
-	case *data.EgoMap:
+	case *data.Map:
 		v, _, err = mv.Get(name)
 		if err != nil {
 			return err
 		}
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		// Could be a structure member, or a request to fetch a receiver function.
 		v, found = mv.Get(name)
 		if !found {
@@ -61,7 +61,7 @@ func memberByteCode(c *Context, i interface{}) error {
 			return c.newError(errors.ErrUnknownMember).Context(name)
 		}
 
-	case *data.EgoPackage:
+	case *data.Package:
 		// First, see if it's a variable in the symbol table for the package, assuming
 		// it starts with an uppercase letter.
 		if util.HasCapitalizedName(name) {

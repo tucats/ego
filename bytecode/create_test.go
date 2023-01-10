@@ -19,7 +19,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *data.EgoArray
+		want *data.Array
 	}{
 		{
 			name: "[]int{5,3}",

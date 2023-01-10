@@ -100,12 +100,12 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			return &data.UndefinedType, err
 		}
 
-		return data.Map(keyType, valueType), nil
+		return data.MapType(keyType, valueType), nil
 	}
 
 	// Structures
 	if c.t.Peek(1) == tokenizer.StructToken && c.t.Peek(2) == tokenizer.DataBeginToken {
-		t := data.Structure()
+		t := data.StructureType()
 		c.t.Advance(2)
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
@@ -123,7 +123,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 				// look to see if this is a known type. If so, copy the embedded fields to
 				// the newly created type we're working on.
 				if pkgData, found := c.Symbols().Get(packageName.Spelling()); found {
-					if pkg, ok := pkgData.(*data.EgoPackage); ok {
+					if pkg, ok := pkgData.(*data.Package); ok {
 						if typeInterface, ok := pkg.Get(name.Spelling()); ok {
 							if typeData, ok := typeInterface.(*data.Type); ok {
 								embedType(t, typeData)
@@ -188,7 +188,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			return &data.UndefinedType, err
 		}
 
-		return data.Array(valueType), nil
+		return data.ArrayType(valueType), nil
 	}
 
 	// Known base types?

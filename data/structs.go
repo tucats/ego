@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-type EgoStruct struct {
+type Struct struct {
 	typeDef      *Type
 	typeName     string
 	static       bool
@@ -21,7 +21,7 @@ type EgoStruct struct {
 	fields       map[string]interface{}
 }
 
-func NewStruct(t *Type) *EgoStruct {
+func NewStruct(t *Type) *Struct {
 	// If this is a user type, get the base type.
 	typeName := ""
 	baseType := t
@@ -57,7 +57,7 @@ func NewStruct(t *Type) *EgoStruct {
 	}
 
 	// Create the structure and pass it back.
-	result := EgoStruct{
+	result := Struct{
 		typeDef:  baseType,
 		static:   static,
 		fields:   fields,
@@ -67,8 +67,8 @@ func NewStruct(t *Type) *EgoStruct {
 	return &result
 }
 
-func NewStructFromMap(m map[string]interface{}) *EgoStruct {
-	t := Structure()
+func NewStructFromMap(m map[string]interface{}) *Struct {
+	t := StructureType()
 
 	if value, ok := m[TypeMDKey]; ok {
 		t = TypeOf(value)
@@ -97,7 +97,7 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 		}
 	}
 
-	result := EgoStruct{
+	result := Struct{
 		static:   static,
 		typeDef:  t,
 		readonly: readonly,
@@ -107,23 +107,23 @@ func NewStructFromMap(m map[string]interface{}) *EgoStruct {
 	return &result
 }
 
-func (s *EgoStruct) GetType() *Type {
+func (s *Struct) GetType() *Type {
 	return s.typeDef
 }
 
-func (s *EgoStruct) SetTyping(b bool) *EgoStruct {
+func (s *Struct) SetTyping(b bool) *Struct {
 	s.strongTyping = b
 
 	return s
 }
 
-func (s *EgoStruct) SetReadonly(b bool) *EgoStruct {
+func (s *Struct) SetReadonly(b bool) *Struct {
 	s.readonly = b
 
 	return s
 }
 
-func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
+func (s *Struct) SetStatic(b bool) *Struct {
 	s.static = b
 
 	return s
@@ -131,7 +131,7 @@ func (s *EgoStruct) SetStatic(b bool) *EgoStruct {
 
 // This is used only by the unit testing to explicitly set the type
 // of a structure. It changes no data, only updates the type value.
-func (s *EgoStruct) AsType(t *Type) *EgoStruct {
+func (s *Struct) AsType(t *Type) *Struct {
 	s.typeDef = t
 	s.typeName = t.name
 
@@ -142,7 +142,7 @@ func (s *EgoStruct) AsType(t *Type) *EgoStruct {
 // to verify that the field exists; if it does not then a nil value is returned.
 // This is a short-cut used in runtime code to access well-known fields from
 // pre-defined object types, such as a db.Client().
-func (s *EgoStruct) GetAlways(name string) interface{} {
+func (s *Struct) GetAlways(name string) interface{} {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -151,7 +151,7 @@ func (s *EgoStruct) GetAlways(name string) interface{} {
 	return value
 }
 
-func (s *EgoStruct) Get(name string) (interface{}, bool) {
+func (s *Struct) Get(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -166,7 +166,7 @@ func (s *EgoStruct) Get(name string) (interface{}, bool) {
 	return value, ok
 }
 
-func (s *EgoStruct) ToMap() map[string]interface{} {
+func (s *Struct) ToMap() map[string]interface{} {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -181,7 +181,7 @@ func (s *EgoStruct) ToMap() map[string]interface{} {
 
 // Store a value in the structure under the given name. This ignores type safety,
 // static, or readonly attributes, so be VERY sure the value is the right type!
-func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
+func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 	if s == nil {
 		ui.Log(ui.InfoLogger, "Fatal error - null struct pointer in SetAlways")
 
@@ -196,7 +196,7 @@ func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
 	return s
 }
 
-func (s *EgoStruct) Set(name string, value interface{}) error {
+func (s *Struct) Set(name string, value interface{}) error {
 	if s.readonly {
 		return errors.EgoError(errors.ErrReadOnly)
 	}
@@ -236,7 +236,7 @@ func (s *EgoStruct) Set(name string, value interface{}) error {
 }
 
 // Make a copy of the current structure object.
-func (s *EgoStruct) Copy() *EgoStruct {
+func (s *Struct) Copy() *Struct {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -250,7 +250,7 @@ func (s *EgoStruct) Copy() *EgoStruct {
 	return result
 }
 
-func (s *EgoStruct) FieldNames() []string {
+func (s *Struct) FieldNames() []string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -267,7 +267,7 @@ func (s *EgoStruct) FieldNames() []string {
 	return keys
 }
 
-func (s *EgoStruct) FieldNamesArray() *EgoArray {
+func (s *Struct) FieldNamesArray() *Array {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -281,7 +281,7 @@ func (s *EgoStruct) FieldNamesArray() *EgoArray {
 	return NewArrayFromArray(&StringType, keyValues)
 }
 
-func (s *EgoStruct) TypeString() string {
+func (s *Struct) TypeString() string {
 	if s.typeName != "" {
 		return s.typeName
 	}
@@ -293,7 +293,7 @@ func (s *EgoStruct) TypeString() string {
 	return s.typeDef.String()
 }
 
-func (s *EgoStruct) String() string {
+func (s *Struct) String() string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -335,7 +335,7 @@ func (s *EgoStruct) String() string {
 	return b.String()
 }
 
-func (s *EgoStruct) Reflect() *EgoStruct {
+func (s *Struct) Reflect() *Struct {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -372,7 +372,7 @@ func (s *EgoStruct) Reflect() *EgoStruct {
 	return NewStructFromMap(m)
 }
 
-func (s *EgoStruct) MarshalJSON() ([]byte, error) {
+func (s *Struct) MarshalJSON() ([]byte, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 

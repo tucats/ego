@@ -636,16 +636,16 @@ func KindOf(i interface{}) int {
 	case string:
 		return StringKind
 
-	case EgoPackage:
+	case Package:
 		return UndefinedKind
 
-	case *EgoPackage:
+	case *Package:
 		return PackageKind
 
-	case *EgoMap:
+	case *Map:
 		return MapKind
 
-	case *EgoStruct:
+	case *Struct:
 		return StructKind
 
 	case *Channel:
@@ -702,19 +702,19 @@ func TypeOf(i interface{}) *Type {
 	case *interface{}:
 		baseType := TypeOf(*v)
 
-		return Pointer(baseType)
+		return PointerType(baseType)
 
 	case *sync.WaitGroup:
 		return &WaitGroupType
 
 	case **sync.WaitGroup:
-		return Pointer(&WaitGroupType)
+		return PointerType(&WaitGroupType)
 
 	case *sync.Mutex:
 		return &MutexType
 
 	case **sync.Mutex:
-		return Pointer(&MutexType)
+		return PointerType(&MutexType)
 
 	case bool:
 		return BoolType
@@ -741,39 +741,39 @@ func TypeOf(i interface{}) *Type {
 		return &StringType
 
 	case *byte:
-		return Pointer(&ByteType)
+		return PointerType(&ByteType)
 
 	case *int32:
-		return Pointer(&Int32Type)
+		return PointerType(&Int32Type)
 
 	case *int:
-		return Pointer(&IntType)
+		return PointerType(&IntType)
 
 	case *int64:
-		return Pointer(&Int64Type)
+		return PointerType(&Int64Type)
 
 	case *float32:
-		return Pointer(&Float32Type)
+		return PointerType(&Float32Type)
 
 	case *float64:
-		return Pointer(&Float64Type)
+		return PointerType(&Float64Type)
 
 	case *string:
-		return Pointer(&StringType)
+		return PointerType(&StringType)
 
 	case *bool:
-		return Pointer(BoolType)
+		return PointerType(BoolType)
 
-	case *EgoPackage:
-		return Pointer(TypeOf(*v))
+	case *Package:
+		return PointerType(TypeOf(*v))
 
-	case *EgoMap:
+	case *Map:
 		return v.Type()
 
-	case *EgoStruct:
+	case *Struct:
 		return v.typeDef
 
-	case *EgoArray:
+	case *Array:
 		return &Type{
 			name:      "[]",
 			kind:      ArrayKind,
@@ -781,7 +781,7 @@ func TypeOf(i interface{}) *Type {
 		}
 
 	case *Channel:
-		return Pointer(&ChanType)
+		return PointerType(&ChanType)
 
 	default:
 		return &InterfaceType
@@ -802,7 +802,7 @@ func IsType(v interface{}, t *Type) bool {
 		for m := range t.functions {
 			found := true
 			switch mv := v.(type) {
-			case *EgoStruct:
+			case *Struct:
 				_, found = mv.Get(m)
 
 			case *Type:
@@ -918,7 +918,7 @@ func PackageForKind(kind int) string {
 }
 
 // Generate a reflection object that describes the type.
-func (t Type) Reflect() *EgoStruct {
+func (t Type) Reflect() *Struct {
 	r := map[string]interface{}{}
 
 	r["istype"] = true

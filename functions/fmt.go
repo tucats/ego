@@ -84,7 +84,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // object type passed in, if it is a typed struct.  Otherwise, it
 // just returns the Unquoted format value.
 func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
-	if m, ok := v.(*data.EgoStruct); ok {
+	if m, ok := v.(*data.Struct); ok {
 		if f := m.GetType().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)

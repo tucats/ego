@@ -502,7 +502,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	// Do the actual compare. Note that if we ended up with a negative
 	// max, that means variable argument list size, and we just assume
 	// what we found in the max...
-	if array, ok := args.(*data.EgoArray); ok {
+	if array, ok := args.(*data.Array); ok {
 		if max < 0 {
 			max = array.Len()
 		}
@@ -526,7 +526,7 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 
 	this := c.thisStack[len(c.thisStack)-1]
 
-	if pkg, ok := this.value.(*data.EgoPackage); ok {
+	if pkg, ok := this.value.(*data.Package); ok {
 		if s, ok := data.GetMetadata(pkg, data.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package()) {

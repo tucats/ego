@@ -80,11 +80,11 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 				r.keySet = keySet
 				r.runes = runes
 
-			case *data.EgoMap:
+			case *data.Map:
 				r.keySet = actual.Keys()
 				actual.ImmutableKeys(true)
 
-			case *data.EgoArray:
+			case *data.Array:
 				actual.Immutable(true)
 
 			case *data.Channel:
@@ -156,7 +156,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				r.index++
 			}
 
-		case *data.EgoMap:
+		case *data.Map:
 			if r.index >= len(r.keySet) {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
@@ -207,7 +207,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				}
 			}
 
-		case *data.EgoArray:
+		case *data.Array:
 			if r.index >= actual.Len() {
 				c.programCounter = destination
 				actual.Immutable(false)

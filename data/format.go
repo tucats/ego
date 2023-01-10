@@ -100,7 +100,7 @@ func Format(element interface{}) string {
 	case FunctionDeclaration:
 		return v.String()
 
-	case *EgoPackage:
+	case *Package:
 		var b strings.Builder
 
 		keys := v.Keys()
@@ -148,13 +148,13 @@ func Format(element interface{}) string {
 
 		return b.String()
 
-	case *EgoStruct:
+	case *Struct:
 		return v.String()
 
-	case *EgoArray:
+	case *Array:
 		return v.String()
 
-	case *EgoMap:
+	case *Map:
 		return v.String()
 
 	case *interface{}:

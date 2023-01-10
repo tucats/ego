@@ -261,7 +261,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 	argPos := data.Int(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {
-		if args, ok := arrayV.(*data.EgoArray); ok {
+		if args, ok := arrayV.(*data.Array); ok {
 			// If no more args in the list to satisfy, push empty array
 			if args.Len() < argPos {
 				r := data.NewArray(&data.InterfaceType, 0)

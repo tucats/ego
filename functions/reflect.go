@@ -67,7 +67,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	if m, ok := args[0].(*data.EgoStruct); ok {
+	if m, ok := args[0].(*data.Struct); ok {
 		return m.Reflect(), nil
 	}
 
@@ -76,7 +76,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Is it an Ego package?
-	if m, ok := args[0].(*data.EgoPackage); ok {
+	if m, ok := args[0].(*data.Package); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
 
@@ -107,7 +107,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Is it an pionter to an Ego package?
-	if m, ok := args[0].(*data.EgoPackage); ok {
+	if m, ok := args[0].(*data.Package); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
 
@@ -136,7 +136,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Is it an Ego array datatype?
-	if m, ok := args[0].(*data.EgoArray); ok {
+	if m, ok := args[0].(*data.Array); ok {
 		// What is the name of the base type value? This will always
 		// be an array of interface{} unless this is []byte in which
 		// case the native type is []byte as well.
@@ -197,16 +197,16 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Type implements the type() function.
 func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
-	case *data.EgoMap:
+	case *data.Map:
 		return v.TypeString(), nil
 
-	case *data.EgoArray:
+	case *data.Array:
 		return v.TypeString(), nil
 
-	case *data.EgoStruct:
+	case *data.Struct:
 		return v.TypeString(), nil
 
-	case data.EgoStruct:
+	case data.Struct:
 		return v.TypeString(), nil
 
 	case nil:
@@ -228,7 +228,7 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 		return "type " + typeName, nil
 
-	case *data.EgoPackage:
+	case *data.Package:
 		t := data.TypeOf(v)
 
 		if t.IsTypeDefinition() {
@@ -287,7 +287,7 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // makeDeclaration constructs a native data structure describing a function declaration.
-func makeDeclaration(fd *data.FunctionDeclaration) *data.EgoStruct {
+func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
 	parameterType := data.TypeDefinition(data.NoName, &data.StructType)
 	parameterType.DefineField("name", &data.StringType)
 	parameterType.DefineField(data.TypeMDName, &data.StringType)

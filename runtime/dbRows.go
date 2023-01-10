@@ -146,7 +146,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
-	db := this.GetAlways(dbFieldName).(*data.EgoStruct)
+	db := this.GetAlways(dbFieldName).(*data.Struct)
 	asStruct := data.Bool(db.GetAlways(asStructFieldName))
 	columns, _ := rows.Columns()
 	colTypes, _ := rows.ColumnTypes()

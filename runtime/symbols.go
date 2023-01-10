@@ -120,7 +120,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 // Get retrieves a value from the package structure by name. It returns the value and
 // a boolean value indicating if it was found. The flag is true if the package has been
 // initialized, the hash map is initialized, and the named value is found in the hashmap.
-func GetPackageSymbols(p *data.EgoPackage) *symbols.SymbolTable {
+func GetPackageSymbols(p *data.Package) *symbols.SymbolTable {
 	if p == nil {
 		return nil
 	}

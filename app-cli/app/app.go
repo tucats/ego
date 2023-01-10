@@ -116,7 +116,7 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	}
 
 	// Create the platform definition symbols
-	platformType := data.Structure(
+	platformType := data.StructureType(
 		data.Field{
 			Name: "os",
 			Type: &data.StringType,
