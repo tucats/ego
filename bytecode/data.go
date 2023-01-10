@@ -297,11 +297,6 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !ok {
 			return c.newError(errors.ErrNotAPointer).Context(name)
 		}
-	case *data.EgoMap:
-		*actual, ok = src.(data.EgoMap)
-		if !ok {
-			return c.newError(errors.ErrNotAPointer).Context(name)
-		}
 
 	case **data.Channel:
 		*actual, ok = src.(*data.Channel)

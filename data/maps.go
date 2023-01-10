@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/errors"
 )
@@ -19,6 +20,7 @@ type EgoMap struct {
 	keyType   *Type
 	valueType *Type
 	immutable int
+	mutex     sync.RWMutex
 }
 
 // Generate a new map value. The caller must supply the data type codes for the expected
@@ -51,6 +53,9 @@ func (m *EgoMap) ValueType() *Type {
 // semaphore, so the calls to ImmutableKeys to set/clear the state must
 // be balanced to prevent having a map that is permanently locked or unlocked.
 func (m *EgoMap) ImmutableKeys(b bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	if b {
 		m.immutable++
 	} else {
@@ -64,6 +69,9 @@ func (m *EgoMap) ImmutableKeys(b bool) {
 // interface was found or not (i.e. should the result be considered value).
 // Finally, it returns an error code if there is a type mismatch.
 func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
 	if IsType(key, m.keyType) {
 		v, found := m.data[key]
 
@@ -78,6 +86,9 @@ func (m *EgoMap) Get(key interface{}) (interface{}, bool, error) {
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
 func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	if m.immutable > 0 {
 		return false, errors.EgoError(errors.ErrImmutableMap)
 	}
@@ -99,6 +110,9 @@ func (m *EgoMap) Set(key interface{}, value interface{}) (bool, error) {
 // Keys returns the set of keys for the map as an array. If the values are strings,
 // ints, or floats they are returned in ascending sorted order.
 func (m *EgoMap) Keys() []interface{} {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
 	if m.keyType.IsType(&StringType) {
 		idx := 0
 		array := make([]string, len(m.data))
@@ -185,6 +199,9 @@ func (m *EgoMap) Keys() []interface{} {
 // value indicates if the value was found (and therefore deleted) versus
 // was not found.
 func (m *EgoMap) Delete(key interface{}) (bool, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	if m.immutable > 0 {
 		return false, errors.EgoError(errors.ErrImmutableMap)
 	}
@@ -211,6 +228,9 @@ func (m *EgoMap) TypeString() string {
 // anonymous struct syntax. Key values are not quoted, but data values are if
 // they are strings.
 func (m *EgoMap) String() string {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
 	var b strings.Builder
 
 	b.WriteString("[")
@@ -235,7 +255,7 @@ func (m *EgoMap) String() string {
 }
 
 // Type returns a type descriptor for the current map.
-func (m EgoMap) Type() *Type {
+func (m *EgoMap) Type() *Type {
 	return &Type{
 		name:      "map",
 		kind:      MapKind,
@@ -305,7 +325,10 @@ func NewMapFromMap(sourceMap interface{}) *EgoMap {
 	return result
 }
 
-func (m EgoMap) MarshalJSON() ([]byte, error) {
+func (m *EgoMap) MarshalJSON() ([]byte, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
 	b := strings.Builder{}
 	b.WriteString("{")
 
