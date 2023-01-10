@@ -20,7 +20,7 @@ func client(ch chan, count int ) {
 
 func main() int {
 
-   clients := 50
+   clients := 150
    ch := make(chan, clients)
 
    for i := 0; i < clients; i++ {

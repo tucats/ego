@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
@@ -16,6 +17,7 @@ type EgoStruct struct {
 	static       bool
 	readonly     bool
 	strongTyping bool
+	mutex        sync.RWMutex
 	fields       map[string]interface{}
 }
 
@@ -141,12 +143,18 @@ func (s *EgoStruct) AsType(t *Type) *EgoStruct {
 // This is a short-cut used in runtime code to access well-known fields from
 // pre-defined object types, such as a db.Client().
 func (s *EgoStruct) GetAlways(name string) interface{} {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	value := s.fields[name]
 
 	return value
 }
 
 func (s *EgoStruct) Get(name string) (interface{}, bool) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	value, ok := s.fields[name]
 
 	// If it's not a field, it might be locatable via the typedef's
@@ -158,7 +166,10 @@ func (s *EgoStruct) Get(name string) (interface{}, bool) {
 	return value, ok
 }
 
-func (s EgoStruct) ToMap() map[string]interface{} {
+func (s *EgoStruct) ToMap() map[string]interface{} {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	result := map[string]interface{}{}
 
 	for k, v := range s.fields {
@@ -177,6 +188,9 @@ func (s *EgoStruct) SetAlways(name string, value interface{}) *EgoStruct {
 		return s
 	}
 
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.fields[name] = value
 
 	return s
@@ -186,6 +200,9 @@ func (s *EgoStruct) Set(name string, value interface{}) error {
 	if s.readonly {
 		return errors.EgoError(errors.ErrReadOnly)
 	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	// Is it a readonly symbol name and it already exists? If so, fail...
 	if name[0:1] == "_" {
@@ -219,7 +236,10 @@ func (s *EgoStruct) Set(name string, value interface{}) error {
 }
 
 // Make a copy of the current structure object.
-func (s EgoStruct) Copy() *EgoStruct {
+func (s *EgoStruct) Copy() *EgoStruct {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	result := NewStructFromMap(s.fields)
 	result.readonly = s.readonly
 	result.static = s.static
@@ -230,7 +250,10 @@ func (s EgoStruct) Copy() *EgoStruct {
 	return result
 }
 
-func (s EgoStruct) FieldNames() []string {
+func (s *EgoStruct) FieldNames() []string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	keys := make([]string, 0)
 
 	for k := range s.fields {
@@ -244,7 +267,10 @@ func (s EgoStruct) FieldNames() []string {
 	return keys
 }
 
-func (s EgoStruct) FieldNamesArray() *EgoArray {
+func (s *EgoStruct) FieldNamesArray() *EgoArray {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	keys := s.FieldNames()
 	keyValues := make([]interface{}, len(keys))
 
@@ -255,7 +281,7 @@ func (s EgoStruct) FieldNamesArray() *EgoArray {
 	return NewArrayFromArray(&StringType, keyValues)
 }
 
-func (s EgoStruct) TypeString() string {
+func (s *EgoStruct) TypeString() string {
 	if s.typeName != "" {
 		return s.typeName
 	}
@@ -267,7 +293,10 @@ func (s EgoStruct) TypeString() string {
 	return s.typeDef.String()
 }
 
-func (s EgoStruct) String() string {
+func (s *EgoStruct) String() string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	if len(s.fields) == 0 {
 		return "{}"
 	}
@@ -306,7 +335,10 @@ func (s EgoStruct) String() string {
 	return b.String()
 }
 
-func (s EgoStruct) Reflect() *EgoStruct {
+func (s *EgoStruct) Reflect() *EgoStruct {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	m := map[string]interface{}{}
 
 	m[TypeMDName] = s.TypeString()
@@ -340,7 +372,10 @@ func (s EgoStruct) Reflect() *EgoStruct {
 	return NewStructFromMap(m)
 }
 
-func (s EgoStruct) MarshalJSON() ([]byte, error) {
+func (s *EgoStruct) MarshalJSON() ([]byte, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	b := strings.Builder{}
 	b.WriteString("{")
 
