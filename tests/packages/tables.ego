@@ -22,8 +22,8 @@ Sarah    22
 Tom      51     
 `
     @assert got == expect
-    @assert t.headings[0] == "Name"
-    @assert t.headings[1] == "Age"
+    @assert t.Headings[0] == "Name"
+    @assert t.Headings[1] == "Age"
 
 }
 

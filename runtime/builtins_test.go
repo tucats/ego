@@ -1,10 +1,7 @@
 package runtime
 
 import (
-	"reflect"
 	"testing"
-
-	"github.com/tucats/ego/symbols"
 )
 
 func Test_pad(t *testing.T) {
@@ -45,74 +42,6 @@ func Test_pad(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Pad(tt.args.s, tt.args.w); got != tt.want {
 				t.Errorf("pad() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFunctionTable(t *testing.T) {
-	type args struct {
-		symbols *symbols.SymbolTable
-		args    []interface{}
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "single string column and row",
-			args: args{
-				symbols: nil,
-				args: []interface{}{
-					[]interface{}{
-						map[string]interface{}{
-							"name": "tom",
-						},
-					},
-				},
-			},
-			want: []interface{}{
-				"name ",
-				"==== ",
-				"tom  ",
-			},
-			wantErr: false,
-		},
-		{
-			name: "two string columns and row",
-			args: args{
-				symbols: nil,
-				args: []interface{}{
-					[]interface{}{
-						map[string]interface{}{
-							"name": "tom",
-							"id":   "123456",
-						},
-					},
-				},
-			},
-			want: []interface{}{
-				"id     name ",
-				"====== ==== ",
-				"123456 tom  ",
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Table(tt.args.symbols, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FunctionTable() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionTable() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

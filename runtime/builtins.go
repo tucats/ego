@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/runtime/db"
+	"github.com/tucats/ego/runtime/table"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -59,7 +60,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	_ = s.Root().SetWithAttributes("util", utilPkg, symbols.SymbolAttribute{Readonly: true})
 
 	s.SetAlways("tables", data.NewPackageFromMap("tables", map[string]interface{}{
-		"New":              TableNew,
+		"New":              table.New,
 		data.TypeMDKey:     data.PackageType("tables"),
 		data.ReadonlyMDKey: true,
 	}))

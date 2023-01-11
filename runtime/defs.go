@@ -31,22 +31,14 @@ const (
 		headers 	map[string]interface{},
 	}`
 
-	// tables.Table type specification.
-	tableTypeSpec = `
-	type tables.Table struct {
-		table 	 interface{},
-		headings []string,
-	}`
 
 	// Field names for runtime types.
 	baseURLFieldName   = "baseURL"
 	clientFieldName    = "client"
 	headersFieldName   = "headers"
-	headingsFieldName  = "headings"
 	mediaTypeFieldName = "mediaType"
 	responseFieldName  = "response"
 
 	statusFieldName = "status"
-	tableFieldName  = "table"
 	verifyFieldName = "verify"
 )
