@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 )
 
 // AddUser is used to add a new user to the security database of the
@@ -36,7 +37,7 @@ func AddUser(c *cli.Context) error {
 	}
 	resp := defs.User{}
 
-	err = runtime.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent)
+	err = rest.Exchange(defs.AdminUsersPath, http.MethodPost, payload, &resp, defs.AdminAgent)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.added", map[string]interface{}{
@@ -68,7 +69,7 @@ func DeleteUser(c *cli.Context) error {
 	resp := defs.User{}
 	url := runtime.URLBuilder(defs.AdminUsersNamePath, user)
 
-	err = runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
+	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.user.deleted", map[string]interface{}{"user": user})
@@ -87,7 +88,7 @@ func DeleteUser(c *cli.Context) error {
 func ListUsers(c *cli.Context) error {
 	var ud = defs.UserCollection{}
 
-	err := runtime.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent)
+	err := rest.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent)
 	if err != nil {
 		return errors.NewError(err)
 	}

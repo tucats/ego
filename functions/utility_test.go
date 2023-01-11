@@ -205,6 +205,7 @@ func TestReflect(t *testing.T) {
 				"basetype": "struct{age int, name string}",
 				"type":     "struct{age int, name string}",
 				"native":   true,
+				"package":  false,
 				"readonly": false,
 				"static":   true,
 				"istype":   false,

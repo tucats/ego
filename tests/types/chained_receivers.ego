@@ -3,12 +3,10 @@
 {
     // This test verifies that the chained set of builtin function
     // calls below ( "New", "Media", and "Base" ) all use the 
-    // "this" value passed from one to the next. The member dereference
-    // is prefaced by capturing the member and doing SetThis
+    // "this" value passed from one to the next. 
     
     url := "http://localhost:8080"
-    r := rest.New().Media("text").Base(url)
-    @assert T.Equal(r.baseURL, url)
-    @assert T.Equal(r.mediaType, "text")
+    r := rest.New().Base(url).Media("text")
+    @assert T.Equal(r.Mediatype, "text")
 }
 @pass

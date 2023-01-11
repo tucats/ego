@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/runtime/command"
 	"github.com/tucats/ego/runtime/db"
+	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/table"
 	"github.com/tucats/ego/symbols"
 )
@@ -35,9 +36,9 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	}))
 
 	s.SetAlways("rest", data.NewPackageFromMap("rest", map[string]interface{}{
-		"New":              RestNew,
-		"Status":           RestStatusMessage,
-		"ParseURL":         RestParseURL,
+		"New":              rest.New,
+		"Status":           rest.Status,
+		"ParseURL":         rest.ParseURL,
 		data.TypeMDKey:     data.PackageType("rest"),
 		data.ReadonlyMDKey: true,
 	}))

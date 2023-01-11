@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 )
 
 func Logging(c *cli.Context) error {
@@ -49,7 +50,7 @@ func Logging(c *cli.Context) error {
 		u := runtime.URLBuilder("/admin/loggers/?keep=%d", keep)
 		count := defs.DBRowCount{}
 
-		err := runtime.Exchange(u.String(), http.MethodDelete, nil, &count, defs.AdminAgent)
+		err := rest.Exchange(u.String(), http.MethodDelete, nil, &count, defs.AdminAgent)
 		if err != nil {
 			return err
 		}
@@ -101,7 +102,7 @@ func Logging(c *cli.Context) error {
 		}
 
 		// Send the update, get a reply
-		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
+		err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
 		if err != nil {
 			return err
 		}
@@ -111,7 +112,7 @@ func Logging(c *cli.Context) error {
 
 	if showStatus || fileOnly {
 		// No changes, just ask for status
-		err := runtime.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
+		err := rest.Exchange(defs.AdminLoggersPath, http.MethodGet, nil, &response, defs.AdminAgent)
 		if err != nil {
 			return err
 		}
@@ -130,7 +131,7 @@ func Logging(c *cli.Context) error {
 
 		lines := defs.LogTextResponse{}
 
-		err := runtime.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
+		err := rest.Exchange(url, http.MethodGet, nil, &lines, defs.AdminAgent)
 		if err != nil {
 			return err
 		}

@@ -23,6 +23,7 @@ import (
 	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/http/tables"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -236,8 +237,8 @@ func RunServer(c *cli.Context) error {
 	} else {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerCertificateFile)
-		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), runtime.ServerKeyFile)
+		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), rest.ServerCertificateFile)
+		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), rest.ServerKeyFile)
 
 		ui.Debug(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Debug(ui.ServerLogger, "**   key  file: %s", keyFile)
@@ -328,7 +329,7 @@ func ResolveServerName(name string) (string, error) {
 	if hasScheme {
 		settings.SetDefault("ego.application.server", name)
 
-		return name, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
+		return name, rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 	}
 
 	// No scheme, so let's try https. If no port supplied, assume the default port.
@@ -336,7 +337,7 @@ func ResolveServerName(name string) (string, error) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
+	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 	if err == nil {
 		return normalizedName, nil
 	}
@@ -346,5 +347,5 @@ func ResolveServerName(name string) (string, error) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	return normalizedName, runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
+	return normalizedName, rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.StatusAgent)
 }

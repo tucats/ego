@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -45,7 +46,7 @@ func TableList(c *cli.Context) error {
 		url.Parameter(defs.RowCountParameterName, false)
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.TablesMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			if rowCounts {
@@ -88,7 +89,7 @@ func TableShow(c *cli.Context) error {
 
 	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
-	err := runtime.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
+	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{
@@ -135,7 +136,7 @@ func TableDrop(c *cli.Context) error {
 
 		urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
-		err = runtime.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
+		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
 			count++
 
@@ -186,7 +187,7 @@ func TableContents(c *cli.Context) error {
 		}
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.RowSetMediaType)
 	if err == nil {
 		err = printRowSet(resp, c.Boolean("row-ids"), c.Boolean("row-numbers"))
 	}
@@ -309,7 +310,7 @@ func TableInsert(c *cli.Context) error {
 
 	urlString := runtime.URLBuilder(defs.TablesRowsPath, table).String()
 
-	err := runtime.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
+	err := rest.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if err == nil {
 		ui.Say("msg.tables.insert.count", map[string]interface{}{
 			"count": resp.Count,
@@ -435,7 +436,7 @@ func TableCreate(c *cli.Context) error {
 	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
 	// Send the array to the server
-	err := runtime.Exchange(
+	err := rest.Exchange(
 		urlString,
 		"PUT",
 		payload,
@@ -497,7 +498,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 	}
 
-	err := runtime.Exchange(
+	err := rest.Exchange(
 		url.String(),
 		http.MethodPatch,
 		payload,
@@ -532,7 +533,7 @@ func TableDelete(c *cli.Context) error {
 		}
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
+	err := rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.TableAgent, defs.RowCountMediaType)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			if resp.Count == 0 {
@@ -703,7 +704,7 @@ func TableSQL(c *cli.Context) error {
 	if strings.Contains(strings.ToLower(sql), "select ") {
 		rows := defs.DBRowSet{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
+		err := rest.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 		if err != nil {
 			return err
 		}
@@ -712,7 +713,7 @@ func TableSQL(c *cli.Context) error {
 	} else {
 		resp := defs.DBRowCount{}
 
-		err := runtime.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
+		err := rest.Exchange(defs.TablesSQLPath, "PUT", sqlPayload, &resp, defs.TableAgent, defs.RowCountMediaType)
 		if err != nil {
 			return err
 		}
@@ -738,7 +739,7 @@ func TablePermissions(c *cli.Context) error {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &permissions, defs.TableAgent)
 	if err == nil {
 		if ui.OutputFormat == ui.TextFormat {
 			t, _ := tables.New([]string{
@@ -775,7 +776,7 @@ func TableGrant(c *cli.Context) error {
 		url.Parameter(defs.UserParameterName, user)
 	}
 
-	err := runtime.Exchange(url.String(), "PUT", permissions, &result, defs.TableAgent)
+	err := rest.Exchange(url.String(), "PUT", permissions, &result, defs.TableAgent)
 	if err == nil {
 		printPermissionObject(result)
 	}
@@ -788,7 +789,7 @@ func TableShowPermission(c *cli.Context) error {
 	result := defs.PermissionObject{}
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 
-	err := runtime.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {
 		printPermissionObject(result)
 	}

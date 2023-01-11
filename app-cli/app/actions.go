@@ -14,12 +14,12 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	rest_runtime "github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/util"
 )
 
 func InsecureAction(c *cli.Context) error {
-	rest_runtime.AllowInsecure(true)
+	rest.AllowInsecure(true)
 
 	return nil
 }

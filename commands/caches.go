@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 )
 
 // SetCacheSize is the administrative command that sets the server's cache size for
@@ -34,7 +34,7 @@ func SetCacheSize(c *cli.Context) error {
 		Limit: size,
 	}
 
-	err = runtime.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
+	err = rest.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
 	if err != nil {
 		return errors.NewError(err)
 	}
@@ -56,7 +56,7 @@ func SetCacheSize(c *cli.Context) error {
 func FlushServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
+	err := rest.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func FlushServerCaches(c *cli.Context) error {
 func ListServerCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
-	err := runtime.Exchange(defs.AdminCachesPath, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
+	err := rest.Exchange(defs.AdminCachesPath, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 )
 
 // Status displays the status of a running server if it exists.
@@ -110,7 +110,7 @@ func remoteStatus(addr string) error {
 		return err
 	}
 
-	err = runtime.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.StatusAgent)
+	err = rest.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.StatusAgent)
 	if err != nil {
 		if ui.OutputFormat == ui.TextFormat {
 			fmt.Println("DOWN")

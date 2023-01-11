@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/rest"
 )
 
 // LogonGrammar describes the login subcommand.
@@ -94,7 +94,7 @@ func Logon(c *cli.Context) error {
 	// Finall, call the endpoint.
 	restClient := resty.New().SetDisableWarn(true)
 
-	if tlsConf, err := runtime.GetTLSConfiguration(); err != nil {
+	if tlsConf, err := rest.GetTLSConfiguration(); err != nil {
 		return err
 	} else {
 		restClient.SetTLSClientConfig(tlsConf)
@@ -110,7 +110,7 @@ func Logon(c *cli.Context) error {
 	}
 
 	req.Header.Set("Accept", defs.JSONMediaType)
-	runtime.AddAgent(req, defs.LogonAgent)
+	rest.AddAgent(req, defs.LogonAgent)
 
 	r, err := req.Post(url)
 	if err != nil {
@@ -209,7 +209,7 @@ func resolveServerName(name string) (string, error) {
 	if hasScheme {
 		settings.SetDefault("ego.application.server", name)
 
-		err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
+		err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 		if err == nil {
 			return name, nil
 		}
@@ -220,7 +220,7 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
+	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err == nil {
 		return normalizedName, nil
 	}
@@ -230,7 +230,7 @@ func resolveServerName(name string) (string, error) {
 
 	settings.SetDefault("ego.application.server", normalizedName)
 
-	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
+	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
 	if err != nil {
 		err = errors.NewError(err)

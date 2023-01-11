@@ -1,4 +1,4 @@
-package runtime
+package rest
 
 import (
 	"crypto/tls"
@@ -232,7 +232,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 	// KEY files found in the EGO PATH if present. If no cert files found, then it assumes it
 	// should just use the native certs.
 	tlsConfigurationMutex.Lock()
-
+	
 	if tlsConfiguration == nil {
 		kind := "using certificate file"
 
