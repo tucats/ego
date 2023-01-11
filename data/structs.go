@@ -6,19 +6,21 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
 type Struct struct {
-	typeDef      *Type
-	typeName     string
-	static       bool
-	readonly     bool
-	strongTyping bool
-	mutex        sync.RWMutex
-	fields       map[string]interface{}
+	typeDef            *Type
+	typeName           string
+	static             bool
+	readonly           bool
+	strongTyping       bool
+	fromBuiltinPackage bool
+	mutex              sync.RWMutex
+	fields             map[string]interface{}
 }
 
 func NewStruct(t *Type) *Struct {
@@ -105,6 +107,12 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	}
 
 	return &result
+}
+
+func (s *Struct) FromBuiltinPackage() *Struct {
+	s.fromBuiltinPackage = true
+
+	return s
 }
 
 func (s *Struct) GetType() *Type {
@@ -257,6 +265,10 @@ func (s *Struct) FieldNames() []string {
 	keys := make([]string, 0)
 
 	for k := range s.fields {
+		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
+			continue
+		}
+
 		if !strings.HasPrefix(k, MetadataPrefix) {
 			keys = append(keys, k)
 		}
@@ -268,9 +280,6 @@ func (s *Struct) FieldNames() []string {
 }
 
 func (s *Struct) FieldNamesArray() *Array {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
 	keys := s.FieldNames()
 	keyValues := make([]interface{}, len(keys))
 
@@ -319,6 +328,10 @@ func (s *Struct) String() string {
 	sort.Strings(keys)
 
 	for i, k := range keys {
+		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
+			continue
+		}
+
 		if i > 0 {
 			b.WriteString(", ")
 		}
@@ -367,6 +380,7 @@ func (s *Struct) Reflect() *Struct {
 	m["members"] = s.FieldNamesArray()
 	m["readonly"] = s.readonly
 	m["static"] = s.static
+	m["package"] = s.fromBuiltinPackage
 
 	return NewStructFromMap(m)
 }
@@ -399,4 +413,18 @@ func (s *Struct) MarshalJSON() ([]byte, error) {
 	b.WriteString("}")
 
 	return []byte(b.String()), nil
+}
+
+// hasCapitalizedName returns true if the first rune/character of the
+// string is considered a capital letter in Unicode.
+func hasCapitalizedName(name string) bool {
+	var firstRune rune
+
+	for _, ch := range name {
+		firstRune = ch
+
+		break
+	}
+
+	return unicode.IsUpper(firstRune)
 }

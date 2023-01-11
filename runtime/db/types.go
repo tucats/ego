@@ -7,18 +7,16 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var dbTypeDef *data.Type
-var dbTypeDefLock sync.Mutex
+var RowsType *data.Type
+var ClientType *data.Type
+var typeDefLock sync.Mutex
 
-var dbRowsTypeDef *data.Type
-var dbRowsTypeDefLock sync.Mutex
+func initClientTypeDef() {
+	typeDefLock.Lock()
+	defer typeDefLock.Unlock()
 
-func initDBTypeDef() {
-	dbTypeDefLock.Lock()
-	defer dbTypeDefLock.Unlock()
-
-	if dbTypeDef == nil {
-		initDBRowsTypeDef()
+	if ClientType == nil {
+		initRowsTypeDef()
 
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
@@ -26,19 +24,19 @@ func initDBTypeDef() {
 			Name:         "Begin",
 			ReceiverType: data.PointerType(t),
 			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, DBBegin)
+		}, Begin)
 
 		t.DefineFunction("Commit", &data.FunctionDeclaration{
 			Name:         "Commit",
 			ReceiverType: data.PointerType(t),
 			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, DBCommit)
+		}, Commit)
 
 		t.DefineFunction("Rollback", &data.FunctionDeclaration{
 			Name:         "Rollback",
 			ReceiverType: data.PointerType(t),
 			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, DBRollback)
+		}, Rollback)
 
 		t.DefineFunction("Query", &data.FunctionDeclaration{
 			Name:         "Query",
@@ -50,10 +48,10 @@ func initDBTypeDef() {
 				},
 			},
 			ReturnTypes: []*data.Type{
-				data.PointerType(dbRowsTypeDef),
+				data.PointerType(RowsType),
 				&data.ErrorType,
 			},
-		}, DBQueryRows)
+		}, Query)
 
 		t.DefineFunction("QueryResult", &data.FunctionDeclaration{
 			Name:         "Execute",
@@ -68,7 +66,7 @@ func initDBTypeDef() {
 				data.ArrayType(data.ArrayType(&data.InterfaceType)),
 				&data.ErrorType,
 			},
-		}, DBQuery)
+		}, QueryResult)
 
 		t.DefineFunction("Execute", &data.FunctionDeclaration{
 			Name:         "Execute",
@@ -83,13 +81,13 @@ func initDBTypeDef() {
 				&data.IntType,
 				&data.ErrorType,
 			},
-		}, DBExecute)
+		}, Execute)
 
 		t.DefineFunction("Close", &data.FunctionDeclaration{
 			Name:         "Close",
 			ReceiverType: data.PointerType(t),
 			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, DBClose)
+		}, Close)
 
 		t.DefineFunction("AsStruct", &data.FunctionDeclaration{
 			Name:         "AsStruct",
@@ -101,50 +99,45 @@ func initDBTypeDef() {
 				},
 			},
 			ReturnTypes: []*data.Type{data.VoidType},
-		}, DataBaseAsStruct)
+		}, AsStructures)
 
-		dbTypeDef = t
+		ClientType = t
 	}
 }
 
-func initDBRowsTypeDef() {
-	dbRowsTypeDefLock.Lock()
-	defer dbRowsTypeDefLock.Unlock()
+func initRowsTypeDef() {
+	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
 
-	if dbRowsTypeDef == nil {
-		t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
+	t.DefineFunction("Next", &data.FunctionDeclaration{
+		Name:         "Next",
+		ReceiverType: data.PointerType(t),
+		ReturnTypes:  []*data.Type{data.BoolType},
+	}, rowsNext)
 
-		t.DefineFunction("Next", &data.FunctionDeclaration{
-			Name:         "Next",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.BoolType},
-		}, rowsNext)
-
-		t.DefineFunction("Scan", &data.FunctionDeclaration{
-			Name: "Scan",
-			Parameters: []data.FunctionParameter{
-				{
-					Name:     "value",
-					ParmType: data.PointerType(&data.InterfaceType),
-				},
+	t.DefineFunction("Scan", &data.FunctionDeclaration{
+		Name: "Scan",
+		Parameters: []data.FunctionParameter{
+			{
+				Name:     "value",
+				ParmType: data.PointerType(&data.InterfaceType),
 			},
-			Variadic:     true,
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, rowsScan)
+		},
+		Variadic:     true,
+		ReceiverType: data.PointerType(t),
+		ReturnTypes:  []*data.Type{&data.ErrorType},
+	}, rowsScan)
 
-		t.DefineFunction("Close", &data.FunctionDeclaration{
-			Name:         "Close",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
-		}, rowsClose)
+	t.DefineFunction("Close", &data.FunctionDeclaration{
+		Name:         "Close",
+		ReceiverType: data.PointerType(t),
+		ReturnTypes:  []*data.Type{&data.ErrorType},
+	}, rowsClose)
 
-		t.DefineFunction("Headings", &data.FunctionDeclaration{
-			Name:         "Headings",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.ArrayType(&data.StringType)},
-		}, rowsHeadings)
+	t.DefineFunction("Headings", &data.FunctionDeclaration{
+		Name:         "Headings",
+		ReceiverType: data.PointerType(t),
+		ReturnTypes:  []*data.Type{data.ArrayType(&data.StringType)},
+	}, rowsHeadings)
 
-		dbRowsTypeDef = t
-	}
+	RowsType = t
 }

@@ -41,7 +41,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	}))
 
 	s.SetAlways("db", data.NewPackageFromMap("db", map[string]interface{}{
-		"New":              db.DBNew,
+		"New":              db.New,
 		data.TypeMDKey:     data.PackageType("db"),
 		data.ReadonlyMDKey: true,
 	}))

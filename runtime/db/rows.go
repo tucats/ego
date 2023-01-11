@@ -10,51 +10,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// DBQueryRows executes a query, with optional parameter substitution, and returns row object
-// for subsequent calls to fetch the data.
-func DBQueryRows(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	db, tx, err := getDBClient(s)
-	if err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
-	}
-
-	this := getThisStruct(s)
-	this.SetAlways(rowCountFieldName, -1)
-
-	query := data.String(args[0])
-
-	var rows *sql.Rows
-
-	var e2 error
-
-	if tx == nil {
-		ui.Debug(ui.DBLogger, "QueryRows: %s", query)
-
-		rows, e2 = db.Query(query, args[1:]...)
-	} else {
-		ui.Debug(ui.DBLogger, "(Tx) QueryRows: %s", query)
-
-		rows, e2 = tx.Query(query, args[1:]...)
-	}
-
-	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(e2)}}, errors.NewError(e2)
-	}
-
-	initDBRowsTypeDef()
-
-	result := data.NewStruct(dbRowsTypeDef)
-	result.SetAlways(rowsFieldName, rows)
-	result.SetAlways(clientFieldName, db)
-	result.SetAlways(dbFieldName, this)
-	result.SetReadonly(true)
-
-	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
-}
 
 func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
