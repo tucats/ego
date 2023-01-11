@@ -1,4 +1,4 @@
-package runtime
+package db
 
 import (
 	"sync"
@@ -7,18 +7,11 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-// db.Client type specification.
-const dbTypeSpec = `
-type db.Client struct {
-	client 		interface{},
-	asStruct 	bool,
-	rowCount 	int,
-	transaction	interface{},
-	constr 		string,
-}`
-
 var dbTypeDef *data.Type
 var dbTypeDefLock sync.Mutex
+
+var dbRowsTypeDef *data.Type
+var dbRowsTypeDefLock sync.Mutex
 
 func initDBTypeDef() {
 	dbTypeDefLock.Lock()
@@ -111,5 +104,47 @@ func initDBTypeDef() {
 		}, DataBaseAsStruct)
 
 		dbTypeDef = t
+	}
+}
+
+func initDBRowsTypeDef() {
+	dbRowsTypeDefLock.Lock()
+	defer dbRowsTypeDefLock.Unlock()
+
+	if dbRowsTypeDef == nil {
+		t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
+
+		t.DefineFunction("Next", &data.FunctionDeclaration{
+			Name:         "Next",
+			ReceiverType: data.PointerType(t),
+			ReturnTypes:  []*data.Type{data.BoolType},
+		}, rowsNext)
+
+		t.DefineFunction("Scan", &data.FunctionDeclaration{
+			Name: "Scan",
+			Parameters: []data.FunctionParameter{
+				{
+					Name:     "value",
+					ParmType: data.PointerType(&data.InterfaceType),
+				},
+			},
+			Variadic:     true,
+			ReceiverType: data.PointerType(t),
+			ReturnTypes:  []*data.Type{&data.ErrorType},
+		}, rowsScan)
+
+		t.DefineFunction("Close", &data.FunctionDeclaration{
+			Name:         "Close",
+			ReceiverType: data.PointerType(t),
+			ReturnTypes:  []*data.Type{&data.ErrorType},
+		}, rowsClose)
+
+		t.DefineFunction("Headings", &data.FunctionDeclaration{
+			Name:         "Headings",
+			ReceiverType: data.PointerType(t),
+			ReturnTypes:  []*data.Type{data.ArrayType(&data.StringType)},
+		}, rowsHeadings)
+
+		dbRowsTypeDef = t
 	}
 }

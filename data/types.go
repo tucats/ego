@@ -190,10 +190,59 @@ func (t Type) FunctionNameList() string {
 		}
 
 		b.WriteString(k)
-		b.WriteString("()")
+
+		// If the name isn't a fully-formed name from the
+		// types formatter, add a "()" as a courtesy to
+		// otherwise-undecorated method names.
+		if !strings.Contains(k, "(") {
+			b.WriteString("()")
+		}
 	}
 
 	return b.String()
+}
+
+// Return a string array containing the list of receiver functions for
+// this type. If there are no functions defined, it returns an
+// empty array.
+func (t Type) FunctionNames() []string {
+	result := []string{}
+
+	if t.kind == TypeKind {
+		t = *t.valueType
+	}
+
+	if len(t.functions) == 0 {
+		return result
+	}
+
+	keys := make([]string, 0)
+
+	for k, v := range t.functions {
+		if v.Declaration != nil {
+			keys = append(keys, v.Declaration.String())
+		} else {
+			keys = append(keys, k)
+		}
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		b := strings.Builder{}
+		b.WriteString(k)
+
+		// If the name isn't a fully-formed name from the
+		// types formatter, add a "()" as a courtesy to
+		// otherwise-undecorated method names.
+		if !strings.Contains(k, "(") {
+			b.WriteString("()")
+		}
+
+		result = append(result, b.String())
+	}
+
+	return result
 }
 
 func (t Type) TypeString() string {

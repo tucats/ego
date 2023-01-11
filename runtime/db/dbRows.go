@@ -1,34 +1,14 @@
-package runtime
+package db
 
 import (
 	"database/sql"
-	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
-
-var dbRowsTypeDef *data.Type
-var dbRowsTypeDefLock sync.Mutex
-
-func initDBRowsTypeDef() {
-	dbRowsTypeDefLock.Lock()
-	defer dbRowsTypeDefLock.Unlock()
-
-	if dbRowsTypeDef == nil {
-		t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
-		t.DefineFunction("Next", nil, rowsNext)
-		t.DefineFunction("Scan", nil, rowsScan)
-		t.DefineFunction("Close", nil, rowsClose)
-		t.DefineFunction("Headings", nil, rowsHeadings)
-
-		dbRowsTypeDef = t
-	}
-}
 
 // DBQueryRows executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.

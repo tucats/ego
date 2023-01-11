@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/runtime/db"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -40,7 +41,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	}))
 
 	s.SetAlways("db", data.NewPackageFromMap("db", map[string]interface{}{
-		"New":              DBNew,
+		"New":              db.DBNew,
 		data.TypeMDKey:     data.PackageType("db"),
 		data.ReadonlyMDKey: true,
 	}))

@@ -349,14 +349,13 @@ func (s *Struct) Reflect() *Struct {
 	}
 
 	// If there are methods associated with this type, add them to the output structure.
-	methods := s.typeDef.FunctionNameList()
-	if methods > "" {
+	methods := s.typeDef.FunctionNames()
+	if len(methods) > 0 {
 		names := make([]interface{}, 0)
 
-		nameList := strings.Split(methods, ",")
-		for _, name := range nameList {
+		for _, name := range methods {
 			if name > "" {
-				names = append(names, strings.TrimSuffix(name, "()"))
+				names = append(names, name)
 			}
 		}
 

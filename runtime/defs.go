@@ -19,14 +19,6 @@ const (
 
 	
 
-	// db.Rows type specification.
-	dbRowsTypeSpec = `
-	type db.Rows struct {
-		client 	interface{},
-		rows 	interface{},
-		db 		interface{},
-	}`
-
 	// rest.Client type specification.
 	restTypeSpec = `
 	type rest.Client struct {
@@ -47,19 +39,14 @@ const (
 	}`
 
 	// Field names for runtime types.
-	asStructFieldName    = "asStruct"
-	baseURLFieldName     = "baseURL"
-	clientFieldName      = "client"
-	constrFieldName      = "constr"
-	dbFieldName          = "db"
-	headersFieldName     = "headers"
-	headingsFieldName    = "headings"
-	mediaTypeFieldName   = "mediaType"
-	responseFieldName    = "response"
-	rowCountFieldName    = "rowCount"
-	rowsFieldName        = "rows"
-	statusFieldName      = "status"
-	tableFieldName       = "table"
-	transactionFieldName = "transaction"
-	verifyFieldName      = "verify"
+	baseURLFieldName   = "baseURL"
+	clientFieldName    = "client"
+	headersFieldName   = "headers"
+	headingsFieldName  = "headings"
+	mediaTypeFieldName = "mediaType"
+	responseFieldName  = "response"
+
+	statusFieldName = "status"
+	tableFieldName  = "table"
+	verifyFieldName = "verify"
 )

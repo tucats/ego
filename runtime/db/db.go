@@ -1,4 +1,4 @@
-package runtime
+package db
 
 import (
 	"database/sql"
@@ -374,4 +374,20 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	}
 
 	return nil, nil, errors.ErrNoFunctionReceiver
+}
+
+// getThis returns a map for the "this" object in the current
+// symbol table.
+func getThisStruct(s *symbols.SymbolTable) *data.Struct {
+	t, ok := s.Get("__this")
+	if !ok {
+		return nil
+	}
+
+	this, ok := t.(*data.Struct)
+	if !ok {
+		return nil
+	}
+
+	return this
 }

@@ -15,6 +15,7 @@ type FunctionDeclaration struct {
 	ReceiverType *Type
 	Parameters   []FunctionParameter
 	ReturnTypes  []*Type
+	Variadic     bool
 }
 
 // dictionary is a descriptive dictionary that shows the declaration string for
@@ -121,7 +122,7 @@ var dictionary = map[string]string{
 	"functions.UUIDParse":         "Parse(value string) (string, error)",
 	"functions.Validate":          "Validate(token string) bool",
 	"functions.WriteFile":         "WriteFile(filename string, data []byte, perms int) (int, error)",
-	"runtime.DBNew":               "New(connection string) *db",
+	"runtime/db.DBNew":            "New(connection string) *db.Client",
 	"runtime.Eval":                "Eval(expressions string) interface{}",
 	"runtime.FormatSymbols":       "Symbols([scope[,format]])",
 	"runtime.LookPath":            "LookPath(command string) string",
@@ -171,6 +172,11 @@ func (f FunctionDeclaration) String() string {
 		}
 
 		r.WriteString(p.Name)
+
+		if f.Variadic && i == len(f.Parameters)-1 {
+			r.WriteString("...")
+		}
+
 		r.WriteRune(' ')
 		r.WriteString(p.ParmType.String())
 	}
@@ -186,7 +192,7 @@ func (f FunctionDeclaration) String() string {
 
 		for i, p := range f.ReturnTypes {
 			if i > 0 {
-				r.WriteRune(',')
+				r.WriteString(", ")
 			}
 
 			r.WriteString(p.ShortTypeString())
