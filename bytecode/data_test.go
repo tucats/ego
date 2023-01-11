@@ -13,7 +13,7 @@ import (
 func TestStructImpl(t *testing.T) {
 	typeDef := data.TypeDefinition("usertype", data.StructureType(
 		data.Field{Name: "active", Type: data.BoolType},
-		data.Field{Name: "test", Type: &data.IntType},
+		data.Field{Name: "test", Type: data.IntType},
 	))
 
 	tests := []struct {

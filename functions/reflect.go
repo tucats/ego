@@ -301,9 +301,9 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // makeDeclaration constructs a native data structure describing a function declaration.
 func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
-	parameterType := data.TypeDefinition(data.NoName, &data.StructType)
-	parameterType.DefineField("name", &data.StringType)
-	parameterType.DefineField(data.TypeMDName, &data.StringType)
+	parameterType := data.TypeDefinition(data.NoName, data.StructType)
+	parameterType.DefineField("name", data.StringType)
+	parameterType.DefineField(data.TypeMDName, data.StringType)
 
 	parameters := data.NewArray(parameterType, len(fd.Parameters))
 
@@ -325,7 +325,7 @@ func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
 
 	declaration["name"] = fd.Name
 	declaration["parameters"] = parameters
-	declaration["returns"] = data.NewArrayFromArray(&data.StringType, returnTypes)
+	declaration["returns"] = data.NewArrayFromArray(data.StringType, returnTypes)
 
 	return data.NewStructFromMap(declaration)
 }

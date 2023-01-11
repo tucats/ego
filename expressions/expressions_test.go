@@ -366,7 +366,7 @@ func TestNew(t *testing.T) {
 			s.SetAlways("name", "Tom")
 			s.SetAlways("b", true)
 			s.SetAlways("roman12", "XII")
-			s.SetAlways("a", data.NewArrayFromArray(&data.InterfaceType, []interface{}{1, "tom", 33., false}))
+			s.SetAlways("a", data.NewArrayFromArray(data.InterfaceType, []interface{}{1, "tom", 33., false}))
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)

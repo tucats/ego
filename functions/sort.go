@@ -169,7 +169,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := data.NewArray(&data.ByteType, len(array))
+		resultArray := data.NewArray(data.ByteType, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -186,7 +186,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Ints(intArray)
 
-		resultArray := data.NewArray(&data.IntType, len(array))
+		resultArray := data.NewArray(data.IntType, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -203,7 +203,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := data.NewArray(&data.Int32Type, len(array))
+		resultArray := data.NewArray(data.Int32Type, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -220,7 +220,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Slice(intArray, func(i, j int) bool { return intArray[i] < intArray[j] })
 
-		resultArray := data.NewArray(&data.Int64Type, len(array))
+		resultArray := data.NewArray(data.Int64Type, len(array))
 
 		for n, i := range intArray {
 			_ = resultArray.Set(n, i)
@@ -237,7 +237,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Slice(floatArray, func(i, j int) bool { return floatArray[i] < floatArray[j] })
 
-		resultArray := data.NewArray(&data.Float64Type, len(array))
+		resultArray := data.NewArray(data.Float64Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)
@@ -254,7 +254,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Float64s(floatArray)
 
-		resultArray := data.NewArray(&data.Float64Type, len(array))
+		resultArray := data.NewArray(data.Float64Type, len(array))
 
 		for n, i := range floatArray {
 			_ = resultArray.Set(n, i)
@@ -271,7 +271,7 @@ func Sort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		sort.Strings(stringArray)
 
-		resultArray := data.NewArray(&data.StringType, len(array))
+		resultArray := data.NewArray(data.StringType, len(array))
 
 		for n, i := range stringArray {
 			_ = resultArray.Set(n, i)

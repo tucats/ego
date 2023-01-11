@@ -52,13 +52,13 @@ func Test_typeCast(t *testing.T) {
 	}{
 		{
 			name: "cast int to string",
-			t:    &data.StringType,
+			t:    data.StringType,
 			v:    55,
 			want: "55",
 		},
 		{
 			name: "cast bool to string",
-			t:    &data.StringType,
+			t:    data.StringType,
 			v:    true,
 			want: "true",
 		},

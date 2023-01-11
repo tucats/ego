@@ -182,7 +182,7 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		count = i + 1
 	}
 
-	r := data.NewArray(&data.StringType, count)
+	r := data.NewArray(data.StringType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, string(ch))
@@ -206,7 +206,7 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		count = i + 1
 	}
 
-	r := data.NewArray(&data.IntType, count)
+	r := data.NewArray(data.IntType, count)
 
 	for i, ch := range v {
 		err := r.Set(i, int(ch))
@@ -349,7 +349,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// We need to store the result in a native Ego array.
-	r := data.NewArray(&data.StringType, len(v))
+	r := data.NewArray(data.StringType, len(v))
 
 	for i, n := range v {
 		err := r.Set(i, n)
@@ -366,7 +366,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := data.String(args[0])
 	t := tokenizer.New(src)
 
-	r := data.NewArray(&data.StringType, len(t.Tokens))
+	r := data.NewArray(data.StringType, len(t.Tokens))
 
 	var err error
 
@@ -383,7 +383,7 @@ func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // URLPattern uses ParseURLPattern and then puts the result in a
 // native Ego map structure.
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	result := data.NewMap(&data.StringType, &data.InterfaceType)
+	result := data.NewMap(data.StringType, data.InterfaceType)
 
 	patternMap, match := ParseURLPattern(data.String(args[0]), data.String(args[1]))
 	if !match {
@@ -516,7 +516,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	fields := strings.Fields(a)
 
-	result := data.NewArray(&data.StringType, len(fields))
+	result := data.NewArray(data.StringType, len(fields))
 
 	for idx, f := range fields {
 		_ = result.Set(idx, f)

@@ -97,7 +97,7 @@ func Output(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		resultArray[n] = v
 	}
 
-	result := data.NewArrayFromArray(&data.StringType, resultArray)
+	result := data.NewArrayFromArray(data.StringType, resultArray)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return result, nil

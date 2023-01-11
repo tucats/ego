@@ -113,7 +113,7 @@ func (m *Map) Keys() []interface{} {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if m.keyType.IsType(&StringType) {
+	if m.keyType.IsType(StringType) {
 		idx := 0
 		array := make([]string, len(m.data))
 
@@ -131,7 +131,7 @@ func (m *Map) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(&IntType) {
+	} else if m.keyType.IsType(IntType) {
 		idx := 0
 		array := make([]int, len(m.data))
 
@@ -149,7 +149,7 @@ func (m *Map) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(&Float64Type) {
+	} else if m.keyType.IsType(Float64Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -167,7 +167,7 @@ func (m *Map) Keys() []interface{} {
 		}
 
 		return result
-	} else if m.keyType.IsType(&Float32Type) {
+	} else if m.keyType.IsType(Float32Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
 
@@ -268,7 +268,7 @@ func (m *Map) Type() *Type {
 // create a new EgoMap with the appropriate types, populated with the values from
 // the source map.
 func NewMapFromMap(sourceMap interface{}) *Map {
-	valueType := &InterfaceType
+	valueType := InterfaceType
 	keyType := InterfaceType
 
 	valueKind := reflect.TypeOf(sourceMap).Elem().Kind()
@@ -276,25 +276,25 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 
 	switch valueKind {
 	case reflect.Int, reflect.Int32, reflect.Int64:
-		valueType = &IntType
+		valueType = IntType
 
 	case reflect.Float64:
-		valueType = &Float64Type
+		valueType = Float64Type
 
 	case reflect.Float32:
-		valueType = &Float32Type
+		valueType = Float32Type
 
 	case reflect.Bool:
 		valueType = BoolType
 
 	case reflect.String:
-		valueType = &StringType
+		valueType = StringType
 
 	case reflect.Map:
-		valueType = MapType(&InterfaceType, &InterfaceType)
+		valueType = MapType(InterfaceType, InterfaceType)
 
 	case reflect.Array:
-		valueType = ArrayType(&InterfaceType)
+		valueType = ArrayType(InterfaceType)
 	}
 
 	switch keyKind {
@@ -308,13 +308,13 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 		keyType = Float64Type
 
 	case reflect.Bool:
-		keyType = *BoolType
+		keyType = BoolType
 
 	case reflect.String:
 		keyType = StringType
 	}
 
-	result := NewMap(&keyType, valueType)
+	result := NewMap(keyType, valueType)
 	val := reflect.ValueOf(sourceMap)
 
 	for _, key := range val.MapKeys() {

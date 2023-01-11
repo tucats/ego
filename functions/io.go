@@ -33,7 +33,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.NewError(err)
 	}
 
-	return data.NewArray(&data.ByteType, 0).Append(content), nil
+	return data.NewArray(data.ByteType, 0).Append(content), nil
 }
 
 // WriteFile writes a string to a file.
@@ -99,7 +99,7 @@ func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	list, err := ExpandPath(path, ext)
 
 	// Rewrap as an Ego array
-	result := data.NewArray(&data.StringType, 0)
+	result := data.NewArray(data.StringType, 0)
 
 	for _, item := range list {
 		result.Append(item)
@@ -159,7 +159,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 // ReadDir implements the io.readdir() function.
 func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
-	result := data.NewArray(&data.InterfaceType, 0)
+	result := data.NewArray(data.InterfaceType, 0)
 
 	path = sandboxName(path)
 
@@ -169,7 +169,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	for _, file := range files {
-		entry := data.NewMap(&data.StringType, &data.InterfaceType)
+		entry := data.NewMap(data.StringType, data.InterfaceType)
 
 		_, _ = entry.Set("name", file.Name())
 		_, _ = entry.Set("directory", file.IsDir())
@@ -230,7 +230,7 @@ func Clearenv(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Environ(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	env := os.Environ()
 
-	result := data.NewArray(&data.StringType, len(env))
+	result := data.NewArray(data.StringType, len(env))
 
 	for index, value := range env {
 		if err := result.Set(index, value); err != nil {

@@ -137,10 +137,10 @@ func Test_negateByteCode(t *testing.T) {
 			name: "negate (reverse) an array",
 			arg:  nil,
 			stack: []interface{}{data.NewArrayFromArray(
-				&data.StringType,
+				data.StringType,
 				[]interface{}{-1, 2})},
 			want: data.NewArrayFromArray(
-				&data.StringType,
+				data.StringType,
 				[]interface{}{2, -1}),
 		},
 		{
@@ -151,7 +151,7 @@ func Test_negateByteCode(t *testing.T) {
 				"bar": int32(-3),
 			})},
 			want: data.NewArrayFromArray(
-				&data.StringType,
+				data.StringType,
 				[]interface{}{2, -1}),
 			err: errors.ErrInvalidType,
 		},
@@ -305,11 +305,11 @@ func Test_addByteCode(t *testing.T) {
 			stack: []interface{}{
 				"xyzzy",
 				data.NewArrayFromArray(
-					&data.StringType,
+					data.StringType,
 					[]interface{}{"foo", "bar"}),
 			},
 			want: data.NewArrayFromArray(
-				&data.StringType,
+				data.StringType,
 				[]interface{}{"foo", "bar", "xyzzy"}),
 			err: errors.ErrInvalidType.Context("interface{}"),
 		},
@@ -450,7 +450,7 @@ func Test_andByteCode(t *testing.T) {
 			stack: []interface{}{
 				"xyzzy",
 				data.NewArrayFromArray(
-					&data.StringType,
+					data.StringType,
 					[]interface{}{"arrays are invalid but cast as", "false"}),
 			},
 			want: false,
@@ -593,7 +593,7 @@ func Test_orByteCode(t *testing.T) {
 			stack: []interface{}{
 				"true",
 				data.NewArrayFromArray(
-					&data.StringType,
+					data.StringType,
 					[]interface{}{"arrays are invalid but cast as", "false"}),
 			},
 			want: true,

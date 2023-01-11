@@ -50,7 +50,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err e
 		resultArray[n] = v
 	}
 
-	result = data.NewArrayFromArray(&data.StringType, resultArray)
+	result = data.NewArrayFromArray(data.StringType, resultArray)
 
 	return result, err
 }

@@ -264,7 +264,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 		if args, ok := arrayV.(*data.Array); ok {
 			// If no more args in the list to satisfy, push empty array
 			if args.Len() < argPos {
-				r := data.NewArray(&data.InterfaceType, 0)
+				r := data.NewArray(data.InterfaceType, 0)
 
 				return c.stackPush(r)
 			}
@@ -274,7 +274,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 				return err
 			}
 
-			return c.stackPush(data.NewArrayFromArray(&data.InterfaceType, value))
+			return c.stackPush(data.NewArrayFromArray(data.InterfaceType, value))
 		}
 	}
 

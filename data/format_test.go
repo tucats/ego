@@ -15,22 +15,22 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "struct type",
-			arg:  TypeDefinition("bang", &StructType),
+			arg:  TypeDefinition("bang", StructType),
 			want: "bang struct",
 		},
 		{
 			name: "struct",
-			arg:  &StructType,
+			arg:  StructType,
 			want: "struct",
 		},
 		{
 			name: "array",
-			arg:  NewArrayFromArray(&IntType, []interface{}{1, 2, 3}),
+			arg:  NewArrayFromArray(IntType, []interface{}{1, 2, 3}),
 			want: "[1, 2, 3]",
 		},
 		{
 			name: "array type",
-			arg:  ArrayType(&IntType),
+			arg:  ArrayType(IntType),
 			want: "[]int",
 		},
 

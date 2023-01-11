@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-
 func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.ErrArgumentCount
@@ -107,5 +106,5 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return functions.MultiValueReturn{Value: []interface{}{data.NewMapFromMap(rowMap), nil}}, nil
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{data.NewArrayFromArray(&data.InterfaceType, rowValues), nil}}, nil
+	return functions.MultiValueReturn{Value: []interface{}{data.NewArrayFromArray(data.InterfaceType, rowValues), nil}}, nil
 }

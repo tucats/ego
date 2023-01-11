@@ -108,7 +108,7 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				values[i] = j
 			}
 
-			query[key] = data.NewArrayFromArray(&data.StringType, values)
+			query[key] = data.NewArrayFromArray(data.StringType, values)
 		}
 
 		urlParts[urlQueryElmeent] = data.NewMapFromMap(query)

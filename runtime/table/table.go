@@ -74,7 +74,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Move the string array of headings into a native array type, which can
 	// be read by the caller.
-	headingsArray := data.NewArray(&data.StringType, len(headings))
+	headingsArray := data.NewArray(data.StringType, len(headings))
 
 	for i, h := range headings {
 		_ = headingsArray.Set(i, h)

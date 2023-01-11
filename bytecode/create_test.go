@@ -27,7 +27,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{3, 5, data.IntType},
 				i:     2,
 			},
-			want: data.NewArrayFromArray(&data.IntType, []interface{}{3, 5}),
+			want: data.NewArrayFromArray(data.IntType, []interface{}{3, 5}),
 		},
 		{
 			name: "[]string{\"Tom\", \"Cole\"}",
@@ -35,7 +35,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{"Cole", "Tom", data.StringType},
 				i:     2,
 			},
-			want: data.NewArrayFromArray(&data.IntType, []interface{}{3, 5}),
+			want: data.NewArrayFromArray(data.IntType, []interface{}{3, 5}),
 		},
 	}
 	for _, tt := range tests {
@@ -68,14 +68,14 @@ func Test_arrayByteCode(t *testing.T) {
 			arg:   2,
 			stack: []interface{}{3, "test", float64(3.5)},
 			err:   nil,
-			want:  data.NewArrayFromArray(&data.InterfaceType, []interface{}{"test", float64(3.5)}),
+			want:  data.NewArrayFromArray(data.InterfaceType, []interface{}{"test", float64(3.5)}),
 		},
 		{
 			name:  "typed array",
 			arg:   []interface{}{3, data.Int32Type},
 			stack: []interface{}{byte(3), "55", float64(3.5)},
 			err:   nil,
-			want:  data.NewArrayFromArray(&data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
+			want:  data.NewArrayFromArray(data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
 		},
 		{
 			name:   "untyped static (invalid) array",
@@ -83,21 +83,21 @@ func Test_arrayByteCode(t *testing.T) {
 			stack:  []interface{}{byte(3), "55", float64(3.5)},
 			err:    errors.ErrInvalidType.Context("string"),
 			static: true,
-			want:   data.NewArrayFromArray(&data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
+			want:   data.NewArrayFromArray(data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
 		},
 		{
 			name:   "untyped static (valid) array",
 			arg:    3,
 			stack:  []interface{}{int32(10), int32(11), int32(12)},
 			static: true,
-			want:   data.NewArrayFromArray(&data.Int32Type, []interface{}{int32(10), int32(11), int32(12)}),
+			want:   data.NewArrayFromArray(data.Int32Type, []interface{}{int32(10), int32(11), int32(12)}),
 		},
 		{
 			name:  "stack underflow",
 			arg:   3,
 			stack: []interface{}{"test", float64(3.5)},
 			err:   errors.ErrStackUnderflow,
-			want:  data.NewArrayFromArray(&data.InterfaceType, []interface{}{"test", float64(3.5)}),
+			want:  data.NewArrayFromArray(data.InterfaceType, []interface{}{"test", float64(3.5)}),
 		},
 	}
 
@@ -173,8 +173,8 @@ func Test_makeMapByteCode(t *testing.T) {
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair
 				"sarah", 31, // Key/value pair
-				&data.IntType,    // Value type
-				&data.StringType, // Key type
+				data.IntType,    // Value type
+				data.StringType, // Key type
 			},
 			err:  nil,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
@@ -190,7 +190,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name: "Missing value type",
 			arg:  4,
 			stack: []interface{}{
-				&data.StringType, // Key type
+				data.StringType, // Key type
 			},
 			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
@@ -202,8 +202,8 @@ func Test_makeMapByteCode(t *testing.T) {
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair
 				"sarah", 31, // Key/value pair
-				&data.IntType,    // Value type
-				&data.StringType, // Key type
+				data.IntType,    // Value type
+				data.StringType, // Key type
 			},
 			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
@@ -216,8 +216,8 @@ func Test_makeMapByteCode(t *testing.T) {
 				"mary", 47, // Key/value pair
 				"chelsea", 10, // Key/value pair
 				"sarah", 31, // Key/value pair
-				&data.IntType,    // Value type
-				&data.StringType, // Key type
+				data.IntType,    // Value type
+				data.StringType, // Key type
 			},
 			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),

@@ -35,7 +35,7 @@ func initializeRestType() {
 					Name:         "Close",
 					ReceiverType: t,
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Close,
@@ -48,11 +48,11 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "endpoint",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Get,
@@ -65,15 +65,15 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "endpoint",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 						{
 							Name:     "body",
-							ParmType: &data.InterfaceType,
+							ParmType: data.InterfaceType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Post,
@@ -86,11 +86,11 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "endpoint",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Delete,
@@ -103,7 +103,7 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "url",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
@@ -137,7 +137,7 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "mediaType",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
@@ -152,7 +152,7 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "tokenString",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
@@ -169,11 +169,11 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "username",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 						{
 							Name:     "password",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
@@ -207,11 +207,11 @@ func initializeRestType() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "code",
-							ParmType: &data.IntType,
+							ParmType: data.IntType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.StringType,
+						data.StringType,
 					},
 				},
 				Value: Status,

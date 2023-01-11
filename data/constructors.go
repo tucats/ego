@@ -2,24 +2,24 @@ package data
 
 // Prebuilt definitions for each given type.
 
-var UndefinedType = Type{
+var UndefinedType = &Type{
 	name: UndefinedTypeName,
 	kind: UndefinedKind,
 }
 
-var StructType = Type{
+var StructType = &Type{
 	name: StructTypeName,
 	kind: StructKind,
 }
 
-var InterfaceType = Type{
+var InterfaceType = &Type{
 	name:      InterfaceTypeName,
 	kind:      InterfaceKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var ErrorType = Type{
+var ErrorType = &Type{
 	name: ErrorTypeName,
 	kind: ErrorKind,
 }
@@ -35,77 +35,77 @@ var BoolType = &Type{
 	valueType: nil,
 }
 
-var ByteType = Type{
+var ByteType = &Type{
 	name:      ByteTypeName,
 	kind:      ByteKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var Int32Type = Type{
+var Int32Type = &Type{
 	name:      Int32TypeName,
 	kind:      Int32Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var IntType = Type{
+var IntType = &Type{
 	name:      IntTypeName,
 	kind:      IntKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var Int64Type = Type{
+var Int64Type = &Type{
 	name:      Int64TypeName,
 	kind:      Int64Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var Float64Type = Type{
+var Float64Type = &Type{
 	name:      Float64TypeName,
 	kind:      Float64Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var Float32Type = Type{
+var Float32Type = &Type{
 	name:      Float32TypeName,
 	kind:      Float32Kind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var StringType = Type{
+var StringType = &Type{
 	name:      StringTypeName,
 	kind:      StringKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var ChanType = Type{
+var ChanType = &Type{
 	name:      "chan",
 	kind:      ChanKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var WaitGroupType = Type{
+var WaitGroupType = &Type{
 	name:      "WaitGroup",
 	kind:      WaitGroupKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var MutexType = Type{
+var MutexType = &Type{
 	name:      "Mutex",
 	kind:      MutexKind,
 	keyType:   nil,
 	valueType: nil,
 }
 
-var VarArgsType = Type{
+var VarArgsType = &Type{
 	name: "...",
 	kind: VarArgsKind,
 }
@@ -169,6 +169,6 @@ func PackageType(name string) *Type {
 	return &Type{
 		name:      name,
 		kind:      PackageKind,
-		valueType: &StructType,
+		valueType: StructType,
 	}
 }

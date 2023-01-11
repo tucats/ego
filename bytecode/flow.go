@@ -290,7 +290,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// Recode the argument list as a native array
-		c.symbolSetAlways("__args", data.NewArrayFromArray(&data.InterfaceType, args))
+		c.symbolSetAlways("__args", data.NewArrayFromArray(data.InterfaceType, args))
 
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego

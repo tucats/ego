@@ -39,7 +39,7 @@ func TestFunctionLen(t *testing.T) {
 			args: args{
 				[]interface{}{
 					data.NewArrayFromArray(
-						&data.InterfaceType,
+						data.InterfaceType,
 						[]interface{}{
 							true,
 							3.14,
@@ -94,20 +94,20 @@ func TestFunctionSort(t *testing.T) {
 		{
 			name: "integer sort",
 			args: args{[]interface{}{
-				data.NewArrayFromArray(&data.IntType, []interface{}{55, 2, 18})},
+				data.NewArrayFromArray(data.IntType, []interface{}{55, 2, 18})},
 			},
 			want: []interface{}{2, 18, 55},
 		},
 		{
 			name: "float64 sort",
 			args: args{[]interface{}{
-				data.NewArrayFromArray(&data.Float64Type, []interface{}{55.0, 2, 18.5})}},
+				data.NewArrayFromArray(data.Float64Type, []interface{}{55.0, 2, 18.5})}},
 			want: []interface{}{2.0, 18.5, 55.0},
 		},
 		{
 			name: "string sort",
 			args: args{[]interface{}{
-				data.NewArrayFromArray(&data.StringType, []interface{}{"pony", "cake", "unicorn", 5})}},
+				data.NewArrayFromArray(data.StringType, []interface{}{"pony", "cake", "unicorn", 5})}},
 			want: []interface{}{"5", "cake", "pony", "unicorn"},
 		},
 		// TODO: Add test cases.
@@ -147,12 +147,12 @@ func TestFunctionMembers(t *testing.T) {
 					map[string]interface{}{"name": "Tom", "age": 55},
 				),
 			}},
-			want: data.NewArrayFromArray(&data.StringType, []interface{}{"age", "name"}),
+			want: data.NewArrayFromArray(data.StringType, []interface{}{"age", "name"}),
 		},
 		{
 			name: "empty struct",
-			args: args{[]interface{}{data.NewStruct(&data.StructType)}},
-			want: data.NewArrayFromArray(&data.StringType, []interface{}{}),
+			args: args{[]interface{}{data.NewStruct(data.StructType)}},
+			want: data.NewArrayFromArray(data.StringType, []interface{}{}),
 		},
 		{
 			name:    "wrong type struct",
@@ -209,7 +209,7 @@ func TestReflect(t *testing.T) {
 				"readonly": false,
 				"static":   true,
 				"istype":   false,
-				"members":  data.NewArrayFromArray(&data.StringType, []interface{}{"age", "name"}),
+				"members":  data.NewArrayFromArray(data.StringType, []interface{}{"age", "name"}),
 			}),
 			wantErr: false,
 		},
@@ -310,7 +310,7 @@ func TestLength(t *testing.T) {
 		{
 			name: "simple array",
 			args: []interface{}{
-				data.NewArrayFromArray(&data.IntType, []interface{}{1, 2, 3, 4}),
+				data.NewArrayFromArray(data.IntType, []interface{}{1, 2, 3, 4}),
 			},
 			want: 4,
 		},

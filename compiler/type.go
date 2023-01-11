@@ -60,14 +60,14 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 
 		keyType, err := c.parseTypeSpec()
 		if err != nil {
-			return &data.UndefinedType, err
+			return data.UndefinedType, err
 		}
 
 		c.t.IsNext(tokenizer.EndOfArrayToken)
 
 		valueType, err := c.parseTypeSpec()
 		if err != nil {
-			return &data.UndefinedType, err
+			return data.UndefinedType, err
 		}
 
 		return data.MapType(keyType, valueType), nil
@@ -102,7 +102,7 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 		return typeDef, nil
 	}
 
-	return &data.UndefinedType, nil
+	return data.UndefinedType, nil
 }
 
 // Given a string expression of a type specification, compile it asn return the
@@ -120,7 +120,7 @@ func CompileTypeSpec(source string) (*data.Type, error) {
 	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
 		name := typeCompiler.t.Next()
 		if !name.IsIdentifier() {
-			return &data.UndefinedType, errors.ErrInvalidSymbolName.Context(name)
+			return data.UndefinedType, errors.ErrInvalidSymbolName.Context(name)
 		}
 
 		nameSpelling = name.Spelling()
@@ -128,7 +128,7 @@ func CompileTypeSpec(source string) (*data.Type, error) {
 		if typeCompiler.t.IsNext(tokenizer.DotToken) {
 			name2 := typeCompiler.t.Next()
 			if !name2.IsIdentifier() {
-				return &data.UndefinedType, errors.ErrInvalidSymbolName.Context(name2)
+				return data.UndefinedType, errors.ErrInvalidSymbolName.Context(name2)
 			}
 
 			nameSpelling = nameSpelling + "." + name2.Spelling()

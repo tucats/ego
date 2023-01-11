@@ -100,7 +100,7 @@ func ProfileKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		result[i] = key
 	}
 
-	return data.NewArrayFromArray(&data.StringType, result), nil
+	return data.NewArrayFromArray(data.StringType, result), nil
 }
 
 // Length implements the len() function.
@@ -177,7 +177,7 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *data.Map:
-		keys := data.NewArray(&data.StringType, 0)
+		keys := data.NewArray(data.StringType, 0)
 		keyList := v.Keys()
 
 		for i, v := range keyList {
@@ -192,7 +192,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return v.FieldNamesArray(), nil
 
 	case *data.Package:
-		keys := data.NewArray(&data.StringType, 0)
+		keys := data.NewArray(data.StringType, 0)
 
 		for _, k := range v.Keys() {
 			if !strings.HasPrefix(k, data.MetadataPrefix) {
@@ -246,7 +246,7 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // additional argument is added to the array as-is.
 func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := make([]interface{}, 0)
-	kind := &data.InterfaceType
+	kind := data.InterfaceType
 
 	for i, j := range args {
 		if array, ok := j.(*data.Array); ok && i == 0 {
@@ -314,7 +314,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, found := s.Get("__cli_args")
 	if !found {
-		r = data.NewArray(&data.StringType, 0)
+		r = data.NewArray(data.StringType, 0)
 	}
 
 	return r, nil
@@ -411,7 +411,7 @@ func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Now scan over the list of now-unique names and make an Ego array
 	// out of the values.
-	packages := data.NewArray(&data.StringType, 0)
+	packages := data.NewArray(data.StringType, 0)
 	for name := range uniqueNames {
 		packages.Append(name)
 	}

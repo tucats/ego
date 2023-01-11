@@ -50,5 +50,5 @@ func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		xLines[i] = j
 	}
 
-	return data.NewArrayFromArray(&data.StringType, xLines), nil
+	return data.NewArrayFromArray(data.StringType, xLines), nil
 }

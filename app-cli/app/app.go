@@ -119,19 +119,19 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	platformType := data.StructureType(
 		data.Field{
 			Name: "os",
-			Type: &data.StringType,
+			Type: data.StringType,
 		},
 		data.Field{
 			Name: "arch",
-			Type: &data.StringType,
+			Type: data.StringType,
 		},
 		data.Field{
 			Name: "go",
-			Type: &data.StringType,
+			Type: data.StringType,
 		},
 		data.Field{
 			Name: "cpus",
-			Type: &data.IntType,
+			Type: data.IntType,
 		},
 	)
 

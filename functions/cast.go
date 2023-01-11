@@ -106,14 +106,14 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// make a new waitgroup object.
 	switch args[0].(type) {
 	case sync.WaitGroup:
-		return data.InstanceOfType(&data.WaitGroupType), nil
+		return data.InstanceOfType(data.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
 	// cast attempt will yield a warning on invalid mutex copy operation.
 	switch args[0].(type) {
 	case sync.Mutex:
-		return data.InstanceOfType(&data.MutexType), nil
+		return data.InstanceOfType(data.MutexType), nil
 	}
 
 	// If it's a channel, just return the value
@@ -278,7 +278,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	source := args[0]
 	if len(args) > 2 {
-		source = data.NewArrayFromArray(&data.InterfaceType, args[:len(args)-1])
+		source = data.NewArrayFromArray(data.InterfaceType, args[:len(args)-1])
 	}
 
 	if kind.IsKind(data.StringKind) {
@@ -356,8 +356,8 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return r, nil
 
 	case string:
-		if kind.IsType(data.ArrayType(&data.IntType)) {
-			r := data.NewArray(&data.IntType, 0)
+		if kind.IsType(data.ArrayType(data.IntType)) {
+			r := data.NewArray(data.IntType, 0)
 
 			for _, rune := range actual {
 				r.Append(int(rune))

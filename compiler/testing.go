@@ -22,7 +22,7 @@ func initTestType() {
 		t := data.TypeDefinition("Testing",
 			data.StructureType(data.Field{
 				Name: "description",
-				Type: &data.StringType,
+				Type: data.StringType,
 			}))
 
 		// Define the type receiver functions

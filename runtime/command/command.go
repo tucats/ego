@@ -36,7 +36,7 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_ = result.Set("Path", cmd.Path)
 
 	// Also store away the native argument list as an Ego array
-	a := data.NewArray(&data.StringType, len(cmd.Args))
+	a := data.NewArray(data.StringType, len(cmd.Args))
 	for n, v := range cmd.Args {
 		_ = a.Set(n, v)
 	}

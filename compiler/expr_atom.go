@@ -55,7 +55,7 @@ func (c *Compiler) expressionAtom() error {
 	// Is an empty struct?
 	if t == tokenizer.EmptyInitializerToken {
 		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, data.NewStruct(&data.StructType).SetStatic(false))
+		c.b.Emit(bytecode.Push, data.NewStruct(data.StructType).SetStatic(false))
 
 		return nil
 	}

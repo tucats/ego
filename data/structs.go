@@ -298,7 +298,7 @@ func (s *Struct) FieldNamesArray() *Array {
 		keyValues[i] = v
 	}
 
-	return NewArrayFromArray(&StringType, keyValues)
+	return NewArrayFromArray(StringType, keyValues)
 }
 
 func (s *Struct) TypeString() string {
@@ -383,7 +383,7 @@ func (s *Struct) Reflect() *Struct {
 			}
 		}
 
-		m["methods"] = NewArrayFromArray(&StringType, names)
+		m["methods"] = NewArrayFromArray(StringType, names)
 	}
 
 	m["istype"] = false

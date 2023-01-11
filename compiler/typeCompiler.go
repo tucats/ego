@@ -19,12 +19,12 @@ func (c *Compiler) typeEmitter(name string) error {
 
 func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 	if _, found := c.types[name]; found {
-		return &data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
+		return data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
 	}
 
 	baseType, err := c.parseType(name, false)
 	if err != nil {
-		return &data.UndefinedType, err
+		return data.UndefinedType, err
 	}
 
 	typeInfo := data.TypeDefinition(name, baseType)
@@ -54,20 +54,20 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 	if c.t.Peek(1) == tokenizer.ErrorToken {
 		c.t.Advance(1)
 
-		return &data.ErrorType, nil
+		return data.ErrorType, nil
 	}
 
 	// Empty interface
 	if c.t.Peek(1) == tokenizer.EmptyInterfaceToken {
 		c.t.Advance(1)
 
-		return &data.InterfaceType, nil
+		return data.InterfaceType, nil
 	}
 
 	if c.t.Peek(1) == tokenizer.InterfaceToken && c.t.Peek(2) == tokenizer.EmptyInitializerToken {
 		c.t.Advance(2)
 
-		return &data.InterfaceType, nil
+		return data.InterfaceType, nil
 	}
 
 	// Interfaces
@@ -80,7 +80,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			f, err := c.ParseFunctionDeclaration()
 			if err != nil {
-				return &data.UndefinedType, err
+				return data.UndefinedType, err
 			}
 
 			t.DefineFunction(f.Name, f, nil)
@@ -95,16 +95,16 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		keyType, err := c.parseType("", false)
 		if err != nil {
-			return &data.UndefinedType, err
+			return data.UndefinedType, err
 		}
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return &data.UndefinedType, c.error(errors.ErrMissingBracket)
+			return data.UndefinedType, c.error(errors.ErrMissingBracket)
 		}
 
 		valueType, err := c.parseType("", false)
 		if err != nil {
-			return &data.UndefinedType, err
+			return data.UndefinedType, err
 		}
 
 		return data.MapType(keyType, valueType), nil
@@ -118,7 +118,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			name := c.t.Next()
 			if !name.IsIdentifier() {
-				return &data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
+				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.
@@ -165,7 +165,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			for c.t.IsNext(tokenizer.CommaToken) {
 				nextField := c.t.Next()
 				if !nextField.IsIdentifier() {
-					return &data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
+					return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
 				}
 
 				fieldNames = append(fieldNames, nextField.Spelling())
@@ -173,7 +173,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 			fieldType, err := c.parseType("", false)
 			if err != nil {
-				return &data.UndefinedType, err
+				return data.UndefinedType, err
 			}
 
 			for _, fieldName := range fieldNames {
@@ -192,7 +192,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		valueType, err := c.parseType("", false)
 		if err != nil {
-			return &data.UndefinedType, err
+			return data.UndefinedType, err
 		}
 
 		return data.ArrayType(valueType), nil
@@ -241,7 +241,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
 	}
 
-	return &data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
+	return data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

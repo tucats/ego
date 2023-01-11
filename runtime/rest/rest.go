@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-
 // New implements the New() rest function.
 func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 && len(args) != 2 {
@@ -119,10 +118,10 @@ func Media(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // of structs.
 func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.Array {
 	cookies := r.Cookies()
-	result := data.NewArray(&data.InterfaceType, len(cookies))
+	result := data.NewArray(data.InterfaceType, len(cookies))
 
 	for i, v := range r.Cookies() {
-		cookie := data.NewMap(&data.StringType, &data.InterfaceType)
+		cookie := data.NewMap(data.StringType, data.InterfaceType)
 
 		_, _ = cookie.Set("expires", v.Expires.String())
 		_, _ = cookie.Set("name", v.Name)
@@ -138,7 +137,7 @@ func fetchCookies(s *symbols.SymbolTable, r *resty.Response) *data.Array {
 // headerMap is a support function that extracts the header data from a
 // rest response, and formats it to be an Ego map.
 func headerMap(response *resty.Response) *data.Map {
-	headers := data.NewMap(&data.StringType, &data.InterfaceType)
+	headers := data.NewMap(data.StringType, data.InterfaceType)
 
 	for k, v := range response.Header() {
 		_, _ = headers.Set(k, strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", v), "]"), "["))

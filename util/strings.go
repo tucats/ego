@@ -63,7 +63,7 @@ func MakeSortedArray(array []string) *data.Array {
 		intermediateArray[i] = v
 	}
 
-	result := data.NewArrayFromArray(&data.StringType, intermediateArray)
+	result := data.NewArrayFromArray(data.StringType, intermediateArray)
 
 	return result
 }

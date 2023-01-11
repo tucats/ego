@@ -595,16 +595,16 @@ func (t Type) FieldNames() []string {
 // be a structure type, and the field name must exist.
 func (t Type) Field(name string) (*Type, error) {
 	if t.kind != StructKind {
-		return &UndefinedType, errors.ErrInvalidStruct
+		return UndefinedType, errors.ErrInvalidStruct
 	}
 
 	if t.fields == nil {
-		return &UndefinedType, errors.ErrInvalidField
+		return UndefinedType, errors.ErrInvalidField
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return &UndefinedType, errors.ErrInvalidField
+		return UndefinedType, errors.ErrInvalidField
 	}
 
 	return ofType, nil
@@ -770,61 +770,61 @@ func TypeOf(i interface{}) *Type {
 		return PointerType(baseType)
 
 	case *sync.WaitGroup:
-		return &WaitGroupType
+		return WaitGroupType
 
 	case **sync.WaitGroup:
-		return PointerType(&WaitGroupType)
+		return PointerType(WaitGroupType)
 
 	case *sync.Mutex:
-		return &MutexType
+		return MutexType
 
 	case **sync.Mutex:
-		return PointerType(&MutexType)
+		return PointerType(MutexType)
 
 	case bool:
 		return BoolType
 
 	case byte:
-		return &ByteType
+		return ByteType
 
 	case int32:
-		return &Int32Type
+		return Int32Type
 
 	case int:
-		return &IntType
+		return IntType
 
 	case int64:
-		return &Int64Type
+		return Int64Type
 
 	case float32:
-		return &Float32Type
+		return Float32Type
 
 	case float64:
-		return &Float64Type
+		return Float64Type
 
 	case string:
-		return &StringType
+		return StringType
 
 	case *byte:
-		return PointerType(&ByteType)
+		return PointerType(ByteType)
 
 	case *int32:
-		return PointerType(&Int32Type)
+		return PointerType(Int32Type)
 
 	case *int:
-		return PointerType(&IntType)
+		return PointerType(IntType)
 
 	case *int64:
-		return PointerType(&Int64Type)
+		return PointerType(Int64Type)
 
 	case *float32:
-		return PointerType(&Float32Type)
+		return PointerType(Float32Type)
 
 	case *float64:
-		return PointerType(&Float64Type)
+		return PointerType(Float64Type)
 
 	case *string:
-		return PointerType(&StringType)
+		return PointerType(StringType)
 
 	case *bool:
 		return PointerType(BoolType)
@@ -846,10 +846,10 @@ func TypeOf(i interface{}) *Type {
 		}
 
 	case *Channel:
-		return PointerType(&ChanType)
+		return PointerType(ChanType)
 
 	default:
-		return &InterfaceType
+		return InterfaceType
 	}
 }
 
@@ -903,7 +903,7 @@ func IsBaseType(v interface{}, t *Type) bool {
 func TypeOfPointer(v interface{}) *Type {
 	if p, ok := v.(Type); ok {
 		if p.kind != PointerKind || p.valueType == nil {
-			return &UndefinedType
+			return UndefinedType
 		}
 
 		return p.valueType
@@ -912,7 +912,7 @@ func TypeOfPointer(v interface{}) *Type {
 	// Is this a pointer to an actual native interface?
 	p, ok := v.(*interface{})
 	if !ok {
-		return &UndefinedType
+		return UndefinedType
 	}
 
 	actual := *p
@@ -1009,7 +1009,7 @@ func (t Type) Reflect() *Struct {
 	}
 
 	if len(functionList) > 0 {
-		functions := NewArray(&StringType, len(functionList))
+		functions := NewArray(StringType, len(functionList))
 
 		names := make([]string, 0)
 		for k := range functionList {

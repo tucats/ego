@@ -335,7 +335,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
-	args := data.NewArrayFromArray(&data.StringType, programArgs)
+	args := data.NewArrayFromArray(data.StringType, programArgs)
 	symbolTable.SetAlways("__cli_args", args)
 	symbolTable.SetAlways("__static_data_types", staticTypes)
 

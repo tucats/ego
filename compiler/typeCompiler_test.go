@@ -23,8 +23,8 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			arg:      "map[string]int",
 			typeName: "type0",
 			want: data.TypeDefinition("type0", data.MapType(
-				&data.StringType,
-				&data.IntType)),
+				data.StringType,
+				data.IntType)),
 			wantErr: nil,
 		},
 		{
@@ -32,8 +32,8 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			arg:      "struct{ age int name string }",
 			typeName: "type1",
 			want: data.TypeDefinition("type1", data.StructureType(
-				data.Field{Name: "age", Type: &data.IntType},
-				data.Field{Name: "name", Type: &data.StringType},
+				data.Field{Name: "age", Type: data.IntType},
+				data.Field{Name: "name", Type: data.StringType},
 			)),
 			wantErr: nil,
 		},
@@ -41,7 +41,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 			name:     "int",
 			arg:      "int",
 			typeName: "type2",
-			want:     data.TypeDefinition("type2", &data.IntType),
+			want:     data.TypeDefinition("type2", data.IntType),
 			wantErr:  nil,
 		},
 

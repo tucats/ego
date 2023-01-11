@@ -75,7 +75,7 @@ func Get(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			jsonResponse = data.NewMapFromMap(actual)
 
 		case []interface{}:
-			jsonResponse = data.NewArrayFromArray(&data.InterfaceType, actual)
+			jsonResponse = data.NewArrayFromArray(data.InterfaceType, actual)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)

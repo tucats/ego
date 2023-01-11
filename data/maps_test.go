@@ -19,8 +19,8 @@ func TestNewMapFromMap(t *testing.T) {
 			name: "int map",
 			args: args{v: map[string]int{"tom": 15, "sue": 19}},
 			want: &Map{
-				keyType:   &StringType,
-				valueType: &IntType,
+				keyType:   StringType,
+				valueType: IntType,
 				immutable: 0,
 				data:      map[interface{}]interface{}{"tom": 15, "sue": 19},
 			},

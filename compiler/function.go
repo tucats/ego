@@ -387,7 +387,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 				return parameters, hasVarArgs, c.error(errors.ErrMissingParenthesis)
 			}
 
-			p := parameter{kind: &data.UndefinedType}
+			p := parameter{kind: data.UndefinedType}
 
 			name := c.t.Next()
 			if name.IsIdentifier() {
@@ -409,7 +409,7 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 			}
 
 			if hasVarArgs {
-				p.kind = &data.VarArgsType
+				p.kind = data.VarArgsType
 			} else {
 				p.kind = theType
 			}

@@ -58,11 +58,11 @@ var FunctionDictionary = map[string]FunctionDefinition{
 			Parameters: []data.FunctionParameter{
 				{
 					Name:     "any",
-					ParmType: &data.InterfaceType,
+					ParmType: data.InterfaceType,
 				},
 			},
 			ReturnTypes: []*data.Type{
-				&data.IntType,
+				data.IntType,
 			},
 		},
 		F: Length,

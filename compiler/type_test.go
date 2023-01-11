@@ -14,33 +14,33 @@ func TestCompileTypeSpec(t *testing.T) {
 	}{
 		{
 			name: "int",
-			want: &data.IntType,
+			want: data.IntType,
 		},
 		{
 			name: "float64",
-			want: &data.Float64Type,
+			want: data.Float64Type,
 		},
 		{
 			name: "string",
-			want: &data.StringType,
+			want: data.StringType,
 		},
 		{
 			name: "*int",
-			want: data.PointerType(&data.IntType),
+			want: data.PointerType(data.IntType),
 		},
 		{
 			name: "[]string",
-			want: data.ArrayType(&data.StringType),
+			want: data.ArrayType(data.StringType),
 		},
 		{
 			name: "struct { name int }",
-			want: data.StructureType(data.Field{Name: "name", Type: &data.IntType}),
+			want: data.StructureType(data.Field{Name: "name", Type: data.IntType}),
 		},
 		{
 			name: "struct { name string, age int }",
 			want: data.StructureType(
-				data.Field{Name: "name", Type: &data.StringType},
-				data.Field{Name: "age", Type: &data.IntType},
+				data.Field{Name: "name", Type: data.StringType},
+				data.Field{Name: "age", Type: data.IntType},
 			),
 		},
 		// TODO: Add test cases.

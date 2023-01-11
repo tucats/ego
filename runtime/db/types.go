@@ -23,19 +23,19 @@ func initClientTypeDef() {
 		t.DefineFunction("Begin", &data.FunctionDeclaration{
 			Name:         "Begin",
 			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
+			ReturnTypes:  []*data.Type{data.ErrorType},
 		}, Begin)
 
 		t.DefineFunction("Commit", &data.FunctionDeclaration{
 			Name:         "Commit",
 			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
+			ReturnTypes:  []*data.Type{data.ErrorType},
 		}, Commit)
 
 		t.DefineFunction("Rollback", &data.FunctionDeclaration{
 			Name:         "Rollback",
 			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
+			ReturnTypes:  []*data.Type{data.ErrorType},
 		}, Rollback)
 
 		t.DefineFunction("Query", &data.FunctionDeclaration{
@@ -44,12 +44,12 @@ func initClientTypeDef() {
 			Parameters: []data.FunctionParameter{
 				{
 					Name:     "sql",
-					ParmType: &data.StringType,
+					ParmType: data.StringType,
 				},
 			},
 			ReturnTypes: []*data.Type{
 				data.PointerType(RowsType),
-				&data.ErrorType,
+				data.ErrorType,
 			},
 		}, Query)
 
@@ -59,12 +59,12 @@ func initClientTypeDef() {
 			Parameters: []data.FunctionParameter{
 				{
 					Name:     "sql",
-					ParmType: &data.StringType,
+					ParmType: data.StringType,
 				},
 			},
 			ReturnTypes: []*data.Type{
-				data.ArrayType(data.ArrayType(&data.InterfaceType)),
-				&data.ErrorType,
+				data.ArrayType(data.ArrayType(data.InterfaceType)),
+				data.ErrorType,
 			},
 		}, QueryResult)
 
@@ -74,19 +74,19 @@ func initClientTypeDef() {
 			Parameters: []data.FunctionParameter{
 				{
 					Name:     "sql",
-					ParmType: &data.StringType,
+					ParmType: data.StringType,
 				},
 			},
 			ReturnTypes: []*data.Type{
-				&data.IntType,
-				&data.ErrorType,
+				data.IntType,
+				data.ErrorType,
 			},
 		}, Execute)
 
 		t.DefineFunction("Close", &data.FunctionDeclaration{
 			Name:         "Close",
 			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{&data.ErrorType},
+			ReturnTypes:  []*data.Type{data.ErrorType},
 		}, Close)
 
 		t.DefineFunction("AsStruct", &data.FunctionDeclaration{
@@ -119,24 +119,24 @@ func initRowsTypeDef() {
 		Parameters: []data.FunctionParameter{
 			{
 				Name:     "value",
-				ParmType: data.PointerType(&data.InterfaceType),
+				ParmType: data.PointerType(data.InterfaceType),
 			},
 		},
 		Variadic:     true,
 		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{&data.ErrorType},
+		ReturnTypes:  []*data.Type{data.ErrorType},
 	}, rowsScan)
 
 	t.DefineFunction("Close", &data.FunctionDeclaration{
 		Name:         "Close",
 		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{&data.ErrorType},
+		ReturnTypes:  []*data.Type{data.ErrorType},
 	}, rowsClose)
 
 	t.DefineFunction("Headings", &data.FunctionDeclaration{
 		Name:         "Headings",
 		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.ArrayType(&data.StringType)},
+		ReturnTypes:  []*data.Type{data.ArrayType(data.StringType)},
 	}, rowsHeadings)
 
 	RowsType = t

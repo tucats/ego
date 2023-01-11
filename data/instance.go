@@ -13,7 +13,7 @@ func NewInterfaceType(name string) *Type {
 		name:      name,
 		kind:      InterfaceKind,
 		functions: make(map[string]Function),
-		valueType: &InterfaceType,
+		valueType: InterfaceType,
 	}
 
 	return t
@@ -73,7 +73,7 @@ func (t Type) InstanceOf(superType *Type) interface{} {
 
 	if t.kind == StructKind {
 		if superType == nil {
-			superType = &StructType
+			superType = StructType
 		}
 
 		return NewStruct(superType)

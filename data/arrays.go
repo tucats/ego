@@ -103,7 +103,7 @@ func (a *Array) Make(size int) *Array {
 // DeepEqual is a recursive compare with another Ego array. The recursive
 // compare is performed on each member of the array.
 func (a *Array) DeepEqual(b *Array) bool {
-	if a.valueType.IsType(&InterfaceType) || b.valueType.IsType(&InterfaceType) {
+	if a.valueType.IsType(InterfaceType) || b.valueType.IsType(InterfaceType) {
 		return reflect.DeepEqual(a.data, b.data)
 	}
 
@@ -137,7 +137,7 @@ func (a *Array) ValueType() *Type {
 // type. This is used to validate anonymous arrays for use as a typed
 // array.
 func (a *Array) Validate(kind *Type) error {
-	if kind.IsType(&InterfaceType) {
+	if kind.IsType(InterfaceType) {
 		return nil
 	}
 
@@ -209,7 +209,7 @@ func (a *Array) Len() int {
 // one. This (along with the Validate() function) can be used to convert
 // an anonymous array to a typed array.
 func (a *Array) SetType(i *Type) error {
-	if a.valueType.IsType(&InterfaceType) {
+	if a.valueType.IsType(InterfaceType) {
 		a.valueType = i
 
 		return nil

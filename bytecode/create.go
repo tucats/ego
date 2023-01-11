@@ -113,7 +113,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		kind = data.TypeOf(args[1])
 	} else {
 		count = data.Int(i)
-		kind = data.ArrayType(&data.InterfaceType)
+		kind = data.ArrayType(data.InterfaceType)
 	}
 
 	array := data.NewArray(kind.BaseType(), count)
@@ -182,7 +182,7 @@ func structByteCode(c *Context, i interface{}) error {
 	count := data.Int(i)
 	m := map[string]interface{}{}
 	fields := make([]string, 0)
-	typeInfo := &data.StructType
+	typeInfo := data.StructType
 	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and

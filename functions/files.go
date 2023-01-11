@@ -29,10 +29,10 @@ var fileType *data.Type
 func initializeFileType() {
 	if fileType == nil {
 		structType := data.StructureType()
-		structType.DefineField(fileFieldName, &data.InterfaceType).
+		structType.DefineField(fileFieldName, data.InterfaceType).
 			DefineField(validFieldName, data.BoolType).
-			DefineField(nameFieldName, &data.StringType).
-			DefineField(modeFieldName, &data.StringType)
+			DefineField(nameFieldName, data.StringType).
+			DefineField(modeFieldName, data.StringType)
 
 		t := data.TypeDefinition("io.File", structType)
 

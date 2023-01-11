@@ -32,52 +32,52 @@ type NativeFunctionDef struct {
 // index is into a natively implemented type...
 var NativeFunctionMap = []NativeFunctionDef{
 	{
-		Kind: &data.WaitGroupType,
+		Kind: data.WaitGroupType,
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: &data.WaitGroupType,
+		Kind: data.WaitGroupType,
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: &data.WaitGroupType,
+		Kind: data.WaitGroupType,
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: data.PointerType(&data.WaitGroupType),
+		Kind: data.PointerType(data.WaitGroupType),
 		Name: "Wait",
 		F:    waitGroupWait,
 	},
 	{
-		Kind: data.PointerType(&data.WaitGroupType),
+		Kind: data.PointerType(data.WaitGroupType),
 		Name: "Add",
 		F:    waitGroupAdd,
 	},
 	{
-		Kind: data.PointerType(&data.WaitGroupType),
+		Kind: data.PointerType(data.WaitGroupType),
 		Name: "Done",
 		F:    waitGroupDone,
 	},
 	{
-		Kind: &data.MutexType,
+		Kind: data.MutexType,
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: &data.MutexType,
+		Kind: data.MutexType,
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},
 	{
-		Kind: data.PointerType(&data.MutexType),
+		Kind: data.PointerType(data.MutexType),
 		Name: "Lock",
 		F:    mutexLock,
 	},
 	{
-		Kind: data.PointerType(&data.MutexType),
+		Kind: data.PointerType(data.MutexType),
 		Name: "Unlock",
 		F:    mutexUnlock,
 	},

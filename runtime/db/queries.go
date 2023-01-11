@@ -145,7 +145,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	// Need to convert the results from a slice to an actual array
 	this.SetAlways(rowCountFieldName, size)
-	r := data.NewArray(&data.InterfaceType, size)
+	r := data.NewArray(data.InterfaceType, size)
 
 	if asStruct {
 		for i, v := range mapResult {

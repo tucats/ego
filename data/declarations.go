@@ -38,47 +38,47 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		&WaitGroupType,
+		WaitGroupType,
 	},
 	{
 		[]string{"*", "sync", ".", "WaitGroup"},
 		nil, // Model generated in instance-of
-		PointerType(&WaitGroupType),
+		PointerType(WaitGroupType),
 	},
 	{
 		[]string{"sync", ".", "Mutex"},
 		nil, // Model generated in instance-of
-		&MutexType,
+		MutexType,
 	},
 	{
 		[]string{"*", "sync", ".", "Mutex"},
 		nil, // Model generated in instance-of
-		PointerType(&MutexType),
+		PointerType(MutexType),
 	},
 	{
 		[]string{"chan"},
 		chanModel,
-		&ChanType,
+		ChanType,
 	},
 	{
 		[]string{"[", "]", ByteTypeName},
-		NewArray(&ByteType, 0),
-		ArrayType(&ByteType),
+		NewArray(ByteType, 0),
+		ArrayType(ByteType),
 	},
 	{
 		[]string{"[", "]", Int32TypeName},
-		NewArray(&Int32Type, 0),
-		ArrayType(&Int32Type),
+		NewArray(Int32Type, 0),
+		ArrayType(Int32Type),
 	},
 	{
 		[]string{"[", "]", IntTypeName},
-		NewArray(&IntType, 0),
-		ArrayType(&IntType),
+		NewArray(IntType, 0),
+		ArrayType(IntType),
 	},
 	{
 		[]string{"[", "]", Int64TypeName},
-		NewArray(&Int64Type, 0),
-		ArrayType(&Int64Type),
+		NewArray(Int64Type, 0),
+		ArrayType(Int64Type),
 	},
 	{
 		[]string{"[", "]", BoolTypeName},
@@ -87,23 +87,23 @@ var TypeDeclarations = []TypeDeclaration{
 	},
 	{
 		[]string{"[", "]", Float64TypeName},
-		NewArray(&Float64Type, 0),
-		ArrayType(&Float64Type),
+		NewArray(Float64Type, 0),
+		ArrayType(Float64Type),
 	},
 	{
 		[]string{"[", "]", Float32TypeName},
-		NewArray(&Float32Type, 0),
-		ArrayType(&Float32Type),
+		NewArray(Float32Type, 0),
+		ArrayType(Float32Type),
 	},
 	{
 		[]string{"[", "]", StringTypeName},
-		NewArray(&StringType, 0),
-		ArrayType(&StringType),
+		NewArray(StringType, 0),
+		ArrayType(StringType),
 	},
 	{
 		[]string{"[", "]", InterfaceTypeName},
-		NewArray(&InterfaceType, 0),
-		ArrayType(&InterfaceType),
+		NewArray(InterfaceType, 0),
+		ArrayType(InterfaceType),
 	},
 	{
 		[]string{BoolTypeName},
@@ -113,47 +113,47 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{ByteTypeName},
 		byteModel,
-		&ByteType,
+		ByteType,
 	},
 	{
 		[]string{Int32TypeName},
 		int32Model,
-		&Int32Type,
+		Int32Type,
 	},
 	{
 		[]string{IntTypeName},
 		intModel,
-		&IntType,
+		IntType,
 	},
 	{
 		[]string{Int64TypeName},
 		int64Model,
-		&Int64Type,
+		Int64Type,
 	},
 	{
 		[]string{Float64TypeName},
 		float64Model,
-		&Float64Type,
+		Float64Type,
 	},
 	{
 		[]string{Float32TypeName},
 		float32Model,
-		&Float32Type,
+		Float32Type,
 	},
 	{
 		[]string{StringTypeName},
 		stringModel,
-		&StringType,
+		StringType,
 	},
 	{
 		[]string{InterfaceTypeName},
 		interfaceModel,
-		&InterfaceType,
+		InterfaceType,
 	},
 	{
 		[]string{"interface", "{}"},
 		interfaceModel,
-		&InterfaceType,
+		InterfaceType,
 	},
 	{
 		[]string{"*", BoolTypeName},
@@ -163,46 +163,46 @@ var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"*", Int32TypeName},
 		&int32Interface,
-		PointerType(&Int32Type),
+		PointerType(Int32Type),
 	},
 	{
 		[]string{"*", ByteTypeName},
 		&byteInterface,
-		PointerType(&ByteType),
+		PointerType(ByteType),
 	},
 	{
 		[]string{"*", IntTypeName},
 		&intInterface,
-		PointerType(&IntType),
+		PointerType(IntType),
 	},
 	{
 		[]string{"*", Int64TypeName},
 		&int64Interface,
-		PointerType(&Int64Type),
+		PointerType(Int64Type),
 	},
 	{
 		[]string{"*", Float64TypeName},
 		&float64Interface,
-		PointerType(&Float64Type),
+		PointerType(Float64Type),
 	},
 	{
 		[]string{"*", Float32TypeName},
 		&float32Interface,
-		PointerType(&Float32Type),
+		PointerType(Float32Type),
 	},
 	{
 		[]string{"*", StringTypeName},
 		&stringInterface,
-		PointerType(&StringType),
+		PointerType(StringType),
 	},
 	{
 		[]string{"*", InterfaceTypeName},
 		&interfaceModel,
-		PointerType(&InterfaceType),
+		PointerType(InterfaceType),
 	},
 	{
 		[]string{"*", "interface", "{}"},
 		&interfaceModel,
-		PointerType(&InterfaceType),
+		PointerType(InterfaceType),
 	},
 }

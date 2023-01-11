@@ -28,11 +28,11 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "value",
-							ParmType: &data.InterfaceType,
+							ParmType: data.InterfaceType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: AddRow,
@@ -43,7 +43,7 @@ func initTableTypeDef() {
 					Name:         "Close",
 					ReceiverType: data.PointerType(t),
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Close,
@@ -57,11 +57,11 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "columnName",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Sort,
@@ -74,11 +74,11 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "format",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: TablePrint,
@@ -99,7 +99,7 @@ func initTableTypeDef() {
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: TableFormat,
@@ -112,15 +112,15 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "columnName",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 						{
 							Name:     "alignment",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Align,
@@ -133,12 +133,12 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "format",
-							ParmType: &data.StringType,
+							ParmType: data.StringType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.StringType,
-						&data.ErrorType,
+						data.StringType,
+						data.ErrorType,
 					},
 				},
 				Value: String,
@@ -151,15 +151,15 @@ func initTableTypeDef() {
 					Parameters: []data.FunctionParameter{
 						{
 							Name:     "width",
-							ParmType: &data.IntType,
+							ParmType: data.IntType,
 						},
 						{
 							Name:     "height",
-							ParmType: &data.IntType,
+							ParmType: data.IntType,
 						},
 					},
 					ReturnTypes: []*data.Type{
-						&data.ErrorType,
+						data.ErrorType,
 					},
 				},
 				Value: Pagination,
