@@ -5,18 +5,6 @@ package runtime
 const (
 	// Type definition strings for runtime-created objects.
 
-	// exec.Cmd type specification.
-	commandTypeSpec = `
-	type exec.Cmd struct {
-		__cmd       interface{},
-		Dir         string,
-		Path		string,
-		Args		[]string,
-		Env			[]string,
-		Stdout      []string,
-		Stdin       []string,
-	}`
-
 	
 
 	// rest.Client type specification.

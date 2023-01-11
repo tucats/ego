@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/runtime/command"
 	"github.com/tucats/ego/runtime/db"
 	"github.com/tucats/ego/runtime/table"
 	"github.com/tucats/ego/symbols"
@@ -27,8 +28,8 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Debug(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
 	s.SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
-		"Command":          NewCommand,
-		"LookPath":         LookPath,
+		"Command":          command.Command,
+		"LookPath":         command.LookPath,
 		data.TypeMDKey:     data.PackageType("exec"),
 		data.ReadonlyMDKey: true,
 	}))
