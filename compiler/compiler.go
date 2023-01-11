@@ -71,7 +71,7 @@ type Compiler struct {
 // New creates a new compiler instance.
 func New(name string) *Compiler {
 	cInstance := Compiler{
-		b:                     nil,
+		b:                     bytecode.New(name),
 		t:                     nil,
 		s:                     symbols.NewRootSymbolTable(name),
 		constants:             make([]string, 0),

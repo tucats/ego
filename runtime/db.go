@@ -4,10 +4,8 @@ import (
 	"database/sql"
 	"net/url"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/app-cli/ui"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/functions"
@@ -17,29 +15,6 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-var dbTypeDef *data.Type
-var dbTypeDefLock sync.Mutex
-
-func initDBTypeDef() {
-	dbTypeDefLock.Lock()
-	defer dbTypeDefLock.Unlock()
-
-	if dbTypeDef == nil {
-		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
-
-		t.DefineFunction("Begin", nil, DBBegin)
-		t.DefineFunction("Commit", nil, DBCommit)
-		t.DefineFunction("Rollback", nil, DBRollback)
-		t.DefineFunction("Query", nil, DBQueryRows)
-		t.DefineFunction("QueryResult", nil, DBQuery)
-		t.DefineFunction("Execute", nil, DBExecute)
-		t.DefineFunction("Close", nil, DBClose)
-		t.DefineFunction("AsStruct", nil, DataBaseAsStruct)
-
-		dbTypeDef = t
-	}
-}
 
 // DBNew implements the New() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
@@ -74,6 +49,8 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
+
+	_ = s.Set(dbTypeDef.Name(), dbTypeDef)
 
 	result := data.NewStruct(dbTypeDef)
 	result.SetAlways(clientFieldName, db)

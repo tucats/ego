@@ -59,6 +59,7 @@ const (
 	PackageTypeName   = "package"
 	InterfaceTypeName = "interface{}"
 	ErrorTypeName     = "error"
+	VoidTypeName      = "void"
 	UndefinedTypeName = "undefined"
 )
 
@@ -211,13 +212,20 @@ func (t Type) TypeString() string {
 // FullTypeString returns the type by name but also includes the
 // full underlying type definition.
 func (t Type) ShortTypeString() string {
+	var ptr string
+
+	if t.kind == PointerKind {
+		t = *t.valueType
+		ptr = "*"
+	}
+
 	if t.kind == TypeKind {
 		name := t.name
 		if t.pkg != "" {
 			name = t.pkg + "." + name
 		}
 
-		return name
+		return ptr + name
 	}
 
 	return t.String()
@@ -474,9 +482,9 @@ func (t *Type) DefineFunction(name string, declaration *FunctionDeclaration, val
 
 // Helper function that defines a set of functions in a single call.
 // Note this can only define functipoin values, not declarations.
-func (t *Type) DefineFunctions(functions map[string]interface{}) {
+func (t *Type) DefineFunctions(functions map[string]Function) {
 	for k, v := range functions {
-		t.DefineFunction(k, nil, v)
+		t.DefineFunction(k, v.Declaration, v.Value)
 	}
 }
 

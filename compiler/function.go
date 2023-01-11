@@ -44,7 +44,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 		// First, let's try to parse the declaration component
 		savedPos := c.t.Mark()
-		fd, _ = c.parseFunctionDeclaration()
+		fd, _ = c.ParseFunctionDeclaration()
 
 		c.t.Set(savedPos)
 
@@ -239,12 +239,14 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 // Helper function for defer in following code, that resets a saved
 // bytecode to the compiler.
 func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
-	*c.b = *saved
+	if saved != nil {
+		*c.b = *saved
+	}
 }
 
-// parseFunctionDeclaration compiles a function declaration, which specifies
+// ParseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) parseFunctionDeclaration() (*data.FunctionDeclaration, error) {
+func (c *Compiler) ParseFunctionDeclaration() (*data.FunctionDeclaration, error) {
 	var err error
 
 	// Can't have side effects added to current bytecode, so save that off and
@@ -268,9 +270,7 @@ func (c *Compiler) parseFunctionDeclaration() (*data.FunctionDeclaration, error)
 		funcDef.Name = funcName.Spelling()
 	}
 
-	// The function name must be followed by a parameter declaration. Currently
-	// we ignore these, but later will copy them into a proper function definition
-	// object when we have them.
+	// The function name must be followed by a parameter declaration.
 	paramList, _, err := c.parseParameterDeclaration()
 	if err != nil {
 		return nil, err

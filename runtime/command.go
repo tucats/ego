@@ -24,9 +24,9 @@ func initCommandTypeDef() {
 	if commandTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(commandTypeSpec)
 
-		t.DefineFunctions(map[string]interface{}{
-			"Output": CommandOutput,
-			"Run":    CommandRun,
+		t.DefineFunctions(map[string]data.Function{
+			"Output": {Value: CommandOutput},
+			"Run":    {Value: CommandRun},
 		})
 
 		commandTypeDef = t

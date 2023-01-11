@@ -50,6 +50,13 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 	// Is it a known complex type?
 
+	// Base error type
+	if c.t.Peek(1) == tokenizer.ErrorToken {
+		c.t.Advance(1)
+
+		return &data.ErrorType, nil
+	}
+
 	// Empty interface
 	if c.t.Peek(1) == tokenizer.EmptyInterfaceToken {
 		c.t.Advance(1)
@@ -71,7 +78,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext(tokenizer.DataEndToken) {
-			f, err := c.parseFunctionDeclaration()
+			f, err := c.ParseFunctionDeclaration()
 			if err != nil {
 				return &data.UndefinedType, err
 			}

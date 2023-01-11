@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
@@ -147,4 +148,10 @@ func GetDeclaration(fname string) *data.FunctionDeclaration {
 	}
 
 	return nil
+}
+
+func TypeCompiler(t string) *data.Type {
+	typeDefintion, _ := compiler.CompileTypeSpec(t)
+
+	return typeDefintion
 }

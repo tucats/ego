@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -10,9 +11,10 @@ type FunctionParameter struct {
 }
 
 type FunctionDeclaration struct {
-	Name        string
-	Parameters  []FunctionParameter
-	ReturnTypes []*Type
+	Name         string
+	ReceiverType *Type
+	Parameters   []FunctionParameter
+	ReturnTypes  []*Type
 }
 
 // dictionary is a descriptive dictionary that shows the declaration string for
@@ -139,6 +141,27 @@ func GetBuiltinDeclaration(name string) string {
 
 func (f FunctionDeclaration) String() string {
 	r := strings.Builder{}
+
+	if f.ReceiverType != nil {
+		ptr := ""
+		ft := f.ReceiverType
+
+		if ft.kind == PointerKind {
+			ptr = "*"
+			ft = ft.valueType
+		}
+
+		varName := ft.name[:1]
+
+		if strings.Contains(ft.name, ".") {
+			names := strings.Split(ft.name, ".")
+			varName = strings.ToLower(names[1][:1])
+		}
+
+		typeName := ft.name
+		r.WriteString(fmt.Sprintf("(%s %s%s) ", varName, ptr, typeName))
+	}
+
 	r.WriteString(f.Name)
 	r.WriteRune('(')
 

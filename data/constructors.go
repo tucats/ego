@@ -24,6 +24,10 @@ var ErrorType = Type{
 	kind: ErrorKind,
 }
 
+var VoidType = &Type{
+	name: VoidTypeName,
+}
+
 var BoolType = &Type{
 	name:      BoolTypeName,
 	kind:      BoolKind,

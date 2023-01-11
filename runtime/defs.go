@@ -17,15 +17,7 @@ const (
 		Stdin       []string,
 	}`
 
-	// db.Client type specification.
-	dbTypeSpec = `
-	type db.Client struct {
-		client 		interface{},
-		asStruct 	bool,
-		rowCount 	int,
-		transaction	interface{},
-		constr 		string,
-	}`
+	
 
 	// db.Rows type specification.
 	dbRowsTypeSpec = `

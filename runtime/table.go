@@ -26,6 +26,7 @@ type Row []interface{}
 var tableTypeDef *data.Type
 var tableTypeDefLock sync.Mutex
 
+
 func initTableTypeDef() {
 	tableTypeDefLock.Lock()
 	defer tableTypeDefLock.Unlock()
@@ -33,15 +34,15 @@ func initTableTypeDef() {
 	if tableTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(tableTypeSpec)
 
-		t.DefineFunctions(map[string]interface{}{
-			"AddRow":     TableAddRow,
-			"Close":      TableClose,
-			"Sort":       TableSort,
-			"Print":      TablePrint,
-			"Format":     TableFormat,
-			"Align":      TableAlign,
-			"String":     TableString,
-			"Pagination": TablePagination,
+		t.DefineFunctions(map[string]data.Function{
+			"AddRow":     {Value: TableAddRow},
+			"Close":      {Value: TableClose},
+			"Sort":       {Value: TableSort},
+			"Print":      {Value: TablePrint},
+			"Format":     {Value: TableFormat},
+			"Align":      {Value: TableAlign},
+			"String":     {Value: TableString},
+			"Pagination": {Value: TablePagination},
 		})
 
 		tableTypeDef = t

@@ -67,6 +67,19 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
+	if m, ok := args[0].(data.Function); ok {
+		if m.Declaration == nil {
+			return data.Format(m.Value), nil
+		}
+
+		return data.NewStructFromMap(map[string]interface{}{
+			data.TypeMDName:     "func",
+			data.BasetypeMDName: "func " + m.Declaration.Name,
+			"istype":            false,
+			"declaration":       makeDeclaration(m.Declaration),
+		}), nil
+	}
+
 	if m, ok := args[0].(*data.Struct); ok {
 		return m.Reflect(), nil
 	}

@@ -68,6 +68,9 @@ var (
 	// "interface{}" token.
 	EmptyInterfaceToken = NewTypeToken("interface{}")
 
+	// "error" token.
+	ErrorToken = NewIdentifierToken("error")
+
 	// "exit" token.
 	ExitToken = NewReservedToken("exit")
 

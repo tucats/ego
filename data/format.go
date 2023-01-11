@@ -177,6 +177,13 @@ func Format(element interface{}) string {
 			return "nil<*interface{}>"
 		}
 
+	case Function:
+		if v.Declaration != nil {
+			return v.Declaration.String()
+		}
+
+		return Format(v.Value)
+
 	default:
 		vv := reflect.ValueOf(v)
 
