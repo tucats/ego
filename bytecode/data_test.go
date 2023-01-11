@@ -175,12 +175,12 @@ func Test_storeByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		if tt.initialValue != nil {
-			_ = c.symbolCreate(varname)
-			_ = c.symbolSet(varname, tt.initialValue)
+			_ = c.create(varname)
+			_ = c.set(varname, tt.initialValue)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -302,12 +302,12 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		if tt.initialValue != nil {
-			_ = c.symbolCreate(varname)
-			_ = c.symbolSet(varname, tt.initialValue)
+			_ = c.create(varname)
+			_ = c.set(varname, tt.initialValue)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -431,12 +431,12 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		if tt.initialValue != nil {
-			_ = c.symbolCreate(varname)
-			_ = c.symbolSet(varname, tt.initialValue)
+			_ = c.create(varname)
+			_ = c.set(varname, tt.initialValue)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -667,13 +667,13 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		if tt.initialValue != nil {
-			_ = c.symbolCreate(varname)
+			_ = c.create(varname)
 			ptr, _ := data.AddressOf(tt.initialValue)
-			_ = c.symbolSet(varname, ptr)
+			_ = c.set(varname, ptr)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -764,12 +764,12 @@ func Test_loadByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		if tt.initialValue != nil {
-			_ = c.symbolCreate(varname)
-			_ = c.symbolSet(varname, tt.initialValue)
+			_ = c.create(varname)
+			_ = c.set(varname, tt.initialValue)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -853,7 +853,7 @@ func Test_explodeByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		if tt.value != nil {
-			_ = c.stackPush(tt.value)
+			_ = c.push(tt.value)
 		}
 
 		err := explodeByteCode(c, nil)

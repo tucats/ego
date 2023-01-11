@@ -47,7 +47,7 @@ func (f CallFrame) String() string {
 // the current execution. This is done as part of setting up a call to a new
 // routine, so it can be restored when a return is executed.
 func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
-	_ = c.stackPush(CallFrame{
+	_ = c.push(CallFrame{
 		symbols:    c.symbols,
 		bytecode:   c.bc,
 		singleStep: c.singleStep,
@@ -148,7 +148,7 @@ func (c *Context) callFramePop() error {
 		// Alternatively, it could be a single-value return using the
 		// result holder. If so, push that on the stack and clear it.
 		if c.result != nil {
-			err = c.stackPush(c.result)
+			err = c.push(c.result)
 			c.result = nil
 		}
 	}

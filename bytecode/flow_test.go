@@ -79,8 +79,8 @@ func Test_typeCast(t *testing.T) {
 
 		// Push the type on the stack that is to be used as the function pointer,
 		// then the value to convert.
-		_ = ctx.stackPush(tt.t)
-		_ = ctx.stackPush(tt.v)
+		_ = ctx.push(tt.t)
+		_ = ctx.push(tt.v)
 
 		err := callByteCode(ctx, 1)
 		if err != nil {
@@ -135,10 +135,10 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 
 	// Push something on the stack so the SP isn't zero and we can test
 	// to see this is still here later.
-	_ = ctx.stackPush(uninterestingValue)
+	_ = ctx.push(uninterestingValue)
 
 	marker := NewStackMarker("defer test")
-	_ = ctx.stackPush(marker)
+	_ = ctx.push(marker)
 
 	e := localCallByteCode(ctx, 5)
 	if !errors.Nil(e) {
@@ -166,7 +166,7 @@ func Test_localCallandReturnByteCode(t *testing.T) {
 
 	// Push another symbol table, and push a data value on the stack.
 	ctx.symbols = symbols.NewChildSymbolTable("local call child", ctx.symbols)
-	_ = ctx.stackPush(3.14)
+	_ = ctx.push(3.14)
 
 	// Execute the return, which should detect that it's a local frame and
 	// pop it off again.
@@ -207,7 +207,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 	}
 
 	// Test if TOS is false
-	_ = ctx.stackPush(false)
+	_ = ctx.push(false)
 
 	e := branchFalseByteCode(ctx, 2)
 	if !errors.Nil(e) {
@@ -219,7 +219,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 	}
 
 	// Test if TOS is true
-	_ = ctx.stackPush(true)
+	_ = ctx.push(true)
 
 	e = branchFalseByteCode(ctx, 1)
 	if !errors.Nil(e) {
@@ -231,7 +231,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 	}
 
 	// Test if target is invalid
-	_ = ctx.stackPush(true)
+	_ = ctx.push(true)
 
 	e = branchTrueByteCode(ctx, 20)
 	if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
@@ -256,7 +256,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 	}
 
 	// Test if TOS is false
-	_ = ctx.stackPush(false)
+	_ = ctx.push(false)
 
 	e := branchTrueByteCode(ctx, 2)
 	if !errors.Nil(e) {
@@ -268,7 +268,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 	}
 
 	// Test if TOS is true
-	_ = ctx.stackPush(true)
+	_ = ctx.push(true)
 
 	e = branchTrueByteCode(ctx, 2)
 	if !errors.Nil(e) {
@@ -280,7 +280,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 	}
 
 	// Test if target is invalid
-	_ = ctx.stackPush(true)
+	_ = ctx.push(true)
 
 	e = branchTrueByteCode(ctx, 20)
 	if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {

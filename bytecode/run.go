@@ -87,7 +87,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		if c.Tracing() {
 			s := FormatInstruction(i)
 
-			s2 := FormatStack(c.symbols, c.stack[:c.stackPointer], c.fullStackTrace)
+			s2 := formatStack(c.symbols, c.stack[:c.stackPointer], c.fullStackTrace)
 			if !c.fullStackTrace && len(s2) > 80 {
 				s2 = s2[:80]
 			}

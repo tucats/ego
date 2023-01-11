@@ -54,7 +54,7 @@ func storeByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	if IsStackMarker(value) {
+	if isStackMarker(value) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -66,7 +66,7 @@ func storeByteCode(c *Context, i interface{}) error {
 
 	err = c.checkType(name, value)
 	if err == nil {
-		err = c.symbolSet(name, value)
+		err = c.set(name, value)
 	} else {
 		return c.error(err)
 	}
@@ -97,7 +97,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -112,10 +112,10 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	// so it can receive the channel info regardless of its type.
 	varname := data.String(i)
 
-	x, found := c.symbolGet(varname)
+	x, found := c.get(varname)
 	if !found {
 		if sourceChan {
-			err = c.symbolCreate(varname)
+			err = c.create(varname)
 		} else {
 			err = c.error(errors.ErrUnknownIdentifier).Context(x)
 		}
@@ -146,7 +146,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 		err = x.(*data.Channel).Send(datum)
 	} else {
 		if varname != DiscardedVariableName {
-			err = c.symbolSet(varname, datum)
+			err = c.set(varname, datum)
 		}
 	}
 
@@ -160,11 +160,11 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
-	// Get the name.
+	// Get the name and set it in the global table.
 	varname := data.String(i)
 
 	c.symbols.Root().SetAlways(varname, v)
@@ -196,7 +196,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidIdentifier)
 	}
 
-	dest, ok := c.symbolGet(name)
+	dest, ok := c.get(name)
 	if !ok {
 		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
@@ -210,7 +210,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(src) {
+	if isStackMarker(src) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -336,12 +336,12 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 	}
 
-	c.symbolSetAlways(symbolName, v)
+	c.setAlways(symbolName, v)
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
@@ -368,12 +368,12 @@ func loadByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidIdentifier).Context(name)
 	}
 
-	v, found := c.symbolGet(name)
+	v, found := c.get(name)
 	if !found {
 		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	return c.stackPush(v)
+	return c.push(v)
 }
 
 // explodeByteCode implements Explode. This accepts a struct on the top of
@@ -389,7 +389,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -405,11 +405,11 @@ func explodeByteCode(c *Context, i interface{}) error {
 				empty = false
 				v, _, _ := m.Get(k)
 
-				c.symbolSetAlways(data.String(k), v)
+				c.setAlways(data.String(k), v)
 			}
 
 			if err == nil {
-				return c.stackPush(empty)
+				return c.push(empty)
 			}
 		}
 	} else {

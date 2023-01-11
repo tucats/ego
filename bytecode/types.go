@@ -12,7 +12,7 @@ import (
 func staticTypingByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -26,7 +26,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 func requiredTypeByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -141,7 +141,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 			}
 		}
 
-		_ = c.stackPush(v)
+		_ = c.push(v)
 	}
 
 	return err
@@ -161,7 +161,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -225,7 +225,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	default:
 		// If they are alread the same type, no work.
 		if data.TypeOf(v).IsType(t) {
-			return c.stackPush(v)
+			return c.push(v)
 		}
 
 		var base []interface{}
@@ -247,7 +247,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = array
 	}
 
-	_ = c.stackPush(v)
+	_ = c.push(v)
 
 	return nil
 }
@@ -279,7 +279,7 @@ func addressOfByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	return c.stackPush(addr)
+	return c.push(addr)
 }
 
 func deRefByteCode(c *Context, i interface{}) error {
@@ -305,7 +305,7 @@ func deRefByteCode(c *Context, i interface{}) error {
 				return c.error(errors.ErrNilPointerReference)
 			}
 
-			return c.stackPush(*c3)
+			return c.push(*c3)
 		}
 
 		return c.error(errors.ErrNotAPointer).Context(data.Format(c2))

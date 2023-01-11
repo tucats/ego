@@ -35,7 +35,7 @@ func printByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(value) {
+		if isStackMarker(value) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -190,13 +190,13 @@ func templateByteCode(c *Context, i interface{}) error {
 
 	t, err := c.Pop()
 	if err == nil {
-		if IsStackMarker(t) {
+		if isStackMarker(t) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		t, e2 := template.New(name).Parse(data.String(t))
 		if e2 == nil {
-			err = c.stackPush(t)
+			err = c.push(t)
 		} else {
 			err = c.error(e2)
 		}
@@ -262,7 +262,7 @@ func timerByteCode(c *Context, i interface{}) error {
 
 		msText := fmt.Sprintf("%4.3f%s", float64(ms)/1000.0, unit)
 
-		return c.stackPush(msText)
+		return c.push(msText)
 
 	default:
 		return c.error(errors.ErrInvalidTimer).Context(mode)

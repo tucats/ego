@@ -215,7 +215,7 @@ func callByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -232,7 +232,7 @@ func callByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidFunctionCall).Context("<nil>")
 	}
 
-	if IsStackMarker(functionPointer) {
+	if isStackMarker(functionPointer) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -250,7 +250,7 @@ func callByteCode(c *Context, i interface{}) error {
 
 		v, err := functions.InternalCast(c.symbols, args)
 		if err == nil {
-			err = c.stackPush(v)
+			err = c.push(v)
 		}
 
 		return err
@@ -290,7 +290,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// Recode the argument list as a native array
-		c.symbolSetAlways("__args", data.NewArrayFromArray(data.InterfaceType, args))
+		c.setAlways("__args", data.NewArrayFromArray(data.InterfaceType, args))
 
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
@@ -305,9 +305,9 @@ func callByteCode(c *Context, i interface{}) error {
 		result, err = function(funcSymbols, args)
 
 		if r, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(NewStackMarker("results"))
+			_ = c.push(NewStackMarker("results"))
 			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.stackPush(r.Value[i])
+				_ = c.push(r.Value[i])
 			}
 
 			return nil
@@ -361,10 +361,10 @@ func callByteCode(c *Context, i interface{}) error {
 		result, err = function(functionSymbols, args)
 
 		if results, ok := result.(functions.MultiValueReturn); ok {
-			_ = c.stackPush(NewStackMarker("results"))
+			_ = c.push(NewStackMarker("results"))
 
 			for i := len(results.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.stackPush(results.Value[i])
+				_ = c.push(results.Value[i])
 			}
 
 			return nil
@@ -373,9 +373,9 @@ func callByteCode(c *Context, i interface{}) error {
 		// If there was an error but this function allows it, then
 		// just push the result values
 		if functionDefinition != nil && functionDefinition.ErrReturn {
-			_ = c.stackPush(NewStackMarker("results"))
-			_ = c.stackPush(err)
-			_ = c.stackPush(result)
+			_ = c.push(NewStackMarker("results"))
+			_ = c.push(err)
+			_ = c.push(result)
 
 			return nil
 		}
@@ -396,7 +396,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// IF no problems and there's a result value, push it on the
 	// stack now.
 	if err == nil && result != nil {
-		err = c.stackPush(result)
+		err = c.push(result)
 	}
 
 	return err
@@ -409,7 +409,7 @@ func returnByteCode(c *Context, i interface{}) error {
 	// Do we have a return value?
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
-		if IsStackMarker(c.Result) {
+		if isStackMarker(c.Result) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 	} else if b, ok := i.(int); ok && b > 0 {
@@ -500,7 +500,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrArgumentTypeCheck)
 	}
 
-	args, found := c.symbolGet("__args")
+	args, found := c.get("__args")
 	if !found {
 		return c.error(errors.ErrArgumentTypeCheck)
 	}
@@ -592,8 +592,8 @@ func entryPointByteCode(c *Context, i interface{}) error {
 		entryPointName = data.String(v)
 	}
 
-	if entryPoint, found := c.symbolGet(entryPointName); found {
-		_ = c.stackPush(entryPoint)
+	if entryPoint, found := c.get(entryPointName); found {
+		_ = c.push(entryPoint)
 
 		return callByteCode(c, 0)
 	}

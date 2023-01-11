@@ -109,7 +109,7 @@ func Test_arrayByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -232,7 +232,7 @@ func Test_makeMapByteCode(t *testing.T) {
 		c.Static = tt.static
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {

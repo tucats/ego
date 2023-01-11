@@ -30,18 +30,18 @@ func equalByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// If both are nil, then they match.
 	if data.IsNil(v1) && data.IsNil(v2) {
-		return c.stackPush(true)
+		return c.push(true)
 	}
 
 	// Otherwise, if either one is nil, there is no match
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.stackPush(false)
+		return c.push(false)
 	}
 
 	var r bool
@@ -104,7 +104,7 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }
@@ -132,14 +132,14 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// IF only one side is nil, they are not equal by definition.
 	if !data.IsNil(v1) && data.IsNil(v2) ||
 		data.IsNil(v1) && !data.IsNil(v2) {
-		return c.stackPush(true)
+		return c.push(true)
 	}
 
 	var r bool
@@ -187,7 +187,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }
@@ -216,12 +216,12 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.stackPush(false)
+		_ = c.push(false)
 
 		return nil
 	}
@@ -253,7 +253,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }
@@ -284,12 +284,12 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.stackPush(false)
+		_ = c.push(false)
 
 		return nil
 	}
@@ -321,7 +321,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }
@@ -350,13 +350,13 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Handle nil cases
 	if v1 == nil || v2 == nil {
-		_ = c.stackPush(false)
+		_ = c.push(false)
 
 		return nil
 	}
@@ -389,7 +389,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }
@@ -419,12 +419,12 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
-		_ = c.stackPush(false)
+		_ = c.push(false)
 
 		return nil
 	}
@@ -455,7 +455,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(r)
+	_ = c.push(r)
 
 	return nil
 }

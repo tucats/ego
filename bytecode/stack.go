@@ -44,7 +44,7 @@ func NewStackMarker(label string, values ...interface{}) StackMarker {
 // one or more type strings are passed, then in addition to being a
 // marker, the item must contain at least one of the types as one of
 // it data elements.
-func IsStackMarker(i interface{}, values ...string) bool {
+func isStackMarker(i interface{}, values ...string) bool {
 	// First, check special case of a call frame, which acts
 	// as a marker but has lots of other data in it as well.
 	frame, ok := i.(CallFrame)
@@ -146,7 +146,7 @@ func stackCheckByteCode(c *Context, i interface{}) error {
 	} else {
 		// The marker is an instance of a StackMarker object.
 		v := c.stack[c.stackPointer-(count+1)]
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return nil
 		}
 	}
@@ -157,7 +157,7 @@ func stackCheckByteCode(c *Context, i interface{}) error {
 // pushByteCode instruction processor. This pushes the instruction operand
 // onto the runtime stack.
 func pushByteCode(c *Context, i interface{}) error {
-	return c.stackPush(i)
+	return c.push(i)
 }
 
 // dropByteCode instruction processor drops items from the stack and
@@ -186,8 +186,8 @@ func dupByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	_ = c.stackPush(v)
-	_ = c.stackPush(v)
+	_ = c.push(v)
+	_ = c.push(v)
 
 	return nil
 }
@@ -208,7 +208,7 @@ func readStackByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrStackUnderflow)
 	}
 
-	return c.stackPush(c.stack[(c.stackPointer-1)-idx])
+	return c.push(c.stack[(c.stackPointer-1)-idx])
 }
 
 // swapByteCode instruction processor exchanges the top two
@@ -225,8 +225,8 @@ func swapByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	_ = c.stackPush(v1)
-	_ = c.stackPush(v2)
+	_ = c.push(v1)
+	_ = c.push(v2)
 
 	return nil
 }
@@ -240,14 +240,14 @@ func copyByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	_ = c.stackPush(v)
+	_ = c.push(v)
 
 	// Use JSON as a reflection-based clone operation
 	var v2 interface{}
 
 	byt, _ := json.Marshal(v)
 	err = json.Unmarshal(byt, &v2)
-	_ = c.stackPush(2)
+	_ = c.push(2)
 
 	if err != nil {
 		err = errors.NewError(err)
@@ -260,13 +260,13 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 	err := c.error(errors.ErrInvalidVariableArguments)
 	argPos := data.Int(i)
 
-	if arrayV, ok := c.symbolGet("__args"); ok {
+	if arrayV, ok := c.get("__args"); ok {
 		if args, ok := arrayV.(*data.Array); ok {
 			// If no more args in the list to satisfy, push empty array
 			if args.Len() < argPos {
 				r := data.NewArray(data.InterfaceType, 0)
 
-				return c.stackPush(r)
+				return c.push(r)
 			}
 
 			value, err := args.GetSlice(argPos, args.Len())
@@ -274,7 +274,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 				return err
 			}
 
-			return c.stackPush(data.NewArrayFromArray(data.InterfaceType, value))
+			return c.push(data.NewArrayFromArray(data.InterfaceType, value))
 		}
 	}
 

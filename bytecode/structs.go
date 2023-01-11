@@ -36,7 +36,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(index) || IsStackMarker(array) {
+	if isStackMarker(index) || isStackMarker(array) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -64,9 +64,9 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 				found := false
 
 				if v, found, err = a.Get(index); err == nil {
-					_ = c.stackPush(NewStackMarker("results"))
-					_ = c.stackPush(found)
-					err = c.stackPush(v)
+					_ = c.push(NewStackMarker("results"))
+					_ = c.push(found)
+					err = c.push(v)
 					twoValues = true
 				}
 			}
@@ -74,7 +74,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 
 		if !twoValues {
 			if v, _, err = a.Get(index); err == nil {
-				err = c.stackPush(v)
+				err = c.push(v)
 			}
 		}
 
@@ -84,13 +84,13 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 
 		datum, err = a.Receive()
 		if err == nil {
-			err = c.stackPush(datum)
+			err = c.push(datum)
 		}
 
 	case *data.Struct:
 		key := data.String(index)
 		v, _ := a.Get(key)
-		err = c.stackPush(v)
+		err = c.push(v)
 		c.lastStruct = a
 
 	case *data.Array:
@@ -100,7 +100,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		v, _ := a.Get(subscript)
-		err = c.stackPush(v)
+		err = c.push(v)
 
 	case []interface{}:
 		// Needed for varars processing
@@ -110,7 +110,7 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		v := a[subscript]
-		err = c.stackPush(v)
+		err = c.push(v)
 
 	default:
 		err = c.error(errors.ErrInvalidType)
@@ -136,7 +136,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(array) || IsStackMarker(index1) || IsStackMarker(index2) {
+	if isStackMarker(array) || isStackMarker(index1) || isStackMarker(index2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -153,7 +153,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 			return errors.ErrInvalidSliceIndex.Context(subscript1)
 		}
 
-		return c.stackPush(a[subscript1:subscript2])
+		return c.push(a[subscript1:subscript2])
 
 	case *data.Array:
 		subscript1 := data.Int(index1)
@@ -161,7 +161,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 
 		v, err := a.GetSliceAsArray(subscript1, subscript2)
 		if err == nil {
-			err = c.stackPush(v)
+			err = c.push(v)
 		}
 
 		return err
@@ -178,7 +178,7 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		}
 
 		v := a[subscript1 : subscript2+1]
-		_ = c.stackPush(v)
+		_ = c.push(v)
 
 	default:
 		return c.error(errors.ErrInvalidType)
@@ -214,7 +214,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(destination) || IsStackMarker(index) || IsStackMarker(v) {
+	if isStackMarker(destination) || isStackMarker(index) || isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -276,7 +276,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 	case *data.Map:
 		if _, err = a.Set(index, v); err == nil {
-			err = c.stackPush(a)
+			err = c.push(a)
 		}
 
 		if err != nil {
@@ -291,7 +291,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return c.error(err)
 		}
 
-		_ = c.stackPush(a)
+		_ = c.push(a)
 
 	// Index into array is integer index
 	case *data.Array:
@@ -309,7 +309,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 		err = a.Set(subscript, v)
 		if err == nil {
-			err = c.stackPush(a)
+			err = c.push(a)
 		}
 
 		return err
@@ -329,7 +329,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		a[subscript] = v
-		_ = c.stackPush(a)
+		_ = c.push(a)
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())
@@ -355,14 +355,14 @@ func storeIntoByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(destination) || IsStackMarker(v) || IsStackMarker(index) {
+	if isStackMarker(destination) || isStackMarker(v) || isStackMarker(index) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch a := destination.(type) {
 	case *data.Map:
 		if _, err = a.Set(index, v); err == nil {
-			err = c.stackPush(a)
+			err = c.push(a)
 		}
 
 		if err != nil {
@@ -381,23 +381,23 @@ func flattenByteCode(c *Context, i interface{}) error {
 
 	v, err := c.Pop()
 	if err == nil {
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		if array, ok := v.(*data.Array); ok {
 			for idx := 0; idx < array.Len(); idx = idx + 1 {
 				vv, _ := array.Get(idx)
-				_ = c.stackPush(vv)
+				_ = c.push(vv)
 				c.argCountDelta++
 			}
 		} else if array, ok := v.([]interface{}); ok {
 			for _, vv := range array {
-				_ = c.stackPush(vv)
+				_ = c.push(vv)
 				c.argCountDelta++
 			}
 		} else {
-			_ = c.stackPush(v)
+			_ = c.push(v)
 		}
 	}
 

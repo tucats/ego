@@ -34,7 +34,7 @@ func negateByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -45,25 +45,25 @@ func negateByteCode(c *Context, i interface{}) error {
 
 	switch value := v.(type) {
 	case bool:
-		return c.stackPush(!value)
+		return c.push(!value)
 
 	case byte:
-		return c.stackPush(-value)
+		return c.push(-value)
 
 	case int32:
-		return c.stackPush(-value)
+		return c.push(-value)
 
 	case int:
-		return c.stackPush(-value)
+		return c.push(-value)
 
 	case int64:
-		return c.stackPush(-value)
+		return c.push(-value)
 
 	case float32:
-		return c.stackPush(float32(0.0) - value)
+		return c.push(float32(0.0) - value)
 
 	case float64:
-		return c.stackPush(0.0 - value)
+		return c.push(0.0 - value)
 
 	case string:
 		length := 0
@@ -78,7 +78,7 @@ func negateByteCode(c *Context, i interface{}) error {
 
 		result := string(runes)
 
-		return c.stackPush(result)
+		return c.push(result)
 
 	case *data.Array:
 		// Create an array in inverse order.
@@ -89,7 +89,7 @@ func negateByteCode(c *Context, i interface{}) error {
 			_ = r.Set(value.Len()-n-1, d)
 		}
 
-		return c.stackPush(r)
+		return c.push(r)
 
 	default:
 		return c.error(errors.ErrInvalidType)
@@ -104,27 +104,27 @@ func notByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// A nil value is treated as false, so !nil is true
 	if data.IsNil(v) {
-		return c.stackPush(true)
+		return c.push(true)
 	}
 
 	switch value := v.(type) {
 	case bool:
-		return c.stackPush(!value)
+		return c.push(!value)
 
 	case byte, int32, int, int64:
-		return c.stackPush(value == 0)
+		return c.push(value == 0)
 
 	case float32:
-		return c.stackPush(value == float32(0))
+		return c.push(value == float32(0))
 
 	case float64:
-		return c.stackPush(value == float64(0))
+		return c.push(value == float64(0))
 
 	default:
 		return c.error(errors.ErrInvalidType)
@@ -147,7 +147,7 @@ func addByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -158,7 +158,7 @@ func addByteCode(c *Context, i interface{}) error {
 
 	switch vx := v1.(type) {
 	case error:
-		return c.stackPush(vx.Error() + data.String(v2))
+		return c.push(vx.Error() + data.String(v2))
 
 		// All other types are scalar math.
 	default:
@@ -166,28 +166,28 @@ func addByteCode(c *Context, i interface{}) error {
 
 		switch v1.(type) {
 		case byte:
-			return c.stackPush(v1.(byte) + v2.(byte))
+			return c.push(v1.(byte) + v2.(byte))
 
 		case int32:
-			return c.stackPush(v1.(int32) + v2.(int32))
+			return c.push(v1.(int32) + v2.(int32))
 
 		case int:
-			return c.stackPush(v1.(int) + v2.(int))
+			return c.push(v1.(int) + v2.(int))
 
 		case int64:
-			return c.stackPush(v1.(int64) + v2.(int64))
+			return c.push(v1.(int64) + v2.(int64))
 
 		case float32:
-			return c.stackPush(v1.(float32) + v2.(float32))
+			return c.push(v1.(float32) + v2.(float32))
 
 		case float64:
-			return c.stackPush(v1.(float64) + v2.(float64))
+			return c.push(v1.(float64) + v2.(float64))
 
 		case string:
-			return c.stackPush(v1.(string) + v2.(string))
+			return c.push(v1.(string) + v2.(string))
 
 		case bool:
-			return c.stackPush(v1.(bool) && v2.(bool))
+			return c.push(v1.(bool) && v2.(bool))
 
 		default:
 			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -207,7 +207,7 @@ func andByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -216,7 +216,7 @@ func andByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.stackPush(data.Bool(v1) && data.Bool(v2))
+	return c.push(data.Bool(v1) && data.Bool(v2))
 }
 
 // orByteCode bytecode instruction processor.
@@ -231,7 +231,7 @@ func orByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -240,7 +240,7 @@ func orByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	return c.stackPush(data.Bool(v1) || data.Bool(v2))
+	return c.push(data.Bool(v1) || data.Bool(v2))
 }
 
 // subtractByteCode instruction processor removes two items from the
@@ -258,7 +258,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -271,27 +271,27 @@ func subtractByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case byte:
-		return c.stackPush(v1.(byte) - v2.(byte))
+		return c.push(v1.(byte) - v2.(byte))
 
 	case int32:
-		return c.stackPush(v1.(int32) - v2.(int32))
+		return c.push(v1.(int32) - v2.(int32))
 
 	case int:
-		return c.stackPush(v1.(int) - v2.(int))
+		return c.push(v1.(int) - v2.(int))
 
 	case int64:
-		return c.stackPush(v1.(int64) - v2.(int64))
+		return c.push(v1.(int64) - v2.(int64))
 
 	case float32:
-		return c.stackPush(v1.(float32) - v2.(float32))
+		return c.push(v1.(float32) - v2.(float32))
 
 	case float64:
-		return c.stackPush(v1.(float64) - v2.(float64))
+		return c.push(v1.(float64) - v2.(float64))
 
 	case string:
 		s := strings.ReplaceAll(v1.(string), v2.(string), "")
 
-		return c.stackPush(s)
+		return c.push(s)
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -310,7 +310,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -326,7 +326,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		count := data.Int(v2)
 		r := strings.Repeat(str, count)
 
-		return c.stackPush(r)
+		return c.push(r)
 	}
 
 	// Nope, plain old math multiply, so normalize the values.
@@ -334,25 +334,25 @@ func multiplyByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case bool:
-		return c.stackPush(v1.(bool) || v2.(bool))
+		return c.push(v1.(bool) || v2.(bool))
 
 	case byte:
-		return c.stackPush(v1.(byte) * v2.(byte))
+		return c.push(v1.(byte) * v2.(byte))
 
 	case int32:
-		return c.stackPush(v1.(int32) * v2.(int32))
+		return c.push(v1.(int32) * v2.(int32))
 
 	case int:
-		return c.stackPush(v1.(int) * v2.(int))
+		return c.push(v1.(int) * v2.(int))
 
 	case int64:
-		return c.stackPush(v1.(int64) * v2.(int64))
+		return c.push(v1.(int64) * v2.(int64))
 
 	case float32:
-		return c.stackPush(v1.(float32) * v2.(float32))
+		return c.push(v1.(float32) * v2.(float32))
 
 	case float64:
-		return c.stackPush(v1.(float64) * v2.(float64))
+		return c.push(v1.(float64) * v2.(float64))
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -371,7 +371,7 @@ func exponentByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -388,11 +388,11 @@ func exponentByteCode(c *Context, i interface{}) error {
 		vv2 := data.Int64(v2)
 
 		if vv2 == 0 {
-			return c.stackPush(0)
+			return c.push(0)
 		}
 
 		if vv2 == 1 {
-			return c.stackPush(v1)
+			return c.push(v1)
 		}
 
 		prod := vv1
@@ -401,13 +401,13 @@ func exponentByteCode(c *Context, i interface{}) error {
 			prod = prod * vv1
 		}
 
-		return c.stackPush(prod)
+		return c.push(prod)
 
 	case float32:
-		return c.stackPush(float32(math.Pow(float64(v1.(float32)), float64(v2.(float32)))))
+		return c.push(float32(math.Pow(float64(v1.(float32)), float64(v2.(float32)))))
 
 	case float64:
-		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
+		return c.push(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -430,7 +430,7 @@ func divideByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -447,42 +447,42 @@ func divideByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(byte) / v2.(byte))
+		return c.push(v1.(byte) / v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int32) / v2.(int32))
+		return c.push(v1.(int32) / v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int) / v2.(int))
+		return c.push(v1.(int) / v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int64) / v2.(int64))
+		return c.push(v1.(int64) / v2.(int64))
 
 	case float32:
 		if v2.(float32) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(float32) / v2.(float32))
+		return c.push(v1.(float32) / v2.(float32))
 
 	case float64:
 		if v2.(float64) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(float64) / v2.(float64))
+		return c.push(v1.(float64) / v2.(float64))
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -505,7 +505,7 @@ func moduloByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -522,28 +522,28 @@ func moduloByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(byte) % v2.(byte))
+		return c.push(v1.(byte) % v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int32) % v2.(int32))
+		return c.push(v1.(int32) % v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int) % v2.(int))
+		return c.push(v1.(int) % v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
 			return c.error(errors.ErrDivisionByZero)
 		}
 
-		return c.stackPush(v1.(int64) % v2.(int64))
+		return c.push(v1.(int64) % v2.(int64))
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -561,7 +561,7 @@ func bitAndByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -572,7 +572,7 @@ func bitAndByteCode(c *Context, i interface{}) error {
 
 	result := data.Int(v1) & data.Int(v2)
 
-	return c.stackPush(result)
+	return c.push(result)
 }
 
 func bitOrByteCode(c *Context, i interface{}) error {
@@ -586,7 +586,7 @@ func bitOrByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -597,7 +597,7 @@ func bitOrByteCode(c *Context, i interface{}) error {
 
 	result := data.Int(v1) | data.Int(v2)
 
-	return c.stackPush(result)
+	return c.push(result)
 }
 
 func bitShiftByteCode(c *Context, i interface{}) error {
@@ -611,7 +611,7 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v1) || IsStackMarker(v2) {
+	if isStackMarker(v1) || isStackMarker(v2) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -633,5 +633,5 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 		value = value >> shift
 	}
 
-	return c.stackPush(value)
+	return c.push(value)
 }

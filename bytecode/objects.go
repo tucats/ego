@@ -23,7 +23,7 @@ func memberByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -35,7 +35,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(m) {
+	if isStackMarker(m) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -74,7 +74,7 @@ func memberByteCode(c *Context, i interface{}) error {
 				syms := symV.(*symbols.SymbolTable)
 
 				if v, ok := syms.Get(name); ok {
-					return c.stackPush(v)
+					return c.push(v)
 				}
 			}
 		}
@@ -106,7 +106,7 @@ func memberByteCode(c *Context, i interface{}) error {
 
 		fn := functions.FindNativeFunction(kind, name)
 		if fn != nil {
-			_ = c.stackPush(fn)
+			_ = c.push(fn)
 
 			return nil
 		}
@@ -115,7 +115,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
 	}
 
-	return c.stackPush(v)
+	return c.push(v)
 }
 
 func storeBytecodeByteCode(c *Context, i interface{}) error {
@@ -124,7 +124,7 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 	var v interface{}
 
 	if v, err = c.Pop(); err == nil {
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 

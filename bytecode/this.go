@@ -24,14 +24,14 @@ func setThisByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		_ = c.stackPush(v)
+		_ = c.push(v)
 		name = data.GenerateName()
-		c.symbolSetAlways(name, v)
+		c.setAlways(name, v)
 	} else {
 		name = data.String(i)
 	}
 
-	if v, ok := c.symbolGet(name); ok {
+	if v, ok := c.get(name); ok {
 		c.pushThis(name, v)
 	}
 
@@ -46,16 +46,16 @@ func loadThisByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidIdentifier)
 	}
 
-	v, found := c.symbolGet(name)
+	v, found := c.get(name)
 	if !found {
 		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	_ = c.stackPush(v)
+	_ = c.push(v)
 	name = data.GenerateName()
-	c.symbolSetAlways(name, v)
+	c.setAlways(name, v)
 
-	if v, ok := c.symbolGet(name); ok {
+	if v, ok := c.get(name); ok {
 		c.pushThis(name, v)
 	}
 
@@ -70,7 +70,7 @@ func getThisByteCode(c *Context, i interface{}) error {
 	this := data.String(i)
 
 	if v, ok := c.popThis(); ok {
-		c.symbolSetAlways(this, v)
+		c.setAlways(this, v)
 	}
 
 	return nil

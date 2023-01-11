@@ -61,7 +61,7 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 
 	if err == nil {
 		if v, err = c.Pop(); err == nil {
-			if IsStackMarker(v) {
+			if isStackMarker(v) {
 				return c.error(errors.ErrFunctionReturnedVoid)
 			}
 

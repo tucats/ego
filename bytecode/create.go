@@ -39,7 +39,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 	count := data.Int(i)
 
 	if v, err := c.Pop(); err == nil {
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -53,7 +53,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
-			if IsStackMarker(v) {
+			if isStackMarker(v) {
 				return c.error(errors.ErrFunctionReturnedVoid)
 			}
 
@@ -74,7 +74,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	return c.stackPush(a)
+	return c.push(a)
 }
 
 // arrayByteCode implements the Array opcode
@@ -124,7 +124,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(v) {
+		if isStackMarker(v) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -148,7 +148,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	_ = c.stackPush(array)
+	_ = c.push(array)
 
 	return nil
 }
@@ -203,7 +203,7 @@ func structByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(value) {
+		if isStackMarker(value) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -279,7 +279,7 @@ func structByteCode(c *Context, i interface{}) error {
 		structure.SetStatic(true)
 	}
 
-	return c.stackPush(structure)
+	return c.push(structure)
 }
 
 // makeMapByteCode implements the MakeMap opcode
@@ -310,7 +310,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -329,7 +329,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 			return err
 		}
 
-		if IsStackMarker(v) || IsStackMarker(k) {
+		if isStackMarker(v) || isStackMarker(k) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
@@ -338,5 +338,5 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	return c.stackPush(m)
+	return c.push(m)
 }

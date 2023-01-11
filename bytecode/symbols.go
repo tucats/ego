@@ -84,11 +84,11 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 		name = data.String(i)
 	}
 
-	if c.symbolIsConstant(name) {
+	if c.isConstant(name) {
 		return c.error(errors.ErrReadOnly)
 	}
 
-	err := c.symbolCreate(name)
+	err := c.create(name)
 	if err != nil {
 		return c.error(err)
 	}
@@ -103,11 +103,11 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 // symbolCreateByteCode instruction processor.
 func symbolCreateByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
-	if c.symbolIsConstant(n) {
+	if c.isConstant(n) {
 		return c.error(errors.ErrReadOnly)
 	}
 
-	err := c.symbolCreate(n)
+	err := c.create(n)
 	if err != nil {
 		err = c.error(err)
 	}
@@ -118,7 +118,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 // symbolCreateIfByteCode instruction processor.
 func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
-	if c.symbolIsConstant(n) {
+	if c.isConstant(n) {
 		return c.error(errors.ErrReadOnly)
 	}
 
@@ -143,7 +143,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 func symbolDeleteByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 
-	err := c.symbolDelete(n)
+	err := c.delete(n)
 	if err != nil {
 		return c.error(err)
 	}
@@ -158,13 +158,13 @@ func constantByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	varname := data.String(i)
 
-	err = c.constantSet(varname, v)
+	err = c.setConstant(varname, v)
 	if err != nil {
 		return c.error(err)
 	}

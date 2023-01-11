@@ -23,26 +23,26 @@ import (
 func authByteCode(c *Context, i interface{}) error {
 	var user, pass, token string
 
-	if _, ok := c.symbolGet("_authenticated"); !ok {
+	if _, ok := c.get("_authenticated"); !ok {
 		return c.error(errors.ErrNotAService)
 	}
 
 	kind := data.String(i)
 
-	if v, ok := c.symbolGet("_user"); ok {
+	if v, ok := c.get("_user"); ok {
 		user = data.String(v)
 	}
 
-	if v, ok := c.symbolGet("_password"); ok {
+	if v, ok := c.get("_password"); ok {
 		pass = data.String(v)
 	}
 
-	if v, ok := c.symbolGet("_token"); ok {
+	if v, ok := c.get("_token"); ok {
 		token = data.String(v)
 	}
 
 	tokenValid := false
-	if v, ok := c.symbolGet("_token_valid"); ok {
+	if v, ok := c.get("_token_valid"); ok {
 		tokenValid = data.Bool(v)
 	}
 
@@ -90,7 +90,7 @@ func authByteCode(c *Context, i interface{}) error {
 	if kind == defs.Any {
 		isAuth := false
 
-		if v, ok := c.symbolGet("_authenticated"); ok {
+		if v, ok := c.get("_authenticated"); ok {
 			isAuth = data.Bool(v)
 		}
 
@@ -109,7 +109,7 @@ func authByteCode(c *Context, i interface{}) error {
 	if kind == defs.AdminAuthneticationRequired || kind == defs.AdminTokenRequired {
 		isAuth := false
 
-		if v, ok := c.symbolGet("_superuser"); ok {
+		if v, ok := c.get("_superuser"); ok {
 			isAuth = data.Bool(v)
 		}
 
@@ -135,7 +135,7 @@ func responseByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	if IsStackMarker(v) {
+	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
@@ -162,14 +162,14 @@ func responseByteCode(c *Context, i interface{}) error {
 }
 
 func writeStatus(c *Context, status int) {
-	responseSymbol, _ := c.symbolGet("$response")
+	responseSymbol, _ := c.get("$response")
 	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		_ = responseStruct.SetAlways("Status", status)
 	}
 }
 
 func writeResponse(c *Context, output string) {
-	responseSymbol, _ := c.symbolGet("$response")
+	responseSymbol, _ := c.get("$response")
 	if responseStruct, ok := responseSymbol.(*data.Struct); ok {
 		bufferValue, _ := responseStruct.Get("Buffer")
 

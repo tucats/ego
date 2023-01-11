@@ -39,20 +39,20 @@ func TestNewContext(t *testing.T) {
 		t.Error("stack not empty before run")
 	}
 
-	e := c.constantSet("xyzzy", "frobozz")
+	e := c.setConstant("xyzzy", "frobozz")
 	if e != nil {
 		t.Errorf("Unexpected constant set error: %v", e)
 	}
 
-	if !c.symbolIsConstant("xyzzy") {
+	if !c.isConstant("xyzzy") {
 		t.Error("symbol not seen as constant")
 	}
 
-	if c.symbolIsConstant("zork") {
+	if c.isConstant("zork") {
 		t.Error("unknown symbol was constant")
 	}
 
-	r, found := c.symbolGet("xyzzy")
+	r, found := c.get("xyzzy")
 	if !found {
 		t.Error("Failed to find previously created constant")
 	}

@@ -273,8 +273,8 @@ func (c *Context) Pop() (interface{}, error) {
 	return v, nil
 }
 
-// FormatStack formats the stack for tracing output.
-func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) string {
+// formatStack formats the stack for tracing output.
+func formatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) string {
 	var b strings.Builder
 
 	if len(s) == 0 {
@@ -315,48 +315,48 @@ func FormatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) stri
 	return b.String()
 }
 
-// constantSet is a helper function to define a constant value.
-func (c *Context) constantSet(name string, v interface{}) error {
+// setConstant is a helper function to define a constant value.
+func (c *Context) setConstant(name string, v interface{}) error {
 	return c.symbols.SetConstant(name, v)
 }
 
-// symbolIsConstant is a helper function to define a constant value.
-func (c *Context) symbolIsConstant(name string) bool {
+// isConstant is a helper function to define a constant value.
+func (c *Context) isConstant(name string) bool {
 	return c.symbols.IsConstant(name)
 }
 
-// symbolGet is a helper function that retrieves a symbol value from the associated
+// get is a helper function that retrieves a symbol value from the associated
 // symbol table.
-func (c *Context) symbolGet(name string) (interface{}, bool) {
+func (c *Context) get(name string) (interface{}, bool) {
 	v, found := c.symbols.Get(name)
 
 	return v, found
 }
 
-// symbolSet is a helper function that sets a symbol value in the associated
+// set is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) symbolSet(name string, value interface{}) error {
+func (c *Context) set(name string, value interface{}) error {
 	return c.symbols.Set(name, value)
 }
 
-// symbolSetAlways is a helper function that sets a symbol value in the associated
+// setAlways is a helper function that sets a symbol value in the associated
 // symbol table.
-func (c *Context) symbolSetAlways(name string, value interface{}) {
+func (c *Context) setAlways(name string, value interface{}) {
 	c.symbols.SetAlways(name, value)
 }
 
-// symbolDelete deletes a symbol from the current context.
-func (c *Context) symbolDelete(name string) error {
+// delete deletes a symbol from the current context.
+func (c *Context) delete(name string) error {
 	return c.symbols.Delete(name, false)
 }
 
-// symbolCreate creates a symbol.
-func (c *Context) symbolCreate(name string) error {
+// create creates a symbol.
+func (c *Context) create(name string) error {
 	return c.symbols.Create(name)
 }
 
-// stackPush puts a new items on the stack.
-func (c *Context) stackPush(v interface{}) error {
+// push puts a new items on the stack.
+func (c *Context) push(v interface{}) error {
 	if c.stackPointer >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
@@ -381,7 +381,7 @@ func (c *Context) checkType(name string, value interface{}) error {
 		return err
 	}
 
-	if oldValue, ok := c.symbolGet(name); ok {
+	if oldValue, ok := c.get(name); ok {
 		if oldValue == nil {
 			return err
 		}

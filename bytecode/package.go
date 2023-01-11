@@ -100,7 +100,7 @@ func importByteCode(c *Context, i interface{}) error {
 	}
 
 	// Finally, store the entire package definition by name as well.
-	c.symbolSetAlways(name, pkg)
+	c.setAlways(name, pkg)
 
 	return nil
 }

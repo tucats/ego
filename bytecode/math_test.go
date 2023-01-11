@@ -166,7 +166,7 @@ func Test_negateByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -322,7 +322,7 @@ func Test_addByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -464,7 +464,7 @@ func Test_andByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -607,7 +607,7 @@ func Test_orByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -736,7 +736,7 @@ func Test_subtractByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -864,7 +864,7 @@ func Test_multiplyByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -993,7 +993,7 @@ func Test_exponentyByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -1137,7 +1137,7 @@ func Test_divideByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -1267,7 +1267,7 @@ func Test_moduloByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -1388,7 +1388,7 @@ func Test_bitAndByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -1521,7 +1521,7 @@ func Test_bitOrByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -1629,7 +1629,7 @@ func Test_bitShiftByteCode(t *testing.T) {
 		c := NewContext(syms, &bc)
 
 		for _, item := range tt.stack {
-			_ = c.stackPush(item)
+			_ = c.push(item)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
