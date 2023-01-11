@@ -78,7 +78,7 @@ func (m *Map) Get(key interface{}) (interface{}, bool, error) {
 		return v, found, nil
 	}
 
-	return nil, false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
+	return nil, false, errors.ErrWrongMapKeyType.Context(key)
 }
 
 // Set sets a value in the map. The key value and type value must be compatible
@@ -90,15 +90,15 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 	defer m.mutex.Unlock()
 
 	if m.immutable > 0 {
-		return false, errors.EgoError(errors.ErrImmutableMap)
+		return false, errors.ErrImmutableMap
 	}
 
 	if !IsBaseType(key, m.keyType) {
-		return false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
+		return false, errors.ErrWrongMapKeyType.Context(key)
 	}
 
 	if !IsBaseType(value, m.valueType) {
-		return false, errors.EgoError(errors.ErrWrongMapValueType).Context(value)
+		return false, errors.ErrWrongMapValueType.Context(value)
 	}
 
 	_, found := m.data[key]
@@ -203,11 +203,11 @@ func (m *Map) Delete(key interface{}) (bool, error) {
 	defer m.mutex.Unlock()
 
 	if m.immutable > 0 {
-		return false, errors.EgoError(errors.ErrImmutableMap)
+		return false, errors.ErrImmutableMap
 	}
 
 	if !IsType(key, m.keyType) {
-		return false, errors.EgoError(errors.ErrWrongMapKeyType).Context(key)
+		return false, errors.ErrWrongMapKeyType.Context(key)
 	}
 
 	_, found, err := m.Get(key)
@@ -345,7 +345,7 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.EgoError(err)
+			return nil, errors.NewError(err)
 		}
 
 		b.WriteString(fmt.Sprintf(`"%s":%s`, key, string(jsonBytes)))

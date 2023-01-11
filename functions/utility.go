@@ -19,7 +19,7 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err == nil {
 		time.Sleep(duration)
 	} else {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return true, err
@@ -37,7 +37,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	var err error
 
 	if len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Set()")
+		return nil, errors.ErrArgumentCount.In("Set()")
 	}
 
 	key := data.String(args[0])
@@ -48,7 +48,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// doesn't exist yet, for example
 	if isEgoSetting {
 		if !settings.Exists(key) {
-			return nil, errors.EgoError(errors.ErrReservedProfileSetting).In("Set()").Context(key)
+			return nil, errors.ErrReservedProfileSetting.In("Set()").Context(key)
 		}
 	}
 
@@ -63,7 +63,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 		(strings.HasPrefix(key, "ego.runtime") ||
 			strings.HasPrefix(key, "ego.server") ||
 			strings.HasPrefix(key, "ego.compiler")) {
-		return nil, errors.EgoError(errors.ErrReservedProfileSetting).In("Set()").Context(key)
+		return nil, errors.ErrReservedProfileSetting.In("Set()").Context(key)
 	}
 
 	// If the value is an empty string, delete the key else
@@ -129,7 +129,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return len(arg.Keys()), nil
 
 	case *data.Package:
-		return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(arg).String())
+		return nil, errors.ErrInvalidType.Context(data.TypeOf(arg).String())
 
 	case nil:
 		return 0, nil
@@ -205,7 +205,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return keys, err
 
 	default:
-		return nil, errors.EgoError(errors.ErrInvalidType).In("members()")
+		return nil, errors.ErrInvalidType.In("members()")
 	}
 }
 
@@ -233,7 +233,7 @@ func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // Signal creates an error object based on the
 // parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	r := errors.EgoError(errors.ErrUserDefined)
+	r := errors.ErrUserDefined
 	if len(args) > 0 {
 		r = r.Context(args[0])
 	}
@@ -265,7 +265,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			result = append(result, array...)
 		} else {
 			if !kind.IsInterface() && !data.TypeOf(j).IsType(kind) {
-				return nil, errors.EgoError(errors.ErrWrongArrayValueType).In("append()")
+				return nil, errors.ErrWrongArrayValueType.In("append()")
 			}
 			result = append(result, j)
 		}
@@ -281,11 +281,11 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if _, ok := args[0].(string); ok {
 		if len(args) != 1 {
-			return nil, errors.EgoError(errors.ErrArgumentCount).In("delete{}")
+			return nil, errors.ErrArgumentCount.In("delete{}")
 		}
 	} else {
 		if len(args) != 2 {
-			return nil, errors.EgoError(errors.ErrArgumentCount).In("delete{}")
+			return nil, errors.ErrArgumentCount.In("delete{}")
 		}
 	}
 
@@ -305,7 +305,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return v, err
 
 	default:
-		return nil, errors.EgoError(errors.ErrInvalidType).In("delete()")
+		return nil, errors.ErrInvalidType.In("delete()")
 	}
 }
 

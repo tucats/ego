@@ -38,11 +38,11 @@ const (
 //     the loop
 func (c *Compiler) compileFor() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingExpression)
+		return c.error(errors.ErrMissingExpression)
 	}
 
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
-		return c.newError(errors.ErrLoopExit)
+		return c.error(errors.ErrLoopExit)
 	}
 
 	c.b.Emit(bytecode.PushScope)
@@ -80,7 +80,7 @@ func (c *Compiler) compileFor() error {
 	defer c.b.Emit(bytecode.DropToMarker)
 
 	if !c.t.IsNext(tokenizer.DefineToken) {
-		return c.newError(errors.ErrMissingLoopAssignment)
+		return c.error(errors.ErrMissingLoopAssignment)
 	}
 
 	// Do we compile a range?
@@ -140,7 +140,7 @@ func (c *Compiler) simpleFor() error {
 
 	// Update any break statements. If there are no breaks, this is an illegal loop construct
 	if len(c.loops.breaks) == 0 {
-		return c.newError(errors.ErrLoopExit)
+		return c.error(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -157,7 +157,7 @@ func (c *Compiler) simpleFor() error {
 func (c *Compiler) conditionalFor() error {
 	bc, err := c.Expression()
 	if err != nil {
-		return c.newError(errors.ErrMissingForLoopInitializer)
+		return c.error(errors.ErrMissingForLoopInitializer)
 	}
 
 	// Make a point of seeing if this is a constant value, which
@@ -200,14 +200,14 @@ func (c *Compiler) conditionalFor() error {
 	// If we didn't emit anything other than
 	// the AtLine then this is an invalid loop
 	if c.b.Mark() <= opcount+1 {
-		return c.newError(errors.ErrLoopBody)
+		return c.error(errors.ErrLoopBody)
 	}
 
 	// Uglier test, but also needs doing. If there was a statement, but
 	// it was a block that did not contain any statments, also empty body.
 	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
 	if wasBlock.Operation == bytecode.PopScope && stmts == c.statementCount {
-		return c.newError(errors.ErrLoopBody)
+		return c.error(errors.ErrLoopBody)
 	}
 	// Branch back to start of loop
 	c.b.Emit(bytecode.Branch, b1)
@@ -220,7 +220,7 @@ func (c *Compiler) conditionalFor() error {
 	_ = c.b.SetAddressHere(b2)
 
 	if isConstant && len(c.loops.breaks) == 0 {
-		return c.newError(errors.ErrLoopExit)
+		return c.error(errors.ErrLoopExit)
 	}
 
 	for _, fixAddr := range c.loops.breaks {
@@ -243,7 +243,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	// be real lvalues. The actual thing we range is on the stack.
 	bc, err := c.Expression()
 	if err != nil {
-		return c.newError(err)
+		return c.error(err)
 	}
 
 	c.b.Append(bc)
@@ -297,7 +297,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// Nope, normal numeric loop conditions. At this point there should not
 	// be an index variable defined.
 	if indexName == tokenizer.EmptyToken.Spelling() && valueName != tokenizer.EmptyToken.Spelling() {
-		return c.newError(errors.ErrInvalidLoopIndex)
+		return c.error(errors.ErrInvalidLoopIndex)
 	}
 
 	c.loopStackPush(indexLoopType)
@@ -312,7 +312,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	c.b.Append(indexStore)
 
 	if !c.t.IsNext(tokenizer.SemicolonToken) {
-		return c.newError(errors.ErrMissingSemicolon)
+		return c.error(errors.ErrMissingSemicolon)
 	}
 
 	// Now get the condition clause that tells us if the loop
@@ -323,7 +323,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	if !c.t.IsNext(tokenizer.SemicolonToken) {
-		return c.newError(errors.ErrMissingSemicolon)
+		return c.error(errors.ErrMissingSemicolon)
 	}
 
 	// Finally, get the clause that updates something
@@ -360,7 +360,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	} else {
 		// Not auto-increment/decrement, so must be a legit assignment and expression
 		if !c.t.IsNext(tokenizer.AssignToken) {
-			return c.newError(errors.ErrMissingEqual)
+			return c.error(errors.ErrMissingEqual)
 		}
 
 		incrementCode, err = c.Expression()
@@ -412,7 +412,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 // in the compiler context.
 func (c *Compiler) compileBreak() error {
 	if c.loops == nil {
-		return c.newError(errors.ErrInvalidLoopControl)
+		return c.error(errors.ErrInvalidLoopControl)
 	}
 
 	fixAddr := c.b.Mark()
@@ -429,7 +429,7 @@ func (c *Compiler) compileBreak() error {
 // in the compiler context.
 func (c *Compiler) compileContinue() error {
 	if c.loops == nil {
-		return c.newError(errors.ErrInvalidLoopControl)
+		return c.error(errors.ErrInvalidLoopControl)
 	}
 
 	c.loops.continues = append(c.loops.continues, c.b.Mark())

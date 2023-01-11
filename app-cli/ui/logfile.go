@@ -27,7 +27,7 @@ func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 
 	err := openLogFile(userLogFileName, withTimeStamp)
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	if withTimeStamp {
@@ -61,7 +61,7 @@ func openLogFile(path string, withTimeStamp bool) error {
 	} else {
 		fileName, err = filepath.Abs(path)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 	}
 
@@ -69,7 +69,7 @@ func openLogFile(path string, withTimeStamp bool) error {
 	if err != nil {
 		logFile = nil
 
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	baseLogFileName, _ = filepath.Abs(path)

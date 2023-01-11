@@ -44,7 +44,7 @@ func New(headings []string) (*Table, error) {
 	t := &Table{}
 
 	if len(headings) == 0 {
-		return t, errors.EgoError(errors.ErrEmptyColumnList)
+		return t, errors.ErrEmptyColumnList
 	}
 
 	t.rowLimit = -1
@@ -80,7 +80,7 @@ func New(headings []string) (*Table, error) {
 	if term.IsTerminal(0) {
 		width, height, err := term.GetSize(0)
 		if err != nil {
-			return nil, errors.EgoError(err)
+			return nil, errors.NewError(err)
 		}
 
 		t.terminalWidth = width

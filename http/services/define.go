@@ -21,7 +21,7 @@ func DefineLibHandlers(root, subpath string) error {
 
 	fids, err := ioutil.ReadDir(filepath.Join(root, subpath))
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	for _, f := range fids {

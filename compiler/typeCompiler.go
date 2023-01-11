@@ -19,7 +19,7 @@ func (c *Compiler) typeEmitter(name string) error {
 
 func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 	if _, found := c.types[name]; found {
-		return &data.UndefinedType, c.newError(errors.ErrDuplicateTypeName).Context(name)
+		return &data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
 	}
 
 	baseType, err := c.parseType(name, false)
@@ -76,7 +76,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 				return &data.UndefinedType, err
 			}
 
-			t.DefineFunction(f.Name, f)
+			t.DefineFunction(f.Name, f, nil)
 		}
 
 		return t, nil
@@ -92,7 +92,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		}
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return &data.UndefinedType, c.newError(errors.ErrMissingBracket)
+			return &data.UndefinedType, c.error(errors.ErrMissingBracket)
 		}
 
 		valueType, err := c.parseType("", false)
@@ -111,7 +111,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		for !c.t.IsNext(tokenizer.DataEndToken) {
 			name := c.t.Next()
 			if !name.IsIdentifier() {
-				return &data.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
+				return &data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.
@@ -158,7 +158,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 			for c.t.IsNext(tokenizer.CommaToken) {
 				nextField := c.t.Next()
 				if !nextField.IsIdentifier() {
-					return &data.UndefinedType, c.newError(errors.ErrInvalidSymbolName)
+					return &data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
 				}
 
 				fieldNames = append(fieldNames, nextField.Spelling())
@@ -234,7 +234,7 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		typeNameSpelling = packageName.Spelling() + "." + typeNameSpelling
 	}
 
-	return &data.UndefinedType, c.newError(errors.ErrUnknownType, typeNameSpelling)
+	return &data.UndefinedType, c.error(errors.ErrUnknownType, typeNameSpelling)
 }
 
 // Embed a given user-defined type's fields in the current type we are compiling.

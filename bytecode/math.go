@@ -35,12 +35,12 @@ func negateByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch value := v.(type) {
@@ -92,7 +92,7 @@ func negateByteCode(c *Context, i interface{}) error {
 		return c.stackPush(r)
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.error(errors.ErrInvalidType)
 	}
 }
 
@@ -105,7 +105,7 @@ func notByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// A nil value is treated as false, so !nil is true
@@ -127,7 +127,7 @@ func notByteCode(c *Context, i interface{}) error {
 		return c.stackPush(value == float64(0))
 
 	default:
-		return c.newError(errors.ErrInvalidType)
+		return c.error(errors.ErrInvalidType)
 	}
 }
 
@@ -148,12 +148,12 @@ func addByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch vx := v1.(type) {
@@ -190,7 +190,7 @@ func addByteCode(c *Context, i interface{}) error {
 			return c.stackPush(v1.(bool) && v2.(bool))
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 }
@@ -208,12 +208,12 @@ func andByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	return c.stackPush(data.Bool(v1) && data.Bool(v2))
@@ -232,12 +232,12 @@ func orByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	return c.stackPush(data.Bool(v1) || data.Bool(v2))
@@ -259,12 +259,12 @@ func subtractByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
@@ -294,7 +294,7 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.stackPush(s)
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -311,12 +311,12 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	// Special case of multiply of string by integer to repeat string
@@ -355,7 +355,7 @@ func multiplyByteCode(c *Context, i interface{}) error {
 		return c.stackPush(v1.(float64) * v2.(float64))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -372,14 +372,14 @@ func exponentByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	switch v1.(type) {
@@ -410,14 +410,14 @@ func exponentByteCode(c *Context, i interface{}) error {
 		return c.stackPush(math.Pow(v1.(float64), v2.(float64)))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
 // divideByteCode bytecode instruction processor.
 func divideByteCode(c *Context, i interface{}) error {
 	if c.stackPointer < 1 {
-		return c.newError(errors.ErrStackUnderflow)
+		return c.error(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
@@ -431,12 +431,12 @@ func divideByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
@@ -444,55 +444,55 @@ func divideByteCode(c *Context, i interface{}) error {
 	switch v1.(type) {
 	case byte:
 		if v2.(byte) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(byte) / v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int32) / v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int) / v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int64) / v2.(int64))
 
 	case float32:
 		if v2.(float32) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(float32) / v2.(float32))
 
 	case float64:
 		if v2.(float64) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(float64) / v2.(float64))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
 // moduloByteCode bytecode instruction processor.
 func moduloByteCode(c *Context, i interface{}) error {
 	if c.stackPointer < 1 {
-		return c.newError(errors.ErrStackUnderflow)
+		return c.error(errors.ErrStackUnderflow)
 	}
 
 	v2, err := c.Pop()
@@ -506,12 +506,12 @@ func moduloByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	v1, v2 = data.Normalize(v1, v2)
@@ -519,34 +519,34 @@ func moduloByteCode(c *Context, i interface{}) error {
 	switch v1.(type) {
 	case byte:
 		if v2.(byte) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(byte) % v2.(byte))
 
 	case int32:
 		if v2.(int32) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int32) % v2.(int32))
 
 	case int:
 		if v2.(int) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int) % v2.(int))
 
 	case int64:
 		if v2.(int64) == 0 {
-			return c.newError(errors.ErrDivisionByZero)
+			return c.error(errors.ErrDivisionByZero)
 		}
 
 		return c.stackPush(v1.(int64) % v2.(int64))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 	}
 }
 
@@ -562,12 +562,12 @@ func bitAndByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	result := data.Int(v1) & data.Int(v2)
@@ -587,12 +587,12 @@ func bitOrByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	result := data.Int(v1) | data.Int(v2)
@@ -612,19 +612,19 @@ func bitShiftByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return c.newError(errors.ErrInvalidType).Context("nil")
+		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
 	shift := data.Int(v1)
 	value := data.Int(v2)
 
 	if shift < -31 || shift > 31 {
-		return c.newError(errors.ErrInvalidBitShift).Context(shift)
+		return c.error(errors.ErrInvalidBitShift).Context(shift)
 	}
 
 	if shift < 0 {

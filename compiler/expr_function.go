@@ -34,7 +34,7 @@ func (c *Compiler) functionCall() error {
 		}
 
 		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.newError(errors.ErrInvalidList)
+			return c.error(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -42,7 +42,7 @@ func (c *Compiler) functionCall() error {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.EndOfListToken {
-		return c.newError(errors.ErrMissingParenthesis)
+		return c.error(errors.ErrMissingParenthesis)
 	}
 
 	c.t.Advance(1)

@@ -209,7 +209,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 		term, e := filterClause(tokens, dialect)
 		if e != nil {
-			return "", errors.EgoError(e)
+			return "", errors.NewError(e)
 		}
 
 		valueCount := 0
@@ -222,7 +222,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 			value, e := filterClause(tokens, dialect)
 			if e != nil {
-				return "", errors.EgoError(e)
+				return "", errors.NewError(e)
 			}
 
 			switch dialect {
@@ -245,7 +245,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 		if !tokens.IsNext(tokenizer.EndOfListToken) {
-			return "", errors.EgoError(errors.ErrMissingParenthesis)
+			return "", errors.ErrMissingParenthesis
 		}
 
 		return result.String(), nil
@@ -306,7 +306,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		}
 
 	default:
-		return "", errors.EgoError(errors.ErrUnexpectedToken).Context(operator)
+		return "", errors.ErrUnexpectedToken.Context(operator)
 	}
 
 	if prefix != "" {
@@ -321,10 +321,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			result.WriteString(term)
 			if !tokens.IsNext(tokenizer.CommaToken) {
 				if termCount < 2 {
-					return "", errors.EgoError(errors.ErrInvalidList)
+					return "", errors.ErrInvalidList
 				}
 				if termCount > 2 && !listAllowed {
-					return "", errors.EgoError(errors.ErrInvalidList)
+					return "", errors.ErrInvalidList
 				}
 
 				break
@@ -339,7 +339,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	}
 
 	if !tokens.IsNext(tokenizer.EndOfListToken) {
-		return "", errors.EgoError(errors.ErrMissingParenthesis)
+		return "", errors.ErrMissingParenthesis
 	}
 
 	return result.String(), nil

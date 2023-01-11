@@ -24,7 +24,7 @@ func authByteCode(c *Context, i interface{}) error {
 	var user, pass, token string
 
 	if _, ok := c.symbolGet("_authenticated"); !ok {
-		return c.newError(errors.ErrNotAService)
+		return c.error(errors.ErrNotAService)
 	}
 
 	kind := data.String(i)
@@ -136,7 +136,7 @@ func responseByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	isJSON := false

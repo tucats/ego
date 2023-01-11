@@ -71,14 +71,14 @@ func Load(application string, name string) error {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	path := filepath.Join(home, ProfileDirectory, ProfileFile)
 
 	configFile, err := os.Open(path)
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	defer configFile.Close()
@@ -106,7 +106,7 @@ func Load(application string, name string) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -122,7 +122,7 @@ func Save() error {
 	// Does the directory exist?
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	path := filepath.Join(home, ProfileDirectory)
@@ -147,7 +147,7 @@ func Save() error {
 	err = ioutil.WriteFile(path, byteBuffer, securePermission)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -240,7 +240,7 @@ func Delete(key string) error {
 	c := getCurrentConfiguration()
 
 	if _, found := c.Items[key]; !found {
-		return errors.EgoError(errors.ErrInvalidConfigName).Context(key)
+		return errors.ErrInvalidConfigName.Context(key)
 	}
 
 	delete(c.Items, key)
@@ -282,7 +282,7 @@ func DeleteProfile(key string) error {
 		if cfg.ID == getCurrentConfiguration().ID {
 			ui.Debug(ui.AppLogger, "cannot delete active profile")
 
-			return errors.EgoError(errors.ErrCannotDeleteActiveProfile).Context(key)
+			return errors.ErrCannotDeleteActiveProfile.Context(key)
 		}
 
 		delete(Configurations, key)
@@ -299,7 +299,7 @@ func DeleteProfile(key string) error {
 
 	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
 
-	return errors.EgoError(errors.ErrNoSuchProfile).Context(key)
+	return errors.ErrNoSuchProfile.Context(key)
 }
 
 func getCurrentConfiguration() *Configuration {

@@ -28,7 +28,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	// We start counting scope one level above the scope created just for
@@ -54,7 +54,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		// time to bail out. Otherwise, keep crawling up the tree.
 		if selectedScope >= 0 && selectedScope != scopeLevel {
 			if syms.IsRoot() && selectedScope > scopeLevel {
-				return nil, errors.EgoError(errors.ErrInvalidScopeLevel).Context(selectedScope)
+				return nil, errors.ErrInvalidScopeLevel.Context(selectedScope)
 			}
 
 			syms = syms.Parent()
@@ -142,7 +142,7 @@ func GetPackageSymbols(p *data.Package) *symbols.SymbolTable {
 func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// This function doesn't take any parameters.
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	// Compile the type definition for the structure we're going to return.
@@ -156,7 +156,7 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		}`)
 
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	result := data.NewArray(t, 0)

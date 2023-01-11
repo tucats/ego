@@ -114,6 +114,12 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"math.Sqrt":           {Min: 1, Max: 1, F: Sqrt},
 	"math.Sum":            {Min: 1, Max: Any, F: Sum},
 	"os.Args":             {Min: 0, Max: 0, F: GetArgs, FullScope: true},
+	"os.Chdir":            {Min: 1, Max: 1, F: Chdir},
+	"os.Chmod":            {Min: 2, Max: 2, F: Chmod},
+	"os.Chown":            {Min: 3, Max: 3, F: Chown},
+	"os.Clearenv":         {Min: 0, Max: 0, F: Clearenv},
+	"os.Environ":          {Min: 0, Max: 0, F: Environ},
+	"os.Executable":       {Min: 0, Max: 0, F: Executable, ErrReturn: true},
 	"os.Exit":             {Min: 0, Max: 1, F: Exit},
 	"os.Getenv":           {Min: 1, Max: 1, F: GetEnv},
 	"os.Hostname":         {Min: 0, Max: 0, F: Hostname},
@@ -281,16 +287,16 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 	}
 
 	if !found {
-		return nil, errors.EgoError(errors.ErrInvalidFunctionName).Context(name)
+		return nil, errors.ErrInvalidFunctionName.Context(name)
 	}
 
 	if len(args) < fdef.Min || len(args) > fdef.Max {
-		return nil, errors.EgoError(errors.ErrPanic).Context(i18n.E("arg.count"))
+		return nil, errors.ErrPanic.Context(i18n.E("arg.count"))
 	}
 
 	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, error))
 	if !ok {
-		return nil, errors.EgoError(errors.ErrPanic).Context(fmt.Errorf(i18n.E("function.pointer",
+		return nil, errors.ErrPanic.Context(fmt.Errorf(i18n.E("function.pointer",
 			map[string]interface{}{"ptr": fdef.F})))
 	}
 
@@ -300,7 +306,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	// Make sure not a collision
 	if _, ok := FunctionDictionary[fd.Name]; ok {
-		return errors.EgoError(errors.ErrFunctionAlreadyExists)
+		return errors.ErrFunctionAlreadyExists
 	}
 
 	FunctionDictionary[fd.Name] = fd
@@ -316,5 +322,5 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 }
 
 func stubFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return nil, errors.EgoError(errors.ErrInvalidFunctionName)
+	return nil, errors.ErrInvalidFunctionName
 }

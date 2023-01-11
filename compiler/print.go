@@ -13,7 +13,7 @@ func (c *Compiler) compilePrint() error {
 
 	for !c.isStatementEnd() {
 		if c.t.IsNext(tokenizer.CommaToken) {
-			return c.newError(errors.ErrUnexpectedToken, c.t.Peek(1))
+			return c.error(errors.ErrUnexpectedToken, c.t.Peek(1))
 		}
 
 		bc, err := c.Expression()

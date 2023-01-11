@@ -82,7 +82,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 	bc.Emit(bytecode.StackCheck, 1)
 
 	if c.t.Peek(1) == tokenizer.PointerToken {
-		return nil, c.newError(errors.ErrInvalidSymbolName, "*")
+		return nil, c.error(errors.ErrInvalidSymbolName, "*")
 	}
 
 	for {
@@ -90,7 +90,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		if !name.IsIdentifier() {
 			c.t.Set(savedPosition)
 
-			return nil, c.newError(errors.ErrInvalidSymbolName, name)
+			return nil, c.error(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
@@ -136,7 +136,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 	if isLvalueList {
 		// TODO if this is a channel store, then a list is not supported yet.
 		if c.t.Peek(1) == tokenizer.ChannelReceiveToken {
-			return nil, c.newError(errors.ErrInvalidChannelList)
+			return nil, c.error(errors.ErrInvalidChannelList)
 		}
 
 		// Patch up the stack size check. We can use the SetAddress
@@ -152,7 +152,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	c.t.TokenP = savedPosition
 
-	return nil, c.newError(errors.ErrNotAnLValueList)
+	return nil, c.error(errors.ErrNotAnLValueList)
 }
 
 // assignmentTarget compiles the information on the left side of
@@ -176,7 +176,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	}
 
 	if !name.IsIdentifier() {
-		return nil, c.newError(errors.ErrInvalidSymbolName, name)
+		return nil, c.error(errors.ErrInvalidSymbolName, name)
 	}
 
 	name = c.normalizeToken(name)
@@ -255,7 +255,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 		bc.Append(expression)
 
 		if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-			return c.newError(errors.ErrMissingBracket)
+			return c.error(errors.ErrMissingBracket)
 		}
 
 		bc.Emit(bytecode.LoadIndex)
@@ -268,7 +268,7 @@ func (c *Compiler) lvalueTerm(bc *bytecode.ByteCode) error {
 
 		member := c.t.Next()
 		if !member.IsIdentifier() {
-			return c.newError(errors.ErrInvalidSymbolName, member)
+			return c.error(errors.ErrInvalidSymbolName, member)
 		}
 
 		// Must do this as a push/loadindex in case the struct is

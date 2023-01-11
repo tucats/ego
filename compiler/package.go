@@ -19,18 +19,18 @@ import (
 // compilePackage compiles a package statement.
 func (c *Compiler) compilePackage() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingPackageName)
+		return c.error(errors.ErrMissingPackageName)
 	}
 
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.newError(errors.ErrInvalidPackageName, name)
+		return c.error(errors.ErrInvalidPackageName, name)
 	}
 
 	name = c.normalizeToken(name)
 
 	if (c.activePackageName != "") && (c.activePackageName != name.Spelling()) {
-		return c.newError(errors.ErrPackageRedefinition)
+		return c.error(errors.ErrPackageRedefinition)
 	}
 
 	c.activePackageName = name.Spelling()
@@ -49,11 +49,11 @@ func (c *Compiler) compileImport() error {
 	// compiled (i.e. not inside a function, etc.)
 	if !c.TestMode() {
 		if c.blockDepth > 0 {
-			return c.newError(errors.ErrInvalidImport)
+			return c.error(errors.ErrInvalidImport)
 		}
 
 		if c.loops != nil {
-			return c.newError(errors.ErrInvalidImport)
+			return c.error(errors.ErrInvalidImport)
 		}
 	}
 
@@ -168,7 +168,7 @@ func (c *Compiler) compileImport() error {
 
 			// If after the import we ended with mismatched block markers, complain
 			if importCompiler.blockDepth != 0 {
-				return c.newError(errors.ErrMissingEndOfBlock, packageName)
+				return c.error(errors.ErrMissingEndOfBlock, packageName)
 			}
 
 			// The import will have generate code that must be run to actually register
@@ -259,7 +259,7 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 			if e2 != nil {
 				c.t.Advance(-1)
 
-				return "", c.newError(e2)
+				return "", c.error(e2)
 			}
 		} else {
 			fn = name + defs.EgoFilenameExtension
@@ -294,7 +294,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
-		return "", errors.EgoError(err)
+		return "", errors.NewError(err)
 	}
 
 	ui.Debug(ui.CompilerLogger, "+++ Directory read attempt for \"%s\"", name)

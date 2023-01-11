@@ -198,7 +198,7 @@ func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 
 func (s *Struct) Set(name string, value interface{}) error {
 	if s.readonly {
-		return errors.EgoError(errors.ErrReadOnly)
+		return errors.ErrReadOnly
 	}
 
 	s.mutex.Lock()
@@ -208,14 +208,14 @@ func (s *Struct) Set(name string, value interface{}) error {
 	if name[0:1] == "_" {
 		_, ok := s.fields[name]
 		if ok {
-			return errors.EgoError(errors.ErrReadOnly)
+			return errors.ErrReadOnly
 		}
 	}
 
 	if s.static {
 		_, ok := s.fields[name]
 		if !ok {
-			return errors.EgoError(errors.ErrInvalidField)
+			return errors.ErrInvalidField
 		}
 	}
 
@@ -223,7 +223,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 		if t, ok := s.typeDef.fields[name]; ok {
 			// Does it have to match already?
 			if s.strongTyping && !IsType(value, t) {
-				return errors.EgoError(errors.ErrInvalidType).Context(TypeOf(value).String())
+				return errors.ErrInvalidType.Context(TypeOf(value).String())
 			}
 			// Make sure it is compatible with the field type.
 			value = t.Coerce(value)
@@ -391,7 +391,7 @@ func (s *Struct) MarshalJSON() ([]byte, error) {
 
 		jsonBytes, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.EgoError(err)
+			return nil, errors.NewError(err)
 		}
 
 		b.WriteString(fmt.Sprintf(`"%s":%s`, k, string(jsonBytes)))

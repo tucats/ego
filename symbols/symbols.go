@@ -113,7 +113,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	// Does it already exist and is it readonly? IF so, fail
 	attr, ok := s.symbols[name]
 	if ok && attr.Readonly {
-		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
+		return errors.ErrReadOnlyValue.Context(name)
 	}
 
 	if !ok {
@@ -163,7 +163,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		}
 	}
 
-	return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
+	return errors.ErrUnknownSymbol.Context(name)
 }
 
 // SetAlways stores a symbol value in the local table. No value in
@@ -272,21 +272,21 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	if found {
 		// Of the value exists and is readonly, we can do no more.
 		if attr.Readonly {
-			return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
+			return errors.ErrReadOnlyValue.Context(name)
 		}
 
 		// Check to be sure this isn't a restricted (function code) type
 		// that we are not allowed to write over, ever.
 		old = s.GetValue(attr.Slot)
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
-			return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
+			return errors.ErrReadOnlyValue.Context(name)
 		}
 	}
 
 	if !found {
 		// If there are no more tables, we have an error.
 		if s.IsRoot() {
-			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
+			return errors.ErrUnknownSymbol.Context(name)
 		}
 		// Otherwise, ask the parent to try to set the value.
 		return s.parent.Set(name, v)
@@ -318,7 +318,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 // variable ("_" as the first character).
 func (s *SymbolTable) Delete(name string, always bool) error {
 	if len(name) == 0 {
-		return errors.EgoError(errors.ErrInvalidSymbolName)
+		return errors.ErrInvalidSymbolName
 	}
 
 	s.mutex.Lock()
@@ -327,14 +327,14 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 	attr, f := s.symbols[name]
 	if !f {
 		if s.IsRoot() {
-			return errors.EgoError(errors.ErrUnknownSymbol).Context(name)
+			return errors.ErrUnknownSymbol.Context(name)
 		}
 
 		return s.parent.Delete(name, always)
 	}
 
 	if !always && attr.Readonly {
-		return errors.EgoError(errors.ErrReadOnlyValue).Context(name)
+		return errors.ErrReadOnlyValue.Context(name)
 	}
 
 	delete(s.symbols, name)
@@ -350,14 +350,14 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 // Create creates a symbol name in the table.
 func (s *SymbolTable) Create(name string) error {
 	if len(name) == 0 {
-		return errors.EgoError(errors.ErrInvalidSymbolName)
+		return errors.ErrInvalidSymbolName
 	}
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	if _, found := s.symbols[name]; found {
-		return errors.EgoError(errors.ErrSymbolExists).Context(name)
+		return errors.ErrSymbolExists.Context(name)
 	}
 
 	s.symbols[name] = &SymbolAttribute{

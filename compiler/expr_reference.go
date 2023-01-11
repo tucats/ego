@@ -63,7 +63,7 @@ func (c *Compiler) reference() error {
 
 			lastName = c.t.NextText()
 			if !tokenizer.IsSymbol(lastName) {
-				return c.newError(errors.ErrInvalidIdentifier)
+				return c.error(errors.ErrInvalidIdentifier)
 			}
 
 			lastName = c.normalize(lastName)
@@ -136,12 +136,12 @@ func (c *Compiler) reference() error {
 				c.b.Emit(bytecode.LoadSlice)
 
 				if c.t.Next() != tokenizer.EndOfArrayToken {
-					return c.newError(errors.ErrMissingBracket)
+					return c.error(errors.ErrMissingBracket)
 				}
 			} else {
 				// Nope, singular index
 				if c.t.Next() != tokenizer.EndOfArrayToken {
-					return c.newError(errors.ErrMissingBracket)
+					return c.error(errors.ErrMissingBracket)
 				}
 
 				c.b.Emit(bytecode.LoadIndex)

@@ -26,7 +26,7 @@ import (
 func stopByteCode(c *Context, i interface{}) error {
 	c.running = false
 
-	return errors.EgoError(errors.ErrStop)
+	return errors.ErrStop
 }
 
 // panicByteCode instruction processor generates an error. The boolean flag is used
@@ -50,7 +50,7 @@ func panicByteCode(c *Context, i interface{}) error {
 		panic(panicMessage)
 	}
 
-	return errors.EgoError(errors.ErrPanic).Context(panicMessage)
+	return errors.ErrPanic.Context(panicMessage)
 }
 
 // atLineByteCode instruction processor. This identifies the start of a new statement,
@@ -67,7 +67,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
-		return errors.EgoError(errors.ErrSignalDebugger)
+		return errors.ErrSignalDebugger
 	}
 
 	// If we are tracing, put that out now.
@@ -96,7 +96,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 	// Get destination
 	address := data.Int(i)
 	if address < 0 || address > c.bc.nextAddress {
-		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	}
 
 	if !data.Bool(v) {
@@ -111,7 +111,7 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 func branchByteCode(c *Context, i interface{}) error {
 	// Get destination
 	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
-		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		c.programCounter = address
 	}
@@ -132,7 +132,7 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 	// Get destination
 
 	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
-		return c.newError(errors.ErrInvalidBytecodeAddress).Context(address)
+		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {
 		if data.Bool(v) {
 			c.programCounter = address
@@ -216,7 +216,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		args[(argc-n)-1] = v
@@ -229,11 +229,17 @@ func callByteCode(c *Context, i interface{}) error {
 	}
 
 	if functionPointer == nil {
-		return c.newError(errors.ErrInvalidFunctionCall).Context("<nil>")
+		return c.error(errors.ErrInvalidFunctionCall).Context("<nil>")
 	}
 
 	if IsStackMarker(functionPointer) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
+	}
+
+	// If this is a function pointer (from a stored type function list)
+	// unwrap the value of the function pointer.
+	if dp, ok := functionPointer.(data.Function); ok {
+		functionPointer = dp.Value
 	}
 
 	// Depends on the type here as to what we call...
@@ -310,7 +316,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.newError(err).In(functions.FindName(function))
+			err = c.error(err).In(functions.FindName(function))
 		}
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
@@ -329,7 +335,7 @@ func callByteCode(c *Context, i interface{}) error {
 			if len(args) < functionDefinition.Min || len(args) > functionDefinition.Max {
 				name := functions.FindName(function)
 
-				return c.newError(errors.ErrArgumentCount).Context(name)
+				return c.error(errors.ErrArgumentCount).Context(name)
 			}
 		}
 
@@ -377,14 +383,14 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.newError(err).In(functions.FindName(function))
+			err = c.error(err).In(functions.FindName(function))
 		}
 
 	case error:
-		return c.newError(errors.ErrUnusedErrorReturn)
+		return c.error(errors.ErrUnusedErrorReturn)
 
 	default:
-		return c.newError(errors.ErrInvalidFunctionCall).Context(function)
+		return c.error(errors.ErrInvalidFunctionCall).Context(function)
 	}
 
 	// IF no problems and there's a result value, push it on the
@@ -404,7 +410,7 @@ func returnByteCode(c *Context, i interface{}) error {
 	if b, ok := i.(bool); ok && b {
 		c.result, err = c.Pop()
 		if IsStackMarker(c.Result) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 	} else if b, ok := i.(int); ok && b > 0 {
 		// there are return items expected on the stack.
@@ -424,7 +430,7 @@ func returnByteCode(c *Context, i interface{}) error {
 	// symbol table back to the package object itself so they an be externally
 	// referenced.
 	if err := c.syncPackageSymbols(); err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	// If FP is zero, there are no frames; this is a return from the main source
@@ -440,14 +446,14 @@ func returnByteCode(c *Context, i interface{}) error {
 	if err == nil && c.breakOnReturn {
 		c.breakOnReturn = false
 
-		return errors.EgoError(errors.ErrSignalDebugger)
+		return errors.ErrSignalDebugger
 	}
 
 	if err == nil {
 		return err
 	}
 
-	return c.newError(err)
+	return c.error(err)
 }
 
 // argCheckByteCode instruction processor verifies that there are enough items
@@ -463,7 +469,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 	switch operand := i.(type) {
 	case []interface{}:
 		if len(operand) < 2 || len(operand) > 3 {
-			return c.newError(errors.ErrArgumentTypeCheck)
+			return c.error(errors.ErrArgumentTypeCheck)
 		}
 
 		min = data.Int(operand[0])
@@ -484,19 +490,19 @@ func argCheckByteCode(c *Context, i interface{}) error {
 
 	case []int:
 		if len(operand) != 2 {
-			return c.newError(errors.ErrArgumentTypeCheck)
+			return c.error(errors.ErrArgumentTypeCheck)
 		}
 
 		min = operand[0]
 		max = operand[1]
 
 	default:
-		return c.newError(errors.ErrArgumentTypeCheck)
+		return c.error(errors.ErrArgumentTypeCheck)
 	}
 
 	args, found := c.symbolGet("__args")
 	if !found {
-		return c.newError(errors.ErrArgumentTypeCheck)
+		return c.error(errors.ErrArgumentTypeCheck)
 	}
 
 	// Do the actual compare. Note that if we ended up with a negative
@@ -508,13 +514,13 @@ func argCheckByteCode(c *Context, i interface{}) error {
 		}
 
 		if array.Len() < min || array.Len() > max {
-			return c.newError(errors.ErrArgumentCount).In(name)
+			return c.error(errors.ErrArgumentCount).In(name)
 		}
 
 		return nil
 	}
 
-	return c.newError(errors.ErrArgumentTypeCheck)
+	return c.error(errors.ErrArgumentTypeCheck)
 }
 
 // See if the top of the "this" stack is a package, and if so return
@@ -573,7 +579,7 @@ func modeCheckBytecode(c *Context, i interface{}) error {
 		return nil
 	}
 
-	return c.newError(errors.ErrWrongMode).Context(mode)
+	return c.error(errors.ErrWrongMode).Context(mode)
 }
 
 func entryPointByteCode(c *Context, i interface{}) error {
@@ -592,5 +598,5 @@ func entryPointByteCode(c *Context, i interface{}) error {
 		return callByteCode(c, 0)
 	}
 
-	return c.newError(errors.ErrUndefinedEntrypoint).Context(entryPointName)
+	return c.error(errors.ErrUndefinedEntrypoint).Context(entryPointName)
 }

@@ -89,7 +89,7 @@ func ShowAction(c *cli.Context) error {
 	if c.GetParameterCount() > 0 {
 		key := c.GetParameter(0)
 		if !settings.Exists(key) {
-			return errors.EgoError(errors.ErrNoSuchProfileKey).Context(key)
+			return errors.ErrNoSuchProfileKey.Context(key)
 		}
 
 		fmt.Println(settings.Get(key))
@@ -148,10 +148,10 @@ func SetOutputAction(c *cli.Context) error {
 			return nil
 		}
 
-		return errors.EgoError(errors.ErrInvalidOutputFormat).Context(outputType)
+		return errors.ErrInvalidOutputFormat.Context(outputType)
 	}
 
-	return errors.EgoError(errors.ErrMissingOutputType)
+	return errors.ErrMissingOutputType
 }
 
 // SetAction uses the first two parameters as a key and value.
@@ -233,11 +233,11 @@ func validateKey(key string) error {
 	if strings.HasPrefix(key, defs.PrivilegedKeyPrefix) {
 		allowed, found := defs.ValidSettings[key]
 		if !found {
-			return errors.EgoError(errors.ErrInvalidConfigName)
+			return errors.ErrInvalidConfigName
 		}
 
 		if !allowed {
-			return errors.EgoError(errors.ErrNoPrivilegeForOperation)
+			return errors.ErrNoPrivilegeForOperation
 		}
 	}
 

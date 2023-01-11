@@ -28,7 +28,7 @@ func (c *Compiler) compileBlock() error {
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
 
 		if c.t.AtEnd() {
-			return c.newError(errors.ErrMissingEndOfBlock)
+			return c.error(errors.ErrMissingEndOfBlock)
 		}
 	}
 
@@ -48,7 +48,7 @@ func (c *Compiler) compileRequiredBlock() error {
 
 	// Otherwise, needs to start with the open block
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
-		return c.newError(errors.ErrMissingBlock)
+		return c.error(errors.ErrMissingBlock)
 	}
 
 	// now compile and close the block.

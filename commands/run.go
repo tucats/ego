@@ -119,7 +119,7 @@ func RunAction(c *cli.Context) error {
 
 				content, e2 = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
 				if e2 != nil {
-					return errors.EgoError(err).Context(fileName)
+					return errors.NewError(err).Context(fileName)
 				}
 			}
 
@@ -263,7 +263,7 @@ func RunAction(c *cli.Context) error {
 			if err != nil {
 				ui.Log(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
-				return errors.EgoError(errors.ErrStop)
+				return errors.ErrStop
 			}
 
 			comp.AddPackageToSymbols(symbolTable)
@@ -325,7 +325,7 @@ func RunAction(c *cli.Context) error {
 	}
 
 	if exitValue > 0 {
-		return errors.EgoError(errors.ErrTerminatedWithErrors)
+		return errors.ErrTerminatedWithErrors
 	}
 
 	return nil

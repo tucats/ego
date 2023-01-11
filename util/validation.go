@@ -29,45 +29,45 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 			switch strings.ToLower(typeString) {
 			case FlagParameterType:
 				if len(values) != 1 {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
 				if values[0] != "" {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
 			case IntParameterType:
 				if len(values) != 1 {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
 				if _, ok := strconv.Atoi(data.String(values[0])); ok != nil {
-					return errors.EgoError(errors.ErrInvalidInteger).Context(name)
+					return errors.ErrInvalidInteger.Context(name)
 				}
 
 			case BoolParameterType:
 				if len(values) > 1 {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
 				if len(values) == 1 && data.String(values[0]) != "" {
 					if !InList(strings.ToLower(values[0]), defs.True, defs.False, "1", "0", "yes", "no") {
-						return errors.EgoError(errors.ErrInvalidBooleanValue).Context(name)
+						return errors.ErrInvalidBooleanValue.Context(name)
 					}
 				}
 
 			case defs.Any, StringParameterType:
 				if len(values) != 1 {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 
 			case ListParameterType:
 				if len(values) == 0 || values[0] == "" {
-					return errors.EgoError(errors.ErrWrongParameterValueCount).Context(name)
+					return errors.ErrWrongParameterValueCount.Context(name)
 				}
 			}
 		} else {
-			return errors.EgoError(errors.ErrInvalidKeyword).Context(name)
+			return errors.ErrInvalidKeyword.Context(name)
 		}
 	}
 
@@ -110,7 +110,7 @@ func AcceptedMediaType(r *http.Request, validList []string) error {
 		// If not, verify that the media type is in the optional list of additional
 		// accepted media types.
 		if !InList(mediaType, validList...) {
-			return errors.EgoError(errors.ErrInvalidMediaType).Context(mediaType)
+			return errors.ErrInvalidMediaType.Context(mediaType)
 		}
 	}
 

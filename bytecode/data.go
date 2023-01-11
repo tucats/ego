@@ -55,7 +55,7 @@ func storeByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(value) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name. If it is the reserved name "_" it means
@@ -68,7 +68,7 @@ func storeByteCode(c *Context, i interface{}) error {
 	if err == nil {
 		err = c.symbolSet(name, value)
 	} else {
-		return c.newError(err)
+		return c.error(err)
 	}
 
 	// Is this a readonly variable that is a structure? If so, mark it
@@ -95,7 +95,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	sourceChan := false
@@ -114,7 +114,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 		if sourceChan {
 			err = c.symbolCreate(varname)
 		} else {
-			err = c.newError(errors.ErrUnknownIdentifier).Context(x)
+			err = c.error(errors.ErrUnknownIdentifier).Context(x)
 		}
 
 		if err != nil {
@@ -128,7 +128,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	}
 
 	if !sourceChan && !destChan {
-		return c.newError(errors.ErrInvalidChannel)
+		return c.error(errors.ErrInvalidChannel)
 	}
 
 	var datum interface{}
@@ -158,7 +158,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name.
@@ -187,16 +187,16 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 
 	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
-		return c.newError(errors.ErrInvalidIdentifier)
+		return c.error(errors.ErrInvalidIdentifier)
 	}
 
 	dest, ok := c.symbolGet(name)
 	if !ok {
-		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	if data.IsNil(dest) {
-		return c.newError(errors.ErrNilPointerReference).Context(name)
+		return c.error(errors.ErrNilPointerReference).Context(name)
 	}
 
 	src, err := c.Pop()
@@ -205,7 +205,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(src) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	switch actual := dest.(type) {
@@ -217,7 +217,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, true)
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(bool)
@@ -227,7 +227,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, byte(1))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(byte)
@@ -237,7 +237,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, int32(1))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int32)
@@ -247,7 +247,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, int(1))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int)
@@ -257,7 +257,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, int64(1))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(int64)
@@ -267,7 +267,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, float64(0))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(float64)
@@ -277,7 +277,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, float32(0))
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(float32)
@@ -287,7 +287,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		if !c.Static {
 			d = data.Coerce(src, "")
 		} else if _, ok := d.(string); !ok {
-			return c.newError(errors.ErrInvalidVarType).Context(name)
+			return c.error(errors.ErrInvalidVarType).Context(name)
 		}
 
 		*actual = d.(string)
@@ -295,17 +295,17 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	case *data.Array:
 		*actual, ok = src.(data.Array)
 		if !ok {
-			return c.newError(errors.ErrNotAPointer).Context(name)
+			return c.error(errors.ErrNotAPointer).Context(name)
 		}
 
 	case **data.Channel:
 		*actual, ok = src.(*data.Channel)
 		if !ok {
-			return c.newError(errors.ErrNotAPointer).Context(name)
+			return c.error(errors.ErrNotAPointer).Context(name)
 		}
 
 	default:
-		return c.newError(errors.ErrNotAPointer).Context(name)
+		return c.error(errors.ErrNotAPointer).Context(name)
 	}
 
 	return nil
@@ -331,7 +331,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 	}
 
@@ -356,12 +356,12 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 func loadByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 	if len(name) == 0 {
-		return c.newError(errors.ErrInvalidIdentifier).Context(name)
+		return c.error(errors.ErrInvalidIdentifier).Context(name)
 	}
 
 	v, found := c.symbolGet(name)
 	if !found {
-		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.stackPush(v)
@@ -381,14 +381,14 @@ func explodeByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	empty := true
 
 	if m, ok := v.(*data.Map); ok {
 		if m.KeyType().Kind() != data.StringKind {
-			err = c.newError(errors.ErrWrongMapKeyType)
+			err = c.error(errors.ErrWrongMapKeyType)
 		} else {
 			keys := m.Keys()
 
@@ -404,7 +404,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 			}
 		}
 	} else {
-		err = c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+		err = c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 	}
 
 	return err

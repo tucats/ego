@@ -226,7 +226,7 @@ func (b *ByteCode) SetAddressHere(mark int) error {
 // for a backwards branch operation.
 func (b *ByteCode) SetAddress(mark int, address int) error {
 	if mark > b.nextAddress || mark < 0 {
-		return errors.EgoError(errors.ErrInvalidBytecodeAddress)
+		return errors.ErrInvalidBytecodeAddress
 	}
 
 	i := b.instructions[mark]

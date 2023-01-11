@@ -1,9 +1,11 @@
 package errors
 
 import (
-	"errors"
+	goerror "errors"
 	"fmt"
 	"strings"
+
+	"github.com/tucats/ego/i18n"
 )
 
 // location describes a source code location. Zero-values mean
@@ -15,37 +17,37 @@ type location struct {
 	column int
 }
 
-// EgoErrorMsg describes the error structure shared by all of Ego.
+// Error describes the error structure shared by all of Ego.
 // This includes a wrapped error (which may be from our list of
 // native errors, or a return code from a Go runtime). The
 // context is a string that further explains the cause/source of
 // the error, and is message-specific.
-type EgoErrorMsg struct {
+type Error struct {
 	err      error
 	location *location
 	context  string
 }
 
-// EgoError creates a new EgoError object, and fils in the native
+// NewError creates a new NewError object, and fils in the native
 // wrapped error. Note that if the value passed in is already
-// an EgoError, then it is returned without re-wrapping it.
-func EgoError(err error) *EgoErrorMsg {
+// an NewError, then it is returned without re-wrapping it.
+func NewError(err error) *Error {
 	if err == nil {
 		return nil
 	}
 
-	if e, ok := err.(*EgoErrorMsg); ok {
+	if e, ok := err.(*Error); ok {
 		return e
 	}
 
-	return &EgoErrorMsg{
+	return &Error{
 		err: err,
 	}
 }
 
 // In specifies the location name. This can be the name of
 // a source code module, or a function name.
-func (e *EgoErrorMsg) In(name string) *EgoErrorMsg {
+func (e *Error) In(name string) *Error {
 	if e == nil {
 		return nil
 	}
@@ -63,7 +65,7 @@ func (e *EgoErrorMsg) In(name string) *EgoErrorMsg {
 // the error. The line number is always present, the column
 // is typically only set during compilation; if it is zero then
 // it is not displayed.
-func (e *EgoErrorMsg) At(line int, column int) *EgoErrorMsg {
+func (e *Error) At(line int, column int) *Error {
 	if e == nil {
 		return nil
 	}
@@ -82,7 +84,7 @@ func (e *EgoErrorMsg) At(line int, column int) *EgoErrorMsg {
 // dependent value that further describes the error. For
 // example, in a keyword not recognized error, the context
 // is usually the offending keyword.
-func (e *EgoErrorMsg) Context(context interface{}) *EgoErrorMsg {
+func (e *Error) Context(context interface{}) *Error {
 	if context != nil {
 		e.context = fmt.Sprintf("%v", context)
 	} else {
@@ -95,19 +97,38 @@ func (e *EgoErrorMsg) Context(context interface{}) *EgoErrorMsg {
 // NewMessage create a new EgoError using an arbitrary
 // string. This is used in cases where a fmt.Errorf() was
 // used to generate an error string.
-func NewMessage(m string) *EgoErrorMsg {
-	return &EgoErrorMsg{
-		err: errors.New(m),
+//
+// Note that the message text is first checked to see if it
+// is an i18n error key. If so, the localized version of the
+// error message is used. If the message starts with an "_"
+// character, no i18n translation is performed.
+func NewMessage(m string) *Error {
+	if strings.HasPrefix(m, "_") {
+		m = m[1:]
+	} else {
+		m = i18n.E(m)
+	}
+
+	return &Error{
+		err: goerror.New(m),
 	}
 }
 
 // Is compares the current error to the supplied error, and
 // return a boolean indicating if they are the same.
-func (e *EgoErrorMsg) Is(err error) bool {
+func (e *Error) Is(err error) bool {
 	if e == nil {
 		return false
 	}
 
+	// Is the test error one of the Ego "native" errors? If so
+	// we need to compare both underlying error states.
+	if e1, ok := err.(*Error); ok {
+		return e.err == e1.err
+	}
+
+	// Otherwise, we're comparing against a Go native error, so
+	// we compare our underlying error to the provided error.
 	return e.err == err
 }
 
@@ -120,7 +141,7 @@ func Equals(e1, e2 error) bool {
 		return false
 	}
 
-	if e, ok := e1.(*EgoErrorMsg); ok {
+	if e, ok := e1.(*Error); ok {
 		return e.Is(e2)
 	}
 
@@ -131,7 +152,7 @@ func Equals(e1, e2 error) bool {
 // object is not an error, then the result is always false.
 // If it is a native error or an EgoError, the error and
 // wrapped error are compared.
-func (e *EgoErrorMsg) Equal(v interface{}) bool {
+func (e *Error) Equal(v interface{}) bool {
 	if e == nil {
 		return v == nil
 	}
@@ -141,7 +162,7 @@ func (e *EgoErrorMsg) Equal(v interface{}) bool {
 	}
 
 	switch a := v.(type) {
-	case *EgoErrorMsg:
+	case *Error:
 		return e.err == a.err
 
 	case error:
@@ -162,7 +183,7 @@ func Nil(e error) bool {
 		return true
 	}
 
-	if ee, ok := e.(*EgoErrorMsg); ok {
+	if ee, ok := e.(*Error); ok {
 		if ee == nil {
 			return true
 		}
@@ -174,7 +195,7 @@ func Nil(e error) bool {
 }
 
 // Format an EgoError as a string for human consumption.
-func (e *EgoErrorMsg) Error() string {
+func (e *Error) Error() string {
 	var b strings.Builder
 
 	if e == nil || e.err == nil {
@@ -242,8 +263,8 @@ func (e *EgoErrorMsg) Error() string {
 }
 
 // Unwrap retrieves the native or wrapped error from this
-// EgoError.
-func (e *EgoErrorMsg) Unwrap() error {
+// Error.
+func (e *Error) Unwrap() error {
 	if e == nil {
 		return nil
 	}
@@ -252,7 +273,7 @@ func (e *EgoErrorMsg) Unwrap() error {
 }
 
 // GetContext retrieves the context value for the error.
-func (e *EgoErrorMsg) GetContext() interface{} {
+func (e *Error) GetContext() interface{} {
 	if e == nil {
 		return nil
 	}

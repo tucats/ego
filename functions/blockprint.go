@@ -23,7 +23,7 @@ func BlockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if !isFont(fontName) {
-		return nil, errors.EgoError(errors.ErrNoSuchAsset).Context(fontName)
+		return nil, errors.ErrNoSuchAsset.Context(fontName)
 	}
 
 	myFigure := figure.NewFigure(msg, fontName, true)

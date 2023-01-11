@@ -182,7 +182,7 @@ func RunServer(c *cli.Context) error {
 		}
 
 		if !found {
-			return errors.EgoError(errors.ErrNoSuchDebugService).Context(debugPath)
+			return errors.ErrNoSuchDebugService.Context(debugPath)
 		}
 	}
 
@@ -207,7 +207,7 @@ func RunServer(c *cli.Context) error {
 
 		sandboxPath, e2 := filepath.Abs(sandboxPath)
 		if e2 != nil {
-			return errors.EgoError(errors.ErrInvalidSandboxPath).Context(sandboxPath)
+			return errors.ErrInvalidSandboxPath.Context(sandboxPath)
 		}
 
 		settings.SetDefault(defs.SandboxPathSetting, sandboxPath)
@@ -246,7 +246,7 @@ func RunServer(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -313,7 +313,7 @@ func ResolveServerName(name string) (string, error) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return "", errors.EgoError(err)
+		return "", errors.NewError(err)
 	}
 
 	port := url.Port()

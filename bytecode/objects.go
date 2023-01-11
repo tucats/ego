@@ -24,7 +24,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		name = data.String(v)
@@ -36,7 +36,7 @@ func memberByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(m) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	var v interface{}
@@ -58,7 +58,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		if v == nil {
-			return c.newError(errors.ErrUnknownMember).Context(name)
+			return c.error(errors.ErrUnknownMember).Context(name)
 		}
 
 	case *data.Package:
@@ -81,7 +81,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		if !found {
 			// Okay, could it be a function based on the type of this object?
 			if fv := tt.Function(name); fv == nil {
-				return c.newError(errors.ErrUnknownPackageMember).Context(name)
+				return c.error(errors.ErrUnknownPackageMember).Context(name)
 			} else {
 				v = fv
 			}
@@ -107,7 +107,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		// Nothing we can do something with, so bail
-		return c.newError(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
+		return c.error(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
 	}
 
 	return c.stackPush(v)
@@ -120,14 +120,14 @@ func storeBytecodeByteCode(c *Context, i interface{}) error {
 
 	if v, err = c.Pop(); err == nil {
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		if bc, ok := v.(*ByteCode); ok {
 			bc.name = data.String(i)
 			c.symbols.SetAlways(bc.name, bc)
 		} else {
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 		}
 	}
 

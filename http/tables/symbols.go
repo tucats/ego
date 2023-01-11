@@ -113,7 +113,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 			input = value
 			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
-			return "", errors.EgoError(errors.ErrNoSuchTXSymbol).Context(key)
+			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
 	}
 
@@ -156,10 +156,10 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
 
 		if key != "" {
-			return "", errors.EgoError(errors.ErrNoSuchTXSymbol).Context(key)
+			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
 
-		return "", errors.EgoError(errors.ErrNoSuchTXSymbol)
+		return "", errors.ErrNoSuchTXSymbol
 	}
 
 	return input, nil

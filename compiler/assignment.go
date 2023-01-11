@@ -48,11 +48,11 @@ func (c *Compiler) compileAssignment() error {
 		tokenizer.SubtractAssignToken,
 		tokenizer.MultiplyAssignToken,
 		tokenizer.DivideAssignToken) {
-		return c.newError(errors.ErrMissingAssignment)
+		return c.error(errors.ErrMissingAssignment)
 	}
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingExpression)
+		return c.error(errors.ErrMissingExpression)
 	}
 
 	// Handle implicit operators
@@ -84,7 +84,7 @@ func (c *Compiler) compileAssignment() error {
 			tokenizer.SubtractAssignToken,
 			tokenizer.MultiplyAssignToken,
 			tokenizer.DivideAssignToken) {
-			return errors.EgoError(errors.ErrMissingAssignment)
+			return errors.ErrMissingAssignment
 		}
 
 		e2, err := c.Expression()

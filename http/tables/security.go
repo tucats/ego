@@ -427,7 +427,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 
 	rows, err := db.Query(`select permissions from admin.privileges where username=$1 and tablename=$2`, stripQuotes(user), stripQuotes(tableName))
 	if err != nil {
-		return errors.EgoError(err).Context(user + ":" + tableName)
+		return errors.NewError(err).Context(user + ":" + tableName)
 	}
 
 	defer rows.Close()
@@ -492,7 +492,7 @@ func grantPermissions(sessionID int32, db *sql.DB, user string, table string, pe
 	}
 
 	if err != nil {
-		return errors.EgoError(err).Context(context)
+		return errors.NewError(err).Context(context)
 	}
 
 	return nil

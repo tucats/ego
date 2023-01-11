@@ -146,12 +146,12 @@ func (a *Array) Validate(kind *Type) error {
 	// array member
 	if a.valueType.Kind() == ByteType.kind {
 		if !kind.IsIntegerType() {
-			return errors.EgoError(errors.ErrWrongArrayValueType)
+			return errors.ErrWrongArrayValueType
 		}
 	} else {
 		for _, v := range a.data {
 			if !IsType(v, kind) {
-				return errors.EgoError(errors.ErrWrongArrayValueType)
+				return errors.ErrWrongArrayValueType
 			}
 		}
 	}
@@ -181,14 +181,14 @@ func (a *Array) Get(i interface{}) (interface{}, error) {
 
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
-			return nil, errors.EgoError(errors.ErrArrayBounds)
+			return nil, errors.ErrArrayBounds
 		}
 
 		return a.bytes[index], nil
 	}
 
 	if index < 0 || index >= len(a.data) {
-		return nil, errors.EgoError(errors.ErrArrayBounds)
+		return nil, errors.ErrArrayBounds
 	}
 
 	return a.data[index], nil
@@ -215,7 +215,7 @@ func (a *Array) SetType(i *Type) error {
 		return nil
 	}
 
-	return errors.EgoError(errors.ErrImmutableArray)
+	return errors.ErrImmutableArray
 }
 
 // Force the size of the array. Existing values are retained if the
@@ -253,7 +253,7 @@ func (a *Array) Set(i interface{}, value interface{}) error {
 	v := value
 
 	if a.immutable > 0 {
-		return errors.EgoError(errors.ErrImmutableArray)
+		return errors.ErrImmutableArray
 	}
 
 	index := getInt(i)
@@ -262,11 +262,11 @@ func (a *Array) Set(i interface{}, value interface{}) error {
 	// the Ego array.
 	if a.valueType.Kind() == ByteKind {
 		if index < 0 || index >= len(a.bytes) {
-			return errors.EgoError(errors.ErrArrayBounds)
+			return errors.ErrArrayBounds
 		}
 	} else {
 		if index < 0 || index >= len(a.data) {
-			return errors.EgoError(errors.ErrArrayBounds)
+			return errors.ErrArrayBounds
 		}
 	}
 
@@ -304,7 +304,7 @@ func (a *Array) Set(i interface{}, value interface{}) error {
 	// Now, ensure it's of the right type for this array. As always, special case
 	// for []byte arrays.
 	if a.valueType.Kind() == ByteKind && !TypeOf(v).IsIntegerType() {
-		return errors.EgoError(errors.ErrWrongArrayValueType)
+		return errors.ErrWrongArrayValueType
 	}
 
 	if a.valueType.Kind() == ByteKind {
@@ -378,7 +378,7 @@ func (a *Array) String() string {
 // array.
 func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
-		return nil, errors.EgoError(errors.ErrArrayBounds)
+		return nil, errors.ErrArrayBounds
 	}
 
 	// If it's a []byte we must build an Ego slide from the native bytes.
@@ -401,7 +401,7 @@ func (a *Array) GetSlice(first, last int) ([]interface{}, error) {
 // array.
 func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 	if first < 0 || last < first || first > len(a.data) || last > len(a.data) {
-		return nil, errors.EgoError(errors.ErrArrayBounds)
+		return nil, errors.ErrArrayBounds
 	}
 
 	slice, err := a.GetSlice(first, last)
@@ -484,11 +484,11 @@ func getInt(i interface{}) int {
 // is marked as immutable.
 func (a *Array) Delete(i int) error {
 	if i >= len(a.data) || i < 0 {
-		return errors.EgoError(errors.ErrArrayBounds)
+		return errors.ErrArrayBounds
 	}
 
 	if a.immutable != 0 {
-		return errors.EgoError(errors.ErrImmutableArray)
+		return errors.ErrImmutableArray
 	}
 
 	if a.valueType.Kind() == ByteType.kind {
@@ -551,7 +551,7 @@ func (a *Array) Sort() error {
 				a.data[i] = v
 
 			default:
-				return errors.EgoError(errors.ErrInvalidType).Context("sort")
+				return errors.ErrInvalidType.Context("sort")
 			}
 		}
 
@@ -572,12 +572,12 @@ func (a *Array) Sort() error {
 				a.data[i] = v
 
 			default:
-				return errors.EgoError(errors.ErrInvalidType).Context("sort")
+				return errors.ErrInvalidType.Context("sort")
 			}
 		}
 
 	default:
-		err = errors.EgoError(errors.ErrArgumentType)
+		err = errors.ErrArgumentType
 	}
 
 	return err
@@ -605,7 +605,7 @@ func (a Array) MarshalJSON() ([]byte, error) {
 
 			jsonBytes, err := json.Marshal(v)
 			if err != nil {
-				return nil, errors.EgoError(err)
+				return nil, errors.NewError(err)
 			}
 
 			b.WriteString(string(jsonBytes))

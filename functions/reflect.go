@@ -156,7 +156,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return data.NewStructFromMap(result), nil
 	}
 
-	if e, ok := args[0].(errors.EgoErrorMsg); ok {
+	if e, ok := args[0].(errors.Error); ok {
 		wrappedError := e.Unwrap()
 
 		if e.Is(errors.ErrUserDefined) {

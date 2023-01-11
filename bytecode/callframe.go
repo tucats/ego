@@ -106,7 +106,7 @@ func (c *Context) callFramePop() error {
 			if _, ok := pkg.(*data.Struct); ok {
 				ui.Log(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
 
-				return errors.EgoError(errors.ErrStop)
+				return errors.ErrStop
 			}
 
 			if m, ok := pkg.(*data.Package); ok {
@@ -136,7 +136,7 @@ func (c *Context) callFramePop() error {
 		c.blockDepth = callFrame.blockDepth
 		c.breakOnReturn = callFrame.breakOnReturn
 	} else {
-		return c.newError(errors.ErrInvalidCallFrame)
+		return c.error(errors.ErrInvalidCallFrame)
 	}
 
 	// Finally, if there _was_ stuff on the stack after the call,

@@ -14,7 +14,7 @@ import (
 func Test_stopByteCode(t *testing.T) {
 	ctx := &Context{running: true}
 
-	if e := stopByteCode(ctx, nil); !e.(*errors.EgoErrorMsg).Equal(errors.ErrStop) {
+	if e := stopByteCode(ctx, nil); !e.(*errors.Error).Equal(errors.ErrStop) {
 		t.Errorf("stopByteCode unexpected error %v", e)
 	}
 
@@ -36,7 +36,7 @@ func Test_panicByteCode(t *testing.T) {
 
 	e := panicByteCode(ctx, "panic")
 
-	if e.(*errors.EgoErrorMsg).GetContext() != "panic" {
+	if e.(*errors.Error).GetContext() != "panic" {
 		t.Errorf("panicByteCode wrong context %v", e)
 	}
 }
@@ -234,7 +234,7 @@ func Test_branchFalseByteCode(t *testing.T) {
 	_ = ctx.stackPush(true)
 
 	e = branchTrueByteCode(ctx, 20)
-	if !e.(*errors.EgoErrorMsg).Equal(errors.ErrInvalidBytecodeAddress) {
+	if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
 		t.Errorf("branchFalseByteCode unexpected error %v", e)
 	}
 
@@ -283,7 +283,7 @@ func Test_branchTrueByteCode(t *testing.T) {
 	_ = ctx.stackPush(true)
 
 	e = branchTrueByteCode(ctx, 20)
-	if !e.(*errors.EgoErrorMsg).Equal(errors.ErrInvalidBytecodeAddress) {
+	if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
 		t.Errorf("branchTrueByteCode unexpected error %v", e)
 	}
 

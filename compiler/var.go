@@ -17,13 +17,13 @@ func (c *Compiler) compileVar() error {
 				break
 			}
 
-			return c.newError(errors.ErrMissingSymbol)
+			return c.error(errors.ErrMissingSymbol)
 		}
 
 		if !name.IsIdentifier() {
 			c.t.Advance(-1)
 
-			return c.newError(errors.ErrInvalidSymbolName, name)
+			return c.error(errors.ErrInvalidSymbolName, name)
 		}
 
 		// See if it's a reserved word.
@@ -34,7 +34,7 @@ func (c *Compiler) compileVar() error {
 				break
 			}
 
-			return c.newError(errors.ErrInvalidSymbolName, name)
+			return c.error(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = c.normalizeToken(name)
@@ -69,7 +69,7 @@ func (c *Compiler) compileVar() error {
 		}
 
 		// Not a symbol name, so fail
-		return c.newError(errors.ErrInvalidTypeSpec)
+		return c.error(errors.ErrInvalidTypeSpec)
 	}
 
 	// We got a defined type, so emit the model and store it

@@ -12,7 +12,7 @@ func (c *Compiler) compileSwitch() error {
 	var defaultBlock *bytecode.ByteCode
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingExpression)
+		return c.error(errors.ErrMissingExpression)
 	}
 
 	fallThrough := 0
@@ -45,7 +45,7 @@ func (c *Compiler) compileSwitch() error {
 	}
 
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
-		return c.newError(errors.ErrMissingBlock)
+		return c.error(errors.ErrMissingBlock)
 	}
 
 	for !c.t.IsNext(tokenizer.BlockEndToken) {
@@ -56,7 +56,7 @@ func (c *Compiler) compileSwitch() error {
 		// Could be a default statement:
 		if c.t.IsNext(tokenizer.DefaultToken) {
 			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.newError(errors.ErrMissingColon)
+				return c.error(errors.ErrMissingColon)
 			}
 
 			savedBC := c.b
@@ -74,11 +74,11 @@ func (c *Compiler) compileSwitch() error {
 		} else {
 			// Must be a "case" statement:
 			if !c.t.IsNext(tokenizer.CaseToken) {
-				return c.newError(errors.ErrMissingCase)
+				return c.error(errors.ErrMissingCase)
 			}
 
 			if c.t.IsNext(tokenizer.ColonToken) {
-				return c.newError(errors.ErrMissingExpression)
+				return c.error(errors.ErrMissingExpression)
 			}
 
 			cx, err := c.Expression()
@@ -100,12 +100,12 @@ func (c *Compiler) compileSwitch() error {
 			c.b.Emit(bytecode.BranchFalse, 0)
 
 			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.newError(errors.ErrMissingColon)
+				return c.error(errors.ErrMissingColon)
 			}
 
 			if fallThrough > 0 {
 				if err := c.b.SetAddressHere(fallThrough); err != nil {
-					return c.newError(err)
+					return c.error(err)
 				}
 
 				fallThrough = 0

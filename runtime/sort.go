@@ -17,17 +17,17 @@ import (
 // run command is invoked.
 func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	array, ok := args[0].(*data.Array)
 	if !ok {
-		return nil, errors.EgoError(errors.ErrArgumentType)
+		return nil, errors.ErrArgumentType
 	}
 
 	fn, ok := args[1].(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.EgoError(errors.ErrArgumentType)
+		return nil, errors.ErrArgumentType
 	}
 
 	var funcError error

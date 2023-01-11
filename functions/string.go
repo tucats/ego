@@ -239,7 +239,7 @@ func ToString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			b.WriteRune(rune(a))
 
 		default:
-			return nil, errors.EgoError(errors.ErrArgumentCount).In("String()")
+			return nil, errors.ErrArgumentCount.In("String()")
 		}
 	}
 
@@ -251,12 +251,12 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	if len(args) == 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Template()")
+		return nil, errors.ErrArgumentCount.In("Template()")
 	}
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(data.TypeOf(args[0]).String())
+		return nil, errors.ErrInvalidType.In("Template()").Context(data.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -267,17 +267,17 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				return nil, errors.EgoError(errors.ErrInvalidTemplateName).In("Template()").Context(templateNode.Name)
+				return nil, errors.ErrInvalidTemplateName.In("Template()").Context(templateNode.Name)
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				return nil, errors.EgoError(errors.ErrInvalidType).In("Template()").Context(data.TypeOf(tv).String())
+				return nil, errors.ErrInvalidType.In("Template()").Context(data.TypeOf(tv).String())
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
 			if err != nil {
-				return nil, errors.EgoError(err)
+				return nil, errors.NewError(err)
 			}
 		}
 	}
@@ -295,7 +295,7 @@ func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return r.String(), err
@@ -354,7 +354,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for i, n := range v {
 		err := r.Set(i, n)
 		if err != nil {
-			return nil, errors.EgoError(err)
+			return nil, errors.NewError(err)
 		}
 	}
 
@@ -529,7 +529,7 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	elemArray, ok := args[0].(*data.Array)
 	if !ok {
-		return nil, errors.EgoError(errors.ErrArgumentType).Context("Join()")
+		return nil, errors.ErrArgumentType.Context("Join()")
 	}
 
 	separator := data.String(args[1])

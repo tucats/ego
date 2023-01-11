@@ -13,7 +13,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		c.Static = data.Bool(v)
@@ -27,19 +27,19 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 	v, err := c.Pop()
 	if err == nil {
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If we're doing strict type checking...
 		if c.Static {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
-					err = c.newError(errors.ErrArgumentType)
+					err = c.error(errors.ErrArgumentType)
 				}
 			} else {
 				if t, ok := i.(string); ok {
 					if t != reflect.TypeOf(v).String() {
-						err = c.newError(errors.ErrArgumentType)
+						err = c.error(errors.ErrArgumentType)
 					}
 				} else {
 					if t, ok := i.(int); ok {
@@ -73,7 +73,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 						}
 
 						if !ok {
-							err = c.newError(errors.ErrArgumentType)
+							err = c.error(errors.ErrArgumentType)
 						}
 					}
 				}
@@ -83,7 +83,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 			// If it's not interface type, check it out...
 			if !t.IsInterface() {
 				if t.IsKind(data.ErrorKind) {
-					v = errors.EgoError(errors.ErrPanic).Context(v)
+					v = errors.ErrPanic.Context(v)
 				}
 
 				// Figure out the type. If it's a user type, get the underlying type unless we're
@@ -101,7 +101,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 				}
 
 				if !actualType.IsType(t) {
-					return c.newError(errors.ErrArgumentType)
+					return c.error(errors.ErrArgumentType)
 				}
 
 				switch t.Kind() {
@@ -135,7 +135,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 				if t.HasFunctions() {
 					vt := data.TypeOf(v)
 					if e := t.ValidateFunctions(vt); e != nil {
-						return c.newError(e)
+						return c.error(e)
 					}
 				}
 			}
@@ -162,7 +162,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Some types cannot be coerced, so must match.
@@ -170,7 +170,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		t.Kind() == data.StructKind ||
 		t.Kind() == data.ArrayKind {
 		if !t.IsType(data.TypeOf(v)) {
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 		}
 	}
 
@@ -183,7 +183,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		for _, k := range vv.FieldNames() {
 			_, e2 := t.Field(k)
 			if e2 != nil {
-				return errors.EgoError(e2)
+				return errors.NewError(e2)
 			}
 		}
 
@@ -276,7 +276,7 @@ func addressOfByteCode(c *Context, i interface{}) error {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	return c.stackPush(addr)
@@ -287,29 +287,29 @@ func deRefByteCode(c *Context, i interface{}) error {
 
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
-		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	if data.IsNil(addr) {
-		return c.newError(errors.ErrNilPointerReference)
+		return c.error(errors.ErrNilPointerReference)
 	}
 
 	if content, ok := addr.(*interface{}); ok {
 		if data.IsNil(content) {
-			return c.newError(errors.ErrNilPointerReference)
+			return c.error(errors.ErrNilPointerReference)
 		}
 
 		c2 := *content
 		if c3, ok := c2.(*interface{}); ok {
 			if data.IsNil(content) {
-				return c.newError(errors.ErrNilPointerReference)
+				return c.error(errors.ErrNilPointerReference)
 			}
 
 			return c.stackPush(*c3)
 		}
 
-		return c.newError(errors.ErrNotAPointer).Context(data.Format(c2))
+		return c.error(errors.ErrNotAPointer).Context(data.Format(c2))
 	}
 
-	return c.newError(errors.ErrNotAPointer).Context(name)
+	return c.error(errors.ErrNotAPointer).Context(name)
 }

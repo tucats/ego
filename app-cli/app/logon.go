@@ -69,7 +69,7 @@ func Logon(c *cli.Context) error {
 	}
 
 	if url == "" {
-		return errors.EgoError(errors.ErrNoLogonServer)
+		return errors.ErrNoLogonServer
 	} else {
 		ui.Debug(ui.RestLogger, "Logon URL is %s", url)
 	}
@@ -116,7 +116,7 @@ func Logon(c *cli.Context) error {
 	if err != nil {
 		ui.Debug(ui.RestLogger, "REST POST %s; failed %v", url, err)
 
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	ui.Debug(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
@@ -128,7 +128,7 @@ func Logon(c *cli.Context) error {
 
 		err := json.Unmarshal(r.Body(), &payload)
 		if err != nil {
-			return errors.EgoError(err).Context("logon")
+			return errors.NewError(err).Context("logon")
 		}
 
 		if ui.IsActive(ui.RestLogger) {
@@ -150,7 +150,7 @@ func Logon(c *cli.Context) error {
 		}
 
 		if err != nil {
-			err = errors.EgoError(err)
+			err = errors.NewError(err)
 		}
 
 		return err
@@ -160,21 +160,21 @@ func Logon(c *cli.Context) error {
 	if err == nil {
 		switch r.StatusCode() {
 		case http.StatusUnauthorized:
-			err = errors.EgoError(errors.ErrNoCredentials)
+			err = errors.ErrNoCredentials
 
 		case http.StatusForbidden:
-			err = errors.EgoError(errors.ErrInvalidCredentials)
+			err = errors.ErrInvalidCredentials
 
 		case http.StatusNotFound:
-			err = errors.EgoError(errors.ErrLogonEndpoint)
+			err = errors.ErrLogonEndpoint
 
 		default:
-			err = errors.EgoError(errors.ErrHTTP).Context(r.StatusCode())
+			err = errors.ErrHTTP.Context(r.StatusCode())
 		}
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -194,7 +194,7 @@ func resolveServerName(name string) (string, error) {
 	// Now make sure it's well-formed.
 	url, err := url.Parse(normalizedName)
 	if err != nil {
-		return "", errors.EgoError(err)
+		return "", errors.NewError(err)
 	}
 
 	port := url.Port()
@@ -233,7 +233,7 @@ func resolveServerName(name string) (string, error) {
 	err = runtime.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return normalizedName, err

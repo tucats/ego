@@ -59,7 +59,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	// Is the URL formed correctly?
 	url, err := url.Parse(connStr)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	// Get the driver from the URL. If it's SQLITE3 we have to strip
@@ -72,7 +72,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	// Create a database connection
 	svc.db, err = sql.Open(svc.driver, connStr)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	// If there was a password specified in the URL, blank it out now before we log it.
@@ -85,7 +85,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	if dberr := svc.initializeDatabase(); dberr != nil {
 		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
-		return nil, errors.EgoError(dberr)
+		return nil, errors.NewError(dberr)
 	}
 
 	// Does the default user already exist? If not, create it.
@@ -168,7 +168,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	if dberr != nil {
 		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
-		return user, errors.EgoError(dberr)
+		return user, errors.NewError(dberr)
 	}
 
 	found := false
@@ -180,7 +180,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 		if dberr != nil {
 			ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
-			return user, errors.EgoError(dberr)
+			return user, errors.NewError(dberr)
 		}
 
 		user.Name = name
@@ -189,7 +189,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 		err := json.Unmarshal([]byte(perms), &user.Permissions)
 		if err != nil {
-			return user, errors.EgoError(err)
+			return user, errors.NewError(err)
 		}
 
 		found = true
@@ -200,7 +200,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 			ui.Debug(ui.AuthLogger, "No database record for %s", name)
 		}
 
-		err = errors.EgoError(errors.ErrNoSuchUser).Context(name)
+		err = errors.ErrNoSuchUser.Context(name)
 	}
 
 	return user, err
@@ -224,14 +224,14 @@ func (pg *DatabaseService) WriteUser(user defs.User) error {
 
 		_, e3 := pg.db.Exec(updateQueryString, user.Name, user.Password, permString)
 		if e3 != nil {
-			dberr = errors.EgoError(e3)
+			dberr = errors.NewError(e3)
 		}
 	} else {
 		action = "added to"
 
 		_, e3 := pg.db.Exec(insertQueryString, user.Name, user.ID, user.Password, permString)
 		if e3 != nil {
-			e3 = errors.EgoError(e3)
+			e3 = errors.NewError(e3)
 		}
 
 		dberr = e3
@@ -240,7 +240,7 @@ func (pg *DatabaseService) WriteUser(user defs.User) error {
 	if dberr != nil {
 		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
-		err = errors.EgoError(dberr)
+		err = errors.NewError(dberr)
 	} else {
 		ui.Debug(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
@@ -255,7 +255,7 @@ func (pg *DatabaseService) DeleteUser(name string) error {
 	if dberr != nil {
 		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
 
-		err = errors.EgoError(dberr)
+		err = errors.NewError(dberr)
 	} else {
 		if count, _ := r.RowsAffected(); count > 0 {
 			ui.Debug(ui.AuthLogger, "Deleted user %s from database", name)
@@ -294,7 +294,7 @@ func (pg *DatabaseService) initializeDatabase() error {
 	}
 
 	if dberr != nil {
-		dberr = errors.EgoError(dberr)
+		dberr = errors.NewError(dberr)
 	}
 
 	return dberr

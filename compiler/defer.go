@@ -14,7 +14,7 @@ import (
 // return is executed.
 func (c *Compiler) compileDefer() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingStatement)
+		return c.error(errors.ErrMissingStatement)
 	}
 
 	// Start by branching around this block of code.

@@ -17,11 +17,11 @@ const (
 var catchSets = [][]error{
 	// OptionalCatchSet
 	{
-		errors.EgoError(errors.ErrUnknownMember),
-		errors.EgoError(errors.ErrInvalidType),
-		errors.EgoError(errors.ErrNilPointerReference),
-		errors.EgoError(errors.ErrDivisionByZero),
-		errors.EgoError(errors.ErrArrayIndex),
+		errors.ErrUnknownMember,
+		errors.ErrInvalidType,
+		errors.ErrNilPointerReference,
+		errors.ErrDivisionByZero,
+		errors.ErrArrayIndex,
 	},
 }
 
@@ -41,7 +41,7 @@ func tryByteCode(c *Context, i interface{}) error {
 // are caught.
 func willCatchByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
-		return c.newError(errors.ErrTryCatchMismatch)
+		return c.error(errors.ErrTryCatchMismatch)
 	}
 
 	try := c.tryStack[len(c.tryStack)-1]
@@ -52,7 +52,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 	switch i := i.(type) {
 	case int:
 		if i > len(catchSets) {
-			return c.newError(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
+			return c.error(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
 				map[string]interface{}{"index": i}))
 		}
 
@@ -63,17 +63,17 @@ func willCatchByteCode(c *Context, i interface{}) error {
 			try.catches = append(try.catches, catchSets[i-1]...)
 		}
 
-	case *errors.EgoErrorMsg:
+	case *errors.Error:
 		try.catches = append(try.catches, i)
 
 	case error:
-		try.catches = append(try.catches, errors.EgoError(i))
+		try.catches = append(try.catches, errors.NewError(i))
 
 	case string:
 		try.catches = append(try.catches, errors.NewMessage(i))
 
 	default:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(i).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(i).String())
 	}
 
 	c.tryStack[len(c.tryStack)-1] = try
@@ -84,7 +84,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 // tryPopByteCode instruction processor.
 func tryPopByteCode(c *Context, i interface{}) error {
 	if len(c.tryStack) == 0 {
-		return c.newError(errors.ErrTryCatchMismatch)
+		return c.error(errors.ErrTryCatchMismatch)
 	}
 
 	if len(c.tryStack) == 1 {

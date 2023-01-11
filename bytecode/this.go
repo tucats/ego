@@ -43,12 +43,12 @@ func setThisByteCode(c *Context, i interface{}) error {
 func loadThisByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 	if len(name) == 0 {
-		return c.newError(errors.ErrInvalidIdentifier)
+		return c.error(errors.ErrInvalidIdentifier)
 	}
 
 	v, found := c.symbolGet(name)
 	if !found {
-		return c.newError(errors.ErrUnknownIdentifier).Context(name)
+		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
 	_ = c.stackPush(v)

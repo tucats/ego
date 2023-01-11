@@ -72,7 +72,7 @@ func Logging(c *cli.Context) error {
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
 				if logger < 0 {
-					return errors.EgoError(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
+					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
 				}
 
 				if logger == ui.ServerLogger {
@@ -89,11 +89,11 @@ func Logging(c *cli.Context) error {
 			for _, loggerName := range loggerNames {
 				logger := ui.Logger(loggerName)
 				if logger < 0 || logger == ui.ServerLogger {
-					return errors.EgoError(errors.ErrInvalidLoggerName).Context(strings.ToUpper(loggerName))
+					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
 				}
 
 				if _, ok := loggers.Loggers[loggerName]; ok {
-					return errors.EgoError(errors.ErrLoggerConflict).Context(loggerName)
+					return errors.ErrLoggerConflict.Context(loggerName)
 				}
 
 				loggers.Loggers[loggerName] = false

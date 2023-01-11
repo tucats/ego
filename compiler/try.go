@@ -26,7 +26,7 @@ func (c *Compiler) compileTry() error {
 	_ = c.b.SetAddressHere(b1)
 
 	if !c.t.IsNext(tokenizer.CatchToken) {
-		return c.newError(errors.ErrMissingCatch)
+		return c.error(errors.ErrMissingCatch)
 	}
 
 	// Is there a named variable that will hold the error?
@@ -34,11 +34,11 @@ func (c *Compiler) compileTry() error {
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		errName := c.t.Next()
 		if !errName.IsIdentifier() {
-			return c.newError(errors.ErrInvalidSymbolName)
+			return c.error(errors.ErrInvalidSymbolName)
 		}
 
 		if !c.t.IsNext(tokenizer.EndOfListToken) {
-			return c.newError(errors.ErrMissingParenthesis)
+			return c.error(errors.ErrMissingParenthesis)
 		}
 
 		c.b.Emit(bytecode.Load, bytecode.ErrorVariableName)

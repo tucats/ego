@@ -165,7 +165,7 @@ func SetDefaultLoggers() error {
 		if trimmedName != "" {
 			logger := ui.Logger(trimmedName)
 			if logger < 0 {
-				return errors.EgoError(errors.ErrInvalidLoggerName).Context(trimmedName)
+				return errors.ErrInvalidLoggerName.Context(trimmedName)
 			}
 
 			ui.SetLogger(logger, true)

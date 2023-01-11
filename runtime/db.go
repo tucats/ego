@@ -28,14 +28,14 @@ func initDBTypeDef() {
 	if dbTypeDef == nil {
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
-		t.DefineFunction("Begin", DBBegin)
-		t.DefineFunction("Commit", DBCommit)
-		t.DefineFunction("Rollback", DBRollback)
-		t.DefineFunction("Query", DBQueryRows)
-		t.DefineFunction("QueryResult", DBQuery)
-		t.DefineFunction("Execute", DBExecute)
-		t.DefineFunction("Close", DBClose)
-		t.DefineFunction("AsStruct", DataBaseAsStruct)
+		t.DefineFunction("Begin", nil, DBBegin)
+		t.DefineFunction("Commit", nil, DBCommit)
+		t.DefineFunction("Rollback", nil, DBRollback)
+		t.DefineFunction("Query", nil, DBQueryRows)
+		t.DefineFunction("QueryResult", nil, DBQuery)
+		t.DefineFunction("Execute", nil, DBExecute)
+		t.DefineFunction("Close", nil, DBClose)
+		t.DefineFunction("AsStruct", nil, DataBaseAsStruct)
 
 		dbTypeDef = t
 	}
@@ -46,7 +46,7 @@ func initDBTypeDef() {
 // for the functions available to a specific handle.
 func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	initDBTypeDef()
@@ -56,7 +56,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	url, err := url.Parse(connStr)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	if scheme := url.Scheme; scheme == "sqlite3" {
@@ -65,7 +65,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	db, err := sql.Open(url.Scheme, connStr)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	// If there was a password specified in the URL, blank it out now before we log it.
@@ -90,7 +90,7 @@ func DBNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // for the functions available to a specific handle.
 func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	var tx *sql.Tx
@@ -107,7 +107,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				this.SetAlways(transactionFieldName, tx)
 			}
 		} else {
-			err = errors.EgoError(errors.ErrTransactionAlreadyActive)
+			err = errors.ErrTransactionAlreadyActive
 		}
 	}
 
@@ -117,7 +117,7 @@ func DBBegin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DBRollback implements the Rollback() db function.
 func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	var tx *sql.Tx
@@ -129,14 +129,14 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if tx != nil {
 			err = tx.Rollback()
 		} else {
-			err = errors.EgoError(errors.ErrNoTransactionActive)
+			err = errors.ErrNoTransactionActive
 		}
 
 		this.SetAlways(transactionFieldName, nil)
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return nil, err
@@ -145,7 +145,7 @@ func DBRollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // DBCommit implements the Commit() db function.
 func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	var tx *sql.Tx
@@ -157,14 +157,14 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if tx != nil {
 			err = tx.Commit()
 		} else {
-			err = errors.EgoError(errors.ErrNoTransactionActive)
+			err = errors.ErrNoTransactionActive
 		}
 
 		this.SetAlways(transactionFieldName, nil)
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return nil, err
@@ -176,7 +176,7 @@ func DBCommit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // column data in the order of the result set, but with no labels, etc.
 func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	_, _, err := getDBClient(s)
@@ -194,7 +194,7 @@ func DataBaseAsStruct(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 // handle contents to prevent re-using the connection.
 func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	_, tx, err := getDBClient(s)
@@ -214,7 +214,7 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this.SetAlways(rowCountFieldName, -1)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return true, err
@@ -224,7 +224,7 @@ func DBClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // entire result set as an array.
 func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	db, tx, err := getDBClient(s)
@@ -258,7 +258,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.EgoError(e2)}}, errors.EgoError(e2)
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(e2)}}, errors.NewError(e2)
 	}
 
 	arrayResult := make([][]interface{}, 0)
@@ -276,7 +276,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 		if err := rows.Scan(rowTemplate...); err != nil {
-			return nil, errors.EgoError(err)
+			return nil, errors.NewError(err)
 		}
 
 		if asStruct {
@@ -301,12 +301,12 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	if err := rows.Close(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.EgoError(err)}}, errors.EgoError(err)
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.EgoError(err)}}, errors.EgoError(err)
+		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -330,7 +330,7 @@ func DBQuery(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // affected by the statement (such as number of rows deleted for a DELETE statement).
 func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	db, tx, e2 := getDBClient(s)
@@ -357,7 +357,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	r, err := sqlResult.RowsAffected()
@@ -367,7 +367,7 @@ func DBExecute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	ui.Debug(ui.DBLogger, "%d rows affected", r)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
@@ -382,7 +382,7 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {
-						return nil, nil, errors.EgoError(errors.ErrDatabaseClientClosed)
+						return nil, nil, errors.ErrDatabaseClientClosed
 					}
 
 					tx := gc.GetAlways(transactionFieldName)
@@ -396,5 +396,5 @@ func getDBClient(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 		}
 	}
 
-	return nil, nil, errors.EgoError(errors.ErrNoFunctionReceiver)
+	return nil, nil, errors.ErrNoFunctionReceiver
 }

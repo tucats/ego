@@ -76,7 +76,7 @@ func TableList(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -112,7 +112,7 @@ func TableShow(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -148,7 +148,7 @@ func TableDrop(c *cli.Context) error {
 	if err == nil && count > 1 {
 		ui.Say("msg.table.delete.count", map[string]interface{}{"count": count})
 	} else if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	return nil
@@ -192,7 +192,7 @@ func TableContents(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -254,12 +254,12 @@ func TableInsert(c *cli.Context) error {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		err = json.Unmarshal(b, &payload)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 	}
 
@@ -275,14 +275,14 @@ func TableInsert(c *cli.Context) error {
 		// Get the column name, and confirm that it's an identifier.
 		column := t.Next()
 		if !column.IsIdentifier() {
-			return errors.EgoError(errors.ErrInvalidIdentifier).Context(column)
+			return errors.ErrInvalidIdentifier.Context(column)
 		}
 
 		columnName := column.Spelling()
 
 		// Must be followed by a "=" token
 		if !t.IsNext(tokenizer.AssignToken) {
-			return errors.EgoError(errors.ErrMissingAssignment)
+			return errors.ErrMissingAssignment
 		}
 
 		// Rest of the string is handled without regard for
@@ -320,7 +320,7 @@ func TableInsert(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -342,12 +342,12 @@ func TableCreate(c *cli.Context) error {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		err = json.Unmarshal(b, &payload)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		// Move the info read in to a map so we can replace fields from
@@ -369,19 +369,19 @@ func TableCreate(c *cli.Context) error {
 		column := t.Next()
 
 		if !t.IsNext(tokenizer.ColonToken) {
-			return errors.EgoError(errors.ErrInvalidColumnDefinition).Context(columnDefText)
+			return errors.ErrInvalidColumnDefinition.Context(columnDefText)
 		}
 
 		columnName := column.Spelling()
 
 		// If we've already defined this one, complain
 		if _, ok := defined[columnName]; ok {
-			return errors.EgoError(errors.ErrDuplicateColumnName).Context(columnName)
+			return errors.ErrDuplicateColumnName.Context(columnName)
 		}
 
 		columnType := t.Next()
 		if !columnType.IsIdentifier() {
-			return errors.EgoError(errors.ErrInvalidType).Context(columnType)
+			return errors.ErrInvalidType.Context(columnType)
 		}
 
 		columnTypeName := columnType.Spelling()
@@ -396,7 +396,7 @@ func TableCreate(c *cli.Context) error {
 		}
 
 		if !found {
-			return errors.EgoError(errors.ErrInvalidType).Context(columnTypeName)
+			return errors.ErrInvalidType.Context(columnTypeName)
 		}
 
 		for t.IsNext(tokenizer.CommaToken) {
@@ -409,7 +409,7 @@ func TableCreate(c *cli.Context) error {
 				columnInfo.Nullable = true
 
 			default:
-				return errors.EgoError(errors.ErrInvalidKeyword).Context(flag)
+				return errors.ErrInvalidKeyword.Context(flag)
 			}
 		}
 
@@ -468,7 +468,7 @@ func TableUpdate(c *cli.Context) error {
 		column := t.NextText()
 
 		if !t.IsNext(tokenizer.AssignToken) {
-			return errors.EgoError(errors.ErrMissingAssignment)
+			return errors.ErrMissingAssignment
 		}
 
 		value := t.Remainder()
@@ -548,7 +548,7 @@ func TableDelete(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -675,7 +675,7 @@ func TableSQL(c *cli.Context) error {
 
 		b, err := ioutil.ReadFile(fn)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		if len(sql) > 0 {

@@ -142,7 +142,7 @@ func dropToMarkerByteCode(c *Context, i interface{}) error {
 // are present.
 func stackCheckByteCode(c *Context, i interface{}) error {
 	if count := data.Int(i); c.stackPointer <= count {
-		return c.newError(errors.ErrReturnValueCount)
+		return c.error(errors.ErrReturnValueCount)
 	} else {
 		// The marker is an instance of a StackMarker object.
 		v := c.stack[c.stackPointer-(count+1)]
@@ -151,7 +151,7 @@ func stackCheckByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	return c.newError(errors.ErrReturnValueCount)
+	return c.error(errors.ErrReturnValueCount)
 }
 
 // pushByteCode instruction processor. This pushes the instruction operand
@@ -205,7 +205,7 @@ func readStackByteCode(c *Context, i interface{}) error {
 	}
 
 	if idx > c.stackPointer {
-		return c.newError(errors.ErrStackUnderflow)
+		return c.error(errors.ErrStackUnderflow)
 	}
 
 	return c.stackPush(c.stack[(c.stackPointer-1)-idx])
@@ -250,14 +250,14 @@ func copyByteCode(c *Context, i interface{}) error {
 	_ = c.stackPush(2)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
 }
 
 func getVarArgsByteCode(c *Context, i interface{}) error {
-	err := c.newError(errors.ErrInvalidVariableArguments)
+	err := c.error(errors.ErrInvalidVariableArguments)
 	argPos := data.Int(i)
 
 	if arrayV, ok := c.symbolGet("__args"); ok {

@@ -10,7 +10,7 @@ import (
 // where each object represents a column of the data.
 func (t *Table) AddRow(row []string) error {
 	if len(row) != t.columnCount {
-		return errors.EgoError(errors.ErrColumnCount).Context(len(row))
+		return errors.ErrColumnCount.Context(len(row))
 	}
 
 	// Update the maximum row width based on this new row info. Count
@@ -38,7 +38,7 @@ func (t *Table) AddRow(row []string) error {
 // formatted values are added to the table as a row.
 func (t *Table) AddRowItems(items ...interface{}) error {
 	if len(items) != t.columnCount {
-		return errors.EgoError(errors.ErrColumnCount).Context(len(items))
+		return errors.ErrColumnCount.Context(len(items))
 	}
 
 	row := make([]string, t.columnCount)

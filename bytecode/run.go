@@ -100,7 +100,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		imp, found := dispatch[i.Operation]
 		if !found {
-			return c.newError(errors.ErrUnimplementedInstruction).Context(i.Operation)
+			return c.error(errors.ErrUnimplementedInstruction).Context(i.Operation)
 		}
 
 		err = imp(c, i.Operand)
@@ -121,7 +121,7 @@ func (c *Context) RunFromAddress(addr int) error {
 					willCatch = false
 
 					for _, e := range try.catches {
-						if e.(*errors.EgoErrorMsg).Equal(err) {
+						if e.(*errors.Error).Equal(err) {
 							willCatch = true
 
 							break
@@ -131,7 +131,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 				// If we aren't catching it, just percolate the error
 				if !willCatch {
-					return errors.EgoError(err)
+					return errors.NewError(err)
 				}
 
 				// We are catching, so update the PC
@@ -153,7 +153,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				}
 
 				if err != nil {
-					err = errors.EgoError(err)
+					err = errors.NewError(err)
 				}
 
 				return err
@@ -164,7 +164,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
 
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	return nil
@@ -177,7 +177,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	parentSymbols := parentCtx.symbols
 	parentCtx.mux.RUnlock()
 
-	err := parentCtx.newError(errors.ErrInvalidFunctionCall)
+	err := parentCtx.error(errors.ErrInvalidFunctionCall)
 
 	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
 	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)
@@ -202,7 +202,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			functionSymbols := symbols.NewChildSymbolTable("Go routine "+fName, parentSymbols)
 
 			ctx := NewContext(functionSymbols, callCode)
-			err = parentCtx.newError(ctx.Run())
+			err = parentCtx.error(ctx.Run())
 
 			waitGroup.Done()
 		}

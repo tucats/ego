@@ -13,18 +13,18 @@ import (
 // a user-defined type specification.
 func (c *Compiler) compileTypeDefinition() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingType)
+		return c.error(errors.ErrMissingType)
 	}
 
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.newError(errors.ErrInvalidSymbolName)
+		return c.error(errors.ErrInvalidSymbolName)
 	}
 
 	name = c.normalizeToken(name)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingType)
+		return c.error(errors.ErrMissingType)
 	}
 
 	return c.typeEmitter(name.Spelling())
@@ -120,7 +120,7 @@ func CompileTypeSpec(source string) (*data.Type, error) {
 	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
 		name := typeCompiler.t.Next()
 		if !name.IsIdentifier() {
-			return &data.UndefinedType, errors.EgoError(errors.ErrInvalidSymbolName).Context(name)
+			return &data.UndefinedType, errors.ErrInvalidSymbolName.Context(name)
 		}
 
 		nameSpelling = name.Spelling()
@@ -128,7 +128,7 @@ func CompileTypeSpec(source string) (*data.Type, error) {
 		if typeCompiler.t.IsNext(tokenizer.DotToken) {
 			name2 := typeCompiler.t.Next()
 			if !name2.IsIdentifier() {
-				return &data.UndefinedType, errors.EgoError(errors.ErrInvalidSymbolName).Context(name2)
+				return &data.UndefinedType, errors.ErrInvalidSymbolName.Context(name2)
 			}
 
 			nameSpelling = nameSpelling + "." + name2.Spelling()

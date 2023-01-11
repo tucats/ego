@@ -51,12 +51,12 @@ func popScopeByteCode(c *Context, i interface{}) error {
 		// See if we're popping off a package table; if so there is work to do to
 		// copy the values back to the named package object.
 		if err := c.syncPackageSymbols(); err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		// Pop off the symbol table and clear up the "this" stack
 		if err := c.popSymbolTable(); err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		c.thisStack = nil
@@ -85,12 +85,12 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	}
 
 	if c.symbolIsConstant(name) {
-		return c.newError(errors.ErrReadOnly)
+		return c.error(errors.ErrReadOnly)
 	}
 
 	err := c.symbolCreate(name)
 	if err != nil {
-		return c.newError(err)
+		return c.error(err)
 	}
 
 	if wasList {
@@ -104,12 +104,12 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 func symbolCreateByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 	if c.symbolIsConstant(n) {
-		return c.newError(errors.ErrReadOnly)
+		return c.error(errors.ErrReadOnly)
 	}
 
 	err := c.symbolCreate(n)
 	if err != nil {
-		err = c.newError(err)
+		err = c.error(err)
 	}
 
 	return err
@@ -119,7 +119,7 @@ func symbolCreateByteCode(c *Context, i interface{}) error {
 func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	n := data.String(i)
 	if c.symbolIsConstant(n) {
-		return c.newError(errors.ErrReadOnly)
+		return c.error(errors.ErrReadOnly)
 	}
 
 	sp := c.symbols
@@ -133,7 +133,7 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 
 	err := c.symbols.Create(n)
 	if err != nil {
-		err = c.newError(err)
+		err = c.error(err)
 	}
 
 	return err
@@ -145,7 +145,7 @@ func symbolDeleteByteCode(c *Context, i interface{}) error {
 
 	err := c.symbolDelete(n)
 	if err != nil {
-		return c.newError(err)
+		return c.error(err)
 	}
 
 	return nil
@@ -159,14 +159,14 @@ func constantByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	varname := data.String(i)
 
 	err = c.constantSet(varname, v)
 	if err != nil {
-		return c.newError(err)
+		return c.error(err)
 	}
 
 	return err
@@ -180,7 +180,7 @@ func (c *Context) syncPackageSymbols() error {
 		pkgname := c.symbols.Parent().Package()
 
 		if err := c.popSymbolTable(); err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		if pkg, ok := c.symbols.Root().Get(pkgname); ok {

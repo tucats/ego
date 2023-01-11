@@ -28,7 +28,7 @@ func UUIDParse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 
 	u, err := uuid.Parse(s)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	return u.String(), nil

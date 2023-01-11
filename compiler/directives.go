@@ -41,7 +41,7 @@ const (
 func (c *Compiler) compileDirective() error {
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.newError(errors.ErrInvalidDirective, name)
+		return c.error(errors.ErrInvalidDirective, name)
 	}
 
 	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
@@ -108,7 +108,7 @@ func (c *Compiler) compileDirective() error {
 		return c.waitDirective()
 
 	default:
-		return c.newError(errors.ErrInvalidDirective, name)
+		return c.error(errors.ErrInvalidDirective, name)
 	}
 }
 
@@ -139,7 +139,7 @@ func (c *Compiler) handlerDirective() error {
 	}
 
 	if !handlerName.IsIdentifier() {
-		return c.newError(errors.ErrInvalidIdentifier)
+		return c.error(errors.ErrInvalidIdentifier)
 	}
 
 	// Determine if we are in "real" http mode
@@ -196,12 +196,12 @@ func (c *Compiler) handlerDirective() error {
 // value in the root symbol table, global to all execution.
 func (c *Compiler) globalDirective() error {
 	if c.t.AtEnd() {
-		return c.newError(errors.ErrInvalidSymbolName)
+		return c.error(errors.ErrInvalidSymbolName)
 	}
 
 	name := c.t.Next()
 	if strings.HasPrefix(name.Spelling(), "_") || !name.IsIdentifier() {
-		return c.newError(errors.ErrInvalidSymbolName, name)
+		return c.error(errors.ErrInvalidSymbolName, name)
 	}
 
 	symbolName := c.normalize(name.Spelling())
@@ -258,7 +258,7 @@ func (c *Compiler) lineDirective() error {
 	// The next token must be an integer value
 	lineNumberToken := c.t.Next()
 	if !lineNumberToken.IsValue() {
-		return c.newError(errors.ErrInvalidInteger).Context(lineNumberToken)
+		return c.error(errors.ErrInvalidInteger).Context(lineNumberToken)
 	}
 
 	// Extract the value from the token and store it as the current line number
@@ -275,12 +275,12 @@ func (c *Compiler) lineDirective() error {
 // logDirective parses the @log directive.
 func (c *Compiler) logDirective() error {
 	if c.t.AtEnd() {
-		return c.newError(errors.ErrInvalidSymbolName)
+		return c.error(errors.ErrInvalidSymbolName)
 	}
 
 	next := c.t.Next()
 	if !next.IsIdentifier() {
-		return c.newError(errors.ErrInvalidSymbolName, next)
+		return c.error(errors.ErrInvalidSymbolName, next)
 	}
 
 	if c.t.AtEnd() {
@@ -303,7 +303,7 @@ func (c *Compiler) logDirective() error {
 // value in the root symbol table with the REST call status value.
 func (c *Compiler) statusDirective() error {
 	if c.t.AtEnd() {
-		return c.newError(errors.ErrInvalidSymbolName)
+		return c.error(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -343,7 +343,7 @@ func (c *Compiler) authenticatedDirective() error {
 		defs.TokenRequired,
 		defs.AdminTokenRequired,
 	) {
-		return c.newError(errors.ErrInvalidAuthenticationType, token)
+		return c.error(errors.ErrInvalidAuthenticationType, token)
 	}
 
 	c.b.Emit(bytecode.Auth, token)
@@ -354,7 +354,7 @@ func (c *Compiler) authenticatedDirective() error {
 // responseDirective processes the @response directive.
 func (c *Compiler) responseDirective() error {
 	if c.t.AtEnd() {
-		return c.newError(errors.ErrInvalidSymbolName)
+		return c.error(errors.ErrInvalidSymbolName)
 	}
 
 	_ = c.modeCheck("server", true)
@@ -375,7 +375,7 @@ func (c *Compiler) templateDirective() error {
 	// Get the template name
 	name := c.t.Next()
 	if !name.IsIdentifier() {
-		return c.newError(errors.ErrInvalidSymbolName, name)
+		return c.error(errors.ErrInvalidSymbolName, name)
 	}
 
 	nameSpelling := c.normalize(name.Spelling())
@@ -422,13 +422,13 @@ func (c *Compiler) typeDirective() error {
 	if t := c.t.NextText(); util.InList(t, "static", "dynamic") {
 		c.b.Emit(bytecode.Push, t == "static")
 	} else {
-		err = c.newError(errors.ErrInvalidTypeCheck, t)
+		err = c.error(errors.ErrInvalidTypeCheck, t)
 	}
 
 	c.b.Emit(bytecode.StaticTyping)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err

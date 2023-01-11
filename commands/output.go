@@ -32,12 +32,12 @@ func commandOutput(thing ...interface{}) error {
 
 	case ui.JSONFormat:
 		if len(thing) > 1 {
-			return errors.EgoError(errors.ErrArgumentCount)
+			return errors.ErrArgumentCount
 		}
 
 		b, err := json.Marshal(thing[0])
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		ui.Say("%s", string(b))
@@ -46,12 +46,12 @@ func commandOutput(thing ...interface{}) error {
 
 	case ui.JSONIndentedFormat:
 		if len(thing) > 1 {
-			return errors.EgoError(errors.ErrArgumentCount)
+			return errors.ErrArgumentCount
 		}
 
 		b, err := json.MarshalIndent(thing[0], ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		ui.Say("%s", string(b))
@@ -59,6 +59,6 @@ func commandOutput(thing ...interface{}) error {
 		return nil
 
 	default:
-		return errors.EgoError(errors.ErrInvalidOutputFormat)
+		return errors.ErrInvalidOutputFormat
 	}
 }

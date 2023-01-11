@@ -55,7 +55,7 @@ func initTableTypeDef() {
 // aligned. In either case the ":" is removed from the name.
 func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	// Fetch the arguments as column headings. If the value is passed by array,
@@ -133,7 +133,7 @@ func TableNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // being held by the table.
 func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	_, err := getTable(s)
@@ -151,7 +151,7 @@ func TableClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // being held by the table.
 func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrInvalidVariableArguments)
+		return nil, errors.ErrInvalidVariableArguments
 	}
 
 	h := data.Int(args[0])
@@ -174,7 +174,7 @@ func TablePagination(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 // were defined when the table was created.
 func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	t, err := getTable(s)
@@ -182,14 +182,14 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		if len(args) > 0 {
 			if m, ok := args[0].(*data.Struct); ok {
 				if len(args) > 1 {
-					err = errors.EgoError(errors.ErrArgumentCount)
+					err = errors.ErrArgumentCount
 				} else {
 					values := make([]string, len(m.FieldNames()))
 
 					for _, k := range m.FieldNames() {
 						v := m.GetAlways(k)
 						if v == nil {
-							return nil, errors.EgoError(errors.ErrInvalidField)
+							return nil, errors.ErrInvalidField
 						}
 
 						p, ok := t.Column(k)
@@ -203,7 +203,7 @@ func TableAddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 			} else {
 				if m, ok := args[0].([]interface{}); ok {
 					if len(args) > 1 {
-						err = errors.EgoError(errors.ErrArgumentCount)
+						err = errors.ErrArgumentCount
 
 						return err, err
 					}
@@ -239,7 +239,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 			pos, found := t.Column(heading)
 			if !found {
-				err = errors.EgoError(errors.ErrInvalidColumnName).Context(heading)
+				err = errors.ErrInvalidColumnName.Context(heading)
 			} else {
 				err = t.SortRows(pos, ascending)
 			}
@@ -255,7 +255,7 @@ func TableSort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // it controls whether an underline string is printed under the column names.
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		err := errors.EgoError(errors.ErrArgumentCount)
+		err := errors.ErrArgumentCount
 
 		return err, err
 	}
@@ -284,7 +284,7 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // TableAlign specifies alignment for a given column.
 func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		err := errors.EgoError(errors.ErrArgumentCount)
+		err := errors.ErrArgumentCount
 
 		return err, err
 	}
@@ -296,7 +296,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if columnName, ok := args[0].(string); ok {
 			column, ok = t.Column(columnName)
 			if !ok {
-				err = errors.EgoError(errors.ErrInvalidColumnName).Context(columnName)
+				err = errors.ErrInvalidColumnName.Context(columnName)
 
 				return err, err
 			}
@@ -318,7 +318,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 				mode = tables.AlignmentCenter
 
 			default:
-				err = errors.EgoError(errors.ErrAlignment).Context(modeName)
+				err = errors.ErrAlignment.Context(modeName)
 
 				return err, err
 			}
@@ -334,7 +334,7 @@ func TableAlign(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // type (text or json).
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	fmt := ui.OutputFormat
@@ -354,7 +354,7 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TableString formats a table as a string in the default output.
 func TableString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	fmt := ui.OutputFormat
@@ -380,7 +380,7 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 			if tbl, ok := gc.Get(tableFieldName); ok {
 				if tp, ok := tbl.(*tables.Table); ok {
 					if tp == nil {
-						return nil, errors.EgoError(errors.ErrTableClosed)
+						return nil, errors.ErrTableClosed
 					}
 
 					return tp, nil
@@ -389,13 +389,13 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 		}
 	}
 
-	return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
+	return nil, errors.ErrNoFunctionReceiver
 }
 
 // Table generates a string describing a rectangular result map.
 func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	includeHeadings := true
@@ -407,7 +407,7 @@ func Table(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	// Scan over the first data element to pick up the column names and types
 	a := data.GetNativeArray(args[0])
 	if len(a) == 0 {
-		return nil, errors.EgoError(errors.ErrInvalidResultSetType)
+		return nil, errors.ErrInvalidResultSetType
 	}
 
 	// Make a list of the sort key names

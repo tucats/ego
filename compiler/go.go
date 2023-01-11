@@ -9,12 +9,12 @@ import (
 
 func (c *Compiler) compileGo() error {
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
-		return c.newError(errors.ErrMissingFunction)
+		return c.error(errors.ErrMissingFunction)
 	}
 
 	fName := c.t.Next()
 	if fName != tokenizer.FuncToken && !fName.IsIdentifier() {
-		return c.newError(errors.ErrInvalidSymbolName, fName)
+		return c.error(errors.ErrInvalidSymbolName, fName)
 	}
 
 	// Is it a function constant?
@@ -33,7 +33,7 @@ func (c *Compiler) compileGo() error {
 	c.b.Emit(bc.Push, fName)
 
 	if !c.t.IsNext(tokenizer.StartOfListToken) {
-		return c.newError(errors.ErrMissingParenthesis)
+		return c.error(errors.ErrMissingParenthesis)
 	}
 
 	argc := 0
@@ -62,7 +62,7 @@ func (c *Compiler) compileGo() error {
 		}
 
 		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.newError(errors.ErrInvalidList)
+			return c.error(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -70,7 +70,7 @@ func (c *Compiler) compileGo() error {
 
 	// Ensure trailing parenthesis
 	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.EndOfListToken {
-		return c.newError(errors.ErrMissingParenthesis)
+		return c.error(errors.ErrMissingParenthesis)
 	}
 
 	c.t.Advance(1)

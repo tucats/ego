@@ -18,11 +18,11 @@ func initializeType() {
 		structType.DefineField("time", &data.InterfaceType)
 
 		t := data.TypeDefinition("time.Time", structType)
-		t.DefineFunction("Add", TimeAdd)
-		t.DefineFunction("Format", TimeFormat)
-		t.DefineFunction("SleepUntil", TimeSleep)
-		t.DefineFunction("String", TimeString)
-		t.DefineFunction("Sub", TimeSub)
+		t.DefineFunction("Add", nil, TimeAdd)
+		t.DefineFunction("Format", nil, TimeFormat)
+		t.DefineFunction("SleepUntil", nil, TimeSleep)
+		t.DefineFunction("String", nil, TimeString)
+		t.DefineFunction("Sub", nil, TimeSub)
 		timeType = t
 	}
 }
@@ -45,7 +45,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	t, err := time.Parse(fmt, str)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	return MakeTime(&t), nil
@@ -54,7 +54,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TimeAdd implements time.duration().
 func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Add()")
+		return nil, errors.ErrArgumentCount.In("Add()")
 	}
 
 	t, err := getTime(s)
@@ -73,7 +73,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TimeSub implements time.duration().
 func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Sub()")
+		return nil, errors.ErrArgumentCount.In("Sub()")
 	}
 
 	t, err := getTime(s)
@@ -92,7 +92,7 @@ func TimeSub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TimeFormat implements time.Format().
 func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Format()")
+		return nil, errors.ErrArgumentCount.In("Format()")
 	}
 
 	t, err := getTime(s)
@@ -108,7 +108,7 @@ func TimeFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // TimeSleep implements time.SleepUntil().
 func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Sleep()")
+		return nil, errors.ErrArgumentCount.In("Sleep()")
 	}
 
 	t, err := getTime(s)
@@ -125,7 +125,7 @@ func TimeSleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // TimeFormat implements time.Format().
 func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("String()")
+		return nil, errors.ErrArgumentCount.In("String()")
 	}
 
 	t, err := getTime(s)
@@ -140,7 +140,7 @@ func TimeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).In("Since()")
+		return nil, errors.ErrArgumentCount.In("Since()")
 	}
 
 	// Get the time value stored in the argument
@@ -162,7 +162,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 		return getTimeV(t)
 	}
 
-	return nil, errors.EgoError(errors.ErrNoFunctionReceiver).In("time function")
+	return nil, errors.ErrNoFunctionReceiver.In("time function")
 }
 
 // getTimeV extracts a time.Time value from an Ego time
@@ -176,7 +176,7 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 		}
 	}
 
-	return nil, errors.EgoError(errors.ErrNoFunctionReceiver).In("time function")
+	return nil, errors.ErrNoFunctionReceiver.In("time function")
 }
 
 // Make a time object with the given time value.

@@ -22,12 +22,12 @@ import (
 // size. You must be an admin user with a valid token to perform this command.
 func SetCacheSize(c *cli.Context) error {
 	if c.GetParameterCount() == 0 {
-		return errors.EgoError(errors.ErrCacheSizeNotSpecified)
+		return errors.ErrCacheSizeNotSpecified
 	}
 
 	size, err := strconv.Atoi(c.GetParameter(0))
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	cacheStatus := defs.CacheResponse{
@@ -36,7 +36,7 @@ func SetCacheSize(c *cli.Context) error {
 
 	err = runtime.Exchange(defs.AdminCachesPath, http.MethodPost, &cacheStatus, &cacheStatus, defs.AdminAgent)
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {

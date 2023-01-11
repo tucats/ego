@@ -26,14 +26,14 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	case "symbols":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
 		fmt.Println(s.Format(true))
 
 	case "line":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
 		text := tx.GetLine(line)
@@ -46,7 +46,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		tx := tokens.Peek(3)
 		if tx != tokenizer.EndOfTokens {
 			if tokens.Peek(4) != tokenizer.EndOfTokens {
-				return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(4))
+				return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(4))
 			}
 
 			if tx.Spelling() != "all" {
@@ -54,7 +54,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 				depth, e2 = strconv.Atoi(tx.Spelling())
 				if e2 != nil {
-					err = errors.EgoError(e2)
+					err = errors.NewError(e2)
 				}
 			}
 		}
@@ -68,7 +68,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		depth := 0
 
 		if tokens.Peek(3) != tokenizer.EndOfTokens {
-			return errors.EgoError(errors.ErrUnexpectedTextAfterCommand).Context(tokens.Peek(3))
+			return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(3))
 		}
 
 		ui.Say("msg.debug.scope")
@@ -103,7 +103,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 			}
 
 			if e2 != nil {
-				err = errors.EgoError(e2)
+				err = errors.NewError(e2)
 			}
 		}
 
@@ -118,7 +118,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 		}
 
 	default:
-		err = errors.EgoError(errors.ErrInvalidDebugCommand).Context("show " + t.Spelling())
+		err = errors.ErrInvalidDebugCommand.Context("show " + t.Spelling())
 	}
 
 	return err

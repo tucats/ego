@@ -124,7 +124,7 @@ func (c *Compiler) expressionAtom() error {
 		}
 
 		if c.t.Next() != tokenizer.EndOfListToken {
-			return c.newError(errors.ErrMissingParenthesis)
+			return c.error(errors.ErrMissingParenthesis)
 		}
 
 		return nil
@@ -268,7 +268,7 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Not something we know what to do with...
-	return c.newError(errors.ErrUnexpectedToken, t)
+	return c.error(errors.ErrUnexpectedToken, t)
 }
 
 func (c *Compiler) parseArray() error {
@@ -288,7 +288,7 @@ func (c *Compiler) parseArray() error {
 
 	if !kind.IsUndefined() {
 		if !kind.IsArray() {
-			return c.newError(errors.ErrInvalidTypeName)
+			return c.error(errors.ErrInvalidTypeName)
 		}
 
 		// It could be a cast operation. If so, remember where we are
@@ -317,7 +317,7 @@ func (c *Compiler) parseArray() error {
 
 		// There better be at least the start of an initialization block then.
 		if !c.t.IsNext(tokenizer.DataBeginToken) {
-			return c.newError(errors.ErrMissingBlock)
+			return c.error(errors.ErrMissingBlock)
 		}
 
 		listTerminator = tokenizer.DataEndToken
@@ -349,7 +349,7 @@ func (c *Compiler) parseArray() error {
 		} else {
 			t1, e2 = strconv.Atoi(c.t.PeekText(1))
 			if e2 != nil {
-				err = errors.EgoError(e2)
+				err = errors.NewError(e2)
 			}
 		}
 
@@ -375,7 +375,7 @@ func (c *Compiler) parseArray() error {
 					c.b.Emit(bytecode.Array, count)
 
 					if !c.t.IsNext(tokenizer.EndOfArrayToken) {
-						return c.newError(errors.ErrInvalidRange)
+						return c.error(errors.ErrInvalidRange)
 					}
 
 					return nil
@@ -416,7 +416,7 @@ func (c *Compiler) parseArray() error {
 		}
 
 		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.newError(errors.ErrInvalidList)
+			return c.error(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -446,14 +446,14 @@ func (c *Compiler) parseStruct() error {
 		// First element: name
 		name := c.t.Next()
 		if !name.IsString() && !name.IsIdentifier() {
-			return c.newError(errors.ErrInvalidSymbolName, name)
+			return c.error(errors.ErrInvalidSymbolName, name)
 		}
 
 		name = c.normalizeToken(name)
 
 		// Second element: colon
 		if c.t.Next() != tokenizer.ColonToken {
-			return c.newError(errors.ErrMissingColon)
+			return c.error(errors.ErrMissingColon)
 		}
 
 		// Third element: value, which is emitted.
@@ -476,7 +476,7 @@ func (c *Compiler) parseStruct() error {
 		}
 
 		if c.t.Peek(1) != tokenizer.CommaToken {
-			return c.newError(errors.ErrInvalidList)
+			return c.error(errors.ErrInvalidList)
 		}
 
 		c.t.Advance(1)
@@ -486,7 +486,7 @@ func (c *Compiler) parseStruct() error {
 	c.t.Advance(1)
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -501,7 +501,7 @@ func (c *Compiler) parseStruct() error {
 // This is only supported when extensions are enabled.
 func (c *Compiler) optional() error {
 	if !c.flags.extensionsEnabled {
-		return c.newError(errors.ErrUnexpectedToken).Context("?")
+		return c.error(errors.ErrUnexpectedToken).Context("?")
 	}
 
 	catch := c.b.Mark()
@@ -520,7 +520,7 @@ func (c *Compiler) optional() error {
 	_ = c.b.SetAddressHere(catch)
 
 	if !c.t.IsNext(tokenizer.ColonToken) {
-		return c.newError(errors.ErrMissingCatch)
+		return c.error(errors.ErrMissingCatch)
 	}
 
 	err = c.unary()

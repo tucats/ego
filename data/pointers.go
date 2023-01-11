@@ -67,6 +67,6 @@ func Dereference(v interface{}) (interface{}, error) {
 		return *actual, nil
 
 	default:
-		return nil, errors.EgoError(errors.ErrNotAPointer)
+		return nil, errors.ErrNotAPointer
 	}
 }

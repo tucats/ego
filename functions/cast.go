@@ -55,7 +55,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return float64(0), nil
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(typeValue)
+			return nil, errors.ErrInvalidType.In("new()").Context(typeValue)
 		}
 	}
 
@@ -96,7 +96,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return float64(0), nil
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(typeValue)
+			return nil, errors.ErrInvalidType.In("new()").Context(typeValue)
 		}
 	}
 
@@ -132,13 +132,13 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
-		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context(nil)
+		return nil, errors.ErrInvalidValue.In("new()").Context(nil)
 
 	case symbols.SymbolTable:
-		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context("symbol table")
+		return nil, errors.ErrInvalidValue.In("new()").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-		return nil, errors.EgoError(errors.ErrInvalidValue).In("new()").Context("builtin function")
+		return nil, errors.ErrInvalidValue.In("new()").Context("builtin function")
 
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
@@ -180,7 +180,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 	default:
-		return nil, errors.EgoError(errors.ErrInvalidType).In("new()").Context(v)
+		return nil, errors.ErrInvalidType.In("new()").Context(v)
 	}
 
 	return r, nil
@@ -349,7 +349,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				_ = r.Set(i, data.String(v))
 
 			default:
-				return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+				return nil, errors.ErrInvalidType.Context(data.TypeOf(v).String())
 			}
 		}
 
@@ -382,6 +382,6 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return data.Coerce(source, data.InstanceOfType(kind)), nil
 		}
 
-		return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(source).String())
+		return nil, errors.ErrInvalidType.Context(data.TypeOf(source).String())
 	}
 }

@@ -45,7 +45,7 @@ func (t *Table) Print(format string) error {
 		fmt.Printf("%s\n", string(b))
 
 	default:
-		return errors.EgoError(errors.ErrInvalidOutputFormat).Context(format)
+		return errors.ErrInvalidOutputFormat.Context(format)
 	}
 
 	return nil
@@ -87,7 +87,7 @@ func (t *Table) String(format string) (string, error) {
 		b.WriteString("\n")
 
 	default:
-		return "", errors.EgoError(errors.ErrInvalidOutputFormat).Context(format)
+		return "", errors.ErrInvalidOutputFormat.Context(format)
 	}
 
 	return b.String(), nil

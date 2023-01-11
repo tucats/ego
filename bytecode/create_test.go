@@ -81,7 +81,7 @@ func Test_arrayByteCode(t *testing.T) {
 			name:   "untyped static (invalid) array",
 			arg:    3,
 			stack:  []interface{}{byte(3), "55", float64(3.5)},
-			err:    errors.EgoError(errors.ErrInvalidType).Context("string"),
+			err:    errors.ErrInvalidType.Context("string"),
 			static: true,
 			want:   data.NewArrayFromArray(&data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
 		},
@@ -96,7 +96,7 @@ func Test_arrayByteCode(t *testing.T) {
 			name:  "stack underflow",
 			arg:   3,
 			stack: []interface{}{"test", float64(3.5)},
-			err:   errors.EgoError(errors.ErrStackUnderflow),
+			err:   errors.ErrStackUnderflow,
 			want:  data.NewArrayFromArray(&data.InterfaceType, []interface{}{"test", float64(3.5)}),
 		},
 	}
@@ -183,7 +183,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			name:  "Missing key type",
 			arg:   4,
 			stack: []interface{}{},
-			err:   errors.EgoError(errors.ErrStackUnderflow),
+			err:   errors.ErrStackUnderflow,
 			want:  data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -192,7 +192,7 @@ func Test_makeMapByteCode(t *testing.T) {
 			stack: []interface{}{
 				&data.StringType, // Key type
 			},
-			err:  errors.EgoError(errors.ErrStackUnderflow),
+			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -205,7 +205,7 @@ func Test_makeMapByteCode(t *testing.T) {
 				&data.IntType,    // Value type
 				&data.StringType, // Key type
 			},
-			err:  errors.EgoError(errors.ErrStackUnderflow),
+			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 		{
@@ -219,7 +219,7 @@ func Test_makeMapByteCode(t *testing.T) {
 				&data.IntType,    // Value type
 				&data.StringType, // Key type
 			},
-			err:  errors.EgoError(errors.ErrStackUnderflow),
+			err:  errors.ErrStackUnderflow,
 			want: data.NewMapFromMap(map[string]int{"tom": 63, "mary": 47, "chelsea": 10, "sarah": 31}),
 		},
 	}

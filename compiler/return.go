@@ -34,7 +34,7 @@ func (c *Compiler) compileReturn() error {
 		}
 
 		if returnCount >= len(c.coercions) {
-			return c.newError(errors.ErrTooManyReturnValues)
+			return c.error(errors.ErrTooManyReturnValues)
 		}
 
 		bc.Append(c.coercions[returnCount])
@@ -51,7 +51,7 @@ func (c *Compiler) compileReturn() error {
 	}
 
 	if returnCount < len(c.coercions) {
-		return c.newError(errors.ErrMissingReturnValues)
+		return c.error(errors.ErrMissingReturnValues)
 	}
 
 	// If there was a return value, the return values must be

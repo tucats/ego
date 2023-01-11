@@ -17,7 +17,7 @@ import (
 func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err error) {
 	// Is this function authorized?
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Exec")
+		return nil, errors.ErrNoPrivilegeForOperation.Context("Exec")
 	}
 
 	// Get the arguments as a string array
@@ -40,7 +40,7 @@ func Exec(s *symbols.SymbolTable, args []interface{}) (result interface{}, err e
 	cmd.Stdout = &out
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.EgoError(e)
+		return nil, errors.NewError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

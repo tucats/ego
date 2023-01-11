@@ -27,7 +27,7 @@ func Start(c *cli.Context) error {
 			// if the pid is or was ever running...
 			err := p.Signal(syscall.Signal(0))
 			if err == nil && !c.Boolean("force") {
-				return errors.EgoError(errors.ErrServerAlreadyRunning).Context(status.PID)
+				return errors.ErrServerAlreadyRunning.Context(status.PID)
 			}
 		}
 	}
@@ -141,12 +141,12 @@ func Start(c *cli.Context) error {
 
 	args[0], e2 = exec.LookPath(args[0])
 	if e2 != nil {
-		return errors.EgoError(e2)
+		return errors.NewError(e2)
 	}
 
 	args[0], e2 = filepath.Abs(args[0])
 	if e2 != nil {
-		return errors.EgoError(e2)
+		return errors.NewError(e2)
 	}
 
 	// Is there a log file specified (either as a command-line option or as an
@@ -173,7 +173,7 @@ func Start(c *cli.Context) error {
 	}
 
 	if e2 != nil {
-		return errors.EgoError(e2)
+		return errors.NewError(e2)
 	}
 
 	pid, e2 := runExec(args[0], args)
@@ -205,7 +205,7 @@ func Start(c *cli.Context) error {
 	}
 
 	if e2 != nil {
-		e2 = errors.EgoError(e2)
+		e2 = errors.NewError(e2)
 	}
 
 	return e2

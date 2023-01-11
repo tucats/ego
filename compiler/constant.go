@@ -23,13 +23,13 @@ func (c *Compiler) compileConst() error {
 	for terminator == tokenizer.EmptyToken || !c.t.IsNext(terminator) {
 		name := c.t.Next()
 		if !name.IsIdentifier() {
-			return c.newError(errors.ErrInvalidSymbolName)
+			return c.error(errors.ErrInvalidSymbolName)
 		}
 
 		nameSpelling := c.normalize(name.Spelling())
 
 		if !c.t.IsNext(tokenizer.AssignToken) {
-			return c.newError(errors.ErrMissingEqual)
+			return c.error(errors.ErrMissingEqual)
 		}
 
 		vx, err := c.Expression()
@@ -43,7 +43,7 @@ func (c *Compiler) compileConst() error {
 		// instance.
 		for _, i := range vx.Opcodes() {
 			if i.Operation == bytecode.Load && !util.InList(data.String(i.Operand), c.constants...) {
-				return c.newError(errors.ErrInvalidConstant)
+				return c.error(errors.ErrInvalidConstant)
 			}
 		}
 

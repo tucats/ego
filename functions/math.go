@@ -20,7 +20,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, v := range args[1:] {
 		v = data.Coerce(v, r)
 		if v == nil {
-			return nil, errors.EgoError(errors.ErrInvalidType).In("min()")
+			return nil, errors.ErrInvalidType.In("min()")
 		}
 
 		switch rv := r.(type) {
@@ -44,7 +44,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				r = v
 			}
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).Context(data.TypeOf(rv).String())
+			return nil, errors.ErrInvalidType.Context(data.TypeOf(rv).String())
 		}
 	}
 
@@ -62,7 +62,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, xv := range args[1:] {
 		v := data.Coerce(xv, r)
 		if v == nil {
-			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(data.TypeOf(r).String())
+			return nil, errors.ErrInvalidType.In("max()").Context(data.TypeOf(r).String())
 		}
 
 		switch rr := r.(type) {
@@ -87,7 +87,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			}
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("max()").Context(data.TypeOf(rr).String())
+			return nil, errors.ErrInvalidType.In("max()").Context(data.TypeOf(rr).String())
 		}
 	}
 
@@ -101,7 +101,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, addendV := range args[1:] {
 		addend := data.Coerce(addendV, base)
 		if addend == nil {
-			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(data.TypeOf(addendV).String())
+			return nil, errors.ErrInvalidType.In("sum()").Context(data.TypeOf(addendV).String())
 		}
 
 		switch rv := addend.(type) {
@@ -130,7 +130,7 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			base = base.(string) + addend.(string)
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("sum()").Context(data.TypeOf(rv).String())
+			return nil, errors.ErrInvalidType.In("sum()").Context(data.TypeOf(rv).String())
 		}
 	}
 
@@ -160,7 +160,7 @@ func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	max := data.Int(args[0])
 	if max <= 0 {
-		return nil, errors.EgoError(errors.ErrInvalidFunctionArgument).Context(max)
+		return nil, errors.ErrInvalidFunctionArgument.Context(max)
 	}
 
 	return rand.Intn(max), nil

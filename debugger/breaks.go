@@ -88,7 +88,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 					err = breakAtLine(name, line)
 				}
 			} else {
-				err = errors.EgoError(e2)
+				err = errors.NewError(e2)
 			}
 
 		case "save":
@@ -107,7 +107,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			}
 
 			if e != nil {
-				err = errors.EgoError(e)
+				err = errors.NewError(e)
 			}
 
 		case "load":
@@ -145,11 +145,11 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			}
 
 			if e != nil {
-				err = errors.EgoError(e)
+				err = errors.NewError(e)
 			}
 
 		default:
-			err = errors.EgoError(errors.ErrInvalidBreakClause)
+			err = errors.ErrInvalidBreakClause
 		}
 
 		if err != nil {

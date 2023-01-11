@@ -61,7 +61,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		ui.Debug(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
 
-		return errors.EgoError(errors.ErrUnrecognizedCommand).Context(parmList[0])
+		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
 
 	// No dangling parameters, let's keep going.
@@ -148,7 +148,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil {
-			return errors.EgoError(errors.ErrUnknownOption).Context(option)
+			return errors.ErrUnknownOption.Context(option)
 		}
 
 		// It could be a parameter, or a subcommand.
@@ -217,7 +217,7 @@ func (c *Context) parseGrammar(args []string) error {
 				if !hasValue {
 					currentArg = currentArg + 1
 					if currentArg >= lastArg {
-						return errors.EgoError(errors.ErrMissingOptionValue).Context(name)
+						return errors.ErrMissingOptionValue.Context(name)
 					}
 
 					value = args[currentArg]
@@ -238,7 +238,7 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				if !found {
-					return errors.EgoError(errors.ErrInvalidKeyword).Context(value)
+					return errors.ErrInvalidKeyword.Context(value)
 				}
 
 			case BooleanType:
@@ -247,7 +247,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case BooleanValueType:
 				b, valid := ValidateBoolean(value)
 				if !valid {
-					return errors.EgoError(errors.ErrInvalidBooleanValue).Context(value)
+					return errors.ErrInvalidBooleanValue.Context(value)
 				}
 
 				location.Value = b
@@ -258,7 +258,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case UUIDType:
 				uuid, err := uuid.Parse(value)
 				if err != nil {
-					return errors.EgoError(err)
+					return errors.NewError(err)
 				}
 
 				location.Value = uuid.String()
@@ -269,7 +269,7 @@ func (c *Context) parseGrammar(args []string) error {
 			case IntType:
 				i, err := strconv.Atoi(value)
 				if err != nil {
-					return errors.EgoError(errors.ErrInvalidInteger).Context(value)
+					return errors.ErrInvalidInteger.Context(value)
 				}
 
 				location.Value = i
@@ -292,7 +292,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 	for _, entry := range c.Grammar {
 		if entry.Required && !entry.Found {
-			err = errors.EgoError(errors.ErrRequiredNotFound).Context(entry.LongName)
+			err = errors.ErrRequiredNotFound.Context(entry.LongName)
 
 			break
 		}
@@ -311,16 +311,16 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
-			return errors.EgoError(errors.ErrUnexpectedParameters)
+			return errors.ErrUnexpectedParameters
 		}
 
 		if g.ExpectedParameterCount < 0 {
 			if len(g.Parameters) > -g.ExpectedParameterCount {
-				return errors.EgoError(errors.ErrTooManyParameters)
+				return errors.ErrTooManyParameters
 			}
 		} else {
 			if len(g.Parameters) != g.ExpectedParameterCount {
-				return errors.EgoError(errors.ErrWrongParameterCount)
+				return errors.ErrWrongParameterCount
 			}
 		}
 

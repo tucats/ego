@@ -167,7 +167,7 @@ func initializeRestType() {
 // RestNew implements the New() rest function.
 func RestNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 && len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	client := resty.New()
@@ -228,14 +228,14 @@ func applyBaseURL(url string, this *data.Struct) string {
 
 func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	urlString := data.String(args[0])
 
 	url, err := url.Parse(urlString)
 	if err != nil {
-		return nil, errors.EgoError(err).Context(urlString)
+		return nil, errors.NewError(err).Context(urlString)
 	}
 
 	hasSchema := strings.Contains(urlString, "://")
@@ -252,7 +252,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		// Scan the URL and the template, and bulid a map of the parts.
 		urlParts, valid = functions.ParseURLPattern(path, templateString)
 		if !valid {
-			return nil, errors.EgoError(errors.ErrInvalidURL).Context(path)
+			return nil, errors.ErrInvalidURL.Context(path)
 		}
 	}
 
@@ -311,7 +311,7 @@ func RestParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	code := data.Int(args[0])
@@ -324,7 +324,7 @@ func RestStatusMessage(s *symbols.SymbolTable, args []interface{}) (interface{},
 
 func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	c, err := getClient(s)
@@ -349,7 +349,7 @@ func RestClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // turn this off when using self-generated certificates.
 func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	client, err := getClient(s)
@@ -377,7 +377,7 @@ func VerifyServer(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // just specify the endpoint.
 func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	_, err := getClient(s)
@@ -403,7 +403,7 @@ func RestBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // enables or disables debug logging for the client.
 func RestDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	r, err := getClient(s)
@@ -431,7 +431,7 @@ func RestAuth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 
 	if len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	user := data.String(args[0])
@@ -453,7 +453,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this := getThisStruct(s)
 
 	if len(args) > 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	token := settings.Get(defs.LogonTokenSetting)
@@ -472,7 +472,7 @@ func RestToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // for free text responses, or "application/json" for JSON data payloads.
 func RestMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	_, err := getClient(s)
@@ -502,7 +502,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	url := applyBaseURL(data.String(args[0]), this)
@@ -522,7 +522,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.EgoError(e2)
+		return nil, errors.NewError(e2)
 	}
 
 	this.SetAlways("cookies", fetchCookies(s, response))
@@ -536,7 +536,7 @@ func RestGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		if err != nil {
-			err = errors.EgoError(err)
+			err = errors.NewError(err)
 		}
 
 		// For well-known complex types, make them Ego-native versions.
@@ -595,7 +595,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	client, err := getClient(s)
@@ -619,7 +619,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
-				return nil, errors.EgoError(err)
+				return nil, errors.NewError(err)
 			}
 
 			body = string(b)
@@ -643,7 +643,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.EgoError(e2)
+		return nil, errors.NewError(e2)
 	}
 
 	status := response.StatusCode()
@@ -657,7 +657,7 @@ func RestPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		if err != nil {
-			err = errors.EgoError(err)
+			err = errors.NewError(err)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -675,7 +675,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	var body interface{} = ""
 
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	client, err := getClient(s)
@@ -697,7 +697,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
-				return nil, errors.EgoError(err)
+				return nil, errors.NewError(err)
 			}
 
 			body = string(b)
@@ -721,7 +721,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.EgoError(e2)
+		return nil, errors.NewError(e2)
 	}
 
 	status := response.StatusCode()
@@ -735,7 +735,7 @@ func RestDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 		err := json.Unmarshal([]byte(rb), &jsonResponse)
 		if err != nil {
-			err = errors.EgoError(err)
+			err = errors.NewError(err)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -757,7 +757,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 			if client, ok := gc.Get(clientFieldName); ok {
 				if cp, ok := client.(*resty.Client); ok {
 					if cp == nil {
-						return nil, errors.EgoError(errors.ErrRestClientClosed)
+						return nil, errors.ErrRestClientClosed
 					}
 
 					return cp, nil
@@ -766,7 +766,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 		}
 	}
 
-	return nil, errors.EgoError(errors.ErrNoFunctionReceiver)
+	return nil, errors.ErrNoFunctionReceiver
 }
 
 // getThis returns a map for the "this" object in the current
@@ -820,7 +820,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if expirationString := settings.Get(defs.LogonTokenExpirationSetting); expirationString != "" {
 					expireTime, err := time.Parse(time.UnixDate, expirationString)
 					if err != nil {
-						return errors.EgoError(err)
+						return errors.NewError(err)
 					}
 
 					now := time.Since(expireTime)
@@ -870,7 +870,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if body != nil {
 		b, err := json.MarshalIndent(body, "", "  ")
 		if err != nil {
-			return errors.EgoError(err)
+			return errors.NewError(err)
 		}
 
 		ui.Debug(ui.RestLogger, "Request payload:\n%s", string(b))
@@ -882,7 +882,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if err != nil {
 		ui.Debug(ui.RestLogger, "REST failed, %v", err)
 
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	if err == nil {
@@ -891,7 +891,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 		ui.Debug(ui.RestLogger, "Status: %d", status)
 
 		if err == nil && status != http.StatusOK && response == nil {
-			return errors.EgoError(errors.ErrHTTP).Context(status)
+			return errors.ErrHTTP.Context(status)
 		}
 
 		if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
@@ -951,7 +951,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -997,14 +997,14 @@ func GetTLSConfiguration() (*tls.Config, error) {
 				if !ok {
 					ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
 
-					return nil, errors.EgoError(errors.ErrCertificateParseError).Context(filename)
+					return nil, errors.ErrCertificateParseError.Context(filename)
 				} else {
 					tlsConfiguration = &tls.Config{RootCAs: roots}
 				}
 			} else {
 				ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
 
-				return nil, errors.EgoError(err)
+				return nil, errors.NewError(err)
 			}
 		}
 

@@ -5,8 +5,8 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// newError generates a new compiler error.
-func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg {
+// error generates a new compiler error.
+func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
 	p := c.t.TokenP
 	if p < 0 {
 		p = 0
@@ -22,7 +22,7 @@ func (c *Compiler) newError(err error, args ...interface{}) *errors.EgoErrorMsg 
 		token = data.String(args[0])
 	}
 
-	e := errors.EgoError(err).Context(token)
+	e := errors.NewError(err).Context(token)
 
 	if c.activePackageName != "" {
 		e = e.In(c.activePackageName)

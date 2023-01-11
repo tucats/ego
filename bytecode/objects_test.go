@@ -39,7 +39,7 @@ func Test_memberByteCode(t *testing.T) {
 				"bar": 42,
 			})},
 			want: 55,
-			err:  errors.EgoError(errors.ErrUnknownMember).Context("zork"),
+			err:  errors.ErrUnknownMember.Context("zork"),
 		},
 		{
 			name: "struct field with name on stack",
@@ -55,14 +55,14 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "foo",
 			stack: []interface{}{},
 			want:  55,
-			err:   errors.EgoError(errors.ErrStackUnderflow),
+			err:   errors.ErrStackUnderflow,
 		},
 		{
 			name:  "struct field, name on stack, with stack underflow",
 			arg:   nil,
 			stack: []interface{}{},
 			want:  55,
-			err:   errors.EgoError(errors.ErrStackUnderflow),
+			err:   errors.ErrStackUnderflow,
 		},
 		{
 			name: "map key",
@@ -87,7 +87,7 @@ func Test_memberByteCode(t *testing.T) {
 			arg:   "zork",
 			stack: []interface{}{3.14},
 			want:  nil,
-			err:   errors.EgoError(errors.ErrInvalidStructOrPackage).Context("interface{}"),
+			err:   errors.ErrInvalidStructOrPackage.Context("interface{}"),
 		},
 	}
 
@@ -164,7 +164,7 @@ func Test_storeBytecodeByteCode(t *testing.T) {
 			name:  "store something other than bytecode",
 			arg:   "foo",
 			stack: []interface{}{"not bytecode"},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("string"),
+			err:   errors.ErrInvalidType.Context("string"),
 		},
 	}
 

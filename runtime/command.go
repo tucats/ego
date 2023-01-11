@@ -38,7 +38,7 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
 	}
 
 	// Let's build the Ego instance of exec.Cmd
@@ -68,12 +68,12 @@ func NewCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount).Context("LookPath")
+		return nil, errors.ErrArgumentCount.Context("LookPath")
 	}
 
 	path, err := exec.LookPath(data.String(args[0]))
 	if err != nil {
-		return "", errors.EgoError(err).Context("LookPath")
+		return "", errors.NewError(err).Context("LookPath")
 	}
 
 	return path, nil
@@ -82,7 +82,7 @@ func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure
@@ -149,7 +149,7 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.EgoError(e)
+		return nil, errors.NewError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")
@@ -167,12 +167,12 @@ func CommandRun(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation).Context("Run")
+		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure
@@ -239,7 +239,7 @@ func CommandOutput(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.EgoError(e)
+		return nil, errors.NewError(e)
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

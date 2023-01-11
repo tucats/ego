@@ -128,7 +128,7 @@ func Debugger(c *bytecode.Context) error {
 
 				default:
 					prompt = true
-					err = errors.EgoError(errors.ErrInvalidStepType).Context(tokens.Peek(2))
+					err = errors.ErrInvalidStepType.Context(tokens.Peek(2))
 
 					c.SetSingleStep(false)
 				}
@@ -160,10 +160,10 @@ func Debugger(c *bytecode.Context) error {
 				err = Break(c, tokens)
 
 			case "exit":
-				return errors.EgoError(errors.ErrStop)
+				return errors.ErrStop
 
 			default:
-				err = errors.EgoError(errors.ErrInvalidDebugCommand).Context(t)
+				err = errors.ErrInvalidDebugCommand.Context(t)
 			}
 
 			if err != nil && !errors.Equals(err, errors.ErrStop) && !errors.Equals(err, errors.ErrStepOver) {

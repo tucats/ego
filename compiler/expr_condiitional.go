@@ -35,7 +35,7 @@ func (c *Compiler) conditional() error {
 	}
 
 	if c.t.AtEnd() || c.t.Peek(1) != tokenizer.ColonToken {
-		return c.newError(errors.ErrMissingColon)
+		return c.error(errors.ErrMissingColon)
 	}
 
 	m2 := c.b.Mark()

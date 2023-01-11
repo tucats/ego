@@ -73,7 +73,7 @@ func importByteCode(c *Context, i interface{}) error {
 
 	pkg, ok := GetPackage(name)
 	if !ok {
-		return c.newError(errors.ErrImportNotCached).Context(name)
+		return c.error(errors.ErrImportNotCached).Context(name)
 	}
 
 	// Do we already have the local symbol table in the tree?
@@ -148,7 +148,7 @@ func pushPackageByteCode(c *Context, i interface{}) error {
 func popPackageByteCode(c *Context, i interface{}) error {
 	size := len(c.packageStack)
 	if size == 0 {
-		return c.newError(errors.ErrMissingPackageStatement)
+		return c.error(errors.ErrMissingPackageStatement)
 	}
 
 	// Pop the item off the package stack.
@@ -157,13 +157,13 @@ func popPackageByteCode(c *Context, i interface{}) error {
 
 	// Verify that we're on the right package.
 	if pkgdef.name != data.String(i) {
-		return c.newError(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
+		return c.error(errors.ErrPanic).Context("package name mismatch: " + pkgdef.name)
 	}
 
 	// Retrieve the package variable
 	pkg, found := GetPackage(pkgdef.name)
 	if !found {
-		return c.newError(errors.ErrMissingPackageStatement)
+		return c.error(errors.ErrMissingPackageStatement)
 	}
 
 	first := true

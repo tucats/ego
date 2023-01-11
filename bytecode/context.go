@@ -264,7 +264,7 @@ func (c *Context) GetModuleName() string {
 // Pop removes the top-most item from the stack.
 func (c *Context) Pop() (interface{}, error) {
 	if c.stackPointer <= 0 || len(c.stack) < c.stackPointer {
-		return nil, c.newError(errors.ErrStackUnderflow)
+		return nil, c.error(errors.ErrStackUnderflow)
 	}
 
 	c.stackPointer = c.stackPointer - 1
@@ -387,7 +387,7 @@ func (c *Context) checkType(name string, value interface{}) error {
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
-			err = c.newError(errors.ErrInvalidVarType)
+			err = c.error(errors.ErrInvalidVarType)
 		}
 	}
 
@@ -402,11 +402,11 @@ func (c *Context) popSymbolTable() error {
 	if c.symbols.IsRoot() {
 		ui.Debug(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
 
-		return errors.EgoError(errors.ErrInternalCompiler).Context("Attempt to pop root table")
+		return errors.ErrInternalCompiler.Context("Attempt to pop root table")
 	}
 
 	if c.symbols == c.symbols.Parent() {
-		return errors.EgoError(errors.ErrInternalCompiler).Context("Symbol Table Cycle Error")
+		return errors.ErrInternalCompiler.Context("Symbol Table Cycle Error")
 	}
 
 	name := c.symbols.Name

@@ -100,7 +100,7 @@ func (c *Compiler) compileStatement() error {
 				return c.Assert()
 			}
 
-			return c.newError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
+			return c.error(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 
 		case tokenizer.BreakToken:
 			return c.compileBreak()
@@ -149,7 +149,7 @@ func (c *Compiler) compileStatement() error {
 	}
 
 	// Unknown statement, return an error
-	return c.newError(errors.ErrUnrecognizedStatement, c.t.Peek(0))
+	return c.error(errors.ErrUnrecognizedStatement, c.t.Peek(0))
 }
 
 // isFunctionCall indicates if the token stream points to a function call.
@@ -270,4 +270,3 @@ func (c *Compiler) isFunctionCall() bool {
 
 	return false
 }
-

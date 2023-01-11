@@ -31,7 +31,7 @@ func equalByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// If both are nil, then they match.
@@ -54,7 +54,7 @@ func equalByteCode(c *Context, i interface{}) error {
 			r = (v2 == nil)
 		}
 
-	case *errors.EgoErrorMsg:
+	case *errors.Error:
 		r = a.Equal(v2)
 
 	case *data.Struct:
@@ -133,7 +133,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// IF only one side is nil, they are not equal by definition.
@@ -148,7 +148,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 	case nil:
 		r = (v2 != nil)
 
-	case *errors.EgoErrorMsg:
+	case *errors.Error:
 		r = !a.Equal(v2)
 
 	case error:
@@ -217,7 +217,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
@@ -230,7 +230,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
 		v1, v2 = data.Normalize(v1, v2)
@@ -249,7 +249,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 			r = v1.(string) > v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -285,7 +285,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
@@ -298,7 +298,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
 		v1, v2 = data.Normalize(v1, v2)
@@ -317,7 +317,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 			r = v1.(string) >= v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -351,7 +351,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Handle nil cases
@@ -366,7 +366,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
 		v1, v2 = data.Normalize(v1, v2)
@@ -385,7 +385,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 			r = v1.(string) < v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 
@@ -420,7 +420,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v1) || IsStackMarker(v2) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	if v1 == nil || v2 == nil {
@@ -433,7 +433,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 
 	switch v1.(type) {
 	case *data.Map, *data.Struct, *data.Package, *data.Array:
-		return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
 		v1, v2 = data.Normalize(v1, v2)
@@ -451,7 +451,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 			r = v1.(string) <= v2.(string)
 
 		default:
-			return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
+			return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 		}
 	}
 

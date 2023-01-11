@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 // ReadFile reads a file contents into a string value.
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+		return nil, errors.ErrWrongParameterCount
 	}
 
 	name := data.String(args[0])
@@ -29,7 +30,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, errors.EgoError(err)
+		return nil, errors.NewError(err)
 	}
 
 	return data.NewArray(&data.ByteType, 0).Append(content), nil
@@ -38,7 +39,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
-		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+		return nil, errors.ErrWrongParameterCount
 	}
 
 	fileName := sandboxName(data.String(args[0]))
@@ -47,7 +48,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		if a.ValueType().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
-				err = errors.EgoError(err)
+				err = errors.NewError(err)
 			}
 
 			return a.Len(), err
@@ -58,7 +59,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	err := ioutil.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return len(text), err
@@ -67,7 +68,7 @@ func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // DeleteFile deletes a file.
 func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	fileName := data.String(args[0])
@@ -75,7 +76,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	err := os.Remove(fileName)
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err == nil, err
@@ -84,7 +85,7 @@ func DeleteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // Expand expands a list of file or path names into a list of files.
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 2 {
-		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	path := data.String(args[0])
@@ -127,7 +128,7 @@ func ExpandPath(path, ext string) ([]string, error) {
 		}
 
 		if err != nil {
-			return names, errors.EgoError(err)
+			return names, errors.NewError(err)
 		}
 
 		// If we have a default suffix, make sure the pattern matches
@@ -164,7 +165,7 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return result, errors.EgoError(err).In("ReadDir()")
+		return result, errors.NewError(err).In("ReadDir()")
 	}
 
 	for _, file := range files {
@@ -182,6 +183,75 @@ func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
+// Chdir implements the os.Chdir() function.
+func Chdir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	path := data.String(args[0])
+
+	if err := os.Chdir(path); err != nil {
+		return nil, errors.NewError(err).In("Chdir")
+	}
+
+	return nil, nil
+}
+
+// Chmod implements the os.Chmod() function.
+func Chmod(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	path := data.String(args[0])
+	mode := data.Int32(args[1])
+
+	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
+		return nil, errors.NewError(err).In("Chmod")
+	}
+
+	return nil, nil
+}
+
+// Chown implements the os.Chown() function.
+func Chown(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	path := data.String(args[0])
+	uid := data.Int(args[1])
+	gid := data.Int(args[1])
+
+	if err := os.Chown(path, uid, gid); err != nil {
+		return nil, errors.NewError(err).In("Chown")
+	}
+
+	return nil, nil
+}
+
+// Clearenv implements the os.Clearenv() function.
+func Clearenv(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	os.Clearenv()
+
+	return nil, nil
+}
+
+// Environ implements the os.Environ() function.
+func Environ(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	env := os.Environ()
+
+	result := data.NewArray(&data.StringType, len(env))
+
+	for index, value := range env {
+		if err := result.Set(index, value); err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
+}
+
+// Executable implements the os.Executable() function.
+func Executable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	path, err := os.Executable()
+
+	if err != nil {
+		err = errors.NewError(err)
+	}
+
+	return path, err
+}
+
 // This is the generic close() which can be used to close a channel or a file,
 // and maybe later other items as well.
 func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -197,11 +267,11 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return Close(s, []interface{}{})
 
 		default:
-			return nil, errors.EgoError(errors.ErrInvalidType).In("close()").Context(arg.TypeString())
+			return nil, errors.ErrInvalidType.In("close()").Context(arg.TypeString())
 		}
 
 	default:
-		return nil, errors.EgoError(errors.ErrInvalidType).In("CloseAny()")
+		return nil, errors.ErrInvalidType.In("CloseAny()")
 	}
 }
 

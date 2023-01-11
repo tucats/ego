@@ -53,7 +53,7 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	text, e2 := fmt.Printf("%s", b.String())
 
 	if e2 != nil {
-		e2 = errors.EgoError(e2)
+		e2 = errors.NewError(e2)
 	}
 
 	return text, e2
@@ -74,7 +74,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	text, e2 := fmt.Printf("%s\n", b.String())
 
 	if e2 != nil {
-		e2 = errors.EgoError(e2)
+		e2 = errors.NewError(e2)
 	}
 
 	return text, e2
@@ -111,7 +111,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	for i, v := range args[2:] {
 		if data.TypeOfPointer(v).IsUndefined() {
-			return nil, errors.EgoError(errors.ErrNotAPointer)
+			return nil, errors.ErrNotAPointer
 		}
 
 		if content, ok := v.(*interface{}); ok {
@@ -122,7 +122,7 @@ func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
 	if err != nil {
-		return 0, errors.EgoError(err).Context("Sscanf()")
+		return 0, errors.NewError(err).Context("Sscanf()")
 	}
 
 	// Stride over the return value pointers, assigning as many
@@ -156,7 +156,7 @@ func scanner(data, format string) ([]interface{}, error) {
 			// Must only be supported format string. TODO We do not allow width
 			// specifications yet.
 			if !util.InList(token.Spelling(), "s", "t", "f", "d", "v") {
-				return result, errors.EgoError(errors.ErrInvalidFormatVerb)
+				return result, errors.ErrInvalidFormatVerb
 			}
 
 			// Add to the previous token
@@ -185,7 +185,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%v", &v)
 			if e != nil {
-				err = errors.EgoError(e).Context("Sscanf()")
+				err = errors.NewError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -201,7 +201,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%t", &v)
 			if e != nil {
-				err = errors.EgoError(e).Context("Sscanf()")
+				err = errors.NewError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -214,7 +214,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%f", &v)
 			if e != nil {
-				err = errors.EgoError(e).Context("Sscanf()")
+				err = errors.NewError(e).Context("Sscanf()")
 				parsing = false
 
 				break
@@ -227,7 +227,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 			_, e := fmt.Sscanf(d[idx].Spelling(), "%d", &v)
 			if e != nil {
-				err = errors.EgoError(e).Context("Sscanf()")
+				err = errors.NewError(e).Context("Sscanf()")
 				parsing = false
 
 				break

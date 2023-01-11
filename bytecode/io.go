@@ -36,7 +36,7 @@ func printByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(value) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		s := ""
@@ -129,7 +129,7 @@ func logByteCode(c *Context, i interface{}) error {
 	}
 
 	if class <= ui.NoSuchLogger {
-		return c.newError(errors.ErrInvalidLoggerName).Context(i)
+		return c.error(errors.ErrInvalidLoggerName).Context(i)
 	}
 
 	msg, err := c.Pop()
@@ -191,14 +191,14 @@ func templateByteCode(c *Context, i interface{}) error {
 	t, err := c.Pop()
 	if err == nil {
 		if IsStackMarker(t) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		t, e2 := template.New(name).Parse(data.String(t))
 		if e2 == nil {
 			err = c.stackPush(t)
 		} else {
-			err = c.newError(e2)
+			err = c.error(e2)
 		}
 	}
 
@@ -224,7 +224,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 
 		return nil
 	} else {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 }
 
@@ -240,7 +240,7 @@ func timerByteCode(c *Context, i interface{}) error {
 	case 1:
 		timerStack := len(c.timerStack)
 		if timerStack == 0 {
-			return c.newError(errors.ErrInvalidTimer)
+			return c.error(errors.ErrInvalidTimer)
 		}
 
 		t := c.timerStack[timerStack-1]
@@ -265,6 +265,6 @@ func timerByteCode(c *Context, i interface{}) error {
 		return c.stackPush(msText)
 
 	default:
-		return c.newError(errors.ErrInvalidTimer).Context(mode)
+		return c.error(errors.ErrInvalidTimer).Context(mode)
 	}
 }

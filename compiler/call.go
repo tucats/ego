@@ -19,7 +19,7 @@ func (c *Compiler) compileFunctionCall() error {
 	// not an identifier, and it's not followed by a parenthesis or dot-notation identifier,
 	// then this is not a function call and we're done.
 	if !c.t.Peek(1).IsIdentifier() || (c.t.Peek(2) != tokenizer.StartOfListToken && c.t.Peek(2) != tokenizer.DotToken) {
-		return c.newError(errors.ErrInvalidFunctionCall)
+		return c.error(errors.ErrInvalidFunctionCall)
 	}
 
 	// Parse the function as an expression. Place a marker on the stack before emitting

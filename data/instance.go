@@ -12,7 +12,7 @@ func NewInterfaceType(name string) *Type {
 	t := &Type{
 		name:      name,
 		kind:      InterfaceKind,
-		functions: make(map[string]interface{}),
+		functions: make(map[string]Function),
 		valueType: &InterfaceType,
 	}
 

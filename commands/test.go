@@ -173,7 +173,7 @@ func TestAction(c *cli.Context) error {
 	}
 
 	if exitValue > 0 {
-		return errors.EgoError(errors.ErrTerminatedWithErrors)
+		return errors.ErrTerminatedWithErrors
 	}
 
 	return nil
@@ -191,7 +191,7 @@ func ReadDirectory(name string) (string, error) {
 			ui.Debug(ui.DebugLogger, "+++ No such directory")
 		}
 
-		return "", errors.EgoError(err)
+		return "", errors.NewError(err)
 	}
 
 	ui.Debug(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
@@ -242,7 +242,7 @@ func ReadFile(name string) (string, error) {
 
 			content, e2 = ioutil.ReadFile(fn)
 			if e2 != nil {
-				return "", errors.EgoError(e2)
+				return "", errors.NewError(e2)
 			}
 		}
 	}

@@ -11,7 +11,7 @@ import (
 // and the panic bytecode issued.
 func (c *Compiler) compilePanic() error {
 	if !c.t.IsNext(tokenizer.StartOfListToken) {
-		return errors.EgoError(errors.ErrMissingParenthesis)
+		return errors.ErrMissingParenthesis
 	}
 
 	err := c.expressionAtom()
@@ -22,7 +22,7 @@ func (c *Compiler) compilePanic() error {
 	c.b.Emit(bytecode.Panic)
 
 	if !c.t.IsNext(tokenizer.EndOfListToken) {
-		return errors.EgoError(errors.ErrMissingParenthesis)
+		return errors.ErrMissingParenthesis
 	}
 
 	return nil

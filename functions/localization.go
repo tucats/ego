@@ -13,7 +13,7 @@ import (
 
 func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.EgoError(errors.ErrWrongParameterCount)
+		return nil, errors.ErrWrongParameterCount
 	}
 
 	language := os.Getenv("LANG")
@@ -54,7 +54,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				parameters[field] = data.String(value)
 			}
 		} else if value != nil {
-			return nil, errors.EgoError(errors.ErrArgumentType)
+			return nil, errors.ErrArgumentType
 		}
 	}
 
@@ -96,14 +96,14 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 			t, e := t.Parse(msgString)
 			if e != nil {
-				return nil, errors.EgoError(e)
+				return nil, errors.NewError(e)
 			}
 
 			var r bytes.Buffer
 
 			e = t.Execute(&r, parameters)
 			if e != nil {
-				return nil, errors.EgoError(e)
+				return nil, errors.NewError(e)
 			}
 
 			return r.String(), nil

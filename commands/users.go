@@ -48,7 +48,7 @@ func AddUser(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -78,7 +78,7 @@ func DeleteUser(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err
@@ -89,7 +89,7 @@ func ListUsers(c *cli.Context) error {
 
 	err := runtime.Exchange(defs.AdminUsersPath, http.MethodGet, nil, &ud, defs.AdminAgent)
 	if err != nil {
-		return errors.EgoError(err)
+		return errors.NewError(err)
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
@@ -122,7 +122,7 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return err

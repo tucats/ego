@@ -318,7 +318,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 // Add all the items in the "data" dictionary to the symbol table, which is initialized if needed.
 func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, symbols); err != nil {
-		return http.StatusBadRequest, errors.EgoError(err)
+		return http.StatusBadRequest, errors.NewError(err)
 	}
 
 	if len(task.Filters) > 0 {
@@ -383,7 +383,7 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperati
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return 0, status, errors.EgoError(err)
+	return 0, status, errors.NewError(err)
 }
 
 func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
@@ -438,7 +438,7 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms 
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return rowCount, status, err
@@ -448,7 +448,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 	var err error
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.EgoError(err)
+		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
 
 	tableName, _ := fullName(user, task.Table)
@@ -472,7 +472,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
-	return 0, status, errors.EgoError(err)
+	return 0, status, errors.NewError(err)
 }
 
 func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symbolTable, emptyResultError bool) (int, int, error) {
@@ -546,7 +546,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 	}
 
 	if err != nil {
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return rowCount, status, err
@@ -554,7 +554,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 
 func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.EgoError(err)
+		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
 
 	tableName, _ := fullName(user, task.Table)
@@ -695,7 +695,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 			updateErr = errors.NewMessage("update did not modify any rows")
 		}
 	} else {
-		updateErr = errors.EgoError(updateErr)
+		updateErr = errors.NewError(updateErr)
 		status = http.StatusBadRequest
 		if strings.Contains(updateErr.Error(), "constraint") {
 			status = http.StatusConflict
@@ -707,7 +707,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 
 func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, error) {
 	if e := applySymbolsToTask(sessionID, &task, id, syms); e != nil {
-		return 0, http.StatusBadRequest, errors.EgoError(e)
+		return 0, http.StatusBadRequest, errors.NewError(e)
 	}
 
 	tableName, _ := fullName(user, task.Table)
@@ -744,12 +744,12 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, errors.EgoError(err)
+	return 0, http.StatusBadRequest, errors.NewError(err)
 }
 
 func txSQL(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return 0, http.StatusBadRequest, errors.EgoError(err)
+		return 0, http.StatusBadRequest, errors.NewError(err)
 	}
 
 	if len(task.Columns) > 0 {
@@ -785,12 +785,12 @@ func txSQL(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, s
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, errors.EgoError(err)
+	return 0, http.StatusBadRequest, errors.NewError(err)
 }
 
 func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return http.StatusBadRequest, errors.EgoError(err)
+		return http.StatusBadRequest, errors.NewError(err)
 	}
 
 	table, _ := fullName(user, task.Table)
@@ -814,7 +814,7 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, id int, 
 			status = http.StatusNotFound
 		}
 
-		err = errors.EgoError(err)
+		err = errors.NewError(err)
 	}
 
 	return status, err
@@ -822,7 +822,7 @@ func txDrop(sessionID int32, user string, db *sql.DB, task TxOperation, id int, 
 
 func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperation, id int, syms *symbolTable) (int, error) {
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
-		return http.StatusBadRequest, errors.EgoError(err)
+		return http.StatusBadRequest, errors.NewError(err)
 	}
 
 	if len(task.Filters) > 0 {

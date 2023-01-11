@@ -137,7 +137,7 @@ func setPermission(user, privilege string, enabled bool) error {
 
 		ui.Debug(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
-		return errors.EgoError(errors.ErrNoSuchUser).Context(user)
+		return errors.ErrNoSuchUser.Context(user)
 	}
 
 	return err
@@ -229,7 +229,7 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		}
 	} else {
 		if len(args) != 2 {
-			return false, errors.EgoError(errors.ErrArgumentCount)
+			return false, errors.ErrArgumentCount
 		}
 
 		user = data.String(args[0])
@@ -246,7 +246,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	var user, priv string
 
 	if len(args) != 2 {
-		return false, errors.EgoError(errors.ErrArgumentCount)
+		return false, errors.ErrArgumentCount
 	}
 
 	user = data.String(args[0])
@@ -270,13 +270,13 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if !superUser {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation)
+		return nil, errors.ErrNoPrivilegeForOperation
 	}
 
 	// There must be one parameter, which is a struct containing
 	// the user data
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	if u, ok := args[0].(*data.Map); ok {
@@ -334,12 +334,12 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	if !superUser {
-		return nil, errors.EgoError(errors.ErrNoPrivilegeForOperation)
+		return nil, errors.ErrNoPrivilegeForOperation
 	}
 
 	// There must be one parameter, which is the username
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	name := strings.ToLower(data.String(args[0]))
@@ -361,7 +361,7 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// There must be one parameter, which is a username
 	if len(args) != 1 {
-		return nil, errors.EgoError(errors.ErrArgumentCount)
+		return nil, errors.ErrArgumentCount
 	}
 
 	r := data.NewMap(&data.StringType, &data.InterfaceType)

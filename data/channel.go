@@ -63,7 +63,7 @@ func (c *Channel) Send(datum interface{}) error {
 		return nil
 	}
 
-	return errors.EgoError(errors.ErrChannelNotOpen)
+	return errors.ErrChannelNotOpen
 }
 
 // Receive accepts an arbitrary data object through the channel, waiting
@@ -76,7 +76,7 @@ func (c *Channel) Receive() (interface{}, error) {
 	}
 
 	if !c.IsOpen() && c.count == 0 {
-		return nil, errors.EgoError(errors.ErrChannelNotOpen)
+		return nil, errors.ErrChannelNotOpen
 	}
 
 	datum := <-c.channel

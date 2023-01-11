@@ -40,7 +40,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 	if v, err := c.Pop(); err == nil {
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		baseType = data.TypeOf(v)
@@ -54,7 +54,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 	for i := 0; i < count; i++ {
 		if v, err := c.Pop(); err == nil {
 			if IsStackMarker(v) {
-				return c.newError(errors.ErrFunctionReturnedVoid)
+				return c.error(errors.ErrFunctionReturnedVoid)
 			}
 
 			t := data.TypeOf(v)
@@ -125,7 +125,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(v) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If we are in static mode, array must be homogeneous.
@@ -135,7 +135,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 				_ = array.SetType(data.TypeOf(v))
 			} else {
 				if arrayType != reflect.TypeOf(v) {
-					return c.newError(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+					return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
 				}
 			}
 		}
@@ -204,7 +204,7 @@ func structByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(value) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If this is the type, use it to make a model. Otherwise, put it in the structure.
@@ -216,7 +216,7 @@ func structByteCode(c *Context, i interface{}) error {
 			} else {
 				ui.Log(ui.InternalLogger, "ERROR: structByteCode() unexpected type value %v", value)
 
-				return errors.EgoError(errors.ErrStop)
+				return errors.ErrStop
 			}
 		} else {
 			m[name] = value
@@ -230,7 +230,7 @@ func structByteCode(c *Context, i interface{}) error {
 			// are valid.
 			for k := range m {
 				if _, found := model.Get(k); !strings.HasPrefix(k, data.MetadataPrefix) && !found {
-					return c.newError(errors.ErrInvalidField, k)
+					return c.error(errors.ErrInvalidField, k)
 				}
 			}
 
@@ -255,7 +255,7 @@ func structByteCode(c *Context, i interface{}) error {
 			}
 
 		default:
-			return c.newError(errors.ErrUnknownType, typeInfo.String())
+			return c.error(errors.ErrUnknownType, typeInfo.String())
 		}
 	} else {
 		// No type, default it to a struct.
@@ -311,7 +311,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 	}
 
 	if IsStackMarker(v) {
-		return c.newError(errors.ErrFunctionReturnedVoid)
+		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	valueType := data.TypeOf(v)
@@ -330,7 +330,7 @@ func makeMapByteCode(c *Context, i interface{}) error {
 		}
 
 		if IsStackMarker(v) || IsStackMarker(k) {
-			return c.newError(errors.ErrFunctionReturnedVoid)
+			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		if _, err = m.Set(k, v); err != nil {

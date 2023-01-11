@@ -29,7 +29,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			// Pairs of name:value
 			name := c.t.Next()
 			if !name.IsIdentifier() {
-				return c.newError(errors.ErrInvalidSymbolName)
+				return c.error(errors.ErrInvalidSymbolName)
 			}
 
 			name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
@@ -40,7 +40,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			}
 
 			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.newError(errors.ErrMissingColon)
+				return c.error(errors.ErrMissingColon)
 			}
 
 			err = c.compileInitializer(fieldType)
@@ -58,7 +58,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			}
 
 			if !c.t.IsNext(tokenizer.CommaToken) {
-				return c.newError(errors.ErrInvalidList)
+				return c.error(errors.ErrInvalidList)
 			}
 		}
 
@@ -81,7 +81,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			c.b.Emit(bytecode.Coerce, base.KeyType())
 
 			if !c.t.IsNext(tokenizer.ColonToken) {
-				return c.newError(errors.ErrMissingColon)
+				return c.error(errors.ErrMissingColon)
 			}
 
 			// Note we compile the value using ourselves, to allow for nested
@@ -98,7 +98,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			}
 
 			if !c.t.IsNext(tokenizer.CommaToken) {
-				return c.newError(errors.ErrInvalidList)
+				return c.error(errors.ErrInvalidList)
 			}
 		}
 
@@ -125,7 +125,7 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 			}
 
 			if !c.t.IsNext(tokenizer.CommaToken) {
-				return c.newError(errors.ErrInvalidList)
+				return c.error(errors.ErrInvalidList)
 			}
 		}
 

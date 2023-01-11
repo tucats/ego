@@ -296,7 +296,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 		}
 
 		if e2 != nil {
-			err = errors.EgoError(e2)
+			err = errors.NewError(e2)
 		}
 	}
 
@@ -362,7 +362,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 	}
 
 	if err != nil {
-		return columns, errors.EgoError(err)
+		return columns, errors.NewError(err)
 	}
 
 	return columns, nil

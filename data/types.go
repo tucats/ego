@@ -68,12 +68,17 @@ const (
 	NoName = ""
 )
 
+type Function struct {
+	Declaration *FunctionDeclaration
+	Value       interface{} // Generally bytecode
+}
+
 type Type struct {
 	name      string
 	pkg       string
 	kind      int
 	fields    map[string]*Type
-	functions map[string]interface{}
+	functions map[string]Function
 	keyType   *Type
 	valueType *Type
 }
@@ -96,7 +101,7 @@ var validationLock sync.Mutex
 // the functions for an associated interface definition.
 func (t Type) ValidateFunctions(i *Type) error {
 	if i.kind != TypeKind || i.valueType == nil {
-		return errors.EgoError(errors.ErrArgumentType)
+		return errors.ErrArgumentType
 	}
 
 	// Sadly, multple threads using the same type could have a collision in
@@ -110,26 +115,21 @@ func (t Type) ValidateFunctions(i *Type) error {
 		return nil
 	}
 
-	m1 := t.functions
-	m2 := i.functions
-
-	for k, bc1 := range m1 {
-		f1, _ := bc1.(*FunctionDeclaration)
-		if f1 == nil {
-			return errors.EgoError(errors.ErrMissingInterface).Context(k)
+	for k, bc1 := range t.functions {
+		if bc1.Declaration == nil {
+			return errors.ErrMissingInterface.Context(k)
 		}
 
-		if bc2, ok := m2[k]; ok {
-			f2, _ := bc2.(*FunctionDeclaration)
-			if f2 == nil {
-				return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
+		if bc2, ok := i.functions[k]; ok {
+			if bc2.Declaration == nil {
+				return errors.ErrMissingInterface.Context(bc1.Declaration.String())
 			}
 
-			if f1.String() != f2.String() {
-				return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
+			if bc1.Declaration.String() != bc2.Declaration.String() {
+				return errors.ErrMissingInterface.Context(bc1.Declaration.String())
 			}
 		} else {
-			return errors.EgoError(errors.ErrMissingInterface).Context(f1.String())
+			return errors.ErrMissingInterface.Context(bc1.Declaration.String())
 		}
 	}
 
@@ -173,8 +173,12 @@ func (t Type) FunctionNameList() string {
 
 	keys := make([]string, 0)
 
-	for k := range t.functions {
-		keys = append(keys, k)
+	for k, v := range t.functions {
+		if v.Declaration != nil {
+			keys = append(keys, v.Declaration.String())
+		} else {
+			keys = append(keys, k)
+		}
 	}
 
 	sort.Strings(keys)
@@ -244,8 +248,8 @@ func (t Type) String() string {
 				name = name + ","
 			}
 
-			if fd, ok := t.functions[f].(*FunctionDeclaration); ok {
-				name = name + fd.String()
+			if fd, ok := t.functions[f]; ok {
+				name = name + fd.Declaration.String()
 			} else {
 				name = name + f
 			}
@@ -457,18 +461,22 @@ func (t Type) IsTypeDefinition() bool {
 
 // Define a function for a type, that can be used as a receiver
 // function.
-func (t *Type) DefineFunction(name string, value interface{}) {
+func (t *Type) DefineFunction(name string, declaration *FunctionDeclaration, value interface{}) {
 	if t.functions == nil {
-		t.functions = map[string]interface{}{}
+		t.functions = map[string]Function{}
 	}
 
-	t.functions[name] = value
+	t.functions[name] = Function{
+		Declaration: declaration,
+		Value:       value,
+	}
 }
 
 // Helper function that defines a set of functions in a single call.
+// Note this can only define functipoin values, not declarations.
 func (t *Type) DefineFunctions(functions map[string]interface{}) {
 	for k, v := range functions {
-		t.DefineFunction(k, v)
+		t.DefineFunction(k, nil, v)
 	}
 }
 
@@ -530,16 +538,16 @@ func (t Type) FieldNames() []string {
 // be a structure type, and the field name must exist.
 func (t Type) Field(name string) (*Type, error) {
 	if t.kind != StructKind {
-		return &UndefinedType, errors.EgoError(errors.ErrInvalidStruct)
+		return &UndefinedType, errors.ErrInvalidStruct
 	}
 
 	if t.fields == nil {
-		return &UndefinedType, errors.EgoError(errors.ErrInvalidField)
+		return &UndefinedType, errors.ErrInvalidField
 	}
 
 	ofType, found := t.fields[name]
 	if !found {
-		return &UndefinedType, errors.EgoError(errors.ErrInvalidField)
+		return &UndefinedType, errors.ErrInvalidField
 	}
 
 	return ofType, nil
@@ -955,11 +963,13 @@ func (t Type) Reflect() *Struct {
 
 		for i, k := range names {
 			fName := functionList[k]
-			if fdef, ok := fName.(FunctionDeclaration); ok {
-				fName = fdef.String()
+			name := k
+
+			if fName.Declaration != nil {
+				name = fName.Declaration.String()
 			}
 
-			_ = functions.Set(i, fName)
+			_ = functions.Set(i, name)
 		}
 
 		r["functions"] = functions

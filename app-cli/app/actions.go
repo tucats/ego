@@ -32,7 +32,7 @@ func OutputFormatAction(c *cli.Context) error {
 			ui.JSONIndentedFormat, ui.JSONFormat, ui.TextFormat) {
 			ui.OutputFormat = formatString
 		} else {
-			return errors.EgoError(errors.ErrInvalidOutputFormat).Context(formatString)
+			return errors.ErrInvalidOutputFormat.Context(formatString)
 		}
 
 		settings.SetDefault(defs.OutputFormatSetting, strings.ToLower(formatString))
@@ -61,7 +61,7 @@ func DebugAction(c *cli.Context) error {
 			if name != "" {
 				logger := ui.Logger(name)
 				if logger < 0 {
-					return errors.EgoError(errors.ErrInvalidLoggerName).Context(name)
+					return errors.ErrInvalidLoggerName.Context(name)
 				}
 
 				ui.SetLogger(logger, true)

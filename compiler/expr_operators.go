@@ -84,7 +84,7 @@ func (c *Compiler) addSubtract() error {
 			c.t.Advance(1)
 
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.newError(errors.ErrMissingTerm)
+				return c.error(errors.ErrMissingTerm)
 			}
 
 			err := c.multDivide()
@@ -148,7 +148,7 @@ func (c *Compiler) multDivide() error {
 			tokenizer.ModuloToken,
 		) {
 			if c.t.IsNext(tokenizer.EndOfTokens) {
-				return c.newError(errors.ErrMissingTerm)
+				return c.error(errors.ErrMissingTerm)
 			}
 
 			err := c.unary()

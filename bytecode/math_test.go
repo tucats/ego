@@ -39,7 +39,7 @@ func Test_negateByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{nil},
 			want:  -5,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "negate nil boolean value",
@@ -220,7 +220,7 @@ func Test_addByteCode(t *testing.T) {
 		{
 			name:  "add string to error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), "-thing"},
+			stack: []interface{}{errors.ErrAssert, "-thing"},
 			want:  "@assert error-thing",
 		},
 		{
@@ -228,14 +228,14 @@ func Test_addByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "add with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "add integers",
@@ -311,7 +311,7 @@ func Test_addByteCode(t *testing.T) {
 			want: data.NewArrayFromArray(
 				&data.StringType,
 				[]interface{}{"foo", "bar", "xyzzy"}),
-			err: errors.EgoError(errors.ErrInvalidType).Context("interface{}"),
+			err: errors.ErrInvalidType.Context("interface{}"),
 		},
 	}
 
@@ -391,13 +391,13 @@ func Test_andByteCode(t *testing.T) {
 		}, {
 			name:  "AND string to error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), "-thing"},
+			stack: []interface{}{errors.ErrAssert, "-thing"},
 			want:  false,
 		},
 		{
 			name:  "AND empty string to error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), ""},
+			stack: []interface{}{errors.ErrAssert, ""},
 			want:  false,
 		},
 		{
@@ -405,14 +405,14 @@ func Test_andByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "AND with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "AND integers",
@@ -534,13 +534,13 @@ func Test_orByteCode(t *testing.T) {
 		{
 			name:  "OR string to error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), "-thing"},
+			stack: []interface{}{errors.ErrAssert, "-thing"},
 			want:  false,
 		},
 		{
 			name:  "OR empty string to error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), ""},
+			stack: []interface{}{errors.ErrAssert, ""},
 			want:  false,
 		},
 		{
@@ -548,14 +548,14 @@ func Test_orByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "OR with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "OR integers",
@@ -665,22 +665,22 @@ func Test_subtractByteCode(t *testing.T) {
 		{
 			name:  "sub string from error",
 			arg:   nil,
-			stack: []interface{}{errors.EgoError(errors.ErrAssert), "-thing"},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("interface{}"),
+			stack: []interface{}{errors.ErrAssert, "-thing"},
+			err:   errors.ErrInvalidType.Context("interface{}"),
 		},
 		{
 			name:  "sub with first nil",
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "sub with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "sub integers",
@@ -693,7 +693,7 @@ func Test_subtractByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  false,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("bool"),
+			err:   errors.ErrInvalidType.Context("bool"),
 		},
 		{
 			name:  "sub strings",
@@ -796,14 +796,14 @@ func Test_multiplyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "multiply with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "multiply integers",
@@ -924,14 +924,14 @@ func Test_exponentyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "exponent with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "exponent integers",
@@ -944,20 +944,20 @@ func Test_exponentyByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("bool"),
+			err:   errors.ErrInvalidType.Context("bool"),
 		},
 		{
 			name:  "exponent false, false",
 			arg:   nil,
 			stack: []interface{}{false, false},
 			want:  false,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("bool"),
+			err:   errors.ErrInvalidType.Context("bool"),
 		},
 		{
 			name:  "exponent strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("string"),
+			err:   errors.ErrInvalidType.Context("string"),
 		},
 		{
 			name:  "exponent float32",
@@ -1053,14 +1053,14 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "divide with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 
 		{
@@ -1094,13 +1094,13 @@ func Test_divideByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("bool"),
+			err:   errors.ErrInvalidType.Context("bool"),
 		},
 		{
 			name:  "divide strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("string"),
+			err:   errors.ErrInvalidType.Context("string"),
 		},
 		{
 			name:  "divide float32 by integer",
@@ -1197,14 +1197,14 @@ func Test_moduloByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{2, nil},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "modulo with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 5},
 			want:  7,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "modulo integer zero",
@@ -1230,13 +1230,13 @@ func Test_moduloByteCode(t *testing.T) {
 			arg:   nil,
 			stack: []interface{}{true, false},
 			want:  true,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("bool"),
+			err:   errors.ErrInvalidType.Context("bool"),
 		},
 		{
 			name:  "modulo strings",
 			arg:   nil,
 			stack: []interface{}{"*", 5},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("string"),
+			err:   errors.ErrInvalidType.Context("string"),
 		},
 		{
 			name:  "modulo integer by byte",
@@ -1326,14 +1326,14 @@ func Test_bitAndByteCode(t *testing.T) {
 			name:  "AND with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "AND with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "AND integer values",
@@ -1447,14 +1447,14 @@ func Test_bitOrByteCode(t *testing.T) {
 			name:  "OR with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "OR with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "OR integer zero",
@@ -1580,14 +1580,14 @@ func Test_bitShiftByteCode(t *testing.T) {
 			name:  "bitshift with first nil",
 			arg:   nil,
 			stack: []interface{}{9, nil},
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "bitshift with second nil",
 			arg:   nil,
 			stack: []interface{}{nil, 0},
 			want:  0,
-			err:   errors.EgoError(errors.ErrInvalidType).Context("nil"),
+			err:   errors.ErrInvalidType.Context("nil"),
 		},
 		{
 			name:  "bitshift right 2 bits",
@@ -1605,7 +1605,7 @@ func Test_bitShiftByteCode(t *testing.T) {
 			name:  "bitshift invalid bit count",
 			arg:   nil,
 			stack: []interface{}{5, -35},
-			err:   errors.EgoError(errors.ErrInvalidBitShift).Context(-35)},
+			err:   errors.ErrInvalidBitShift.Context(-35)},
 		{
 			name:  "shift with 0 args on stack",
 			arg:   nil,
