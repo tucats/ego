@@ -20,9 +20,9 @@ type db.Rows struct {
 
 const (
 	clientFieldName      = "client"
-	constrFieldName      = "constr"
+	constrFieldName      = "Constr"
 	dbFieldName          = "db"
-	rowCountFieldName    = "rowCount"
+	rowCountFieldName    = "Rowcount"
 	rowsFieldName        = "rows"
 	asStructFieldName    = "asStruct"
 	transactionFieldName = "transaction"

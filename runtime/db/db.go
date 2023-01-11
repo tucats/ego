@@ -1,3 +1,8 @@
+// The db package manages the Ego data base interfaces, similar to the
+// sql package in conventional Go. There is basic functionality
+// for creating a new connection, and then using that connection
+// object (a db.Client) to perform queries, etc. A db.Rows type
+// is also defined for row sets.
 package db
 
 import (
@@ -117,7 +122,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	if g, ok := symbols.Get("__this"); ok {
 		if gc, ok := g.(*data.Struct); ok {
-			if client, ok := gc.Get(clientFieldName); ok {
+			if client := gc.GetAlways(clientFieldName); client != nil {
 				if cp, ok := client.(*sql.DB); ok {
 					if cp == nil {
 						return nil, nil, errors.ErrDatabaseClientClosed

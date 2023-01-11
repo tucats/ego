@@ -55,9 +55,14 @@ func memberByteCode(c *Context, i interface{}) error {
 		v, found = mv.Get(name)
 		if !found {
 			v = data.TypeOf(mv).Function(name)
+			found = (v != nil)
+
+			if decl, ok := v.(data.Function); ok {
+				found = (decl.Declaration != nil) || decl.Value != nil
+			}
 		}
 
-		if v == nil {
+		if !found {
 			return c.error(errors.ErrUnknownMember).Context(name)
 		}
 

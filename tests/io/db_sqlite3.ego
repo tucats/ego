@@ -28,7 +28,7 @@
         names := [ "Tom", "Mary", "Sarah", "Chelsea", "Tony" ]
         for i := 0; i < len(names) ; i = i + 1 {
             _, e := d.Execute("insert into members values($1, $2)", 101+i, names[i])
-            @assert T.Equal(d.rowCount, 1, "rowcount not updated correctly on insert")
+            @assert T.Equal(d.Rowcount, 1, "rowcount not updated correctly on insert")
             @assert T.Nil(e, "insert failed")
         }
 
@@ -37,7 +37,7 @@
         r, e := d.QueryResult("select * from members order by name")
         @assert T.Nil(e, "select failed" )
         @assert T.Equal(len(r), 5, "wrong number of rows returned")
-        @assert T.Equal(d.rowCount, 5, "wrong number of rows in result handle")
+        @assert T.Equal(d.Rowcount, 5, "wrong number of rows in result handle")
         @assert T.Equal(r[0][1], "Chelsea", "unexpected result set value(s)")
 
         // Do a query with an argument, and in "struct" mode which returns each row as
@@ -55,7 +55,7 @@
 
         // Done with the database
         d.Close()
-        @assert T.Equal(d.rowCount, -1, "rowcount not updated after close")
+        @assert T.Equal(d.Rowcount, -1, "rowcount not updated after close")
 
         os.Remove("foo.db")
     }

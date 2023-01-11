@@ -154,17 +154,28 @@ func (s *Struct) GetAlways(name string) interface{} {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	value := s.fields[name]
+	value, ok := s.fields[name]
+	// If it's not a field, it might be locatable via the typedef's
+	// declared receiver functions.
+	if !ok {
+		value = s.typeDef.functions[name]
+	}
 
 	return value
 }
 
+// Get retrieves a field from the structure. Note that if the
+// structure is a synthetic package type, we only allow access
+// to exported names.
 func (s *Struct) Get(name string) (interface{}, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	value, ok := s.fields[name]
+	if s.fromBuiltinPackage && !hasCapitalizedName(name) {
+		return nil, false
+	}
 
+	value, ok := s.fields[name]
 	// If it's not a field, it might be locatable via the typedef's
 	// declared receiver functions.
 	if !ok {
