@@ -82,10 +82,10 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 
 			case *data.Map:
 				r.keySet = actual.Keys()
-				actual.ImmutableKeys(true)
+				actual.SetReadonly(true)
 
 			case *data.Array:
-				actual.Immutable(true)
+				actual.SetReadonly(true)
 
 			case *data.Channel:
 				// No further init required
@@ -161,7 +161,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 
-				actual.ImmutableKeys(false)
+				actual.SetReadonly(false)
 			} else {
 				key := r.keySet[r.index]
 
@@ -210,7 +210,7 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 		case *data.Array:
 			if r.index >= actual.Len() {
 				c.programCounter = destination
-				actual.Immutable(false)
+				actual.SetReadonly(false)
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
 				if r.indexName != "" && r.indexName != DiscardedVariableName {

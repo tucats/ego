@@ -42,14 +42,12 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 1 {
 		value := args[1]
 		if egoMap, ok := value.(*data.Map); ok {
-			keys := egoMap.Keys()
-			for _, key := range keys {
+			for _, key := range egoMap.Keys() {
 				value, _, _ := egoMap.Get(key)
 				parameters[data.String(key)] = data.String(value)
 			}
 		} else if egoStruct, ok := value.(*data.Struct); ok {
-			fields := egoStruct.FieldNames()
-			for _, field := range fields {
+			for _, field := range egoStruct.FieldNames() {
 				value := egoStruct.GetAlways(field)
 				parameters[field] = data.String(value)
 			}

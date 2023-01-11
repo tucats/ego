@@ -159,12 +159,12 @@ func (a *Array) Validate(kind *Type) error {
 	return nil
 }
 
-// Immutable sets or clears the flag that marks the array as immutable. When
+// SetReadonly sets or clears the flag that marks the array as immutable. When
 // an array is marked as immutable, it cannot be modified (but can be deleted
 // in it's entirety). Note that this function actually uses a semaphore to
-// track the state, so there must bre an exact match of calls to Immutable(false)
-// as there were to Immutable(true) to allow modifiations to the array.
-func (a *Array) Immutable(b bool) *Array {
+// track the state, so there must bre an exact match of calls to SetReadonly(false)
+// as there were to SetReadonly(true) to allow modifiations to the array.
+func (a *Array) SetReadonly(b bool) *Array {
 	if b {
 		a.immutable++
 	} else {

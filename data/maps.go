@@ -48,11 +48,11 @@ func (m *Map) ValueType() *Type {
 	return m.valueType
 }
 
-// ImmutableKeys marks the map as immutable. This is passed in as a boolean
+// SetReadonly marks the map as immutable. This is passed in as a boolean
 // value (true means immutable). Internally, this is actually a counting
-// semaphore, so the calls to ImmutableKeys to set/clear the state must
+// semaphore, so the calls to SetReadonly to set/clear the state must
 // be balanced to prevent having a map that is permanently locked or unlocked.
-func (m *Map) ImmutableKeys(b bool) {
+func (m *Map) SetReadonly(b bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

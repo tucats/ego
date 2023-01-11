@@ -76,7 +76,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	if len(name) > 1 && name[0:1] == DiscardedVariableName {
 		switch a := value.(type) {
 		case *data.Map:
-			a.ImmutableKeys(true)
+			a.SetReadonly(true)
+
+		case *data.Array:
+			a.SetReadonly(true)
 
 		case *data.Struct:
 			a.SetReadonly(true)
@@ -166,12 +169,15 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 
 	c.symbols.Root().SetAlways(varname, v)
 
-	// Is this a readonly variable that is a structure? If so, mark it
-	// with the embedded readonly flag.
+	// Is this a readonly variable that is a complex native type?
+	// If so, mark it as readonly.
 	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
 		case *data.Map:
-			a.ImmutableKeys(true)
+			a.SetReadonly(true)
+
+		case *data.Array:
+			a.SetReadonly(true)
 
 		case *data.Struct:
 			a.SetReadonly(true)
@@ -342,7 +348,10 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 	if len(symbolName) > 1 && symbolName[0:1] == DiscardedVariableName {
 		switch a := v.(type) {
 		case *data.Map:
-			a.ImmutableKeys(true)
+			a.SetReadonly(true)
+
+		case *data.Array:
+			a.SetReadonly(true)
 
 		case *data.Struct:
 			a.SetReadonly(true)
