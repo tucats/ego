@@ -13,7 +13,7 @@ import (
 
 func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.ErrWrongParameterCount
+		return nil, errors.ErrArgumentCount
 	}
 
 	language := os.Getenv("LANG")

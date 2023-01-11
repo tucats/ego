@@ -18,7 +18,7 @@ import (
 // ReadFile reads a file contents into a string value.
 func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.ErrWrongParameterCount
+		return nil, errors.ErrArgumentCount
 	}
 
 	name := data.String(args[0])
@@ -39,7 +39,7 @@ func ReadFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // WriteFile writes a string to a file.
 func WriteFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
-		return nil, errors.ErrWrongParameterCount
+		return nil, errors.ErrArgumentCount
 	}
 
 	fileName := sandboxName(data.String(args[0]))
