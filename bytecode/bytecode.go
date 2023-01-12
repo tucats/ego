@@ -85,14 +85,12 @@ func New(name string) *ByteCode {
 		name = defs.Anon
 	}
 
-	bc := ByteCode{
+	return &ByteCode{
 		name:         name,
 		instructions: make([]instruction, initialOpcodeSize),
 		nextAddress:  0,
 		sealed:       false,
 	}
-
-	return &bc
 }
 
 // EmitAT emits a single instruction. The opcode is required, and can optionally
@@ -106,33 +104,33 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
 	}
 
-	i := instruction{Operation: opcode}
+	instruction := instruction{Operation: opcode}
 
 	// If there is one operand, store that in the instruction. If
 	// there are multiple operands, make them into an array.
 	if len(operands) > 0 {
 		if len(operands) > 1 {
-			i.Operand = operands
+			instruction.Operand = operands
 		} else {
-			i.Operand = operands[0]
+			instruction.Operand = operands[0]
 		}
 	}
 
 	// If the operand is a token, use the spelling of the token
 	// as the value. If it's an integer or floating point value,
 	// convert the token to a value.
-	if t, ok := i.Operand.(tokenizer.Token); ok {
-		text := t.Spelling()
-		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = data.Int(text)
-		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = data.Float64(text)
+	if token, ok := instruction.Operand.(tokenizer.Token); ok {
+		text := token.Spelling()
+		if token.IsClass(tokenizer.IntegerTokenClass) {
+			instruction.Operand = data.Int(text)
+		} else if token.IsClass(tokenizer.FloatTokenClass) {
+			instruction.Operand = data.Float64(text)
 		} else {
-			i.Operand = text
+			instruction.Operand = text
 		}
 	}
 
-	b.instructions[address] = i
+	b.instructions[address] = instruction
 	b.sealed = false
 }
 
@@ -145,33 +143,33 @@ func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
 		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
 	}
 
-	i := instruction{Operation: opcode}
+	instruction := instruction{Operation: opcode}
 
 	// If there is one operand, store that in the instruction. If
 	// there are multiple operands, make them into an array.
 	if len(operands) > 0 {
 		if len(operands) > 1 {
-			i.Operand = operands
+			instruction.Operand = operands
 		} else {
-			i.Operand = operands[0]
+			instruction.Operand = operands[0]
 		}
 	}
 
 	// If the operand is a token, use the spelling of the token
 	// as the value. If it's an integer or floating point value,
 	// convert the token to a value.
-	if t, ok := i.Operand.(tokenizer.Token); ok {
-		text := t.Spelling()
-		if t.IsClass(tokenizer.IntegerTokenClass) {
-			i.Operand = data.Int(text)
-		} else if t.IsClass(tokenizer.FloatTokenClass) {
-			i.Operand = data.Float64(text)
+	if token, ok := instruction.Operand.(tokenizer.Token); ok {
+		text := token.Spelling()
+		if token.IsClass(tokenizer.IntegerTokenClass) {
+			instruction.Operand = data.Int(text)
+		} else if token.IsClass(tokenizer.FloatTokenClass) {
+			instruction.Operand = data.Float64(text)
 		} else {
-			i.Operand = text
+			instruction.Operand = text
 		}
 	}
 
-	b.instructions[b.nextAddress] = i
+	b.instructions[b.nextAddress] = instruction
 	b.nextAddress = b.nextAddress + 1
 	b.sealed = false
 }
@@ -229,9 +227,9 @@ func (b *ByteCode) SetAddress(mark int, address int) error {
 		return errors.ErrInvalidBytecodeAddress
 	}
 
-	i := b.instructions[mark]
-	i.Operand = address
-	b.instructions[mark] = i
+	instruction := b.instructions[mark]
+	instruction.Operand = address
+	b.instructions[mark] = instruction
 
 	return nil
 }
@@ -244,14 +242,14 @@ func (b *ByteCode) Append(a *ByteCode) {
 		return
 	}
 
-	base := b.nextAddress
+	offset := b.nextAddress
 
-	for _, i := range a.instructions[:a.nextAddress] {
-		if i.Operation > BranchInstructions {
-			i.Operand = data.Int(i.Operand) + base
+	for _, instruction := range a.instructions[:a.nextAddress] {
+		if instruction.Operation > BranchInstructions {
+			instruction.Operand = data.Int(instruction.Operand) + offset
 		}
 
-		b.Emit(i.Operation, i.Operand)
+		b.Emit(instruction.Operation, instruction.Operand)
 	}
 
 	b.sealed = false
@@ -312,14 +310,14 @@ func (b *ByteCode) Remove(address int) {
 // line number; all previous line numbers are no longer valid and are
 // set to zero.
 func (b *ByteCode) ClearLineNumbers() {
-	for n, i := range b.instructions {
-		if n == len(b.instructions)-1 {
+	for index, instruction := range b.instructions {
+		if index == len(b.instructions)-1 {
 			break
 		}
 
-		if i.Operation == AtLine {
-			i.Operand = 0
-			b.instructions[n] = i
+		if instruction.Operation == AtLine {
+			instruction.Operand = 0
+			b.instructions[index] = instruction
 		}
 	}
 }

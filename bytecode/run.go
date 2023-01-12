@@ -85,15 +85,15 @@ func (c *Context) RunFromAddress(addr int) error {
 		i := c.bc.instructions[c.programCounter]
 
 		if c.Tracing() {
-			s := FormatInstruction(i)
+			instruction := FormatInstruction(i)
 
-			s2 := formatStack(c.symbols, c.stack[:c.stackPointer], c.fullStackTrace)
-			if !c.fullStackTrace && len(s2) > 80 {
-				s2 = s2[:80]
+			stack := c.formatStack(c.symbols, c.fullStackTrace)
+			if !c.fullStackTrace && len(stack) > 80 {
+				stack = stack[:80]
 			}
 
 			ui.Debug(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
-				c.threadID, c.GetModuleName(), c.programCounter, s, c.stackPointer, s2)
+				c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
 		}
 
 		c.programCounter = c.programCounter + 1

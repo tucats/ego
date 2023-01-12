@@ -90,7 +90,7 @@ func (c *Context) callFramePop() error {
 	// Now retrieve the runtime context stored on the stack and
 	// indicated by the fp (frame pointer)
 	c.stackPointer = c.framePointer
-	cx, err := c.Pop()
+	callFrameValue, err := c.Pop()
 
 	if err != nil {
 		return err
@@ -102,26 +102,26 @@ func (c *Context) callFramePop() error {
 		packageSymbols := c.symbols.Parent()
 		packageName := c.symbols.Parent().Package()
 
-		if pkg, ok := c.symbols.Root().Get(packageName); ok {
-			if _, ok := pkg.(*data.Struct); ok {
+		if packageValue, ok := c.symbols.Root().Get(packageName); ok {
+			if _, ok := packageValue.(*data.Struct); ok {
 				ui.Log(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
 
 				return errors.ErrStop
 			}
 
-			if m, ok := pkg.(*data.Package); ok {
-				for _, k := range packageSymbols.Names() {
-					if util.HasCapitalizedName(k) {
-						pkgSymbol, _ := packageSymbols.Get(k)
+			if pkg, ok := packageValue.(*data.Package); ok {
+				for _, name := range packageSymbols.Names() {
+					if util.HasCapitalizedName(name) {
+						symbolValue, _ := packageSymbols.Get(name)
 
-						m.Set(k, pkgSymbol)
+						pkg.Set(name, symbolValue)
 					}
 				}
 			}
 		}
 	}
 
-	if callFrame, ok := cx.(CallFrame); ok {
+	if callFrame, ok := callFrameValue.(CallFrame); ok {
 		ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
@@ -157,8 +157,8 @@ func (c *Context) callFramePop() error {
 }
 
 func (c *Context) SetBreakOnReturn() {
-	cx := c.stack[c.framePointer]
-	if callFrame, ok := cx.(CallFrame); ok {
+	callFrameValue := c.stack[c.framePointer]
+	if callFrame, ok := callFrameValue.(CallFrame); ok {
 		ui.Debug(ui.SymbolLogger, "(%d) setting break-on-return", c.threadID)
 
 		callFrame.breakOnReturn = true
@@ -173,18 +173,18 @@ func (c *Context) SetBreakOnReturn() {
 // the frame pointer (FP) in the current context which points to the
 // saved frame. Its FP points to the previous saved frame, and so on.
 func (c *Context) FormatFrames(maxDepth int) string {
-	f := c.framePointer
+	framePointer := c.framePointer
 	depth := 1
-	r := fmt.Sprintf("Call frames:\n  at: %12s  (%s)\n",
+	result := fmt.Sprintf("Call frames:\n  at: %12s  (%s)\n",
 		formatLocation(c.GetModuleName(), c.line), c.symbols.Name)
 
-	for (maxDepth < 0 || depth < maxDepth) && f > 0 {
-		fx := c.stack[f-1]
+	for (maxDepth < 0 || depth < maxDepth) && framePointer > 0 {
+		callFrameValue := c.stack[framePointer-1]
 
-		if frame, ok := fx.(CallFrame); ok {
-			r = r + fmt.Sprintf("from: %12s  (%s)\n",
-				formatLocation(frame.Module, frame.Line), frame.symbols.Name)
-			f = frame.fp
+		if callFrame, ok := callFrameValue.(CallFrame); ok {
+			result = result + fmt.Sprintf("from: %12s  (%s)\n",
+				formatLocation(callFrame.Module, callFrame.Line), callFrame.symbols.Name)
+			framePointer = callFrame.fp
 
 			depth++
 		} else {
@@ -192,7 +192,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 		}
 	}
 
-	return r
+	return result
 }
 
 // Utility function that abstracts out how we format a location using

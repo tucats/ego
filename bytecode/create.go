@@ -38,43 +38,43 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 	count := data.Int(i)
 
-	if v, err := c.Pop(); err == nil {
-		if isStackMarker(v) {
+	if value, err := c.Pop(); err == nil {
+		if isStackMarker(value) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		baseType = data.TypeOf(v)
+		baseType = data.TypeOf(value)
 	}
 
 	isInt := baseType.IsIntegerType()
 	isFloat := baseType.IsFloatType()
 
-	a := data.NewArray(baseType, count)
+	result := data.NewArray(baseType, count)
 
 	for i := 0; i < count; i++ {
-		if v, err := c.Pop(); err == nil {
-			if isStackMarker(v) {
+		if value, err := c.Pop(); err == nil {
+			if isStackMarker(value) {
 				return c.error(errors.ErrFunctionReturnedVoid)
 			}
 
-			t := data.TypeOf(v)
+			valueType := data.TypeOf(value)
 
 			// If we are initializing any integer or float array, coerce the
 			// value to the correct type as long as the value is also an integer
 			// or float type. This lets initializers of []int32{} be expressed as
 			// default int constant values, etc.
-			if (isInt && t.IsIntegerType()) || (isFloat && t.IsFloatType()) {
-				v = baseType.Coerce(v)
+			if (isInt && valueType.IsIntegerType()) || (isFloat && valueType.IsFloatType()) {
+				value = baseType.Coerce(value)
 			}
 
-			err = a.Set(count-i-1, v)
+			err = result.Set(count-i-1, value)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return c.push(a)
+	return c.push(result)
 }
 
 // arrayByteCode implements the Array opcode
@@ -116,39 +116,39 @@ func arrayByteCode(c *Context, i interface{}) error {
 		kind = data.ArrayType(data.InterfaceType)
 	}
 
-	array := data.NewArray(kind.BaseType(), count)
+	result := data.NewArray(kind.BaseType(), count)
 
-	for n := 0; n < count; n++ {
-		v, err := c.Pop()
+	for index := 0; index < count; index++ {
+		value, err := c.Pop()
 		if err != nil {
 			return err
 		}
 
-		if isStackMarker(v) {
+		if isStackMarker(value) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
 		// If we are in static mode, array must be homogeneous.
 		if c.Static {
-			if n == 0 {
-				arrayType = reflect.TypeOf(v)
-				_ = array.SetType(data.TypeOf(v))
+			if index == 0 {
+				arrayType = reflect.TypeOf(value)
+				_ = result.SetType(data.TypeOf(value))
 			} else {
-				if arrayType != reflect.TypeOf(v) {
-					return c.error(errors.ErrInvalidType).Context(data.TypeOf(v).String())
+				if arrayType != reflect.TypeOf(value) {
+					return c.error(errors.ErrInvalidType).Context(data.TypeOf(value).String())
 				}
 			}
 		}
 		// All good, load it into the array after making an attempt at a coercion.
-		v = kind.BaseType().Coerce(v)
+		value = kind.BaseType().Coerce(value)
 
-		err = array.Set((count-n)-1, v)
+		err = result.Set((count-index)-1, value)
 		if err != nil {
 			return err
 		}
 	}
 
-	_ = c.push(array)
+	_ = c.push(result)
 
 	return nil
 }
@@ -180,20 +180,20 @@ func structByteCode(c *Context, i interface{}) error {
 	var model interface{}
 
 	count := data.Int(i)
-	m := map[string]interface{}{}
+	structMap := map[string]interface{}{}
 	fields := make([]string, 0)
 	typeInfo := data.StructType
 	typeName := ""
 
 	// Pull `count` pairs of items off the stack (name and
 	// value) and add them into the map.
-	for n := 0; n < count; n++ {
-		nx, err := c.Pop()
+	for index := 0; index < count; index++ {
+		nameValue, err := c.Pop()
 		if err != nil {
 			return err
 		}
 
-		name := data.String(nx)
+		name := data.String(nameValue)
 		if !strings.HasPrefix(name, data.MetadataPrefix) {
 			fields = append(fields, name)
 		}
@@ -219,7 +219,7 @@ func structByteCode(c *Context, i interface{}) error {
 				return errors.ErrStop
 			}
 		} else {
-			m[name] = value
+			structMap[name] = value
 		}
 	}
 
@@ -228,9 +228,9 @@ func structByteCode(c *Context, i interface{}) error {
 		case *data.Struct:
 			// Check all the fields in the new value to ensure they
 			// are valid.
-			for k := range m {
-				if _, found := model.Get(k); !strings.HasPrefix(k, data.MetadataPrefix) && !found {
-					return c.error(errors.ErrInvalidField, k)
+			for fieldName := range structMap {
+				if _, found := model.Get(fieldName); !strings.HasPrefix(fieldName, data.MetadataPrefix) && !found {
+					return c.error(errors.ErrInvalidField, fieldName)
 				}
 			}
 
@@ -243,14 +243,14 @@ func structByteCode(c *Context, i interface{}) error {
 				fieldValue, _ := model.Get(fieldName)
 
 				if value := reflect.ValueOf(fieldValue); value.Kind() == reflect.Ptr {
-					ts := value.String()
-					if ts == defs.ByteCodeReflectionTypeString {
+					typeString := value.String()
+					if typeString == defs.ByteCodeReflectionTypeString {
 						continue
 					}
 				}
 
-				if _, found := m[fieldName]; !found {
-					m[fieldName] = fieldValue
+				if _, found := structMap[fieldName]; !found {
+					structMap[fieldName] = fieldValue
 				}
 			}
 
@@ -261,12 +261,12 @@ func structByteCode(c *Context, i interface{}) error {
 		// No type, default it to a struct.
 		t := data.StructureType()
 		for _, name := range fields {
-			t.DefineField(name, data.TypeOf(m[name]))
+			t.DefineField(name, data.TypeOf(structMap[name]))
 		}
 	}
 
 	// Put the newly created instance of a struct on the stack.
-	structure := data.NewStructFromMap(m)
+	structure := data.NewStructFromMap(structMap)
 
 	if typeName != "" {
 		structure.AsType(typeInfo)

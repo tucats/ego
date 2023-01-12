@@ -41,8 +41,8 @@ func NewStackMarker(label string, values ...interface{}) StackMarker {
 
 // See if the item is a marker. If there are no marker types, this
 // just returns true if the interface given is any stack marker. If
-// one or more type strings are passed, then in addition to being a
-// marker, the item must contain at least one of the types as one of
+// one or more value strings are passed, then in addition to being a
+// marker, the item must contain at least one of the values as one of
 // it data elements.
 func isStackMarker(i interface{}, values ...string) bool {
 	// First, check special case of a call frame, which acts

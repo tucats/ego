@@ -217,9 +217,9 @@ func (c *Context) GetTokenizer() *tokenizer.Tokenizer {
 // AppendSymbols appends a symbol table to the current context.
 // This is used to add in compiler maps, for example.
 func (c *Context) AppendSymbols(s *symbols.SymbolTable) *Context {
-	for _, k := range s.Names() {
-		v, _ := s.Get(k)
-		c.symbols.SetAlways(k, v)
+	for _, name := range s.Names() {
+		value, _ := s.Get(name)
+		c.symbols.SetAlways(name, value)
 	}
 
 	return c
@@ -268,51 +268,53 @@ func (c *Context) Pop() (interface{}, error) {
 	}
 
 	c.stackPointer = c.stackPointer - 1
-	v := c.stack[c.stackPointer]
+	value := c.stack[c.stackPointer]
 
-	return v, nil
+	return value, nil
 }
 
 // formatStack formats the stack for tracing output.
-func formatStack(syms *symbols.SymbolTable, s []interface{}, newlines bool) string {
-	var b strings.Builder
+func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
+	var result strings.Builder
 
-	if len(s) == 0 {
+	stack := c.stack
+
+	if len(stack) == 0 {
 		return "<empty>"
 	}
 
 	if newlines {
-		b.WriteString("stack elements:\n")
+		result.WriteString("stack elements:\n")
 	}
 
-	for n := len(s) - 1; n >= 0; n = n - 1 {
-		if n < len(s)-1 {
-			b.WriteString(", ")
+	for stackIndex := len(stack) - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
+		if stackIndex < len(stack)-1 {
+			result.WriteString(", ")
 
 			if newlines {
-				b.WriteString("\n")
+				result.WriteString("\n")
 			}
 		}
 
 		if newlines {
-			b.WriteString(fmt.Sprintf("%90s      [%2d]:   ", " ", n))
+			result.WriteString(fmt.Sprintf("%90s      [%2d]:   ", " ", stackIndex))
 		}
 
 		// If it's a string, escape the newlines for readability.
-		if stringValue, ok := s[n].(string); ok {
+		if stringValue, ok := stack[stackIndex].(string); ok {
 			stringValue = strings.ReplaceAll(stringValue, "\t", "\\t")
 			stringValue = strings.ReplaceAll(stringValue, "\n", "\\n")
-			b.WriteString(stringValue)
+			result.WriteString(stringValue)
 		} else {
-			b.WriteString(data.Format(s[n]))
+			result.WriteString(data.Format(stack[stackIndex]))
 		}
 
-		if !newlines && b.Len() > 50 {
-			return b.String()[:50] + "..."
+		if !newlines && result.Len() > 50 {
+			return result.String()[:50] + "..."
 		}
 	}
 
-	return b.String()
+	return result.String()
 }
 
 // setConstant is a helper function to define a constant value.
@@ -328,9 +330,7 @@ func (c *Context) isConstant(name string) bool {
 // get is a helper function that retrieves a symbol value from the associated
 // symbol table.
 func (c *Context) get(name string) (interface{}, bool) {
-	v, found := c.symbols.Get(name)
-
-	return v, found
+	return c.symbols.Get(name)
 }
 
 // set is a helper function that sets a symbol value in the associated
@@ -356,12 +356,12 @@ func (c *Context) create(name string) error {
 }
 
 // push puts a new items on the stack.
-func (c *Context) push(v interface{}) error {
+func (c *Context) push(value interface{}) error {
 	if c.stackPointer >= len(c.stack) {
 		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
 	}
 
-	c.stack[c.stackPointer] = v
+	c.stack[c.stackPointer] = value
 	c.stackPointer = c.stackPointer + 1
 
 	return nil
@@ -381,12 +381,12 @@ func (c *Context) checkType(name string, value interface{}) error {
 		return err
 	}
 
-	if oldValue, ok := c.get(name); ok {
-		if oldValue == nil {
+	if existingValue, ok := c.get(name); ok {
+		if existingValue == nil {
 			return err
 		}
 
-		if reflect.TypeOf(value) != reflect.TypeOf(oldValue) {
+		if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
 			err = c.error(errors.ErrInvalidVarType)
 		}
 	}
