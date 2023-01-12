@@ -153,15 +153,13 @@ func scanner(data, format string) ([]interface{}, error) {
 	// single token.
 	for _, token := range fTokens.Tokens {
 		if parsingVerb {
-			// Must only be supported format string. TODO We do not allow width
-			// specifications yet.
-			if !util.InList(token.Spelling(), "s", "t", "f", "d", "v") {
-				return result, errors.ErrInvalidFormatVerb
-			}
-
 			// Add to the previous token
 			f[len(f)-1] = f[len(f)-1] + token.Spelling()
-			parsingVerb = false
+
+			// Are we at the end of a supported format string?
+			if util.InList(token.Spelling(), "b", "x", "o", "s", "t", "f", "d", "v") {
+				parsingVerb = false
+			}
 		} else {
 			f = append(f, token.Spelling())
 			if token == tokenizer.ModuloToken {
@@ -179,63 +177,74 @@ func scanner(data, format string) ([]interface{}, error) {
 			break
 		}
 
-		switch token {
-		case "%v":
-			var v interface{}
+		if token[:1] == "%" {
+			switch token[len(token)-1:] {
+			case "v":
+				var v interface{}
 
-			_, e := fmt.Sscanf(d[idx].Spelling(), "%v", &v)
-			if e != nil {
-				err = errors.NewError(e).Context("Sscanf()")
-				parsing = false
+				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
+				if e != nil {
+					err = errors.NewError(e).Context("Sscanf()")
+					parsing = false
 
-				break
+					break
+				}
+
+				result = append(result, v)
+
+			case "s":
+				v := ""
+
+				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
+				if e != nil {
+					err = errors.NewError(e).Context("Sscanf()")
+					parsing = false
+
+					break
+				}
+
+				result = append(result, v)
+
+			case "t":
+				v := false
+
+				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
+				if e != nil {
+					err = errors.NewError(e).Context("Sscanf()")
+					parsing = false
+
+					break
+				}
+
+				result = append(result, v)
+
+			case "f":
+				v := 0.0
+
+				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
+				if e != nil {
+					err = errors.NewError(e).Context("Sscanf()")
+					parsing = false
+
+					break
+				}
+
+				result = append(result, v)
+
+			case "d", "b", "x", "o":
+				v := 0
+
+				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
+				if e != nil {
+					err = errors.NewError(e).Context("Sscanf()")
+					parsing = false
+
+					break
+				}
+
+				result = append(result, v)
 			}
-
-			result = append(result, v)
-
-		case "%s":
-			result = append(result, d[idx].Spelling())
-
-		case "%t":
-			v := false
-
-			_, e := fmt.Sscanf(d[idx].Spelling(), "%t", &v)
-			if e != nil {
-				err = errors.NewError(e).Context("Sscanf()")
-				parsing = false
-
-				break
-			}
-
-			result = append(result, v)
-
-		case "%f":
-			v := 0.0
-
-			_, e := fmt.Sscanf(d[idx].Spelling(), "%f", &v)
-			if e != nil {
-				err = errors.NewError(e).Context("Sscanf()")
-				parsing = false
-
-				break
-			}
-
-			result = append(result, v)
-
-		case "%d":
-			v := 0
-
-			_, e := fmt.Sscanf(d[idx].Spelling(), "%d", &v)
-			if e != nil {
-				err = errors.NewError(e).Context("Sscanf()")
-				parsing = false
-
-				break
-			}
-
-			result = append(result, v)
-
-		default:
+		} else {
 			if token != d[idx].Spelling() {
 				parsing = false
 			}
