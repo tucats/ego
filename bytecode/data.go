@@ -54,6 +54,10 @@ func storeByteCode(c *Context, i interface{}) error {
 		}
 	}
 
+	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+		return c.error(errors.ErrReadOnly).Context(name)
+	}
+
 	if isStackMarker(value) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
@@ -65,28 +69,11 @@ func storeByteCode(c *Context, i interface{}) error {
 	}
 
 	err = c.checkType(name, value)
-	if err == nil {
-		err = c.set(name, value)
-	} else {
+	if err != nil {
 		return c.error(err)
 	}
 
-	// Is this a readonly variable that is a structure? If so, mark it
-	// with the embedded readonly flag.
-	if len(name) > 1 && name[0:1] == DiscardedVariableName {
-		switch a := value.(type) {
-		case *data.Map:
-			a.SetReadonly(true)
-
-		case *data.Array:
-			a.SetReadonly(true)
-
-		case *data.Struct:
-			a.SetReadonly(true)
-		}
-	}
-
-	return err
+	return c.set(name, value)
 }
 
 // StoreChan instruction processor.
@@ -155,24 +142,23 @@ func storeChanByteCode(c *Context, i interface{}) error {
 
 // storeGlobalByteCode instruction processor.
 func storeGlobalByteCode(c *Context, i interface{}) error {
-	v, err := c.Pop()
+	value, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
-	if isStackMarker(v) {
+	if isStackMarker(value) {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Get the name and set it in the global table.
-	varname := data.String(i)
-
-	c.symbols.Root().SetAlways(varname, v)
+	name := data.String(i)
 
 	// Is this a readonly variable that is a complex native type?
 	// If so, mark it as readonly.
-	if len(varname) > 1 && varname[0:1] == DiscardedVariableName {
-		switch a := v.(type) {
+	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+		constantValue := data.DeepCopy(value)
+		switch a := constantValue.(type) {
 		case *data.Map:
 			a.SetReadonly(true)
 
@@ -182,6 +168,10 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 		case *data.Struct:
 			a.SetReadonly(true)
 		}
+
+		err = c.symbols.Root().SetConstant(name, constantValue)
+	} else {
+		c.symbols.Root().SetAlways(name, value)
 	}
 
 	return err

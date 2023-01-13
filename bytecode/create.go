@@ -224,8 +224,7 @@ func structByteCode(c *Context, i interface{}) error {
 	}
 
 	if model != nil {
-		switch model := model.(type) {
-		case *data.Struct:
+		if model, ok := model.(*data.Struct); ok {
 			// Check all the fields in the new value to ensure they
 			// are valid.
 			for fieldName := range structMap {
@@ -253,8 +252,7 @@ func structByteCode(c *Context, i interface{}) error {
 					structMap[fieldName] = fieldValue
 				}
 			}
-
-		default:
+		} else {
 			return c.error(errors.ErrUnknownType, typeInfo.String())
 		}
 	} else {
@@ -316,27 +314,27 @@ func makeMapByteCode(c *Context, i interface{}) error {
 
 	valueType := data.TypeOf(v)
 
-	m := data.NewMap(keyType, valueType)
+	result := data.NewMap(keyType, valueType)
 
-	for i := 0; i < count; i++ {
-		v, err := c.Pop()
+	for index := 0; index < count; index++ {
+		value, err := c.Pop()
 		if err != nil {
 			return err
 		}
 
-		k, err := c.Pop()
+		key, err := c.Pop()
 		if err != nil {
 			return err
 		}
 
-		if isStackMarker(v) || isStackMarker(k) {
+		if isStackMarker(value) || isStackMarker(key) {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		if _, err = m.Set(k, v); err != nil {
+		if _, err = result.Set(key, value); err != nil {
 			return err
 		}
 	}
 
-	return c.push(m)
+	return c.push(result)
 }

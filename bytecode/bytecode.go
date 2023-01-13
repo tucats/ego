@@ -12,13 +12,13 @@ import (
 
 // growthIncrement indicates the number of elements to add to the
 // opcode array when storage is exhausted in the current array.
-const growthIncrement = 50
+const growthIncrement = 32
 
 // initialOpcodeSize is the initial size of the emit buffer.
 const initialOpcodeSize = 20
 
 // initialStackSize is the initial stack size.
-const initialStackSize = 50
+const initialStackSize = 16
 
 // ErrorVariableName is the name of the local variable created for a
 // catch-block of a try/catch construct. The variable contains an error.

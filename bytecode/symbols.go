@@ -72,32 +72,55 @@ func popScopeByteCode(c *Context, i interface{}) error {
 func createAndStoreByteCode(c *Context, i interface{}) error {
 	var value interface{}
 
-	var name string
+	var err error
 
-	wasList := false
+	var name string
 
 	if operands, ok := i.([]interface{}); ok && len(operands) == 2 {
 		name = data.String(operands[0])
 		value = operands[1]
-		wasList = true
 	} else {
 		name = data.String(i)
+		value, err = c.Pop()
+		if err != nil {
+			return err
+		}
 	}
 
 	if c.isConstant(name) {
 		return c.error(errors.ErrReadOnly)
 	}
 
-	err := c.create(name)
+	err = c.create(name)
 	if err != nil {
 		return c.error(err)
 	}
 
-	if wasList {
-		i = []interface{}{name, value}
+	// If the name starts with "_" it is implicitly a readonly
+	// variable.  In this case, make a copy of the value to
+	// be stored, and mark it as a readonly value if it is
+	// a complex type. Then, store the copy as a constant with
+	// the given name.
+	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+		constantValue := data.DeepCopy(value)
+
+		switch a := constantValue.(type) {
+		case *data.Map:
+			a.SetReadonly(true)
+
+		case *data.Array:
+			a.SetReadonly(true)
+
+		case *data.Struct:
+			a.SetReadonly(true)
+		}
+
+		err = c.setConstant(name, constantValue)
+	} else {
+		err = c.set(name, value)
 	}
 
-	return storeByteCode(c, i)
+	return err
 }
 
 // symbolCreateByteCode instruction processor.

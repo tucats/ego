@@ -89,10 +89,13 @@ BUILD=$(expr $BUILD + 1 )
 
 BUILDVER=$BASE-$BUILD
 echo $BUILDVER >buildver.txt
+BUILDVER=$(cat buildver.txt)
+FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 fi
 
 echo Build $BUILDVER on $GOOS $GOARCH
+
 GOARCH=$GOARCH GOOS=$GOOS $GO build -ldflags "$FLAGS" $RACE
 
 if [ "$1" == "-bin" ]; then

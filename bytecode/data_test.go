@@ -136,8 +136,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
-			err:          errors.ErrReadOnlyValue.Context("_a"),
-			want:         int32(55),
+			err:          errors.ErrReadOnly.Context("_a"),
 		},
 		{
 			name:         "replace string value with int32 value",

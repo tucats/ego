@@ -279,7 +279,7 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 
 	stack := c.stack
 
-	if len(stack) == 0 {
+	if c.stackPointer == 0 {
 		return "<empty>"
 	}
 
@@ -287,7 +287,7 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 		result.WriteString("stack elements:\n")
 	}
 
-	for stackIndex := len(stack) - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
+	for stackIndex := c.stackPointer - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
 		if stackIndex < len(stack)-1 {
 			result.WriteString(", ")
 
