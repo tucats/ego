@@ -3,6 +3,7 @@ package bytecode
 import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 )
 
 // DiscardedVariableName is the reserved name for the variable
@@ -55,7 +56,14 @@ func storeByteCode(c *Context, i interface{}) error {
 	}
 
 	if len(name) > 1 && name[0:1] == DiscardedVariableName {
-		return c.error(errors.ErrReadOnly).Context(name)
+		oldValue, found := c.get(name)
+		if !found {
+			return c.error(errors.ErrReadOnly).Context(name)
+		}
+
+		if _, ok := oldValue.(symbols.UndefinedValue); !ok {
+			return c.error(errors.ErrReadOnly).Context(name)
+		}
 	}
 
 	if isStackMarker(value) {

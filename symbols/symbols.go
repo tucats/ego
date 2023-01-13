@@ -12,6 +12,9 @@ import (
 
 const NoSlot = -1
 
+type UndefinedValue struct {
+}
+
 // Get retrieves a symbol from the current table or any parent
 // table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
@@ -270,14 +273,14 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 	attr, found := s.symbols[name]
 	if found {
-		// Of the value exists and is readonly, we can do no more.
-		if attr.Readonly {
+		// ff the value exists, isn't undefined, and is readonly, we can do no more.
+		old = s.GetValue(attr.Slot)
+		if _, ok := old.(UndefinedValue); !ok && attr.Readonly {
 			return errors.ErrReadOnlyValue.Context(name)
 		}
 
 		// Check to be sure this isn't a restricted (function code) type
 		// that we are not allowed to write over, ever.
-		old = s.GetValue(attr.Slot)
 		if _, ok := old.(func(*SymbolTable, []interface{}) (interface{}, error)); ok {
 			return errors.ErrReadOnlyValue.Context(name)
 		}
@@ -365,7 +368,7 @@ func (s *SymbolTable) Create(name string) error {
 		Readonly: false,
 	}
 
-	s.SetValue(s.size, nil)
+	s.SetValue(s.size, UndefinedValue{})
 	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {

@@ -375,23 +375,25 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) error {
-	var err error
-
 	if !c.Static || value == nil {
-		return err
+		return nil
 	}
 
 	if existingValue, ok := c.get(name); ok {
 		if existingValue == nil {
-			return err
+			return nil
+		}
+
+		if _, ok := existingValue.(symbols.UndefinedValue); ok {
+			return nil
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-			err = c.error(errors.ErrInvalidVarType)
+			return c.error(errors.ErrInvalidVarType)
 		}
 	}
 
-	return err
+	return nil
 }
 
 func (c *Context) Result() interface{} {
