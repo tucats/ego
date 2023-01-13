@@ -307,7 +307,6 @@ func (c *Compiler) statusDirective() error {
 	}
 
 	_ = c.modeCheck("server", true)
-	name := "_rest_status"
 
 	if c.t.AtEnd() {
 		c.b.Emit(bytecode.Push, http.StatusOK)
@@ -320,7 +319,7 @@ func (c *Compiler) statusDirective() error {
 		c.b.Append(bc)
 	}
 
-	c.b.Emit(bytecode.StoreGlobal, name)
+	c.b.Emit(bytecode.StoreGlobal, defs.RestStatusVariableName)
 
 	return nil
 }

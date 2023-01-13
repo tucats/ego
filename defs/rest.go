@@ -74,5 +74,9 @@ const (
 	AdminTokenRequired          = "admintoken"
 )
 
+const (
+	RestStatusVariableName = "__rest_status"
+)
+
 // ServerInstanceID is the UUID of the current Server Instance.
 var ServerInstanceID string

@@ -177,7 +177,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 			a.SetReadonly(true)
 		}
 
-		err = c.symbols.Root().SetConstant(name, constantValue)
+		c.symbols.Root().SetAlways(name, constantValue)
 	} else {
 		c.symbols.Root().SetAlways(name, value)
 	}

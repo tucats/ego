@@ -372,7 +372,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_user", user)
 	symbolTable.SetAlways("_password", pass)
 	symbolTable.SetAlways("_authenticated", authenticatedCredentials)
-	symbolTable.SetAlways("_rest_status", http.StatusOK)
+	symbolTable.SetAlways(defs.RestStatusVariableName, http.StatusOK)
 	symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
 
 	// Get the body of the request as a string
@@ -417,7 +417,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
 	status := http.StatusOK
-	if statusValue, ok := symbolTable.Get("_rest_status"); ok {
+	if statusValue, ok := symbolTable.Get(defs.RestStatusVariableName); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
