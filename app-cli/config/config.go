@@ -61,7 +61,7 @@ var Grammar = []cli.Option{
 				LongName:    "force",
 				ShortName:   "f",
 				OptionType:  cli.BooleanType,
-				Description: "opt.config.force",
+				Description: "config.force",
 			},
 		},
 	},

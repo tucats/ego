@@ -70,6 +70,10 @@ func ShowHelp(c *Context) {
 	}
 
 	commandDescription := i18n.T(c.Description)
+	if commandDescription == c.Description {
+		commandDescription = i18n.T("opt." + c.Description)
+	}
+
 	if c.Parent == nil && c.Version != "" {
 		commandDescription = commandDescription + ", " + c.Version
 	}
@@ -99,7 +103,12 @@ func ShowHelp(c *Context) {
 				headerShown = true
 			}
 
-			_ = tc.AddRow([]string{option.LongName, i18n.T(option.Description)})
+			optionDescription := i18n.T(option.Description)
+			if optionDescription == c.Description {
+				optionDescription = i18n.T("opt." + option.Description)
+			}
+
+			_ = tc.AddRow([]string{option.LongName, optionDescription})
 		}
 	}
 
@@ -125,7 +134,13 @@ func ShowHelp(c *Context) {
 				fmt.Printf("%s:\n", i18n.L("Parameters"))
 
 				headerShown = true
-				_ = tc.AddRowItems(i18n.T(option.Description))
+
+				optionDescription := i18n.T(option.Description)
+				if optionDescription == c.Description {
+					optionDescription = i18n.T("opt." + option.Description)
+				}
+
+				_ = tc.AddRowItems(optionDescription)
 			}
 		}
 	}
@@ -180,6 +195,9 @@ func ShowHelp(c *Context) {
 			}
 
 			fullDescription := i18n.T(option.Description)
+			if fullDescription == option.Description {
+				fullDescription = i18n.T("opt." + option.Description)
+			}
 
 			if option.EnvironmentVariable != "" {
 				fullDescription = fullDescription + " [" + option.EnvironmentVariable + "]"
