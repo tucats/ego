@@ -1167,6 +1167,9 @@ var Messages = map[string]map[string]string{
 	"opt.server.run.uuid": {
 		"en": "Sets the optional session UUID value",
 	},
+	"opt.server.show.id": {
+		"en": "Display the UUID of each user",
+	},
 	"opt.server.user.pass": {
 		"en": "Password to assign to user",
 	},

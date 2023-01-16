@@ -353,6 +353,7 @@ var ServerDeleteGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 	},
 }
+
 var ServerUserGrammar = []cli.Option{
 	{
 		LongName:    "username",
@@ -370,6 +371,15 @@ var ServerUserGrammar = []cli.Option{
 		LongName:    "permissions",
 		Description: "opt.server.user.perms",
 		OptionType:  cli.StringListType,
+	},
+}
+
+var ServerListUsersGrammar = []cli.Option{
+	{
+		LongName:    "id",
+		ShortName:   "i",
+		Description: "opt.server.show.id",
+		OptionType:  cli.BooleanType,
 	},
 }
 
@@ -395,6 +405,7 @@ var UserGrammar = []cli.Option{
 		Description: "ego.server.user.list",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ListUsers,
+		Value:       ServerListUsersGrammar,
 	},
 }
 

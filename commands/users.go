@@ -94,7 +94,20 @@ func ListUsers(c *cli.Context) error {
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
-		t, _ := tables.New([]string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions")})
+		var headings []string
+
+		showID := c.Boolean("id")
+
+		if showID {
+			headings = []string{i18n.L("User"), i18n.L("ID"), i18n.L("Permissions")}
+		} else {
+			headings = []string{i18n.L("User"), i18n.L("Permissions")}
+		}
+
+		t, err := tables.New(headings)
+		if err != nil {
+			return err
+		}
 
 		for _, u := range ud.Items {
 			perms := ""
@@ -111,13 +124,26 @@ func ListUsers(c *cli.Context) error {
 				perms = "."
 			}
 
-			_ = t.AddRowItems(u.Name, u.ID, perms)
+			if showID {
+				if err = t.AddRowItems(u.Name, u.ID, perms); err != nil {
+					return err
+				}
+			} else {
+				if err = t.AddRowItems(u.Name, perms); err != nil {
+					return err
+				}
+			}
 		}
 
-		_ = t.SortRows(0, true)
+		if err = t.SortRows(0, true); err != nil {
+			return err
+		}
+
 		t.SetPagination(0, 0)
 
-		_ = t.Print(ui.TextFormat)
+		if err = t.Print(ui.TextFormat); err != nil {
+			return err
+		}
 	} else {
 		_ = commandOutput(ud)
 	}
