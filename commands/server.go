@@ -237,8 +237,8 @@ func RunServer(c *cli.Context) error {
 	} else {
 		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), rest.ServerCertificateFile)
-		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), rest.ServerKeyFile)
+		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerCertificateFile)
+		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerKeyFile)
 
 		ui.Debug(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Debug(ui.ServerLogger, "**   key  file: %s", keyFile)

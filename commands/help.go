@@ -67,7 +67,7 @@ func help(userKeys []string) {
 }
 
 func printHelp(keys []string) {
-	fn := path.Join(settings.Get(defs.EgoPathSetting), helpFileName)
+	fn := path.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, helpFileName)
 
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {

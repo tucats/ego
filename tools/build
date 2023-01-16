@@ -13,8 +13,10 @@
 #          By default, uses the current build number
 #
 
+BUILDVERFILE=tools/buildver.txt
+
 # Are we even in a build directory?
-if [[ ! -a buildver.txt ]]; then
+if [[ ! -a $BUILDVERFILE ]]; then
    echo "Not in a build directory"
    exit 1
 fi
@@ -22,7 +24,7 @@ fi
 # Ensure that we have access to the go tools
 export PATH=/usr/local/go/bin:$PATH
 
-BUILDVER=$(cat buildver.txt)
+BUILDVER=$(cat $BUILDVERFILE)
 BUILDTIME=$(date +"%Y%m%d%H%M%S")
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
@@ -88,8 +90,8 @@ BUILD=$(echo $BUILDVER | cut -f2 -d- )
 BUILD=$(expr $BUILD + 1 )
 
 BUILDVER=$BASE-$BUILD
-echo $BUILDVER >buildver.txt
-BUILDVER=$(cat buildver.txt)
+echo $BUILDVER >$BUILDVERFILE
+BUILDVER=$(cat $BUILDVERFILE)
 FLAGS="-X main.BuildVersion=$BUILDVER -X main.BuildTime=$BUILDTIME"
 
 fi

@@ -232,7 +232,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 	// KEY files found in the EGO PATH if present. If no cert files found, then it assumes it
 	// should just use the native certs.
 	tlsConfigurationMutex.Lock()
-	
+
 	if tlsConfiguration == nil {
 		kind := "using certificate file"
 
@@ -242,7 +242,7 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			kind = "skipping server verification"
 		} else {
 			// Is there a server cert file we can/should be using?
-			filename := filepath.Join(settings.Get(defs.EgoPathSetting), ServerCertificateFile)
+			filename := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, ServerCertificateFile)
 			if b, err := os.ReadFile(filename); err == nil {
 				kind = kind + " " + filename
 				roots := x509.NewCertPool()
