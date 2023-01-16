@@ -286,6 +286,8 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 		}
 	}
 
+	// It wasn't found, so we are going to see if we can ask the parent
+	// symbol table to do the honors.
 	if !found {
 		// If there are no more tables, we have an error.
 		if s.IsRoot() {
@@ -295,10 +297,34 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 		return s.parent.Set(name, v)
 	}
 
-	s.SetValue(attr.Slot, v)
-
+	// If we are setting a readonly value, then make sure we are
+	// setting a copy of the value, and for complex types, the value
+	// is marked as readeonly.
 	if strings.HasPrefix(name, "_") {
 		attr.Readonly = true
+		v = data.DeepCopy(v)
+
+		switch actual := v.(type) {
+		case *data.Array:
+			actual.SetReadonly(true)
+			v = actual
+
+		case *data.Map:
+			actual.SetReadonly(true)
+			v = actual
+
+		case *data.Struct:
+			actual.SetReadonly(true)
+			v = actual
+		}
+	}
+
+	// Store the value in the slot, and if it was readonly, write
+	// the symbol map attribute value back.
+	s.SetValue(attr.Slot, v)
+
+	if attr.Readonly {
+		s.symbols[name] = attr
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
