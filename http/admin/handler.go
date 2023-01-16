@@ -33,16 +33,13 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If INFO logging, put out the prologue message for the operation.
-	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// Do the actual work.
 	status := userAction(sessionID, w, r)
 
-	// If not doing INFO logging, no intermediate messages have been generated so we can generate a single summary here.
-	if !ui.IsActive(ui.ServerLogger) {
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
-	}
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 }
 
 func CachesHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,14 +55,12 @@ func CachesHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	status := cachesAction(sessionID, w, r)
 
-	if !ui.IsActive(ui.ServerLogger) {
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
-	}
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 }
 
 func LoggingHandler(w http.ResponseWriter, r *http.Request) {
@@ -81,14 +76,12 @@ func LoggingHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] %s %s; from %s", sessionID, r.Method, r.URL.Path, requestor)
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	status := loggingAction(sessionID, w, r)
 
-	if !ui.IsActive(ui.ServerLogger) {
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
-	}
+	ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: json", sessionID, r.Method, r.URL.Path, requestor, status)
 }
 
 // For a given userid, indicate if this user exists and has admin privileges.

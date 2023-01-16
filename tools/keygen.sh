@@ -32,7 +32,7 @@ certstrap sign _.attlocal.net --CA $COMMONFILE  $PHRASE
 # Copy the newly-made certificate/key info to the parent
 # directory for use by the server and clients
 
-cp out/_.attlocal.net.key https-server.key
-cp out/_.attlocal.net.crt https-server.crt
+cp out/_.attlocal.net.key lib/https-server.key
+cp out/_.attlocal.net.crt lib/https-server.crt
 
 exit

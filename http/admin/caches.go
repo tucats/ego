@@ -3,7 +3,6 @@ package admin
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -59,8 +58,6 @@ func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d, sending JSON response", sessionID, http.StatusOK))
-
 		return http.StatusOK
 
 	// Get the list of cached items.
@@ -87,8 +84,6 @@ func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
-
 		return http.StatusOK
 
 	// DELETE the cached service compilation units. In-flight services
@@ -110,8 +105,6 @@ func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 		b, _ := json.Marshal(result)
 		_, _ = w.Write(b)
-
-		ui.Debug(ui.ServerLogger, "[%d] 200, sending JSON response", sessionID)
 
 		return http.StatusOK
 

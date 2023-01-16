@@ -18,6 +18,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	response := defs.LoggingResponse{
 		ServerInfo: util.MakeServerInfo(sessionID),
 	}
+	status := http.StatusOK
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
@@ -36,8 +37,9 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 		err := json.Unmarshal(buf.Bytes(), &loggers)
 		if err != nil {
-			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-			ui.Debug(ui.ServerLogger, "[%d] Bad payload: %v", sessionID, err)
+			status = http.StatusBadRequest
+			util.ErrorResponse(w, sessionID, err.Error(), status)
+			ui.Debug(ui.RestLogger, "[%d] Bad payload: %v", sessionID, err)
 
 			return http.StatusBadRequest
 		}
@@ -45,8 +47,9 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		for loggerName, mode := range loggers.Loggers {
 			logger := ui.Logger(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
-				util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
-				ui.Debug(ui.ServerLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
+				status = http.StatusBadRequest
+				util.ErrorResponse(w, sessionID, err.Error(), status)
+				ui.Debug(ui.RestLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
 				return http.StatusBadRequest
 			}
@@ -56,7 +59,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 				modeString = "disable"
 			}
 
-			ui.Debug(ui.ServerLogger, "[%d] %s %s(%d) logger", sessionID, modeString, loggerName, logger)
+			ui.Debug(ui.RestLogger, "[%d] %s %s(%d) logger", sessionID, modeString, loggerName, logger)
 			ui.SetLogger(logger, mode)
 		}
 
@@ -81,7 +84,8 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 	case http.MethodDelete:
 		if err := util.ValidateParameters(r.URL, map[string]string{"keep": "int"}); err != nil {
-			util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			status = http.StatusBadRequest
+			util.ErrorResponse(w, sessionID, err.Error(), status)
 
 			return http.StatusBadRequest
 		}
@@ -111,13 +115,15 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		b, _ := json.Marshal(reply)
 		_, _ = w.Write(b)
 
-		return http.StatusOK
+		return status
 
 	default:
-		ui.Debug(ui.ServerLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
-		util.ErrorResponse(w, sessionID, "Method not allowed", http.StatusMethodNotAllowed)
+		status = http.StatusMethodNotAllowed
 
-		return http.StatusMethodNotAllowed
+		ui.Debug(ui.RestLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
+		util.ErrorResponse(w, sessionID, "Method not allowed", status)
+
+		return status
 	}
 }
 

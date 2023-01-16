@@ -70,6 +70,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ServiceCacheMutex.Unlock()
 
+	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
 	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
 	requestor := r.RemoteAddr
@@ -82,11 +83,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Debug(ui.RestLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
 	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Debug(ui.RestLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	if ui.IsActive(ui.InfoLogger) {
@@ -225,8 +226,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
 		if err != nil {
+			status = http.StatusInternalServerError
+			w.WriteHeader(status)
+
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			ServiceCacheMutex.Unlock()
+
+			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 			return
 		}
@@ -249,9 +255,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			status = http.StatusBadRequest
+			w.WriteHeader(status)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			ServiceCacheMutex.Unlock()
+
+			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 			return
 		}
@@ -266,8 +275,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		status = http.StatusBadRequest
+		w.WriteHeader(status)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
+
+		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 		return
 	}
@@ -416,7 +428,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
-	status := http.StatusOK
 	if statusValue, ok := symbolTable.Get(defs.RestStatusVariableName); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
@@ -428,11 +439,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
-		if ui.IsActive(ui.InfoLogger) {
-			ui.Debug(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
-		} else {
-			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.Host, status)
-		}
+		ui.Debug(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
+		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 		return
 	}
@@ -469,7 +477,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			kind = "json"
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content-type %s", sessionID, r.Method, r.URL, requestor, status, kind)
+		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: %s", sessionID, r.Method, r.URL, requestor, status, kind)
 	}
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in
@@ -485,7 +493,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ui.Debug(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
 
-	if status == 503 {
+	if status == http.StatusServiceUnavailable {
 		go func() {
 			time.Sleep(1 * time.Second)
 			ui.Debug(ui.ServerLogger, "Server shutdown by admin function")

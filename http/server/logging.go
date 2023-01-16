@@ -11,7 +11,7 @@ import (
 )
 
 // Debugging tool that dumps interesting things about a request. Only outputs
-// when DEBUG logging is enabled.
+// when REST logging is enabled.
 func LogRequest(r *http.Request, sessionID int32) {
 	if ui.IsActive(ui.RestLogger) {
 		ui.Debug(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)

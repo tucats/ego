@@ -105,8 +105,6 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 				msg, _ := json.Marshal(response)
 				_, _ = w.Write(msg)
 
-				ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
-
 				return http.StatusOK
 			}
 
@@ -123,7 +121,6 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			// If it's a single user, do that.
 			if name != "" {
 				status := http.StatusOK
-				msg := successMessage
 				u.Password = ""
 
 				if u.ID == uuid.Nil {
@@ -132,7 +129,6 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 					return http.StatusNotFound
 				}
 
-				ui.Debug(ui.ServerLogger, fmt.Sprintf("[%d] %d %s", sessionID, status, msg))
 				w.Header().Add(contentTypeHeader, defs.UserMediaType)
 
 				result := u
@@ -164,7 +160,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			w.Header().Add(contentTypeHeader, defs.UsersMediaType)
 			_, _ = w.Write(b)
 
-			ui.Debug(ui.ServerLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
+			ui.Debug(ui.RestLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
 
 			return http.StatusOK
 		}
@@ -172,7 +168,6 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 	// We had some kind of error, so report that.
 	util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
-	ui.Debug(ui.ServerLogger, "[%d] 500 Internal server error %v", sessionID, err)
 
 	return http.StatusInternalServerError
 }
@@ -204,8 +199,6 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 
 		w.Header().Add(contentTypeHeader, defs.UserMediaType)
 		_, _ = w.Write(b)
-
-		ui.Debug(ui.ServerLogger, "[%d] 200 Success", sessionID)
 
 		return true, http.StatusOK
 	}
