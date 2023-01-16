@@ -31,7 +31,7 @@ func (c *Context) ResolveEnvironmentVariables() error {
 					c.Grammar[found].Value = value != ""
 
 				case BooleanValueType:
-					c.Grammar[found].Value, _ = ValidateBoolean(value)
+					c.Grammar[found].Value, _ = validateBoolean(value)
 
 				case IntType:
 					c.Grammar[found].Value, _ = strconv.Atoi(value)

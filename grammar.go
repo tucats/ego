@@ -744,7 +744,7 @@ var RunGrammar = []cli.Option{
 		LongName:    defs.OptimizerOption,
 		ShortName:   "o",
 		Description: "opt.run.optimize",
-		OptionType:  cli.BooleanValueType,
+		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:    "full-symbol-scope",
@@ -795,7 +795,7 @@ var TestGrammar = []cli.Option{
 		LongName:    defs.OptimizerOption,
 		ShortName:   "o",
 		Description: "opt.run.optimize",
-		OptionType:  cli.BooleanValueType,
+		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:            "trace",

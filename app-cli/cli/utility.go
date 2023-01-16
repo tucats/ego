@@ -6,9 +6,9 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// ValidKeyword does a case-insensitive compare of a string containing
+// validKeyword does a case-insensitive compare of a string containing
 // a keyword against a list of possible stirng values.
-func ValidKeyword(test string, valid []string) bool {
+func validKeyword(test string, valid []string) bool {
 	for _, v := range valid {
 		if strings.EqualFold(test, v) {
 			return true
@@ -18,11 +18,11 @@ func ValidKeyword(test string, valid []string) bool {
 	return false
 }
 
-// FindKeyword does a case-insensitive compare of a string containing
+// findKeyword does a case-insensitive compare of a string containing
 // a keyword against a list of possible string values. If the keyword
 // is found, it's position in the list is returned. If it was not found,
 // the value returned is -1.
-func FindKeyword(test string, valid []string) int {
+func findKeyword(test string, valid []string) int {
 	for n, v := range valid {
 		if strings.EqualFold(test, v) {
 			return n
@@ -32,21 +32,22 @@ func FindKeyword(test string, valid []string) int {
 	return -1
 }
 
-// ValidateBoolean tests to see if a string value contains a
+// validateBoolean tests to see if a string value contains a
 // legitimate boolean value. The first return is the boolean
 // value, and the second indicates if it was valid.
-func ValidateBoolean(value string) (bool, bool) {
+func validateBoolean(value string) (bool, bool) {
 	valid := false
+	value = strings.ToLower(value)
 
 	for _, x := range []string{"1", defs.True, "t", "yes", "y"} {
-		if strings.ToLower(value) == x {
+		if value == x {
 			return true, true
 		}
 	}
 
 	if !valid {
 		for _, x := range []string{"0", defs.False, "f", "no", "n"} {
-			if strings.ToLower(value) == x {
+			if value == x {
 				return false, true
 			}
 		}
@@ -55,9 +56,9 @@ func ValidateBoolean(value string) (bool, bool) {
 	return false, false
 }
 
-// MakeList takes a string containing a comma-separated list of
+// makeList takes a string containing a comma-separated list of
 // string values and converts it to an array of trimmed strings.
-func MakeList(value string) []string {
+func makeList(value string) []string {
 	if len(strings.TrimSpace(value)) == 0 {
 		return []string{}
 	}

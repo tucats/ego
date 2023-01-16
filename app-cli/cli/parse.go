@@ -242,10 +242,21 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 			case BooleanType:
-				location.Value = true
+				// if it has a value, use that to set the boolean (so it
+				// behaves like a BooleanValueType). If no value was parsed,
+				// just assume it is true.
+				if hasValue {
+					if b, valid := validateBoolean(value); !valid {
+						return errors.ErrInvalidBooleanValue.Context(value)
+					} else {
+						location.Value = b
+					}
+				} else {
+					location.Value = true
+				}
 
 			case BooleanValueType:
-				b, valid := ValidateBoolean(value)
+				b, valid := validateBoolean(value)
 				if !valid {
 					return errors.ErrInvalidBooleanValue.Context(value)
 				}
@@ -264,7 +275,7 @@ func (c *Context) parseGrammar(args []string) error {
 				location.Value = uuid.String()
 
 			case StringListType:
-				location.Value = MakeList(value)
+				location.Value = makeList(value)
 
 			case IntType:
 				i, err := strconv.Atoi(value)

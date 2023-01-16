@@ -54,7 +54,7 @@ func TestValidKeyword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidKeyword(tt.args.test, tt.args.valid); got != tt.want {
+			if got := validKeyword(tt.args.test, tt.args.valid); got != tt.want {
 				t.Errorf("ValidKeyword() = %v, want %v", got, tt.want)
 			}
 		})
@@ -116,7 +116,7 @@ func TestFindKeyword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FindKeyword(tt.args.test, tt.args.valid); got != tt.want {
+			if got := findKeyword(tt.args.test, tt.args.valid); got != tt.want {
 				t.Errorf("FindKeyword() = %v, want %v", got, tt.want)
 			}
 		})
@@ -189,7 +189,7 @@ func TestValidateBoolean(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ValidateBoolean(tt.args.value)
+			got, got1 := validateBoolean(tt.args.value)
 			if got != tt.want {
 				t.Errorf("ValidateBoolean() got = %v, want %v", got, tt.want)
 			}
@@ -242,7 +242,7 @@ func TestMakeList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MakeList(tt.args.value); !reflect.DeepEqual(got, tt.want) {
+			if got := makeList(tt.args.value); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MakeList() = %v, want %v", got, tt.want)
 			}
 		})
