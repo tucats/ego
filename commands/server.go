@@ -68,7 +68,7 @@ func RunServer(c *cli.Context) error {
 
 	// Unless told to specifically suppress the log, turn it on.
 	if !c.WasFound("no-log") {
-		ui.SetLogger(ui.ServerLogger, true)
+		ui.Active(ui.ServerLogger, true)
 
 		if fn, ok := c.String("log"); ok {
 			err := ui.OpenLogFile(fn, true)
@@ -104,14 +104,14 @@ func RunServer(c *cli.Context) error {
 		symbols.RootSymbolTable.SetAlways("__debug_service_path", debugPath)
 	}
 
-	ui.Debug(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
-	ui.Debug(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
+	ui.Log(ui.ServerLogger, "Starting server (Ego %s), session %s", c.Version, defs.ServerInstanceID)
+	ui.Log(ui.ServerLogger, "Active loggers: %s", ui.ActiveLoggers())
 
 	// Do we enable the /code endpoint? This is off by default.
 	if c.Boolean("code") {
 		http.HandleFunc(defs.CodePath, services.CodeHandler)
 
-		ui.Debug(ui.ServerLogger, "Enabling /code endpoint")
+		ui.Log(ui.ServerLogger, "Enabling /code endpoint")
 	}
 
 	// Establish the admin endpoints
@@ -120,15 +120,15 @@ func RunServer(c *cli.Context) error {
 	http.HandleFunc(defs.AdminCachesPath, admin.CachesHandler)
 	http.HandleFunc(defs.AdminLoggersPath, admin.LoggingHandler)
 	http.HandleFunc(defs.AdminHeartbeatPath, HeartbeatHandler)
-	ui.Debug(ui.ServerLogger, "Enabling /admin endpoints")
+	ui.Log(ui.ServerLogger, "Enabling /admin endpoints")
 
 	http.HandleFunc(defs.TablesPath, tables.TablesHandler)
-	ui.Debug(ui.ServerLogger, "Enabling /tables endpoints")
+	ui.Log(ui.ServerLogger, "Enabling /tables endpoints")
 
 	// Set up tracing for the server, and enable the logger if
 	// needed.
 	if c.WasFound("trace") {
-		ui.SetLogger(ui.TraceLogger, true)
+		ui.Active(ui.TraceLogger, true)
 	}
 
 	// Figure out the root location of the services, which will
@@ -212,7 +212,7 @@ func RunServer(c *cli.Context) error {
 		}
 
 		settings.SetDefault(defs.SandboxPathSetting, sandboxPath)
-		ui.Debug(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
+		ui.Log(ui.ServerLogger, "Server file I/O sandbox path: %s ", sandboxPath)
 	}
 
 	addr := ":" + strconv.Itoa(port)
@@ -231,17 +231,17 @@ func RunServer(c *cli.Context) error {
 	}
 
 	if !secure {
-		ui.Debug(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
+		ui.Log(ui.ServerLogger, "** REST service (insecure) starting on port %d", port)
 
 		err = http.ListenAndServe(addr, nil)
 	} else {
-		ui.Debug(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
+		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
 		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerCertificateFile)
 		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerKeyFile)
 
-		ui.Debug(ui.ServerLogger, "**   cert file: %s", certFile)
-		ui.Debug(ui.ServerLogger, "**   key  file: %s", keyFile)
+		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
+		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)
 
 		err = http.ListenAndServeTLS(addr, certFile, keyFile, nil)
 	}

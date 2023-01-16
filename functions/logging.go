@@ -17,14 +17,14 @@ func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	name := strings.TrimSpace(data.String(args[0]))
 	enabled := data.Bool(args[1])
 
-	loggerID := ui.Logger(name)
+	loggerID := ui.LoggerByName(name)
 	if loggerID <= 0 {
 		return nil, errors.ErrInvalidLoggerName.Context(name)
 	}
 
 	oldSetting := ui.IsActive(loggerID)
 
-	ui.SetLogger(loggerID, enabled)
+	ui.Active(loggerID, enabled)
 
 	return oldSetting, nil
 }

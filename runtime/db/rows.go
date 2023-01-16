@@ -23,7 +23,7 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	this.SetAlways(rowsFieldName, nil)
 	this.SetAlways(clientFieldName, nil)
 
-	ui.Debug(ui.DBLogger, "rows.Close() called")
+	ui.Log(ui.DBLogger, "rows.Close() called")
 
 	return err, nil
 }
@@ -64,7 +64,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	active := rows.Next()
 
-	ui.Debug(ui.DBLogger, "rows.Next() = %v", active)
+	ui.Log(ui.DBLogger, "rows.Next() = %v", active)
 
 	return active, nil
 }

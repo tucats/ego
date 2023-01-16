@@ -72,14 +72,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 
 	url = strings.TrimSuffix(url, "/") + endpoint
 
-	ui.Debug(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
+	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
 
 	client := resty.New().SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	// Unless this is a open (un-authenticate) service, let's verify that the
 	// authentication token is still valid.
 	if util.InList(endpoint, openServices...) {
-		ui.Debug(ui.RestLogger, "Endpoint %s does not require token", endpoint)
+		ui.Log(ui.RestLogger, "Endpoint %s does not require token", endpoint)
 	} else {
 		if token := settings.Get(defs.LogonTokenSetting); token != "" {
 			// Let's check to see if it's expired already... Note we skip this if the
@@ -101,7 +101,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			}
 
 			client.SetAuthToken(token)
-			ui.Debug(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
+			ui.Log(ui.RestLogger, "Authorization set using bearer token: %s...", token[:4])
 		}
 	}
 
@@ -122,13 +122,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if len(mediaTypes) > 0 {
 		receiveMediaType = mediaTypes[0]
 
-		ui.Debug(ui.RestLogger, "Adding media type: %s", receiveMediaType)
+		ui.Log(ui.RestLogger, "Adding media type: %s", receiveMediaType)
 	}
 
 	if len(mediaTypes) > 1 {
 		sendMediaType = mediaTypes[1]
 
-		ui.Debug(ui.RestLogger, "Adding media type: %s", sendMediaType)
+		ui.Log(ui.RestLogger, "Adding media type: %s", sendMediaType)
 	}
 
 	r.Header.Add("Content-Type", sendMediaType)
@@ -141,14 +141,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			return errors.NewError(err)
 		}
 
-		ui.Debug(ui.RestLogger, "Request payload:\n%s", string(b))
+		ui.Log(ui.RestLogger, "Request payload:\n%s", string(b))
 
 		r.SetBody(b)
 	}
 
 	resp, err = r.Execute(method, url)
 	if err != nil {
-		ui.Debug(ui.RestLogger, "REST failed, %v", err)
+		ui.Log(ui.RestLogger, "REST failed, %v", err)
 
 		return errors.NewError(err)
 	}
@@ -156,14 +156,14 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 	if err == nil {
 		status := resp.StatusCode()
 
-		ui.Debug(ui.RestLogger, "Status: %d", status)
+		ui.Log(ui.RestLogger, "Status: %d", status)
 
 		if err == nil && status != http.StatusOK && response == nil {
 			return errors.ErrHTTP.Context(status)
 		}
 
 		if replyMedia := resp.Header().Get("Content-Type"); replyMedia != "" {
-			ui.Debug(ui.RestLogger, "Reply media type: %s", replyMedia)
+			ui.Log(ui.RestLogger, "Reply media type: %s", replyMedia)
 		}
 
 		// If there was an error, and the runtime rest automatic error handling is enabled,
@@ -175,13 +175,13 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 			err := json.Unmarshal(resp.Body(), &errorResponse)
 			if err == nil {
 				if msg, found := errorResponse["msg"]; found {
-					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
 					return errors.NewMessage(data.String(msg))
 				}
 
 				if msg, found := errorResponse["message"]; found {
-					ui.Debug(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
+					ui.Log(ui.RestLogger, "Response payload:\n%v", string(resp.Body()))
 
 					return errors.NewMessage(data.String(msg))
 				}
@@ -204,7 +204,7 @@ func Exchange(endpoint, method string, body interface{}, response interface{}, a
 				if err == nil && ui.IsActive(ui.RestLogger) {
 					responseBytes, _ := json.MarshalIndent(response, "", "  ")
 
-					ui.Debug(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
+					ui.Log(ui.RestLogger, "Response payload:\n%s", string(responseBytes))
 				}
 
 				if err == nil && status != http.StatusOK {
@@ -249,20 +249,20 @@ func GetTLSConfiguration() (*tls.Config, error) {
 
 				ok := roots.AppendCertsFromPEM(b)
 				if !ok {
-					ui.Debug(ui.RestLogger, "Failed to parse root certificate for client configuration")
+					ui.Log(ui.RestLogger, "Failed to parse root certificate for client configuration")
 
 					return nil, errors.ErrCertificateParseError.Context(filename)
 				} else {
 					tlsConfiguration = &tls.Config{RootCAs: roots}
 				}
 			} else {
-				ui.Debug(ui.RestLogger, "Failed to read server certificate file: %v", err)
+				ui.Log(ui.RestLogger, "Failed to read server certificate file: %v", err)
 
 				return nil, errors.NewError(err)
 			}
 		}
 
-		ui.Debug(ui.RestLogger, "Client TLS %s", kind)
+		ui.Log(ui.RestLogger, "Client TLS %s", kind)
 	}
 
 	tlsConfigurationMutex.Unlock()

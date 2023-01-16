@@ -60,7 +60,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		blockDepth: c.blockDepth,
 	})
 
-	ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
+	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, tableName, c.symbols.Name)
 
 	c.framePointer = c.stackPointer
@@ -104,7 +104,7 @@ func (c *Context) callFramePop() error {
 
 		if packageValue, ok := c.symbols.Root().Get(packageName); ok {
 			if _, ok := packageValue.(*data.Struct); ok {
-				ui.Log(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
+				ui.WriteLog(ui.InternalLogger, "ERROR: callFramePop(), map/struct confusion")
 
 				return errors.ErrStop
 			}
@@ -122,7 +122,7 @@ func (c *Context) callFramePop() error {
 	}
 
 	if callFrame, ok := callFrameValue.(CallFrame); ok {
-		ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
+		ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
 		c.line = callFrame.Line
@@ -159,12 +159,12 @@ func (c *Context) callFramePop() error {
 func (c *Context) SetBreakOnReturn() {
 	callFrameValue := c.stack[c.framePointer]
 	if callFrame, ok := callFrameValue.(CallFrame); ok {
-		ui.Debug(ui.SymbolLogger, "(%d) setting break-on-return", c.threadID)
+		ui.Log(ui.SymbolLogger, "(%d) setting break-on-return", c.threadID)
 
 		callFrame.breakOnReturn = true
 		c.stack[c.framePointer] = callFrame
 	} else {
-		ui.Debug(ui.SymbolLogger, "(%d) failed setting break-on-return; call frame invalid", c.threadID)
+		ui.Log(ui.SymbolLogger, "(%d) failed setting break-on-return; call frame invalid", c.threadID)
 	}
 }
 

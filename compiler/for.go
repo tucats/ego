@@ -111,7 +111,7 @@ func (c *Compiler) loopStackPop() {
 	if c.loops != nil {
 		c.loops = c.loops.parent
 	} else {
-		ui.Debug(ui.TraceLogger, "=== loop stack empty")
+		ui.Log(ui.TraceLogger, "=== loop stack empty")
 	}
 }
 

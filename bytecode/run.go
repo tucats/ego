@@ -70,9 +70,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	c.programCounter = addr
 	c.running = true
 
-	if ui.IsActive(ui.TraceLogger) {
-		ui.Debug(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
-	}
+	ui.Log(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
 
 	// Loop over the bytecodes and run.
 	for c.running {
@@ -92,7 +90,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				stack = stack[:80]
 			}
 
-			ui.Debug(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
+			ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
 				c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
 		}
 
@@ -145,11 +143,11 @@ func (c *Context) RunFromAddress(addr int) error {
 				c.symbols.SetAlways(ErrorVariableName, err)
 
 				if ui.IsActive(ui.TraceLogger) {
-					ui.Debug(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
+					ui.Log(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)
 				}
 			} else {
 				if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
-					ui.Debug(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
+					ui.Log(ui.TraceLogger, "(%d)  *** Return error: %s", c.threadID, err)
 				}
 
 				if err != nil {
@@ -161,7 +159,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 	}
 
-	ui.Debug(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
+	ui.Log(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
 
 	if err != nil {
 		return errors.NewError(err)
@@ -179,8 +177,8 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 
 	err := parentCtx.error(errors.ErrInvalidFunctionCall)
 
-	ui.Debug(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
-	ui.Debug(ui.TraceLogger, "--> Argument list: %#v", args)
+	ui.Log(ui.TraceLogger, "--> Starting Go routine \"%s\"", fName)
+	ui.Log(ui.TraceLogger, "--> Argument list: %#v", args)
 
 	// Locate the bytecode for the function. It must be a symbol defined as bytecode.
 	if fCode, ok := parentSymbols.Get(fName); ok {
@@ -211,7 +209,7 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 	if err != nil && !err.Is(errors.ErrStop) {
 		fmt.Printf("%s\n", i18n.E("go.error", map[string]interface{}{"name": fName, "err": err}))
 
-		ui.Debug(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
+		ui.Log(ui.TraceLogger, "--> Go routine invocation ends with %v", err)
 		os.Exit(55)
 	}
 }

@@ -187,7 +187,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Debug(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
+	ui.Log(ui.CompilerLogger, "+++ Adding in builtin functions to symbol table %s", symbolTable.Name)
 
 	functionNames := make([]string, 0)
 	for k := range FunctionDictionary {
@@ -217,7 +217,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 					pkg = pp
 				}
 			} else {
-				ui.Debug(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
+				ui.Log(ui.CompilerLogger, "    AddBuiltins creating new package %s", d.Pkg)
 			}
 
 			root := symbolTable.Root()
@@ -227,7 +227,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Debug(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
+				ui.Log(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				pkg.Set(n, d.F)
 
@@ -235,7 +235,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 				data.SetMetadata(pkg, data.ReadonlyMDKey, true)
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
-				ui.Debug(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
+				ui.Log(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)
 			}
 		}
 	}

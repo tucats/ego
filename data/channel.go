@@ -36,9 +36,7 @@ func NewChannel(size int) *Channel {
 		channel: make(chan interface{}, size),
 	}
 
-	if ui.IsActive(ui.TraceLogger) {
-		ui.Debug(ui.TraceLogger, "--> Created  %s", c.String())
-	}
+	ui.Log(ui.TraceLogger, "--> Created  %s", c.String())
 
 	return c
 }
@@ -50,7 +48,7 @@ func NewChannel(size int) *Channel {
 func (c *Channel) Send(datum interface{}) error {
 	if c.IsOpen() {
 		if ui.IsActive(ui.TraceLogger) {
-			ui.Debug(ui.TraceLogger, "--> Sending on %s", c.String())
+			ui.Log(ui.TraceLogger, "--> Sending on %s", c.String())
 		}
 
 		c.channel <- datum
@@ -71,9 +69,7 @@ func (c *Channel) Send(datum interface{}) error {
 // check to see if the messages have all been drained by looking at the
 // counter.
 func (c *Channel) Receive() (interface{}, error) {
-	if ui.IsActive(ui.TraceLogger) {
-		ui.Debug(ui.TraceLogger, "--> Receiving on %s", c.String())
-	}
+	ui.Log(ui.TraceLogger, "--> Receiving on %s", c.String())
 
 	if !c.IsOpen() && c.count == 0 {
 		return nil, errors.ErrChannelNotOpen
@@ -113,7 +109,7 @@ func (c *Channel) IsEmpty() bool {
 // before taking the exclusive lock so c.String() can work.
 func (c *Channel) Close() bool {
 	if ui.IsActive(ui.TraceLogger) {
-		ui.Debug(ui.TraceLogger, "--> Closing %s", c.String())
+		ui.Log(ui.TraceLogger, "--> Closing %s", c.String())
 	}
 
 	c.mutex.Lock()

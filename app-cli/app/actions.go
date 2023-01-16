@@ -59,12 +59,12 @@ func DebugAction(c *cli.Context) error {
 		for _, v := range loggers {
 			name := strings.TrimSpace(v)
 			if name != "" {
-				logger := ui.Logger(name)
+				logger := ui.LoggerByName(name)
 				if logger < 0 {
 					return errors.ErrInvalidLoggerName.Context(name)
 				}
 
-				ui.SetLogger(logger, true)
+				ui.Active(logger, true)
 			}
 		}
 	}
@@ -129,7 +129,7 @@ func UseProfileAction(c *cli.Context) error {
 	name, _ := c.String("profile")
 	settings.UseProfile(name)
 
-	ui.Debug(ui.AppLogger, "Using profile %s", name)
+	ui.Log(ui.AppLogger, "Using profile %s", name)
 
 	return nil
 }

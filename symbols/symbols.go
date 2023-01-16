@@ -44,7 +44,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
 			s.Name, s.id.String(), quotedName, attr.Slot, status)
 	}
 
@@ -78,7 +78,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
 			s.Name, s.id.String(), quotedName, attr.Slot, status)
 	}
 
@@ -102,7 +102,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 		return s.parent.GetAddress(name)
 	}
 
-	ui.Debug(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
+	ui.Log(ui.SymbolLogger, "%s(%s), get(&%s)", s.Name, s.id, name)
 
 	return v, found
 }
@@ -131,7 +131,7 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 	s.SetValue(attr.Slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
 			s.Name, s.id, name, data.Format(v))
 	}
 
@@ -153,7 +153,7 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		if found {
 			attr.Readonly = flag
 
-			ui.Debug(ui.SymbolLogger, "Marking %s in %s table, readonly=%v",
+			ui.Log(ui.SymbolLogger, "Marking %s in %s table, readonly=%v",
 				name, syms.Name, flag)
 
 			return nil
@@ -210,7 +210,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
 			s.Name, s.id, quotedName, attr.Slot, valueString)
 	}
 }
@@ -257,7 +257,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
 			s.Name, s.id, quotedName, attr.Slot, valueString, attr.Readonly)
 	}
 
@@ -334,7 +334,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 		}
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
-		ui.Debug(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
 			s.Name, s.id, quotedName, attr.Slot, valueString)
 	}
 
@@ -369,7 +369,7 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 	delete(s.symbols, name)
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.Debug(ui.SymbolLogger, "%s(%s), delete(%s)",
+		ui.WriteLog(ui.SymbolLogger, "%s(%s), delete(%s)",
 			s.Name, s.id, name)
 	}
 
@@ -398,7 +398,7 @@ func (s *SymbolTable) Create(name string) error {
 	s.size++
 
 	if ui.IsActive(ui.SymbolLogger) {
-		ui.Debug(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
+		ui.WriteLog(ui.SymbolLogger, "%s(%s), create(%s) = nil[%d]",
 			s.Name, s.id, name, s.size-1)
 	}
 

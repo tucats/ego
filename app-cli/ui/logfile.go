@@ -75,7 +75,7 @@ func openLogFile(path string, withTimeStamp bool) error {
 	baseLogFileName, _ = filepath.Abs(path)
 	currentLogFileName, _ = filepath.Abs(fileName)
 
-	Log(InfoLogger, "New log file opened: %s", currentLogFileName)
+	WriteLog(InfoLogger, "New log file opened: %s", currentLogFileName)
 
 	return nil
 }
@@ -88,7 +88,7 @@ func rollOverTask() {
 		beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 		wakeTime := beginningOfDay.Add(24*time.Hour + time.Second)
 		sleepUntil := time.Until(wakeTime)
-		Log(InfoLogger, "Log rollover scheduled for %s", wakeTime.String())
+		WriteLog(InfoLogger, "Log rollover scheduled for %s", wakeTime.String())
 		time.Sleep(sleepUntil)
 		RollOverLog()
 	}
@@ -98,14 +98,14 @@ func rollOverTask() {
 // it was created. Then create a new log file.
 func RollOverLog() {
 	if err1 := SaveLastLog(); err1 != nil {
-		Log(InternalLogger, "ERROR: RollOverLog() unable to roll over log file; %v", err1)
+		WriteLog(InternalLogger, "ERROR: RollOverLog() unable to roll over log file; %v", err1)
 
 		return
 	}
 
 	err := openLogFile(baseLogFileName, true)
 	if err != nil {
-		Log(InternalLogger, "ERROR: RollOverLog() unable to open new log file; %v", err)
+		WriteLog(InternalLogger, "ERROR: RollOverLog() unable to open new log file; %v", err)
 
 		return
 	}
@@ -125,7 +125,7 @@ func timeStampLogFileName(path string) string {
 // was initialized.
 func SaveLastLog() error {
 	if logFile != nil {
-		Log(InfoLogger, "Log file being rolled over")
+		WriteLog(InfoLogger, "Log file being rolled over")
 
 		sequenceMux.Lock()
 		defer sequenceMux.Unlock()
@@ -143,11 +143,11 @@ func PurgeLogs() int {
 	searchPath := path.Dir(CurrentLogFile())
 	names := []string{}
 
-	Debug(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
+	Log(ServerLogger, "Purging all but %d logs from %s", keep, searchPath)
 
 	files, err := ioutil.ReadDir(searchPath)
 	if err != nil {
-		Debug(ServerLogger, "Error making list of log files, %s", err.Error())
+		Log(ServerLogger, "Error making list of log files, %s", err.Error())
 
 		return count
 	}
@@ -170,9 +170,9 @@ func PurgeLogs() int {
 
 		err := os.Remove(fileName)
 		if err != nil {
-			Debug(ServerLogger, "Error purging log file, %v", err)
+			Log(ServerLogger, "Error purging log file, %v", err)
 		} else {
-			Debug(ServerLogger, "Purged log file %s", fileName)
+			Log(ServerLogger, "Purged log file %s", fileName)
 			count++
 		}
 	}

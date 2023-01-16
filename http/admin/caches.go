@@ -16,7 +16,7 @@ import (
 func cachesAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
+		ui.Log(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
 
 		return http.StatusForbidden

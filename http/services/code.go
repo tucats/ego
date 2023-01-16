@@ -54,8 +54,8 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = buf.ReadFrom(r.Body)
 	text := buf.String()
 
-	ui.Debug(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, util.SessionLog(sessionID, text))
-	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.ServerLogger, "[%d] %s /code request,\n%s", sessionID, r.Method, util.SessionLog(sessionID, text))
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// Tokenize the input
 	t := tokenizer.New(text)
@@ -75,7 +75,7 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 		err := comp.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 		if err != nil {
-			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: %v", err)
+			ui.Log(ui.ServerLogger, "Unable to auto-import packages: %v", err)
 		}
 
 		// Run the compiled code

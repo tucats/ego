@@ -57,9 +57,9 @@ func LoadUserDatabase(c *cli.Context) error {
 	var err error
 
 	if !ui.IsActive(ui.AuthLogger) {
-		ui.Debug(ui.ServerLogger, "Initializing credentials and authorizations")
+		ui.Log(ui.ServerLogger, "Initializing credentials and authorizations")
 	} else {
-		ui.Debug(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)
+		ui.Log(ui.AuthLogger, "Initializing credentials and authorizations using %s", userDatabaseFile)
 	}
 
 	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
@@ -135,7 +135,7 @@ func setPermission(user, privilege string, enabled bool) error {
 			return err
 		}
 
-		ui.Debug(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
+		ui.Log(ui.AuthLogger, "Setting %s privilege for user \"%s\" to %v", privname, user, enabled)
 	} else {
 		return errors.ErrNoSuchUser.Context(user)
 	}
@@ -154,7 +154,7 @@ func GetPermission(user, privilege string) bool {
 		return (pn >= 0)
 	}
 
-	ui.Debug(ui.AuthLogger, "User %s does not have %s privilege", user, privilege)
+	ui.Log(ui.AuthLogger, "User %s does not have %s privilege", user, privilege)
 
 	return false
 }
@@ -390,7 +390,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func ValidateToken(t string) bool {
 	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
 	if err != nil {
-		ui.Debug(ui.AuthLogger, "Token validation error: "+err.Error())
+		ui.Log(ui.AuthLogger, "Token validation error: "+err.Error())
 	}
 
 	return v.(bool)

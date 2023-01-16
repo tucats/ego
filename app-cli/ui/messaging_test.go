@@ -42,8 +42,8 @@ func TestLogMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := Logger(tt.args.class)
-			got := LogMessage(logger, tt.args.format, tt.args.args...)
+			logger := LoggerByName(tt.args.class)
+			got := formatLogMessage(logger, tt.args.format, tt.args.args...)
 			// Mask out the parts that are variable and un-testable, which
 			// includes the current date/time and a sequence number
 			got = got[23:]

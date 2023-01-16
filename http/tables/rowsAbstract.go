@@ -29,10 +29,10 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 	tableName, _ = fullName(user, tableName)
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to insert abstract rows into table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -63,7 +63,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
@@ -92,17 +92,17 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = values
 				rowSet.Columns = keys
-				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
+			ui.Log(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// If we're showing our payload in the log, do that now
 		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 
 		// If at this point we have an empty row set, then just bail out now. Return a success
@@ -140,7 +140,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 		for _, row := range rowSet.Rows {
 			q, values := formAbstractInsertQuery(r.URL, user, rowSet.Columns, row)
-			ui.Debug(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
+			ui.Log(ui.TableLogger, "[%d] Insert row with query: %s", sessionID, q)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -166,7 +166,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 			err = tx.Commit()
 			if err == nil {
-				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows", sessionID, count)
+				ui.Log(ui.TableLogger, "[%d] Inserted %d rows", sessionID, count)
 
 				return
 			}
@@ -206,10 +206,10 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to read abstract rows from table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -227,7 +227,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 			return
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+		ui.Log(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
 		err = readAbstractRowData(db, q, sessionID, w)
 		if err == nil {
@@ -235,7 +235,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, sessionID int
 		}
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 	util.ErrorResponse(w, sessionID, err.Error(), 400)
 }
 
@@ -282,7 +282,7 @@ func readAbstractRowData(db *sql.DB, q string, sessionID int32, w http.ResponseW
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 	}
 
 	return err
@@ -304,10 +304,10 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to update abstract rows in table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to update abstract rows in table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -323,7 +323,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
 		rowSet := defs.DBAbstractRowSet{
@@ -344,10 +344,10 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 				rowSet.Count = 1
 				rowSet.Rows = make([][]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Debug(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
+				ui.Log(ui.RestLogger, "[%d] Converted object to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
+			ui.Log(ui.RestLogger, "[%d] Received rowset with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// Start a transaction to ensure atomicity of the entire update
@@ -355,7 +355,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 
 		// Loop over the row set doing the updates
 		for _, data := range rowSet.Rows {
-			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, data)
+			ui.Log(ui.TableLogger, "[%d] values list = %v", sessionID, data)
 
 			q := formAbstractUpdateQuery(r.URL, user, rowSet.Columns, data)
 			if p := strings.Index(q, syntaxErrorPrefix); p > 0 {
@@ -364,7 +364,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 				return
 			}
 
-			ui.Debug(ui.TableLogger, "[%d] Query: %s", sessionID, q)
+			ui.Log(ui.TableLogger, "[%d] Query: %s", sessionID, q)
 
 			counts, err := db.Exec(q, data...)
 			if err == nil {
@@ -396,7 +396,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, sessionID i
 		b, _ := json.MarshalIndent(result, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
+		ui.Log(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
 	} else {
 		util.ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}

@@ -145,16 +145,14 @@ func TestAction(c *cli.Context) error {
 				builtinsAdded = true
 			}
 
-			if ui.IsActive(ui.ByteCodeLogger) {
-				b.Disasm()
-			}
+			b.Disasm()
 
 			// Run the compiled code
 			ctx := bytecode.NewContext(symbolTable, b)
 
 			ctx.EnableConsoleOutput(false)
 			if c.Boolean("trace") {
-				ui.SetLogger(ui.TraceLogger, true)
+				ui.Active(ui.TraceLogger, true)
 			}
 
 			err = ctx.Run()
@@ -187,18 +185,18 @@ func ReadDirectory(name string) (string, error) {
 	fi, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			ui.Debug(ui.DebugLogger, "+++ No such directory")
+			ui.Log(ui.DebugLogger, "+++ No such directory")
 		}
 
 		return "", errors.NewError(err)
 	}
 
-	ui.Debug(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
+	ui.Log(ui.DebugLogger, "+++ Directory read attempt for \"%s\"", name)
 
 	if len(fi) == 0 {
-		ui.Debug(ui.DebugLogger, "+++ Directory is empty")
+		ui.Log(ui.DebugLogger, "+++ Directory is empty")
 	} else {
-		ui.Debug(ui.DebugLogger, "+++ Reading test directory %s", dirname)
+		ui.Log(ui.DebugLogger, "+++ Reading test directory %s", dirname)
 	}
 
 	// For all the items that aren't directories themselves, and
@@ -229,7 +227,7 @@ func ReadFile(name string) (string, error) {
 		return s, nil
 	}
 
-	ui.Debug(ui.TraceLogger, "+++ Reading test file %s", name)
+	ui.Log(ui.TraceLogger, "+++ Reading test file %s", name)
 
 	// Not a directory, try to read the file
 	content, e2 := ioutil.ReadFile(name)

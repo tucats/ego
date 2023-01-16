@@ -139,7 +139,7 @@ func Save() error {
 			c.ID = uuid.New().String()
 			Configurations[n] = c
 
-			ui.Debug(ui.AppLogger, "Creating configuration \"%s\" with id %s", n, c.ID)
+			ui.Log(ui.AppLogger, "Creating configuration \"%s\" with id %s", n, c.ID)
 		}
 	}
 
@@ -174,7 +174,7 @@ func Set(key string, value string) {
 	c.Items[key] = value
 	ProfileDirty = true
 
-	ui.Debug(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
+	ui.Log(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
 }
 
 // SetDefault puts a profile entry in the current Configuration structure. It is
@@ -183,7 +183,7 @@ func Set(key string, value string) {
 func SetDefault(key string, value string) {
 	explicitValues.Items[key] = value
 
-	ui.Debug(ui.AppLogger, "Setting default key \"%s\" = \"%s\"", key, value)
+	ui.Log(ui.AppLogger, "Setting default key \"%s\" = \"%s\"", key, value)
 }
 
 // Get gets a profile entry in the current configuration structure.
@@ -248,7 +248,7 @@ func Delete(key string) error {
 
 	ProfileDirty = true
 
-	ui.Debug(ui.AppLogger, "Deleting profile key \"%s\"", key)
+	ui.Log(ui.AppLogger, "Deleting profile key \"%s\"", key)
 
 	return nil
 }
@@ -280,7 +280,7 @@ func Exists(key string) bool {
 func DeleteProfile(key string) error {
 	if cfg, ok := Configurations[key]; ok {
 		if cfg.ID == getCurrentConfiguration().ID {
-			ui.Debug(ui.AppLogger, "cannot delete active profile")
+			ui.Log(ui.AppLogger, "cannot delete active profile")
 
 			return errors.ErrCannotDeleteActiveProfile.Context(key)
 		}
@@ -291,13 +291,13 @@ func DeleteProfile(key string) error {
 
 		err := Save()
 		if err == nil {
-			ui.Debug(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
+			ui.Log(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
 		}
 
 		return err
 	}
 
-	ui.Debug(ui.AppLogger, "no such profile to delete: %s", key)
+	ui.Log(ui.AppLogger, "no such profile to delete: %s", key)
 
 	return errors.ErrNoSuchProfile.Context(key)
 }

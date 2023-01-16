@@ -202,7 +202,7 @@ func (s *Struct) ToMap() map[string]interface{} {
 // static, or readonly attributes, so be VERY sure the value is the right type!
 func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 	if s == nil {
-		ui.Log(ui.InfoLogger, "Fatal error - null struct pointer in SetAlways")
+		ui.WriteLog(ui.InfoLogger, "Fatal error - null struct pointer in SetAlways")
 
 		return s
 	}

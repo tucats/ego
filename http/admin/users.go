@@ -160,7 +160,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 			w.Header().Add(contentTypeHeader, defs.UsersMediaType)
 			_, _ = w.Write(b)
 
-			ui.Debug(ui.RestLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
+			ui.Log(ui.RestLogger, "[%d] 200 returned info on %d users", sessionID, len(result.Items))
 
 			return http.StatusOK
 		}

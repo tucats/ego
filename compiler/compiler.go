@@ -216,7 +216,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	symV, _ := pkg.Get(data.SymbolsMDKey)
 	syms := symV.(*symbols.SymbolTable)
 
-	ui.Debug(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
+	ui.Log(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
 
 	functionNames := make([]string, 0)
 	for k := range functions.FunctionDictionary {
@@ -243,7 +243,7 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 					debugName = f.Pkg + "." + name
 				}
 
-				ui.Debug(ui.CompilerLogger, "... processing builtin %s", debugName)
+				ui.Log(ui.CompilerLogger, "... processing builtin %s", debugName)
 			}
 
 			added = true
@@ -275,7 +275,7 @@ func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
 		return false
 	}
 
-	ui.Debug(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID())
+	ui.Log(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID())
 
 	for name, f := range functions.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
@@ -328,7 +328,7 @@ var packageMerge sync.Mutex
 // to the given symbol table. This function supports attribute chaining
 // for a compiler instance.
 func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
-	ui.Debug(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
+	ui.Log(ui.CompilerLogger, "Adding compiler packages to %s(%v)", s.Name, s.ID())
 	packageMerge.Lock()
 	defer packageMerge.Unlock()
 
@@ -346,7 +346,7 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 			// Do we already have a package of this name defined?
 			_, found := s.Get(k)
 			if found {
-				ui.Debug(ui.CompilerLogger, "Duplicate package %s already in table", k)
+				ui.Log(ui.CompilerLogger, "Duplicate package %s already in table", k)
 			}
 
 			// If the package name is empty, we add the individual items
@@ -388,7 +388,7 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
-	ui.Debug(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
+	ui.Log(ui.CompilerLogger, "+++ Starting auto-import all=%v", all)
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.
@@ -396,14 +396,14 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	savedOptimizerLogging := ui.IsActive(ui.OptimizerLogger)
 	savedTraceLogging := ui.IsActive(ui.TraceLogger)
 
-	ui.SetLogger(ui.TokenLogger, false)
-	ui.SetLogger(ui.OptimizerLogger, false)
-	ui.SetLogger(ui.TraceLogger, false)
+	ui.Active(ui.TokenLogger, false)
+	ui.Active(ui.OptimizerLogger, false)
+	ui.Active(ui.TraceLogger, false)
 
 	defer func(token, opt, trace bool) {
-		ui.SetLogger(ui.TokenLogger, token)
-		ui.SetLogger(ui.OptimizerLogger, opt)
-		ui.SetLogger(ui.TraceLogger, trace)
+		ui.Active(ui.TokenLogger, token)
+		ui.Active(ui.OptimizerLogger, opt)
+		ui.Active(ui.TraceLogger, trace)
 	}(savedTokenLogging, savedOptimizerLogging, savedTraceLogging)
 
 	// Start by making a list of the packages. If we need all packages,

@@ -148,7 +148,7 @@ func (c *Compiler) handlerDirective() error {
 		httpMode = true
 	}
 
-	ui.Debug(ui.ByteCodeLogger, "@handler invocation uses real http mode: %v", httpMode)
+	ui.Log(ui.ByteCodeLogger, "@handler invocation uses real http mode: %v", httpMode)
 
 	stackMarker := bytecode.NewStackMarker("handler")
 

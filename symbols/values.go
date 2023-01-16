@@ -58,7 +58,7 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 		newBin := make([]interface{}, SymbolAllocationSize)
 		s.values = append(s.values, &newBin)
 
-		ui.Debug(ui.SymbolLogger, "%s, create new value bin", s.Name)
+		ui.Log(ui.SymbolLogger, "%s, create new value bin", s.Name)
 	}
 
 	slot := index % SymbolAllocationSize

@@ -32,11 +32,11 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var e2 error
 
 	if tx == nil {
-		ui.Debug(ui.DBLogger, "QueryRows: %s", query)
+		ui.Log(ui.DBLogger, "QueryRows: %s", query)
 
 		rows, e2 = db.Query(query, args[1:]...)
 	} else {
-		ui.Debug(ui.DBLogger, "(Tx) QueryRows: %s", query)
+		ui.Log(ui.DBLogger, "(Tx) QueryRows: %s", query)
 
 		rows, e2 = tx.Query(query, args[1:]...)
 	}
@@ -75,14 +75,14 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	var e2 error
 
 	query := data.String(args[0])
-	ui.Debug(ui.DBLogger, "Query: %s", query)
+	ui.Log(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
-		ui.Debug(ui.DBLogger, "Query: %s", query)
+		ui.Log(ui.DBLogger, "Query: %s", query)
 
 		rows, e2 = db.Query(query, args[1:]...)
 	} else {
-		ui.Debug(ui.DBLogger, "(Tx) Query: %s", query)
+		ui.Log(ui.DBLogger, "(Tx) Query: %s", query)
 
 		rows, e2 = tx.Query(query, args[1:]...)
 	}
@@ -132,7 +132,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		size = len(mapResult)
 	}
 
-	ui.Debug(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
+	ui.Log(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	if err := rows.Close(); err != nil {
 		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
@@ -178,14 +178,14 @@ func Execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	query := data.String(args[0])
 
-	ui.Debug(ui.DBLogger, "Executing: %s", query)
+	ui.Log(ui.DBLogger, "Executing: %s", query)
 
 	if tx == nil {
-		ui.Debug(ui.DBLogger, "Execute: %s", query)
+		ui.Log(ui.DBLogger, "Execute: %s", query)
 
 		sqlResult, err = db.Exec(query, args[1:]...)
 	} else {
-		ui.Debug(ui.DBLogger, "(Tx) Execute: %s", query)
+		ui.Log(ui.DBLogger, "(Tx) Execute: %s", query)
 
 		sqlResult, err = tx.Exec(query, args[1:]...)
 	}
@@ -198,7 +198,7 @@ func Execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThisStruct(s)
 	this.SetAlways(rowCountFieldName, int(r))
 
-	ui.Debug(ui.DBLogger, "%d rows affected", r)
+	ui.Log(ui.DBLogger, "%d rows affected", r)
 
 	if err != nil {
 		err = errors.NewError(err)

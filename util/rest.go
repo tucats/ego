@@ -46,13 +46,13 @@ func ErrorResponse(w http.ResponseWriter, sessionID int32, msg string, status in
 
 	b, _ := json.MarshalIndent(response, "", "  ")
 
-	ui.Debug(ui.RestLogger, "[%d] error, %s; %d", sessionID, msg, status)
+	ui.Log(ui.RestLogger, "[%d] error, %s; %d", sessionID, msg, status)
 
 	w.Header().Add("Content-Type", defs.ErrorMediaType)
 	w.WriteHeader(status)
 	_, _ = w.Write(b)
 
 	if ui.IsActive(ui.RestLogger) {
-		ui.Debug(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
+		ui.WriteLog(ui.RestLogger, "[%d] Error response payload:\n%s", sessionID, SessionLog(sessionID, string(b)))
 	}
 }

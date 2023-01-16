@@ -49,7 +49,7 @@ func isStackMarker(i interface{}, values ...string) bool {
 	// as a marker but has lots of other data in it as well.
 	frame, ok := i.(CallFrame)
 	if ok {
-		ui.Debug(ui.TraceLogger, "                 >>> Unexpected call frame found: %s:%d", frame.Module, frame.Line)
+		ui.Log(ui.TraceLogger, "                 >>> Unexpected call frame found: %s:%d", frame.Module, frame.Line)
 
 		return true
 	}

@@ -547,7 +547,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 	}
 
 	if kind != StructKind {
-		ui.Log(ui.InternalLogger, "ERROR: DefineField() called for a type that is not a struct")
+		ui.WriteLog(ui.InternalLogger, "ERROR: DefineField() called for a type that is not a struct")
 
 		return nil
 	}
@@ -556,7 +556,7 @@ func (t *Type) DefineField(name string, ofType *Type) *Type {
 		t.fields = map[string]*Type{}
 	} else {
 		if _, found := t.fields[name]; found {
-			ui.Log(ui.InternalLogger, "ERROR: DefineField() called with duplicate field name %s", name)
+			ui.WriteLog(ui.InternalLogger, "ERROR: DefineField() called with duplicate field name %s", name)
 
 			return nil
 		}

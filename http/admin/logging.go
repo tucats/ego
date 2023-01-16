@@ -22,7 +22,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 
 	user, hasAdminPrivileges := isAdminRequestor(r)
 	if !hasAdminPrivileges {
-		ui.Debug(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
+		ui.Log(ui.AuthLogger, "[%d] User %s not authorized", sessionID, user)
 		util.ErrorResponse(w, sessionID, "Not authorized", http.StatusForbidden)
 
 		return http.StatusForbidden
@@ -39,17 +39,17 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		if err != nil {
 			status = http.StatusBadRequest
 			util.ErrorResponse(w, sessionID, err.Error(), status)
-			ui.Debug(ui.RestLogger, "[%d] Bad payload: %v", sessionID, err)
+			ui.Log(ui.RestLogger, "[%d] Bad payload: %v", sessionID, err)
 
 			return http.StatusBadRequest
 		}
 
 		for loggerName, mode := range loggers.Loggers {
-			logger := ui.Logger(loggerName)
+			logger := ui.LoggerByName(loggerName)
 			if logger < 0 || (logger == ui.ServerLogger && !mode) {
 				status = http.StatusBadRequest
 				util.ErrorResponse(w, sessionID, err.Error(), status)
-				ui.Debug(ui.RestLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
+				ui.Log(ui.RestLogger, "[%d] Bad logger name: %s", sessionID, loggerName)
 
 				return http.StatusBadRequest
 			}
@@ -59,8 +59,8 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 				modeString = "disable"
 			}
 
-			ui.Debug(ui.RestLogger, "[%d] %s %s(%d) logger", sessionID, modeString, loggerName, logger)
-			ui.SetLogger(logger, mode)
+			ui.Log(ui.RestLogger, "[%d] %s %s(%d) logger", sessionID, modeString, loggerName, logger)
+			ui.Active(logger, mode)
 		}
 
 		fallthrough
@@ -72,7 +72,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 		response.ServerInfo = util.MakeServerInfo(sessionID)
 
 		for _, k := range ui.LoggerNames() {
-			response.Loggers[k] = ui.IsActive(ui.Logger(k))
+			response.Loggers[k] = ui.IsActive(ui.LoggerByName(k))
 		}
 
 		w.Header().Add(contentTypeHeader, defs.LogStatusMediaType)
@@ -120,7 +120,7 @@ func loggingAction(sessionID int32, w http.ResponseWriter, r *http.Request) int 
 	default:
 		status = http.StatusMethodNotAllowed
 
-		ui.Debug(ui.RestLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
+		ui.Log(ui.RestLogger, "[%d] 405 Unsupported method %s", sessionID, r.Method)
 		util.ErrorResponse(w, sessionID, "Method not allowed", status)
 
 		return status
@@ -134,7 +134,7 @@ func logHeaders(r *http.Request, sessionID int32) {
 				continue
 			}
 
-			ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
+			ui.Log(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 		}
 	}
 }

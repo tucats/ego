@@ -79,7 +79,7 @@ func RunAction(c *cli.Context) error {
 
 	disassemble := c.Boolean(defs.DisassembleOption)
 	if disassemble {
-		ui.SetLogger(ui.ByteCodeLogger, true)
+		ui.Active(ui.ByteCodeLogger, true)
 	}
 
 	if c.WasFound(defs.OptimizerOption) {
@@ -261,7 +261,7 @@ func RunAction(c *cli.Context) error {
 
 			err := comp.AutoImport(autoImport, symbolTable)
 			if err != nil {
-				ui.Log(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
+				ui.WriteLog(ui.InternalLogger, "DEBUG: RunAction() auto-import error %v", err)
 
 				return errors.ErrStop
 			}
@@ -277,9 +277,7 @@ func RunAction(c *cli.Context) error {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
-			if ui.IsActive(ui.ByteCodeLogger) {
-				b.Disasm()
-			}
+			b.Disasm()
 
 			// Run the compiled code from a new context, configured with the symbol table,
 			// token stream, and scope/debug settings.
@@ -289,7 +287,7 @@ func RunAction(c *cli.Context) error {
 				SetFullSymbolScope(fullScope)
 
 			if ctx.Tracing() {
-				ui.SetLogger(ui.DebugLogger, true)
+				ui.Active(ui.DebugLogger, true)
 			}
 
 			// If we run under control of the debugger, do that, else just run the context.
@@ -346,7 +344,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	}
 
 	if c.Boolean("trace") {
-		ui.SetLogger(ui.TraceLogger, true)
+		ui.Active(ui.TraceLogger, true)
 	}
 
 	// Add the runtime builtins and the function library builtins

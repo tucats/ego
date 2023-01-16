@@ -83,7 +83,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	}
 
 	if dberr := svc.initializeDatabase(); dberr != nil {
-		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 		return nil, errors.NewError(dberr)
 	}
@@ -101,14 +101,14 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 		e2 = svc.WriteUser(user)
 
 		if e2 == nil {
-			ui.Debug(ui.AuthLogger, "Default database credential %s created", user.Name)
+			ui.Log(ui.AuthLogger, "Default database credential %s created", user.Name)
 		}
 	}
 
 	if e2 == nil {
-		ui.Debug(ui.AuthLogger, "Database credential store %s", svc.constr)
+		ui.Log(ui.AuthLogger, "Database credential store %s", svc.constr)
 	} else {
-		ui.Debug(ui.ServerLogger, "Database error: %v", e2)
+		ui.Log(ui.ServerLogger, "Database error: %v", e2)
 	}
 
 	return svc, e2
@@ -123,7 +123,7 @@ func (pg *DatabaseService) ListUsers() map[string]defs.User {
 	}
 
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 		return r
 	}
@@ -133,7 +133,7 @@ func (pg *DatabaseService) ListUsers() map[string]defs.User {
 
 		dberr = rowSet.Scan(&name, &id, &perms)
 		if dberr != nil {
-			ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 			return r
 		}
@@ -166,7 +166,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	}
 
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 		return user, errors.NewError(dberr)
 	}
@@ -178,7 +178,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 		dberr = rowSet.Scan(&name, &id, &password, &perms)
 		if dberr != nil {
-			ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+			ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 			return user, errors.NewError(dberr)
 		}
@@ -197,7 +197,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 
 	if !found {
 		if !doNotLog {
-			ui.Debug(ui.AuthLogger, "No database record for %s", name)
+			ui.Log(ui.AuthLogger, "No database record for %s", name)
 		}
 
 		err = errors.ErrNoSuchUser.Context(name)
@@ -238,11 +238,11 @@ func (pg *DatabaseService) WriteUser(user defs.User) error {
 	}
 
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 		err = errors.NewError(dberr)
 	} else {
-		ui.Debug(ui.AuthLogger, "User %s %s database", user.Name, action)
+		ui.Log(ui.AuthLogger, "User %s %s database", user.Name, action)
 	}
 
 	return err
@@ -253,14 +253,14 @@ func (pg *DatabaseService) DeleteUser(name string) error {
 
 	r, dberr := pg.db.Exec(deleteUserQueryString, name)
 	if dberr != nil {
-		ui.Debug(ui.ServerLogger, "Database error: %v", dberr)
+		ui.Log(ui.ServerLogger, "Database error: %v", dberr)
 
 		err = errors.NewError(dberr)
 	} else {
 		if count, _ := r.RowsAffected(); count > 0 {
-			ui.Debug(ui.AuthLogger, "Deleted user %s from database", name)
+			ui.Log(ui.AuthLogger, "Deleted user %s from database", name)
 		} else {
-			ui.Debug(ui.AuthLogger, "No user %s in database", name)
+			ui.Log(ui.AuthLogger, "No user %s in database", name)
 		}
 	}
 
@@ -287,9 +287,9 @@ func (pg *DatabaseService) initializeDatabase() error {
 	if dberr != nil {
 		_, dberr = pg.db.Exec(createTableQueryString)
 		if dberr == nil {
-			ui.Debug(ui.AuthLogger, "Created empty credentials table")
+			ui.Log(ui.AuthLogger, "Created empty credentials table")
 		} else {
-			ui.Debug(ui.ServerLogger, "error creating table: %v", dberr)
+			ui.Log(ui.ServerLogger, "error creating table: %v", dberr)
 		}
 	}
 

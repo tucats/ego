@@ -163,12 +163,12 @@ func SetDefaultLoggers() error {
 	for _, loggerName := range loggers {
 		trimmedName := strings.TrimSpace(loggerName)
 		if trimmedName != "" {
-			logger := ui.Logger(trimmedName)
+			logger := ui.LoggerByName(trimmedName)
 			if logger < 0 {
 				return errors.ErrInvalidLoggerName.Context(trimmedName)
 			}
 
-			ui.SetLogger(logger, true)
+			ui.Active(logger, true)
 		}
 	}
 

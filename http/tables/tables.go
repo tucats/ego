@@ -86,7 +86,7 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			return
 		}
 
-		ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 		counts, err := db.Exec(q)
 		if err == nil {
@@ -105,21 +105,21 @@ func TableCreate(user string, isAdmin bool, tableName string, sessionID int32, w
 			_, _ = w.Write(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
-			ui.Debug(ui.ServerLogger, "[%d] table created", sessionID)
+			ui.Log(ui.ServerLogger, "[%d] table created", sessionID)
 
 			return
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] Error creating table, %v", sessionID, err)
+		ui.Log(ui.ServerLogger, "[%d] Error creating table, %v", sessionID, err)
 		util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
+	ui.Log(ui.TableLogger, "[%d] Error inserting into table, %v", sessionID, strings.TrimPrefix(err.Error(), "pq: "))
 
 	if err == nil {
 		err = fmt.Errorf("unknown error")
@@ -148,7 +148,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int32, db *sql.DB, us
 
 	count, _ := result.RowsAffected()
 	if count > 0 {
-		ui.Debug(ui.TableLogger, "[%d] Created schema %s", sessionID, schema)
+		ui.Log(ui.TableLogger, "[%d] Created schema %s", sessionID, schema)
 	}
 
 	return true
@@ -201,7 +201,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"table": tableName,
 		})
 
-		ui.Debug(ui.SQLLogger, "[%d] Read unique query: \n%s", sessionID, util.SessionLog(sessionID, q))
+		ui.Log(ui.SQLLogger, "[%d] Read unique query: \n%s", sessionID, util.SessionLog(sessionID, q))
 
 		rows, err := db.Query(q)
 		if err != nil {
@@ -224,7 +224,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			keys = append(keys, name)
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Unique columns: %v", sessionID, keys)
+		ui.Log(ui.TableLogger, "[%d] Unique columns: %v", sessionID, keys)
 
 		// Determine which columns are nullable.
 		q = queryParameters(nullableColumnsQuery, map[string]string{
@@ -232,7 +232,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			"quote": "",
 		})
 
-		ui.Debug(ui.SQLLogger, "[%d] Read nullable query: %s", sessionID, util.SessionLog(sessionID, q))
+		ui.Log(ui.SQLLogger, "[%d] Read nullable query: %s", sessionID, util.SessionLog(sessionID, q))
 
 		var nrows *sql.Rows
 
@@ -262,7 +262,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			}
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Nullable columns: %v", sessionID, keys)
+		ui.Log(ui.TableLogger, "[%d] Nullable columns: %v", sessionID, keys)
 
 		// Get standard column names an type info.
 		columns, e2 := getColumnInfo(db, user, tableName, sessionID)
@@ -289,7 +289,7 @@ func ReadTable(user string, isAdmin bool, tableName string, sessionID int32, w h
 			_, _ = w.Write(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
 			return
@@ -323,7 +323,7 @@ func getColumnInfo(db *sql.DB, user string, tableName string, sessionID int32) (
 		"table": name,
 	})
 
-	ui.Debug(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "[%d] Reading table metadata query: %s", sessionID, q)
 
 	rows, err := db.Query(q)
 	if err == nil {
@@ -399,7 +399,7 @@ func DeleteTable(user string, isAdmin bool, tableName string, sessionID int32, w
 			"table": tableName,
 		})
 
-		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		_, err = db.Exec(q)
 		if err == nil {
@@ -470,8 +470,8 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 			q = q + paging
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
-		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+		ui.Log(ui.ServerLogger, "[%d] attempting to read tables from schema %s", sessionID, user)
+		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		rows, err = db.Query(q)
 		if err == nil {
@@ -495,7 +495,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 
 				// See how many columns are in this table. Must be a fully-qualfiied name.
 				columnQuery := "SELECT * FROM \"" + user + "\".\"" + name + "\" WHERE 1=0"
-				ui.Debug(ui.SQLLogger, "[%d] Columns metadata query: %s", sessionID, columnQuery)
+				ui.Log(ui.SQLLogger, "[%d] Columns metadata query: %s", sessionID, columnQuery)
 
 				tableInfo, err := db.Query(columnQuery)
 				if err != nil {
@@ -525,7 +525,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 						"table":  name,
 					})
 
-					ui.Debug(ui.SQLLogger, "[%d] Row count query: %s", sessionID, q)
+					ui.Log(ui.SQLLogger, "[%d] Row count query: %s", sessionID, q)
 
 					result, e2 := db.Query(q)
 					if e2 != nil {
@@ -550,7 +550,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				})
 			}
 
-			ui.Debug(ui.ServerLogger, "[%d] read %d table names", sessionID, count)
+			ui.Log(ui.ServerLogger, "[%d] read %d table names", sessionID, count)
 
 			if err == nil {
 				resp := defs.TableInfo{
@@ -565,7 +565,7 @@ func ListTables(user string, isAdmin bool, sessionID int32, w http.ResponseWrite
 				_, _ = w.Write(b)
 
 				if ui.IsActive(ui.RestLogger) {
-					ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+					ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 				}
 
 				return

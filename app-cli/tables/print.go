@@ -185,7 +185,7 @@ func (t *Table) paginateText() []string {
 
 	// Temporarily set to a ridiculously huge number
 	// t.terminalHeight = 9999999
-	ui.Debug(ui.DebugLogger, "terminal height is %d lines\n", t.terminalHeight)
+	ui.Log(ui.DebugLogger, "terminal height is %d lines\n", t.terminalHeight)
 
 	// Do we need to include the Row header first?
 	availableWidth := t.terminalWidth
@@ -349,9 +349,9 @@ func (t *Table) paginateText() []string {
 		printBlockSize = rowCount
 	}
 
-	ui.Debug(ui.AppLogger, "There are %d pagelets", pageletCount)
-	ui.Debug(ui.AppLogger, "There are %d lines in each pagelet", pageletSize)
-	ui.Debug(ui.AppLogger, "Each print block is %d lines", printBlockSize)
+	ui.Log(ui.AppLogger, "There are %d pagelets", pageletCount)
+	ui.Log(ui.AppLogger, "There are %d lines in each pagelet", pageletSize)
+	ui.Log(ui.AppLogger, "Each print block is %d lines", printBlockSize)
 
 	// @tomcole need to rethink this loop. Really probably needs to scan by
 	// lines count in a pagelet, and then append into the output as needed.
@@ -393,7 +393,7 @@ func (t *Table) FormatText() []string {
 		return t.paginateText()
 	}
 
-	ui.Debug(ui.AppLogger, "Print column order: %v", t.columnOrder)
+	ui.Log(ui.AppLogger, "Print column order: %v", t.columnOrder)
 
 	output := make([]string, 0)
 

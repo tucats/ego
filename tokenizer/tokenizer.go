@@ -196,10 +196,10 @@ func New(src string) *Tokenizer {
 	}
 
 	if ui.IsActive(ui.TokenLogger) {
-		ui.Debug(ui.TokenLogger, "Tokenizer contents:")
+		ui.WriteLog(ui.TokenLogger, "Tokenizer contents:")
 
 		for index, token := range t.Tokens {
-			ui.Debug(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
+			ui.WriteLog(ui.TokenLogger, "  [%2d:%2d] %v", t.Line[index], t.Pos[index], token)
 		}
 	}
 

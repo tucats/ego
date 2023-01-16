@@ -27,7 +27,7 @@ func FlushAssetCache() {
 	AssetCache = map[string]AssetObject{}
 	assetCacheSize = 0
 
-	ui.Debug(ui.ServerLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
+	ui.Log(ui.ServerLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
 }
 
 // Get the current asset cache size.
@@ -52,7 +52,7 @@ func findAsset(sessionID int32, path string) []byte {
 	if AssetCache == nil {
 		AssetCache = map[string]AssetObject{}
 
-		ui.Debug(ui.ServerLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
+		ui.Log(ui.ServerLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
 	}
 
 	if a, ok := AssetCache[path]; ok {
@@ -60,12 +60,12 @@ func findAsset(sessionID int32, path string) []byte {
 		a.Count = a.Count + 1
 		AssetCache[path] = a
 
-		ui.Debug(ui.InfoLogger, "[%d] Asset loaded from cache: %s", sessionID, path)
+		ui.Log(ui.InfoLogger, "[%d] Asset loaded from cache: %s", sessionID, path)
 
 		return a.data
 	}
 
-	ui.Debug(ui.InfoLogger, "[%d] Asset not found in cache: %s", sessionID, path)
+	ui.Log(ui.InfoLogger, "[%d] Asset not found in cache: %s", sessionID, path)
 
 	return nil
 }
@@ -74,7 +74,7 @@ func findAsset(sessionID int32, path string) []byte {
 // grows too large, then drop objects from the cache, oldest-first.
 func saveAsset(sessionID int32, path string, data []byte) {
 	if len(data) > maxAssetCacheSize/2 {
-		ui.Debug(ui.InfoLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
+		ui.Log(ui.InfoLogger, "[%d] Asset too large to cache; path %s; size %d; cache size %d",
 			sessionID, path, len(data), assetCacheSize)
 
 		return
@@ -120,10 +120,10 @@ func saveAsset(sessionID int32, path string, data []byte) {
 
 		delete(AssetCache, oldestAsset)
 
-		ui.Debug(ui.InfoLogger, "[%d] Asset purged; path %s; size %d; cache size %d",
+		ui.Log(ui.InfoLogger, "[%d] Asset purged; path %s; size %d; cache size %d",
 			sessionID, path, oldSize, assetCacheSize)
 	}
 
-	ui.Debug(ui.InfoLogger, "[%d] Asset saved; path %s; size %d; cache size %d",
+	ui.Log(ui.InfoLogger, "[%d] Asset saved; path %s; size %d; cache size %d",
 		sessionID, path, newSize, assetCacheSize)
 }

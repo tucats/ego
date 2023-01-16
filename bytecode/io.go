@@ -125,7 +125,7 @@ func logByteCode(c *Context, i interface{}) error {
 	if id, ok := i.(int); ok {
 		class = id
 	} else {
-		class = ui.Logger(data.String(i))
+		class = ui.LoggerByName(data.String(i))
 	}
 
 	if class <= ui.NoSuchLogger {
@@ -137,7 +137,7 @@ func logByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	ui.Debug(class, "%v", msg)
+	ui.Log(class, "%v", msg)
 
 	return nil
 }

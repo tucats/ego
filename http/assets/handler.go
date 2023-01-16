@@ -27,7 +27,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	server.LogRequest(r, sessionID)
-	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	// We dont permit index requests
 	if path == "" || strings.HasSuffix(path, "/") {
@@ -36,8 +36,8 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf(`{"err": "%s"}`, "index reads not permitted")
 		_, _ = w.Write([]byte(msg))
 
-		ui.Debug(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", sessionID, path)
-		ui.Debug(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", sessionID)
+		ui.Log(ui.InfoLogger, "[%d] Indexed asset read attempt from path %s", sessionID, path)
+		ui.Log(ui.InfoLogger, "[%d] STATUS 403, sending JSON response", sessionID)
 
 		return
 	}
@@ -51,7 +51,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		root := settings.Get(defs.EgoPathSetting)
 		fn := filepath.Join(root, defs.LibPathName, "services", path)
 
-		ui.Debug(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)
+		ui.Log(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
@@ -59,7 +59,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 
-			ui.Debug(ui.InfoLogger, "[%d] Server asset load error: %s", sessionID, err.Error())
+			ui.Log(ui.InfoLogger, "[%d] Server asset load error: %s", sessionID, err.Error())
 			w.WriteHeader(400)
 			_, _ = w.Write([]byte(msg))
 

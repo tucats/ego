@@ -52,7 +52,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		connStr = strings.ReplaceAll(connStr, ":"+secretString+"@", ":"+strings.Repeat("*", len(secretString))+"@")
 	}
 
-	ui.Debug(ui.DBLogger, "Connecting to %s", connStr)
+	ui.Log(ui.DBLogger, "Connecting to %s", connStr)
 
 	_ = s.Set(ClientType.Name(), ClientType)
 

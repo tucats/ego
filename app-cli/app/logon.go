@@ -71,7 +71,7 @@ func Logon(c *cli.Context) error {
 	if url == "" {
 		return errors.ErrNoLogonServer
 	} else {
-		ui.Debug(ui.RestLogger, "Logon URL is %s", url)
+		ui.Log(ui.RestLogger, "Logon URL is %s", url)
 	}
 
 	// Get the username. If not supplied by the user, prompt until provided.
@@ -106,7 +106,7 @@ func Logon(c *cli.Context) error {
 	if ui.IsActive(ui.RestLogger) {
 		// Use a fake password payload for the REST logging so we don't expose the password
 		b, _ := json.MarshalIndent(defs.Credentials{Username: user, Password: "********"}, "", "  ")
-		ui.Debug(ui.RestLogger, "REST Request:\n%s", string(b))
+		ui.Log(ui.RestLogger, "REST Request:\n%s", string(b))
 	}
 
 	req.Header.Set("Accept", defs.JSONMediaType)
@@ -114,12 +114,12 @@ func Logon(c *cli.Context) error {
 
 	r, err := req.Post(url)
 	if err != nil {
-		ui.Debug(ui.RestLogger, "REST POST %s; failed %v", url, err)
+		ui.Log(ui.RestLogger, "REST POST %s; failed %v", url, err)
 
 		return errors.NewError(err)
 	}
 
-	ui.Debug(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
+	ui.Log(ui.RestLogger, "REST POST %s; status %d", url, r.StatusCode())
 
 	// If the call was successful and the server responded with Success, remove any trailing
 	// newline from the result body and store the string as the new token value.
@@ -133,7 +133,7 @@ func Logon(c *cli.Context) error {
 
 		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(payload, "", "  ")
-			ui.Debug(ui.RestLogger, "REST Response:\n%s", string(b))
+			ui.Log(ui.RestLogger, "REST Response:\n%s", string(b))
 		}
 
 		settings.Set(defs.LogonTokenSetting, payload.Token)

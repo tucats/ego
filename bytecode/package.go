@@ -173,12 +173,12 @@ func popPackageByteCode(c *Context, i interface{}) error {
 			v, attr, _ := c.symbols.GetWithAttributes(k)
 
 			if first {
-				ui.Debug(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
+				ui.Log(ui.TraceLogger, "(%d) Updating package %s", c.threadID, pkgdef.name)
 
 				first = false
 			}
 
-			ui.Debug(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
+			ui.Log(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
 
 			// If it was readonly, and not already in a constant wrapper,
 			// wrap it as a constant now.

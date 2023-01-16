@@ -59,7 +59,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
-		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -84,7 +84,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			ui.Debug(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
+			ui.Log(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -94,7 +94,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Debug(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
 		} else {
 			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
@@ -108,7 +108,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		ui.Debug(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
 			user, valid)
 	}
 
@@ -157,9 +157,9 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Table request for user %s (admin=%v); %s %s",
+	ui.Log(ui.ServerLogger, "[%d] Table request for user %s (admin=%v); %s %s",
 		sessionID, user, hasAdminPermission, r.Method, path)
-	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
 	if !valid {

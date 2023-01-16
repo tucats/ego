@@ -26,7 +26,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	c.blockDepth++
 	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
 
-	ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
+	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, c.symbols.Name, oldName)
 
 	return nil

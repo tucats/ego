@@ -261,7 +261,7 @@ func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	if !b {
-		ui.Debug(ui.DebugLogger, "T.Equals fail, args[0] = %v; args[1] = %v", args[0], args[1])
+		ui.Log(ui.DebugLogger, "T.Equals fail, args[0] = %v; args[1] = %v", args[0], args[1])
 	}
 
 	return b, nil

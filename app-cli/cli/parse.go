@@ -59,7 +59,7 @@ func (c *Context) parseGrammar(args []string) error {
 			list.WriteString(parm)
 		}
 
-		ui.Debug(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
+		ui.Log(ui.CLILogger, "Unexpected parameter%s already parsed: %s", plural, list.String())
 
 		return errors.ErrUnrecognizedCommand.Context(parmList[0])
 	}
@@ -79,7 +79,7 @@ func (c *Context) parseGrammar(args []string) error {
 		option := args[currentArg]
 		isShort := false
 
-		ui.Debug(ui.CLILogger, "Processing token: %s", option)
+		ui.Log(ui.CLILogger, "Processing token: %s", option)
 
 		// Are we now only eating parameter values?
 		if parametersOnly {
@@ -87,7 +87,7 @@ func (c *Context) parseGrammar(args []string) error {
 			globalContext.Parameters = append(globalContext.Parameters, option)
 			count := len(globalContext.Parameters)
 
-			ui.Debug(ui.CLILogger, "added parameter %d", count)
+			ui.Log(ui.CLILogger, "added parameter %d", count)
 
 			continue
 		}
@@ -194,10 +194,10 @@ func (c *Context) parseGrammar(args []string) error {
 					if entry.Action != nil {
 						subContext.Action = entry.Action
 
-						ui.Debug(ui.CLILogger, "Saving action routine in subcommand context")
+						ui.Log(ui.CLILogger, "Saving action routine in subcommand context")
 					}
 
-					ui.Debug(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
+					ui.Log(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
 
 					return subContext.parseGrammar(args[currentArg+1:])
 				}
@@ -208,7 +208,7 @@ func (c *Context) parseGrammar(args []string) error {
 			g.Parameters = append(g.Parameters, option)
 			count := len(g.Parameters)
 
-			ui.Debug(ui.CLILogger, "Unclaimed token added parameter %d", count)
+			ui.Log(ui.CLILogger, "Unclaimed token added parameter %d", count)
 		} else {
 			location.Found = true
 			// If it's not a boolean type, see it already has a value from the = construct.
@@ -286,7 +286,7 @@ func (c *Context) parseGrammar(args []string) error {
 				location.Value = i
 			}
 
-			ui.Debug(ui.CLILogger, "Option value set to %#v", location.Value)
+			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
 
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
@@ -316,9 +316,9 @@ func (c *Context) parseGrammar(args []string) error {
 		g := c.FindGlobal()
 
 		if g.ExpectedParameterCount == -99 {
-			ui.Debug(ui.CLILogger, "Parameters expected: <varying> found %d", g.GetParameterCount())
+			ui.Log(ui.CLILogger, "Parameters expected: <varying> found %d", g.GetParameterCount())
 		} else {
-			ui.Debug(ui.CLILogger, "Parameters expected: %d  found %d", g.ExpectedParameterCount, g.GetParameterCount())
+			ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.ExpectedParameterCount, g.GetParameterCount())
 		}
 
 		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
@@ -342,11 +342,11 @@ func (c *Context) parseGrammar(args []string) error {
 		// Did we ever find an action routine? If so, let's run it. Otherwise,
 		// there wasn't enough command to determine what to do, so show the help.
 		if c.Action != nil {
-			ui.Debug(ui.CLILogger, "Invoking command action")
+			ui.Log(ui.CLILogger, "Invoking command action")
 
 			err = c.Action(c)
 		} else {
-			ui.Debug(ui.CLILogger, "No command action was ever specified during parsing")
+			ui.Log(ui.CLILogger, "No command action was ever specified during parsing")
 			ShowHelp(c)
 		}
 	}

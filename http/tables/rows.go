@@ -38,10 +38,10 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to delete rows from table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -72,7 +72,7 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			return
 		}
 
-		ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 		rows, err := db.Exec(q)
 		if err == nil {
@@ -95,11 +95,11 @@ func DeleteRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			_, _ = w.Write(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				ui.Log(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
 			status := http.StatusOK
-			ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, status)
+			ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, rowCount, status)
 
 			return
 		}
@@ -142,10 +142,10 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 
 	tableName, _ = fullName(user, tableName)
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to insert rows into table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -176,7 +176,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		_, _ = io.Copy(buf, r.Body)
 		rawPayload := buf.String()
 
-		ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+		ui.Log(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 
 		// Lets get the rows we are to insert. This is either a row set, or a single object.
 		rowSet := defs.DBRowSet{
@@ -197,17 +197,17 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Debug(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
+				ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
+			ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// If we're showing our payload in the log, do that now
 		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(rowSet, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-			ui.Debug(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Resolved REST Request payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 
 		// If at this point we have an empty row set, then just bail out now. Return a success
@@ -259,7 +259,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				if keywordMatch(column.Type, "time", "date", "timestamp") {
 					text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 					row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-					ui.Debug(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
+					ui.Log(ui.TableLogger, "[%d] updated column %s value from %v to %v", sessionID, column.Name, v, row[column.Name])
 				}
 			}
 
@@ -271,7 +271,7 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			}
 
 			q, values := formInsertQuery(tableName, user, row)
-			ui.Debug(ui.SQLLogger, "[%d] Insert exec: %s", sessionID, q)
+			ui.Log(ui.SQLLogger, "[%d] Insert exec: %s", sessionID, q)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -302,13 +302,13 @@ func InsertRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 			_, _ = w.Write(b)
 
 			if ui.IsActive(ui.RestLogger) {
-				ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+				ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 			}
 
 			err = tx.Commit()
 			if err == nil {
 				status := http.StatusOK
-				ui.Debug(ui.TableLogger, "[%d] Inserted %d rows; %d", sessionID, count, status)
+				ui.Log(ui.TableLogger, "[%d] Inserted %d rows; %d", sessionID, count, status)
 
 				return
 			}
@@ -360,10 +360,10 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to read rows from table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -371,7 +371,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		defer db.Close()
 
 		if isAdmin {
-			ui.Debug(ui.TableLogger, "[%d] Table authorization skipped because user \"%s\" has root privileges", sessionID, user)
+			ui.Log(ui.TableLogger, "[%d] Table authorization skipped because user \"%s\" has root privileges", sessionID, user)
 		}
 
 		if !isAdmin && !Authorized(sessionID, db, user, tableName, readOperation) {
@@ -387,7 +387,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 			return
 		}
 
-		ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+		ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 		err = readRowData(db, q, sessionID, w)
 		if err == nil {
@@ -395,7 +395,7 @@ func ReadRows(user string, isAdmin bool, tableName string, sessionID int32, w ht
 		}
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 	util.ErrorResponse(w, sessionID, err.Error(), 400)
 }
 
@@ -448,10 +448,10 @@ func readRowData(db *sql.DB, q string, sessionID int32, w http.ResponseWriter) e
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
 
@@ -485,10 +485,10 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
+	ui.Log(ui.ServerLogger, "[%d] Request to update rows in table %s", sessionID, tableName)
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	db, err := OpenDB(sessionID, user, "")
@@ -556,7 +556,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		rawPayload := buf.String()
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.Debug(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
+			ui.WriteLog(ui.RestLogger, "[%d] Raw payload:\n%s", sessionID, util.SessionLog(sessionID, rawPayload))
 		}
 
 		// Lets get the rows we are to update. This is either a row set, or a single object.
@@ -578,14 +578,14 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]interface{}, 1)
 				rowSet.Rows[0] = item
-				ui.Debug(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
+				ui.Log(ui.RestLogger, "[%d] Converted object payload to rowset payload %v", sessionID, item)
 			}
 		} else {
-			ui.Debug(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
+			ui.Log(ui.RestLogger, "[%d] Received rowset payload with %d items", sessionID, len(rowSet.Rows))
 		}
 
 		// Anything in the data map that is on the exclude list is removed
-		ui.Debug(ui.TableLogger, "[%d] exclude list = %v", sessionID, excludeList)
+		ui.Log(ui.TableLogger, "[%d] exclude list = %v", sessionID, excludeList)
 
 		// Start a transaction to ensure atomicity of the entire update
 		tx, _ := db.Begin()
@@ -610,7 +610,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				}
 			}
 
-			ui.Debug(ui.TableLogger, "[%d] values list = %v", sessionID, rowData)
+			ui.Log(ui.TableLogger, "[%d] values list = %v", sessionID, rowData)
 
 			q, values := formUpdateQuery(r.URL, user, rowData)
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
@@ -621,7 +621,7 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 				return
 			}
 
-			ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+			ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 			counts, err := db.Exec(q, values...)
 			if err == nil {
@@ -664,10 +664,10 @@ func UpdateRows(user string, isAdmin bool, tableName string, sessionID int32, w 
 		_, _ = w.Write(b)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Updated %d rows; %d", sessionID, count, status)
+		ui.Log(ui.TableLogger, "[%d] Updated %d rows; %d", sessionID, count, status)
 	} else {
 		util.ErrorResponse(w, sessionID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
 	}
@@ -714,7 +714,7 @@ func useAbstract(r *http.Request) bool {
 				flag = data.Bool(v[0])
 			}
 
-			ui.Debug(ui.RestLogger, "Abstract parameter value: %v", flag)
+			ui.Log(ui.RestLogger, "Abstract parameter value: %v", flag)
 
 			return flag
 		}

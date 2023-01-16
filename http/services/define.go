@@ -42,7 +42,7 @@ func DefineLibHandlers(root, subpath string) error {
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
-			ui.Debug(ui.ServerLogger, "Processing endpoint directory %s", newpath)
+			ui.Log(ui.ServerLogger, "Processing endpoint directory %s", newpath)
 
 			err := DefineLibHandlers(root, newpath)
 			if err != nil {
@@ -60,7 +60,7 @@ func DefineLibHandlers(root, subpath string) error {
 		}
 
 		path = path + "/"
-		ui.Debug(ui.ServerLogger, "  Endpoint %s", path)
+		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
 		http.HandleFunc(path, ServiceHandler)
 	}
 

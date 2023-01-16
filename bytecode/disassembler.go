@@ -25,7 +25,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 
 	if ui.IsActive(ui.ByteCodeLogger) {
 		if !usingRange {
-			ui.Debug(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
+			ui.Log(ui.ByteCodeLogger, "*** Disassembly %s", b.name)
 		}
 
 		scopePad := 0
@@ -37,7 +37,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 			}
 
 			op := FormatInstruction(i)
-			ui.Debug(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op)
+			ui.Log(ui.ByteCodeLogger, "%4d: %s%s", n, strings.Repeat("| ", scopePad), op)
 
 			if i.Operation == PushScope {
 				scopePad = scopePad + 1
@@ -45,7 +45,7 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		}
 
 		if !usingRange {
-			ui.Debug(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
+			ui.Log(ui.ByteCodeLogger, "*** Disassembled %d instructions", end-start)
 		}
 	}
 }

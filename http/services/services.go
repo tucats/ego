@@ -83,11 +83,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		requestor = addrs[0]
 	}
 
-	ui.Debug(ui.RestLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
-	ui.Debug(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
+	ui.Log(ui.RestLogger, "[%d] %s %s from %v", sessionID, r.Method, r.URL.Path, requestor)
+	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.RestLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.RestLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	if ui.IsActive(ui.InfoLogger) {
@@ -96,7 +96,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			ui.Debug(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
+			ui.WriteLog(ui.InfoLogger, "[%d] header: %s %v", sessionID, headerName, headerValues)
 		}
 	}
 
@@ -221,7 +221,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		cachedItem.Count++
 		ServiceCache[endpoint] = cachedItem
 
-		ui.Debug(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
+		ui.Log(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
 		ServiceCacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
@@ -232,7 +232,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
 			ServiceCacheMutex.Unlock()
 
-			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
+			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 			return
 		}
@@ -250,7 +250,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 		if err != nil {
-			ui.Debug(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
+			ui.Log(ui.ServerLogger, "Unable to auto-import packages: "+err.Error())
 		}
 
 		serviceCode, err = compilerInstance.Compile(name, tokens)
@@ -260,7 +260,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, "Error: "+err.Error())
 			ServiceCacheMutex.Unlock()
 
-			ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
+			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 			return
 		}
@@ -279,7 +279,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 		_, _ = io.WriteString(w, "Error: "+err.Error())
 
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
+		ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 		return
 	}
@@ -308,9 +308,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			// Create the authorization header from the payload
 			authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials.Username+":"+credentials.Password))
 			r.Header.Set("Authorization", authorization)
-			ui.Debug(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] Authorization credentials found in request payload", sessionID)
 		} else {
-			ui.Debug(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
+			ui.Log(ui.AuthLogger, "[%d] failed attempt at payload credentials, %v, user=%s", sessionID, err, credentials.Username)
 		}
 	}
 
@@ -320,7 +320,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		// No authentication credentials provided
 		authenticatedCredentials = false
 
-		ui.Debug(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
+		ui.Log(ui.AuthLogger, "[%d] No authentication credentials given", sessionID)
 	} else if strings.HasPrefix(strings.ToLower(authorization), defs.AuthScheme) {
 		// Bearer token provided. Extract the token part of the header info, and
 		// attempt to validate it.
@@ -349,7 +349,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			ui.Debug(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
+			ui.WriteLog(ui.AuthLogger, "[%d] Auth using token %s, user %s%s", sessionID, tokenstr, user, valid)
 		}
 	} else {
 		// Must have a valid username:password. This must be syntactically valid, and
@@ -359,7 +359,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		user, pass, ok = r.BasicAuth()
 		if !ok {
-			ui.Debug(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
+			ui.Log(ui.AuthLogger, "[%d] BasicAuth invalid", sessionID)
 		} else {
 			authenticatedCredentials = auth.ValidatePassword(user, pass)
 		}
@@ -376,7 +376,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		ui.Debug(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
+		ui.Log(ui.AuthLogger, "[%d] Auth using user \"%s\"%s", sessionID,
 			user, valid)
 	}
 
@@ -402,11 +402,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx.EnableConsoleOutput(true)
 
 	if debug {
-		ui.Debug(ui.ServerLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServerLogger, "Debugging started for service %s %s", r.Method, r.URL.Path)
 
 		err = debugger.Run(ctx)
 
-		ui.Debug(ui.ServerLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
+		ui.Log(ui.ServerLogger, "Debugging ended for service %s %s", r.Method, r.URL.Path)
 	} else {
 		err = ctx.Run()
 	}
@@ -439,8 +439,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = io.WriteString(w, "Error: "+err.Error()+"\n")
 
-		ui.Debug(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
+		ui.Log(ui.InfoLogger, "[%d] STATUS %d", sessionID, status)
+		ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; status %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
 		return
 	}
@@ -456,7 +456,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		byteBuffer, _ := json.Marshal(responseObject)
 		_, _ = io.WriteString(w, string(byteBuffer))
 
-		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
+		ui.Log(ui.InfoLogger, "[%d] STATUS %d, sending JSON response", sessionID, status)
 	} else {
 		// Otherwise, capture the print buffer.
 		responseSymbol, _ := ctx.GetSymbols().Get("$response")
@@ -468,7 +468,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = io.WriteString(w, buffer)
 
-		ui.Debug(ui.InfoLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
+		ui.Log(ui.InfoLogger, "[%d] STATUS %d, sending TEXT response", sessionID, status)
 	}
 
 	if !ui.IsActive(ui.InfoLogger) {
@@ -477,7 +477,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			kind = "json"
 		}
 
-		ui.Debug(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: %s", sessionID, r.Method, r.URL, requestor, status, kind)
+		ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; status %d; content: %s", sessionID, r.Method, r.URL, requestor, status, kind)
 	}
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in
@@ -490,13 +490,13 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		count := cachedItem.s.GetPackages(symbolTable)
 		ServiceCache[endpoint] = cachedItem
 
-		ui.Debug(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
+		ui.Log(ui.InfoLogger, "[%d] Caching %d package definitions for %s", sessionID, count, endpoint)
 	}
 
 	if status == http.StatusServiceUnavailable {
 		go func() {
 			time.Sleep(1 * time.Second)
-			ui.Debug(ui.ServerLogger, "Server shutdown by admin function")
+			ui.Log(ui.ServerLogger, "Server shutdown by admin function")
 			os.Exit(0)
 		}()
 	}
@@ -511,7 +511,7 @@ func findPath(sessionID int32, urlPath string) string {
 
 			for _, path := range pathList {
 				if strings.HasPrefix(urlPath, path) {
-					ui.Debug(ui.InfoLogger, "[%d] Path %s resolves to endpoint %s", sessionID, urlPath, path)
+					ui.Log(ui.InfoLogger, "[%d] Path %s resolves to endpoint %s", sessionID, urlPath, path)
 
 					return path
 				}
@@ -526,7 +526,7 @@ func findPath(sessionID int32, urlPath string) string {
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
 func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
-	ui.Debug(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
+	ui.Log(ui.InfoLogger, "[%d] Caching compilation unit for %s", session, endpoint)
 
 	ServiceCache[endpoint] = CachedCompilationUnit{
 		Age:   time.Now(),
@@ -552,7 +552,7 @@ func addToCache(session int32, endpoint string, comp *compiler.Compiler, code *b
 		}
 
 		delete(ServiceCache, key)
-		ui.Debug(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
+		ui.Log(ui.InfoLogger, "[%d] Endpoint %s aged out of cache", session, key)
 	}
 }
 

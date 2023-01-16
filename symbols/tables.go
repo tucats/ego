@@ -170,7 +170,7 @@ func (s *SymbolTable) Root() *SymbolTable {
 		st = st.parent
 	}
 
-	ui.Debug(ui.SymbolLogger, "+++ Root of %s(%s): %s(%s)",
+	ui.Log(ui.SymbolLogger, "+++ Root of %s(%s): %s(%s)",
 		s.Name, s.id, st.Name, st.id)
 
 	return st

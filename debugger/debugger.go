@@ -147,14 +147,14 @@ func Debugger(c *bytecode.Context) error {
 				t2 := tokenizer.New(text)
 
 				traceMode := ui.IsActive(ui.TraceLogger)
-				ui.SetLogger(ui.TraceLogger, false)
+				ui.Active(ui.TraceLogger, false)
 
 				err = compiler.Run("debugger", s, t2)
 				if errors.Equals(err, errors.ErrStop) {
 					err = nil
 				}
 
-				ui.SetLogger(ui.TraceLogger, traceMode)
+				ui.Active(ui.TraceLogger, traceMode)
 
 			case "break":
 				err = Break(c, tokens)
@@ -191,8 +191,8 @@ func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTra
 
 	traceMode := ui.IsActive(ui.TraceLogger)
 
-	defer ui.SetLogger(ui.TraceLogger, traceMode)
-	ui.SetLogger(ui.TraceLogger, allowTrace)
+	defer ui.Active(ui.TraceLogger, traceMode)
+	ui.Active(ui.TraceLogger, allowTrace)
 
 	err := compiler.Run("debugger", s, t2)
 	if errors.Equals(err, errors.ErrStop) {

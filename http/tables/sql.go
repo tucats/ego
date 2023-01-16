@@ -15,7 +15,7 @@ import (
 )
 
 func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, user string) {
-	ui.Debug(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
+	ui.Log(ui.TableLogger, "[%d] Executing SQL statements as a transaction", sessionID)
 
 	var body string
 
@@ -71,7 +71,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		if ui.IsActive(ui.RestLogger) {
 			b, _ := json.MarshalIndent(statements, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-			ui.Debug(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] SQL statements: \n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
 
@@ -111,7 +111,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		}
 
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			ui.Debug(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
+			ui.Log(ui.SQLLogger, "[%d] SQL query: %s", sessionID, statement)
 
 			err = readRowDataTx(tx, statement, sessionID, w)
 			if err != nil {
@@ -122,13 +122,13 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 		} else {
 			var rows sql.Result
 
-			ui.Debug(ui.SQLLogger, "[%d] SQL exec: %s", sessionID, statement)
+			ui.Log(ui.SQLLogger, "[%d] SQL exec: %s", sessionID, statement)
 
 			rows, err = tx.Exec(statement)
 			if err == nil {
 				count, _ := rows.RowsAffected()
 
-				ui.Debug(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
+				ui.Log(ui.TableLogger, "[%d] Updated %d rows", sessionID, count)
 
 				// If this is the last operation in the transaction, this is also our response
 				// payload.
@@ -143,7 +143,7 @@ func SQLTransaction(r *http.Request, w http.ResponseWriter, sessionID int32, use
 					_, _ = w.Write(b)
 
 					if ui.IsActive(ui.RestLogger) {
-						ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+						ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 					}
 
 					break
@@ -229,10 +229,10 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int32, w http.ResponseWriter)
 		b, _ := json.MarshalIndent(resp, "", "  ")
 		_, _ = w.Write(b)
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 
 		if ui.IsActive(ui.RestLogger) {
-			ui.Debug(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
+			ui.WriteLog(ui.RestLogger, "[%d] Response payload:\n%s", sessionID, util.SessionLog(sessionID, string(b)))
 		}
 	}
 

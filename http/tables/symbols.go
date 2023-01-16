@@ -22,7 +22,7 @@ func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbol
 
 	if ui.IsActive(ui.RestLogger) {
 		b, _ := json.MarshalIndent(task, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		ui.Debug(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
+		ui.WriteLog(ui.RestLogger, "[%d] Transaction task %d payload:\n%s", sessionID, id, util.SessionLog(sessionID, string(b)))
 	}
 
 	// Process any substittions to filters, column names, or data values
@@ -111,7 +111,7 @@ func applySymbolsToItem(sessionID int32, input interface{}, symbols *symbolTable
 
 		if value, ok := symbols.symbols[key]; ok {
 			input = value
-			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
+			ui.Log(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, key, value)
 		} else {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
@@ -139,7 +139,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 		input = strings.ReplaceAll(input, search, replace)
 
 		if oldInput != input {
-			ui.Debug(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, k, replace)
+			ui.Log(ui.TableLogger, "[%d] %s symbol substitution, %s = %v", sessionID, label, k, replace)
 		}
 	}
 
@@ -153,7 +153,7 @@ func applySymbolsToString(sessionID int32, input string, syms *symbolTable, labe
 			key = input[p1+2 : p2]
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
+		ui.Log(ui.TableLogger, "[%d] %s has unknown symbol \"%s\"", sessionID, label, key)
 
 		if key != "" {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)

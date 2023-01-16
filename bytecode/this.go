@@ -125,6 +125,6 @@ func (c *Context) PrintThisStack(operation string) {
 			}
 		}
 
-		ui.Debug(ui.SymbolLogger, b.String())
+		ui.Log(ui.SymbolLogger, b.String())
 	}
 }

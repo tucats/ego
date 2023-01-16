@@ -73,7 +73,7 @@ func LogRequestCounts() {
 			continue
 		}
 
-		ui.Debug(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
+		ui.Log(ui.ServerLogger, "Requests in last %d seconds: admin(%d)  service(%d)  asset(%d)  code(%d)  heartbeat(%d)  tables(%d)",
 			duration, admin, service, assets, code, heartbeats, tables)
 	}
 }

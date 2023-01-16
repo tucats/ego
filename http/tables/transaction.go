@@ -85,14 +85,14 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 		return
 	}
 
-	ui.Debug(ui.ServerLogger, "[%d] Transaction request with %d operations", sessionID, len(tasks))
+	ui.Log(ui.ServerLogger, "[%d] Transaction request with %d operations", sessionID, len(tasks))
 
 	if p := parameterString(r); p != "" {
-		ui.Debug(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
+		ui.Log(ui.ServerLogger, "[%d] request parameters:  %s", sessionID, p)
 	}
 
 	if len(tasks) == 0 {
-		ui.Debug(ui.ServerLogger, "[%d] no tasks in transaction", sessionID)
+		ui.Log(ui.ServerLogger, "[%d] no tasks in transaction", sessionID)
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("no tasks in transaction"))
 
@@ -150,9 +150,9 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
-					ui.Debug(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
+					ui.WriteLog(ui.TableLogger, "[%d] Operation %s", sessionID, strings.ToUpper(task.Opcode))
 				} else {
-					ui.Debug(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
+					ui.WriteLog(ui.TableLogger, "[%d] Operation %s on table %s", sessionID, strings.ToUpper(task.Opcode), tableName)
 				}
 			}
 
@@ -208,7 +208,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					// Convert from filter syntax to Ego syntax.
 					condition := formCondition(errorCondition.Condition)
 
-					ui.Debug(ui.TableLogger, "[%d] Evaluate error condition: %s", sessionID, condition)
+					ui.Log(ui.TableLogger, "[%d] Evaluate error condition: %s", sessionID, condition)
 
 					// Build a temporary symbol table for the expression evaluator. Fill it with the symbols
 					// being managed for this transaction.
@@ -233,7 +233,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 					if data.Bool(result) {
 						_ = tx.Rollback()
 
-						ui.Debug(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
+						ui.Log(ui.TableLogger, "[%d] Transaction rolled back at task %d", sessionID, n+1)
 
 						msg := fmt.Sprintf("Error condition %d aborts transaction at operation %d", errorNumber+1, n+1)
 						httpStatus = http.StatusInternalServerError
@@ -283,7 +283,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-				ui.Debug(ui.TableLogger, "[%d] %s",
+				ui.Log(ui.TableLogger, "[%d] %s",
 					sessionID,
 					fmt.Sprintf("completed %d operations in transaction, updated and/or read %d rows, returning %d rows",
 						len(tasks), rowsAffected, len(rows)))
@@ -303,7 +303,7 @@ func Transaction(user string, isAdmin bool, sessionID int32, w http.ResponseWrit
 
 		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 
-		ui.Debug(ui.TableLogger, "[%d] %s",
+		ui.Log(ui.TableLogger, "[%d] %s",
 			sessionID,
 			fmt.Sprintf("completed %d operations in transaction, updated %d rows", len(tasks), rowsAffected))
 
@@ -347,7 +347,7 @@ func txSymbols(sessionID int32, task TxOperation, id int, symbols *symbolTable) 
 		msg.WriteString(data.String(value))
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
+	ui.Log(ui.TableLogger, "[%d] Defined new symbols; %s", sessionID, msg.String())
 
 	return http.StatusOK, nil
 }
@@ -372,7 +372,7 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperati
 		}
 	}
 
-	ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 	var status int
 
@@ -381,7 +381,7 @@ func txRows(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOperati
 		return count, status, nil
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
 	return 0, status, errors.NewError(err)
 }
@@ -432,7 +432,7 @@ func readTxRowResultSet(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms 
 
 		syms.symbols[resultSetSymbolName] = result
 
-		ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
+		ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns; %d", sessionID, rowCount, columnCount, status)
 	} else {
 		status = http.StatusBadRequest
 	}
@@ -461,7 +461,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return count, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}
 
-	ui.Debug(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "[%d] Query: %s", sessionID, q)
 
 	var status int
 
@@ -470,7 +470,7 @@ func txSelect(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return count, status, nil
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
+	ui.Log(ui.TableLogger, "[%d] Error reading table, %v", sessionID, err)
 
 	return 0, status, errors.NewError(err)
 }
@@ -521,7 +521,7 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 					msg.WriteString(data.String(v))
 				}
 
-				ui.Debug(ui.TableLogger, "[%d] Read table to set symbols: %s", sessionID, msg.String())
+				ui.Log(ui.TableLogger, "[%d] Read table to set symbols: %s", sessionID, msg.String())
 
 				rowCount++
 			}
@@ -534,9 +534,9 @@ func readTxRowData(db *sql.DB, tx *sql.Tx, q string, sessionID int32, syms *symb
 			err = errors.NewMessage("SELECT task did not return a unique row")
 			status = http.StatusBadRequest
 
-			ui.Debug(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
+			ui.Log(ui.TableLogger, "[%d] Invalid read of %d rows ", sessionID, rowCount)
 		} else {
-			ui.Debug(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
+			ui.Log(ui.TableLogger, "[%d] Read %d rows of %d columns", sessionID, rowCount, columnCount)
 		}
 	} else {
 		status = http.StatusBadRequest
@@ -681,7 +681,7 @@ func txUpdate(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return 0, http.StatusBadRequest, errors.NewMessage("update without filter is not allowed")
 	}
 
-	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
+	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, result.String())
 
 	status := http.StatusOK
 
@@ -729,7 +729,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int
 		return 0, http.StatusBadRequest, errors.NewMessage(filterErrorMessage(q))
 	}
 
-	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 	rows, err := tx.Exec(q)
 	if err == nil {
@@ -739,7 +739,7 @@ func txDelete(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int
 			return 0, http.StatusNotFound, errors.NewMessage("delete did not modify any rows")
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
+		ui.Log(ui.TableLogger, "[%d] Deleted %d rows; %d", sessionID, count, 200)
 
 		return int(count), http.StatusOK, nil
 	}
@@ -770,7 +770,7 @@ func txSQL(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, s
 
 	q := task.SQL
 
-	ui.Debug(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.SQLLogger, "[%d] Exec: %s", sessionID, q)
 
 	rows, err := tx.Exec(q)
 	if err == nil {
@@ -780,7 +780,7 @@ func txSQL(sessionID int32, user string, tx *sql.Tx, task TxOperation, id int, s
 			return 0, http.StatusNotFound, errors.NewMessage("sql did not modify any rows")
 		}
 
-		ui.Debug(ui.TableLogger, "[%d] Affeccted %d rows; %d", sessionID, count, 200)
+		ui.Log(ui.TableLogger, "[%d] Affeccted %d rows; %d", sessionID, count, 200)
 
 		return int(count), http.StatusOK, nil
 	}
@@ -871,12 +871,12 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		if keywordMatch(column.Type, "time", "date", "timestamp") {
 			text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
 			task.Data[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-			ui.Debug(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
+			ui.Log(ui.TableLogger, "[%d] Updated column %s value from %v to %v", sessionID, column.Name, v, task.Data[column.Name])
 		}
 	}
 
 	q, values := formInsertQuery(task.Table, user, task.Data)
-	ui.Debug(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
+	ui.Log(ui.TableLogger, "[%d] Exec: %s", sessionID, q)
 
 	_, e := tx.Exec(q, values...)
 	if e != nil {
@@ -888,7 +888,7 @@ func txInsert(sessionID int32, user string, db *sql.DB, tx *sql.Tx, task TxOpera
 		return status, errors.NewMessage("error inserting row; " + e.Error())
 	}
 
-	ui.Debug(ui.TableLogger, "[%d] Successful INSERT to %s", sessionID, tableName)
+	ui.Log(ui.TableLogger, "[%d] Successful INSERT to %s", sessionID, tableName)
 
 	return http.StatusOK, nil
 }

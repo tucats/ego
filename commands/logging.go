@@ -71,7 +71,7 @@ func Logging(c *cli.Context) error {
 			loggerNames, _ := c.StringList("enable")
 
 			for _, loggerName := range loggerNames {
-				logger := ui.Logger(loggerName)
+				logger := ui.LoggerByName(loggerName)
 				if logger < 0 {
 					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
 				}
@@ -88,7 +88,7 @@ func Logging(c *cli.Context) error {
 			loggerNames, _ := c.StringList("disable")
 
 			for _, loggerName := range loggerNames {
-				logger := ui.Logger(loggerName)
+				logger := ui.LoggerByName(loggerName)
 				if logger < 0 || logger == ui.ServerLogger {
 					return errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
 				}

@@ -74,7 +74,7 @@ func atLineByteCode(c *Context, i interface{}) error {
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
 		text := c.tokenizer.GetLine(c.line)
 		if len(strings.TrimSpace(text)) > 0 {
-			ui.Debug(ui.TraceLogger, "(%d) Source line  >>>>  %3d: %s", c.threadID, c.line, text)
+			ui.Log(ui.TraceLogger, "(%d) Source line  >>>>  %3d: %s", c.threadID, c.line, text)
 		}
 	}
 
@@ -178,7 +178,7 @@ func goByteCode(c *Context, i interface{}) error {
 		fName := data.String(fx)
 
 		// Launch the function call as a separate thread.
-		ui.Debug(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
+		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
 		waitGroup.Add(1)
 
 		go GoRoutine(fName, c, args)
@@ -274,7 +274,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// case, this must be done _after_ the call frame is recorded.
 		functionSymbols := c.getPackageSymbols()
 		if functionSymbols == nil {
-			ui.Debug(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
+			ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 				c.threadID, c.symbols.Name, parentTable.Name)
 
 			c.callframePush("function "+function.name, function, 0, true)
@@ -536,7 +536,7 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 		if s, ok := data.GetMetadata(pkg, data.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package()) {
-					ui.Debug(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())
+					ui.Log(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())
 
 					return table
 				}

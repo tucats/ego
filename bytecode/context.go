@@ -167,7 +167,7 @@ func (c *Context) SetGlobal(name string, value interface{}) error {
 // EnableConsoleOutput tells the context to begin capturing all output normally generated
 // from Print and Newline into a buffer instead of going to stdout.
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
-	ui.Debug(ui.AppLogger, ">>> Console output set to %v", flag)
+	ui.Log(ui.AppLogger, ">>> Console output set to %v", flag)
 
 	if !flag {
 		c.output = &strings.Builder{}
@@ -402,7 +402,7 @@ func (c *Context) Result() interface{} {
 
 func (c *Context) popSymbolTable() error {
 	if c.symbols.IsRoot() {
-		ui.Debug(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
+		ui.Log(ui.SymbolLogger, "(%d) nil symbol table parent of %s", c.threadID, c.symbols.Name)
 
 		return errors.ErrInternalCompiler.Context("Attempt to pop root table")
 	}
@@ -422,7 +422,7 @@ func (c *Context) popSymbolTable() error {
 		c.symbols = c.symbols.Parent()
 	}
 
-	ui.Debug(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
+	ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 		c.threadID, name, c.symbols.Name)
 
 	return nil

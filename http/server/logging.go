@@ -14,8 +14,8 @@ import (
 // when REST logging is enabled.
 func LogRequest(r *http.Request, sessionID int32) {
 	if ui.IsActive(ui.RestLogger) {
-		ui.Debug(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
-		ui.Debug(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
+		ui.Log(ui.RestLogger, "[%d] *** START NEW REQUEST ***", sessionID)
+		ui.Log(ui.RestLogger, "[%d] %s %s from %s (%d bytes of request content)", sessionID, r.Method, r.URL.Path, r.RemoteAddr, r.ContentLength)
 
 		queryParameters := r.URL.Query()
 		parmMsg := strings.Builder{}
@@ -45,7 +45,7 @@ func LogRequest(r *http.Request, sessionID int32) {
 		}
 
 		if parmMsg.Len() > 0 {
-			ui.Debug(ui.RestLogger, "[%d] Query parameters:\n%s", sessionID,
+			ui.WriteLog(ui.RestLogger, "[%d] Query parameters:\n%s", sessionID,
 				util.SessionLog(sessionID, strings.TrimSuffix(parmMsg.String(), "\n")))
 		}
 
@@ -70,7 +70,7 @@ func LogRequest(r *http.Request, sessionID int32) {
 			}
 		}
 
-		ui.Debug(ui.RestLogger, "[%d] Received headers:\n%s",
+		ui.WriteLog(ui.RestLogger, "[%d] Received headers:\n%s",
 			sessionID,
 			util.SessionLog(sessionID,
 				strings.TrimSuffix(headerMsg.String(), "\n"),
@@ -96,7 +96,7 @@ func LogMemoryStatistics() {
 			(currentStats.TotalAlloc != previousStats.TotalAlloc) ||
 			(currentStats.Sys != previousStats.Sys) ||
 			(currentStats.NumGC != previousStats.NumGC) {
-			ui.Debug(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
+			ui.Log(ui.ServerLogger, "Memory: Allocated(%8.3fmb) Total(%8.3fmb) System(%8.3fmb) GC(%d) ",
 				bToMb(currentStats.Alloc), bToMb(currentStats.TotalAlloc), bToMb(currentStats.Sys), currentStats.NumGC)
 		}
 

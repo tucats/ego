@@ -141,7 +141,7 @@ func (p *Package) Set(key string, value interface{}) {
 			action = "update"
 		}
 
-		ui.Debug(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.name, action, key, v))
+		ui.Log(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.name, action, key, v))
 	}
 
 	p.items[key] = value
@@ -171,7 +171,7 @@ func (p *Package) Merge(source Package) {
 		if _, found := p.Get(key); !found {
 			value, _ := source.Get(key)
 			p.Set(key, value)
-			ui.Debug(ui.CompilerLogger, "... merging key %s from existing package", key)
+			ui.Log(ui.CompilerLogger, "... merging key %s from existing package", key)
 		}
 	}
 }

@@ -54,7 +54,7 @@ func authByteCode(c *Context, i interface{}) error {
 		writeResponse(c, "401 Not authorized")
 		writeStatus(c, http.StatusUnauthorized)
 
-		ui.Debug(ui.InfoLogger, "@authenticated request provides no credentials")
+		ui.Log(ui.InfoLogger, "@authenticated request provides no credentials")
 
 		return nil
 	}
@@ -66,7 +66,7 @@ func authByteCode(c *Context, i interface{}) error {
 		c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
 		writeStatus(c, http.StatusForbidden)
-		ui.Debug(ui.InfoLogger, "@authenticated token: no valid token")
+		ui.Log(ui.InfoLogger, "@authenticated token: no valid token")
 
 		return nil
 	}
@@ -79,7 +79,7 @@ func authByteCode(c *Context, i interface{}) error {
 			writeResponse(c, "401 Not authorized")
 			writeStatus(c, http.StatusUnauthorized)
 
-			ui.Debug(ui.InfoLogger, "@authenticated user: no credentials")
+			ui.Log(ui.InfoLogger, "@authenticated user: no credentials")
 
 			return nil
 		}
@@ -100,7 +100,7 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
-			ui.Debug(ui.InfoLogger, "@authenticated any: not authenticated")
+			ui.Log(ui.InfoLogger, "@authenticated any: not authenticated")
 
 			return nil
 		}
@@ -119,7 +119,7 @@ func authByteCode(c *Context, i interface{}) error {
 			c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
-			ui.Debug(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
+			ui.Log(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))
 		}
 	}
 

@@ -144,10 +144,10 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Does this optimization match?
 			if found {
 				if count == 0 && ui.IsActive(ui.OptimizerLogger) {
-					ui.Debug(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.name)
+					ui.Log(ui.OptimizerLogger, "@@@ Optimizing bytecode %s @@@", b.name)
 				}
 
-				ui.Debug(ui.OptimizerLogger, "Optimization found in %s: %s", b.name, optimization.Description)
+				ui.Log(ui.OptimizerLogger, "Optimization found in %s: %s", b.name, optimization.Description)
 
 				// Make a copy of the replacements, with the token values from the
 				// source stream inserted as appropriate.
@@ -210,8 +210,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	}
 
 	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.nextAddress != startingSize {
-		ui.Debug(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.nextAddress)
-		ui.Debug(ui.OptimizerLogger, "")
+		ui.Log(ui.OptimizerLogger, "Found %d optimization(s) for net change in size of %d instructions", count, startingSize-b.nextAddress)
+		ui.Log(ui.OptimizerLogger, "")
 	}
 
 	return count, nil
@@ -240,12 +240,12 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	savedBytecodeLoggerState := ui.IsActive(ui.ByteCodeLogger)
 
 	defer func() {
-		ui.SetLogger(ui.ByteCodeLogger, savedBytecodeLoggerState)
+		ui.Active(ui.ByteCodeLogger, savedBytecodeLoggerState)
 	}()
 
 	if ui.IsActive(ui.OptimizerLogger) {
-		ui.SetLogger(ui.ByteCodeLogger, true)
-		ui.Debug(ui.OptimizerLogger, "Patching, existing code:")
+		ui.Active(ui.ByteCodeLogger, true)
+		ui.Log(ui.OptimizerLogger, "Patching, existing code:")
 		b.Disasm(start, start+deleteSize)
 	}
 
@@ -267,8 +267,8 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	b.nextAddress = b.nextAddress - offset
 
 	if ui.IsActive(ui.OptimizerLogger) {
-		ui.SetLogger(ui.ByteCodeLogger, true)
-		ui.Debug(ui.OptimizerLogger, "Patching, new code:")
+		ui.Active(ui.ByteCodeLogger, true)
+		ui.Log(ui.OptimizerLogger, "Patching, new code:")
 		b.Disasm(start, start+len(insert))
 	}
 }
@@ -312,7 +312,7 @@ func (b *ByteCode) constantStructOptimizer() int {
 				},
 			})
 
-			ui.Debug(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.name)
+			ui.Log(ui.OptimizerLogger, "Optimization found in %s: Static struct", b.name)
 
 			count++
 		}
