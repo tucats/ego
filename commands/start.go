@@ -77,7 +77,7 @@ func Start(c *cli.Context) error {
 		}
 
 		// Is there a debug log identified?
-		if v == "--debug" || v == "-d" {
+		if v == "--log" || v == "-l" {
 			loggingNamesArg = i + 1
 		}
 
@@ -87,7 +87,7 @@ func Start(c *cli.Context) error {
 		}
 
 		// Is there a log file to use as the server's stdout?
-		if v == "--log" {
+		if v == "--log-file" {
 			logNameArg = i + 1
 		}
 	}
@@ -104,7 +104,7 @@ func Start(c *cli.Context) error {
 		if defaultNames := settings.Get(defs.ServerDefaultLogSetting); defaultNames != "" {
 			newArgs := make([]string, 3)
 			newArgs[0] = args[0]
-			newArgs[1] = "-d"
+			newArgs[1] = "--log"
 			newArgs[2] = defaultNames
 			args = append(newArgs, args[1:]...)
 		}
@@ -151,7 +151,7 @@ func Start(c *cli.Context) error {
 
 	// Is there a log file specified (either as a command-line option or as an
 	// environment variable)? If not, use the default name.
-	logFileName, _ := c.String("log")
+	logFileName, _ := c.String("log-file")
 	if logFileName == "" {
 		logFileName = os.Getenv(defs.EgoLogEnv)
 	}
@@ -168,7 +168,7 @@ func Start(c *cli.Context) error {
 	if logNameArg > 0 {
 		args[logNameArg] = logFileName
 	} else {
-		args = append(args, "--log")
+		args = append(args, "--log-file")
 		args = append(args, logFileName)
 	}
 

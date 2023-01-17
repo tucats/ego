@@ -49,11 +49,11 @@ func LanguageAction(c *cli.Context) error {
 	return nil
 }
 
-// DebugAction is an action routine to set the loggers that will get debug messages
+// LogAction is an action routine to set the loggers that will get debug messages
 // during execution. This must be a string list, and each named logger is enabled.
 // If a logger name is not valid, an error is returned.
-func DebugAction(c *cli.Context) error {
-	loggers, specified := c.FindGlobal().StringList("debug")
+func LogAction(c *cli.Context) error {
+	loggers, specified := c.FindGlobal().StringList("log")
 
 	if specified {
 		for _, v := range loggers {
@@ -67,6 +67,17 @@ func DebugAction(c *cli.Context) error {
 				ui.Active(logger, true)
 			}
 		}
+	}
+
+	return nil
+}
+
+// LogFileAction is an action routine to set the name of the output log file.
+func LogFileAction(c *cli.Context) error {
+	logFile, specified := c.FindGlobal().String("log-file")
+
+	if specified {
+		return ui.OpenLogFile(logFile, false)
 	}
 
 	return nil

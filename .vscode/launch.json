@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}", 
             "debugAdapter": "dlv-dap",
-            "args": ["-d", "cli"]
+            "args": ["--log", "cli"]
         },  
         {
             "name": "run with filename but no verb",
@@ -39,7 +39,7 @@
         "mode": "auto",
         "program": "${workspaceFolder}", 
         "debugAdapter": "dlv-dap",
-        "args": ["-d", "rest", "db", "drop", "fizbo"]
+        "args": ["--log", "rest", "db", "drop", "fizbo"]
     },
     {
         "name": "insert row into 'table'",
@@ -48,7 +48,7 @@
         "mode": "auto",
         "program": "${workspaceFolder}", 
         "debugAdapter": "dlv-dap",
-        "args": ["-d", "rest", "db", "insert", "table", "id=101", "name='Bob'"]
+        "args": ["--log", "rest", "db", "insert", "table", "id=101", "name='Bob'"]
     },
     {
         "name": "profile show token",
@@ -64,7 +64,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-d", "app,token"]
+            "args": ["--log", "app,token"]
         },
         {
             "name": "ego test <all>",
@@ -80,7 +80,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "-d", "trace", "run", "test.ego", "-o=0"]
+            "args": [ "--log", "trace", "run", "test.ego", "-o=0"]
         },
         {
             "name": "Debug test.ego",
@@ -88,7 +88,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["run", "test.ego", "-d"]
+            "args": ["run", "test.ego", "--log"]
         },
 
         {
@@ -98,7 +98,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}", 
             "debugAdapter": "dlv-dap",
-            "args": ["-d", "optimizer", "test", "-o=1"]
+            "args": ["--log", "optimizer", "test", "-o=1"]
         },  
         {
             "name": "Trace test.ego",
@@ -114,7 +114,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-d", "trace", "test", "test.ego"]
+            "args": ["--log", "trace", "test", "test.ego"]
         },
         {
             "name": "Trace test test.ego",
@@ -122,7 +122,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-d", "trace", "test", "test.ego"]
+            "args": ["--log", "trace", "test", "test.ego"]
         },
         {
             "name": "Logon to local server",
@@ -130,7 +130,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "-d", "rest", "logon", "-l", "homebase.local", "-u", "admin", "-p", "password"]
+            "args": [ "--log", "rest", "logon", "-l", "homebase.local", "-u", "admin", "-p", "password"]
         },
         {
             "name": "Local ego server",
@@ -138,7 +138,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["-d", "trace,compiler,debug,symbols", "server", "run", "-k"]
+            "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "-k"]
         },
         {
             "name": "Detached ego server",

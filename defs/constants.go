@@ -27,6 +27,10 @@ const EgoLogEnv = "EGO_LOG"
 // are to be enabled by default at startup (before command line processing).
 const EgoDefaultLogging = "EGO_DEFAULT_LOGGING"
 
+// The environment variable that contains the name to use for writing log
+// file messages. If not specified, defaults to writing to stdout.
+const EgoDefaultLogFileName = "EGO_LOG_FILE"
+
 // The file extension for Ego programs".
 const EgoFilenameExtension = ".ego"
 

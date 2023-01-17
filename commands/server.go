@@ -70,7 +70,7 @@ func RunServer(c *cli.Context) error {
 	if !c.WasFound("no-log") {
 		ui.Active(ui.ServerLogger, true)
 
-		if fn, ok := c.String("log"); ok {
+		if fn, ok := c.String("log-file"); ok {
 			err := ui.OpenLogFile(fn, true)
 			if err != nil {
 				return err

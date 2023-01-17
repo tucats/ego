@@ -1038,11 +1038,14 @@ var Messages = map[string]map[string]string{
 	"opt.filter": {
 		"en": "List of optional filter clauses",
 	},
-	"opt.global.debug": {
-		"en": "Debug loggers to enable",
-	},
 	"opt.global.format": {
 		"en": "Specify text, json or indented output format",
+	},
+	"opt.global.log": {
+		"en": "Loggers to enable",
+	},
+	"opt.global.log.file": {
+		"en": "Name of file where log messages are written",
 	},
 	"opt.global.profile": {
 		"en": "Name of profile to use",

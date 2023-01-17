@@ -627,7 +627,7 @@ var ServerRunGrammar = []cli.Option{
 		Private:     true,
 	},
 	{
-		LongName:    "log",
+		LongName:    "log-file",
 		Description: "server.run.log",
 		OptionType:  cli.StringType,
 	},
@@ -717,7 +717,7 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_DISASM",
 	},
 	{
-		LongName:    "log",
+		LongName:    "log-file",
 		Description: "run.log",
 		OptionType:  cli.StringType,
 	},

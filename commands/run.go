@@ -25,7 +25,7 @@ import (
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) error {
-	if logFile, found := c.String("log"); found {
+	if logFile, found := c.String("log-file"); found {
 		err := ui.OpenLogFile(logFile, false)
 		if err != nil {
 			return err

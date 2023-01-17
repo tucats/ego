@@ -49,12 +49,19 @@ func runFromContext(context *cli.Context) error {
 			EnvironmentVariable: "EGO_PROFILE",
 		},
 		{
-			LongName:            "debug",
-			ShortName:           "d",
-			Description:         "global.debug",
+			LongName:            "log",
+			ShortName:           "l",
+			Description:         "global.log",
 			OptionType:          cli.StringListType,
-			Action:              DebugAction,
+			Action:              LogAction,
 			EnvironmentVariable: defs.EgoDefaultLogging,
+		},
+		{
+			LongName:            "log-file",
+			Description:         "global.log.file",
+			OptionType:          cli.StringType,
+			Action:              LogFileAction,
+			EnvironmentVariable: defs.EgoDefaultLogFileName,
 		},
 		{
 			LongName:            "format",
