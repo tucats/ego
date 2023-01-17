@@ -150,7 +150,7 @@ func RunAction(c *cli.Context) error {
 			// false, but we know we're going to use user input. So this first
 			// time through, make the text just be an empty string. This will
 			// force the run loop to compile the empty string, which will process
-			// all the uuto-imports. In this way, the use of -d TRACE on the
+			// all the uuto-imports. In this way, the use of --log TRACE on the
 			// command line will handle all the import processing BEFORE the
 			// first prompt, so the tracing after the prompt is just for the
 			// statement(s) typed in at the prompt.

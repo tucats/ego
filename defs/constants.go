@@ -162,7 +162,7 @@ const (
 	ServerTokenExpirationSetting = PrivilegedKeyPrefix + "server.token.expiration"
 
 	// A string indicating the default logging to be assigned to a server that is
-	// started without an explicit -d setting.
+	// started without an explicit --log setting.
 	ServerDefaultLogSetting = PrivilegedKeyPrefix + "server.default.logging"
 
 	// How many old logs do we maintain by default when in server mode?

@@ -115,11 +115,11 @@ command to display the current profile values.
 ## Logging
 The _Ego_ command has a number of logging message classes that can be enabled to 
 produce diagnostic information to the stdout console. These are enabled with the 
-`-d` option immediately following the `ego` command and before any sub-command 
+`--log` option immediately following the `ego` command and before any sub-command 
 is given. The option must be followed by one or more logger names, separated by 
 commas. For example,
 
-    ego -d trace,symbols run myprogram.ego
+    ego --log trace,symbols run myprogram.ego
     
 This enables the TRACE and SYMBOLS loggers and runs the program "myprogram.ego".
 The trace messages all have the same basic format, as shown by this sample line 
