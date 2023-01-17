@@ -17,10 +17,10 @@ func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Strings()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Strings()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Strings()")
+	return nil, errors.ErrArgumentType.In("Strings()").Context(args[0])
 }
 
 // SortBytes implements the sort.Bytes function.
@@ -35,7 +35,7 @@ func SortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.ErrWrongArrayValueType.Context("sort.Bytes()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Bytes()")
+	return nil, errors.ErrArgumentType.In("sort.Bytes()")
 }
 
 // SortInts implements the sort.Ints function.
@@ -47,10 +47,10 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Ints()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Ints()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Ints()")
+	return nil, errors.ErrArgumentType.In("sort.Ints()")
 }
 
 // SortInt32s implements the sort.Int32s function.
@@ -62,10 +62,10 @@ func SortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Int32s()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Int32s()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Int32s()")
+	return nil, errors.ErrArgumentType.In("sort.Int32s()")
 }
 
 // SortInt64s implements the sort.Int64s function.
@@ -77,10 +77,10 @@ func SortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Int64s()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Int64s()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Int64s()")
+	return nil, errors.ErrArgumentType.In("sort.Int64s()")
 }
 
 // SortFloats implements the sort.Floats function.
@@ -92,10 +92,10 @@ func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Floats()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Floats()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Floats()")
+	return nil, errors.ErrArgumentType.In("sort.Floats()")
 }
 
 // SortFloat32s implements the sort.Float32s function.
@@ -107,10 +107,10 @@ func SortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Float32s()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Float32s()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Float32s()")
+	return nil, errors.ErrArgumentType.In("sort.Float32s()")
 }
 
 // SortFloat64s implements the sort.Float64s function.
@@ -122,10 +122,10 @@ func SortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Float64s()")
+		return nil, errors.ErrWrongArrayValueType.In("sort.Float64s()")
 	}
 
-	return nil, errors.ErrArgumentType.Context("sort.Float64s()")
+	return nil, errors.ErrArgumentType.In("sort.Float64s()")
 }
 
 // Sort implements the sort.Sort() function, whichi sorts an array regardless of it's type.
