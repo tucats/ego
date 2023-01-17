@@ -30,6 +30,14 @@ func handler( req http.Request, resp http.Response) {
 
     // Convert the value to an integer and get the list of factors.
     try {
+        v := int(value)
+        if v == nil {
+            resp.WriteStatus(400)
+            resp.WriteMessage(fmt.Sprintf("invalid integer: %s", value))
+
+            return
+        }
+
         r := math.Factor(int(value))
 
         // Return a success status and the factors.
