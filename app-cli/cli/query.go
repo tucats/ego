@@ -1,6 +1,8 @@
 package cli
 
-import "strings"
+import (
+	"strings"
+)
 
 // GetParameter returns the ith parameter string parsed, or an
 // empty string if not found.
@@ -108,6 +110,34 @@ func (c *Context) String(name string) (string, bool) {
 	}
 
 	return "", false
+}
+
+// Keyword returns the value of a named string parameter from the
+// parsed grammar. The result is the ordinal position (zero-based)
+// on the keyword from the list. If the value is not in the list,
+// it returns -1.
+func (c *Context) Keyword(name string) (int, bool) {
+	for _, entry := range c.Grammar {
+		if entry.OptionType == Subcommand && entry.Found {
+			subContext := entry.Value.(Context)
+
+			return subContext.Keyword(name)
+		}
+
+		if entry.Found && (entry.OptionType == KeywordType) && name == entry.LongName {
+			if value, ok := entry.Value.(string); ok {
+				for n, k := range entry.Keywords {
+					if strings.EqualFold(value, k) {
+						return n, true
+					}
+				}
+
+				return -1, false
+			}
+		}
+	}
+
+	return 0, false
 }
 
 // StringList returns the array of strings that are the value of

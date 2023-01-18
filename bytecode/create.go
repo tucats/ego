@@ -59,17 +59,18 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 
 			valueType := data.TypeOf(value)
 
-			// If we are initializing any integer or float array, coerce the
-			// value to the correct type as long as the value is also an integer
-			// or float type. This lets initializers of []int32{} be expressed as
-			// default int constant values, etc.
-			if isInt && valueType.IsIntegerType() {
-				value = baseType.Coerce(value)
-			} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
-				value = baseType.Coerce(value)
-			} else if c.Static {
-				if !valueType.IsType(baseType) {
-					return c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
+			// If we are initializing any integer or float array, we can coerce
+			// value from another integer type if we are in loose or dynamic
+			// typing.
+			if c.Static < 2 {
+				if isInt && valueType.IsIntegerType() {
+					value = baseType.Coerce(value)
+				} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
+					value = baseType.Coerce(value)
+				} else {
+					if !valueType.IsType(baseType) {
+						return c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
+					}
 				}
 			}
 
@@ -134,8 +135,9 @@ func arrayByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		// If we are in static mode, array must be homogeneous.
-		if c.Static {
+		// If we are in static mode, array must be homogeneous unless
+		// we are making an array of interfaces.
+		if c.Static == 0 && !kind.IsType(data.ArrayType(data.InterfaceType)) {
 			if index == 0 {
 				arrayType = reflect.TypeOf(value)
 				_ = result.SetType(data.TypeOf(value))
@@ -145,6 +147,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 				}
 			}
 		}
+
 		// All good, load it into the array after making an attempt at a coercion.
 		value = kind.BaseType().Coerce(value)
 
@@ -279,7 +282,7 @@ func structByteCode(c *Context, i interface{}) error {
 	// If we are in static mode, or this is a non-empty definition,
 	// mark the structure as having static members. That means you
 	// cannot modify the field names or add/delete fields.
-	if c.Static || count > 0 {
+	if c.Static == 0 || count > 0 {
 		structure.SetStatic(true)
 	}
 

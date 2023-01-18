@@ -4,7 +4,7 @@
 a := "Tom"
 
 {
-    @type static
+    @type strict
 
     // Set a (locally scoped) version of the same variable to an integer
     a := 3

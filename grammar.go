@@ -664,10 +664,11 @@ var ServerRunGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
-		LongName:            "static-types",
+		LongName:            defs.TypingOption,
 		Description:         "server.run.static",
-		OptionType:          cli.BooleanType,
-		EnvironmentVariable: "EGO_STATIC_TYPES",
+		OptionType:          cli.KeywordType,
+		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},
+		EnvironmentVariable: "EGO_TYPING",
 	},
 	{
 		LongName:            "realm",
@@ -729,10 +730,12 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_TRACE",
 	},
 	{
-		LongName:            "static-types",
-		Description:         "run.static",
-		OptionType:          cli.BooleanType,
-		EnvironmentVariable: "EGO_STATIC_TYPES",
+		LongName:    defs.TypingOption,
+		Description: "run.static",
+		OptionType:  cli.KeywordType,
+		Keywords:    []string{defs.Strict, defs.Loose, defs.Dynamic},
+
+		EnvironmentVariable: "EGO_TYPING",
 	},
 	{
 		LongName:    "debug",
@@ -780,10 +783,11 @@ var RunGrammar = []cli.Option{
 // TestGrammar handles the command line options.
 var TestGrammar = []cli.Option{
 	{
-		LongName:            "static-types",
+		LongName:            defs.TypingOption,
 		Description:         "run.static",
-		OptionType:          cli.BooleanType,
-		EnvironmentVariable: "EGO_STATIC_TYPES",
+		OptionType:          cli.KeywordType,
+		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},
+		EnvironmentVariable: "EGO_TYPING",
 	},
 	{
 		LongName:    "debug",

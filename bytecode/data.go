@@ -218,7 +218,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *bool:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, true)
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -228,7 +228,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *byte:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, byte(1))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -238,7 +238,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *int32:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, int32(1))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -248,7 +248,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *int:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, int(1))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -258,7 +258,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *int64:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, int64(1))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -268,7 +268,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *float64:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, float64(0))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -278,7 +278,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *float32:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, float32(0))
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)
@@ -288,7 +288,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 
 	case *string:
 		d := src
-		if !c.Static {
+		if c.Static > 1 {
 			d = data.Coerce(src, "")
 		} else if _, ok := d.(string); !ok {
 			return c.error(errors.ErrInvalidVarType).Context(name)

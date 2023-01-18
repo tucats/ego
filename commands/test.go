@@ -38,10 +38,15 @@ func TestAction(c *cli.Context) error {
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests")
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
 
-	if c.WasFound(defs.StaticTypesOption) {
-		staticTypes = c.Boolean(defs.StaticTypesOption)
+	if c.WasFound(defs.TypingOption) {
+		typeOption, _ := c.Keyword(defs.TypingOption)
+		if typeOption < 0 {
+			typeOption = 0
+		}
+
+		staticTypes = typeOption
 	}
 
 	if c.WasFound(defs.OptimizerOption) {

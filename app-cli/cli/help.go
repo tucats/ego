@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/app-cli/ui"
@@ -192,6 +193,9 @@ func ShowHelp(c *Context) {
 
 			case StringListType:
 				name = name + " <list>"
+
+			case KeywordType:
+				name = name + " " + strings.Join(option.Keywords, "|")
 			}
 
 			fullDescription := i18n.T(option.Description)

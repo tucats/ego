@@ -414,12 +414,25 @@ func (c *Compiler) errorDirective() error {
 }
 
 // typeDirective implements the @type directive which must be followed by the
-// keyword "static" or "dynamic", indicating the type of type checking.
+// keyword "strict" or "dynamic", indicating the type of type checking.
 func (c *Compiler) typeDirective() error {
 	var err error
 
-	if t := c.t.NextText(); util.InList(t, "static", "dynamic") {
-		c.b.Emit(bytecode.Push, t == "static")
+	if t := c.t.NextText(); util.InList(t, defs.Strict, defs.Loose, defs.Dynamic) {
+		value := 0
+
+		switch strings.ToLower(t) {
+		case defs.Strict:
+			value = 0
+
+		case defs.Loose:
+			value = 1
+
+		case defs.Dynamic:
+			value = 2
+		}
+
+		c.b.Emit(bytecode.Push, value)
 	} else {
 		err = c.error(errors.ErrInvalidTypeCheck, t)
 	}

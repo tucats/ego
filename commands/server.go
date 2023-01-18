@@ -199,8 +199,8 @@ func RunServer(c *cli.Context) error {
 		services.MaxCachedEntries, _ = c.Integer("cache-size")
 	}
 
-	if c.WasFound("static-types") {
-		settings.SetDefault(defs.StaticTypesSetting, "dynamic")
+	if optionValue, found := c.String(defs.TypingOption); found {
+		settings.SetDefault(defs.StaticTypesSetting, optionValue)
 	}
 
 	if c.WasFound("sandbox-path") {

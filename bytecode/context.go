@@ -57,7 +57,7 @@ type Context struct {
 	threadID             int32
 	fullSymbolScope      bool
 	running              bool
-	Static               bool
+	Static               int
 	debugging            bool
 	singleStep           bool
 	breakOnReturn        bool
@@ -80,9 +80,9 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// Determine whether static data typing is in effect. This is
 	// normally off, but can be set by a global variable (which is
 	// ultimately set by a profile setting or CLI option).
-	static := false
+	static := 3
 	if s, found := s.Get("__static_data_types"); found {
-		static = data.Bool(s)
+		static = data.Int(s)
 	}
 
 	// If we weren't given a table, create an empty temp table.
@@ -375,7 +375,7 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) error {
-	if !c.Static || value == nil {
+	if c.Static != 0 || value == nil {
 		return nil
 	}
 

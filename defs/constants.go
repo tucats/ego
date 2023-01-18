@@ -92,7 +92,7 @@ const (
 	// Should the bytecode generator attempt an optimization pass?
 	OptimizerSetting = PrivilegedKeyPrefix + "compiler.optimize"
 
-	// Should the Ego program(s) be run with "static" or
+	// Should the Ego program(s) be run with "strict" or
 	// "dynamic" typing? The default is "dynamic".
 	StaticTypesSetting = PrivilegedKeyPrefix + "compiler.types"
 
@@ -226,7 +226,7 @@ const (
 	AutoImportOption      = "auto-import"
 	DisassembleOption     = "disassemble"
 	FullSymbolScopeOption = "full-symbol-scope"
-	StaticTypesOption     = "static-types"
+	TypingOption          = "typing"
 	SymbolTableSizeOption = "symbol-allocation"
 	OptimizerOption       = "optimize"
 )
@@ -244,7 +244,8 @@ const (
 	True    = "true"
 	False   = "false"
 	Any     = "any"
-	Static  = "static"
+	Strict  = "strict"
+	Loose   = "loose"
 	Dynamic = "dynamic"
 	Main    = "main"
 )

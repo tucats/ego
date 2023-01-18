@@ -32,7 +32,11 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	symbolTable.SetAlways("__exec_mode", "server")
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	if staticTypes < 0 {
+		staticTypes = 0
+	}
+
 	symbolTable.SetAlways("__static_data_types", staticTypes)
 
 	u := r.URL.Query()

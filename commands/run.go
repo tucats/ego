@@ -93,9 +93,9 @@ func RunAction(c *cli.Context) error {
 
 	interactive := false
 
-	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, "dynamic", "static") == 2
-	if c.WasFound(defs.StaticTypesOption) {
-		staticTypes = c.Boolean(defs.StaticTypesOption)
+	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	if value, found := c.Keyword(defs.TypingOption); found {
+		staticTypes = value
 	}
 
 	argc := c.GetParameterCount()
@@ -329,7 +329,7 @@ func RunAction(c *cli.Context) error {
 	return nil
 }
 
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes, interactive, disassemble bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes int, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 

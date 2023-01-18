@@ -22,7 +22,7 @@ func TestStructImpl(t *testing.T) {
 		arg     interface{}
 		want    interface{}
 		wantErr bool
-		static  bool
+		static  int
 	}{
 		{
 			name:  "two member incomplete test",
@@ -33,7 +33,7 @@ func TestStructImpl(t *testing.T) {
 				"test":   0,
 			}).SetStatic(true).AsType(typeDef),
 			wantErr: false,
-			static:  true,
+			static:  0,
 		},
 		{
 			name:  "one member test",
@@ -42,6 +42,7 @@ func TestStructImpl(t *testing.T) {
 			want: data.NewStructFromMap(map[string]interface{}{
 				"test": 123,
 			}).SetStatic(true),
+			static:  2,
 			wantErr: false,
 		},
 		{
@@ -52,6 +53,7 @@ func TestStructImpl(t *testing.T) {
 				"test":   123,
 				"active": true,
 			}).SetStatic(true),
+			static:  2,
 			wantErr: false,
 		},
 		{
@@ -63,7 +65,7 @@ func TestStructImpl(t *testing.T) {
 				"test":   0,
 			}).SetStatic(true).AsType(typeDef),
 			wantErr: true,
-			static:  true,
+			static:  0,
 		},
 	}
 
@@ -104,7 +106,7 @@ func Test_storeByteCode(t *testing.T) {
 		stack        []interface{}
 		want         interface{}
 		err          error
-		static       bool
+		static       int
 		debug        bool
 	}{
 		{
@@ -112,6 +114,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{},
+			static:       2,
 			err:          errors.ErrStackUnderflow,
 			want:         0,
 		},
@@ -121,6 +124,7 @@ func Test_storeByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			err:          nil,
+			static:       2,
 			want:         0,
 		},
 		{
@@ -129,6 +133,7 @@ func Test_storeByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			err:          nil,
+			static:       2,
 			want:         int32(55),
 		},
 		{
@@ -136,6 +141,7 @@ func Test_storeByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          errors.ErrReadOnly.Context("_a"),
 		},
 		{
@@ -144,6 +150,7 @@ func Test_storeByteCode(t *testing.T) {
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
 			err:          nil,
+			static:       2,
 			want:         int32(55),
 		},
 		{
@@ -152,7 +159,7 @@ func Test_storeByteCode(t *testing.T) {
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
 			err:          errors.ErrInvalidVarType,
-			static:       true,
+			static:       0,
 			want:         int32(55),
 		},
 		{
@@ -161,6 +168,7 @@ func Test_storeByteCode(t *testing.T) {
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
 			err:          errors.ErrUnknownSymbol.Context("a"),
+			static:       2,
 			want:         int32(55),
 		},
 	}
@@ -233,7 +241,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 		stack        []interface{}
 		want         interface{}
 		err          error
-		static       bool
+		static       int
 		debug        bool
 	}{
 		{
@@ -242,6 +250,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{},
 			err:          errors.ErrStackUnderflow,
+			static:       2,
 			want:         0,
 		},
 		{
@@ -249,6 +258,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "_",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -257,6 +267,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -265,6 +276,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			want:         int32(55),
 		},
 		{
@@ -272,6 +284,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -280,7 +293,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         int32(55),
 		},
 		{
@@ -288,6 +301,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			want:         int32(55),
 		},
 	}
@@ -360,7 +374,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		stack        []interface{}
 		want         interface{}
 		err          error
-		static       bool
+		static       int
 		debug        bool
 	}{
 		{
@@ -369,6 +383,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{},
 			err:          errors.ErrStackUnderflow,
+			static:       2,
 			want:         0,
 		},
 		{
@@ -376,6 +391,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "_",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -384,6 +400,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -392,6 +409,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			want:         int32(55),
 		},
 		{
@@ -399,6 +417,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -407,7 +426,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         int32(55),
 		},
 		{
@@ -415,6 +434,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: nil,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			want:         int32(55),
 		},
 	}
@@ -489,7 +509,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 		stack        []interface{}
 		want         interface{}
 		err          error
-		static       bool
+		static       int
 		debug        bool
 	}{
 		{
@@ -498,6 +518,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			initialValue: 0,
 			stack:        []interface{}{},
 			err:          errors.ErrStackUnderflow,
+			static:       2,
 			want:         0,
 		},
 		{
@@ -505,6 +526,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "_",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          errors.ErrInvalidIdentifier,
 			want:         int32(55),
 		},
@@ -513,6 +535,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: true,
 			stack:        []interface{}{byte(55)},
+			static:       2,
 			err:          nil,
 			want:         true,
 		},
@@ -521,6 +544,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: byte(1),
 			stack:        []interface{}{byte(55)},
+			static:       2,
 			err:          nil,
 			want:         byte(55),
 		},
@@ -529,6 +553,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: int32(55),
 			stack:        []interface{}{55},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
@@ -537,6 +562,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: 55,
 			stack:        []interface{}{55},
+			static:       2,
 			err:          nil,
 			want:         55,
 		},
@@ -545,6 +571,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: int64(55),
 			stack:        []interface{}{int64(55)},
+			static:       2,
 			err:          nil,
 			want:         int64(55),
 		},
@@ -553,6 +580,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: float32(0),
 			stack:        []interface{}{float32(3.14)},
+			static:       2,
 			err:          nil,
 			want:         float32(3.14),
 		},
@@ -561,6 +589,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: float64(0),
 			stack:        []interface{}{float64(3.14)},
+			static:       2,
 			err:          nil,
 			want:         float64(3.14),
 		},
@@ -569,6 +598,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "_a",
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			want:         int32(55),
 			err:          errors.ErrInvalidIdentifier,
 		},
@@ -577,6 +607,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
+			static:       2,
 			err:          nil,
 			want:         "55",
 		},
@@ -585,7 +616,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: int(0),
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         int(55),
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -594,7 +625,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: byte(9),
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         byte(55),
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -603,7 +634,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: int64(0),
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         int64(55),
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -612,7 +643,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: float32(0),
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         float32(55),
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -621,7 +652,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: float64(0),
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         float64(55),
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -630,7 +661,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: false,
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         true,
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -639,7 +670,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: "test",
 			stack:        []interface{}{int32(55)},
-			static:       true,
+			static:       0,
 			want:         "55",
 			err:          errors.ErrInvalidVarType.Context("a"),
 		},
@@ -727,7 +758,7 @@ func Test_loadByteCode(t *testing.T) {
 		stack        []interface{}
 		want         interface{}
 		err          error
-		static       bool
+		static       int
 		debug        bool
 	}{
 		{
@@ -735,22 +766,25 @@ func Test_loadByteCode(t *testing.T) {
 			arg:          "a",
 			initialValue: int32(55),
 			stack:        []interface{}{},
+			static:       2,
 			err:          nil,
 			want:         int32(55),
 		},
 		{
-			name:  "variable not found",
-			arg:   "a",
-			stack: []interface{}{},
-			err:   errors.ErrUnknownIdentifier.Context("a"),
-			want:  int32(55),
+			name:   "variable not found",
+			arg:    "a",
+			stack:  []interface{}{},
+			static: 2,
+			err:    errors.ErrUnknownIdentifier.Context("a"),
+			want:   int32(55),
 		},
 		{
-			name:  "variable name invalid",
-			arg:   "",
-			stack: []interface{}{},
-			err:   errors.ErrInvalidIdentifier.Context(""),
-			want:  int32(55),
+			name:   "variable name invalid",
+			arg:    "",
+			stack:  []interface{}{},
+			static: 2,
+			err:    errors.ErrInvalidIdentifier.Context(""),
+			want:   int32(55),
 		},
 	}
 
