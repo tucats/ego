@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/tucats/ego/defs"
 	"gopkg.in/resty.v1"
 )
+
+var verbose = false
 
 // FormatUnquoted formats a value but does not put quotes on strings.
 func FormatUnquoted(arg interface{}) string {
@@ -24,6 +27,72 @@ func FormatUnquoted(arg interface{}) string {
 	default:
 		return Format(v)
 	}
+}
+
+func FormatWithType(element interface{}) string {
+	switch actual := element.(type) {
+	case error:
+		return "E<" + actual.Error() + ">"
+
+	case string:
+		return strconv.Quote(actual)
+
+	case byte:
+		return fmt.Sprintf("byte(%d)", actual)
+
+	case int32:
+		return fmt.Sprintf("int32(%d)", actual)
+
+	case int:
+		return fmt.Sprintf("int(%d)", actual)
+
+	case int64:
+		return fmt.Sprintf("int64(%d)", actual)
+
+	case float32:
+		return fmt.Sprintf("float32(%f)", actual)
+
+	case float64:
+		return fmt.Sprintf("float64(%f)", actual)
+	}
+
+	fmtString := Format(element)
+	//if strings.HasPrefix(fmtString, "[") && strings.HasSuffix(fmtString, "]") {
+	//	fmtString = strings.TrimSuffix(strings.TrimPrefix(fmtString, "["), "]")
+	//}
+
+	// For things already formatted with a type prefix, don't add to the string.
+	for _, prefix := range []string{"[", "M<", "F<", "Pkg<"} {
+		if strings.HasPrefix(fmtString, prefix) {
+			return fmtString
+		}
+	}
+
+	// Is it a function declaration?
+	parens := 0
+	braces := 0
+	found := false
+
+	for _, ch := range fmtString {
+		if ch == rune('(') {
+			parens = parens + 1
+			found = true
+		} else if ch == rune(')') {
+			parens = parens - 1
+		} else if ch == rune('{') {
+			braces = braces + 1
+			found = true
+		} else if ch == rune('}') {
+			braces = braces - 1
+		}
+	}
+
+	if found && parens == 0 && braces == 0 {
+		return fmtString
+	}
+
+	// It's some kind of more complex type, output the type and the value(s)
+	return TypeOf(element).String() + "{" + fmtString + "}"
 }
 
 func Format(element interface{}) string {
@@ -104,47 +173,36 @@ func Format(element interface{}) string {
 		var b strings.Builder
 
 		keys := v.Keys()
-		needsComma := false
 
 		b.WriteString("Pkg<")
 
-		if v.Builtins() {
-			b.WriteString("builtins")
+		b.WriteString(v.name)
 
-			needsComma = true
+		if v.Builtins() {
+			b.WriteString(", builtins")
 		}
 
 		if v.Imported() {
-			if needsComma {
-				b.WriteString(", ")
-			}
-
-			b.WriteString("imports")
-
-			needsComma = true
+			b.WriteString(", imports")
 		}
 
-		for _, k := range keys {
-			// Skip over hidden values
-			if strings.HasPrefix(k, "__") {
-				continue
+		if verbose {
+			for _, k := range keys {
+				// Skip over hidden values
+				if strings.HasPrefix(k, "__") {
+					continue
+				}
+
+				i, _ := v.Get(k)
+
+				b.WriteRune(' ')
+				b.WriteString(k)
+				b.WriteString(": ")
+				b.WriteString(Format(i))
 			}
-
-			i, _ := v.Get(k)
-
-			if needsComma {
-				b.WriteString(",")
-			}
-
-			needsComma = true
-
-			b.WriteRune(' ')
-			b.WriteString(k)
-			b.WriteString(": ")
-			b.WriteString(Format(i))
 		}
 
-		b.WriteString(" >")
+		b.WriteString(">")
 
 		return b.String()
 

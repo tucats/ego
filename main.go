@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/tucats/ego/app-cli/app"
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -49,6 +51,11 @@ func main() {
 	}
 
 	err := app.Run(EgoGrammar, args)
+
+	// If the runtime stack was used, report this to the tracing log.
+	if maxStackSize := bytecode.MaxStackSize.Load(); maxStackSize > 0 {
+		ui.Log(ui.TraceLogger, "Maximum runtime stack depth: %d", maxStackSize)
+	}
 
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.

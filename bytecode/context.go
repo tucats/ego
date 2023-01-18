@@ -30,6 +30,8 @@ type TryInfo struct {
 // This value is updated atomically during context creation.
 var nextThreadID int32 = 0
 
+var MaxStackSize atomic.Int32
+
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
@@ -280,20 +282,23 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 	stack := c.stack
 
 	if c.stackPointer == 0 {
-		return "<empty>"
+		return ""
 	}
 
 	if newlines {
 		result.WriteString("stack elements:\n")
 	}
 
+	first := true
 	for stackIndex := c.stackPointer - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
-		if stackIndex < len(stack)-1 {
+		if !first {
 			result.WriteString(", ")
 
 			if newlines {
 				result.WriteString("\n")
 			}
+		} else {
+			first = false
 		}
 
 		if newlines {
@@ -301,16 +306,11 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 		}
 
 		// If it's a string, escape the newlines for readability.
-		if stringValue, ok := stack[stackIndex].(string); ok {
-			stringValue = strings.ReplaceAll(stringValue, "\t", "\\t")
-			stringValue = strings.ReplaceAll(stringValue, "\n", "\\n")
-			result.WriteString(stringValue)
-		} else {
-			result.WriteString(data.Format(stack[stackIndex]))
-		}
 
-		if !newlines && result.Len() > 50 {
-			return result.String()[:50] + "..."
+		result.WriteString(data.FormatWithType(stack[stackIndex]))
+
+		if !newlines && result.Len() > 79 {
+			return result.String()[:76] + "..."
 		}
 	}
 
@@ -363,6 +363,10 @@ func (c *Context) push(value interface{}) error {
 
 	c.stack[c.stackPointer] = value
 	c.stackPointer = c.stackPointer + 1
+
+	if c.stackPointer > int(MaxStackSize.Load()) {
+		MaxStackSize.Store(int32(c.stackPointer))
+	}
 
 	return nil
 }

@@ -81,7 +81,7 @@ var dictionary = map[string]string{
 	"functions.PathJoin":           "Join(pathParts... string) string",
 	"functions.Print":              "Print(item... interface{})",
 	"functions.Printf":             "Println(item... interface{})",
-	"functions.Println":            "Print(item... interface{})",
+	"functions.Println":            "Println(item... interface{})",
 	"functions.ProfileDelete":      "Delete(key string)",
 	"functions.ProfileGet":         "Get(key string)",
 	"functions.ProfileKeys":        "Keys() []string",

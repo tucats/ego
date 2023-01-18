@@ -350,6 +350,8 @@ func (a *Array) String() string {
 
 	b.WriteString("[")
 
+	isInterface := a.valueType.IsInterface()
+
 	if a.valueType.Kind() == ByteType.kind {
 		for i, element := range a.bytes {
 			if i > 0 {
@@ -364,7 +366,11 @@ func (a *Array) String() string {
 				b.WriteString(", ")
 			}
 
-			b.WriteString(Format(element))
+			if isInterface {
+				b.WriteString(FormatWithType(element))
+			} else {
+				b.WriteString(Format(element))
+			}
 		}
 	}
 
