@@ -104,6 +104,10 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
 	}
 
+	if address > b.nextAddress {
+		b.nextAddress = address
+	}
+
 	instruction := instruction{Operation: opcode}
 
 	// If there is one operand, store that in the instruction. If
@@ -136,42 +140,11 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...interface{}) {
 
 // Emit emits a single instruction. The opcode is required, and can optionally
 // be followed by an instruction operand (based on whichever instruction)
-// is issued.
+// is issued. The instruction is emitted at the current "next address" of
+// the bytecode object, which is then incremented.
 func (b *ByteCode) Emit(opcode Opcode, operands ...interface{}) {
-	// If the output capacity is too small, expand it.
-	if b.nextAddress >= len(b.instructions) {
-		b.instructions = append(b.instructions, make([]instruction, growthIncrement)...)
-	}
-
-	instruction := instruction{Operation: opcode}
-
-	// If there is one operand, store that in the instruction. If
-	// there are multiple operands, make them into an array.
-	if len(operands) > 0 {
-		if len(operands) > 1 {
-			instruction.Operand = operands
-		} else {
-			instruction.Operand = operands[0]
-		}
-	}
-
-	// If the operand is a token, use the spelling of the token
-	// as the value. If it's an integer or floating point value,
-	// convert the token to a value.
-	if token, ok := instruction.Operand.(tokenizer.Token); ok {
-		text := token.Spelling()
-		if token.IsClass(tokenizer.IntegerTokenClass) {
-			instruction.Operand = data.Int(text)
-		} else if token.IsClass(tokenizer.FloatTokenClass) {
-			instruction.Operand = data.Float64(text)
-		} else {
-			instruction.Operand = text
-		}
-	}
-
-	b.instructions[b.nextAddress] = instruction
-	b.nextAddress = b.nextAddress + 1
-	b.sealed = false
+	b.EmitAt(b.nextAddress, opcode, operands...)
+	b.nextAddress++
 }
 
 // Truncate the output array to the current bytecode size. This is also
