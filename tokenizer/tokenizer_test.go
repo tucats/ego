@@ -16,6 +16,17 @@ func TestTokenize(t *testing.T) {
 		want []Token
 	}{
 		{
+			name: "Float expression",
+			args: args{
+				src: "3.14 + 2",
+			},
+			want: []Token{
+				NewFloatToken("3.14"),
+				AddToken,
+				NewIntegerToken("2"),
+			},
+		},
+		{
 			name: "compound token",
 			args: args{
 				src: "{}",
@@ -62,9 +73,9 @@ func TestTokenize(t *testing.T) {
 			want: []Token{
 				NewIdentifierToken("a"),
 				DefineToken,
-				NewValueToken("5"),
+				NewIntegerToken("5"),
 				LessThanOrEqualsToken,
-				NewValueToken("6")},
+				NewIntegerToken("6")},
 		},
 		{
 			name: "channel compound tokens",
@@ -74,7 +85,7 @@ func TestTokenize(t *testing.T) {
 			want: []Token{
 				NewIdentifierToken("x"),
 				ChannelReceiveToken,
-				NewValueToken("55"),
+				NewIntegerToken("55"),
 			},
 		},
 		{
@@ -90,9 +101,9 @@ func TestTokenize(t *testing.T) {
 				src: "11 + 15",
 			},
 			want: []Token{
-				NewValueToken("11"),
+				NewIntegerToken("11"),
 				AddToken,
-				NewValueToken("15")},
+				NewIntegerToken("15")},
 		},
 		{
 			name: "Integer expression without spaces",
@@ -100,9 +111,9 @@ func TestTokenize(t *testing.T) {
 				src: "11+15",
 			},
 			want: []Token{
-				NewValueToken("11"),
+				NewIntegerToken("11"),
 				AddToken,
-				NewValueToken("15"),
+				NewIntegerToken("15"),
 			},
 		},
 		{
@@ -114,17 +125,6 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("name"),
 				AddToken,
 				NewStringToken("User"),
-			},
-		},
-		{
-			name: "Float expression",
-			args: args{
-				src: "3.14 + 2",
-			},
-			want: []Token{
-				NewValueToken("3.14"),
-				AddToken,
-				NewValueToken("2"),
 			},
 		},
 		// TODO: Add test cases.

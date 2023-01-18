@@ -17,6 +17,10 @@ func NewToken(class TokenClass, spelling string) Token {
 	}
 }
 
+func NewFloatToken(spelling string) Token {
+	return NewToken(FloatTokenClass, spelling)
+}
+
 func NewValueToken(spelling string) Token {
 	return NewToken(ValueTokenClass, spelling)
 }

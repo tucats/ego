@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/util"
 )
 
 // Tokenizer is an instance of a tokenized string.
@@ -135,6 +136,8 @@ func New(src string) *Tokenizer {
 
 		if TypeTokens[NewTypeToken(nextTokenSpelling)] {
 			nextToken = NewTypeToken(nextTokenSpelling)
+		} else if util.InList(nextTokenSpelling, "true", "false") {
+			nextToken = Token{class: BooleanTokenClass, spelling: nextTokenSpelling}
 		} else if tx := NewReservedToken(nextTokenSpelling); tx.IsReserved(true) {
 			nextToken = tx
 		} else if IsSymbol(nextTokenSpelling) {
@@ -146,6 +149,10 @@ func New(src string) *Tokenizer {
 			nextToken = NewStringToken(rawString)
 		} else if strings.HasPrefix(nextTokenSpelling, "`") && strings.HasSuffix(nextTokenSpelling, "`") {
 			nextToken = NewStringToken(strings.TrimPrefix(strings.TrimSuffix(nextTokenSpelling, "`"), "`"))
+		} else if _, err := strconv.ParseInt(nextTokenSpelling, 10, 64); err == nil {
+			nextToken = Token{class: IntegerTokenClass, spelling: nextTokenSpelling}
+		} else if _, err := strconv.ParseFloat(nextTokenSpelling, 64); err == nil {
+			nextToken = Token{class: FloatTokenClass, spelling: nextTokenSpelling}
 		} else {
 			nextToken = Token{class: ValueTokenClass, spelling: nextTokenSpelling}
 		}

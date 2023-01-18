@@ -149,11 +149,6 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 
 // coerceByteCode instruction processor.
 func coerceByteCode(c *Context, i interface{}) error {
-	// If we are in static mode, we don't do any coercions.
-	if c.Static {
-		return nil
-	}
-
 	t := data.TypeOf(i)
 
 	v, err := c.Pop()
@@ -163,6 +158,21 @@ func coerceByteCode(c *Context, i interface{}) error {
 
 	if isStackMarker(v) {
 		return c.error(errors.ErrFunctionReturnedVoid)
+	}
+
+	// If we are in static mode, we don't do any coercions and require a match
+	if c.Static {
+		// If it's an interface we are converting to, no worries, it's a match and we're done.
+		if t.IsInterface() {
+			return c.push(v)
+		}
+
+		vt := data.TypeOf(v)
+		if !vt.IsType(t) {
+			return c.error(errors.ErrInvalidType).Context(vt.String())
+		}
+
+		return c.push(v)
 	}
 
 	// Some types cannot be coerced, so must match.
@@ -247,9 +257,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 		v = array
 	}
 
-	_ = c.push(v)
-
-	return nil
+	return c.push(v)
 }
 
 func (b ByteCode) NeedsCoerce(kind *data.Type) bool {

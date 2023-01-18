@@ -379,7 +379,7 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		v := data.Coerce(source, data.InstanceOfType(kind))
 		if v != nil {
-			return data.Coerce(source, data.InstanceOfType(kind)), nil
+			return v, nil
 		}
 
 		return nil, errors.ErrInvalidType.Context(data.TypeOf(source).String())

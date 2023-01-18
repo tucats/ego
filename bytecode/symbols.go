@@ -146,12 +146,8 @@ func symbolCreateIfByteCode(c *Context, i interface{}) error {
 	}
 
 	sp := c.symbols
-	for sp.Parent() != nil {
-		if _, found := sp.Get(n); found {
-			return nil
-		}
-
-		sp = sp.Parent()
+	if _, found := sp.GetLocal(n); found {
+		return nil
 	}
 
 	err := c.symbols.Create(n)

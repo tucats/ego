@@ -147,25 +147,38 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// If the token is a number, convert it
-	if i, err := strconv.Atoi(text); err == nil {
-		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, i)
+	if t.IsClass(tokenizer.IntegerTokenClass) {
+		if i, err := strconv.ParseInt(text, 10, 32); err == nil {
+			c.t.Advance(1)
+			c.b.Emit(bytecode.Push, int(i))
 
-		return nil
+			return nil
+		}
+
+		if i, err := strconv.ParseInt(text, 10, 64); err == nil {
+			c.t.Advance(1)
+			c.b.Emit(bytecode.Push, i)
+
+			return nil
+		}
 	}
 
-	if i, err := strconv.ParseFloat(text, 64); err == nil {
-		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, i)
+	if t.IsClass(tokenizer.FloatTokenClass) {
+		if i, err := strconv.ParseFloat(text, 64); err == nil {
+			c.t.Advance(1)
+			c.b.Emit(bytecode.Push, i)
 
-		return nil
+			return nil
+		}
 	}
 
-	if !t.IsString() && (text == defs.True || text == defs.False) {
-		c.t.Advance(1)
-		c.b.Emit(bytecode.Push, (text == defs.True))
+	if t.IsClass(tokenizer.BooleanTokenClass) {
+		if text == defs.True || text == defs.False {
+			c.t.Advance(1)
+			c.b.Emit(bytecode.Push, (text == defs.True))
 
-		return nil
+			return nil
+		}
 	}
 
 	if t.IsValue() {

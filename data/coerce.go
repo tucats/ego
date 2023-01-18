@@ -116,6 +116,9 @@ func Coerce(v interface{}, model interface{}) interface{} {
 		case int:
 			return int64(value)
 
+		case int32:
+			return int64(value)
+
 		case int64:
 			return value
 

@@ -63,8 +63,14 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 			// value to the correct type as long as the value is also an integer
 			// or float type. This lets initializers of []int32{} be expressed as
 			// default int constant values, etc.
-			if (isInt && valueType.IsIntegerType()) || (isFloat && valueType.IsFloatType()) {
+			if isInt && valueType.IsIntegerType() {
 				value = baseType.Coerce(value)
+			} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
+				value = baseType.Coerce(value)
+			} else if c.Static {
+				if !valueType.IsType(baseType) {
+					return c.error(errors.ErrWrongArrayValueType).Context(valueType.String())
+				}
 			}
 
 			err = result.Set(count-i-1, value)

@@ -2,7 +2,7 @@
 
 {
     func f() (int, int) {
-       return 55, "66"
+       return 55, 66
     }
 
     a, b := f()

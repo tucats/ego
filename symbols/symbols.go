@@ -10,7 +10,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-const NoSlot = -1
+const (
+	NoSlot   = -1
+	NotFound = "<not found>"
+)
 
 type UndefinedValue struct {
 }
@@ -33,7 +36,38 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		status := "<not found>"
+		status := NotFound
+		attr = &SymbolAttribute{}
+
+		if found {
+			status = data.Format(v)
+			if len(status) > 60 {
+				status = status[:57] + "..."
+			}
+		}
+
+		quotedName := fmt.Sprintf("\"%s\"", name)
+		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
+			s.Name, s.id.String(), quotedName, attr.Slot, status)
+	}
+
+	return v, found
+}
+
+// Get retrieves a symbol from the current table.
+func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
+	var v interface{}
+
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	attr, found := s.symbols[name]
+	if found {
+		v = s.GetValue(attr.Slot)
+	}
+
+	if ui.IsActive(ui.SymbolLogger) {
+		status := NotFound
 		attr = &SymbolAttribute{}
 
 		if found {
@@ -69,7 +103,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		status := "<not found>"
+		status := NotFound
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {

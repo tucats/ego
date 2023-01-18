@@ -114,7 +114,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "trace", "test", "test.ego"]
+            "args": ["--log", "trace", "test", "test.ego", "--static-types"]
         },
         {
             "name": "Trace test test.ego",

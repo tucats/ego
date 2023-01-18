@@ -39,10 +39,10 @@
     @assert m["name"] == "Tom"
 
     // Can we restore values into an array?
-    s = "[1, 2, 3]"
-    a := []int{}
+    stra := "[1, 2, 3]"
+    inta := []int{}
 
-    a4, e := json.Unmarshal(s, &a)
+    a4, e := json.Unmarshal(stra, &inta)
     if e != nil {
         fmt.Println("Error: ", e)
     }

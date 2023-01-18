@@ -11,11 +11,11 @@
 
     // Invalid structure member
     b := {name:"Tom", age:35}
-    a = ?b.title: "anon"
-    @assert a == "anon"
+    as := ?b.title: "anon"
+    @assert as == "anon"
 
-    a = ?b.name : "anon"
-    @assert a == "Tom"
+    as = ?b.name : "anon"
+    @assert as == "Tom"
 
     // Invalid array index
     c := []int{1,2,3}
@@ -26,7 +26,7 @@
     @assert a == -1
     
     // Invalid type for operation
-    a = ?(b/2) : true
-    @assert a == true
+    ab := ?(b/2) : true
+    @assert ab == true
 }
 @pass
