@@ -34,6 +34,13 @@ func FormatWithType(element interface{}) string {
 	case error:
 		return "E<" + actual.Error() + ">"
 
+	case bool:
+		if actual {
+			return "true"
+		}
+
+		return "false"
+
 	case string:
 		return strconv.Quote(actual)
 
@@ -54,6 +61,9 @@ func FormatWithType(element interface{}) string {
 
 	case float64:
 		return fmt.Sprintf("float64(%f)", actual)
+
+	case *Type:
+		return actual.String()
 	}
 
 	fmtString := Format(element)
