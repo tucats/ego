@@ -30,7 +30,14 @@ type TryInfo struct {
 // This value is updated atomically during context creation.
 var nextThreadID int32 = 0
 
+// MaxStackSize records the largest stack size encountered during a
+// stack push operation. This can be used to determine if the initial
+// stack size is adequate.
 var MaxStackSize atomic.Int32
+
+// InstructionsExecuted counts the number of byte code instructions
+// executed.
+var InstructionsExecuted atomic.Int64
 
 // Context holds the runtime information about an instance of bytecode being
 // executed.

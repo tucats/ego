@@ -57,27 +57,37 @@ func main() {
 		ui.Log(ui.TraceLogger, "Maximum runtime stack depth: %d", maxStackSize)
 	}
 
+	// If we executed bytecode instructions, report this to the tracing log.
+	if count := bytecode.InstructionsExecuted.Load(); count > 0 {
+		ui.Log(ui.TraceLogger, "Executed %d bytecode instructions", count)
+	}
+
 	// If something went wrong, report it to the user and force an exit
 	// status from the error, else a default General error.
 	if err != nil {
-		msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
-		os.Stderr.Write([]byte(msg))
+		if egoErr, ok := err.(*errors.Error); ok {
+			if !egoErr.Is(errors.ErrExit) {
+				msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
+				os.Stderr.Write([]byte(msg))
+				os.Exit(1)
+			} else {
+				if value := egoErr.GetContext(); value != nil {
+					errorCode := 1
 
-		if value := err.(*errors.Error).GetContext(); value != nil {
-			errorCode := 1
+					if _, ok := value.(string); ok {
+						errorCode = data.Int(value)
+					}
 
-			if _, ok := value.(string); !ok {
-				errorCode = data.Int(value)
+					if _, ok := value.(int); ok {
+						errorCode = data.Int(value)
+					}
+
+					os.Exit(errorCode)
+				}
 			}
-
-			if errorCode == 0 {
-				errorCode = 1
-			}
-
-			os.Exit(errorCode)
 		}
 
-		os.Exit(1)
+		os.Exit(0)
 	}
 }
 

@@ -213,21 +213,19 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
-		os.Exit(0)
+		return nil, errors.ErrExit.Context(0)
 	}
 
 	switch v := args[0].(type) {
 	case bool, byte, int32, int, int64, float32, float64:
-		os.Exit(data.Int(args[0]))
+		return nil, errors.ErrExit.Context(data.Int(args[0]))
 
 	case string:
-		return nil, errors.NewMessage(v)
+		return nil, errors.ErrExit.Context(v)
 
 	default:
-		os.Exit(0)
+		return nil, errors.ErrExit.Context(0)
 	}
-
-	return nil, nil
 }
 
 // Signal creates an error object based on the

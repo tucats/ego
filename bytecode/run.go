@@ -82,6 +82,8 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		i := c.bc.instructions[c.programCounter]
 
+		InstructionsExecuted.Add(1)
+
 		if c.Tracing() {
 			instruction := FormatInstruction(i)
 

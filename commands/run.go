@@ -25,6 +25,8 @@ import (
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) error {
+	var err error
+
 	if logFile, found := c.String("log-file"); found {
 		err := ui.OpenLogFile(logFile, false)
 		if err != nil {
@@ -270,7 +272,9 @@ func RunAction(c *cli.Context) error {
 			comp.SetInteractive(interactive)
 		}
 
-		b, err := comp.Compile(mainName, t)
+		var b *bytecode.ByteCode
+
+		b, err = comp.Compile(mainName, t)
 		if err != nil {
 			exitValue = 1
 			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
@@ -301,13 +305,17 @@ func RunAction(c *cli.Context) error {
 				err = nil
 			}
 
-			if err != nil {
-				exitValue = 2
-				msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
+			exitValue = 0
 
-				os.Stderr.Write([]byte(msg))
-			} else {
-				exitValue = 0
+			if err != nil {
+				if egoErr, ok := err.(*errors.Error); ok && !egoErr.Is(errors.ErrExit) {
+					exitValue = 2
+					msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
+
+					os.Stderr.Write([]byte(msg))
+				}
+
+				break
 			}
 
 			if c.Boolean("symbols") {
@@ -326,7 +334,7 @@ func RunAction(c *cli.Context) error {
 		return errors.ErrTerminatedWithErrors
 	}
 
-	return nil
+	return err
 }
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes int, interactive, disassemble bool) *symbols.SymbolTable {

@@ -11,6 +11,7 @@ var ErrContinue = NewMessage("_continue")
 var ErrSignalDebugger = NewMessage("_signal")
 var ErrStepOver = NewMessage("_step-over")
 var ErrStop = NewMessage("_stop")
+var ErrExit = NewMessage("_exit")
 
 // Return values reflecting runtime error conditions.
 
