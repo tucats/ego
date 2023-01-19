@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -143,7 +144,7 @@ func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThis(s *symbols.SymbolTable) *data.Struct {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}

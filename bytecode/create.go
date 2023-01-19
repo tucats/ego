@@ -180,7 +180,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 //
 // Items on the stack are pulled off in pairs representing a
 // string containing the field name, and an arbitrary value.
-// Any field names that start with data.MetadataPrefix ("__")
+// Any field names that start with data.MetadataPrefix (defs.InvisiblePrefix)
 // are considered metadata and are stored as metadata in the
 // resulting structure. This allows type names, etc. to be added
 // to the struct definition

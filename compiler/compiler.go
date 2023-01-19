@@ -39,49 +39,48 @@ type loop struct {
 // something like a switch conditional value, the value cannot
 // be a struct initializer, though that is allowed elsewhere.
 type flagSet struct {
-	disallowStructInits bool
-	extensionsEnabled   bool
+	disallowStructInits   bool
+	extensionsEnabled     bool
+	normalizedIdentifiers bool
+	testMode              bool
 }
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
-	activePackageName     string
-	sourceFile            string
-	b                     *bytecode.ByteCode
-	t                     *tokenizer.Tokenizer
-	s                     *symbols.SymbolTable
-	rootTable             *symbols.SymbolTable
-	loops                 *loop
-	coercions             []*bytecode.ByteCode
-	constants             []string
-	deferQueue            []int
-	packages              map[string]*data.Package
-	packageMutex          sync.Mutex
-	types                 map[string]*data.Type
-	functionDepth         int
-	blockDepth            int
-	statementCount        int
-	disasm                bool
-	testMode              bool
-	normalizedIdentifiers bool
-	flags                 flagSet // Use to hold parser state flags
-	exitEnabled           bool    // Only true in interactive mode
+	activePackageName string
+	sourceFile        string
+	b                 *bytecode.ByteCode
+	t                 *tokenizer.Tokenizer
+	s                 *symbols.SymbolTable
+	rootTable         *symbols.SymbolTable
+	loops             *loop
+	coercions         []*bytecode.ByteCode
+	constants         []string
+	deferQueue        []int
+	packages          map[string]*data.Package
+	packageMutex      sync.Mutex
+	types             map[string]*data.Type
+	functionDepth     int
+	blockDepth        int
+	statementCount    int
+	flags             flagSet // Use to hold parser state flags
+	exitEnabled       bool    // Only true in interactive mode
 }
 
 // New creates a new compiler instance.
 func New(name string) *Compiler {
 	cInstance := Compiler{
-		b:                     bytecode.New(name),
-		t:                     nil,
-		s:                     symbols.NewRootSymbolTable(name),
-		constants:             make([]string, 0),
-		deferQueue:            make([]int, 0),
-		types:                 map[string]*data.Type{},
-		packageMutex:          sync.Mutex{},
-		packages:              map[string]*data.Package{},
-		normalizedIdentifiers: false,
+		b:            bytecode.New(name),
+		t:            nil,
+		s:            symbols.NewRootSymbolTable(name),
+		constants:    make([]string, 0),
+		deferQueue:   make([]int, 0),
+		types:        map[string]*data.Type{},
+		packageMutex: sync.Mutex{},
+		packages:     map[string]*data.Package{},
 		flags: flagSet{
-			extensionsEnabled: settings.GetBool(defs.ExtensionsEnabledSetting),
+			normalizedIdentifiers: false,
+			extensionsEnabled:     settings.GetBool(defs.ExtensionsEnabledSetting),
 		},
 		rootTable: &symbols.RootSymbolTable,
 	}
@@ -92,14 +91,14 @@ func New(name string) *Compiler {
 // NormalizedIdentifiers returns true if this instance of the compiler is folding
 // all identifiers to a common (lower) case.
 func (c *Compiler) NormalizedIdentifiers() bool {
-	return c.normalizedIdentifiers
+	return c.flags.normalizedIdentifiers
 }
 
 // SetNormalizedIdentifiers sets the flag indicating if this compiler instance is
 // folding all identifiers to a common case. This function supports attribute
 // chaining for a compiler instance.
 func (c *Compiler) SetNormalizedIdentifiers(flag bool) *Compiler {
-	c.normalizedIdentifiers = flag
+	c.flags.normalizedIdentifiers = flag
 
 	return c
 }
@@ -127,14 +126,14 @@ func (c *Compiler) ExitEnabled(b bool) *Compiler {
 // of the Ego "test" command, which has slightly different rules for
 // block constructs.
 func (c *Compiler) TestMode() bool {
-	return c.testMode
+	return c.flags.testMode
 }
 
 // SetTestMode is used to set the test mode indicator for the compiler.
 // This is set to true only when running in Ego "test" mode. This
 // function supports attribute chaining for a compiler instance.
 func (c *Compiler) SetTestMode(b bool) *Compiler {
-	c.testMode = b
+	c.flags.testMode = b
 
 	return c
 }
@@ -167,15 +166,7 @@ func (c *Compiler) WithTokens(t *tokenizer.Tokenizer) *Compiler {
 // WithNormalization sets the normalization flag. This function supports
 // attribute chaining for a compiler instance.
 func (c *Compiler) WithNormalization(f bool) *Compiler {
-	c.normalizedIdentifiers = f
-
-	return c
-}
-
-// Disasm sets the disassembler flag.This function supports
-// attribute chaining for a compiler instance.
-func (c *Compiler) Disasm(f bool) *Compiler {
-	c.disasm = f
+	c.flags.normalizedIdentifiers = f
 
 	return c
 }
@@ -294,7 +285,7 @@ func (c *Compiler) Get(name string) (interface{}, bool) {
 // normalize performs case-normalization based on the current
 // compiler settings.
 func (c *Compiler) normalize(name string) string {
-	if c.normalizedIdentifiers {
+	if c.flags.normalizedIdentifiers {
 		return strings.ToLower(name)
 	}
 
@@ -304,7 +295,7 @@ func (c *Compiler) normalize(name string) string {
 // normalizeToken performs case-normalization based on the current
 // compiler settings for an identifier token.
 func (c *Compiler) normalizeToken(t tokenizer.Token) tokenizer.Token {
-	if t.IsIdentifier() && c.normalizedIdentifiers {
+	if t.IsIdentifier() && c.flags.normalizedIdentifiers {
 		return tokenizer.NewIdentifierToken(strings.ToLower(t.Spelling()))
 	}
 
@@ -470,19 +461,19 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 // function supports attribute chaining for a compiler instance.
 func (c *Compiler) Clone(withLock bool) *Compiler {
 	cx := Compiler{
-		activePackageName:     c.activePackageName,
-		sourceFile:            c.sourceFile,
-		b:                     c.b,
-		t:                     c.t,
-		s:                     c.s.Clone(withLock),
-		rootTable:             c.s.Clone(withLock),
-		coercions:             c.coercions,
-		constants:             c.constants,
-		packageMutex:          sync.Mutex{},
-		deferQueue:            []int{},
-		normalizedIdentifiers: c.normalizedIdentifiers,
+		activePackageName: c.activePackageName,
+		sourceFile:        c.sourceFile,
+		b:                 c.b,
+		t:                 c.t,
+		s:                 c.s.Clone(withLock),
+		rootTable:         c.s.Clone(withLock),
+		coercions:         c.coercions,
+		constants:         c.constants,
+		packageMutex:      sync.Mutex{},
+		deferQueue:        []int{},
 		flags: flagSet{
-			extensionsEnabled: c.flags.extensionsEnabled,
+			normalizedIdentifiers: c.flags.normalizedIdentifiers,
+			extensionsEnabled:     c.flags.extensionsEnabled,
 		},
 		exitEnabled: c.exitEnabled,
 	}

@@ -103,11 +103,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Define information we know about our running session and the caller, independent of
 	// the service being invoked.
 	symbolTable.SetAlways("_pid", os.Getpid())
-	symbolTable.SetAlways("_server_instance", defs.ServerInstanceID)
+	symbolTable.SetAlways(defs.InstanceUUIDVariable, defs.ServerInstanceID)
 	symbolTable.SetAlways("_session", int(sessionID))
 	symbolTable.SetAlways("_method", r.Method)
-	symbolTable.SetAlways("__exec_mode", "server")
-	symbolTable.SetAlways("_version", server.Version)
+	symbolTable.SetAlways(defs.ModeVariable, "server")
+	symbolTable.SetAlways(defs.VersionName, server.Version)
 	symbolTable.SetAlways("_start_time", server.StartTime)
 	symbolTable.SetAlways("_requestor", requestor)
 
@@ -116,7 +116,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		staticTypes = defs.NoTypeEnforcement
 	}
 
-	symbolTable.SetAlways(defs.TypeEnforcement, staticTypes)
+	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()
@@ -193,7 +193,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// we are debugging?
 	var debug bool
 
-	if b, ok := symbols.RootSymbolTable.Get("__debug_service_path"); ok {
+	if b, ok := symbols.RootSymbolTable.Get(defs.DebugServicePathVariable); ok {
 		debugPath := data.String(b)
 		if debugPath == "/" {
 			debug = true
@@ -388,7 +388,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_user", user)
 	symbolTable.SetAlways("_password", pass)
 	symbolTable.SetAlways("_authenticated", authenticatedCredentials)
-	symbolTable.SetAlways(defs.RestStatusVariableName, http.StatusOK)
+	symbolTable.SetAlways(defs.RestStatusVariable, http.StatusOK)
 	symbolTable.SetAlways("_superuser", authenticatedCredentials && auth.GetPermission(user, "root"))
 
 	// Get the body of the request as a string
@@ -432,7 +432,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// variable _rest_status which is set using the @status
 	// directive in the code. If it's a 401, also add the realm
 	// info to support the browser's attempt to prompt the user.
-	if statusValue, ok := symbolTable.Get(defs.RestStatusVariableName); ok {
+	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
@@ -507,7 +507,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func findPath(sessionID int32, urlPath string) string {
-	if paths, ok := symbols.RootSymbolTable.Get("__paths"); ok {
+	if paths, ok := symbols.RootSymbolTable.Get(defs.PathsVariable); ok {
 		if pathList, ok := paths.([]string); ok {
 			sort.Slice(pathList, func(i, j int) bool {
 				return len(pathList[i]) > len(pathList[j])

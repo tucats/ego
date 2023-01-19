@@ -23,7 +23,7 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 		}
 
 		c.typeStrictness = value
-		c.symbols.SetAlways(defs.TypeEnforcement, value)
+		c.symbols.SetAlways(defs.TypeCheckingVariable, value)
 	}
 
 	return err

@@ -2,17 +2,18 @@ package symbols
 
 import (
 	"github.com/google/uuid"
+	"github.com/tucats/ego/defs"
 )
 
 // This is the list of symbols that are initialized in the root
 // symbol table. These must match the values in rootValues below.
 // The slot numbers must be sequential starting at zero.
 var rootNames = map[string]*SymbolAttribute{
-	"_copyright": {
+	defs.CopyrightVariable: {
 		slot:     0,
 		Readonly: true,
 	},
-	"_server_instance": {
+	defs.InstanceUUIDVariable: {
 		slot:     1,
 		Readonly: true,
 	},

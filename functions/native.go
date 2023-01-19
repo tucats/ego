@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -100,7 +101,7 @@ func FindNativeFunction(kind *data.Type, name string) NativeFunction {
 // that will be handled via mapping within the individual native
 // function shims.
 func getNativeThis(s *symbols.SymbolTable) interface{} {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}

@@ -2,15 +2,15 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
-// DiscardedVariableName is the reserved name for the variable
+// defs.DiscardedVariable is the reserved name for the variable
 // whose value is not used. This is place-holder in some Ego/Go
 // syntax constructs where a value is not used. It can also be
 // used to discard the result of a function call.
-const DiscardedVariableName = "_"
 
 // storeByteCode implements the Store opcode
 //
@@ -55,7 +55,7 @@ func storeByteCode(c *Context, i interface{}) error {
 		}
 	}
 
-	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+	if len(name) > 1 && name[0:1] == defs.DiscardedVariable {
 		oldValue, found := c.get(name)
 		if !found {
 			return c.error(errors.ErrReadOnly).Context(name)
@@ -72,7 +72,7 @@ func storeByteCode(c *Context, i interface{}) error {
 
 	// Get the name. If it is the reserved name "_" it means
 	// to just discard the value.
-	if name == DiscardedVariableName {
+	if name == defs.DiscardedVariable {
 		return nil
 	}
 
@@ -140,7 +140,7 @@ func storeChanByteCode(c *Context, i interface{}) error {
 	if destChan {
 		err = x.(*data.Channel).Send(datum)
 	} else {
-		if varname != DiscardedVariableName {
+		if varname != defs.DiscardedVariable {
 			err = c.set(varname, datum)
 		}
 	}
@@ -164,7 +164,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 
 	// Is this a readonly variable that is a complex native type?
 	// If so, mark it as readonly.
-	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+	if len(name) > 1 && name[0:1] == defs.DiscardedVariable {
 		constantValue := data.DeepCopy(value)
 		switch a := constantValue.(type) {
 		case *data.Map:
@@ -190,7 +190,7 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 func storeViaPointerByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 
-	if i == nil || name == "" || name[0:1] == DiscardedVariableName {
+	if i == nil || name == "" || name[0:1] == defs.DiscardedVariable {
 		return c.error(errors.ErrInvalidIdentifier)
 	}
 
@@ -343,7 +343,7 @@ func storeAlwaysByteCode(c *Context, i interface{}) error {
 
 	// Is this a readonly variable that is a structure? If so, mark it
 	// with the embedded readonly flag.
-	if len(symbolName) > 1 && symbolName[0:1] == DiscardedVariableName {
+	if len(symbolName) > 1 && symbolName[0:1] == defs.DiscardedVariable {
 		switch a := v.(type) {
 		case *data.Map:
 			a.SetReadonly(true)

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -158,7 +159,7 @@ func TimeSince(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // getTime looks in the symbol table for the "this" receiver, and
 // extracts the time value from it.
 func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
-	if t, ok := symbols.Get("__this"); ok {
+	if t, ok := symbols.Get(defs.ThisVariable); ok {
 		return getTimeV(t)
 	}
 

@@ -56,7 +56,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 		app.Version = fmt.Sprintf("%d.%d-%d", major, minor, delta)
 	}
 
-	symbols.RootSymbolTable.SetAlways("_version", app.Version)
+	symbols.RootSymbolTable.SetAlways(defs.VersionName, app.Version)
 
 	return app
 }
@@ -65,7 +65,7 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 // help output.
 func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
-	symbols.RootSymbolTable.SetAlways("_copyright", app.Copyright)
+	symbols.RootSymbolTable.SetAlways(defs.CopyrightVariable, app.Copyright)
 
 	return app
 }
@@ -78,9 +78,9 @@ func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {
-		symbols.RootSymbolTable.SetAlways("_buildtime", functions.MakeTime(&t))
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, functions.MakeTime(&t))
 	} else {
-		symbols.RootSymbolTable.SetAlways("_buildtime", app.BuildTime)
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, app.BuildTime)
 	}
 
 	return app
@@ -141,7 +141,7 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	_ = platform.Set("arch", runtime.GOARCH)
 	_ = platform.Set("cpus", runtime.NumCPU())
 	platform.SetReadonly(true)
-	_ = symbols.RootSymbolTable.SetWithAttributes("_platform", platform,
+	_ = symbols.RootSymbolTable.SetWithAttributes(defs.PlatformVariable, platform,
 		symbols.SymbolAttribute{Readonly: true})
 
 	if err := SetDefaultLoggers(); err != nil {

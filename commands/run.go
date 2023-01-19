@@ -180,7 +180,7 @@ func RunAction(c *cli.Context) error {
 
 	// Set up the symbol table.
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
-	symbolTable.Root().SetAlways("__main", defs.Main)
+	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 
 	exitValue := 0
 
@@ -346,18 +346,18 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
 	args := data.NewArrayFromArray(data.StringType, programArgs)
-	symbolTable.SetAlways("__cli_args", args)
+	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)
 
 	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {
 		typeEnforcement = defs.NoTypeEnforcement
 	}
 
-	symbolTable.SetAlways(defs.TypeEnforcement, typeEnforcement)
+	symbolTable.SetAlways(defs.TypeCheckingVariable, typeEnforcement)
 
 	if interactive {
-		symbolTable.SetAlways("__exec_mode", "interactive")
+		symbolTable.SetAlways(defs.ModeVariable, "interactive")
 	} else {
-		symbolTable.SetAlways("__exec_mode", "run")
+		symbolTable.SetAlways(defs.ModeVariable, "run")
 	}
 
 	if c.Boolean("trace") {

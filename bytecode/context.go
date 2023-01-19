@@ -90,7 +90,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// normally off, but can be set by a global variable (which is
 	// ultimately set by a profile setting or CLI option).
 	static := defs.NoTypeEnforcement
-	if s, found := s.Get(defs.TypeEnforcement); found {
+	if s, found := s.Get(defs.TypeCheckingVariable); found {
 		static = data.Int(s)
 		if static < defs.StrictTypeEnforcement || static > defs.NoTypeEnforcement {
 			static = defs.NoTypeEnforcement

@@ -10,7 +10,7 @@ import (
 // exec.Cmd type specification.
 const commandTypeSpec = `
 	type exec.Cmd struct {
-		__cmd       interface{},
+		cmd         interface{},
 		Dir         string,
 		Path		string,
 		Args		[]string,

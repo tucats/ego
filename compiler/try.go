@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -41,7 +42,7 @@ func (c *Compiler) compileTry() error {
 			return c.error(errors.ErrMissingParenthesis)
 		}
 
-		c.b.Emit(bytecode.Load, bytecode.ErrorVariableName)
+		c.b.Emit(bytecode.Load, defs.ErrorVariable)
 		c.b.Emit(bytecode.StoreAlways, errName)
 	}
 

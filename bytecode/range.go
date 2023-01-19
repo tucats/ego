@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -50,11 +51,11 @@ func rangeInitByteCode(c *Context, i interface{}) error {
 		r.indexName = data.String(list[0])
 		r.valueName = data.String(list[1])
 
-		if r.indexName != "" && r.indexName != DiscardedVariableName {
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 			err = c.symbols.Create(r.indexName)
 		}
 
-		if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 			err = c.symbols.Create(r.valueName)
 		}
 	}
@@ -145,11 +146,11 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				key := r.keySet[r.index]
 				value := r.runes[r.index]
 
-				if r.indexName != "" && r.indexName != DiscardedVariableName {
+				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.valueName, string(value))
 				}
 
@@ -165,11 +166,11 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 			} else {
 				key := r.keySet[r.index]
 
-				if r.indexName != "" && r.indexName != DiscardedVariableName {
+				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.indexName, key)
 				}
 
-				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 					var value interface{}
 
 					ok := false
@@ -193,10 +194,10 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 			} else {
 				datum, err = actual.Receive()
 				if err == nil {
-					if r.indexName != "" && r.indexName != DiscardedVariableName {
+					if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.indexName, r.index)
 					}
-					if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+					if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 						err = c.symbols.Set(r.valueName, datum)
 					}
 
@@ -213,10 +214,10 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				actual.SetReadonly(false)
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
-				if r.indexName != "" && r.indexName != DiscardedVariableName {
+				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 					var d interface{}
 
 					d, err = actual.Get(r.index)
@@ -232,10 +233,10 @@ func rangeNextByteCode(c *Context, i interface{}) error {
 				c.programCounter = destination
 				c.rangeStack = c.rangeStack[:stackSize-1]
 			} else {
-				if r.indexName != "" && r.indexName != DiscardedVariableName {
+				if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.indexName, r.index)
 				}
-				if err == nil && r.valueName != "" && r.valueName != DiscardedVariableName {
+				if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
 					err = c.symbols.Set(r.valueName, actual[r.index])
 				}
 				r.index++

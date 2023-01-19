@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -269,7 +270,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 	defer s.mutex.Unlock()
 
 	// Is it a readonly symbol name and it already exists? If so, fail...
-	if name[0:1] == "_" {
+	if name[0:1] == defs.ReadonlyVariablePrefix {
 		_, ok := s.fields[name]
 		if ok {
 			return errors.ErrReadOnly

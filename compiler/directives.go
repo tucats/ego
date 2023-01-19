@@ -121,7 +121,7 @@ func (c *Compiler) entrypointDirective() error {
 
 	c.b.Emit(bytecode.Push, mainName)
 	c.b.Emit(bytecode.Dup)
-	c.b.Emit(bytecode.StoreAlways, "__main")
+	c.b.Emit(bytecode.StoreAlways, defs.MainVariable)
 	c.b.Emit(bytecode.EntryPoint)
 	c.b.Emit(bytecode.AtLine, -1)
 	c.b.Emit(bytecode.Push, 0)
@@ -200,7 +200,7 @@ func (c *Compiler) globalDirective() error {
 	}
 
 	name := c.t.Next()
-	if strings.HasPrefix(name.Spelling(), "_") || !name.IsIdentifier() {
+	if strings.HasPrefix(name.Spelling(), defs.ReadonlyVariablePrefix) || !name.IsIdentifier() {
 		return c.error(errors.ErrInvalidSymbolName, name)
 	}
 
@@ -319,7 +319,7 @@ func (c *Compiler) statusDirective() error {
 		c.b.Append(bc)
 	}
 
-	c.b.Emit(bytecode.StoreGlobal, defs.RestStatusVariableName)
+	c.b.Emit(bytecode.StoreGlobal, defs.RestStatusVariable)
 
 	return nil
 }
@@ -476,7 +476,7 @@ func (c *Compiler) localizationDirective() error {
 		return err
 	}
 
-	c.b.Emit(bytecode.StoreGlobal, "__localization")
+	c.b.Emit(bytecode.StoreGlobal, defs.LocalizationVariable)
 
 	return nil
 }

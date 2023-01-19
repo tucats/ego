@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -169,7 +170,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	first := true
 	// Copy all the upper-case ("external") symbols names to the package level.
 	for _, k := range c.symbols.Names() {
-		if !strings.HasPrefix(k, "__") && util.HasCapitalizedName(k) {
+		if !strings.HasPrefix(k, defs.InvisiblePrefix) && util.HasCapitalizedName(k) {
 			v, attr, _ := c.symbols.GetWithAttributes(k)
 
 			if first {
@@ -199,7 +200,7 @@ func popPackageByteCode(c *Context, i interface{}) error {
 	s := symbols.NewSymbolTable("package " + pkgdef.name + " local values")
 
 	for _, k := range c.symbols.Names() {
-		if !strings.HasPrefix(k, "__") {
+		if !strings.HasPrefix(k, defs.InvisiblePrefix) {
 			v, _ := c.symbols.Get(k)
 
 			s.SetAlways(k, v)

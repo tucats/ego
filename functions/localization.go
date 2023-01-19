@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -67,7 +68,7 @@ func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	language = strings.ToLower(language)
 
 	// Find the localization data
-	localizedMap, found := s.Get("__localization")
+	localizedMap, found := s.Get(defs.LocalizationVariable)
 	if !found {
 		return property, nil
 	}

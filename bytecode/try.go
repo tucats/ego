@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
@@ -94,7 +95,7 @@ func tryPopByteCode(c *Context, i interface{}) error {
 		c.tryStack = c.tryStack[:len(c.tryStack)-1]
 	}
 
-	_ = c.symbols.Delete("_error", true)
+	_ = c.symbols.Delete(defs.ErrorVariable, true)
 
 	return nil
 }

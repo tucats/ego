@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -17,7 +18,7 @@ func PackageAsString(vv *data.Package) string {
 	keys := vv.Keys()
 	for _, key := range keys {
 		keyString := data.String(key)
-		if strings.HasPrefix(keyString, "__") {
+		if strings.HasPrefix(keyString, defs.InvisiblePrefix) {
 			continue
 		}
 

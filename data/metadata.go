@@ -1,8 +1,10 @@
 package data
 
+import "github.com/tucats/ego/defs"
+
 // Common metadata keys.
 const (
-	MetadataPrefix = "__"
+	MetadataPrefix = defs.InvisiblePrefix
 
 	BasetypeMDName    = "basetype"
 	BasetypeMDKey     = MetadataPrefix + BasetypeMDName

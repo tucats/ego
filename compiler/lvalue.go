@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -198,7 +199,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 	// Quick optimization; if the name is "_" it just means
 	// discard and we can shortcircuit that.
-	if name.Spelling() == bytecode.DiscardedVariableName {
+	if name.Spelling() == defs.DiscardedVariable {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		// If its the case of x := <-c  then skip the assignment

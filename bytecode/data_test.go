@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -120,7 +121,7 @@ func Test_storeByteCode(t *testing.T) {
 		},
 		{
 			name:         "store to nul name",
-			arg:          "_",
+			arg:          defs.DiscardedVariable,
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			err:          nil,
@@ -255,7 +256,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 		},
 		{
 			name:         "store to nul name is allowed",
-			arg:          "_",
+			arg:          defs.DiscardedVariable,
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			static:       2,
@@ -388,7 +389,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		},
 		{
 			name:         "store to nul name is allowed",
-			arg:          "_",
+			arg:          defs.DiscardedVariable,
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			static:       2,
@@ -523,7 +524,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 		},
 		{
 			name:         "store to nul name is not allowed",
-			arg:          "_",
+			arg:          defs.DiscardedVariable,
 			initialValue: 0,
 			stack:        []interface{}{int32(55)},
 			static:       2,

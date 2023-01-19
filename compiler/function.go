@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -106,7 +107,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		if parameter.kind.IsKind(data.VarArgsKind) {
 			b.Emit(bytecode.GetVarArgs, index)
 		} else {
-			b.Emit(bytecode.Load, "__args")
+			b.Emit(bytecode.Load, defs.ArgumentListVariable)
 			b.Emit(bytecode.LoadIndex, index)
 		}
 

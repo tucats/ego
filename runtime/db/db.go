@@ -12,6 +12,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 
@@ -116,11 +117,11 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// getClient searches the symbol table for the client receiver ("__this")
+// getClient searches the symbol table for the client receiver (defs.ThisVariable)
 // variable, validates that it contains a database client object, and returns
 // the native client object.
 func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
-	if g, ok := symbols.Get("__this"); ok {
+	if g, ok := symbols.Get(defs.ThisVariable); ok {
 		if gc, ok := g.(*data.Struct); ok {
 			if client := gc.GetAlways(clientFieldName); client != nil {
 				if cp, ok := client.(*sql.DB); ok {
@@ -145,7 +146,7 @@ func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThisStruct(s *symbols.SymbolTable) *data.Struct {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}

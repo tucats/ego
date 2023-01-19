@@ -62,8 +62,8 @@ func atLineByteCode(c *Context, i interface{}) error {
 
 	c.line = data.Int(i)
 	c.stepOver = false
-	c.symbols.SetAlways(defs.Line, c.line)
-	c.symbols.SetAlways(defs.Module, c.bc.name)
+	c.symbols.SetAlways(defs.LineVariable, c.line)
+	c.symbols.SetAlways(defs.ModuleVariable, c.bc.name)
 
 	// Are we in debug mode?
 	if c.line != 0 && c.debugging {
@@ -290,7 +290,7 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// Recode the argument list as a native array
-		c.setAlways("__args", data.NewArrayFromArray(data.InterfaceType, args))
+		c.setAlways(defs.ArgumentListVariable, data.NewArrayFromArray(data.InterfaceType, args))
 
 	case functions.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
@@ -299,7 +299,7 @@ func callByteCode(c *Context, i interface{}) error {
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
 
 		if v, ok := c.popThis(); ok {
-			funcSymbols.SetAlways("__this", v)
+			funcSymbols.SetAlways(defs.ThisVariable, v)
 		}
 
 		result, err = function(funcSymbols, args)
@@ -355,7 +355,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Is this builtin one that requires a "this" variable? If so, get it from
 		// the "this" stack.
 		if v, ok := c.popThis(); ok {
-			functionSymbols.SetAlways("__this", v)
+			functionSymbols.SetAlways(defs.ThisVariable, v)
 		}
 
 		result, err = function(functionSymbols, args)
@@ -500,7 +500,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrArgumentTypeCheck)
 	}
 
-	args, found := c.get("__args")
+	args, found := c.get(defs.ArgumentListVariable)
 	if !found {
 		return c.error(errors.ErrArgumentTypeCheck)
 	}
@@ -573,7 +573,7 @@ func waitByteCode(c *Context, i interface{}) error {
 }
 
 func modeCheckBytecode(c *Context, i interface{}) error {
-	mode, found := c.symbols.Get("__exec_mode")
+	mode, found := c.symbols.Get(defs.ModeVariable)
 
 	if found && (data.String(i) == data.String(mode)) {
 		return nil

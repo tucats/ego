@@ -52,10 +52,10 @@ func DefineLibHandlers(root, subpath string) error {
 	}
 
 	for _, path := range paths {
-		if pathList, ok := symbols.RootSymbolTable.Get("__paths"); ok {
+		if pathList, ok := symbols.RootSymbolTable.Get(defs.PathsVariable); ok {
 			if px, ok := pathList.([]string); ok {
 				px = append(px, path)
-				symbols.RootSymbolTable.SetAlways("__paths", px)
+				symbols.RootSymbolTable.SetAlways(defs.PathsVariable, px)
 			}
 		}
 

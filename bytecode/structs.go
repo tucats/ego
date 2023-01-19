@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -228,7 +229,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		// Cannot start with the read-only name
-		if name[0:1] == "_" {
+		if name[0:1] == defs.DiscardedVariable {
 			return c.error(errors.ErrReadOnlyValue, a.Name()+"."+name)
 		}
 

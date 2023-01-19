@@ -22,7 +22,7 @@ func Run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	cmd := &exec.Cmd{}
 
 	cmdStruct := getThisStruct(s)
-	if i, ok := cmdStruct.Get("__cmd"); ok {
+	if i, ok := cmdStruct.Get("cmd"); ok {
 		cmd, _ = i.(*exec.Cmd)
 	}
 

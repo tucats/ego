@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
@@ -101,7 +102,7 @@ func createAndStoreByteCode(c *Context, i interface{}) error {
 	// be stored, and mark it as a readonly value if it is
 	// a complex type. Then, store the copy as a constant with
 	// the given name.
-	if len(name) > 1 && name[0:1] == DiscardedVariableName {
+	if len(name) > 1 && name[0:1] == defs.ReadonlyVariablePrefix {
 		constantValue := data.DeepCopy(value)
 
 		switch a := constantValue.(type) {

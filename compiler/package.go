@@ -147,7 +147,7 @@ func (c *Compiler) compileImport() error {
 
 			ui.Log(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
-			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.testMode)
+			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
 			importCompiler.b = bytecode.New("import " + filePath)
 			importCompiler.t = tokenizer.New(text)
 			importCompiler.activePackageName = packageName

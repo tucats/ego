@@ -32,7 +32,7 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	cmd := exec.Command(strArray[0], strArray[1:]...)
 
 	// Store the native structure, and the path from the rsulting command object
-	result.SetAlways("__cmd", cmd)
+	result.SetAlways("cmd", cmd)
 	_ = result.Set("Path", cmd.Path)
 
 	// Also store away the native argument list as an Ego array
@@ -62,7 +62,7 @@ func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThisStruct(s *symbols.SymbolTable) *data.Struct {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}

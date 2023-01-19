@@ -260,7 +260,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 	err := c.error(errors.ErrInvalidVariableArguments)
 	argPos := data.Int(i)
 
-	if arrayV, ok := c.get("__args"); ok {
+	if arrayV, ok := c.get(defs.ArgumentListVariable); ok {
 		if args, ok := arrayV.(*data.Array); ok {
 			// If no more args in the list to satisfy, push empty array
 			if args.Len() < argPos {

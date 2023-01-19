@@ -262,7 +262,7 @@ func CloseAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	case *data.Struct:
 		switch arg.TypeString() {
 		case "io.File":
-			s.SetAlways("__this", arg)
+			s.SetAlways(defs.ThisVariable, arg)
 
 			return Close(s, []interface{}{})
 

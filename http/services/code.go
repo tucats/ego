@@ -30,14 +30,14 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")
-	symbolTable.SetAlways("__exec_mode", "server")
+	symbolTable.SetAlways(defs.ModeVariable, "server")
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
 		staticTypes = defs.NoTypeEnforcement
 	}
 
-	symbolTable.SetAlways(defs.TypeEnforcement, staticTypes)
+	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
 	u := r.URL.Query()
 	args := map[string]interface{}{}

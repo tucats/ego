@@ -146,11 +146,11 @@ func headerMap(response *resty.Response) *data.Map {
 	return headers
 }
 
-// getClient searches the symbol table for the client receiver ("__this")
+// getClient searches the symbol table for the client receiver (defs.ThisVariable)
 // variable, validates that it contains a REST client object, and returns
 // the native client object.
 func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
-	if g, ok := symbols.Get("__this"); ok {
+	if g, ok := symbols.Get(defs.ThisVariable); ok {
 		if gc, ok := g.(*data.Struct); ok {
 			if client := gc.GetAlways(clientFieldName); client != nil {
 				if cp, ok := client.(*resty.Client); ok {
@@ -170,7 +170,7 @@ func getClient(symbols *symbols.SymbolTable) (*resty.Client, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThis(s *symbols.SymbolTable) *data.Struct {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}
@@ -186,7 +186,7 @@ func getThis(s *symbols.SymbolTable) *data.Struct {
 func AddAgent(r *resty.Request, agentType string) {
 	var version string
 
-	if x, found := symbols.RootSymbolTable.Get("_version"); found {
+	if x, found := symbols.RootSymbolTable.Get(defs.VersionName); found {
 		version = data.String(x)
 	}
 

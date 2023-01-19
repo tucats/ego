@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/i18n"
 )
 
@@ -103,7 +104,7 @@ func (e *Error) Context(context interface{}) *Error {
 // error message is used. If the message starts with an "_"
 // character, no i18n translation is performed.
 func NewMessage(m string) *Error {
-	if strings.HasPrefix(m, "_") {
+	if strings.HasPrefix(m, defs.ReadonlyVariablePrefix) {
 		m = m[1:]
 	} else {
 		m = i18n.E(m)

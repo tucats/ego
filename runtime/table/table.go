@@ -5,6 +5,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/tables"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -190,11 +191,11 @@ func Sort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return err, err
 }
 
-// getTable searches the symbol table for the client receiver ("__this")
+// getTable searches the symbol table for the client receiver (defs.ThisVariable)
 // variable, validates that it contains a table object, and returns the
 // native table object.
 func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
-	if value, ok := symbols.Get("__this"); ok {
+	if value, ok := symbols.Get(defs.ThisVariable); ok {
 		if structValue, ok := value.(*data.Struct); ok {
 			if tableValue := structValue.GetAlways(tableFieldName); tableValue != nil {
 				if table, ok := tableValue.(*tables.Table); ok {
@@ -214,7 +215,7 @@ func getTable(symbols *symbols.SymbolTable) (*tables.Table, error) {
 // getThis returns a map for the "this" object in the current
 // symbol table.
 func getThisStruct(s *symbols.SymbolTable) *data.Struct {
-	t, ok := s.Get("__this")
+	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil
 	}

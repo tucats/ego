@@ -199,7 +199,7 @@ func Format(element interface{}) string {
 		if verbose {
 			for _, k := range keys {
 				// Skip over hidden values
-				if strings.HasPrefix(k, "__") {
+				if strings.HasPrefix(k, defs.InvisiblePrefix) {
 					continue
 				}
 

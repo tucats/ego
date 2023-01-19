@@ -142,7 +142,7 @@ func (c *Context) RunFromAddress(addr int) error {
 				c.tryStack[len(c.tryStack)-1].addr = 0
 
 				// Implicit pop-scope done here.
-				c.symbols.SetAlways(ErrorVariableName, err)
+				c.symbols.SetAlways(defs.ErrorVariable, err)
 
 				if ui.IsActive(ui.TraceLogger) {
 					ui.Log(ui.TraceLogger, "(%d)  *** Branch to %d on error: %s", c.threadID, c.programCounter, text)

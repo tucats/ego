@@ -253,15 +253,31 @@ const (
 const (
 	ByteCodeReflectionTypeString = "<*bytecode.ByteCode Value>"
 
-	TypeEnforcement        = "__type_checking"
+	TypeCheckingVariable   = InvisiblePrefix + "type_checking"
 	StrictTypeEnforcement  = 0
 	RelaxedTypeEnforcement = 1
 	NoTypeEnforcement      = 2
-)
 
-const (
-	Line   = "__line"
-	Module = "__module"
+	InvisiblePrefix          = "__"
+	ThisVariable             = InvisiblePrefix + "this"
+	MainVariable             = InvisiblePrefix + "main"
+	ErrorVariable            = InvisiblePrefix + "error"
+	ArgumentListVariable     = InvisiblePrefix + "args"
+	CLIArgumentListVariable  = InvisiblePrefix + "cli_args"
+	ModeVariable             = InvisiblePrefix + "exec_mode"
+	DebugServicePathVariable = InvisiblePrefix + "debug_service_path"
+	PathsVariable            = InvisiblePrefix + "paths"
+	LocalizationVariable     = InvisiblePrefix + "localization"
+	LineVariable             = InvisiblePrefix + "line"
+	ModuleVariable           = InvisiblePrefix + "module"
+	RestStatusVariable       = InvisiblePrefix + "rest_status"
+	DiscardedVariable        = "_"
+	ReadonlyVariablePrefix   = "_"
+	VersionName              = ReadonlyVariablePrefix + "version"
+	CopyrightVariable        = ReadonlyVariablePrefix + "copyright"
+	InstanceUUIDVariable     = ReadonlyVariablePrefix + "server_instance"
+	BuildTimeVariable        = ReadonlyVariablePrefix + "buildtime"
+	PlatformVariable         = ReadonlyVariablePrefix + "platform"
 )
 
 // ValidSettings describes the list of valid settings, and whether they can be set by the

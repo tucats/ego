@@ -50,7 +50,7 @@ func authByteCode(c *Context, i interface{}) error {
 	// and we don't have credentials, this is a 401 in all cases.
 	if user == "" && pass == "" && token == "" {
 		c.running = false
-		c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusUnauthorized)
+		c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusUnauthorized)
 		writeResponse(c, "401 Not authorized")
 		writeStatus(c, http.StatusUnauthorized)
 
@@ -63,7 +63,7 @@ func authByteCode(c *Context, i interface{}) error {
 	if (kind == defs.TokenRequired || kind == defs.AdminTokenRequired) && !tokenValid {
 		c.running = false
 
-		c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
+		c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 		writeResponse(c, "403 Forbidden")
 		writeStatus(c, http.StatusForbidden)
 		ui.Log(ui.InfoLogger, "@authenticated token: no valid token")
@@ -75,7 +75,7 @@ func authByteCode(c *Context, i interface{}) error {
 		if user == "" && pass == "" {
 			c.running = false
 
-			c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusUnauthorized)
+			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusUnauthorized)
 			writeResponse(c, "401 Not authorized")
 			writeStatus(c, http.StatusUnauthorized)
 
@@ -97,7 +97,7 @@ func authByteCode(c *Context, i interface{}) error {
 		if !isAuth {
 			c.running = false
 
-			c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
+			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
 			ui.Log(ui.InfoLogger, "@authenticated any: not authenticated")
@@ -116,7 +116,7 @@ func authByteCode(c *Context, i interface{}) error {
 		if !isAuth {
 			c.running = false
 
-			c.GetSymbols().Root().SetAlways(defs.RestStatusVariableName, http.StatusForbidden)
+			c.GetSymbols().Root().SetAlways(defs.RestStatusVariable, http.StatusForbidden)
 			writeResponse(c, "403 Forbidden")
 			writeStatus(c, http.StatusForbidden)
 			ui.Log(ui.InfoLogger, fmt.Sprintf("@authenticated %s: not admin", kind))

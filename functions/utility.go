@@ -9,6 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -55,7 +56,7 @@ func ProfileSet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// Additionally, we don't allow anyone to change runtime, compiler, or server settings from Ego code
 
 	mode := "interactive"
-	if modeValue, found := symbols.Get("__exec_mode"); found {
+	if modeValue, found := symbols.Get(defs.ModeVariable); found {
 		mode = data.String(modeValue)
 	}
 
@@ -165,7 +166,7 @@ func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 // GetMode implements the util.Mode() function which reports the runtime mode.
 func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	m, ok := symbols.Get("__exec_mode")
+	m, ok := symbols.Get(defs.ModeVariable)
 	if !ok {
 		m = "run"
 	}
@@ -310,7 +311,7 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // GetArgs implements util.Args() which fetches command-line arguments from
 // the Ego command invocation, if any.
 func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	r, found := s.Get("__cli_args")
+	r, found := s.Get(defs.CLIArgumentListVariable)
 	if !found {
 		r = data.NewArray(data.StringType, 0)
 	}
@@ -432,7 +433,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 
 	// Scan over the symbol table. Skip hidden symbols.
 	for _, k := range s.Names() {
-		if strings.HasPrefix(k, "__") {
+		if strings.HasPrefix(k, defs.InvisiblePrefix) {
 			continue
 		}
 

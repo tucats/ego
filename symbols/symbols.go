@@ -221,7 +221,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	symbolTable.mutex.Lock()
 	defer symbolTable.mutex.Unlock()
 
-	readOnly := strings.HasPrefix(name, "_")
+	readOnly := strings.HasPrefix(name, defs.ReadonlyVariablePrefix)
 
 	// IF this doesn't exist, allocate more space in the values array
 	attr, ok := symbolTable.symbols[name]
@@ -237,7 +237,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 
 	symbolTable.SetValue(attr.slot, v)
 
-	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
+	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -286,7 +286,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	// Store the value, and update the symbol table entry.
 	symbolTable.SetValue(attr.slot, v)
 
-	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
+	if ui.IsActive(ui.SymbolLogger) && name != defs.LineVariable && name != defs.ModuleVariable {
 		valueString := data.Format(v)
 		if len(valueString) > 60 {
 			valueString = valueString[:57] + "..."
@@ -336,7 +336,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	// If we are setting a readonly value, then make sure we are
 	// setting a copy of the value, and for complex types, the value
 	// is marked as readeonly.
-	if strings.HasPrefix(name, "_") {
+	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 		attr.Readonly = true
 		v = data.DeepCopy(v)
 

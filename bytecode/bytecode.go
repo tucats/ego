@@ -20,10 +20,6 @@ const initialOpcodeSize = 20
 // initialStackSize is the initial stack size.
 const initialStackSize = 16
 
-// ErrorVariableName is the name of the local variable created for a
-// catch-block of a try/catch construct. The variable contains an error.
-const ErrorVariableName = "__error"
-
 // firstOptimizerLogMessage is a flag that indicates if this is the first time the
 // optimizer is being invoked, but has been turned off by configuration, and
 // the optimizer log is active. In this case, we put out (once) a message saying
