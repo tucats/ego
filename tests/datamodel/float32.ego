@@ -4,7 +4,7 @@
     v := float32(1.1)
     @assert reflect(v).basetype == "float32"
 
-    v1 := v + 1
+    v1 := v + float32(1)
     @assert v1 == float32(2.1)
     @assert reflect(v1).basetype == "float32"
 

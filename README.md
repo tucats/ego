@@ -207,7 +207,7 @@ is disabled.
 This defaults to `dynamic` which means that a variable can take on different types during the
 execution of a program. When set to `static`, it means that once a variable is declared within
 a given scope, it can never contain a variable of a different type (that is, if declared as a
-string, it can not be set to an int value). The value `loose` can be used to specify that typing
+string, it can not be set to an int value). The value `relaxed` can be used to specify that typing
 is largely static, but automatic coercion is provided for common values in initializers, etc. 
 such as using `[]int32{1,2,3}` which assumes the constants are meant to be `int32` values even
 though they are expressed as `int` constants.

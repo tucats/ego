@@ -76,7 +76,15 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
+
 		if v1 == nil && v2 == nil {
 			result = true
 		} else {
@@ -162,7 +170,14 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		result = !reflect.DeepEqual(v1, v2)
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
 
 		switch v1.(type) {
 		case nil:
@@ -231,7 +246,14 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -299,7 +321,14 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -367,7 +396,14 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
 
 		switch v1.(type) {
 		case byte, int32, int, int64:
@@ -434,7 +470,15 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
+
 		switch v1.(type) {
 		case byte, int32, int, int64:
 			result = data.Int64(v1) <= data.Int64(v2)

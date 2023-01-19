@@ -315,7 +315,10 @@ func RunAction(c *cli.Context) error {
 					os.Stderr.Write([]byte(msg))
 				}
 
-				break
+				// If it was an exit operation, we are done with the REPL loop
+				if egoErr, ok := err.(*errors.Error); ok && egoErr.Is(errors.ErrExit) {
+					break
+				}
 			}
 
 			if c.Boolean("symbols") {
@@ -323,6 +326,7 @@ func RunAction(c *cli.Context) error {
 			}
 		}
 
+		// If this came as a program via the command line, do not do REPL loop.
 		if wasCommandLine {
 			break
 		}

@@ -14,6 +14,7 @@
 //           text of the error.
 
 import "http"
+import "math"
 
 func handler( req http.Request, resp http.Response) {
     // Parse apart the URL, which should be a slash and the

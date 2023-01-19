@@ -77,7 +77,14 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	if target, ok := value.(*data.Map); ok {
 		if m, ok := v.(map[string]interface{}); ok {
 			for k, v := range m {
-				_, err = target.Set(k, v)
+				k2 := data.Coerce(k, data.InstanceOfType(target.KeyType()))
+				v2 := v
+
+				if !target.ValueType().IsInterface() {
+					v2 = data.Coerce(v, data.InstanceOfType(target.ValueType()))
+				}
+
+				_, err = target.Set(k2, v2)
 				if err != nil {
 					return errors.NewError(err), nil
 				}
@@ -100,7 +107,7 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			for k, v := range m {
 				if target.ValueType().Kind() == data.StructKind {
 					if mm, ok := v.(map[string]interface{}); ok {
-						v = data.NewStructFromMap(mm)
+						v = data.NewStructOfTypeFromMap(target.ValueType(), mm)
 					}
 				}
 

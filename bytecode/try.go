@@ -22,6 +22,7 @@ var catchSets = [][]error{
 		errors.ErrNilPointerReference,
 		errors.ErrDivisionByZero,
 		errors.ErrArrayIndex,
+		errors.ErrTypeMismatch,
 	},
 }
 

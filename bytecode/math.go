@@ -162,7 +162,14 @@ func addByteCode(c *Context, i interface{}) error {
 
 		// All other types are scalar math.
 	default:
-		v1, v2 = data.Normalize(v1, v2)
+		if c.Static > 0 {
+			v1, v2 = data.Normalize(v1, v2)
+		} else {
+			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+				return c.error(errors.ErrTypeMismatch).
+					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+			}
+		}
 
 		switch v1.(type) {
 		case byte:
@@ -267,7 +274,14 @@ func subtractByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	if c.Static > 0 {
+		v1, v2 = data.Normalize(v1, v2)
+	} else {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+		}
+	}
 
 	switch v1.(type) {
 	case byte:
@@ -330,7 +344,14 @@ func multiplyByteCode(c *Context, i interface{}) error {
 	}
 
 	// Nope, plain old math multiply, so normalize the values.
-	v1, v2 = data.Normalize(v1, v2)
+	if c.Static > 0 {
+		v1, v2 = data.Normalize(v1, v2)
+	} else {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+		}
+	}
 
 	switch v1.(type) {
 	case bool:
@@ -375,7 +396,14 @@ func exponentByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	if c.Static > 0 {
+		v1, v2 = data.Normalize(v1, v2)
+	} else {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+		}
+	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
@@ -439,7 +467,14 @@ func divideByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	if c.Static > 0 {
+		v1, v2 = data.Normalize(v1, v2)
+	} else {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+		}
+	}
 
 	switch v1.(type) {
 	case byte:
@@ -514,7 +549,14 @@ func moduloByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context("nil")
 	}
 
-	v1, v2 = data.Normalize(v1, v2)
+	if c.Static > 0 {
+		v1, v2 = data.Normalize(v1, v2)
+	} else {
+		if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
+			return c.error(errors.ErrTypeMismatch).
+				Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
+		}
+	}
 
 	switch v1.(type) {
 	case byte:

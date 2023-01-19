@@ -675,6 +675,9 @@ var Messages = map[string]map[string]string{
 	"error.type.def": {
 		"en": "missing type definition",
 	},
+	"error.type.mismatch": {
+		"en": "type mismatch",
+	},
 	"error.type.name": {
 		"en": "invalid type name",
 	},
@@ -1096,7 +1099,7 @@ var Messages = map[string]map[string]string{
 		"en": "Enable bytecode optimizer",
 	},
 	"opt.run.static": {
-		"en": "Enforce static typing on program execution",
+		"en": "Specify value typing during program execution",
 	},
 	"opt.run.symbols": {
 		"en": "Display symbol table",
@@ -1159,7 +1162,7 @@ var Messages = map[string]map[string]string{
 		"en": "File path of sandboxed area for file I/O",
 	},
 	"opt.server.run.static": {
-		"en": "Enforce static typing on program execution",
+		"en": "Specify value typing during service execution",
 	},
 	"opt.server.run.superuser": {
 		"en": "Designate this user as a super-user with ROOT privileges",

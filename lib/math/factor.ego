@@ -27,10 +27,10 @@ func Factor(n int) []int {
 
     for i:= 2; i <= length; i=i+1 {
         count = count + 1
-        d := float64(n)/i
+        d := float64(n)/float64(i)
         j := int(n)/i
 
-        if d == j {
+        if d == float64(j) {
             if index(result, i) < 0 {
                 result = append(result, i)
             }

@@ -109,6 +109,51 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	return &result
 }
 
+func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
+	if value, ok := m[TypeMDKey]; ok {
+		t = TypeOf(value)
+	} else if t == nil {
+		t = StructureType()
+		for k, v := range m {
+			t.DefineField(k, TypeOf(v))
+		}
+	}
+
+	static := (len(m) > 0)
+	if value, ok := m[StaticMDKey]; ok {
+		static = Bool(value)
+	}
+
+	readonly := false
+	if value, ok := m[ReadonlyMDKey]; ok {
+		readonly = Bool(value)
+	}
+
+	fields := map[string]interface{}{}
+
+	// Copy all the map items except any metadata items. Make
+	// sure the map value matches the field definition.
+	for k, v := range m {
+		if !strings.HasPrefix(k, MetadataPrefix) {
+			f := t.fields[k]
+			if f != nil {
+				v = Coerce(v, InstanceOfType(f))
+			}
+
+			fields[k] = v
+		}
+	}
+
+	result := Struct{
+		static:   static,
+		typeDef:  t,
+		readonly: readonly,
+		fields:   fields,
+	}
+
+	return &result
+}
+
 func (s *Struct) FromBuiltinPackage() *Struct {
 	s.fromBuiltinPackage = true
 

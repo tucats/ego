@@ -60,7 +60,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 			valueType := data.TypeOf(value)
 
 			// If we are initializing any integer or float array, we can coerce
-			// value from another integer type if we are in loose or dynamic
+			// value from another integer type if we are in relaxed or dynamic
 			// typing.
 			if c.Static < 2 {
 				if isInt && valueType.IsIntegerType() {

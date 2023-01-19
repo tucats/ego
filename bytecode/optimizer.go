@@ -159,7 +159,11 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					if token, ok := replacement.Operand.(placeholder); ok {
 						switch token.Operation {
 						case OptRunConstantFragment:
-							v, _ := b.executeFragment(idx, idx+len(optimization.Pattern))
+							v, err := b.executeFragment(idx, idx+len(optimization.Pattern))
+							if err != nil {
+								return 0, err
+							}
+
 							newInstruction.Operand = v
 
 						case OptRead:
@@ -206,7 +210,12 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 	// Now do any additional optimizations that aren't pattern-based.
 	if staticOptimizations {
-		count += b.constantStructOptimizer()
+		i, err := b.constantStructOptimizer()
+		if err != nil {
+			return count, err
+		}
+
+		count += i
 	}
 
 	if count > 0 && ui.IsActive(ui.OptimizerLogger) && b.nextAddress != startingSize {
@@ -229,8 +238,11 @@ func (b *ByteCode) executeFragment(start, end int) (interface{}, error) {
 
 	s := symbols.NewSymbolTable("fragment")
 	c := NewContext(s, fragment)
+	c.Static = 0 // Assume strict typing
 
-	_ = c.Run()
+	if err := c.Run(); err != nil {
+		return nil, err
+	}
 
 	return c.Pop()
 }
@@ -273,7 +285,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	}
 }
 
-func (b *ByteCode) constantStructOptimizer() int {
+func (b *ByteCode) constantStructOptimizer() (int, error) {
 	count := 0
 
 	for idx := 0; idx < b.nextAddress; idx++ {
@@ -303,7 +315,10 @@ func (b *ByteCode) constantStructOptimizer() int {
 		// If they are all constant values, we can construct an array constant
 		// here one time by executing the code fragment.
 		if areConstant {
-			v, _ := b.executeFragment(idx-fieldCount*2, idx)
+			v, err := b.executeFragment(idx-fieldCount*2, idx)
+			if err != nil {
+				return 0, err
+			}
 
 			b.Patch(idx-fieldCount*2, fieldCount*2+1, []instruction{
 				{
@@ -318,5 +333,5 @@ func (b *ByteCode) constantStructOptimizer() int {
 		}
 	}
 
-	return count
+	return count, nil
 }

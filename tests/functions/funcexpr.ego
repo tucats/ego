@@ -7,8 +7,9 @@
    }
 
    func x2( v float64) float64 {
-      return v * 2
+      return v * 2.0
    }
+   
    v1 := x1(x2, 55.)
    v2 := x1( func(x int) int { 
          return x*3 

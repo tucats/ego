@@ -35,7 +35,11 @@
     }
 
     @assert type(m) == "map[string]interface{}"
-    @assert m["age"] == 55
+
+    // Test for the float value, because the model uses interfaces{} and
+    // so json.Unmarshal unhelpfully converts unknown numeric values to
+    // float64 (for safety, I guess)
+    @assert m["age"] == float64(55)
     @assert m["name"] == "Tom"
 
     // Can we restore values into an array?
