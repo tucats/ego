@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 )
 
@@ -16,8 +17,13 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		c.typeStrictness = data.Int(v)
-		c.symbols.SetAlways("__static_data_types", c.typeStrictness)
+		value := data.Int(v)
+		if value < defs.StrictTypeEnforcement || value > defs.NoTypeEnforcement {
+			return c.error(errors.ErrInvalidValue).Context(value)
+		}
+
+		c.typeStrictness = value
+		c.symbols.SetAlways(defs.TypeEnforcement, value)
 	}
 
 	return err

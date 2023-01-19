@@ -45,7 +45,6 @@ func RunServer(c *cli.Context) error {
 	}
 
 	// If it was specified on the command line, override it.
-
 	if c.WasFound(defs.SymbolTableSizeOption) {
 		symbols.SymbolAllocationSize, _ = c.Integer(defs.SymbolTableSizeOption)
 	}
@@ -84,6 +83,20 @@ func RunServer(c *cli.Context) error {
 			symbols.SymbolAllocationSize = symbols.MinSymbolAllocationSize
 		}
 	}
+
+	// Determine type enforcement for the server
+	typeEnforcement := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
+	if value, found := c.Keyword(defs.TypingOption); found {
+		typeEnforcement = value
+	}
+
+	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {
+		typeEnforcement = defs.NoTypeEnforcement
+	}
+
+	// Store the setting back in the runtime settings cache. This can be retrieved later by the
+	// individual service handler(s)
+	settings.Set(defs.StaticTypesSetting, []string{"strict", "relaxed", "dynamic"}[typeEnforcement])
 
 	// If we have an explicit session ID, override the default. Otherwise,
 	// we'll use the default value created during symbol table startup.

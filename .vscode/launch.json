@@ -133,12 +133,12 @@
             "args": [ "--log", "rest", "logon", "-l", "homebase.local", "-u", "admin", "-p", "password"]
         },
         {
-            "name": "Local ego server",
+            "name": "Local ego server (strict type checking)",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "-k"]
+            "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "--typing=strict"]
         },
         {
             "name": "Detached ego server",

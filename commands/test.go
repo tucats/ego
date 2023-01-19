@@ -42,8 +42,8 @@ func TestAction(c *cli.Context) error {
 
 	if c.WasFound(defs.TypingOption) {
 		typeOption, _ := c.Keyword(defs.TypingOption)
-		if typeOption < 0 {
-			typeOption = 0
+		if typeOption < defs.StrictTypeEnforcement {
+			typeOption = defs.NoTypeEnforcement
 		}
 
 		staticTypes = typeOption
@@ -61,7 +61,7 @@ func TestAction(c *cli.Context) error {
 	// Add test-specific functions and values
 	symbolTable.SetAlways("eval", runtime.Eval)
 	symbolTable.SetAlways("__exec_mode", "test")
-	symbolTable.SetAlways("__static_data_types", staticTypes)
+	symbolTable.SetAlways(defs.TypeEnforcement, staticTypes)
 
 	runtime.AddBuiltinPackages(symbolTable)
 

@@ -112,11 +112,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_requestor", requestor)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
-	if staticTypes < 0 {
-		staticTypes = 2
+	if staticTypes < defs.StrictTypeEnforcement {
+		staticTypes = defs.NoTypeEnforcement
 	}
 
-	symbolTable.SetAlways("__static_data_types", staticTypes)
+	symbolTable.SetAlways(defs.TypeEnforcement, staticTypes)
 
 	// Get the query parameters and store as a local variable
 	queryParameters := r.URL.Query()

@@ -665,6 +665,7 @@ var ServerRunGrammar = []cli.Option{
 	},
 	{
 		LongName:            defs.TypingOption,
+		Aliases:             []string{"typing"},
 		Description:         "server.run.static",
 		OptionType:          cli.KeywordType,
 		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},
@@ -731,6 +732,7 @@ var RunGrammar = []cli.Option{
 	},
 	{
 		LongName:    defs.TypingOption,
+		Aliases:     []string{"typing"},
 		Description: "run.static",
 		OptionType:  cli.KeywordType,
 		Keywords:    []string{defs.Strict, defs.Loose, defs.Dynamic},
@@ -784,6 +786,7 @@ var RunGrammar = []cli.Option{
 var TestGrammar = []cli.Option{
 	{
 		LongName:            defs.TypingOption,
+		Aliases:             []string{"typing"},
 		Description:         "run.static",
 		OptionType:          cli.KeywordType,
 		Keywords:            []string{defs.Strict, defs.Loose, defs.Dynamic},

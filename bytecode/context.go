@@ -89,9 +89,12 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	// Determine whether static data typing is in effect. This is
 	// normally off, but can be set by a global variable (which is
 	// ultimately set by a profile setting or CLI option).
-	static := 3
-	if s, found := s.Get("__static_data_types"); found {
+	static := defs.NoTypeEnforcement
+	if s, found := s.Get(defs.TypeEnforcement); found {
 		static = data.Int(s)
+		if static < defs.StrictTypeEnforcement || static > defs.NoTypeEnforcement {
+			static = defs.NoTypeEnforcement
+		}
 	}
 
 	// If we weren't given a table, create an empty temp table.

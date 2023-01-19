@@ -226,7 +226,7 @@ const (
 	AutoImportOption      = "auto-import"
 	DisassembleOption     = "disassemble"
 	FullSymbolScopeOption = "full-symbol-scope"
-	TypingOption          = "typing"
+	TypingOption          = "types"
 	SymbolTableSizeOption = "symbol-allocation"
 	OptimizerOption       = "optimize"
 )
@@ -252,6 +252,11 @@ const (
 
 const (
 	ByteCodeReflectionTypeString = "<*bytecode.ByteCode Value>"
+
+	TypeEnforcement        = "__type_checking"
+	StrictTypeEnforcement  = 0
+	RelaxedTypeEnforcement = 1
+	NoTypeEnforcement      = 2
 )
 
 const (

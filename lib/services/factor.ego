@@ -31,10 +31,10 @@ func handler( req http.Request, resp http.Response) {
 
     // Convert the value to an integer and get the list of factors.
     try {
-        v := int(value)
-        if v == nil {
+        v , err := strconv.Atoi(value)
+        if err != nil {
             resp.WriteStatus(400)
-            resp.WriteMessage(fmt.Sprintf("invalid integer: %s", value))
+            resp.WriteMessage(fmt.Sprintf("invalid integer value: %s", value))
 
             return
         }

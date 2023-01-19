@@ -341,13 +341,18 @@ func RunAction(c *cli.Context) error {
 	return err
 }
 
-func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, staticTypes int, interactive, disassemble bool) *symbols.SymbolTable {
+func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("file " + mainName)
 
 	args := data.NewArrayFromArray(data.StringType, programArgs)
 	symbolTable.SetAlways("__cli_args", args)
-	symbolTable.SetAlways("__static_data_types", staticTypes)
+
+	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {
+		typeEnforcement = defs.NoTypeEnforcement
+	}
+
+	symbolTable.SetAlways(defs.TypeEnforcement, typeEnforcement)
 
 	if interactive {
 		symbolTable.SetAlways("__exec_mode", "interactive")
