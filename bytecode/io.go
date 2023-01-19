@@ -220,7 +220,7 @@ func fromFileByteCode(c *Context, i interface{}) error {
 	}
 
 	if b, err := ioutil.ReadFile(data.String(i)); err == nil {
-		c.tokenizer = tokenizer.New(string(b))
+		c.tokenizer = tokenizer.New(string(b), false)
 
 		return nil
 	} else {

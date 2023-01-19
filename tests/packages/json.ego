@@ -6,8 +6,7 @@
     s := json.MarshalIndent(anon, "", "  ")
 
     // This test is sensitive to formatting.
-    @assert string(s) == 
-`{
+    @assert string(s) == `{
   "age": 55,
   "name": "Tom"
 }`

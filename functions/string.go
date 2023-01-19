@@ -364,7 +364,7 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Tokenize splits a string into tokens.
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := data.String(args[0])
-	t := tokenizer.New(src)
+	t := tokenizer.New(src, false)
 
 	r := data.NewArray(data.StringType, len(t.Tokens))
 

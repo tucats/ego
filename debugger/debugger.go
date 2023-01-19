@@ -88,7 +88,7 @@ func Debugger(c *bytecode.Context) error {
 				cmd = "step"
 			}
 
-			tokens = tokenizer.New(cmd)
+			tokens = tokenizer.New(cmd, false)
 			if !tokens.AtEnd() {
 				break
 			}
@@ -144,7 +144,7 @@ func Debugger(c *bytecode.Context) error {
 
 			case "print":
 				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
-				t2 := tokenizer.New(text)
+				t2 := tokenizer.New(text, true)
 
 				traceMode := ui.IsActive(ui.TraceLogger)
 				ui.Active(ui.TraceLogger, false)
@@ -187,7 +187,7 @@ func Debugger(c *bytecode.Context) error {
 func runAfterFirstToken(s *symbols.SymbolTable, t *tokenizer.Tokenizer, allowTrace bool) error {
 	verb := t.GetTokens(0, 1, false)
 	text := strings.TrimPrefix(strings.TrimSpace(t.GetSource()), verb)
-	t2 := tokenizer.New(text)
+	t2 := tokenizer.New(text, false)
 
 	traceMode := ui.IsActive(ui.TraceLogger)
 
@@ -210,7 +210,7 @@ func getLine() string {
 		return ""
 	}
 
-	t := tokenizer.New(text)
+	t := tokenizer.New(text, false)
 
 	for {
 		braceCount := 0
@@ -249,7 +249,7 @@ func getLine() string {
 
 		if braceCount > 0 || parenCount > 0 || bracketCount > 0 || openTick {
 			text = text + runtime.ReadConsoleText(".....> ")
-			t = tokenizer.New(text)
+			t = tokenizer.New(text, false)
 
 			continue
 		} else {

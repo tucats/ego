@@ -52,7 +52,7 @@ func TestCompiler_typeCompiler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c.t = tokenizer.New(tt.arg)
+			c.t = tokenizer.New(tt.arg, true)
 
 			if tt.debug {
 				fmt.Println("DEBUG")

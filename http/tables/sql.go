@@ -242,7 +242,7 @@ func readRowDataTx(tx *sql.Tx, q string, sessionID int32, w http.ResponseWriter)
 func splitSQLStatements(s string) []string {
 	result := []string{}
 
-	t := tokenizer.New(s)
+	t := tokenizer.New(s, false)
 	next := ""
 
 	for !t.AtEnd() {

@@ -28,9 +28,10 @@
 
    xm := map[string]map[string]int {
       "cole": {
-         "tom": 30
-      }
+         "tom": 30,
+      },
    }
+
    z := y(xm)
    @assert z == 60
 

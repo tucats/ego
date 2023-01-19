@@ -13,16 +13,14 @@
     @assert str == `[{"Name":"Tom","Age":53,"Title":"Dad"},{"Name":"Mary","Age":47,"Title":"Mom"}]`
 
     str = t.String("text")
-    @assert str == 
-`Name    Age    Title    
+    @assert str == `Name    Age    Title    
 ====    ===    =====    
 Tom     53     Dad      
 Mary    47     Mom      
 `
 
     str = t.String("indented")
-    @assert str == 
-`[
+    @assert str == `[
    {
       "Age": 53,
       "Name": "Tom",

@@ -15,6 +15,7 @@ import (
 const (
 	AssertDirective       = "assert"
 	AuthentiatedDirective = "authenticated"
+	DebugDirective        = "debug"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
 	FailDirective         = "fail"
@@ -52,6 +53,11 @@ func (c *Compiler) compileDirective() error {
 
 	case AuthentiatedDirective:
 		return c.authenticatedDirective()
+
+	case DebugDirective:
+		ui.Log(ui.InternalLogger, "DEBUG DIRECTIVE")
+
+		return nil
 
 	case EntryPointDirective:
 		return c.entrypointDirective()

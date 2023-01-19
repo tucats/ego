@@ -271,7 +271,7 @@ func TableInsert(c *cli.Context) error {
 		}
 
 		// Tokenize the parameter, which should be of the form <id> = <value>
-		t := tokenizer.New(p)
+		t := tokenizer.New(p, false)
 
 		// Get the column name, and confirm that it's an identifier.
 		column := t.Next()
@@ -366,7 +366,7 @@ func TableCreate(c *cli.Context) error {
 			break
 		}
 
-		t := tokenizer.New(columnDefText)
+		t := tokenizer.New(columnDefText, false)
 		column := t.Next()
 
 		if !t.IsNext(tokenizer.ColonToken) {
@@ -465,7 +465,7 @@ func TableUpdate(c *cli.Context) error {
 			break
 		}
 
-		t := tokenizer.New(p)
+		t := tokenizer.New(p, false)
 		column := t.NextText()
 
 		if !t.IsNext(tokenizer.AssignToken) {
@@ -561,7 +561,7 @@ func makeFilter(filters []string) string {
 	for _, filter := range filters {
 		var term strings.Builder
 
-		t := tokenizer.New(filter)
+		t := tokenizer.New(filter, true)
 		term1 := t.NextText()
 
 		if t.AtEnd() {

@@ -48,7 +48,7 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 		switch t.NextText() {
 		case "when":
 			text := t.GetTokens(2, len(t.Tokens), true)
-			ec := compiler.New("break expression").WithTokens(tokenizer.New(text))
+			ec := compiler.New("break expression").WithTokens(tokenizer.New(text, true))
 
 			bc, err := ec.Expression()
 			if err == nil {
@@ -126,7 +126,8 @@ func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 			if e == nil {
 				for n, bp := range v {
 					if bp.Kind == 2 {
-						ec := compiler.New("break expression").WithTokens(tokenizer.New(bp.Text))
+						ec := compiler.New("break expression").
+							WithTokens(tokenizer.New(bp.Text, true))
 
 						bc, err := ec.Expression()
 						if err == nil {

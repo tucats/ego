@@ -118,11 +118,16 @@ var crushedTokens = []crushedToken{
 }
 
 // New creates a tokenizer instance and breaks the string
-// up into an array of tokens.
-func New(src string) *Tokenizer {
+// up into an array of tokens. The isCode flag is used to
+// indicate this is Ego code, which has some different
+// tokenizing rules.
+func New(src string, isCode bool) *Tokenizer {
 	var s scanner.Scanner
 
-	t := Tokenizer{Source: splitLines(src), TokenP: 0}
+	lines := splitLines(src, isCode)
+	src = strings.Join(lines, "\n")
+
+	t := Tokenizer{Source: lines, TokenP: 0}
 	t.Tokens = make([]Token, 0)
 
 	s.Init(strings.NewReader(src))
@@ -162,38 +167,40 @@ func New(src string) *Tokenizer {
 
 		// See if this is one of the special cases convert multiple tokens into
 		// a single token?
-		for _, crush := range crushedTokens {
-			if len(crush.source) > len(t.Tokens) {
-				continue
-			}
+		if isCode {
+			for _, crush := range crushedTokens {
+				if len(crush.source) > len(t.Tokens) {
+					continue
+				}
 
-			found := true
-			// See if the current token stream now ends with a sequence that should
-			// be collapsed. If we look at each source token and never get a mismatch
-			// we know this was still found.
-			for i, ch := range crush.source {
-				if t.Tokens[len(t.Tokens)-len(crush.source)+i] != ch {
-					found = false
+				found := true
+				// See if the current token stream now ends with a sequence that should
+				// be collapsed. If we look at each source token and never get a mismatch
+				// we know this was still found.
+				for i, ch := range crush.source {
+					if t.Tokens[len(t.Tokens)-len(crush.source)+i] != ch {
+						found = false
+
+						break
+					}
+				}
+
+				// If we found a match here, lop off the individual tokens
+				// and replace the "current" token with the crushed value
+				if found {
+					t.Tokens = append(t.Tokens[:len(t.Tokens)-len(crush.source)], crush.result)
+
+					// We also must adjust the Line and Pos arrays accordingly. Remove as many
+					// items from the end as needed.
+					t.Line = t.Line[:len(t.Line)-len(crush.source)+1]
+					t.Pos = t.Pos[:len(t.Pos)-len(crush.source)+1]
+
+					// Adjust the column to reflect the character position of the
+					// start of the crushed token.
+					column = column - len(crush.result.Spelling())
 
 					break
 				}
-			}
-
-			// If we found a match here, lop off the individual tokens
-			// and replace the "current" token with the crushed value
-			if found {
-				t.Tokens = append(t.Tokens[:len(t.Tokens)-len(crush.source)], crush.result)
-
-				// We also must adjust the Line and Pos arrays accordingly. Remove as many
-				// items from the end as needed.
-				t.Line = t.Line[:len(t.Line)-len(crush.source)+1]
-				t.Pos = t.Pos[:len(t.Pos)-len(crush.source)+1]
-
-				// Adjust the column to reflect the character position of the
-				// start of the crushed token.
-				column = column - len(crush.result.Spelling())
-
-				break
 			}
 		}
 
@@ -350,16 +357,70 @@ func (t *Tokenizer) GetLine(line int) string {
 }
 
 // splitLines splits a string by line endings, and returns the
-// source as an array of strings.
-func splitLines(src string) []string {
+// source as an array of strings. If the isCode flag is set, the
+// source lines have ";" added according to Go rules to add extra
+// tokens to make command breaks clear. If the flag is false, no
+// modifiecation to the code other than line splitting is done.
+func splitLines(src string, isCode bool) []string {
+	var result []string
+
 	// Are we seeing Windows-style line endings? If so, use that as
 	// the split boundary.
 	if strings.Index(src, "\r\n") > 0 {
-		return strings.Split(src, "\r\n")
+		result = strings.Split(src, "\r\n")
+	} else {
+		// Otherwise, simple split by new-line works fine.
+		result = strings.Split(src, "\n")
 	}
 
-	// Otherwise, simple split by new-line works fine.
-	return strings.Split(src, "\n")
+	// Look to see if we should add in semicolons in the Go style. We
+	// do not add them if in the middle of a multi-line backtick-quoted
+	// constant, or if the last rune is a "continuation" rune like a comma.
+	if isCode {
+		backTick := false
+
+		for n, line := range result {
+			text := strings.TrimSpace(line)
+			lastChar := rune(0)
+
+			for _, ch := range text {
+				if ch == '`' {
+					backTick = !backTick
+				}
+
+				lastChar = ch
+			}
+
+			if backTick {
+				continue
+			}
+
+			found := false
+			continuationRunes := []rune{
+				rune(0),
+				';',
+				':',
+				',',
+				'.',
+				'{',
+				'`',
+			}
+
+			for _, t := range continuationRunes {
+				if lastChar == t {
+					found = true
+
+					break
+				}
+			}
+
+			if !found {
+				result[n] = text + " ;"
+			}
+		}
+	}
+
+	return result
 }
 
 // GetSource returns the entire string of the tokenizer.

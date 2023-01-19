@@ -1225,7 +1225,7 @@ var Messages = map[string]map[string]string{
 		"en": "If specified, list only this user",
 	},
 	"opt.table.read.columns": {
-		"en": "List of optional column names to display; if not specified, all columns are returned",
+		"en": "List of columns to display; default is all columns",
 	},
 	"opt.table.read.order.by": {
 		"en": "List of optional columns use to sort output",

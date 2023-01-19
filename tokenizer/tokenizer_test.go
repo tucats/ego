@@ -24,6 +24,7 @@ func TestTokenize(t *testing.T) {
 				NewFloatToken("3.14"),
 				AddToken,
 				NewIntegerToken("2"),
+				NewSpecialToken(";"),
 			},
 		},
 		{
@@ -31,7 +32,10 @@ func TestTokenize(t *testing.T) {
 			args: args{
 				src: "{}",
 			},
-			want: []Token{EmptyInitializerToken},
+			want: []Token{
+				EmptyInitializerToken,
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "embedded compound token",
@@ -41,7 +45,9 @@ func TestTokenize(t *testing.T) {
 			want: []Token{
 				NewIdentifierToken("stuff"),
 				EmptyInitializerToken,
-				NewIdentifierToken("here")},
+				NewIdentifierToken("here"),
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "interface{} compound token",
@@ -51,7 +57,9 @@ func TestTokenize(t *testing.T) {
 			want: []Token{
 				VarToken,
 				NewIdentifierToken("x"),
-				EmptyInterfaceToken},
+				EmptyInterfaceToken,
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "elipsis compound token",
@@ -63,7 +71,9 @@ func TestTokenize(t *testing.T) {
 				StartOfListToken,
 				NewIdentifierToken("stuff"),
 				VariadicToken,
-				EndOfListToken},
+				EndOfListToken,
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "assignment, LEQ compound tokens",
@@ -75,7 +85,9 @@ func TestTokenize(t *testing.T) {
 				DefineToken,
 				NewIntegerToken("5"),
 				LessThanOrEqualsToken,
-				NewIntegerToken("6")},
+				NewIntegerToken("6"),
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "channel compound tokens",
@@ -86,6 +98,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("x"),
 				ChannelReceiveToken,
 				NewIntegerToken("55"),
+				NewSpecialToken(";"),
 			},
 		},
 		{
@@ -93,7 +106,10 @@ func TestTokenize(t *testing.T) {
 			args: args{
 				src: "wage55",
 			},
-			want: []Token{NewIdentifierToken("wage55")},
+			want: []Token{
+				NewIdentifierToken("wage55"),
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "Integer expression with spaces",
@@ -103,7 +119,9 @@ func TestTokenize(t *testing.T) {
 			want: []Token{
 				NewIntegerToken("11"),
 				AddToken,
-				NewIntegerToken("15")},
+				NewIntegerToken("15"),
+				NewSpecialToken(";"),
+			},
 		},
 		{
 			name: "Integer expression without spaces",
@@ -114,6 +132,7 @@ func TestTokenize(t *testing.T) {
 				NewIntegerToken("11"),
 				AddToken,
 				NewIntegerToken("15"),
+				NewSpecialToken(";"),
 			},
 		},
 		{
@@ -125,6 +144,7 @@ func TestTokenize(t *testing.T) {
 				NewIdentifierToken("name"),
 				AddToken,
 				NewStringToken("User"),
+				NewSpecialToken(";"),
 			},
 		},
 		// TODO: Add test cases.
@@ -132,7 +152,7 @@ func TestTokenize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tk := New(tt.args.src)
+			tk := New(tt.args.src, true)
 			got := tk.Tokens
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Tokenize() = %v, want %v", got, tt.want)
@@ -215,7 +235,7 @@ func TestTokenizer_Remainder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := New(tt.name)
+			tr := New(tt.name, false)
 			tr.Set(tt.count)
 
 			if got := tr.Remainder(); got != tt.want {

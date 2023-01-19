@@ -14,8 +14,7 @@
     got := t.String()
 
     // Note, this is very sensitive to formatting
-    expect := 
-`Name     Age    
+    expect := `Name     Age    
 =====    ===    
 Mary     48     
 Sarah    22     

@@ -215,6 +215,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	}
 
 	bc.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
+	bc.Seal()
 
 	return bc, nil
 }

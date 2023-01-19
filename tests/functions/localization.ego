@@ -5,16 +5,16 @@
     @localization {
         "en": {
             "hello.msg": "hello, {{.Name}}",
-            "goodbye.msg":"goodbye"
+            "goodbye.msg":"goodbye",
         },
         "fr": {
             "goodbye.msg":"au revoir",
-            "hello.msg": "bonjour, {{.Name}}"
+            "hello.msg": "bonjour, {{.Name}}",
         },
         "es": {
             "hello.msg": "hola, {{.Name}}",
-            "goodbye.msg":"adios"
-        }
+            "goodbye.msg":"adios",
+        },
     }
 
     // Try it in French

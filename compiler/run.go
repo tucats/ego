@@ -10,7 +10,7 @@ import (
 
 // Given a string, compile and execute it immediately.
 func RunString(name string, s *symbols.SymbolTable, programText string) error {
-	return Run(name, s, tokenizer.New(programText))
+	return Run(name, s, tokenizer.New(programText, true))
 }
 
 // Given a token stream, compile and execute it immediately. Note that language

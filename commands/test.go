@@ -108,7 +108,7 @@ func TestAction(c *cli.Context) error {
 		}
 
 		// Tokenize the input
-		t := tokenizer.New(text)
+		t := tokenizer.New(text, true)
 
 		// If it doesn't start with "@", "test" it's not a test,
 		// but a support file, and we skip it.

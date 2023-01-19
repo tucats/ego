@@ -12,9 +12,11 @@ import (
 func (c *Compiler) compileConst() error {
 	// Is this a list of constants enclosed in a parenthesis?
 	terminator := tokenizer.EmptyToken
+	isList := false
 
 	if c.t.IsNext(tokenizer.StartOfListToken) {
 		terminator = tokenizer.EndOfListToken
+		isList = true
 	}
 
 	// Scan over the list (possibly a single item) and compile each
@@ -22,6 +24,14 @@ func (c *Compiler) compileConst() error {
 	// away as readonly symbols.
 	for terminator == tokenizer.EmptyToken || !c.t.IsNext(terminator) {
 		name := c.t.Next()
+		if isList && name == tokenizer.SemicolonToken {
+			if c.t.IsNext(terminator) {
+				break
+			}
+			
+			name = c.t.Next()
+		}
+
 		if !name.IsIdentifier() {
 			return c.error(errors.ErrInvalidSymbolName)
 		}

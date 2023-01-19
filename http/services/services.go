@@ -243,7 +243,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Tokenize the input, adding an epilogue that creates a call to the
 		// handler function.
-		tokens = tokenizer.New(string(bytes) + "\n@handler handler")
+		tokens = tokenizer.New(string(bytes)+"\n@handler handler", true)
 
 		// Compile the token stream
 		name := strings.ReplaceAll(r.URL.Path, "/", "_")

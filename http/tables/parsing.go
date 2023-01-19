@@ -89,7 +89,7 @@ func formWhereExpressions(filters []string) string {
 	var result strings.Builder
 
 	for i, clause := range filters {
-		tokens := tokenizer.New(clause)
+		tokens := tokenizer.New(clause, true)
 		if tokens.AtEnd() {
 			continue
 		}
@@ -120,7 +120,7 @@ func formWhereExpressions(filters []string) string {
 func formCondition(condition string) string {
 	var result strings.Builder
 
-	tokens := tokenizer.New(condition)
+	tokens := tokenizer.New(condition, true)
 	if tokens.AtEnd() {
 		return ""
 	}

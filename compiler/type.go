@@ -113,7 +113,7 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 // the resulting value is a type definition of the given name.
 func CompileTypeSpec(source string) (*data.Type, error) {
 	typeCompiler := New("type compiler")
-	typeCompiler.t = tokenizer.New(source)
+	typeCompiler.t = tokenizer.New(source, true)
 	nameSpelling := ""
 
 	// Does it have a type <name> prefix? And is that a package.name style name?

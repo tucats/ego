@@ -74,6 +74,14 @@ func (c *Compiler) compileImport() error {
 		var packageName string
 
 		fileName := c.t.Next()
+		if fileName == tokenizer.EndOfListToken {
+			break
+		}
+
+		for isList && (fileName == tokenizer.SemicolonToken) {
+			fileName = c.t.Next()
+		}
+
 		if !fileName.IsString() {
 			packageName = fileName.Spelling()
 			fileName = c.t.Next()
@@ -149,7 +157,7 @@ func (c *Compiler) compileImport() error {
 
 			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
 			importCompiler.b = bytecode.New("import " + filePath)
-			importCompiler.t = tokenizer.New(text)
+			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
 
 			for !importCompiler.t.AtEnd() {
@@ -213,7 +221,12 @@ func (c *Compiler) compileImport() error {
 			break
 		}
 
-		if isList && c.t.Next() == tokenizer.EndOfListToken {
+		// Eat the semicolon if present
+		if c.t.IsNext(tokenizer.SemicolonToken) {
+			continue
+		}
+
+		if c.t.Next() == tokenizer.EndOfListToken {
 			break
 		}
 	}

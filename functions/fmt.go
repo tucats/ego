@@ -144,8 +144,8 @@ func scanner(data, format string) ([]interface{}, error) {
 
 	result := make([]interface{}, 0)
 
-	fTokens := tokenizer.New(format)
-	dTokens := tokenizer.New(data)
+	fTokens := tokenizer.New(format, false)
+	dTokens := tokenizer.New(data, false)
 	d := dTokens.Tokens
 	f := []string{}
 	parsingVerb := false

@@ -78,6 +78,13 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 
 		// Parse function declarations, add to the type object.
 		for !c.t.IsNext(tokenizer.DataEndToken) {
+			for c.t.IsNext(tokenizer.SemicolonToken) {
+			}
+
+			if c.t.IsNext(tokenizer.DataEndToken) {
+				break
+			}
+
 			f, err := c.ParseFunctionDeclaration()
 			if err != nil {
 				return data.UndefinedType, err
@@ -116,9 +123,16 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		c.t.Advance(2)
 
 		for !c.t.IsNext(tokenizer.DataEndToken) {
+			_ = c.t.IsNext(tokenizer.SemicolonToken)
+
+			if c.t.IsNext(tokenizer.DataEndToken) {
+				break
+			}
+
 			name := c.t.Next()
+
 			if !name.IsIdentifier() {
-				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName)
+				return data.UndefinedType, c.error(errors.ErrInvalidSymbolName).Context(name)
 			}
 
 			// Is it a compound name? Could be a package reference to an embedded type.

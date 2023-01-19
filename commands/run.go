@@ -205,7 +205,7 @@ func RunAction(c *cli.Context) error {
 		}
 
 		// Tokenize the input
-		t := tokenizer.New(text)
+		t := tokenizer.New(text, true)
 
 		// If not in command-line mode, see if there is an incomplete quote
 		// in the last token, which means we want to prompt for more and
@@ -214,7 +214,7 @@ func RunAction(c *cli.Context) error {
 			lastToken := t.Tokens[len(t.Tokens)-1]
 			if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
 				text = text + runtime.ReadConsoleText("...> ")
-				t = tokenizer.New(text)
+				t = tokenizer.New(text, true)
 				lineNumber++
 
 				continue
@@ -240,7 +240,7 @@ func RunAction(c *cli.Context) error {
 
 			if count > 0 {
 				text = text + runtime.ReadConsoleText("...> ")
-				t = tokenizer.New(text)
+				t = tokenizer.New(text, true)
 				lineNumber++
 
 				continue

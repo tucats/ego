@@ -175,7 +175,7 @@ func (c *Compiler) WithNormalization(f bool) *Compiler {
 // around the Compile() operation that removes the need for the caller
 // to provide a tokenizer.
 func (c *Compiler) CompileString(name string, source string) (*bytecode.ByteCode, error) {
-	t := tokenizer.New(source)
+	t := tokenizer.New(source, true)
 
 	return c.Compile(name, t)
 }
