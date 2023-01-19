@@ -28,7 +28,7 @@ var catchSets = [][]error{
 
 // tryByteCode instruction processor.
 func tryByteCode(c *Context, i interface{}) error {
-	try := TryInfo{
+	try := tryInfo{
 		addr:    data.Int(i),
 		catches: make([]error, 0),
 	}
@@ -89,7 +89,7 @@ func tryPopByteCode(c *Context, i interface{}) error {
 	}
 
 	if len(c.tryStack) == 1 {
-		c.tryStack = make([]TryInfo, 0)
+		c.tryStack = make([]tryInfo, 0)
 	} else {
 		c.tryStack = c.tryStack[:len(c.tryStack)-1]
 	}

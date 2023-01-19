@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	NoSlot   = -1
-	NotFound = "<not found>"
+	noSlot   = -1
+	notFound = "<not found>"
 )
 
 type UndefinedValue struct {
@@ -28,7 +28,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 	attr, found := s.symbols[name]
 	if found {
-		v = s.GetValue(attr.Slot)
+		v = s.GetValue(attr.slot)
 	}
 
 	if !found && !s.IsRoot() {
@@ -36,7 +36,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		status := NotFound
+		status := notFound
 		attr = &SymbolAttribute{}
 
 		if found {
@@ -48,7 +48,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.Slot, status)
+			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
 
 	return v, found
@@ -63,11 +63,11 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 
 	attr, found := s.symbols[name]
 	if found {
-		v = s.GetValue(attr.Slot)
+		v = s.GetValue(attr.slot)
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		status := NotFound
+		status := notFound
 		attr = &SymbolAttribute{}
 
 		if found {
@@ -79,7 +79,7 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.Slot, status)
+			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
 
 	return v, found
@@ -95,7 +95,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 
 	attr, found := s.symbols[name]
 	if found {
-		v = s.GetValue(attr.Slot)
+		v = s.GetValue(attr.slot)
 	}
 
 	if !found && !s.IsRoot() {
@@ -103,7 +103,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 	}
 
 	if ui.IsActive(ui.SymbolLogger) {
-		status := NotFound
+		status := notFound
 		if found {
 			status = data.Format(v)
 			if len(status) > 60 {
@@ -113,7 +113,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
-			s.Name, s.id.String(), quotedName, attr.Slot, status)
+			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
 
 	return v, attr, found
@@ -129,7 +129,7 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 
 	attr, found := s.symbols[name]
 	if found {
-		v = s.AddressOfValue(attr.Slot)
+		v = s.AddressOfValue(attr.slot)
 	}
 
 	if !found && !s.IsRoot() {
@@ -155,14 +155,14 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 
 	if !ok {
 		attr = &SymbolAttribute{
-			Slot:     s.size,
+			slot:     s.size,
 			Readonly: true,
 		}
 		s.size++
 		s.symbols[name] = attr
 	}
 
-	s.SetValue(attr.Slot, v)
+	s.SetValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) {
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), constant  \"%s\" = %s",
@@ -226,7 +226,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 	// IF this doesn't exist, allocate more space in the values array
 	attr, ok := symbolTable.symbols[name]
 	if !ok {
-		attr = &SymbolAttribute{Slot: s.size}
+		attr = &SymbolAttribute{slot: s.size}
 		symbolTable.symbols[name] = attr
 		s.size++
 	}
@@ -235,7 +235,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 		attr.Readonly = true
 	}
 
-	symbolTable.SetValue(attr.Slot, v)
+	symbolTable.SetValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
 		valueString := data.Format(v)
@@ -245,7 +245,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
-			s.Name, s.id, quotedName, attr.Slot, valueString)
+			s.Name, s.id, quotedName, attr.slot, valueString)
 	}
 }
 
@@ -271,7 +271,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 	// add it to the symbol table slot.
 	attr, ok := symbolTable.symbols[name]
 	if !ok {
-		attr = &SymbolAttribute{Slot: s.size}
+		attr = &SymbolAttribute{slot: s.size}
 		symbolTable.symbols[name] = attr
 
 		s.size++
@@ -279,10 +279,12 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 
 	// Copy the attributes other than slot from the new attribute
 	// set to this attribute set.
-	attr.Readonly = newAttr.Readonly
+	savedSlot := attr.slot
+	attr = &newAttr
+	attr.slot = savedSlot
 
 	// Store the value, and update the symbol table entry.
-	symbolTable.SetValue(attr.Slot, v)
+	symbolTable.SetValue(attr.slot, v)
 
 	if ui.IsActive(ui.SymbolLogger) && name != defs.Line && name != defs.Module {
 		valueString := data.Format(v)
@@ -292,7 +294,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
-			s.Name, s.id, quotedName, attr.Slot, valueString, attr.Readonly)
+			s.Name, s.id, quotedName, attr.slot, valueString, attr.Readonly)
 	}
 
 	return nil
@@ -308,7 +310,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	attr, found := s.symbols[name]
 	if found {
 		// ff the value exists, isn't undefined, and is readonly, we can do no more.
-		old = s.GetValue(attr.Slot)
+		old = s.GetValue(attr.slot)
 		if _, ok := old.(UndefinedValue); !ok && attr.Readonly {
 			return errors.ErrReadOnlyValue.Context(name)
 		}
@@ -355,7 +357,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 	// Store the value in the slot, and if it was readonly, write
 	// the symbol map attribute value back.
-	s.SetValue(attr.Slot, v)
+	s.SetValue(attr.slot, v)
 
 	if attr.Readonly {
 		s.symbols[name] = attr
@@ -369,7 +371,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 
 		quotedName := fmt.Sprintf("\"%s\"", name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
-			s.Name, s.id, quotedName, attr.Slot, valueString)
+			s.Name, s.id, quotedName, attr.slot, valueString)
 	}
 
 	return nil
@@ -424,7 +426,7 @@ func (s *SymbolTable) Create(name string) error {
 	}
 
 	s.symbols[name] = &SymbolAttribute{
-		Slot:     s.size,
+		slot:     s.size,
 		Readonly: false,
 	}
 

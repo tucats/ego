@@ -17,12 +17,12 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-type This struct {
+type this struct {
 	name  string
 	value interface{}
 }
 
-type TryInfo struct {
+type tryInfo struct {
 	addr    int
 	catches []error
 }
@@ -42,15 +42,15 @@ var InstructionsExecuted atomic.Int64
 // Context holds the runtime information about an instance of bytecode being
 // executed.
 type Context struct {
-	Name                 string
+	name                 string
 	bc                   *ByteCode
 	symbols              *symbols.SymbolTable
 	tokenizer            *tokenizer.Tokenizer
 	stack                []interface{}
-	tryStack             []TryInfo
+	tryStack             []tryInfo
 	rangeStack           []*rangeDefinition
 	timerStack           []time.Time
-	thisStack            []This
+	thisStack            []this
 	packageStack         []packageDef
 	output               *strings.Builder
 	lastStruct           interface{}
@@ -101,7 +101,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 
 	// Create the context object.
 	ctx := Context{
-		Name:                 name,
+		name:                 name,
 		threadID:             atomic.AddInt32(&nextThreadID, 1),
 		bc:                   b,
 		programCounter:       0,
@@ -117,7 +117,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
 		packageStack:         make([]packageDef, 0),
-		tryStack:             make([]TryInfo, 0),
+		tryStack:             make([]tryInfo, 0),
 		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),
 		tracing:              false,

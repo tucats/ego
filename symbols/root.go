@@ -9,11 +9,11 @@ import (
 // The slot numbers must be sequential starting at zero.
 var rootNames = map[string]*SymbolAttribute{
 	"_copyright": {
-		Slot:     0,
+		slot:     0,
 		Readonly: true,
 	},
 	"_server_instance": {
-		Slot:     1,
+		slot:     1,
 		Readonly: true,
 	},
 }

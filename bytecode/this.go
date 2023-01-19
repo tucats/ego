@@ -79,10 +79,10 @@ func getThisByteCode(c *Context, i interface{}) error {
 // pushThis adds a receiver value to the "this" stack.
 func (c *Context) pushThis(name string, v interface{}) {
 	if c.thisStack == nil {
-		c.thisStack = []This{}
+		c.thisStack = []this{}
 	}
 
-	c.thisStack = append(c.thisStack, This{name, v})
+	c.thisStack = append(c.thisStack, this{name, v})
 	c.PrintThisStack("push")
 }
 

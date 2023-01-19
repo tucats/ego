@@ -22,8 +22,11 @@ var SymbolAllocationSize = 32
 // Exported because it is referenced by CLI handlers.
 const MinSymbolAllocationSize = 16
 
+// SymbolAttribute is the object that defines information about a
+// symbol. This includes private data that indicates where the value
+// is stored, as well as metadata about the symbol.
 type SymbolAttribute struct {
-	Slot     int
+	slot     int
 	Readonly bool
 }
 

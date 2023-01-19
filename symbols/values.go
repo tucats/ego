@@ -45,7 +45,7 @@ func (s *SymbolTable) initializeValues() {
 
 // Given an index and a value, store the value in the Values list.
 func (s *SymbolTable) SetValue(index int, v interface{}) {
-	if index == NoSlot {
+	if index == noSlot {
 		return
 	}
 
@@ -67,7 +67,7 @@ func (s *SymbolTable) SetValue(index int, v interface{}) {
 
 // Given an index, retrieve a value from the Values list.
 func (s *SymbolTable) GetValue(index int) interface{} {
-	if index == NoSlot {
+	if index == noSlot {
 		return nil
 	}
 
@@ -84,7 +84,7 @@ func (s *SymbolTable) GetValue(index int) interface{} {
 // Given an index, return the address of the value in that
 // slot.
 func (s *SymbolTable) AddressOfValue(index int) *interface{} {
-	if index == NoSlot {
+	if index == noSlot {
 		return nil
 	}
 

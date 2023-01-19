@@ -26,7 +26,7 @@ type CallFrame struct {
 	symbols       *symbols.SymbolTable
 	bytecode      *ByteCode
 	tokenizer     *tokenizer.Tokenizer
-	thisStack     []This
+	thisStack     []this
 	singleStep    bool
 	breakOnReturn bool
 	blockDepth    int

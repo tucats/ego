@@ -141,7 +141,8 @@ func (app *App) Run(grammar []cli.Option, args []string) error {
 	_ = platform.Set("arch", runtime.GOARCH)
 	_ = platform.Set("cpus", runtime.NumCPU())
 	platform.SetReadonly(true)
-	_ = symbols.RootSymbolTable.SetWithAttributes("_platform", platform, symbols.SymbolAttribute{Readonly: true})
+	_ = symbols.RootSymbolTable.SetWithAttributes("_platform", platform,
+		symbols.SymbolAttribute{Readonly: true})
 
 	if err := SetDefaultLoggers(); err != nil {
 		return err

@@ -70,7 +70,7 @@ func (c *Context) RunFromAddress(addr int) error {
 	c.programCounter = addr
 	c.running = true
 
-	ui.Log(ui.TraceLogger, "*** Tracing %s (%d)  ", c.Name, c.threadID)
+	ui.Log(ui.TraceLogger, "*** Tracing %s (%d)  ", c.name, c.threadID)
 
 	// Loop over the bytecodes and run.
 	for c.running {
@@ -161,7 +161,7 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 	}
 
-	ui.Log(ui.TraceLogger, "*** End tracing %s (%d) ", c.Name, c.threadID)
+	ui.Log(ui.TraceLogger, "*** End tracing %s (%d) ", c.name, c.threadID)
 
 	if err != nil {
 		return errors.NewError(err)

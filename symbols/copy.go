@@ -42,7 +42,7 @@ func (s *SymbolTable) GetPackages(source *SymbolTable) (count int) {
 	}
 
 	for k, attributes := range source.symbols {
-		v := source.GetValue(attributes.Slot)
+		v := source.GetValue(attributes.slot)
 		if p, ok := v.(*data.Package); ok {
 			s.SetAlways(k, p)
 
