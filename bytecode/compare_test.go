@@ -120,7 +120,7 @@ func TestComparisons(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Promotion requires relaxed type checking
-			ctx := Context{TypeStrictness: 2}
+			ctx := Context{typeStrictness: 2}
 			ctx.stack = []interface{}{tt.v1, tt.v2}
 			ctx.stackPointer = len(ctx.stack)
 

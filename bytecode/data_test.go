@@ -74,7 +74,7 @@ func TestStructImpl(t *testing.T) {
 			ctx := &Context{
 				stack:          tt.stack,
 				stackPointer:   len(tt.stack),
-				TypeStrictness: tt.static,
+				typeStrictness: tt.static,
 				symbols:        symbols.NewSymbolTable("test bench"),
 			}
 
@@ -179,7 +179,7 @@ func Test_storeByteCode(t *testing.T) {
 		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
-		c.TypeStrictness = tt.static
+		c.typeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -312,7 +312,7 @@ func Test_storeAlwaysByteCode(t *testing.T) {
 		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
-		c.TypeStrictness = tt.static
+		c.typeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -447,7 +447,7 @@ func Test_storeGlobalByteCode(t *testing.T) {
 		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
-		c.TypeStrictness = tt.static
+		c.typeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -694,7 +694,7 @@ func Test_storeViaPointerByteCode(t *testing.T) {
 		}
 
 		c := NewContext(syms, &bc)
-		c.TypeStrictness = tt.static
+		c.typeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -794,7 +794,7 @@ func Test_loadByteCode(t *testing.T) {
 		varname := data.String(tt.arg)
 
 		c := NewContext(syms, &bc)
-		c.TypeStrictness = tt.static
+		c.typeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)

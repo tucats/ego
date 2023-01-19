@@ -66,7 +66,7 @@ type Context struct {
 	threadID             int32
 	fullSymbolScope      bool
 	running              bool
-	TypeStrictness       int
+	typeStrictness       int
 	debugging            bool
 	singleStep           bool
 	breakOnReturn        bool
@@ -109,7 +109,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		stackPointer:         0,
 		framePointer:         0,
 		running:              false,
-		TypeStrictness:       static,
+		typeStrictness:       static,
 		line:                 0,
 		symbols:              s,
 		fullSymbolScope:      true,
@@ -386,7 +386,7 @@ func (c *Context) push(value interface{}) error {
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
 func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
-	if c.TypeStrictness > 1 || value == nil {
+	if c.typeStrictness > 1 || value == nil {
 		return value, nil
 	}
 
@@ -399,7 +399,7 @@ func (c *Context) checkType(name string, value interface{}) (interface{}, error)
 			return value, nil
 		}
 
-		if c.TypeStrictness == 1 {
+		if c.typeStrictness == 1 {
 			newT := data.TypeOf(value)
 			oldT := data.TypeOf(existingValue)
 

@@ -16,8 +16,8 @@ func staticTypingByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrFunctionReturnedVoid)
 		}
 
-		c.TypeStrictness = data.Int(v)
-		c.symbols.SetAlways("__static_data_types", c.TypeStrictness)
+		c.typeStrictness = data.Int(v)
+		c.symbols.SetAlways("__static_data_types", c.typeStrictness)
 	}
 
 	return err
@@ -31,7 +31,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 		}
 
 		// If we're doing strict type checking...
-		if c.TypeStrictness == 0 {
+		if c.typeStrictness == 0 {
 			if t, ok := i.(reflect.Type); ok {
 				if t != reflect.TypeOf(v) {
 					err = c.error(errors.ErrArgumentType)
@@ -161,7 +161,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	}
 
 	// If we are in static mode, we don't do any coercions and require a match
-	if c.TypeStrictness == 0 {
+	if c.typeStrictness == 0 {
 		// If it's an interface we are converting to, no worries, it's a match and we're done.
 		if t.IsInterface() {
 			return c.push(v)

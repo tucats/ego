@@ -62,7 +62,7 @@ func makeArrayByteCode(c *Context, i interface{}) error {
 			// If we are initializing any integer or float array, we can coerce
 			// value from another integer type if we are in relaxed or dynamic
 			// typing.
-			if c.TypeStrictness < 2 {
+			if c.typeStrictness < 2 {
 				if isInt && valueType.IsIntegerType() {
 					value = baseType.Coerce(value)
 				} else if isFloat && (valueType.IsIntegerType() || valueType.IsFloatType()) {
@@ -137,7 +137,7 @@ func arrayByteCode(c *Context, i interface{}) error {
 
 		// If we are in static mode, array must be homogeneous unless
 		// we are making an array of interfaces.
-		if c.TypeStrictness == 0 && !kind.IsType(data.ArrayType(data.InterfaceType)) {
+		if c.typeStrictness == 0 && !kind.IsType(data.ArrayType(data.InterfaceType)) {
 			if index == 0 {
 				arrayType = reflect.TypeOf(value)
 				_ = result.SetType(data.TypeOf(value))
@@ -282,7 +282,7 @@ func structByteCode(c *Context, i interface{}) error {
 	// If we are in static mode, or this is a non-empty definition,
 	// mark the structure as having static members. That means you
 	// cannot modify the field names or add/delete fields.
-	if c.TypeStrictness == 0 || count > 0 {
+	if c.typeStrictness == 0 || count > 0 {
 		structure.SetStatic(true)
 	}
 
