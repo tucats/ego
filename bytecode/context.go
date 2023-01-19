@@ -66,7 +66,7 @@ type Context struct {
 	threadID             int32
 	fullSymbolScope      bool
 	running              bool
-	Static               int
+	TypeStrictness       int
 	debugging            bool
 	singleStep           bool
 	breakOnReturn        bool
@@ -109,7 +109,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		stackPointer:         0,
 		framePointer:         0,
 		running:              false,
-		Static:               static,
+		TypeStrictness:       static,
 		line:                 0,
 		symbols:              s,
 		fullSymbolScope:      true,
@@ -379,32 +379,45 @@ func (c *Context) push(value interface{}) error {
 }
 
 // checkType is a utility function used to determine if a given value
-// could be stored in a named symbol. When the value is nil or static
-// type checking is disabled (the default) then no action occurs.
+// could be stored in a named symbol. When the value is nil or dynamic
+// type checking is enabled (the default) then no action occurs.
 //
 // Otherwise, the symbol name is used to look up the current value (if
 // any) of the symbol. If it exists, then the type of the value being
 // proposed must match the type of the existing value.
-func (c *Context) checkType(name string, value interface{}) error {
-	if c.Static != 0 || value == nil {
-		return nil
+func (c *Context) checkType(name string, value interface{}) (interface{}, error) {
+	if c.TypeStrictness > 1 || value == nil {
+		return value, nil
 	}
 
 	if existingValue, ok := c.get(name); ok {
 		if existingValue == nil {
-			return nil
+			return value, nil
 		}
 
 		if _, ok := existingValue.(symbols.UndefinedValue); ok {
-			return nil
+			return value, nil
+		}
+
+		if c.TypeStrictness == 1 {
+			newT := data.TypeOf(value)
+			oldT := data.TypeOf(existingValue)
+
+			if newT.IsIntegerType() && oldT.IsIntegerType() {
+				value = data.Coerce(value, existingValue)
+			}
+
+			if newT.IsFloatType() && oldT.IsFloatType() {
+				value = data.Coerce(value, existingValue)
+			}
 		}
 
 		if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-			return c.error(errors.ErrInvalidVarType)
+			return nil, c.error(errors.ErrInvalidVarType)
 		}
 	}
 
-	return nil
+	return value, nil
 }
 
 func (c *Context) Result() interface{} {

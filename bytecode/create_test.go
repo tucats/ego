@@ -100,7 +100,7 @@ func Test_arrayByteCode(t *testing.T) {
 		bc := ByteCode{}
 
 		c := NewContext(syms, &bc)
-		c.Static = tt.static
+		c.TypeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)
@@ -228,7 +228,7 @@ func Test_makeMapByteCode(t *testing.T) {
 		bc := ByteCode{}
 
 		c := NewContext(syms, &bc)
-		c.Static = tt.static
+		c.TypeStrictness = tt.static
 
 		for _, item := range tt.stack {
 			_ = c.push(item)

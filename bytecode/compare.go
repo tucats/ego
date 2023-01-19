@@ -76,7 +76,7 @@ func equalByteCode(c *Context, i interface{}) error {
 		}
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -170,7 +170,7 @@ func notEqualByteCode(c *Context, i interface{}) error {
 		result = !reflect.DeepEqual(v1, v2)
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -246,7 +246,7 @@ func greaterThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -321,7 +321,7 @@ func greaterThanOrEqualByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -396,7 +396,7 @@ func lessThanByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
@@ -470,7 +470,7 @@ func lessThanOrEqualByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
 
 	default:
-		if c.Static > 0 {
+		if c.TypeStrictness > 0 {
 			v1, v2 = data.Normalize(v1, v2)
 		} else {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {
