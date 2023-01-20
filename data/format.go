@@ -186,20 +186,28 @@ func Format(element interface{}) string {
 
 		b.WriteString("Pkg<")
 
-		b.WriteString(v.name)
+		b.WriteString(strconv.Quote(v.name))
 
 		if v.Builtins() {
 			b.WriteString(", builtins")
 		}
 
-		if v.Imported() {
-			b.WriteString(", imports")
+		if v.HasImportedSource() {
+			b.WriteString(", source")
+		}
+
+		if v.HasTypes() {
+			b.WriteString(", types")
 		}
 
 		if verbose {
 			for _, k := range keys {
 				// Skip over hidden values
 				if strings.HasPrefix(k, defs.InvisiblePrefix) {
+					continue
+				}
+
+				if !hasCapitalizedName(k) {
 					continue
 				}
 

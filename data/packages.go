@@ -67,7 +67,29 @@ func (p *Package) SetImported(f bool) *Package {
 	return p
 }
 
-func (p *Package) Imported() bool {
+func (p *Package) HasTypes() bool {
+	for _, v := range p.items {
+		if t, ok := v.(*Type); ok {
+			if hasCapitalizedName(t.name) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (p *Package) Constants() bool {
+	for _, v := range p.items {
+		if _, ok := v.(*Type); ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Package) HasImportedSource() bool {
 	return p.imported
 }
 

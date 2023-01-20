@@ -106,7 +106,7 @@ func (c *Compiler) compileImport() error {
 		packageDef, _ := bytecode.GetPackage(packageName)
 
 		wasBuiltin := packageDef.Builtins()
-		wasImported := packageDef.Imported()
+		wasImported := packageDef.HasImportedSource()
 
 		ui.Log(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
@@ -134,7 +134,7 @@ func (c *Compiler) compileImport() error {
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
-		if !packageDef.Imported() {
+		if !packageDef.HasImportedSource() {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
@@ -192,7 +192,7 @@ func (c *Compiler) compileImport() error {
 		}
 
 		// Rewrite the package if we've added stuff to it.
-		if wasImported != packageDef.Imported() || wasBuiltin != packageDef.Builtins() {
+		if wasImported != packageDef.HasImportedSource() || wasBuiltin != packageDef.Builtins() {
 			if ui.IsActive(ui.CompilerLogger) {
 				ui.Log(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 
