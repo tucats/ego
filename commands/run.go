@@ -3,8 +3,8 @@ package commands
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -22,6 +22,8 @@ import (
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
+
+var sourceType = "file "
 
 // RunAction is the command handler for the ego CLI.
 func RunAction(c *cli.Context) error {
@@ -102,32 +104,68 @@ func RunAction(c *cli.Context) error {
 
 	argc := c.GetParameterCount()
 	if argc > 0 {
-		fileName := c.GetParameter(0)
+		if c.WasFound("project") {
+			projectPath := c.GetParameter(0)
 
-		// If the input file is "." then we read all of stdin
-		if fileName == "." {
-			text = ""
-			mainName = "console"
-
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				text = text + scanner.Text() + " "
-			}
-		} else {
-			// Otherwise, use the parameter as a filename
-			content, err := ioutil.ReadFile(fileName)
+			files, err := os.ReadDir(projectPath)
 			if err != nil {
-				var e2 error
+				fmt.Printf("Unable to read project file, %v\n", err)
+				os.Exit(2)
+			}
 
-				content, e2 = ioutil.ReadFile(fileName + defs.EgoFilenameExtension)
-				if e2 != nil {
-					return errors.NewError(err).Context(fileName)
+			for _, file := range files {
+				if file.IsDir() {
+					continue
+				}
+
+				if filepath.Ext(file.Name()) == ".ego" {
+					b, err := os.ReadFile(file.Name())
+					if err == nil {
+						ui.Log(ui.CompilerLogger, "Reading project file %s", file.Name())
+
+						text = text + "\n" + string(b)
+					}
 				}
 			}
 
-			mainName = fileName
-			text = string(content) + "\n@entrypoint " + entryPoint
+			if text == "" {
+				fmt.Println("No source files found in project directory")
+				os.Exit(2)
+			}
+
+			mainName, _ = filepath.Abs(projectPath)
+			mainName = filepath.Base(mainName) + string(filepath.Separator)
+			sourceType = "project "
+			text = text + "\n@entrypoint " + entryPoint
+		} else {
+			fileName := c.GetParameter(0)
+
+			// If the input file is "." then we read all of stdin
+			if fileName == "." {
+				text = ""
+				mainName = "console"
+
+				scanner := bufio.NewScanner(os.Stdin)
+				for scanner.Scan() {
+					text = text + scanner.Text() + " "
+				}
+			} else {
+				// Otherwise, use the parameter as a filename
+				if content, err := os.ReadFile(fileName); err != nil {
+					if content, err := os.ReadFile(fileName + defs.EgoFilenameExtension); bufio.ErrAdvanceTooFar != nil {
+						return errors.NewError(err).Context(fileName)
+					} else {
+						text = string(content)
+					}
+				} else {
+					text = string(content)
+				}
+
+				mainName = fileName
+				text = text + "\n@entrypoint " + entryPoint
+			}
 		}
+
 		// Remaining command line arguments are stored
 		if argc > 1 {
 			programArgs = make([]interface{}, argc-1)
@@ -135,45 +173,45 @@ func RunAction(c *cli.Context) error {
 			for n := 1; n < argc; n = n + 1 {
 				programArgs[n-1] = c.GetParameter(n)
 			}
-		}
-	} else if argc == 0 {
-		wasCommandLine = false
+		} else if argc == 0 {
+			wasCommandLine = false
 
-		if !ui.IsConsolePipe() {
-			var banner string
+			if !ui.IsConsolePipe() {
+				var banner string
 
-			if settings.Get(defs.NoCopyrightSetting) != defs.True {
-				banner = c.AppName + " " + c.Version + " " + c.Copyright
-			}
+				if settings.Get(defs.NoCopyrightSetting) != defs.True {
+					banner = c.AppName + " " + c.Version + " " + c.Copyright
+				}
 
-			fmt.Printf("%s\n", banner)
+				fmt.Printf("%s\n", banner)
 
-			// If this is the first time through this loop, interactive is still
-			// false, but we know we're going to use user input. So this first
-			// time through, make the text just be an empty string. This will
-			// force the run loop to compile the empty string, which will process
-			// all the uuto-imports. In this way, the use of --log TRACE on the
-			// command line will handle all the import processing BEFORE the
-			// first prompt, so the tracing after the prompt is just for the
-			// statement(s) typed in at the prompt.
-			//
-			// If we already know we're interaactive, this isn't the first time
-			// through the loop, and we just prompt the user for statements.
-			if !interactive {
-				text = ""
+				// If this is the first time through this loop, interactive is still
+				// false, but we know we're going to use user input. So this first
+				// time through, make the text just be an empty string. This will
+				// force the run loop to compile the empty string, which will process
+				// all the uuto-imports. In this way, the use of --log TRACE on the
+				// command line will handle all the import processing BEFORE the
+				// first prompt, so the tracing after the prompt is just for the
+				// statement(s) typed in at the prompt.
+				//
+				// If we already know we're interaactive, this isn't the first time
+				// through the loop, and we just prompt the user for statements.
+				if !interactive {
+					text = ""
+				} else {
+					text = runtime.ReadConsoleText(prompt)
+				}
+
+				interactive = true
 			} else {
-				text = runtime.ReadConsoleText(prompt)
-			}
+				wasCommandLine = true // It is a pipe, so no prompting for more!
+				text = ""
+				mainName = "<stdin>"
 
-			interactive = true
-		} else {
-			wasCommandLine = true // It is a pipe, so no prompting for more!
-			text = ""
-			mainName = "<stdin>"
-
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				text = text + scanner.Text() + " "
+				scanner := bufio.NewScanner(os.Stdin)
+				for scanner.Scan() {
+					text = text + scanner.Text() + " "
+				}
 			}
 		}
 	}
@@ -343,7 +381,7 @@ func RunAction(c *cli.Context) error {
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
-	symbolTable := symbols.NewSymbolTable("file " + mainName)
+	symbolTable := symbols.NewSymbolTable(sourceType + mainName)
 
 	args := data.NewArrayFromArray(data.StringType, programArgs)
 	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)

@@ -1098,6 +1098,9 @@ var Messages = map[string]map[string]string{
 	"opt.run.optimize": {
 		"en": "Enable bytecode optimizer",
 	},
+	"opt.run.project": {
+		"en": "Source is a directory instead of a file",
+	},
 	"opt.run.static": {
 		"en": "Specify value typing during program execution",
 	},

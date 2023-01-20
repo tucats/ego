@@ -719,6 +719,12 @@ var RunGrammar = []cli.Option{
 		EnvironmentVariable: "EGO_DISASM",
 	},
 	{
+		LongName:    "project",
+		ShortName:   "p",
+		Description: "run.project",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    "log-file",
 		Description: "run.log",
 		OptionType:  cli.StringType,
