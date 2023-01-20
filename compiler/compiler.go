@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
@@ -43,12 +44,14 @@ type flagSet struct {
 	extensionsEnabled     bool
 	normalizedIdentifiers bool
 	testMode              bool
+	mainSeen              bool
 }
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
 	activePackageName string
 	sourceFile        string
+	id                string
 	b                 *bytecode.ByteCode
 	t                 *tokenizer.Tokenizer
 	s                 *symbols.SymbolTable
@@ -73,6 +76,7 @@ func New(name string) *Compiler {
 		b:            bytecode.New(name),
 		t:            nil,
 		s:            symbols.NewRootSymbolTable(name),
+		id:           uuid.NewString(),
 		constants:    make([]string, 0),
 		deferQueue:   make([]int, 0),
 		types:        map[string]*data.Type{},
@@ -127,6 +131,12 @@ func (c *Compiler) ExitEnabled(b bool) *Compiler {
 // block constructs.
 func (c *Compiler) TestMode() bool {
 	return c.flags.testMode
+}
+
+// MainSeen indicates if a "package main" has been seen in this
+// compilation.
+func (c *Compiler) MainSeen() bool {
+	return c.flags.mainSeen
 }
 
 // SetTestMode is used to set the test mode indicator for the compiler.

@@ -334,3 +334,13 @@ func (c *Compiler) TestPass() error {
 
 	return nil
 }
+
+// Fail implements the @fail directive.
+func (c *Compiler) File() error {
+	fileName := c.t.Next().Spelling()
+	c.sourceFile = fileName
+
+	c.b.Emit(bytecode.InFile, fileName)
+
+	return nil
+}

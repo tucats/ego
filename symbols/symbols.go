@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -32,6 +33,11 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	}
 
 	if !found && !s.IsRoot() {
+		if s.parent == nil || s.parent == s {
+			fmt.Println("DEBUG: SYMBOL TABLE LOOP")
+			os.Exit(3)
+		}
+
 		return s.parent.Get(name)
 	}
 

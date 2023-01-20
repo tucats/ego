@@ -178,6 +178,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	cx.types = c.types
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
+	cx.sourceFile = c.sourceFile
 
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.

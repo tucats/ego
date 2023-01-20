@@ -32,7 +32,7 @@ func (c *Compiler) error(err error, args ...interface{}) *errors.Error {
 
 	// Get the context info if possible.
 	if p >= 0 && p < len(c.t.Line) && p < len(c.t.Pos) {
-		e = e.In(c.activePackageName).At(c.t.Line[p], c.t.Pos[p])
+		e = e.At(c.t.Line[p], c.t.Pos[p])
 	}
 
 	return e

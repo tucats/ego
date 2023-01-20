@@ -37,6 +37,10 @@ func (c *Compiler) compilePackage() error {
 
 	c.b.Emit(bytecode.PushPackage, name)
 
+	if name.Spelling() == "main" {
+		c.flags.mainSeen = true
+	}
+
 	return nil
 }
 
@@ -159,6 +163,7 @@ func (c *Compiler) compileImport() error {
 			importCompiler.b = bytecode.New("import " + filePath)
 			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
+			importCompiler.sourceFile = c.sourceFile
 
 			for !importCompiler.t.AtEnd() {
 				err := importCompiler.compileStatement()

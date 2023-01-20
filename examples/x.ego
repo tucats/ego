@@ -35,10 +35,3 @@ func (c *Employee) Setname(f string, l string)  {
 func (c Employee) Greet() string {
     return "Greetings, " + c.Fullname()
 }
-
-func main() {
-    
-    var e employee
-    e.setname("Tom", "Cole")
-    fmt.Println(e.greet())
-}

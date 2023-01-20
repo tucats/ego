@@ -18,6 +18,7 @@ const (
 	DebugDirective        = "debug"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
+	FileDirective         = "file"
 	FailDirective         = "fail"
 	GlobalDirective       = "global"
 	HandlerDirective      = "handler"
@@ -67,6 +68,9 @@ func (c *Compiler) compileDirective() error {
 
 	case FailDirective:
 		return c.Fail()
+
+	case FileDirective:
+		return c.File()
 
 	case GlobalDirective:
 		return c.globalDirective()

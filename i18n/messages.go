@@ -489,6 +489,9 @@ var Messages = map[string]map[string]string{
 	"error.nil": {
 		"en": "nil pointer reference",
 	},
+	"error.no.main.package": {
+		"en": "no main package found",
+	},
 	"error.not.assignment.list": {
 		"en": "not an assignment list",
 	},

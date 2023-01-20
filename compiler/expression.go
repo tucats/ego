@@ -25,6 +25,7 @@ func (c *Compiler) Expression() (*bytecode.ByteCode, error) {
 	cx.flags = c.flags
 	cx.b = bytecode.New("subexpression")
 	cx.types = c.types
+	cx.sourceFile = c.sourceFile
 
 	err := cx.conditional()
 	if err == nil {

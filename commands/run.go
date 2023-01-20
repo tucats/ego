@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -48,6 +49,7 @@ func RunAction(c *cli.Context) error {
 	wasCommandLine := true
 	fullScope := false
 	lineNumber := 1
+	isProject := false
 
 	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
@@ -123,7 +125,8 @@ func RunAction(c *cli.Context) error {
 					if err == nil {
 						ui.Log(ui.CompilerLogger, "Reading project file %s", file.Name())
 
-						text = text + "\n" + string(b)
+						text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
+						text = text + "@line 1\n" + string(b)
 					}
 				}
 			}
@@ -137,6 +140,7 @@ func RunAction(c *cli.Context) error {
 			mainName = filepath.Base(mainName) + string(filepath.Separator)
 			sourceType = "project "
 			text = text + "\n@entrypoint " + entryPoint
+			isProject = true
 		} else {
 			fileName := c.GetParameter(0)
 
@@ -319,6 +323,10 @@ func RunAction(c *cli.Context) error {
 
 			os.Stderr.Write([]byte(msg))
 		} else {
+			if isProject && !comp.MainSeen() {
+				return errors.ErrNoMainPackage
+			}
+
 			b.Disasm()
 
 			// Run the compiled code from a new context, configured with the symbol table,

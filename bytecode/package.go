@@ -49,6 +49,7 @@ func IsPackage(name string) bool {
 
 	return found
 }
+
 func GetPackage(name string) (*data.Package, bool) {
 	packageCacheLock.Lock()
 	defer packageCacheLock.Unlock()
@@ -67,6 +68,12 @@ func GetPackage(name string) (*data.Package, bool) {
 	packageCache[name] = pkg
 
 	return pkg, false
+}
+
+func inFileByteCode(c *Context, i interface{}) error {
+	c.name = "file " + data.String(i)
+
+	return nil
 }
 
 func inPackageByteCode(c *Context, i interface{}) error {

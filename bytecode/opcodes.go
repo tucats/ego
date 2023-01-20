@@ -53,6 +53,7 @@ const (
 	GreaterThan
 	GreaterThanOrEqual
 	Import
+	InFile
 	InPackage
 	LessThan
 	LessThanOrEqual
@@ -162,6 +163,7 @@ var opcodeNames = map[Opcode]string{
 	GreaterThan:        "GT",
 	GreaterThanOrEqual: "GTEQ",
 	Import:             "Import",
+	InFile:             "InFile",
 	InPackage:          "InPackage",
 	LessThan:           "LT",
 	LessThanOrEqual:    "LTEQ",
@@ -260,6 +262,7 @@ func initializeDispatch() {
 			GreaterThan:        greaterThanByteCode,
 			GreaterThanOrEqual: greaterThanOrEqualByteCode,
 			Import:             importByteCode,
+			InFile:             inFileByteCode,
 			InPackage:          inPackageByteCode,
 			LessThan:           lessThanByteCode,
 			LessThanOrEqual:    lessThanOrEqualByteCode,
