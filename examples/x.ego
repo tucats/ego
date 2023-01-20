@@ -7,7 +7,7 @@ package x
  * locate the associated functions bound to the package.
  */
 
-type employee  struct{
+type Employee  struct{
     name struct {
            first string
            last string
@@ -24,16 +24,16 @@ type employee  struct{
  * can reference 'c' as an instance of an employee.
  */
 
-func (c employee) fullname() string { 
+func (c Employee) Fullname() string { 
     return c.name.first + " " + c.name.last 
 }
 
-func (c *employee) setname(f string, l string)  {
+func (c *Employee) Setname(f string, l string)  {
     c.name = {first:f, last:l}
 }
 
-func (c employee) greet() string {
-    return "Greetings, " + c.fullname()
+func (c Employee) Greet() string {
+    return "Greetings, " + c.Fullname()
 }
 
 func main() {

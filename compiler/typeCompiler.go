@@ -4,6 +4,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -18,6 +19,23 @@ func (c *Compiler) typeEmitter(name string) error {
 }
 
 func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
+	if c.t.IsNext(tokenizer.DotToken) {
+		packageName := name
+		name = c.t.Next().Spelling()
+
+		if pkgV, found := symbols.RootSymbolTable.Get(packageName); found {
+			if pkg, ok := pkgV.(*data.Package); ok {
+				if typeV, found := pkg.Get(name); found {
+					if t, ok := typeV.(*data.Type); ok {
+						return t, nil
+					}
+				}
+			}
+		}
+
+		return nil, c.error(errors.ErrUnknownType).Context(packageName + "." + name)
+	}
+	
 	if _, found := c.types[name]; found {
 		return data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
 	}

@@ -55,11 +55,28 @@ func (c *Compiler) compileVar() error {
 	if kind.IsUndefined() {
 		// Is the next item a symbol? If so, assume it's a user
 		// defined type
+		var pkgName tokenizer.Token
+
 		typeName := c.t.Next()
+		isPackageType := false
+
 		if typeName.IsIdentifier() {
+			if c.t.IsNext(tokenizer.DotToken) {
+				pkgName = typeName
+				typeName = c.t.Next()
+				isPackageType = true
+			}
+
 			for _, name := range names {
 				c.b.Emit(bytecode.Load, "new")
-				c.b.Emit(bytecode.Load, typeName)
+
+				if isPackageType {
+					c.b.Emit(bytecode.Load, pkgName)
+					c.b.Emit(bytecode.Member, typeName)
+				} else {
+					c.b.Emit(bytecode.Load, typeName)
+				}
+
 				c.b.Emit(bytecode.Call, 1)
 				c.b.Emit(bytecode.SymbolCreate, name)
 				c.b.Emit(bytecode.Store, name)
