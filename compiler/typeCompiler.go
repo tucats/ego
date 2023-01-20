@@ -11,6 +11,10 @@ import (
 func (c *Compiler) typeEmitter(name string) error {
 	typeInfo, err := c.typeCompiler(name)
 	if err == nil {
+		if typeInfo.Kind() == data.TypeKind {
+			typeInfo.SetPackage(c.activePackageName)
+		}
+
 		c.b.Emit(bytecode.Push, typeInfo)
 		c.b.Emit(bytecode.StoreAlways, name)
 	}
@@ -35,7 +39,7 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 
 		return nil, c.error(errors.ErrUnknownType).Context(packageName + "." + name)
 	}
-	
+
 	if _, found := c.types[name]; found {
 		return data.UndefinedType, c.error(errors.ErrDuplicateTypeName).Context(name)
 	}
@@ -45,7 +49,7 @@ func (c *Compiler) typeCompiler(name string) (*data.Type, error) {
 		return data.UndefinedType, err
 	}
 
-	typeInfo := data.TypeDefinition(name, baseType)
+	typeInfo := data.TypeDefinition(name, baseType).SetPackage(c.activePackageName)
 	c.types[name] = typeInfo
 
 	return typeInfo, nil

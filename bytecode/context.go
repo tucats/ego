@@ -43,6 +43,7 @@ var InstructionsExecuted atomic.Int64
 // executed.
 type Context struct {
 	name                 string
+	pkg                  string
 	bc                   *ByteCode
 	symbols              *symbols.SymbolTable
 	tokenizer            *tokenizer.Tokenizer

@@ -66,6 +66,13 @@ func memberByteCode(c *Context, i interface{}) error {
 			return c.error(errors.ErrUnknownMember).Context(name)
 		}
 
+		// If this is from a package, we must be in the same package to access it.
+		if pkg := mv.PackageType(); pkg != "" && pkg != c.pkg {
+			if !util.HasCapitalizedName(name) {
+				return c.error(errors.ErrSymbolNotExported).Context(name)
+			}
+		}
+
 	case *data.Package:
 		// First, see if it's a variable in the symbol table for the package, assuming
 		// it starts with an uppercase letter.

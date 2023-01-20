@@ -1035,6 +1035,16 @@ func (t Type) Reflect() *Struct {
 	return NewStructFromMap(r)
 }
 
+func (t *Type) SetPackage(name string) *Type {
+	if name == "main" {
+		name = ""
+	}
+
+	t.pkg = name
+
+	return t
+}
+
 func UserType(packageName, typeName string) Type {
 	return Type{
 		kind: TypeKind,

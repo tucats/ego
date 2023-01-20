@@ -292,6 +292,13 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			return c.error(err)
 		}
 
+		// If this is from a package, we must be in the same package to access it.
+		if pkg := a.PackageType(); pkg != "" && pkg != c.pkg {
+			if !util.HasCapitalizedName(key) {
+				return c.error(errors.ErrSymbolNotExported).Context(key)
+			}
+		}
+
 		_ = c.push(a)
 
 	// Index into array is integer index

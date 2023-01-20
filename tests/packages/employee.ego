@@ -7,10 +7,10 @@ package employee
 const ManagerID = 100
 
 type Employee struct {
-    id int
-    name string
+    Id int
+    Name string
 }
 
 func (e *Employee) SetName( s string ) {
-    e.name = s
+    e.Name = s
 }

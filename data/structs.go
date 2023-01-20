@@ -31,6 +31,9 @@ func NewStruct(t *Type) *Struct {
 
 	for baseType.IsTypeDefinition() {
 		typeName = t.name
+		if baseType.pkg != "" {
+			typeName = baseType.pkg + "." + typeName
+		}
 
 		// If there are receiver functions in the type definition,
 		// make them part of this structure as well.
@@ -210,6 +213,19 @@ func (s *Struct) GetAlways(name string) interface{} {
 	return value
 }
 
+func (s *Struct) PackageType() string {
+	if s.typeDef.pkg != "" {
+		return s.typeDef.pkg
+	}
+
+	parts := strings.Split(s.typeName, ".")
+	if len(parts) > 1 {
+		return parts[0]
+	}
+
+	return ""
+}
+
 // Get retrieves a field from the structure. Note that if the
 // structure is a synthetic package type, we only allow access
 // to exported names.
@@ -353,7 +369,12 @@ func (s *Struct) TypeString() string {
 	}
 
 	if s.typeDef.IsTypeDefinition() {
-		return s.typeDef.name
+		name := s.typeDef.name
+		if s.typeDef.pkg != "" {
+			name = s.typeDef.pkg + "." + s.typeDef.name
+		}
+
+		return name
 	}
 
 	return s.typeDef.String()

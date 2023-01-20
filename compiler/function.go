@@ -82,6 +82,12 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 
 	b.Emit(bytecode.ArgCheck, len(parameters), maxArgCount, functionName)
 
+	// Indicate if we are running within a package to the running context
+	// at the time this is executed.
+	if c.activePackageName != "" {
+		b.Emit(bytecode.InPackage, c.activePackageName)
+	}
+
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.

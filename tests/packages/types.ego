@@ -4,9 +4,9 @@
 
 import "tests/packages/employee"
 {
-    e := employee.Employee{id:155}
-    @assert e.id == 155
-    @assert e.name == ""
+    e := employee.Employee{Id:155}
+    @assert e.Id == 155
+    @assert e.Name == ""
 }
 
 @pass

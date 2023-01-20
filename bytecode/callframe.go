@@ -23,6 +23,7 @@ import (
 type CallFrame struct {
 	Module        string
 	Line          int
+	Package       string
 	symbols       *symbols.SymbolTable
 	bytecode      *ByteCode
 	tokenizer     *tokenizer.Tokenizer
@@ -48,6 +49,7 @@ func (f CallFrame) String() string {
 // routine, so it can be restored when a return is executed.
 func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary bool) {
 	_ = c.push(CallFrame{
+		Package:    c.pkg,
 		symbols:    c.symbols,
 		bytecode:   c.bc,
 		singleStep: c.singleStep,
@@ -125,6 +127,7 @@ func (c *Context) callFramePop() error {
 		ui.Log(ui.SymbolLogger, "(%d) pop symbol table; \"%s\" => \"%s\"",
 			c.threadID, c.symbols.Name, callFrame.symbols.Name)
 
+		c.pkg = callFrame.Package
 		c.line = callFrame.Line
 		c.symbols = callFrame.symbols
 		c.singleStep = callFrame.singleStep

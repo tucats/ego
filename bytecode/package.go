@@ -69,6 +69,12 @@ func GetPackage(name string) (*data.Package, bool) {
 	return pkg, false
 }
 
+func inPackageByteCode(c *Context, i interface{}) error {
+	c.pkg = data.String(i)
+
+	return nil
+}
+
 func importByteCode(c *Context, i interface{}) error {
 	name := data.String(i)
 
