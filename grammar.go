@@ -42,6 +42,7 @@ var EgoGrammar = []cli.Option{
 		Value:                RunGrammar,
 		ParametersExpected:   -99,
 		ParameterDescription: "parm.file",
+		DefaultVerb:          true,
 	},
 	{
 		LongName:    "server",

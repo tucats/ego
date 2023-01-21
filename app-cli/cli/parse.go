@@ -153,8 +153,16 @@ func (c *Context) parseGrammar(args []string) error {
 
 		// It could be a parameter, or a subcommand.
 		if location == nil {
+			var defaultVerb Option
+
 			// Is it a subcommand?
 			for _, entry := range c.Grammar {
+				if entry.DefaultVerb {
+					defaultVerb = entry
+
+					ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
+				}
+
 				// Is it one of the aliases permitted?
 				isAlias := false
 
@@ -167,40 +175,15 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
-					// We're doing a subcommand! Create a new context that defines the
-					// next level down. It should include the current context information,
-					// and an updated grammar tree, command text, and description adapted
-					// for this subcommand.
-					subContext := *c
-					subContext.Parent = c
-
-					// Zero out any action that was set by default, since the subgrammar now
-					// controls the action to be used.
-					c.Action = nil
-					subContext.Action = nil
-
-					if entry.Value != nil {
-						subContext.Grammar = entry.Value.([]Option)
-					} else {
-						subContext.Grammar = []Option{}
-					}
-
-					subContext.Command = c.Command + entry.LongName + " "
-					subContext.Description = entry.Description
-					entry.Found = true
-					c.FindGlobal().ExpectedParameterCount = entry.ParametersExpected
-					c.FindGlobal().ParameterDescription = entry.ParameterDescription
-
-					if entry.Action != nil {
-						subContext.Action = entry.Action
-
-						ui.Log(ui.CLILogger, "Saving action routine in subcommand context")
-					}
-
-					ui.Log(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
-
-					return subContext.parseGrammar(args[currentArg+1:])
+					return doSubcommand(c, entry, args, currentArg)
 				}
+			}
+
+			// No subcommand found, but was there a default we should use anyway?
+			if defaultVerb.LongName != "" {
+				ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+
+				return doSubcommand(c, defaultVerb, args, currentArg-1)
 			}
 
 			// Not a subcommand, just save it as an unclaimed parameter
@@ -352,4 +335,40 @@ func (c *Context) parseGrammar(args []string) error {
 	}
 
 	return err
+}
+
+func doSubcommand(c *Context, entry Option, args []string, currentArg int) error {
+	// We're doing a subcommand! Create a new context that defines the
+	// next level down. It should include the current context information,
+	// and an updated grammar tree, command text, and description adapted
+	// for this subcommand.
+	subContext := *c
+	subContext.Parent = c
+
+	// Zero out any action that was set by default, since the subgrammar now
+	// controls the action to be used.
+	c.Action = nil
+	subContext.Action = nil
+
+	if entry.Value != nil {
+		subContext.Grammar = entry.Value.([]Option)
+	} else {
+		subContext.Grammar = []Option{}
+	}
+
+	subContext.Command = c.Command + entry.LongName + " "
+	subContext.Description = entry.Description
+	entry.Found = true
+	c.FindGlobal().ExpectedParameterCount = entry.ParametersExpected
+	c.FindGlobal().ParameterDescription = entry.ParameterDescription
+
+	if entry.Action != nil {
+		subContext.Action = entry.Action
+
+		ui.Log(ui.CLILogger, "Saving action routine in subcommand context")
+	}
+
+	ui.Log(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
+
+	return subContext.parseGrammar(args[currentArg+1:])
 }

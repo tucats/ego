@@ -3,14 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/commands"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 )
@@ -35,31 +33,15 @@ func main() {
 		app.SetBuildTime(BuildTime)
 	}
 
-	// Hack. If the second argument is a filename ending in ".ego"
-	// then assume it was mean to be a "run" command.
-	args := os.Args
-	if len(args) > 1 && filepath.Ext(args[1]) == defs.EgoFilenameExtension {
-		args = make([]string, 0)
+	// Run the app using the associated grammar and command line arguments.
+	err := app.Run(EgoGrammar, os.Args)
 
-		for i, arg := range os.Args {
-			if i == 1 {
-				args = append(args, "run")
-			}
-
-			args = append(args, arg)
-		}
-	}
-
-	err := app.Run(EgoGrammar, args)
-
-	// If the runtime stack was used, report this to the tracing log.
-	if maxStackSize := bytecode.MaxStackSize.Load(); maxStackSize > 0 {
-		ui.Log(ui.TraceLogger, "Maximum runtime stack depth: %d", maxStackSize)
-	}
-
-	// If we executed bytecode instructions, report this to the tracing log.
+	// If we executed bytecode instructions, report the instruction count
+	// and maximum stack size used to the tracing log.
 	if count := bytecode.InstructionsExecuted.Load(); count > 0 {
-		ui.Log(ui.TraceLogger, "Executed %d bytecode instructions", count)
+		ui.Log(ui.TraceLogger,
+			"Executed %d bytecode instructions; maximum runtime stack size was %d elements",
+			count, bytecode.MaxStackSize.Load())
 	}
 
 	// If something went wrong, report it to the user and force an exit

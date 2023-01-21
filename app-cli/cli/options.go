@@ -54,6 +54,7 @@ type Option struct {
 	Found                bool
 	Required             bool
 	Private              bool
+	DefaultVerb          bool
 }
 
 // Context is a simple array of Option types, and is used to express
