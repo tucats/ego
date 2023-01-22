@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -48,7 +49,13 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		_ = t.SetAlignment(index, tables.AlignmentCenter)
 	}
 
+	tableName := ""
+
 	for syms != nil {
+		if selectedScope >= 0 {
+			tableName = syms.Name
+		}
+
 		// If a specific scope was requested and we never found it,
 		// time to bail out. Otherwise, keep crawling up the tree.
 		if selectedScope >= 0 && selectedScope != scopeLevel {
@@ -62,7 +69,11 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			continue
 		}
 
-		name := syms.Name
+		name := " " + syms.Name
+		if syms.IsShared() {
+			name = "*" + syms.Name
+		}
+
 		scope := strconv.Itoa(scopeLevel)
 
 		// Get the sets of rows for this table. If the table is empty,
@@ -111,6 +122,10 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	if json {
 		return t.FormatJSON(), nil
+	}
+
+	if selectedScope >= 0 {
+		fmt.Printf("\nSymbol table: %s\n\n", strconv.Quote(tableName))
 	}
 
 	return strings.Join(t.FormatText(), "\n") + "\n", nil

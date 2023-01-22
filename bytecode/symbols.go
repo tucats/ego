@@ -25,7 +25,7 @@ func pushScopeByteCode(c *Context, i interface{}) error {
 	defer c.mux.Unlock()
 
 	c.blockDepth++
-	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols)
+	c.symbols = symbols.NewChildSymbolTable("block "+strconv.Itoa(c.blockDepth), c.symbols).Shared(false)
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
 		c.threadID, c.symbols.Name, oldName)

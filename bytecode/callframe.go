@@ -67,8 +67,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 
 	c.framePointer = c.stackPointer
 	c.result = nil
-	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols)
-	c.symbols.SetScopeBoundary(boundary)
+	c.symbols = symbols.NewChildSymbolTable(tableName, c.symbols).Shared(false).SetScopeBoundary(boundary)
 	c.bc = bc
 	c.programCounter = pc
 

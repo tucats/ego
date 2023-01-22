@@ -22,7 +22,7 @@ var SymbolAllocationSize = 32
 // as sharable, which incurs extra locking. The default if false, where
 // tables are only shared if the individual sharing attribute is explicitly
 // enabled.
-var alwaysShared = false
+var alwaysShared = true
 
 // No symbol table allocation extent will be smaller than this size.
 // Exported because it is referenced by CLI handlers.
@@ -96,6 +96,12 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 // collisions in the table maps. Set the flag to true if you want
 // this table (and all it's parents) to support sharing.
 func (s *SymbolTable) Shared(flag bool) *SymbolTable {
+	if alwaysShared && !flag {
+		s.shared = false
+
+		return s
+	}
+
 	// Set the shared flag based on the user input, but overrriden
 	// by the defaul tif necessary.
 	s.shared = flag || alwaysShared
@@ -225,8 +231,10 @@ func (s *SymbolTable) ScopeBoundary() bool {
 
 // SetScopeBoundary indicates that this symbol table is meant to
 // be a boundary point beyond which symbol scope cannot be examined.
-func (s *SymbolTable) SetScopeBoundary(flag bool) {
+func (s *SymbolTable) SetScopeBoundary(flag bool) *SymbolTable {
 	s.scopeBoundary = flag
+
+	return s
 }
 
 // Size returns the number of symbols in the table.

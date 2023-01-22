@@ -86,6 +86,10 @@ func (e *Error) At(line int, column int) *Error {
 // example, in a keyword not recognized error, the context
 // is usually the offending keyword.
 func (e *Error) Context(context interface{}) *Error {
+	if e == nil {
+		return nil
+	}
+
 	if context != nil {
 		e.context = fmt.Sprintf("%v", context)
 	} else {

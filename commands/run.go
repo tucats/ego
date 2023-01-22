@@ -161,9 +161,9 @@ func RunAction(c *cli.Context) error {
 				}
 			} else {
 				// Otherwise, use the parameter as a filename
-				if content, err := os.ReadFile(fileName); err != nil {
-					if content, err := os.ReadFile(fileName + defs.EgoFilenameExtension); bufio.ErrAdvanceTooFar != nil {
-						return errors.NewError(err).Context(fileName)
+				if content, e1 := os.ReadFile(fileName); e1 != nil {
+					if content, e2 := os.ReadFile(fileName + defs.EgoFilenameExtension); e2 != nil {
+						return errors.NewError(e1).Context(fileName)
 					} else {
 						text = string(content)
 					}
