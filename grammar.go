@@ -407,6 +407,7 @@ var UserGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.ListUsers,
 		Value:       ServerListUsersGrammar,
+		DefaultVerb: true,
 	},
 }
 

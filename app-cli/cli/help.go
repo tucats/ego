@@ -95,12 +95,14 @@ func ShowHelp(c *Context) {
 	_ = tc.SetSpacing(helpSpacing)
 	_ = tc.SetMinimumWidth(0, minimumFirstColumnWidth)
 
+	hadDefaultVerb := false
+
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
 			if !headerShown {
 				fmt.Printf("%s:\n", i18n.L("Commands"))
 
-				_ = tc.AddRow([]string{"help", i18n.T("opt.help.text")})
+				_ = tc.AddRow([]string{" help", i18n.T("opt.help.text")})
 				headerShown = true
 			}
 
@@ -109,7 +111,13 @@ func ShowHelp(c *Context) {
 				optionDescription = i18n.T("opt." + option.Description)
 			}
 
-			_ = tc.AddRow([]string{option.LongName, optionDescription})
+			defaultFlag := " "
+			if option.DefaultVerb {
+				defaultFlag = "*"
+				hadDefaultVerb = true
+			}
+
+			_ = tc.AddRow([]string{defaultFlag + option.LongName, optionDescription})
 		}
 	}
 
@@ -118,6 +126,10 @@ func ShowHelp(c *Context) {
 
 		tc.Print(ui.TextFormat)
 		fmt.Printf("\n")
+	}
+
+	if hadDefaultVerb {
+		fmt.Printf("%s\n\n", i18n.L("had.default.verb"))
 	}
 
 	headerShown = false

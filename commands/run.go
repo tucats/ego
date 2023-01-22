@@ -105,9 +105,13 @@ func RunAction(c *cli.Context) error {
 	}
 
 	argc := c.GetParameterCount()
+	ui.Log(ui.CLILogger, "Initial parameter count is %d", argc)
+
 	if argc > 0 {
 		if c.WasFound("project") {
 			projectPath := c.GetParameter(0)
+
+			ui.Log(ui.CLILogger, "Read project at %s", projectPath)
 
 			files, err := os.ReadDir(projectPath)
 			if err != nil {
@@ -144,6 +148,8 @@ func RunAction(c *cli.Context) error {
 		} else {
 			fileName := c.GetParameter(0)
 
+			ui.Log(ui.CLILogger, "Read source file %s", fileName)
+
 			// If the input file is "." then we read all of stdin
 			if fileName == "." {
 				text = ""
@@ -169,54 +175,66 @@ func RunAction(c *cli.Context) error {
 				text = text + "\n@entrypoint " + entryPoint
 			}
 		}
+	}
 
-		// Remaining command line arguments are stored
-		if argc > 1 {
-			programArgs = make([]interface{}, argc-1)
+	// Remaining command line arguments are stored
+	ui.Log(ui.CLILogger, "Processing remaining arguments (%d)", argc)
 
-			for n := 1; n < argc; n = n + 1 {
-				programArgs[n-1] = c.GetParameter(n)
+	if argc > 1 {
+		programArgs = make([]interface{}, argc-1)
+
+		for n := 1; n < argc; n = n + 1 {
+			programArgs[n-1] = c.GetParameter(n)
+		}
+
+		ui.Log(ui.CLILogger, "Saving CLI parameters %v", programArgs)
+	} else if argc == 0 {
+		wasCommandLine = false
+
+		ui.Log(ui.CLILogger, "No source given, reading from console")
+
+		if !ui.IsConsolePipe() {
+			ui.Log(ui.CLILogger, "Console is not a pipe")
+			var banner string
+
+			if settings.Get(defs.NoCopyrightSetting) != defs.True {
+				banner = c.AppName + " " + c.Version + " " + c.Copyright
 			}
-		} else if argc == 0 {
-			wasCommandLine = false
 
-			if !ui.IsConsolePipe() {
-				var banner string
+			fmt.Printf("%s\n", banner)
 
-				if settings.Get(defs.NoCopyrightSetting) != defs.True {
-					banner = c.AppName + " " + c.Version + " " + c.Copyright
-				}
-
-				fmt.Printf("%s\n", banner)
-
-				// If this is the first time through this loop, interactive is still
-				// false, but we know we're going to use user input. So this first
-				// time through, make the text just be an empty string. This will
-				// force the run loop to compile the empty string, which will process
-				// all the uuto-imports. In this way, the use of --log TRACE on the
-				// command line will handle all the import processing BEFORE the
-				// first prompt, so the tracing after the prompt is just for the
-				// statement(s) typed in at the prompt.
-				//
-				// If we already know we're interaactive, this isn't the first time
-				// through the loop, and we just prompt the user for statements.
-				if !interactive {
-					text = ""
-				} else {
-					text = runtime.ReadConsoleText(prompt)
-				}
-
-				interactive = true
-			} else {
-				wasCommandLine = true // It is a pipe, so no prompting for more!
+			// If this is the first time through this loop, interactive is still
+			// false, but we know we're going to use user input. So this first
+			// time through, make the text just be an empty string. This will
+			// force the run loop to compile the empty string, which will process
+			// all the uuto-imports. In this way, the use of --log TRACE on the
+			// command line will handle all the import processing BEFORE the
+			// first prompt, so the tracing after the prompt is just for the
+			// statement(s) typed in at the prompt.
+			//
+			// If we already know we're interaactive, this isn't the first time
+			// through the loop, and we just prompt the user for statements.
+			if !interactive {
 				text = ""
-				mainName = "<stdin>"
-
-				scanner := bufio.NewScanner(os.Stdin)
-				for scanner.Scan() {
-					text = text + scanner.Text() + " "
-				}
+			} else {
+				text = runtime.ReadConsoleText(prompt)
 			}
+
+			interactive = true
+		} else {
+			ui.Log(ui.CLILogger, "Console is a pipe")
+
+			wasCommandLine = true // It is a pipe, so no prompting for more!
+			interactive = true
+			text = ""
+			mainName = "<stdin>"
+
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				text = text + scanner.Text() + " "
+			}
+
+			ui.Log(ui.CLILogger, "Source: %s", text)
 		}
 	}
 

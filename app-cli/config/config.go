@@ -31,6 +31,7 @@ var Grammar = []cli.Option{
 		ParameterDescription: "key",
 		ParametersExpected:   -1,
 		OptionType:           cli.Subcommand,
+		DefaultVerb:          true,
 	},
 	{
 		LongName:             "set-output",

@@ -801,6 +801,9 @@ var Messages = map[string]map[string]string{
 	"label.Field": {
 		"en": "Field",
 	},
+	"label.had.default.verb": {
+		"en": "(*) indicates the default subcommand if none given",
+	},
 	"label.ID": {
 		"en": "ID",
 	},

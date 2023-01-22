@@ -68,6 +68,18 @@ func (c *Context) parseGrammar(args []string) error {
 	lastArg := len(args)
 	parametersOnly := false
 	helpVerb := true
+	defaultVerb := Option{}
+
+	// See if we have a default verb we should know about.
+	// Is it a subcommand?
+
+	for _, entry := range c.Grammar {
+		if entry.DefaultVerb {
+			defaultVerb = entry
+
+			ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
+		}
+	}
 
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
 		var location *Option
@@ -147,14 +159,12 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 
 		// If it was an option (short or long) and not found, this is an error.
-		if name != "" && location == nil {
+		if name != "" && location == nil && defaultVerb.LongName == "" {
 			return errors.ErrUnknownOption.Context(option)
 		}
 
 		// It could be a parameter, or a subcommand.
 		if location == nil {
-			var defaultVerb Option
-
 			// Is it a subcommand?
 			for _, entry := range c.Grammar {
 				if entry.DefaultVerb {
@@ -281,6 +291,13 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 	}
 
+	// No subcommand found, but was there a default we should use anyway?
+	if defaultVerb.LongName != "" {
+		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
+
+		return doSubcommand(c, defaultVerb, args, 0)
+	}
+
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
 	// all required options were in fact found.
 
@@ -369,6 +386,10 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 	}
 
 	ui.Log(ui.CLILogger, "Transferring control to subgrammar for %s", entry.LongName)
+
+	if len(args) == 0 {
+		return subContext.parseGrammar([]string{})
+	}
 
 	return subContext.parseGrammar(args[currentArg+1:])
 }
