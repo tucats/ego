@@ -407,7 +407,7 @@ func RunAction(c *cli.Context) error {
 
 func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{}, typeEnforcement int, interactive, disassemble bool) *symbols.SymbolTable {
 	// Create an empty symbol table and store the program arguments.
-	symbolTable := symbols.NewSymbolTable(sourceType + mainName)
+	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
 
 	args := data.NewArrayFromArray(data.StringType, programArgs)
 	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)

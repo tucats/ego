@@ -24,8 +24,10 @@ type UndefinedValue struct {
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	var v interface{}
 
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	if s.shared {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {
@@ -64,8 +66,10 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 	var v interface{}
 
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	if s.shared {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {
@@ -96,8 +100,10 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttribute, bool) {
 	var v interface{}
 
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	if s.shared {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {
@@ -130,8 +136,10 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	var v interface{}
 
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	if s.shared {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {
@@ -150,8 +158,10 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if s.shared {
+		s.Lock()
+		defer s.Unlock()
+	}
 
 	// Does it already exist and is it readonly? IF so, fail
 	attr, ok := s.symbols[name]
@@ -183,8 +193,10 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 // value. It returns nil if this was successful, else a symbol-not-found
 // error is reported.
 func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if s.shared {
+		s.Lock()
+		defer s.Unlock()
+	}
 
 	syms := s
 
@@ -224,8 +236,10 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 		}
 	}
 
-	symbolTable.mutex.Lock()
-	defer symbolTable.mutex.Unlock()
+	if s.shared {
+		symbolTable.Lock()
+		defer symbolTable.Unlock()
+	}
 
 	readOnly := strings.HasPrefix(name, defs.ReadonlyVariablePrefix)
 
@@ -270,8 +284,10 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 		}
 	}
 
-	symbolTable.mutex.Lock()
-	defer symbolTable.mutex.Unlock()
+	if s.shared {
+		symbolTable.Lock()
+		defer symbolTable.Unlock()
+	}
 
 	// IF this doesn't exist, allocate more space in the values array, and
 	// add it to the symbol table slot.
@@ -310,8 +326,10 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 func (s *SymbolTable) Set(name string, v interface{}) error {
 	var old interface{}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if s.shared {
+		originalTable := s.Lock()
+		defer originalTable.Unlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {
@@ -392,8 +410,10 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 		return errors.ErrInvalidSymbolName
 	}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if s.shared {
+		originalTable := s.Lock()
+		defer originalTable.Unlock()
+	}
 
 	attr, f := s.symbols[name]
 	if !f {
@@ -424,8 +444,10 @@ func (s *SymbolTable) Create(name string) error {
 		return errors.ErrInvalidSymbolName
 	}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if s.shared {
+		originalTable := s.Lock()
+		defer originalTable.Unlock()
+	}
 
 	if _, found := s.symbols[name]; found {
 		return errors.ErrSymbolExists.Context(name)
@@ -449,8 +471,10 @@ func (s *SymbolTable) Create(name string) error {
 
 // IsConstant determines if a name is a constant or readonly value.
 func (s *SymbolTable) IsConstant(name string) bool {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	if s.shared {
+		originalTable := s.RLock()
+		defer originalTable.RUnlock()
+	}
 
 	attr, found := s.symbols[name]
 	if found {

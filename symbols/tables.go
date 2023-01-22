@@ -18,6 +18,12 @@ import (
 // this value.
 var SymbolAllocationSize = 32
 
+// alwaysShared determines if new symbol tables are automatically marked
+// as sharable, which incurs extra locking. The default if false, where
+// tables are only shared if the individual sharing attribute is explicitly
+// enabled.
+var alwaysShared = false
+
 // No symbol table allocation extent will be smaller than this size.
 // Exported because it is referenced by CLI handlers.
 const MinSymbolAllocationSize = 16
@@ -41,6 +47,7 @@ type SymbolTable struct {
 	size          int
 	scopeBoundary bool
 	isRoot        bool
+	shared        bool
 	mutex         sync.RWMutex
 }
 
@@ -55,6 +62,7 @@ func NewSymbolTable(name string) *SymbolTable {
 		parent:  &RootSymbolTable,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
+		shared:  alwaysShared,
 	}
 	symbols.initializeValues()
 
@@ -69,6 +77,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		parent:  parent,
 		symbols: map[string]*SymbolAttribute{},
 		id:      uuid.New(),
+		shared:  alwaysShared,
 	}
 
 	if parent == nil {
@@ -81,14 +90,80 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	return &symbols
 }
 
+// Shared marke this symbol table as being able to be shared
+// by multiple threads or go routines. When set, it causes
+// extra read/write locking to be done on the table to prevent
+// collisions in the table maps. Set the flag to true if you want
+// this table (and all it's parents) to support sharing.
+func (s *SymbolTable) Shared(flag bool) *SymbolTable {
+	// Set the shared flag based on the user input, but overrriden
+	// by the defaul tif necessary.
+	s.shared = flag || alwaysShared
+
+	// If we ended up setting this table to be shared, crawl up the
+	// parent chain to set all symbol tables as shared that are
+	// above us, as a get will do a crawl of the entire chain.
+	if s.shared {
+		p := s.parent
+		for p != nil {
+			p.shared = true
+			p = p.parent
+		}
+	}
+
+	return s
+}
+
+func (s *SymbolTable) IsShared() bool {
+	return s.shared
+}
+
+// SharedParent returns the symbol table in the tree where
+// sharing starts. This can be used to reach up the tree to
+// prune off the non-shared tables from the scope of a go
+// routine, for example.
+func (s *SymbolTable) SharedParent() *SymbolTable {
+	for s != nil && !s.shared {
+		s = s.parent
+	}
+
+	return s
+}
+
 // Lock locks the symbol table so it cannot be used concurrently.
-func (s *SymbolTable) Lock() {
-	s.mutex.Lock()
+func (s *SymbolTable) Lock() *SymbolTable {
+	if s.shared {
+		s.mutex.Lock()
+	}
+
+	return s
 }
 
 // Unlock unlocks the symbol table for concurrent use.
-func (s *SymbolTable) Unlock() {
-	s.mutex.Unlock()
+func (s *SymbolTable) Unlock() *SymbolTable {
+	if s.shared {
+		s.mutex.Unlock()
+	}
+
+	return s
+}
+
+// Lock locks the symbol table for readaing so it cannot be used concurrently.
+func (s *SymbolTable) RLock() *SymbolTable {
+	if s.shared {
+		s.mutex.RLock()
+	}
+
+	return s
+}
+
+// Unlock unlocks the symbol table previouly readlocked.
+func (s *SymbolTable) RUnlock() *SymbolTable {
+	if s.shared {
+		s.mutex.RUnlock()
+	}
+
+	return s
 }
 
 // Parent retrieves the parent symbol table of this table. If there
@@ -100,8 +175,8 @@ func (s *SymbolTable) Parent() *SymbolTable {
 // SetParent sets the parent of the currnent table to the provided
 // table.
 func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	s.parent = p
 	s.isRoot = (p == nil)
@@ -128,8 +203,8 @@ func (s *SymbolTable) ID() uuid.UUID {
 // Names returns an array of strings containing the names of the
 // symbols in the table.
 func (s *SymbolTable) Names() []string {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	result := []string{}
 
@@ -156,8 +231,8 @@ func (s *SymbolTable) SetScopeBoundary(flag bool) {
 
 // Size returns the number of symbols in the table.
 func (s *SymbolTable) Size() int {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	return len(s.symbols)
 }
@@ -165,8 +240,8 @@ func (s *SymbolTable) Size() int {
 // Root finds the root table for the symbol table, by searching up
 // the tree of tables until it finds the root table.
 func (s *SymbolTable) Root() *SymbolTable {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	st := s
 	for !st.IsRoot() {

@@ -11,8 +11,8 @@ import (
 // which are needed for shallow clones of a compiler.
 func (s *SymbolTable) Clone(withLock bool) *SymbolTable {
 	if withLock {
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
+		s.Lock()
+		defer s.Unlock()
 	}
 
 	t := SymbolTable{

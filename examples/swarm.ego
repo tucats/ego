@@ -10,8 +10,8 @@ func client(ch chan, count int ) {
 
       r.Get("/services/factor/10")
 
-      if r.status != 200 {
-         status = r.status
+      if r.Status != 200 {
+         status = r.Status
       }
    }
 
@@ -20,7 +20,7 @@ func client(ch chan, count int ) {
 
 func main() int {
 
-   clients := 150
+   clients :=  150
    ch := make(chan, clients)
 
    for i := 0; i < clients; i++ {

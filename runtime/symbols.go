@@ -129,6 +129,7 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		name string
 		id string
 		root bool
+		shared bool
 		size int
 		}`)
 
@@ -142,11 +143,12 @@ func SymbolTables(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	for p != nil {
 		item := data.NewStructFromMap(map[string]interface{}{
-			"depth": depth,
-			"name":  p.Name,
-			"id":    p.ID().String(),
-			"root":  p.IsRoot(),
-			"size":  p.Size(),
+			"depth":  depth,
+			"name":   p.Name,
+			"id":     p.ID().String(),
+			"root":   p.IsRoot(),
+			"size":   p.Size(),
+			"shared": p.IsShared(),
 		})
 
 		result.Append(item)

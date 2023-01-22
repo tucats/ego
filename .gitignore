@@ -12,3 +12,4 @@ user-database.json
 *.code-workspace
 builds
 out
+__debug_bin

@@ -47,6 +47,7 @@ var RootSymbolTable = SymbolTable{
 	size:          len(rootNames),
 	values:        rootValues,
 	isRoot:        true,
+	shared:        true,
 }
 
 // SetGlobal sets a symbol value in the global symbol table.
