@@ -7,8 +7,6 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-type Row []interface{}
-
 var tableTypeDef *data.Type
 var tableTypeDefLock sync.Mutex
 

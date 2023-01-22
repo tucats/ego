@@ -12,10 +12,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// For a new() on an object, we won't recursively copy objects
-// nested more deeply than this. Setting this too small will
-// prevent complex structures from copying correctly. Too large,
-// and memory could be swallowed whole.
+// MaxDeepCopyDepth specifies the maximum depth that a recursive
+// copy will go before failing. Setting this too small will
+// prevent complex structures from copying correctly. Setting it
+// too large can result in excessive memory consumption.
 const MaxDeepCopyDepth = 100
 
 // Normalize coerces a value to match the type of a model value.

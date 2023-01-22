@@ -1,13 +1,13 @@
 package i18n
 
-// Messages contains a map of internalized strings. The map is organized
+// messages contains a map of internalized strings. The map is organized
 // by message id passed into the i18n.T() function as the first key, and
 // then the language derived from the environment.  If a string for a key
 // in a given language is not found, it reverts to using the "en" key.
 //
 // If the text isn't found in English either, the key is returned
 // as the unlocalizable result.
-var Messages = map[string]map[string]string{
+var messages = map[string]map[string]string{
 	"ego": {
 		"en": "run an Ego program",
 	},

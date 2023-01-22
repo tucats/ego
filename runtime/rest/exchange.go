@@ -35,7 +35,7 @@ const MaxRedirectCount = 10
 var tlsConfiguration *tls.Config
 var tlsConfigurationMutex sync.Mutex
 
-// openServices is a list of endpoing paths that do not require the
+// openServices is a list of endpoint paths that do not require the
 // addition of an authorization token.
 var openServices = []string{
 	defs.ServicesUpPath,

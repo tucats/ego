@@ -1,6 +1,6 @@
 package bytecode
 
-var Optimizations = []optimization{
+var optimizations = []optimization{
 	{
 		Description: "Load followed by SetThis",
 		Pattern: []instruction{
@@ -88,7 +88,7 @@ var Optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: PopScope,
-				Operand:   placeholder{Name: "count", Operation: OptRead, Register: 1},
+				Operand:   placeholder{Name: "count", Operation: optRead, Register: 1},
 			},
 		},
 	}, {
@@ -168,7 +168,7 @@ var Optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: Push,
-				Operand:   placeholder{Name: "sum", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "sum", Operation: optRunConstantFragment},
 			},
 		},
 	},
@@ -190,7 +190,7 @@ var Optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: Push,
-				Operand:   placeholder{Name: "difference", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "difference", Operation: optRunConstantFragment},
 			},
 		},
 	},
@@ -212,7 +212,7 @@ var Optimizations = []optimization{
 		Replacement: []instruction{
 			{
 				Operation: Push,
-				Operand:   placeholder{Name: "product", Operation: OptRunConstantFragment},
+				Operand:   placeholder{Name: "product", Operation: optRunConstantFragment},
 			},
 		},
 	},

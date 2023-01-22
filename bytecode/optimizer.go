@@ -17,19 +17,19 @@ import (
 // struct builds.
 var staticOptimizations = false
 
-type OptimizerOperation int
+type optimizerOperation int
 
 const (
-	OptNothing OptimizerOperation = iota
-	OptStore
-	OptRead
+	optNothing optimizerOperation = iota
+	optStore
+	optRead
 	OptCount
-	OptRunConstantFragment
+	optRunConstantFragment
 )
 
 type placeholder struct {
 	Name      string
-	Operation OptimizerOperation
+	Operation optimizerOperation
 	Register  int
 	Value     interface{}
 }
@@ -48,7 +48,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	// Figure out the maximum pattern size, since we'll need this for backing
 	// up the bytecode scanner after each patch operation.
 	maxPatternSize := 0
-	for _, optimization := range Optimizations {
+	for _, optimization := range optimizations {
 		if max := len(optimization.Pattern); max > maxPatternSize {
 			maxPatternSize = max
 		}
@@ -60,7 +60,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 		found := false
 
 		// Scan over all the available optimizations.
-		for _, optimization := range Optimizations {
+		for _, optimization := range optimizations {
 			operandValues := map[string]placeholder{}
 			registers := make([]interface{}, 5)
 			found = true
@@ -132,7 +132,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 							}
 							registers[token.Register] = data.Int(registers[token.Register]) + increment
 
-						case OptStore:
+						case optStore:
 							registers[token.Register] = i.Operand
 						}
 
@@ -158,7 +158,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 					if token, ok := replacement.Operand.(placeholder); ok {
 						switch token.Operation {
-						case OptRunConstantFragment:
+						case optRunConstantFragment:
 							v, err := b.executeFragment(idx, idx+len(optimization.Pattern))
 							if err != nil {
 								return 0, err
@@ -166,7 +166,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 							newInstruction.Operand = v
 
-						case OptRead:
+						case optRead:
 							newInstruction.Operand = registers[token.Register]
 
 						default:

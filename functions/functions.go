@@ -15,17 +15,39 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// FunctionDefinition is an element in the function dictionary.
+// FunctionDefinition is an element in the function dictionary. This
+// defines each function that is implemented as native Go code (a
+// "builtin" function).
 type FunctionDefinition struct {
-	Name      string
-	Pkg       string
-	Min       int
-	Max       int
+	// Name is the name of the function.
+	Name string
+	// Pkg is the package that contains the function, if it is
+	// a builtin package member.
+	Pkg string
+
+	// Min is the minimum number of arguments the function can accept.
+	Min int
+
+	// Max is the maximum number of arguments the function can accept.
+	Max int
+
+	// ErrReturn is true if the function returns a tuple containing the
+	// function result and an error return.
 	ErrReturn bool
+
+	// FullScope indicates if this function is allowed to access the
+	// entire scope tree of the running program.
 	FullScope bool
-	F         interface{}
-	V         interface{}
-	D         *data.FunctionDeclaration
+
+	// F is the address of the function implementation
+	F interface{}
+
+	// V is a value constant associated with this name.
+	V interface{}
+
+	// D is a function declaration object that details the
+	// parameter and return types.
+	D *data.FunctionDeclaration
 }
 
 // MultiValueReturn is a type used to return a list of values from a builtin

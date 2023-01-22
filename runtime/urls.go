@@ -9,7 +9,7 @@ import (
 // The object that knows how to semantically add values to a URL to
 // forma a valid string. Note that this does not have to be a valid
 // complete URL, but may consist of just the path and parameters.
-type URLString struct {
+type urlString struct {
 	buffer         strings.Builder
 	parameterCount int
 }
@@ -18,8 +18,8 @@ type URLString struct {
 // populates it with the arguments provided. The parts are treated as
 // a path name and optional path arguments. If no initial parts are
 // provided in the call, then the URLString starts as an empty string.
-func URLBuilder(initialParts ...interface{}) *URLString {
-	url := &URLString{}
+func URLBuilder(initialParts ...interface{}) *urlString {
+	url := &urlString{}
 
 	if len(initialParts) > 0 {
 		format := fmt.Sprintf("%v", initialParts[0])
@@ -39,7 +39,7 @@ func URLBuilder(initialParts ...interface{}) *URLString {
 // %s or %d. The array of parts items is read to fill in the format operators in
 // the format string. Any remaining items in the parts array are treated as
 // URL parameter values to add to the URL.
-func (u *URLString) Path(format string, parts ...interface{}) *URLString {
+func (u *urlString) Path(format string, parts ...interface{}) *urlString {
 	substitutions := strings.Count(format, "%")
 
 	subs := make([]interface{}, substitutions)
@@ -59,7 +59,7 @@ func (u *URLString) Path(format string, parts ...interface{}) *URLString {
 // Parameter adds a parameter to the URL being constructed. The name string
 // contains the parameter name. This is added to the URL being built. The arguments
 // are optional additional arguments which follow the parameter value if specified.
-func (u *URLString) Parameter(name string, arguments ...interface{}) *URLString {
+func (u *urlString) Parameter(name string, arguments ...interface{}) *urlString {
 	if u.parameterCount == 0 {
 		u.buffer.WriteRune('?')
 	} else {
@@ -85,6 +85,6 @@ func (u *URLString) Parameter(name string, arguments ...interface{}) *URLString 
 }
 
 // String converts the URL that was constructed to a string value.
-func (u *URLString) String() string {
+func (u *urlString) String() string {
 	return u.buffer.String()
 }

@@ -17,7 +17,7 @@ const (
 
 // For a given task, apply the symbols to the various fields and data values
 // in the task.
-func applySymbolsToTask(sessionID int32, task *TxOperation, id int, syms *symbolTable) error {
+func applySymbolsToTask(sessionID int32, task *txOperation, id int, syms *symbolTable) error {
 	var err error
 
 	if ui.IsActive(ui.RestLogger) {

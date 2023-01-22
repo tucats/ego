@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-type UserIOService interface {
+type userIOService interface {
 	ReadUser(name string, doNotLog bool) (defs.User, error)
 	WriteUser(user defs.User) error
 	DeleteUser(name string) error
@@ -24,7 +24,11 @@ type UserIOService interface {
 	Flush() error
 }
 
-var AuthService UserIOService
+// AuthService stores the specific instance of a service provider for
+// authentication services (there are builtin providers for JSON based
+// file service and a database serivce that can connect to Postgres or
+// SQLite3).
+var AuthService userIOService
 
 var userDatabaseFile = ""
 
@@ -81,7 +85,7 @@ func LoadUserDatabase(c *cli.Context) error {
 	return err
 }
 
-func defineCredentialService(path, user, password string) (UserIOService, error) {
+func defineCredentialService(path, user, password string) (userIOService, error) {
 	var err error
 
 	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")

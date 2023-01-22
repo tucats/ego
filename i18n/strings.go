@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// Language is a string that identifies the current language, such as
+// "en" for English or "fr" for French. This is used as a key in the
+// internal localization dictionaries.
 var Language string
 
 func T(key string, valueMap ...map[string]interface{}) string {
@@ -22,9 +25,9 @@ func T(key string, valueMap ...map[string]interface{}) string {
 	}
 
 	// Find the message using the current language
-	text, ok := Messages[key][Language]
+	text, ok := messages[key][Language]
 	if !ok {
-		text, ok = Messages[key]["en"]
+		text, ok = messages[key]["en"]
 		if !ok {
 			text = key
 		}

@@ -7,13 +7,13 @@ import (
 	"github.com/tucats/ego/i18n"
 )
 
-const (
-	// Discards the catch set, which means all errors are caught.
-	AllErrorsCatchSet = 0
+// Constant that describes using no catch set, which means all errors
+// are caught.
+const allErrorsCatchSet = 0
 
-	// Set of errors that an ?optional is permitted to ignore.
-	OptionalCatchSet = 1
-)
+// Constant that describes using the set of errors that an ?optional
+// is permitted to ignore.
+const OptionalCatchSet = 1
 
 var catchSets = [][]error{
 	// OptionalCatchSet
@@ -59,7 +59,7 @@ func willCatchByteCode(c *Context, i interface{}) error {
 		}
 
 		// Zero has a special meaning of "catch everything"
-		if i == AllErrorsCatchSet {
+		if i == allErrorsCatchSet {
 			try.catches = make([]error, 0)
 		} else {
 			try.catches = append(try.catches, catchSets[i-1]...)

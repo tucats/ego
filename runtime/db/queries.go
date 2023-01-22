@@ -45,7 +45,7 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(e2)}}, errors.NewError(e2)
 	}
 
-	result := data.NewStruct(RowsType).FromBuiltinPackage()
+	result := data.NewStruct(rowsType).FromBuiltinPackage()
 	result.SetAlways(rowsFieldName, rows)
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(dbFieldName, this)

@@ -8,23 +8,26 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-type AssetObject struct {
+type assetObject struct {
 	data     []byte
 	Count    int
 	LastUsed time.Time
 }
 
-var AssetCache map[string]AssetObject
-var AssetMux sync.Mutex
+// AssetCache is the map that identifies the objects that are in the
+// cache. Each asset has a unique name (typially the endpoint path used
+// to reference it in HTML code).
+var AssetCache map[string]assetObject
+var assetMux sync.Mutex
 var maxAssetCacheSize int = 1024 * 1024 // How many bytes can we keep in the cache? Default is 1MB.
 var assetCacheSize int = 0
 
 // Flush the cache of assets being held in memory on behalf of the html services.
 func FlushAssetCache() {
-	AssetMux.Lock()
-	defer AssetMux.Unlock()
+	assetMux.Lock()
+	defer assetMux.Unlock()
 
-	AssetCache = map[string]AssetObject{}
+	AssetCache = map[string]assetObject{}
 	assetCacheSize = 0
 
 	ui.Log(ui.ServerLogger, "Initialized asset cache; max size %d", maxAssetCacheSize)
@@ -37,8 +40,8 @@ func GetAssetCacheSize() int {
 
 // Get the number of items in the asset cache.
 func GetAssetCacheCount() int {
-	AssetMux.Lock()
-	defer AssetMux.Unlock()
+	assetMux.Lock()
+	defer assetMux.Unlock()
 
 	return len(AssetCache)
 }
@@ -46,11 +49,11 @@ func GetAssetCacheCount() int {
 // For a given asset path, look it up in the cache. If found, the asset is returned
 // as a byte array. If not found, a nil value is returned.
 func findAsset(sessionID int32, path string) []byte {
-	AssetMux.Lock()
-	defer AssetMux.Unlock()
+	assetMux.Lock()
+	defer assetMux.Unlock()
 
 	if AssetCache == nil {
-		AssetCache = map[string]AssetObject{}
+		AssetCache = map[string]assetObject{}
 
 		ui.Log(ui.ServerLogger, "[%d] Initialized asset cache, %d bytes", sessionID, maxAssetCacheSize)
 	}
@@ -80,14 +83,14 @@ func saveAsset(sessionID int32, path string, data []byte) {
 		return
 	}
 
-	AssetMux.Lock()
-	defer AssetMux.Unlock()
+	assetMux.Lock()
+	defer assetMux.Unlock()
 
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
-	a := AssetObject{
+	a := assetObject{
 		data:     data,
 		LastUsed: time.Now(),
 	}

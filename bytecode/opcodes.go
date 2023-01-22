@@ -226,7 +226,7 @@ var opcodeNames = map[Opcode]string{
 
 func initializeDispatch() {
 	if dispatch == nil {
-		dispatch = DispatchMap{
+		dispatch = dispatchMap{
 			Add:                addByteCode,
 			AddressOf:          addressOfByteCode,
 			And:                andByteCode,

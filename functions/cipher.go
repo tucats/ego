@@ -16,11 +16,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// AuthToken is the Go native expression of a token value, which contains
+// authToken is the Go native expression of a token value, which contains
 // the identity of the creator, an arbitrary data payload, an expiration
 // time after which the token is no longer valid, a unique ID for this
 // token, and the unique ID of the Ego session that created the token.
-type AuthToken struct {
+type authToken struct {
 	Name    string
 	Data    string
 	TokenID uuid.UUID
@@ -95,7 +95,7 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return false, nil
 	}
 
-	var t = AuthToken{}
+	var t = authToken{}
 
 	err = json.Unmarshal([]byte(j), &t)
 	if err != nil {
@@ -146,7 +146,7 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrInvalidTokenEncryption.In("extract()")
 	}
 
-	var t = AuthToken{}
+	var t = authToken{}
 
 	err = json.Unmarshal([]byte(j), &t)
 	if err != nil {
@@ -179,7 +179,7 @@ func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
-	t := AuthToken{
+	t := authToken{
 		Name:    data.String(args[0]),
 		TokenID: uuid.New(),
 	}

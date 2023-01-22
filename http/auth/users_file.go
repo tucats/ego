@@ -12,14 +12,14 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-type FileService struct {
+type fileService struct {
 	path  string
 	dirty bool
 	data  map[string]defs.User
 }
 
-func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (UserIOService, error) {
-	svc := &FileService{
+func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (userIOService, error) {
+	svc := &fileService{
 		path: userDatabaseFile,
 		data: map[string]defs.User{},
 	}
@@ -65,11 +65,11 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (User
 	return svc, nil
 }
 
-func (f *FileService) ListUsers() map[string]defs.User {
+func (f *fileService) ListUsers() map[string]defs.User {
 	return f.data
 }
 
-func (f *FileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
+func (f *fileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 	var err error
 
 	user, ok := f.data[name]
@@ -80,7 +80,7 @@ func (f *FileService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 	return user, err
 }
 
-func (f *FileService) WriteUser(user defs.User) error {
+func (f *fileService) WriteUser(user defs.User) error {
 	_, found := f.data[user.Name]
 	f.data[user.Name] = user
 	f.dirty = true
@@ -94,7 +94,7 @@ func (f *FileService) WriteUser(user defs.User) error {
 	return nil
 }
 
-func (f *FileService) DeleteUser(name string) error {
+func (f *fileService) DeleteUser(name string) error {
 	u, err := f.ReadUser(name, false)
 	if err == nil {
 		delete(f.data, u.Name)
@@ -106,7 +106,7 @@ func (f *FileService) DeleteUser(name string) error {
 	return nil
 }
 
-func (f *FileService) Flush() error {
+func (f *fileService) Flush() error {
 	if !f.dirty {
 		return nil
 	}

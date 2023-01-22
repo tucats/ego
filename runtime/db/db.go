@@ -55,9 +55,9 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	ui.Log(ui.DBLogger, "Connecting to %s", connStr)
 
-	_ = s.Set(ClientType.Name(), ClientType)
+	_ = s.Set(clientType.Name(), clientType)
 
-	result := data.NewStruct(ClientType).FromBuiltinPackage()
+	result := data.NewStruct(clientType).FromBuiltinPackage()
 	result.SetAlways(clientFieldName, db)
 	result.SetAlways(constrFieldName, connStr)
 	result.SetAlways(asStructFieldName, false)

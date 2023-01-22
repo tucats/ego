@@ -7,15 +7,15 @@ import (
 	"github.com/tucats/ego/data"
 )
 
-var RowsType *data.Type
-var ClientType *data.Type
+var rowsType *data.Type
+var clientType *data.Type
 var typeDefLock sync.Mutex
 
 func initClientTypeDef() {
 	typeDefLock.Lock()
 	defer typeDefLock.Unlock()
 
-	if ClientType == nil {
+	if clientType == nil {
 		initRowsTypeDef()
 
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
@@ -48,7 +48,7 @@ func initClientTypeDef() {
 				},
 			},
 			ReturnTypes: []*data.Type{
-				data.PointerType(RowsType),
+				data.PointerType(rowsType),
 				data.ErrorType,
 			},
 		}, Query)
@@ -101,7 +101,7 @@ func initClientTypeDef() {
 			ReturnTypes: []*data.Type{data.VoidType},
 		}, AsStructures)
 
-		ClientType = t
+		clientType = t
 	}
 }
 
@@ -139,5 +139,5 @@ func initRowsTypeDef() {
 		ReturnTypes:  []*data.Type{data.ArrayType(data.StringType)},
 	}, rowsHeadings)
 
-	RowsType = t
+	rowsType = t
 }

@@ -369,7 +369,7 @@ func (c *Context) create(name string) error {
 // push puts a new items on the stack.
 func (c *Context) push(value interface{}) error {
 	if c.stackPointer >= len(c.stack) {
-		c.stack = append(c.stack, make([]interface{}, GrowStackBy)...)
+		c.stack = append(c.stack, make([]interface{}, growStackBy)...)
 	}
 
 	c.stack[c.stackPointer] = value

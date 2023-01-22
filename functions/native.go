@@ -18,20 +18,22 @@ import (
 // the argument count, locating the native "this" value, mapping it to the
 // correct type, and then calling the function.
 
+// NativeFunction defines the signature of native (i.e. builtin) runtime
+// functions.
 type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
-type NativeFunctionDef struct {
+type nativeFunctionDef struct {
 	Kind *data.Type
 	Name string
 	F    NativeFunction
 }
 
-// NativeFunctionMap defines, for each combination of data type and function
+// nativeFunctionMap defines, for each combination of data type and function
 // name, specify the native function handler for that type. For example, a
 // sync.WaitGroup has Add(), Done(), and Wait() methods and are all shown
 // here. This table is used by the Member opcode to check to see if the member
 // index is into a natively implemented type...
-var NativeFunctionMap = []NativeFunctionDef{
+var nativeFunctionMap = []nativeFunctionDef{
 	{
 		Kind: data.WaitGroupType,
 		Name: "Wait",
@@ -87,7 +89,7 @@ var NativeFunctionMap = []NativeFunctionDef{
 // For a given datatype and name, see if there is a native function that
 // supports this operation.  If so, return it's function pointer.
 func FindNativeFunction(kind *data.Type, name string) NativeFunction {
-	for _, f := range NativeFunctionMap {
+	for _, f := range nativeFunctionMap {
 		if f.Kind.IsType(kind) && f.Name == name {
 			return f.F
 		}

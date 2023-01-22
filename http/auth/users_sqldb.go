@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-type DatabaseService struct {
+type databaseService struct {
 	constr string
 	driver string
 	db     *sql.DB
@@ -53,8 +53,8 @@ const (
 `
 )
 
-func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOService, error) {
-	svc := &DatabaseService{}
+func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOService, error) {
+	svc := &databaseService{}
 
 	// Is the URL formed correctly?
 	url, err := url.Parse(connStr)
@@ -114,7 +114,7 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (UserIOSer
 	return svc, e2
 }
 
-func (pg *DatabaseService) ListUsers() map[string]defs.User {
+func (pg *databaseService) ListUsers() map[string]defs.User {
 	r := map[string]defs.User{}
 
 	rowSet, dberr := pg.db.Query(listUsersQueryString)
@@ -154,7 +154,7 @@ func (pg *DatabaseService) ListUsers() map[string]defs.User {
 	return r
 }
 
-func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, error) {
+func (pg *databaseService) ReadUser(name string, doNotLog bool) (defs.User, error) {
 	var err error
 
 	var user defs.User
@@ -206,7 +206,7 @@ func (pg *DatabaseService) ReadUser(name string, doNotLog bool) (defs.User, erro
 	return user, err
 }
 
-func (pg *DatabaseService) WriteUser(user defs.User) error {
+func (pg *databaseService) WriteUser(user defs.User) error {
 	var err error
 
 	b, _ := json.Marshal(user.Permissions)
@@ -248,7 +248,7 @@ func (pg *DatabaseService) WriteUser(user defs.User) error {
 	return err
 }
 
-func (pg *DatabaseService) DeleteUser(name string) error {
+func (pg *databaseService) DeleteUser(name string) error {
 	var err error
 
 	r, dberr := pg.db.Exec(deleteUserQueryString, name)
@@ -268,14 +268,14 @@ func (pg *DatabaseService) DeleteUser(name string) error {
 }
 
 // Required interface, but does no work for the Database service.
-func (pg *DatabaseService) Flush() error {
+func (pg *databaseService) Flush() error {
 	var err error
 
 	return err
 }
 
 // Verify that the database is initialized.
-func (pg *DatabaseService) initializeDatabase() error {
+func (pg *databaseService) initializeDatabase() error {
 	rows, dberr := pg.db.Query(probeTableExistsQueryString)
 
 	defer func() {

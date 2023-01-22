@@ -12,19 +12,19 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// OpcodeHandler defines a function that implements an opcode.
-type OpcodeHandler func(b *Context, i interface{}) error
+// opcodeHandler defines a function that implements an opcode.
+type opcodeHandler func(b *Context, i interface{}) error
 
-// DispatchMap is a map that is used to locate the function for an opcode.
-type DispatchMap map[Opcode]OpcodeHandler
+// dispatchMap is a map that is used to locate the function for an opcode.
+type dispatchMap map[Opcode]opcodeHandler
 
-var dispatch DispatchMap
+var dispatch dispatchMap
 var dispatchMux sync.Mutex
 var waitGroup sync.WaitGroup
 
-// GrowStackBy indicates the number of elements to add to the stack when
+// growStackBy indicates the number of elements to add to the stack when
 // it runs out of space.
-const GrowStackBy = 50
+const growStackBy = 50
 
 func (c *Context) GetName() string {
 	if c.bc != nil {

@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	SQLDialect = 0
-	EgoDialect = 1
+	sqlDialect = 0
+	egoDialect = 1
 )
 
 func sqlEscape(source string) string {
@@ -99,7 +99,7 @@ func formWhereExpressions(filters []string) string {
 		}
 
 		for {
-			clause, err := filterClause(tokens, SQLDialect)
+			clause, err := filterClause(tokens, sqlDialect)
 			if err != nil {
 				return syntaxErrorPrefix + err.Error()
 			}
@@ -126,7 +126,7 @@ func formCondition(condition string) string {
 	}
 
 	for {
-		clause, err := filterClause(tokens, EgoDialect)
+		clause, err := filterClause(tokens, egoDialect)
 		if err != nil {
 			return syntaxErrorPrefix + err.Error()
 		}
@@ -166,14 +166,14 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 		if isString {
 			switch dialect {
-			case SQLDialect:
+			case sqlDialect:
 				operatorSpelling = "'" + operatorSpelling + "'"
-			case EgoDialect:
+			case egoDialect:
 				operatorSpelling = "\"" + operatorSpelling + "\""
 			}
 		}
 
-		if isName && dialect == SQLDialect {
+		if isName && dialect == sqlDialect {
 			operatorSpelling = "\"" + operatorSpelling + "\""
 		}
 
@@ -190,19 +190,19 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 		var conjunction string
 
 		switch dialect {
-		case SQLDialect:
+		case sqlDialect:
 			conjunction = " OR "
 
-		case EgoDialect:
+		case egoDialect:
 			conjunction = " || "
 		}
 
 		if util.InList(strings.ToUpper(operator.Spelling()), "CONTAINSALL", "HASALL") {
 			switch dialect {
-			case SQLDialect:
+			case sqlDialect:
 				conjunction = " AND "
 
-			case EgoDialect:
+			case egoDialect:
 				conjunction = " && "
 			}
 		}
@@ -226,7 +226,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 			}
 
 			switch dialect {
-			case SQLDialect:
+			case sqlDialect:
 				// Building a string like:
 				//    position('evil' in classification) > 0
 				result.WriteString("POSITION(")
@@ -235,7 +235,7 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 				result.WriteString(term)
 				result.WriteString(") > 0")
 
-			case EgoDialect:
+			case egoDialect:
 				result.WriteString("strings.Index(")
 				result.WriteString(term)
 				result.WriteString(",")
@@ -255,10 +255,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 	switch strings.ToUpper(operator.Spelling()) {
 	case "EQ":
 		switch dialect {
-		case SQLDialect:
+		case sqlDialect:
 			infix = "="
 
-		case EgoDialect:
+		case egoDialect:
 			infix = "=="
 		}
 
@@ -276,10 +276,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	case "AND":
 		switch dialect {
-		case SQLDialect:
+		case sqlDialect:
 			infix = " AND "
 
-		case EgoDialect:
+		case egoDialect:
 			infix = "&&"
 		}
 
@@ -287,10 +287,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	case "OR":
 		switch dialect {
-		case SQLDialect:
+		case sqlDialect:
 			infix = " OR "
 
-		case EgoDialect:
+		case egoDialect:
 			infix = "||"
 		}
 
@@ -298,10 +298,10 @@ func filterClause(tokens *tokenizer.Tokenizer, dialect int) (string, error) {
 
 	case "NOT":
 		switch dialect {
-		case SQLDialect:
+		case sqlDialect:
 			prefix = " NOT "
 
-		case EgoDialect:
+		case egoDialect:
 			prefix = " !"
 		}
 

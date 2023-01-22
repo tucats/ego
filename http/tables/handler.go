@@ -302,7 +302,7 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If the table is the SQL pseudo-table name, then dispatch to the
 		// SQL statement handler. Otherwise, it's a table create operation.
-		if strings.EqualFold(tableName, SQLPseudoTable) {
+		if strings.EqualFold(tableName, sqlPseudoTable) {
 			SQLTransaction(r, w, sessionID, user)
 		} else {
 			TableCreate(user, hasAdminPermission, tableName, sessionID, w, r)

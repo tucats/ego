@@ -32,8 +32,10 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Define a cache. This keeps a copy of the compiler and the bytecode
-// used to represent each service compilation.
+// Define a cache element. This keeps a copy of the compiler instance
+// and the bytecode used to represent each service compilation. The Age
+// is exported as a variable that shows when the item was put in the
+// cache, and is used to retire items from the cache when it gets full.
 type CachedCompilationUnit struct {
 	Age   time.Time
 	c     *compiler.Compiler
@@ -44,13 +46,15 @@ type CachedCompilationUnit struct {
 }
 
 const (
-	CredentialInvalidMessage = ", invalid credential"
-	CredentialAdminMessage   = ", root privilege user"
-	CredentialNormalMessage  = ", normal user"
+	credentialInvalidMessage = ", invalid credential"
+	credentialAdminMessage   = ", root privilege user"
+	credentialNormalMessage  = ", normal user"
 )
 
+// ServiceCache is a map that contains compilation data for previously-
+// compiled service handlers written in the Ego language.
 var ServiceCache = map[string]CachedCompilationUnit{}
-var ServiceCacheMutex sync.Mutex
+var serviceCacheMutex sync.Mutex
 
 // MaxCachedEntries is the maximum number of items allowed in the service
 // cache before items start to be aged out (oldest first).
@@ -63,12 +67,12 @@ var MaxCachedEntries = 0
 // in Ego. It loads and compiles the service code, and
 // then runs it with a context specific to each request.
 func ServiceHandler(w http.ResponseWriter, r *http.Request) {
-	ServiceCacheMutex.Lock()
+	serviceCacheMutex.Lock()
 	if MaxCachedEntries < 0 {
 		txt := settings.Get(defs.MaxCacheSizeSetting)
 		MaxCachedEntries, _ = strconv.Atoi(txt)
 	}
-	ServiceCacheMutex.Unlock()
+	serviceCacheMutex.Unlock()
 
 	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
@@ -213,7 +217,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	var tokens *tokenizer.Tokenizer
 
 	// Is this endpoint already in the cache of compiled services?
-	ServiceCacheMutex.Lock()
+	serviceCacheMutex.Lock()
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		symbolTable.GetPackages(cachedItem.s)
 		compilerInstance = cachedItem.c.Clone(true)
@@ -226,7 +230,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		ServiceCache[endpoint] = cachedItem
 
 		ui.Log(ui.InfoLogger, "[%d] Using cached compilation unit for %s", sessionID, endpoint)
-		ServiceCacheMutex.Unlock()
+		serviceCacheMutex.Unlock()
 	} else {
 		bytes, err := ioutil.ReadFile(filepath.Join(server.PathRoot, endpoint+defs.EgoFilenameExtension))
 		if err != nil {
@@ -234,7 +238,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(status)
 
 			_, _ = io.WriteString(w, "File open error: "+err.Error())
-			ServiceCacheMutex.Unlock()
+			serviceCacheMutex.Unlock()
 
 			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
@@ -262,7 +266,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusBadRequest
 			w.WriteHeader(status)
 			_, _ = io.WriteString(w, "Error: "+err.Error())
-			ServiceCacheMutex.Unlock()
+			serviceCacheMutex.Unlock()
 
 			ui.Log(ui.ServerLogger, "[%d] %s %s; from %s; %d", sessionID, r.Method, r.URL, r.RemoteAddr, status)
 
@@ -275,7 +279,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			addToCache(sessionID, endpoint, compilerInstance, serviceCode, tokens)
 		}
 
-		ServiceCacheMutex.Unlock()
+		serviceCacheMutex.Unlock()
 	}
 
 	if err != nil {
@@ -344,12 +348,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 				tokenstr = tokenstr[:10] + "..."
 			}
 
-			valid := CredentialInvalidMessage
+			valid := credentialInvalidMessage
 			if authenticatedCredentials {
 				if auth.GetPermission(user, "root") {
-					valid = CredentialAdminMessage
+					valid = credentialAdminMessage
 				} else {
-					valid = CredentialNormalMessage
+					valid = credentialNormalMessage
 				}
 			}
 
@@ -371,12 +375,12 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		symbolTable.SetAlways("_token", "")
 		symbolTable.SetAlways("_token_valid", false)
 
-		valid := CredentialInvalidMessage
+		valid := credentialInvalidMessage
 		if authenticatedCredentials {
 			if auth.GetPermission(user, "root") {
-				valid = CredentialAdminMessage
+				valid = credentialAdminMessage
 			} else {
-				valid = CredentialNormalMessage
+				valid = credentialNormalMessage
 			}
 		}
 
@@ -423,9 +427,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// fix errors in the code and just re-run without having to flush the cache or restart the
 	// server.
 	if err != nil {
-		ServiceCacheMutex.Lock()
+		serviceCacheMutex.Lock()
 		delete(ServiceCache, endpoint)
-		ServiceCacheMutex.Unlock()
+		serviceCacheMutex.Unlock()
 	}
 
 	// Determine the status of the REST call by looking for the
@@ -435,7 +439,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	if statusValue, ok := symbolTable.Get(defs.RestStatusVariable); ok {
 		status = data.Int(statusValue)
 		if status == http.StatusUnauthorized {
-			w.Header().Set("WWW-Authenticate", `Basic realm="`+server.Realm+`", charset="UTF-8"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="`+strconv.Quote(server.Realm)+`", charset="UTF-8"`)
 		}
 	}
 
@@ -486,8 +490,8 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Last thing, if this service is cached but doesn't have a package symbol table in
 	// the cache, give our current set to the cached item.
-	ServiceCacheMutex.Lock()
-	defer ServiceCacheMutex.Unlock()
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
 
 	if cachedItem, ok := ServiceCache[endpoint]; ok && cachedItem.s == nil {
 		cachedItem.s = symbols.NewRootSymbolTable("packages for " + endpoint)
