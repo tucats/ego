@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"time"
 
 	"github.com/tucats/ego/app-cli/app"
 	"github.com/tucats/ego/app-cli/ui"
@@ -24,6 +26,8 @@ var BuildTime string
 var Copyright = "(C) Copyright Tom Cole 2020, 2021, 2022, 2023"
 
 func main() {
+	start := time.Now()
+
 	app := app.New("ego: " + i18n.T("ego")).
 		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright).
@@ -38,10 +42,23 @@ func main() {
 
 	// If we executed bytecode instructions, report the instruction count
 	// and maximum stack size used to the tracing log.
-	if count := bytecode.InstructionsExecuted.Load(); count > 0 {
-		ui.Log(ui.TraceLogger,
-			"Executed %d bytecode instructions; maximum runtime stack size was %d elements",
-			count, bytecode.MaxStackSize.Load())
+	if ui.IsActive(ui.StatsLogger) {
+		ui.Log(ui.StatsLogger, "Execution elapsed time:      %15s", time.Since(start).String())
+
+		if count := bytecode.InstructionsExecuted.Load(); count > 0 {
+			ui.Log(ui.StatsLogger, "Bytecode instructions executed: %12d", count)
+			ui.Log(ui.StatsLogger, "Max runtime stack size:         %12d", bytecode.MaxStackSize.Load())
+		}
+
+		m := &runtime.MemStats{}
+		runtime.ReadMemStats(m)
+
+		ui.Log(ui.StatsLogger, "Memory currently on heap        %12d", m.Alloc)
+		ui.Log(ui.StatsLogger, "Objects currently on heap       %12d", m.Mallocs-m.Frees)
+		ui.Log(ui.StatsLogger, "Total heap memory alloated:     %12d", m.TotalAlloc)
+		ui.Log(ui.StatsLogger, "Total system memory allocated:  %12d", m.Sys)
+		ui.Log(ui.StatsLogger, "Garbage collection cycles:      %12d", m.NumGC)
+		ui.Log(ui.StatsLogger, "Garbage collection pct of cpu:     %8.7f", m.GCCPUFraction)
 	}
 
 	// If something went wrong, report it to the user and force an exit
