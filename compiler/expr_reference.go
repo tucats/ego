@@ -77,7 +77,7 @@ func (c *Compiler) reference() error {
 			c.b.Emit(bytecode.Member, lastName)
 
 			if c.t.IsNext(tokenizer.EmptyInitializerToken) {
-				c.b.Emit(bytecode.Load, "new")
+				c.b.Emit(bytecode.Load, "$new")
 				c.b.Emit(bytecode.Swap)
 				c.b.Emit(bytecode.Call, 1)
 			} else {

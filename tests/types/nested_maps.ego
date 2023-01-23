@@ -7,7 +7,7 @@
     a["cole"] = b
 
     @assert a["cole"]["Tom"] == 61
-    @assert type(a) == "map[string]map[string]int"
+    @assert reflect.Type(a) == "map[string]map[string]int"
 
 }
 

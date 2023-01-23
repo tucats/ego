@@ -236,7 +236,7 @@ func (c *Compiler) expressionAtom() error {
 			}
 
 			if c.t.IsNext(tokenizer.EmptyInitializerToken) {
-				c.b.Emit(bytecode.Load, "new")
+				c.b.Emit(bytecode.Load, "$new")
 				c.b.Emit(bytecode.Push, typeSpec)
 				c.b.Emit(bytecode.Call, 1)
 			} else {

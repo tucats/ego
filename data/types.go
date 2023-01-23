@@ -1004,7 +1004,7 @@ func (t Type) Reflect() *Struct {
 	}
 
 	functionList := t.functions
-	if t.valueType.kind == InterfaceKind {
+	if t.valueType != nil && t.valueType.kind == InterfaceKind {
 		functionList = t.valueType.functions
 	}
 

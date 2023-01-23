@@ -126,12 +126,16 @@ func Format(element interface{}) string {
 	case *sync.WaitGroup:
 		return "sync.WaitGroup{}"
 
-		// Naked WaitGroup is a model for a type
+	// Naked WaitGroup is a model for a type
 	case sync.Mutex:
 		return "Mutex type"
-	// Pointer to WaitGroup is what an _Ego_ WaitGroup is
+
+	// Pointer to sync.Mutex is what an _Ego_ Mutex is
 	case *sync.Mutex:
 		return "sync.Mutex{}"
+
+	case **sync.Mutex:
+		return "*sync.Mutex{}"
 
 	case *time.Time:
 		return v.String()
@@ -238,7 +242,10 @@ func Format(element interface{}) string {
 			vv := *v
 			switch vv := vv.(type) {
 			case *sync.Mutex:
-				return "&sync.Mutex"
+				return "sync.Mutex"
+
+			case **sync.Mutex:
+				return "*sync.Mutex"
 
 			case *sync.WaitGroup:
 				return "&sync.WaitGroup{}"

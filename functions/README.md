@@ -278,23 +278,6 @@ This generates a UUID (universal unique identifier) and returns it formatted
 as a string value. Every call to this function will result in a new unique
 value.
 
-### members(st)
-
-Returns an array of strings containing the names of each member of the 
-structure passed as an argument. If the value passed is not a structure
-it causes an error. Note that the resulting array elements can be used
-to reference fields in a structure using array index notation.
-
-    e := { name: "Dave", age: 33 }
-    m := utils.members(e)
-
-    e[m[1]] := 55
-
-The `util.members()` function returns an array [ "age", "name" ]. These are
-the fields of the structure, and they are always returned in alphabetical
-order. The assignment statement uses the first array element ("age") to access
-the value of e.age.
-
 ### util.Symbols()
 Returns a string containing a formatted expression of the symbol table at
 the moment the function is called, including all nested levels of scope.

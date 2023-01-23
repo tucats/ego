@@ -117,7 +117,7 @@ func (c *Context) PrintThisStack(operation string) {
 			for index := lastOne; index >= 0; index-- {
 				v := c.thisStack[index]
 				n := v.name
-				r, _ := functions.Type(c.symbols, []interface{}{v.value})
+				r, _ := functions.ReflectType(c.symbols, []interface{}{v.value})
 				b.WriteString(fmt.Sprintf("\"%s\" T(%s)", n, r))
 				if index > 0 {
 					b.WriteString(",")

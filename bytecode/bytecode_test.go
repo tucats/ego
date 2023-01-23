@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 )
 
@@ -254,6 +255,48 @@ func TestByteCode_Append(t *testing.T) {
 			// Check the slice of intentionally emitted opcodes (array may be larger)
 			if !reflect.DeepEqual(tt.want, b.instructions[:tt.wantPos]) {
 				t.Errorf("Append() wrong array, got %v, want %v", b.instructions, tt.want)
+			}
+		})
+	}
+}
+
+func TestByteCode_String(t *testing.T) {
+	tests := []struct {
+		name        string
+		fname       string
+		declaration *data.FunctionDeclaration
+		want        string
+	}{
+		{
+			name:  "foo",
+			fname: "foo",
+			want:  "foo()",
+		},
+		{
+			name:  "foo with declaration string",
+			fname: "foo",
+			declaration: &data.FunctionDeclaration{
+				Name: "foo",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "i",
+						ParmType: data.Int32Type,
+					},
+				},
+				ReturnTypes: []*data.Type{data.Float64Type},
+			},
+			want: "foo(i int32) float64",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &ByteCode{
+				name:        tt.fname,
+				declaration: tt.declaration,
+			}
+			if got := b.String(); got != tt.want {
+				t.Errorf("ByteCode.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}

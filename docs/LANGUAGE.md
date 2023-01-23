@@ -53,7 +53,8 @@
    1. [`rest` package](#rest)
    1. [`sort` package](#sort)
    1. [`strings` package](#strings)
-   1. [`sync` package](#strings)
+   1. [`sync` package](#sync)
+   1. [`reflect` package](#reflect)
    1. [`tables` package](#tables)
    1. [`util` package](#util)
    1. [`uuid` package](#uuid)
@@ -763,8 +764,7 @@ a single value.
 | index()   | index(items, 55)      | Return the array index of `items` that contains the value `55` |
 | len()     | len(items)            | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
 | make()    | make([]int, 5)        | Create an array of int values with `5` elements in the array |
-| members() | members(emp)          | Return an array of strings containing the struct member names of the argument |
-| type()    | type(emp)             | Return a string with the type of the argument. If emp is a struct, the result will be `"struct"` |
+
 
 &nbsp;
 &nbsp;
@@ -2259,9 +2259,10 @@ err := json.Unmarshal(s, &r)
 ```
 
 If `s` contains the JSON byte array from the `Marshal` example above, the result is a
-structure { age: 44, name:"Tom"} in the variable `r`. You can use the `members()` function
-to examine if a structure contains a field you expected. Note that the Unmarshal function
-returns an error code as it's result; this will be nil if there are no errors found.
+structure { age: 44, name:"Tom"} in the variable `r`. You can use the `reflect.Members()`
+function to examine if a structure contains a field you expected. Note that the Unmarshal
+function returns an error code as it's result; this will be nil if there are no errors 
+found.
 
 You can optionally not pass the value to store the resulting decoded value as the second
 parameter. If only the byte array is passed, the function's return value is the decoded
@@ -3270,6 +3271,78 @@ defer wg.Done()
 
 &nbsp;
 &nbsp;
+
+## reflect <a name="reflect"></a>
+
+The reflelct package provides functions to allow an Ego program to discover
+information about native values and types.
+
+Note that this _does not_ match the native Go functions at this point.
+
+### reflect.DeepCopy(value interface{} [, depth int])
+
+This makes a "deep copy" of the value. For scalar objects, it is just a
+simple copy of the object. For complex types such as structs, arrays, or
+maps it makes a recursive copy of the entire object, so every member of 
+the result is a new instance of the old member value, essentially doubling
+the memory consumed. The depth is optional, and if not given defaults to
+100. This indicates how deep the recursive copy should go before stopping.
+
+### reflect.InstanceOf(type)
+
+This create a "Zero Value" of the given type. The result is always of the
+specified type, with all the values of the item set to the native zero 
+value for that type (`false` for `bool`, an empty string for `string`, 
+etc.)
+
+
+### reflect.Members(i struct) []string
+
+Returns an array of strings containing the names of each member of the 
+structure passed as an argument. If the value passed is not a structure
+it causes an error. Note that the resulting array elements can be used
+to reference fields in a structure using array index notation.
+
+    e := { name: "Dave", age: 33 }
+    m := reflect.Members(e)
+
+    e[m[1]] := 55
+
+The `reflect.Members()` function returns an array [ "age", "name" ]. These are
+the fields of the structure, and they are always returned in alphabetical
+order. The assignment statement uses the first array element ("age") to access
+the value of e.age.
+
+### reflect.Reflect(value)
+
+This returns a structure that contains detailed information about the
+type of value given.  The resulting structure has fields that are
+specific to each type, and will not be present in the structure for
+other types.
+
+
+| Field        | Description                |
+|:-------------|:---------------------------|
+| basetype     | The native Go type of the value |
+| declaration  | The declaration string for functions or native types |
+| istype       | Boolean indicating if the value was itself a type |
+| members      | The names of the fields in the struct or type |
+| methods      | The names of the receiver methods for this type |
+| native       | Boolean indicating if this is a native Go structure or type |
+| package      | Boolean indicating if this type is from a package |
+| readonly     | Boolean indicating if this is a readonly value |
+| size         | For arrays and maps, the number of elements |
+| type         | The _Ego_ type name of the value |
+| static       | Is the field list fixed for this struct? |
+
+
+
+### reflect.Type(value)
+
+This returns a string containing the type name of the item. For built-in 
+scalar types like `int32` or `string`, the result is that native type name
+as a string. For complex types or user-defined types, the type string is 
+the cannocial type declaration string for the type.
 
 ## tables <a name="tables"></a>
 

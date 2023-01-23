@@ -18,19 +18,22 @@ import (
 // too large can result in excessive memory consumption.
 const MaxDeepCopyDepth = 100
 
-// Normalize coerces a value to match the type of a model value.
+// Normalize coerces a value to match the type of a model value. The
+// (possibly modified) value is returned as the function value.
 func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := data.Normalize(args[0], args[1])
 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
 }
 
-// New implements the new() function. If an integer type number
-// or a string type name is given, the "zero value" for that type
-// is returned. For an array, struct, or map, a recursive copy is
-// done of the members to a new object which is returned.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// Is the type an integer? If so it's a type
+// ReflectNew implements the new() function. This function creates a new
+// "zero value" of any given type or object. If an integer type
+// number or a string type name is given, the "zero value" for
+// that type is returned. For an array, struct, or map, a recursive
+// copy is done of the members to a new object which is returned.
+func ReflectNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	// Is the type an integer? If so it's a type kind from the native
+	// reflection package.
 	if typeValue, ok := args[0].(int); ok {
 		switch reflect.Kind(typeValue) {
 		case reflect.Uint8, reflect.Int8:
@@ -64,30 +67,26 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
-	if typeValue, ok := args[0].(*data.Type); ok {
-		return typeValue.InstanceOf(typeValue), nil
-	}
-
-	// Is the type an string? If so it's a type name
+	// Is the type a string? If so it's a bult-in scalar type name
 	if typeValue, ok := args[0].(string); ok {
 		switch strings.ToLower(typeValue) {
+		case data.BoolType.Name():
+			return false, nil
+
 		case data.ByteType.Name():
 			return byte(0), nil
 
 		case data.Int32TypeName:
 			return int32(0), nil
 
-		case data.Int64TypeName:
-			return int64(0), nil
-
 		case data.IntTypeName:
 			return 0, nil
 
+		case data.Int64TypeName:
+			return int64(0), nil
+
 		case data.StringTypeName:
 			return "", nil
-
-		case data.BoolType.Name():
-			return false, nil
 
 		case data.Float32TypeName:
 			return float32(0), nil
@@ -112,7 +111,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
 	// cast attempt will yield a warning on invalid mutex copy operation.
 	switch args[0].(type) {
-	case sync.Mutex:
+	case *sync.Mutex:
 		return data.InstanceOfType(data.MutexType), nil
 	}
 
@@ -121,12 +120,21 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return typeValue, nil
 	}
 
-	// If it's a native struct, it has it's own deep copy.
-	if structValue, ok := args[0].(*data.Struct); ok {
-		return data.DeepCopy(structValue), nil
+	// Some native complex types work using the data package deep
+	// copy operation on that type.
+
+	switch actual := args[0].(type) {
+	case *data.Struct:
+		return data.DeepCopy(actual), nil
+
+	case *data.Array:
+		return data.DeepCopy(actual), nil
+
+	case *data.Map:
+		return data.DeepCopy(actual), nil
 	}
 
-	// Otherwise, make a deep copy of the item.
+	// Otherwise, make a deep copy of the item ourselves.
 	r := DeepCopy(args[0], MaxDeepCopyDepth)
 
 	// If there was a user-defined type in the source, make the clone point back to it
@@ -138,7 +146,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrInvalidValue.In("new()").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
-		return nil, errors.ErrInvalidValue.In("new()").Context("builtin function")
+		return v, nil
 
 	// No action for this group
 	case byte, int32, int, int64, string, float32, float64:
