@@ -2,9 +2,9 @@
 
 {
     var a1,a2,a3 int
-    @assert T.Equal(type(a1) , "int" )
-    @assert T.Equal(type(a2) , "int" )
-    @assert T.Equal(type(a3) , "int" )
+    @assert T.Equal(reflect.Type(a1) , "int" )
+    @assert T.Equal(reflect.Type(a2) , "int" )
+    @assert T.Equal(reflect.Type(a3) , "int" )
 
     var i int 
     var f float64 
@@ -17,11 +17,11 @@
     }
     var xx x
     
-    @assert T.Equal(type(i)  , "int"         ) 
-    @assert T.Equal(type(f)  , "float64"       ) 
-    @assert T.Equal(type(s)  , "string"      ) 
-    @assert T.Equal(type(b)  , "bool"        ) 
-    @assert T.Equal(type(x)  , "type struct{age int, name string}" ) 
-    @assert T.Equal(type(xx) , "x"    ) 
+    @assert T.Equal(reflect.Type(i)  , "int"         ) 
+    @assert T.Equal(reflect.Type(f)  , "float64"       ) 
+    @assert T.Equal(reflect.Type(s)  , "string"      ) 
+    @assert T.Equal(reflect.Type(b)  , "bool"        ) 
+    @assert T.Equal(reflect.Type(x)  , "type struct{age int, name string}" ) 
+    @assert T.Equal(reflect.Type(xx) , "x"    ) 
 }
 @pass

@@ -10,7 +10,7 @@ func half(x int) float64 {
    try {
       return x / 0 
    } catch (e){
-      if type(e) != "error" {
+      if reflect.Type(e) != "error" {
          @fail "catch error is wrong type"
       }
       return -55.0

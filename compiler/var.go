@@ -68,7 +68,7 @@ func (c *Compiler) compileVar() error {
 			}
 
 			for _, name := range names {
-				c.b.Emit(bytecode.Load, "new")
+				c.b.Emit(bytecode.Load, "$new")
 
 				if isPackageType {
 					c.b.Emit(bytecode.Load, pkgName)

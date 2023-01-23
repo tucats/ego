@@ -174,8 +174,8 @@ func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	return m, nil
 }
 
-// Members gets an array of the names of the fields in a structure.
-func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// ReflectMembers gets an array of the names of the fields in a structure.
+func ReflectMembers(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *data.Map:
 		keys := data.NewArray(data.StringType, 0)
@@ -206,7 +206,7 @@ func Members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return keys, err
 
 	default:
-		return nil, errors.ErrInvalidType.In("members()")
+		return nil, errors.ErrInvalidType.In("Members()")
 	}
 }
 

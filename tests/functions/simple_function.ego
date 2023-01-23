@@ -7,14 +7,14 @@
 @test "functions: simple function call"
 
 func dbl(x interface{}) interface{} {
-   if type(x) == "float64" {
+   if reflect.Type(x) == "float64" {
       return x * 2.0
    }
    
    return x * 2
 }
 
-@assert type(dbl(4.0)) == "float64"
+@assert reflect.Type(dbl(4.0)) == "float64"
 @assert dbl(55)        == 110
 @assert dbl(-2)        == -4
 @pass

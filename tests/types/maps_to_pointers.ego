@@ -8,6 +8,6 @@
 
     b := a["name"]
     @assert *b == 55
-    @assert type(a) == "map[string]*int"
+    @assert reflect.Type(a) == "map[string]*int"
 }
 @pass

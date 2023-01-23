@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -13,7 +14,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	vv := reflect.ValueOf(args[0])
 	ts := vv.String()
 
@@ -193,7 +194,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}), nil
 	}
 
-	typeString, err := Type(s, args)
+	typeString, err := ReflectType(s, args)
 	if err == nil {
 		result := map[string]interface{}{
 			data.TypeMDName:     typeString,
@@ -207,8 +208,18 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// Type implements the type() function.
-func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// ReflectDeepCopy implements the reflect.DeepCopy function.
+func ReflectDeepCopy(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	depth := MaxDeepCopyDepth
+	if len(args) > 1 {
+		depth = data.Int(args[1])
+	}
+
+	return DeepCopy(args[0], depth), nil
+}
+
+// ReflectType implements the type() function.
+func ReflectType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *data.Map:
 		return v.TypeString(), nil
@@ -227,6 +238,18 @@ func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	case error:
 		return "error", nil
+
+	case *sync.WaitGroup:
+		return "sync.Waitgroup", nil
+
+	case **sync.WaitGroup:
+		return "*sync.WaitGroup", nil
+
+	case **sync.Mutex:
+		return "*sync.Mutex", nil
+
+	case *sync.Mutex:
+		return "sync.Mutex", nil
 
 	case *data.Channel:
 		return "chan", nil

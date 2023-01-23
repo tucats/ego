@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-sqlite3 v1.14.14
-	golang.org/x/net v0.3.0 // indirect
-	golang.org/x/term v0.3.0
+	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/term v0.4.0
 	gopkg.in/resty.v1 v1.12.0
 )

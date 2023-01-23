@@ -33,7 +33,7 @@
         fmt.Println("Error: ", e)
     }
 
-    @assert type(m) == "map[string]interface{}"
+    @assert reflect.Type(m) == "map[string]interface{}"
 
     // Test for the float value, because the model uses interfaces{} and
     // so json.Unmarshal unhelpfully converts unknown numeric values to

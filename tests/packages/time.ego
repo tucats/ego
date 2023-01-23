@@ -9,7 +9,7 @@
 
     @assert t1.String() == "Thu Dec 1 00:00:00 UTC 1960"
     @assert e == "24h0m0s"
-    @assert type(t1) == "time.Time"
+    @assert reflect.Type(t1) == "time.Time"
 }
 
 @pass

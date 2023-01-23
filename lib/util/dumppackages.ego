@@ -10,7 +10,7 @@ func DumpPackages() {
    
    for _, v := range packages {
       p := v
-      m := members(util.Eval(v))
+      m := reflect.Members(util.Eval(v))
       
       for _, n := range m {
          fn := v + "." + n

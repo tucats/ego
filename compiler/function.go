@@ -97,7 +97,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		// If it was by value, make a copy of that so the function can't
 		// modify the actual value.
 		if byValue {
-			b.Emit(bytecode.Load, "new")
+			b.Emit(bytecode.Load, "$new")
 			b.Emit(bytecode.Load, thisName)
 			b.Emit(bytecode.Call, 1)
 			b.Emit(bytecode.Store, thisName)
