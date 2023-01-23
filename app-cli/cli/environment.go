@@ -1,3 +1,7 @@
+// The "cli" package provides basic grammar-based processing of command line options,
+// and dispatches to action routines when a completed grammar is processed. It also
+// includes the builtin "help" command and the associated "-h" option added to any
+// subcommand.
 package cli
 
 import (

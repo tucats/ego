@@ -78,7 +78,7 @@ func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {
-		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, functions.MakeTime(&t))
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, functions.MakeTime(&t, nil))
 	} else {
 		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, app.BuildTime)
 	}

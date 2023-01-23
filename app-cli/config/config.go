@@ -1,3 +1,5 @@
+// This package manages the "config" subcommand. It includes the grammar
+// definition and the action routines for the config subcommands.
 package config
 
 import (

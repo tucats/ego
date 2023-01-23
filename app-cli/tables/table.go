@@ -1,3 +1,10 @@
+// Package tables provides basic text table formatting functions. A table
+// is defined as a set of columns, and rows are added to the table. The
+// table can be configured for alignment, validation, and filtering on
+// a per-column basis. The table contents can be sorted by any set of
+// columns before being output. The output can be either a human-readable
+// text output to the console, or a JSON payload describing the table
+// contents.
 package tables
 
 import (

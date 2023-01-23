@@ -18,6 +18,7 @@ import (
 func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	selectedScope := -1
 	json := false
+	allItems := false
 
 	if len(args) > 0 {
 		selectedScope = data.Int(args[0])
@@ -28,6 +29,10 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	if len(args) > 2 {
+		allItems = data.Bool(args[2])
+	}
+
+	if len(args) > 3 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -78,7 +83,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 		// Get the sets of rows for this table. If the table is empty,
 		// we don't print it out.
-		rows := syms.FormattedData(false)
+		rows := syms.FormattedData(allItems)
 		if len(rows) > 0 {
 			for _, row := range rows {
 				// Escape the value column if needed

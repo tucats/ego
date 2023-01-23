@@ -82,9 +82,27 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		Name:      "Symbols",
 		Pkg:       "util",
 		Min:       0,
-		Max:       2,
+		Max:       3,
 		FullScope: true,
 		F:         FormatSymbols,
+		D: &data.FunctionDeclaration{
+			Name:        "Symbols",
+			ReturnTypes: []*data.Type{data.VoidType},
+			Parameters: []data.FunctionParameter{
+				{
+					Name:     "scope",
+					ParmType: data.IntType,
+				},
+				{
+					Name:     "format",
+					ParmType: data.StringType,
+				},
+				{
+					Name:     "all",
+					ParmType: data.BoolType,
+				},
+			},
+		},
 	})
 
 	_ = functions.AddFunction(s, functions.FunctionDefinition{

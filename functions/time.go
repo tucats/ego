@@ -3,6 +3,7 @@ package functions
 import (
 	"time"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -13,10 +14,10 @@ const basicLayout = "Mon Jan 2 15:04:05 MST 2006"
 
 var timeType *data.Type
 
-func initializeType() {
+func initializeType(s *symbols.SymbolTable) error {
 	if timeType == nil {
 		structType := data.StructureType()
-		structType.DefineField("time", data.InterfaceType)
+		structType.DefineField("Time", data.InterfaceType)
 
 		t := data.TypeDefinition("time.Time", structType)
 		t.DefineFunction("Add", nil, TimeAdd)
@@ -25,14 +26,28 @@ func initializeType() {
 		t.DefineFunction("String", nil, TimeString)
 		t.DefineFunction("Sub", nil, TimeSub)
 		timeType = t
+
+		if s != nil {
+			if p, found := s.Get("time"); found {
+				if pkg, ok := p.(*data.Package); ok {
+					pkg.Set("Time", t)
+
+					if err := s.Set("time", pkg); err != nil {
+						return err
+					}
+				}
+			}
+		}
 	}
+
+	return nil
 }
 
-// TimeNow implements time.now().
+// TimeNow implements time.Now().
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()
 
-	return MakeTime(&t), nil
+	return MakeTime(&t, s), nil
 }
 
 // TimeParse time.Parse().
@@ -49,7 +64,7 @@ func TimeParse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.NewError(err)
 	}
 
-	return MakeTime(&t), nil
+	return MakeTime(&t, s), nil
 }
 
 // TimeAdd implements time.duration().
@@ -64,7 +79,7 @@ func TimeAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		if err == nil {
 			t2 := t.Add(d)
 
-			return MakeTime(&t2), nil
+			return MakeTime(&t2, s), nil
 		}
 	}
 
@@ -170,7 +185,7 @@ func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {
 // object, by looking in the [time] member.
 func getTimeV(timeV interface{}) (*time.Time, error) {
 	if m, ok := timeV.(*data.Struct); ok {
-		if tv, ok := m.Get("time"); ok {
+		if tv, ok := m.Get("Time"); ok {
 			if tp, ok := tv.(*time.Time); ok {
 				return tp, nil
 			}
@@ -181,11 +196,13 @@ func getTimeV(timeV interface{}) (*time.Time, error) {
 }
 
 // Make a time object with the given time value.
-func MakeTime(t *time.Time) interface{} {
-	initializeType()
+func MakeTime(t *time.Time, s *symbols.SymbolTable) interface{} {
+	if err := initializeType(s); err != nil {
+		ui.Log(ui.InternalLogger, "Failed to create time.Time type, %v", err)
+	}
 
 	r := data.NewStruct(timeType)
-	_ = r.Set("time", t)
+	_ = r.Set("Time", t)
 
 	r.SetReadonly(true)
 

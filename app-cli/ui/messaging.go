@@ -1,5 +1,5 @@
 // Package ui contains basic tools for interacting with a user. This includes generating
-// informational and debugging messages. It also includes functions for controlling
+// informational and debugging messages, including functions for controlling
 // whether those messages are displayed or not.
 package ui
 
