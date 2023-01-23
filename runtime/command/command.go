@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"os/exec"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -32,8 +31,6 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	strArray = fork.MungeArguments(strArray...)
-
-	fmt.Printf("DEBUG: %v\n", strArray)
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
 
