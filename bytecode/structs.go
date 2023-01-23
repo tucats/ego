@@ -270,7 +270,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		if defn == nil {
-			fmt.Printf("DEBUG: unknown fuunction value: %#v\n", v)
+			fmt.Printf("DEBUG: unknown function value: %#v\n", v)
 		}
 
 		a.DefineFunction(data.String(index), defn, nil)
