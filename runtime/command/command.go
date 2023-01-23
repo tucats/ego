@@ -1,12 +1,14 @@
 package command
 
 import (
+	"fmt"
 	"os/exec"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -28,6 +30,10 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for n, v := range args {
 		strArray[n] = data.String(v)
 	}
+
+	strArray = fork.MungeArguments(strArray...)
+
+	fmt.Printf("DEBUG: %v\n", strArray)
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
 

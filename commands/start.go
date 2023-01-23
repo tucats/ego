@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/http/server"
 )
 
@@ -176,7 +177,7 @@ func Start(c *cli.Context) error {
 		return errors.NewError(e2)
 	}
 
-	pid, e2 := runExec(args[0], args)
+	pid, e2 := fork.Run(args[0], args)
 
 	// If there were no errors, rewrite the PID file with the
 	// state of the newly-created server.

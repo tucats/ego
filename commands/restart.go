@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/fork"
 	"github.com/tucats/ego/http/server"
 )
 
@@ -65,7 +66,7 @@ func Restart(c *cli.Context) error {
 		time.Sleep(1 * time.Second)
 
 		// Launch the new process
-		pid, err := runExec(args[0], args)
+		pid, err := fork.Run(args[0], args)
 		if err == nil {
 			status.PID = pid
 			status.LogID = logID
