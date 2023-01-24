@@ -33,11 +33,11 @@ var nextThreadID int32 = 0
 // MaxStackSize records the largest stack size encountered during a
 // stack push operation. This can be used to determine if the initial
 // stack size is adequate.
-var MaxStackSize atomic.Int32
+var MaxStackSize int32
 
 // InstructionsExecuted counts the number of byte code instructions
 // executed.
-var InstructionsExecuted atomic.Int64
+var InstructionsExecuted int64
 
 // Context holds the runtime information about an instance of bytecode being
 // executed.
@@ -375,8 +375,8 @@ func (c *Context) push(value interface{}) error {
 	c.stack[c.stackPointer] = value
 	c.stackPointer = c.stackPointer + 1
 
-	if c.stackPointer > int(MaxStackSize.Load()) {
-		MaxStackSize.Store(int32(c.stackPointer))
+	if c.stackPointer > int(MaxStackSize) {
+		atomic.StoreInt32(&MaxStackSize, int32(c.stackPointer))
 	}
 
 	return nil

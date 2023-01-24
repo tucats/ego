@@ -43,7 +43,7 @@ func RunAction(c *cli.Context) error {
 
 	programArgs := make([]interface{}, 0)
 	mainName := defs.Main
-	prompt := c.MainProgram + "> "
+	prompt := strings.TrimSuffix(c.MainProgram, ".exe") + "> "
 	debug := c.Boolean("debug")
 	text := ""
 	wasCommandLine := true

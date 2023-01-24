@@ -45,9 +45,9 @@ func main() {
 	if ui.IsActive(ui.StatsLogger) {
 		ui.Log(ui.StatsLogger, "Execution elapsed time:      %15s", time.Since(start).String())
 
-		if count := bytecode.InstructionsExecuted.Load(); count > 0 {
+		if count := bytecode.InstructionsExecuted; count > 0 {
 			ui.Log(ui.StatsLogger, "Bytecode instructions executed: %12d", count)
-			ui.Log(ui.StatsLogger, "Max runtime stack size:         %12d", bytecode.MaxStackSize.Load())
+			ui.Log(ui.StatsLogger, "Max runtime stack size:         %12d", bytecode.MaxStackSize)
 		}
 
 		m := &runtime.MemStats{}

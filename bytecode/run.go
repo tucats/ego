@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
@@ -82,7 +83,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		i := c.bc.instructions[c.programCounter]
 
-		InstructionsExecuted.Add(1)
+		atomic.AddInt64(&InstructionsExecuted, 1)
 
 		if c.Tracing() {
 			instruction := FormatInstruction(i)

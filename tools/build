@@ -43,7 +43,8 @@ if [ "$1" == "-all" ]; then
    mkdir -p builds/linux
    mkdir -p builds/macos/intel
    mkdir -p builds/macos/applesilicon/
-   mkdir -p builds/windows
+   mkdir -p builds/windows/x64/
+   mkdir -p builds/windows/arm64/
 
    echo Linux x86...
    GOARCH=amd64 GOOS=linux $GO build -ldflags "$FLAGS" -o builds/linux/ego
@@ -55,7 +56,10 @@ if [ "$1" == "-all" ]; then
    GOARCH=arm64 GOOS=darwin $GO build -ldflags "$FLAGS" -o builds/macos/applesilicon/ego
 
    echo Windows x86
-   GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/ego.exe
+   GOARCH=amd64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/x64/ego.exe
+   
+   echo Windows arm64
+   GOARCH=arm64 GOOS=windows $GO build -ldflags "$FLAGS" -o builds/windows/arm64/ego.exe
 
    exit 0
 fi
