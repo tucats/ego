@@ -4,19 +4,19 @@ import (
 	"strings"
 )
 
-// GetParameter returns the ith parameter string parsed, or an
+// Parameter returns the ith parameter string parsed, or an
 // empty string if not found.
-func (c *Context) GetParameter(i int) string {
+func (c *Context) Parameter(index int) string {
 	g := c.FindGlobal()
-	if i < g.GetParameterCount() {
-		return g.Parameters[i]
+	if index < g.ParameterCount() {
+		return g.Parameters[index]
 	}
 
 	return ""
 }
 
-// GetParameterCount returns the number of parameters processed.
-func (c *Context) GetParameterCount() int {
+// ParameterCount returns the number of parameters processed.
+func (c *Context) ParameterCount() int {
 	return len(c.FindGlobal().Parameters)
 }
 

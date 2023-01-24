@@ -31,8 +31,8 @@ func Status(c *cli.Context) error {
 		addr, _ = os.Hostname()
 	}
 
-	if c.GetParameterCount() > 0 {
-		addr = c.GetParameter(0)
+	if c.ParameterCount() > 0 {
+		addr = c.Parameter(0)
 	}
 
 	if !c.Boolean("local") {

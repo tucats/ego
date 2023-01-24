@@ -315,22 +315,22 @@ func (c *Context) parseGrammar(args []string) error {
 	if err == nil {
 		g := c.FindGlobal()
 
-		if g.ExpectedParameterCount == -99 {
-			ui.Log(ui.CLILogger, "Parameters expected: <varying> found %d", g.GetParameterCount())
+		if g.Expected == -99 {
+			ui.Log(ui.CLILogger, "Parameters expected: <varying> found %d", g.ParameterCount())
 		} else {
-			ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.ExpectedParameterCount, g.GetParameterCount())
+			ui.Log(ui.CLILogger, "Parameters expected: %d  found %d", g.Expected, g.ParameterCount())
 		}
 
-		if g.ExpectedParameterCount == 0 && len(g.Parameters) > 0 {
+		if g.Expected == 0 && len(g.Parameters) > 0 {
 			return errors.ErrUnexpectedParameters
 		}
 
-		if g.ExpectedParameterCount < 0 {
-			if len(g.Parameters) > -g.ExpectedParameterCount {
+		if g.Expected < 0 {
+			if len(g.Parameters) > -g.Expected {
 				return errors.ErrTooManyParameters
 			}
 		} else {
-			if len(g.Parameters) != g.ExpectedParameterCount {
+			if len(g.Parameters) != g.Expected {
 				return errors.ErrWrongParameterCount
 			}
 		}
@@ -376,7 +376,7 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 	subContext.Command = c.Command + entry.LongName + " "
 	subContext.Description = entry.Description
 	entry.Found = true
-	c.FindGlobal().ExpectedParameterCount = entry.ParametersExpected
+	c.FindGlobal().Expected = entry.ParametersExpected
 	c.FindGlobal().ParameterDescription = entry.ParameterDescription
 
 	if entry.Action != nil {

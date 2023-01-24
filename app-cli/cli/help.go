@@ -50,11 +50,11 @@ func ShowHelp(c *Context) {
 	}
 
 	g := c.FindGlobal()
-	e := g.ExpectedParameterCount
+	e := g.Expected
 
 	if g.ParameterDescription > "" {
 		parmDesc := i18n.T(g.ParameterDescription)
-		if g.ExpectedParameterCount < 1 {
+		if g.Expected < 1 {
 			parmDesc = "[" + parmDesc + "]"
 		}
 

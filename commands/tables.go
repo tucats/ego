@@ -85,7 +85,7 @@ func TableList(c *cli.Context) error {
 
 func TableShow(c *cli.Context) error {
 	resp := defs.TableColumnsInfo{}
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 
 	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
 
@@ -129,7 +129,7 @@ func TableDrop(c *cli.Context) error {
 	resp := defs.TableColumnsInfo{}
 
 	for i := 0; i < 999; i++ {
-		table = c.GetParameter(i)
+		table = c.Parameter(i)
 		if table == "" {
 			break
 		}
@@ -157,7 +157,7 @@ func TableDrop(c *cli.Context) error {
 
 func TableContents(c *cli.Context) error {
 	resp := defs.DBRowSet{}
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
 	if columns, ok := c.StringList("columns"); ok {
@@ -246,7 +246,7 @@ func printRowSet(resp defs.DBRowSet, showRowID bool, showRowNumber bool) error {
 
 func TableInsert(c *cli.Context) error {
 	resp := defs.DBRowCount{}
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 	payload := map[string]interface{}{}
 
 	// If there is a JSON file to initialize the payload with, do it now.
@@ -265,7 +265,7 @@ func TableInsert(c *cli.Context) error {
 	}
 
 	for i := 1; i < 999; i++ {
-		p := c.GetParameter(i)
+		p := c.Parameter(i)
 		if p == "" {
 			break
 		}
@@ -328,7 +328,7 @@ func TableInsert(c *cli.Context) error {
 }
 
 func TableCreate(c *cli.Context) error {
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 	fields := map[string]defs.DBColumn{}
 	payload := make([]defs.DBColumn, 0)
 	resp := defs.DBRowCount{}
@@ -361,7 +361,7 @@ func TableCreate(c *cli.Context) error {
 	for i := 1; i < 999; i++ {
 		columnInfo := defs.DBColumn{}
 
-		columnDefText := c.GetParameter(i)
+		columnDefText := c.Parameter(i)
 		if columnDefText == "" {
 			break
 		}
@@ -455,12 +455,12 @@ func TableCreate(c *cli.Context) error {
 
 func TableUpdate(c *cli.Context) error {
 	resp := defs.DBRowCount{}
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 
 	payload := map[string]interface{}{}
 
 	for i := 1; i < 999; i++ {
-		p := c.GetParameter(i)
+		p := c.Parameter(i)
 		if p == "" {
 			break
 		}
@@ -518,7 +518,7 @@ func TableUpdate(c *cli.Context) error {
 
 func TableDelete(c *cli.Context) error {
 	resp := defs.DBRowCount{}
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 
 	url := runtime.URLBuilder(defs.TablesRowsPath, table)
 
@@ -663,7 +663,7 @@ func TableSQL(c *cli.Context) error {
 	showRowNumbers := c.Boolean("row-numbers")
 
 	for i := 0; i < 999; i++ {
-		sqlItem := c.GetParameter(i)
+		sqlItem := c.Parameter(i)
 		if sqlItem == "" {
 			break
 		}
@@ -768,7 +768,7 @@ func TablePermissions(c *cli.Context) error {
 
 func TableGrant(c *cli.Context) error {
 	permissions, _ := c.StringList("permission")
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
@@ -785,7 +785,7 @@ func TableGrant(c *cli.Context) error {
 }
 
 func TableShowPermission(c *cli.Context) error {
-	table := c.GetParameter(0)
+	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
 

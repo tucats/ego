@@ -21,11 +21,11 @@ import (
 // will result in discarding the oldest cache entries until the cache is the correct
 // size. You must be an admin user with a valid token to perform this command.
 func SetCacheSize(c *cli.Context) error {
-	if c.GetParameterCount() == 0 {
+	if c.ParameterCount() == 0 {
 		return errors.ErrCacheSizeNotSpecified
 	}
 
-	size, err := strconv.Atoi(c.GetParameter(0))
+	size, err := strconv.Atoi(c.Parameter(0))
 	if err != nil {
 		return errors.NewError(err)
 	}
@@ -48,12 +48,12 @@ func SetCacheSize(c *cli.Context) error {
 	return nil
 }
 
-// FlushServerCaches is the administrative command that directs the server to
+// FlushCaches is the administrative command that directs the server to
 // discard any cached compilation units for service code. Subsequent service
 // requests require that the service code be reloaded from disk. This is often
 // used when making changes to a service, to quickly force the server to pick up
 // the changes. You must be an admin user with a valid token to perform this command.
-func FlushServerCaches(c *cli.Context) error {
+func FlushCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
 	err := rest.Exchange(defs.AdminCachesPath, http.MethodDelete, nil, &cacheStatus, defs.AdminAgent)
@@ -79,11 +79,11 @@ func FlushServerCaches(c *cli.Context) error {
 	return nil
 }
 
-// ListServerCahces is the administrative command that displays the information about
+// ShowCaches is the administrative command that displays the information about
 // the server's cache of previously-compiled service programs. The current and maximum
 // size of the cache, and the endpoints that are cached are listed. You must be an
 // admin user with a valid token to perform this command.
-func ListServerCaches(c *cli.Context) error {
+func ShowCaches(c *cli.Context) error {
 	cacheStatus := defs.CacheResponse{}
 
 	err := rest.Exchange(defs.AdminCachesPath, http.MethodGet, nil, &cacheStatus, defs.AdminAgent)

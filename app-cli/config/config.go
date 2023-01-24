@@ -89,8 +89,8 @@ var Grammar = []cli.Option{
 // ShowAction Displays the current contents of the active configuration.
 func ShowAction(c *cli.Context) error {
 	// Is the user asking for a single value?
-	if c.GetParameterCount() > 0 {
-		key := c.GetParameter(0)
+	if c.ParameterCount() > 0 {
+		key := c.Parameter(0)
 		if !settings.Exists(key) {
 			return errors.ErrNoSuchProfileKey.Context(key)
 		}
@@ -140,8 +140,8 @@ func ListAction(c *cli.Context) error {
 
 // SetOutputAction is the action handler for the set-output subcommand.
 func SetOutputAction(c *cli.Context) error {
-	if c.GetParameterCount() == 1 {
-		outputType := c.GetParameter(0)
+	if c.ParameterCount() == 1 {
+		outputType := c.Parameter(0)
 		if util.InList(outputType,
 			ui.TextFormat,
 			ui.JSONFormat,
@@ -160,7 +160,7 @@ func SetOutputAction(c *cli.Context) error {
 // SetAction uses the first two parameters as a key and value.
 func SetAction(c *cli.Context) error {
 	// Generic --key and --value specification.
-	key := c.GetParameter(0)
+	key := c.Parameter(0)
 	value := defs.True
 
 	if equals := strings.Index(key, "="); equals >= 0 {
@@ -186,7 +186,7 @@ func SetAction(c *cli.Context) error {
 func DeleteAction(c *cli.Context) error {
 	var err error
 
-	key := c.GetParameter(0)
+	key := c.Parameter(0)
 
 	// Sanity check -- if it is a privileged setting, is it valid?
 	if err = validateKey(key); err != nil {
@@ -208,7 +208,7 @@ func DeleteAction(c *cli.Context) error {
 
 // DeleteProfileAction deletes a named profile.
 func DeleteProfileAction(c *cli.Context) error {
-	name := c.GetParameter(0)
+	name := c.Parameter(0)
 
 	err := settings.DeleteProfile(name)
 	if err == nil {
@@ -223,7 +223,7 @@ func DeleteProfileAction(c *cli.Context) error {
 // SetDescriptionAction sets the profile description string.
 func SetDescriptionAction(c *cli.Context) error {
 	config := settings.Configurations[settings.ProfileName]
-	config.Description = c.GetParameter(0)
+	config.Description = c.Parameter(0)
 	settings.Configurations[settings.ProfileName] = config
 	settings.ProfileDirty = true
 

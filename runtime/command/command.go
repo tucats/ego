@@ -33,7 +33,7 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	strArray = fork.MungeArguments(strArray...)
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
-
+	
 	// Store the native structure, and the path from the rsulting command object
 	result.SetAlways("cmd", cmd)
 	_ = result.Set("Path", cmd.Path)

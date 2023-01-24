@@ -60,20 +60,20 @@ type Option struct {
 // Context is a simple array of Option types, and is used to express
 // a grammar at a given level (root, subcommand, etc.).
 type Context struct {
-	AppName                string
-	MainProgram            string
-	Description            string
-	Copyright              string
-	Version                string
-	Command                string
-	ParameterDescription   string
-	Grammar                []Option
-	Args                   []string
-	Parameters             []string
-	Parent                 *Context
-	Action                 func(c *Context) error
-	ParameterCount         int
-	ExpectedParameterCount int
+	AppName              string
+	MainProgram          string
+	Description          string
+	Copyright            string
+	Version              string
+	Command              string
+	ParameterDescription string
+	Grammar              []Option
+	Args                 []string
+	Parameters           []string
+	Parent               *Context
+	Action               func(c *Context) error
+	Count                int
+	Expected             int
 }
 
 func DumpGrammar(ctx *Context) {
@@ -104,8 +104,8 @@ func dumpGrammarLevel(ctx *Context, level int) {
 	}
 
 	p(level+1, "ParameterDescription", ctx.ParameterDescription)
-	p(level+1, "ParameterCount", ctx.ParameterCount)
-	p(level+1, "ExpectedParameterCount", ctx.ExpectedParameterCount)
+	p(level+1, "Count", ctx.Count)
+	p(level+1, "Expected", ctx.Expected)
 
 	fmt.Printf("%s  }\n", prefix)
 }

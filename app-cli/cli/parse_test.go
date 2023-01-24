@@ -54,17 +54,17 @@ func booleanAction(c *Context) error {
 
 func TestContext_ParseGrammar(t *testing.T) {
 	type fields struct {
-		AppName                string
-		MainProgram            string
-		Description            string
-		Command                string
-		Grammar                []Option
-		Args                   []string
-		Parent                 *Context
-		Parameters             []string
-		ParameterCount         int
-		ExpectedParameterCount int
-		ParameterDescription   string
+		AppName              string
+		MainProgram          string
+		Description          string
+		Command              string
+		Grammar              []Option
+		Args                 []string
+		Parent               *Context
+		Parameters           []string
+		Count                int
+		Expected             int
+		ParameterDescription string
 	}
 
 	type args struct {
@@ -371,17 +371,17 @@ func TestContext_ParseGrammar(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Context{
-				AppName:                tt.fields.AppName,
-				MainProgram:            tt.fields.MainProgram,
-				Description:            tt.fields.Description,
-				Command:                tt.fields.Command,
-				Grammar:                tt.fields.Grammar,
-				Args:                   tt.fields.Args,
-				Parent:                 tt.fields.Parent,
-				Parameters:             tt.fields.Parameters,
-				ParameterCount:         tt.fields.ParameterCount,
-				ExpectedParameterCount: tt.fields.ExpectedParameterCount,
-				ParameterDescription:   tt.fields.ParameterDescription,
+				AppName:              tt.fields.AppName,
+				MainProgram:          tt.fields.MainProgram,
+				Description:          tt.fields.Description,
+				Command:              tt.fields.Command,
+				Grammar:              tt.fields.Grammar,
+				Args:                 tt.fields.Args,
+				Parent:               tt.fields.Parent,
+				Parameters:           tt.fields.Parameters,
+				Count:                tt.fields.Count,
+				Expected:             tt.fields.Expected,
+				ParameterDescription: tt.fields.ParameterDescription,
 			}
 
 			if err := c.parseGrammar(tt.args.args); (err != nil) != tt.wantErr {

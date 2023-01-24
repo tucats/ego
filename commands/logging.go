@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/cli"
@@ -26,8 +27,8 @@ func Logging(c *cli.Context) error {
 		}
 	}
 
-	if c.GetParameterCount() > 0 {
-		addr = c.GetParameter(0)
+	if c.ParameterCount() > 0 {
+		addr = c.Parameter(0)
 		// If it's valid but has no port number, and --port was not
 		// given on the command line, assume the default port 8080
 		if u, err := url.Parse("https://" + addr); err == nil {
@@ -65,8 +66,6 @@ func Logging(c *cli.Context) error {
 	showStatus := c.Boolean("status")
 
 	if c.WasFound("enable") || c.WasFound("disable") {
-		showStatus = true
-
 		if c.WasFound("enable") {
 			loggerNames, _ := c.StringList("enable")
 
@@ -105,6 +104,34 @@ func Logging(c *cli.Context) error {
 		err := rest.Exchange(defs.AdminLoggersPath, http.MethodPost, &loggers, &response, defs.AdminAgent)
 		if err != nil {
 			return err
+		}
+
+		if !showStatus && ui.OutputFormat == "text" {
+			report := strings.Builder{}
+
+			keys := []string{}
+
+			for k, v := range response.Loggers {
+				if v {
+					keys = append(keys, k)
+				}
+			}
+
+			sort.Strings(keys)
+
+			for n, k := range keys {
+				if n > 0 {
+					report.WriteString(", ")
+				}
+
+				report.WriteString(k)
+			}
+
+			fmt.Println(i18n.L("active.loggers"), report.String())
+
+			return nil
+		} else {
+			showStatus = true
 		}
 	}
 

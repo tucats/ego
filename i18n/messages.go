@@ -780,6 +780,9 @@ var messages = map[string]map[string]string{
 	"label.Active": {
 		"en": "Active",
 	},
+	"label.active.loggers": {
+		"en": "Active loggers: ",
+	},
 	"label.Columns": {
 		"en": "Columns",
 	},

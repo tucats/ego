@@ -104,12 +104,12 @@ func RunAction(c *cli.Context) error {
 		staticTypes = value
 	}
 
-	argc := c.GetParameterCount()
+	argc := c.ParameterCount()
 	ui.Log(ui.CLILogger, "Initial parameter count is %d", argc)
 
 	if argc > 0 {
 		if c.WasFound("project") {
-			projectPath := c.GetParameter(0)
+			projectPath := c.Parameter(0)
 
 			ui.Log(ui.CLILogger, "Read project at %s", projectPath)
 
@@ -146,7 +146,7 @@ func RunAction(c *cli.Context) error {
 			text = text + "\n@entrypoint " + entryPoint
 			isProject = true
 		} else {
-			fileName := c.GetParameter(0)
+			fileName := c.Parameter(0)
 
 			ui.Log(ui.CLILogger, "Read source file %s", fileName)
 
@@ -184,7 +184,7 @@ func RunAction(c *cli.Context) error {
 		programArgs = make([]interface{}, argc-1)
 
 		for n := 1; n < argc; n = n + 1 {
-			programArgs[n-1] = c.GetParameter(n)
+			programArgs[n-1] = c.Parameter(n)
 		}
 
 		ui.Log(ui.CLILogger, "Saving CLI parameters %v", programArgs)
