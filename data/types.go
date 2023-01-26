@@ -848,6 +848,9 @@ func TypeOf(i interface{}) *Type {
 	case *Channel:
 		return PointerType(ChanType)
 
+	case *errors.Error, errors.Error:
+		return ErrorType
+
 	default:
 		return InterfaceType
 	}

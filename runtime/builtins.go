@@ -28,6 +28,8 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
+	initializeErrors(s)
+
 	s.SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
 		"Command":          command.Command,
 		"LookPath":         command.LookPath,

@@ -120,7 +120,7 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 		return data.NewStructFromMap(result), nil
 	}
 
-	// Is it an pionter to an Ego package?
+	// Is it an pointer to an Ego package?
 	if m, ok := args[0].(*data.Package); ok {
 		// Make a list of the visible member names
 		memberList := []string{}
@@ -170,7 +170,7 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 		return data.NewStructFromMap(result), nil
 	}
 
-	if e, ok := args[0].(errors.Error); ok {
+	if e, ok := args[0].(*errors.Error); ok {
 		wrappedError := e.Unwrap()
 
 		if e.Is(errors.ErrUserDefined) {
@@ -188,8 +188,9 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 		return data.NewStructFromMap(map[string]interface{}{
 			data.TypeMDName:     "error",
 			data.BasetypeMDName: "error",
-			"error":             wrappedError.Error(),
+			"error":             strings.TrimPrefix(wrappedError.Error(), "error."),
 			"text":              e.Error(),
+			"context":           e.GetContext(),
 			"istype":            false,
 		}), nil
 	}

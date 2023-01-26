@@ -249,9 +249,10 @@ func (e *Error) Error() string {
 				b.WriteString(", ")
 			}
 
-			b.WriteString(e.err.Error())
-
+			msg := strings.TrimPrefix(e.err.Error(), "error.")
 			predicate = true
+
+			b.WriteString(msg)
 		}
 	}
 

@@ -113,11 +113,14 @@ func memberByteCode(c *Context, i interface{}) error {
 
 		fn := functions.FindNativeFunction(kind, name)
 		if fn != nil {
-			_ = c.push(fn)
-
-			return nil
+			return c.push(fn)
 		}
 
+		// Function based on the type?
+		fnx := kind.Function(name)
+		if fnx != nil {
+			return c.push(fnx)
+		}
 		// Nothing we can do something with, so bail
 		return c.error(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
 	}

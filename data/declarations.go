@@ -1,5 +1,7 @@
 package data
 
+import "github.com/tucats/ego/errors"
+
 // This defines the token structure for various type declarations, including a model of that
 // type and the type designation.
 type TypeDeclaration struct {
@@ -59,6 +61,11 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"chan"},
 		chanModel,
 		ChanType,
+	},
+	{
+		[]string{ErrorTypeName},
+		&errors.Error{},
+		ErrorType,
 	},
 	{
 		[]string{"[", "]", ByteTypeName},

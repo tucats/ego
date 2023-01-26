@@ -71,8 +71,8 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"append": {Min: 2, Max: Any, F: Append},
 	"close":  {Min: 1, Max: 1, F: CloseAny},
 	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true},
-	"error":  {Min: 1, Max: 1, F: Signal},
-	"index":  {Min: 2, Max: 2, F: Index},
+	//"error":  {Min: 1, Max: 1, F: Signal},
+	"index": {Min: 2, Max: 2, F: Index},
 	"len": {
 		Min: 1,
 		Max: 1,
@@ -102,7 +102,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"cipher.Random":       {Min: 0, Max: 1, F: CipherRandom},
 	"cipher.Token":        {Min: 1, Max: 2, F: Extract},
 	"cipher.Validate":     {Min: 1, Max: 2, F: Validate},
-	"errors.New":          {Min: 1, Max: Any, F: Signal},
 	"filepath.Abs":        {Min: 1, Max: 1, F: PathAbs},
 	"filepath.Base":       {Min: 1, Max: 1, F: PathBase},
 	"filepath.Clean":      {Min: 1, Max: 1, F: PathClean},

@@ -44,6 +44,7 @@
    1. [The `import` statement](#import)
    1. [`cipher` package](#cipher)
    1. [`db` package](#db)
+   1. [`errors` package](#errors)
    1. [`exec` package](#exec)
    1. [`fmt` package](#fmt)
    1. [`io` package](#io)
@@ -759,7 +760,6 @@ a single value.
 | append()  | append(list, 5, 6, 7) | Append the items together into an array. |
 | close()   | close(sender)         | Close a channel. See the information on [Threads](#threads) for more info. |
 | delete()  | delete(emp, "Name")   | Remove the named field from a map, or a delete a dynamic struct member |
-| error()   | error("panic")        | Generate a runtime error with the given name (for example,  "panic") |
 | eval()    | eval("3 + 5")         | Evaluate the expression in the string value, and return the result, `8` |
 | index()   | index(items, 55)      | Return the array index of `items` that contains the value `55` |
 | len()     | len(items)            | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
@@ -1896,6 +1896,76 @@ without filling up memory with the entire result set at once.
 
 &nbsp;
 &nbsp;
+
+## errors <a name="error"></a>
+The `errors` package implements simple error types. There is a single method, `New`, which
+is used to create a new error. The resulting error has a number of functions that can be
+accessed.
+
+### errors.New()
+The `New` function creates a new instance of an error. The first parameter is the text
+of the error message, which must be a string value.
+
+The optional second value is a context value, which is stored in the error. This is 
+displayed when the error is formatted, and can be retrieved using the Unwrap() function.
+
+```go
+
+    var e error
+
+    fn := "foobar.txt"
+    e = errors.New("not found", fn)
+
+```
+
+This results in creating a new error with a string value of "not found" and a context
+value of the fn variable. This will be appended to the error message when it is formatted.
+If a context value is not supplied (i.e. only one argument is passed to `New`) then there
+is no context value output.
+
+### (e error) Error() string
+The `Error()` function can be used with any error as the receiver value, and will 
+generate a textual representation of the error.
+
+
+```go
+
+    var e error
+
+    fn := "foobar.txt"
+    e = errors.New("not found", fn)
+
+    m := e.Error()
+
+```
+
+After this code executes, `m` will contain the string value "not found: foobar.txt".
+
+### (e error) Is(other error) bool
+The `Is()` function can be used with any error as the receiver value, and will 
+compare the error to the provided parameter which is also an error value. This
+lets you compare error messages to see if they match. Note that this does not
+compare the context, only the actual error message.
+
+
+### (e error) Unwrap() interface{}
+The `Unwrap()` function can be used with any error as the receiver value, and will 
+return the context value stored in the error. If there is no context, the result is
+`nil`.
+
+
+```go
+
+    var e error
+
+    fn := "foobar.txt"
+    e = errors.New("not found", fn)
+
+    f2 := e.Unwrap()
+
+```
+
+After this code executes, `f2` will contain the string value "foobar.txt".
 
 ## exec <a name="exec"></a>
 The `exec` package is a subset of the Go package that supports executing a command as

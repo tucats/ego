@@ -124,6 +124,7 @@ func FormatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	}
 
 	t.ShowHeadings(true).ShowUnderlines(true)
+	t.SetPagination(0, 0)
 
 	if json {
 		return t.FormatJSON(), nil
