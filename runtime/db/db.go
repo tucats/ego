@@ -29,7 +29,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrArgumentCount
 	}
 
-
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args[0])
 
@@ -93,7 +92,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrArgumentCount
 	}
 
-	_, tx, err := client(s)
+	db, tx, err := client(s)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +100,8 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if tx != nil {
 		err = tx.Rollback()
 	}
+
+	db.Close()
 
 	this := getThisStruct(s)
 	this.SetAlways(clientFieldName, nil)
