@@ -1,15 +1,16 @@
-package command
+package exec
 
 import (
 	"sync"
 
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/symbols"
 )
 
 // exec.Cmd type specification.
 const commandTypeSpec = `
-	type exec.Cmd struct {
+	type Cmd struct {
 		cmd         interface{},
 		Dir         string,
 		Path		string,
@@ -22,7 +23,7 @@ const commandTypeSpec = `
 var commandTypeDef *data.Type
 var commandTypeDefLock sync.Mutex
 
-func initCommandTypeDef() {
+func InitializeExec(s *symbols.SymbolTable) {
 	commandTypeDefLock.Lock()
 	defer commandTypeDefLock.Unlock()
 
@@ -34,6 +35,14 @@ func initCommandTypeDef() {
 			"Run":    {Value: Run},
 		})
 
-		commandTypeDef = t
+		commandTypeDef = t.SetPackage("exec")
+
+		s.SharedParent().SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
+			"Command":          Command,
+			"LookPath":         LookPath,
+			"Cmd":              t,
+			data.TypeMDKey:     data.PackageType("exec"),
+			data.ReadonlyMDKey: true,
+		}))
 	}
 }

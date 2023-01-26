@@ -1,4 +1,4 @@
-package command
+package exec
 
 import (
 	"os/exec"
@@ -15,8 +15,6 @@ import (
 // subprocess and returns a *exec.Cmd object that can be used to
 // interrogate the success of the operation and view the results.
 func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	initCommandTypeDef()
-
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
@@ -33,7 +31,7 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	strArray = fork.MungeArguments(strArray...)
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
-	
+
 	// Store the native structure, and the path from the rsulting command object
 	result.SetAlways("cmd", cmd)
 	_ = result.Set("Path", cmd.Path)

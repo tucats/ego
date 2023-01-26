@@ -1,17 +1,14 @@
 package runtime
 
 import (
-	"strings"
-
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/functions"
-	"github.com/tucats/ego/runtime/command"
 	"github.com/tucats/ego/runtime/db"
+	runtimeerrors "github.com/tucats/ego/runtime/errors"
+	"github.com/tucats/ego/runtime/exec"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/table"
 	"github.com/tucats/ego/symbols"
@@ -28,14 +25,8 @@ const passwordPromptPrefix = "password~"
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
-	initializeErrors(s)
-
-	s.SetAlways("exec", data.NewPackageFromMap("exec", map[string]interface{}{
-		"Command":          command.Command,
-		"LookPath":         command.LookPath,
-		data.TypeMDKey:     data.PackageType("exec"),
-		data.ReadonlyMDKey: true,
-	}))
+	runtimeerrors.InitializeErrors(s)
+	exec.InitializeExec(s)
 
 	s.SetAlways("rest", data.NewPackageFromMap("rest", map[string]interface{}{
 		"New":              rest.New,
@@ -124,41 +115,6 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 		FullScope: true,
 		F:         Eval,
 	})
-}
-
-// Prompt implements the prompt() function, which uses the console
-// reader.
-func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	prompt := ""
-	if len(args) > 0 {
-		prompt = data.String(args[0])
-	}
-
-	var text string
-	if strings.HasPrefix(prompt, passwordPromptPrefix) {
-		text = ui.PromptPassword(prompt[len(passwordPromptPrefix):])
-	} else {
-		text = ReadConsoleText(prompt)
-	}
-
-	text = strings.TrimSuffix(text, "\n")
-
-	return text, nil
-}
-
-// Eval implements the eval() function which accepts a string representation of
-// an expression and returns the expression result. This can also be used to convert
-// string expressions of structs or arrays.
-func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	return expressions.Evaluate(data.String(args[0]), symbols)
 }
 
 func GetDeclaration(fname string) *data.FunctionDeclaration {
