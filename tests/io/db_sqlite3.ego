@@ -57,7 +57,11 @@
         d.Close()
         @assert T.Equal(d.Rowcount, -1, "rowcount not updated after close")
 
-        os.Remove("foo.db")
+        // The windows sqlite library does not seem to actually close the file
+        // when you close the connection, so we cannot delete this on Windows.
+        if _platform.os != "windows" {
+            os.Remove("foo.db")
+        }
     }
 }
 
