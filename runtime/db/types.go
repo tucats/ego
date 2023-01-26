@@ -3,20 +3,50 @@ package db
 import (
 	"sync"
 
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/symbols"
 )
 
 var rowsType *data.Type
 var clientType *data.Type
 var typeDefLock sync.Mutex
 
-func initClientTypeDef() {
+// db.Client type specification.
+const dbTypeSpec = `
+type Client struct {
+	client 		interface{},
+	asStruct 	bool,
+	rowCount 	int,
+	transaction	interface{},
+	constr 		string,
+}`
+
+// db.Rows type specification.
+const dbRowsTypeSpec = `
+type Rows struct {
+	client 	interface{},
+	rows 	interface{},
+	db 		interface{},
+}`
+
+const (
+	clientFieldName      = "client"
+	constrFieldName      = "Constr"
+	dbFieldName          = "db"
+	rowCountFieldName    = "Rowcount"
+	rowsFieldName        = "rows"
+	asStructFieldName    = "asStruct"
+	transactionFieldName = "transaction"
+)
+
+func Initialize(s *symbols.SymbolTable) {
 	typeDefLock.Lock()
 	defer typeDefLock.Unlock()
 
 	if clientType == nil {
-		initRowsTypeDef()
+		rowT := initRowsTypeDef()
 
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
@@ -101,11 +131,23 @@ func initClientTypeDef() {
 			ReturnTypes: []*data.Type{data.VoidType},
 		}, AsStructures)
 
-		clientType = t
+		clientType = t.SetPackage("db")
+
+		newpkg := data.NewPackageFromMap("db", map[string]interface{}{
+			"New":              New,
+			"Client":           t,
+			"Rows":             rowT,
+			data.TypeMDKey:     data.PackageType("db"),
+			data.ReadonlyMDKey: true,
+		})
+
+		pkg, _ := bytecode.GetPackage(newpkg.Name())
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name(), newpkg)
 	}
 }
 
-func initRowsTypeDef() {
+func initRowsTypeDef() *data.Type {
 	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
 
 	t.DefineFunction("Next", &data.FunctionDeclaration{
@@ -139,5 +181,7 @@ func initRowsTypeDef() {
 		ReturnTypes:  []*data.Type{data.ArrayType(data.StringType)},
 	}, rowsHeadings)
 
-	rowsType = t
+	rowsType = t.SetPackage("db")
+
+	return rowsType
 }

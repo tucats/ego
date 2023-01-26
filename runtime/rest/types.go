@@ -3,13 +3,15 @@ package rest
 import (
 	"sync"
 
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/symbols"
 )
 
 // rest.Client type specification.
 const restTypeSpec = `
-type rest.Client struct {
+type Client struct {
 	client 		interface{},
 	baseURL 	string,
 	MediaType 	string,
@@ -22,7 +24,7 @@ type rest.Client struct {
 var restType *data.Type
 var restTypeLock sync.Mutex
 
-func initializeRestType() {
+func Initialize(s *symbols.SymbolTable) {
 	restTypeLock.Lock()
 	defer restTypeLock.Unlock()
 
@@ -218,6 +220,19 @@ func initializeRestType() {
 			},
 		})
 
-		restType = t
+		restType = t.SetPackage("rest")
+
+		newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
+			"New":              New,
+			"Status":           Status,
+			"ParseURL":         ParseURL,
+			"Client":           restType,
+			data.TypeMDKey:     data.PackageType("rest"),
+			data.ReadonlyMDKey: true,
+		})
+
+		pkg, _ := bytecode.GetPackage(newpkg.Name())
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name(), newpkg)
 	}
 }

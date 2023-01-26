@@ -2,7 +2,6 @@ package functions
 
 import (
 	"math"
-	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -158,12 +157,6 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return count, nil
 }
 
-// GetEnv implements the util.getenv() function which reads
-// an environment variable from the os.
-func GetEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return os.Getenv(data.String(args[0])), nil
-}
-
 // GetMode implements the util.Mode() function which reports the runtime mode.
 func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	m, ok := symbols.Get(defs.ModeVariable)
@@ -210,24 +203,6 @@ func ReflectMembers(symbols *symbols.SymbolTable, args []interface{}) (interface
 	}
 }
 
-// Exit implements the os.exit() function.
-func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// If no arguments, just do a simple exit
-	if len(args) == 0 {
-		return nil, errors.ErrExit.Context(0)
-	}
-
-	switch v := args[0].(type) {
-	case bool, byte, int32, int, int64, float32, float64:
-		return nil, errors.ErrExit.Context(data.Int(args[0]))
-
-	case string:
-		return nil, errors.ErrExit.Context(v)
-
-	default:
-		return nil, errors.ErrExit.Context(0)
-	}
-}
 
 // Signal creates an error object based on the
 // parameters.
@@ -306,17 +281,6 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	default:
 		return nil, errors.ErrInvalidType.In("delete()")
 	}
-}
-
-// GetArgs implements util.Args() which fetches command-line arguments from
-// the Ego command invocation, if any.
-func GetArgs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	r, found := s.Get(defs.CLIArgumentListVariable)
-	if !found {
-		r = data.NewArray(data.StringType, 0)
-	}
-
-	return r, nil
 }
 
 // Make implements the make() function. The first argument must be a model of the

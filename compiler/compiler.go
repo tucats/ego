@@ -340,7 +340,11 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 		}
 
 		m := data.NewPackage(packageName)
+
 		keys := packageDictionary.Keys()
+		if len(keys) == 0 {
+			continue
+		}
 
 		for _, k := range keys {
 			v, _ := packageDictionary.Get(k)
@@ -424,6 +428,9 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 				uniqueNames[fn] = true
 			}
 		}
+
+		uniqueNames["os"] = true
+		uniqueNames["io"] = true
 	} else {
 		for _, p := range requiredPackages {
 			uniqueNames[p] = true

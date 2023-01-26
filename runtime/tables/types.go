@@ -1,16 +1,30 @@
-package table
+package tables
 
 import (
 	"sync"
 
+	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/symbols"
+)
+
+// tables.Table type specification.
+const tableTypeSpec = `
+	type Table struct {
+		table 	 interface{},
+		Headings []string,
+	}`
+
+const (
+	headingsFieldName = "Headings"
+	tableFieldName    = "table"
 )
 
 var tableTypeDef *data.Type
 var tableTypeDefLock sync.Mutex
 
-func initTableTypeDef() {
+func Initialize(s *symbols.SymbolTable) {
 	tableTypeDefLock.Lock()
 	defer tableTypeDefLock.Unlock()
 
@@ -164,6 +178,16 @@ func initTableTypeDef() {
 			},
 		})
 
-		tableTypeDef = t
+		tableTypeDef = t.SetPackage("tables")
+
+		newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
+			"New":              New,
+			data.TypeMDKey:     data.PackageType("tables"),
+			data.ReadonlyMDKey: true,
+		})
+
+		pkg, _ := bytecode.GetPackage(newpkg.Name())
+		pkg.Merge(newpkg)
+		s.Root().SetAlways(newpkg.Name(), newpkg)
 	}
 }

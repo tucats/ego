@@ -29,7 +29,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrArgumentCount
 	}
 
-	initClientTypeDef()
 
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args[0])

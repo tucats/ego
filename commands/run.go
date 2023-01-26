@@ -20,6 +20,7 @@ import (
 	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -217,7 +218,7 @@ func RunAction(c *cli.Context) error {
 			if !interactive {
 				text = ""
 			} else {
-				text = runtime.ReadConsoleText(prompt)
+				text = io.ReadConsoleText(prompt)
 			}
 
 			interactive = true
@@ -273,7 +274,7 @@ func RunAction(c *cli.Context) error {
 		for !wasCommandLine && len(t.Tokens) > 0 {
 			lastToken := t.Tokens[len(t.Tokens)-1]
 			if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
-				text = text + runtime.ReadConsoleText("...> ")
+				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text, true)
 				lineNumber++
 
@@ -299,7 +300,7 @@ func RunAction(c *cli.Context) error {
 			}
 
 			if count > 0 {
-				text = text + runtime.ReadConsoleText("...> ")
+				text = text + io.ReadConsoleText("...> ")
 				t = tokenizer.New(text, true)
 				lineNumber++
 
@@ -395,7 +396,7 @@ func RunAction(c *cli.Context) error {
 			break
 		}
 
-		text = runtime.ReadConsoleText(prompt)
+		text = io.ReadConsoleText(prompt)
 	}
 
 	if exitValue > 0 {

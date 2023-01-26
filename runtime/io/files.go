@@ -1,109 +1,18 @@
-package functions
+package io
 
 import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"math"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
-
-const (
-	fileFieldName    = "File"
-	nameFieldName    = "Name"
-	validFieldName   = "Valid"
-	scannerFieldName = "Scanner"
-	modeFieldName    = "Mode"
-)
-
-var fileType *data.Type
-
-func initializeFileType() {
-	if fileType == nil {
-		structType := data.StructureType()
-		structType.DefineField(fileFieldName, data.InterfaceType).
-			DefineField(validFieldName, data.BoolType).
-			DefineField(nameFieldName, data.StringType).
-			DefineField(modeFieldName, data.StringType)
-
-		t := data.TypeDefinition("io.File", structType)
-
-		t.DefineFunction("Close", nil, Close)
-		t.DefineFunction("ReadString", nil, ReadString)
-		t.DefineFunction("WriteString", nil, WriteString)
-		t.DefineFunction("Write", nil, Write)
-		t.DefineFunction("WriteAt", nil, WriteAt)
-		t.DefineFunction("String", nil, AsString)
-
-		fileType = t
-	}
-}
-
-// OpenFile opens a file.
-func OpenFilex(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	var mask os.FileMode = 0644
-
-	var f *os.File
-
-	mode := os.O_RDONLY
-
-	fname, err := filepath.Abs(sandboxName(data.String(args[0])))
-	if err != nil {
-		return nil, errors.NewError(err)
-	}
-
-	modeValue := "input"
-
-	if len(args) > 1 {
-		modeValue = strings.ToLower(data.String(args[1]))
-
-		// Is it a valid mode name?
-		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
-			return nil, errors.ErrInvalidFileMode.Context(modeValue)
-		}
-		// If we are opening for output mode, delete the file if it already
-		// exists
-		if util.InList(modeValue, "create", "write", "output") {
-			_ = os.Remove(fname)
-			mode = os.O_CREATE | os.O_WRONLY
-			modeValue = "output"
-		} else if modeValue == "append" {
-			// For append, adjust the mode bits
-			mode = os.O_APPEND | os.O_WRONLY
-		} else {
-			modeValue = "input"
-		}
-	}
-
-	if len(args) > 2 {
-		mask = os.FileMode(data.Int(args[2]) & math.MaxInt8)
-	}
-
-	f, err = os.OpenFile(fname, mode, mask)
-	if err != nil {
-		return nil, errors.NewError(err)
-	}
-
-	initializeFileType()
-
-	fobj := data.NewStruct(fileType)
-	fobj.SetReadonly(true)
-	fobj.SetAlways(fileFieldName, f)
-	fobj.SetAlways(validFieldName, true)
-	fobj.SetAlways(nameFieldName, fname)
-	fobj.SetAlways(modeFieldName, modeValue)
-
-	return fobj, nil
-}
 
 func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
@@ -174,30 +83,6 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	return nil, errors.ErrInvalidfileIdentifier.In(fn)
 }
 
-// Close closes a file.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount.In("Close()")
-	}
-
-	f, err := getFile("Close", s)
-	if err == nil {
-		e2 := f.Close()
-		if e2 != nil {
-			err = errors.NewError(e2)
-		}
-
-		this := getThis(s)
-
-		this.SetAlways(validFieldName, false)
-		this.SetAlways(modeFieldName, "closed")
-		this.SetAlways(fileFieldName, nil)
-		this.SetAlways(nameFieldName, "")
-	}
-
-	return err, nil
-}
-
 // ReadString reads the next line from the file as a string.
 func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
@@ -206,7 +91,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	f, err := getFile("ReadString", s)
 	if err != nil {
-		return MultiValueReturn{Value: []interface{}{nil, err}}, err
+		return data.List(nil, err), err
 	}
 
 	var scanner *bufio.Scanner
@@ -223,7 +108,7 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	scanner.Scan()
 
-	return MultiValueReturn{Value: []interface{}{scanner.Text(), err}}, err
+	return data.List(scanner.Text(), err), err
 }
 
 // WriteString writes a string value to a file.
@@ -244,7 +129,7 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, err
+	return data.List(length, err), err
 }
 
 // Write writes an arbitrary binary object to a file.
@@ -259,7 +144,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	err := enc.Encode(args[0])
 	if err != nil {
-		return nil, errors.NewError(err)
+		return data.List(nil, err), errors.NewError(err)
 	}
 
 	bytes := buf.Bytes()
@@ -274,7 +159,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err)
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, err
+	return data.List(length, err), err
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
@@ -305,5 +190,5 @@ func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err)
 	}
 
-	return MultiValueReturn{Value: []interface{}{length, err}}, err
+	return data.List(length, err), err
 }

@@ -1,4 +1,4 @@
-package table
+package tables
 
 import (
 	"strings"
@@ -80,8 +80,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	for i, h := range headings {
 		_ = headingsArray.Set(i, h)
 	}
-
-	initTableTypeDef()
 
 	result := data.NewStruct(tableTypeDef).FromBuiltinPackage()
 	result.SetAlways(tableFieldName, t)

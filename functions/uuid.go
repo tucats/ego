@@ -5,7 +5,6 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
-	"github.com/tucats/ego/util"
 )
 
 // UUIDNew implements the uuid.New() function.
@@ -32,8 +31,4 @@ func UUIDParse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	}
 
 	return u.String(), nil
-}
-
-func Hostname(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return util.Hostname(), nil
 }

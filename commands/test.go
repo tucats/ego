@@ -14,9 +14,9 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -93,7 +93,7 @@ func TestAction(c *cli.Context) error {
 
 	// Now use the list of locations given to build an expanded list of files
 	for _, fileOrPath := range locations {
-		files, err := functions.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
+		files, err := io.ExpandPath(fileOrPath, defs.EgoFilenameExtension)
 		if err != nil {
 			return err
 		}

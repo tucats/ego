@@ -35,7 +35,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	initializeRestType()
 
 	if config, err := GetTLSConfiguration(); err != nil {
 		return nil, err

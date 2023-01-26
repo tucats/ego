@@ -187,7 +187,7 @@ func (p *Package) Get(key string) (interface{}, bool) {
 
 // Merge adds any entries from a package to the current package that do not already
 // exist.
-func (p *Package) Merge(source Package) {
+func (p *Package) Merge(source *Package) {
 	keys := source.Keys()
 	for _, key := range keys {
 		if _, found := p.Get(key); !found {

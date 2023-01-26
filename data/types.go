@@ -89,6 +89,10 @@ type Field struct {
 	Type *Type
 }
 
+type Values struct {
+	Items []interface{}
+}
+
 // This map caches whether a given type implements a given interface.
 // Initially this is not known, but after the first validation, the
 // result is stored here to accelerate any subsequent evaluations.
@@ -97,6 +101,11 @@ type Field struct {
 var implements map[string]bool
 
 var validationLock sync.Mutex
+
+// List creates a new list item, placing the items in the list object.
+func List(items ...interface{}) Values {
+	return Values{Items: items}
+}
 
 // ValidateFunctions compares the functions for a given type against
 // the functions for an associated interface definition.
@@ -1048,10 +1057,8 @@ func (t *Type) SetPackage(name string) *Type {
 	return t
 }
 
-func UserType(packageName, typeName string) Type {
-	return Type{
-		kind: TypeKind,
-		name: typeName,
-		pkg:  packageName,
-	}
+func (t *Type) SetName(name string) *Type {
+	t.name = name
+
+	return t
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -93,7 +92,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if err := rows.Scan(rowTemplate...); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
+		return data.List(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	if asStruct {
@@ -103,8 +102,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			rowMap[v] = rowValues[i]
 		}
 
-		return functions.MultiValueReturn{Value: []interface{}{data.NewMapFromMap(rowMap), nil}}, nil
+		return data.List(data.NewMapFromMap(rowMap), nil), nil
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{data.NewArrayFromArray(data.InterfaceType, rowValues), nil}}, nil
+	return data.List(data.NewArrayFromArray(data.InterfaceType, rowValues), nil), nil
 }

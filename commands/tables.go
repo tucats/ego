@@ -15,6 +15,7 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
@@ -690,7 +691,7 @@ func TableSQL(c *cli.Context) error {
 		ui.Say("msg.enter.blank.line")
 
 		for {
-			line := runtime.ReadConsoleText("sql> ")
+			line := io.ReadConsoleText("sql> ")
 			if len(strings.TrimSpace(line)) == 0 {
 				break
 			}

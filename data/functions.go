@@ -42,12 +42,9 @@ var dictionary = map[string]string{
 	"functions.EqualFold":          "EqualFold(a, b string) bool",
 	"functions.Exec":               "Exec(command string) []string",
 	"functions.Exit":               "Exit(code int)",
-	"functions.Expand":             "Expand(path string, filter string) []string",
 	"functions.Extract":            "Token(t string) struct{}",
 	"functions.Fields":             "Fields(text string) []string",
 	"functions.Format":             "Format(formatString string, args... interface{}) string",
-	"functions.GetArgs":            "Args() []string",
-	"functions.GetEnv":             "Getenv(name string) string ",
 	"functions.Hash":               "Hash(data string) string",
 	"functions.Hostname":           "Hostname() string",
 	"functions.Index":              "index(text string, substr string) int",
@@ -70,7 +67,6 @@ var dictionary = map[string]string{
 	"functions.Min":                "Min(item... interface{}) interface{}",
 	"functios.Mode":                "Mode() string",
 	"functions.New":                "InstanceOf(any interface{}) interface{}",
-	"functions.OpenFile":           "Open(filename string) File",
 	"functions.Normalize":          "Normalize(any1, any2 interface{}) interface{}",
 	"functions.Packages":           "Packages() []string",
 	"functions.PathAbs":            "Abs(partialPath string) string",
@@ -90,7 +86,6 @@ var dictionary = map[string]string{
 	"functions.Sscanf":             "Scanf(data string, fmt string, items... &interface()) int",
 	"functions.Sizeof":             "sizeof(any interface{}) int",
 	"functions.Random":             "Random(maximumValue int) int",
-	"functions.ReadDir":            "ReadDir(path string) []map[string]interface{}",
 	"functions.ReadFile":           "ReadFile(filename string) ([]byte, error)",
 	"functions.DeleteFile":         "Remove(filename string) error",
 	"functions.ReflectReflect":     "Reflect(any interface) struct",
@@ -134,18 +129,36 @@ var dictionary = map[string]string{
 	"functions.UUIDParse":          "Parse(value string) (string, error)",
 	"functions.Validate":           "Validate(token string) bool",
 	"functions.WriteFile":          "WriteFile(filename string, data []byte, perms int) (int, error)",
-	"runtime.db.New":               "New(connection string) *db.Client",
 	"runtime.Eval":                 "Eval(expressions string) interface{}",
 	"runtime.FormatSymbols":        "Symbols([scope[,format]])",
 	"runtime.LookPath":             "LookPath(command string) string",
-	"runtime.NewCommand":           "Command(command string, args...string) Cmd",
-	"runtime.Prompt":               "Prompt(promptString string) string",
+	"runtime.exec.Command":         "Command(command string, args...string) Cmd",
 	"runtime.ParseURL":             "ParseURL(url string) struct",
-	"runtime.RestNew":              "New() rest.Client",
 	"runtime.RestStatusMessage":    "Status(code int) string",
 	"runtime.sortSlice":            "Slice(data []interface{}, func comparison(i, j int) bool) []interface{}",
 	"runtime.SymbolTables":         "SymbolTables() []struct",
-	"runtime.TableNew":             "New(columns []string) Table",
+	"runtime/db.New":               "New(connection string) *db.Client",
+	"runtime/io.Expand":            "Expand(path string[, filter string]) []string",
+	"runtime/io.Open":              "Open(filename string) (File, error)",
+	"runtime/io.Prompt":            "Prompt(promptString string) string",
+	"runtime/io.ReadDir":           "ReadDir(path string) []io.Entry",
+	"runtime/os.Args":              "Args() []string",
+	"runtime/os.Chdir":             "Chdir(path string) error)",
+	"runtime/os.Chmod":             "Chmod(file string, mode int) error",
+	"runtime/os.Chown":             "Chown(file string, owner string) error",
+	"runtime/os.Clearenv":          "Clearenv()",
+	"runtime/os.Environ":           "Environ() []string",
+	"runtime/os.Executable":        "Executable() string",
+	"runtime/os.Exit":              "Exit(status int)",
+	"runtime/os.Getenv":            "Getenv(name string) string",
+	"runtime/os.Hostname":          "Hostname() string",
+	"runtime/os.Readfile":          "Readfile(filename string) ([]byte, error)",
+	"runtime/os.Remove":            "Remove(filename string) error",
+	"runtime/os.Writefile":         "Writefile(filename string, mode int, data []byte) error",
+	"runtime/rest.New":             "New() *rest.Client",
+	"runtime/rest.ParseURL":        "ParseURL(url string) map[string]interface{}",
+	"runtime/rest.Status":          "Status() int",
+	"runtime/tables.New":           "New(columns []string) Table",
 }
 
 func GetBuiltinDeclaration(name string) string {
@@ -169,6 +182,8 @@ func (f FunctionDeclaration) String() string {
 		if strings.Contains(ft.name, ".") {
 			names := strings.Split(ft.name, ".")
 			varName = strings.ToLower(names[1][:1])
+		} else {
+			varName = strings.ToLower(varName)
 		}
 
 		typeName := ft.name

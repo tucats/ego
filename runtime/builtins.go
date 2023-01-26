@@ -9,16 +9,12 @@ import (
 	"github.com/tucats/ego/runtime/db"
 	runtimeerrors "github.com/tucats/ego/runtime/errors"
 	"github.com/tucats/ego/runtime/exec"
+	"github.com/tucats/ego/runtime/io"
+	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/rest"
-	"github.com/tucats/ego/runtime/table"
+	"github.com/tucats/ego/runtime/tables"
 	"github.com/tucats/ego/symbols"
 )
-
-// passwordPromptPrefix is the string prefix you can put in the prompt
-// string for a call to the Ego prompt() function to cause it to suppress
-// keyboard echo for the input. The text after this prefix, if any, is used
-// as the prompt text.
-const passwordPromptPrefix = "password~"
 
 // AddBuiltinPackages adds in the pre-defined package receivers
 // for things like the table and rest systems.
@@ -26,24 +22,17 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
 	runtimeerrors.InitializeErrors(s)
-	exec.InitializeExec(s)
-
-	s.SetAlways("rest", data.NewPackageFromMap("rest", map[string]interface{}{
-		"New":              rest.New,
-		"Status":           rest.Status,
-		"ParseURL":         rest.ParseURL,
-		data.TypeMDKey:     data.PackageType("rest"),
-		data.ReadonlyMDKey: true,
-	}))
-
-	s.SetAlways("db", data.NewPackageFromMap("db", map[string]interface{}{
-		"New":              db.New,
-		data.TypeMDKey:     data.PackageType("db"),
-		data.ReadonlyMDKey: true,
-	}))
+	exec.Initialize(s)
+	db.Initialize(s)
+	rest.Initialize(s)
+	tables.Initialize(s)
+	io.Initialize(s)
+	os.Initialize(s)
 
 	var utilPkg *data.Package
 
+	// Add to the util.SymbolTables to the util package (which has functions that must
+	// remain in the functions package to prevent import cycles.
 	utilV, found := s.Root().Get("util")
 	if !found {
 		utilPkg, _ = bytecode.GetPackage("util")
@@ -53,12 +42,6 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 
 	utilPkg.Set("SymbolTables", SymbolTables)
 	_ = s.Root().SetWithAttributes("util", utilPkg, symbols.SymbolAttribute{Readonly: true})
-
-	s.SetAlways("tables", data.NewPackageFromMap("tables", map[string]interface{}{
-		"New":              table.New,
-		data.TypeMDKey:     data.PackageType("tables"),
-		data.ReadonlyMDKey: true,
-	}))
 
 	// Add the sort.Slice function, which must live outside
 	// the function package to avoid import cycles.
@@ -96,15 +79,6 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 				},
 			},
 		},
-	})
-
-	_ = functions.AddFunction(s, functions.FunctionDefinition{
-		Name:      "Prompt",
-		Pkg:       "io",
-		Min:       0,
-		Max:       1,
-		FullScope: true,
-		F:         Prompt,
 	})
 
 	_ = functions.AddFunction(s, functions.FunctionDefinition{

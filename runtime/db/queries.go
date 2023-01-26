@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -19,7 +18,7 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	db, tx, err := client(s)
 	if err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+		return data.List(nil, err), err
 	}
 
 	this := getThisStruct(s)
@@ -42,7 +41,7 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(e2)}}, errors.NewError(e2)
+		return data.List(nil, errors.NewError(e2)), errors.NewError(e2)
 	}
 
 	result := data.NewStruct(rowsType).FromBuiltinPackage()
@@ -51,7 +50,7 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result.SetAlways(dbFieldName, this)
 	result.SetReadonly(true)
 
-	return functions.MultiValueReturn{Value: []interface{}{result, err}}, err
+	return data.List(result, err), err
 }
 
 // QueryResult executes a query, with optional parameter substitution, and returns the
@@ -63,7 +62,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	db, tx, err := client(s)
 	if err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, err}}, err
+		return data.List(nil, err), err
 	}
 
 	this := getThisStruct(s)
@@ -92,7 +91,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 
 	if e2 != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(e2)}}, errors.NewError(e2)
+		return data.List(nil, errors.NewError(e2)), errors.NewError(e2)
 	}
 
 	arrayResult := make([][]interface{}, 0)
@@ -135,12 +134,12 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	ui.Log(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	if err := rows.Close(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
+		return data.List(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return functions.MultiValueReturn{Value: []interface{}{nil, errors.NewError(err)}}, errors.NewError(err)
+		return data.List(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -157,7 +156,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{r, err}}, err
+	return data.List(r, err), err
 }
 
 // Execute executes a SQL statement, and returns the number of rows that were
@@ -204,5 +203,5 @@ func Execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err)
 	}
 
-	return functions.MultiValueReturn{Value: []interface{}{int(r), err}}, err
+	return data.List(int(r), err), err
 }

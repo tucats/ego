@@ -304,10 +304,10 @@ func callByteCode(c *Context, i interface{}) error {
 
 		result, err = function(funcSymbols, args)
 
-		if r, ok := result.(functions.MultiValueReturn); ok {
+		if r, ok := result.(data.Values); ok {
 			_ = c.push(NewStackMarker("results"))
-			for i := len(r.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.push(r.Value[i])
+			for i := len(r.Items) - 1; i >= 0; i = i - 1 {
+				_ = c.push(r.Items[i])
 			}
 
 			return nil
@@ -360,11 +360,11 @@ func callByteCode(c *Context, i interface{}) error {
 
 		result, err = function(functionSymbols, args)
 
-		if results, ok := result.(functions.MultiValueReturn); ok {
+		if results, ok := result.(data.Values); ok {
 			_ = c.push(NewStackMarker("results"))
 
-			for i := len(results.Value) - 1; i >= 0; i = i - 1 {
-				_ = c.push(results.Value[i])
+			for i := len(results.Items) - 1; i >= 0; i = i - 1 {
+				_ = c.push(results.Items[i])
 			}
 
 			return nil

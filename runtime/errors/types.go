@@ -49,8 +49,8 @@ func InitializeErrors(s *symbols.SymbolTable) {
 		ReturnTypes: []*data.Type{data.StringType},
 	}, Is)
 
-	// Register the (e error) Is( other error) bool function, which compares
-	// the receiver to anotehr error value and returns true if they are equal.
+	// Register the (e error) Unwrap( ) interface{} function, which returns
+	// the context value associated with the error.
 	data.ErrorType.DefineFunction("Unwrap", &data.FunctionDeclaration{
 		Name:         "Unwrap",
 		ReceiverType: data.ErrorType,
