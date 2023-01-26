@@ -2,9 +2,7 @@ package functions
 
 import (
 	"math"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
@@ -12,18 +10,6 @@ import (
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
-
-// Sleep implements util.sleep().
-func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	duration, err := time.ParseDuration(data.String(args[0]))
-	if err == nil {
-		time.Sleep(duration)
-	} else {
-		err = errors.NewError(err)
-	}
-
-	return true, err
-}
 
 // ProfileGet implements the profile.get() function.
 func ProfileGet(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -157,15 +143,6 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return count, nil
 }
 
-// GetMode implements the util.Mode() function which reports the runtime mode.
-func GetMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	m, ok := symbols.Get(defs.ModeVariable)
-	if !ok {
-		m = "run"
-	}
-
-	return m, nil
-}
 
 // ReflectMembers gets an array of the names of the fields in a structure.
 func ReflectMembers(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -202,7 +179,6 @@ func ReflectMembers(symbols *symbols.SymbolTable, args []interface{}) (interface
 		return nil, errors.ErrInvalidType.In("Members()")
 	}
 }
-
 
 // Signal creates an error object based on the
 // parameters.
@@ -335,89 +311,4 @@ func Make(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return array, nil
-}
-
-func MemStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	var m runtime.MemStats
-
-	result := map[string]interface{}{}
-
-	runtime.ReadMemStats(&m)
-
-	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-
-	result["time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
-	result["current"] = bToMb(m.Alloc)
-	result["total"] = bToMb(m.TotalAlloc)
-	result["system"] = bToMb(m.Sys)
-	result["gc"] = int(m.NumGC)
-
-	return data.NewStructFromMap(result), nil
-}
-
-func bToMb(b uint64) float64 {
-	return float64(b) / 1024.0 / 1024.0
-}
-
-func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// Make the unordered list of all package names defined in all
-	// scopes from here. This may include duplicates.
-	allNames := makePackageList(s)
-
-	// Scan the list and set values in the map accordingly. This will
-	// effectively remove the duplicates.
-	var uniqueNames = map[string]bool{}
-
-	for _, name := range allNames {
-		uniqueNames[name] = true
-	}
-
-	// Now scan over the list of now-unique names and make an Ego array
-	// out of the values.
-	packages := data.NewArray(data.StringType, 0)
-	for name := range uniqueNames {
-		packages.Append(name)
-	}
-
-	// Ask the array to sort itself, and return the array as the
-	// function value.
-	_ = packages.Sort()
-
-	return packages, nil
-}
-
-// makePackageList is a helper function that recursively
-// scans the symbol table scope tree from the current
-// location, and makes a list of all the package names
-// defined within the current scope. The result is an
-// array of strings, which may contain duplicates as the
-// same package may be defined at multiple scope levels.
-func makePackageList(s *symbols.SymbolTable) []string {
-	var result []string
-
-	// Scan over the symbol table. Skip hidden symbols.
-	for _, k := range s.Names() {
-		if strings.HasPrefix(k, defs.InvisiblePrefix) {
-			continue
-		}
-
-		// Get the symbol. IF it is a package, add it's name
-		// to our list.
-		v, _ := s.Get(k)
-		if p, ok := v.(*data.Package); ok {
-			result = append(result, p.Name())
-		}
-	}
-
-	// If there is a parent table, repeat the operation
-	// with the parent table, appending those results to
-	// our own.
-	if s.Parent() != nil {
-		px := makePackageList(s.Parent())
-		if len(px) > 0 {
-			result = append(result, px...)
-		}
-	}
-
-	return result
 }

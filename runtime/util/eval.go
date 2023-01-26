@@ -1,4 +1,4 @@
-package runtime
+package util
 
 import (
 	"github.com/tucats/ego/data"

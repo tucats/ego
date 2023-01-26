@@ -1,4 +1,4 @@
-package functions
+package util
 
 import (
 	"strings"
@@ -29,9 +29,9 @@ func SetLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	return oldSetting, nil
 }
 
-// LogTail implements the util.Log(n) function, which returns the last 'n' lines
+// Log implements the util.Log(n) function, which returns the last 'n' lines
 // from the current.
-func LogTail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Log(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := data.Int(args[0])
 	filter := 0
 

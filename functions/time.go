@@ -43,6 +43,18 @@ func initializeType(s *symbols.SymbolTable) error {
 	return nil
 }
 
+// Sleep implements time.Sleep().
+func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	duration, err := time.ParseDuration(data.String(args[0]))
+	if err == nil {
+		time.Sleep(duration)
+	} else {
+		err = errors.NewError(err)
+	}
+
+	return true, err
+}
+
 // TimeNow implements time.Now().
 func TimeNow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()

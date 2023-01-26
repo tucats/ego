@@ -138,7 +138,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameterStruct))
 
 	// Setup additional builtins and supporting values needed for REST service execution
-	symbolTable.SetAlways("eval", runtime.Eval)
 	symbolTable.SetAlways("authenticated", auth.Authenticated)
 	symbolTable.SetAlways("permission", auth.Permission)
 	symbolTable.SetAlways("setuser", auth.SetUser)

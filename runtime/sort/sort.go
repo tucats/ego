@@ -1,4 +1,4 @@
-package functions
+package sort
 
 import (
 	"sort"
@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// SortStrings implements the sort.Strings function.
-func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Strings implements the sort.Strings function.
+func Strings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.StringKind) {
 			err := array.Sort()
@@ -23,8 +23,8 @@ func SortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return nil, errors.ErrArgumentType.In("Strings()").Context(args[0])
 }
 
-// SortBytes implements the sort.Bytes function.
-func SortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Bytes implements the sort.Bytes function.
+func Bytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.ByteKind) {
 			err := array.Sort()
@@ -38,8 +38,8 @@ func SortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return nil, errors.ErrArgumentType.In("sort.Bytes()")
 }
 
-// SortInts implements the sort.Ints function.
-func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Ints implements the sort.Ints function.
+func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.IntKind) {
 			err := array.Sort()
@@ -53,8 +53,8 @@ func SortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.ErrArgumentType.In("sort.Ints()")
 }
 
-// SortInt32s implements the sort.Int32s function.
-func SortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Int32s implements the sort.Int32s function.
+func Int32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.Int32Kind) {
 			err := array.Sort()
@@ -68,8 +68,8 @@ func SortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return nil, errors.ErrArgumentType.In("sort.Int32s()")
 }
 
-// SortInt64s implements the sort.Int64s function.
-func SortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Int64s implements the sort.Int64s function.
+func Int64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.Int64Kind) {
 			err := array.Sort()
@@ -83,8 +83,8 @@ func SortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return nil, errors.ErrArgumentType.In("sort.Int64s()")
 }
 
-// SortFloats implements the sort.Floats function.
-func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Floats implements the sort.Floats function.
+func Floats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.Float64Kind) {
 			err := array.Sort()
@@ -98,8 +98,8 @@ func SortFloats(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return nil, errors.ErrArgumentType.In("sort.Floats()")
 }
 
-// SortFloat32s implements the sort.Float32s function.
-func SortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Float32s implements the sort.Float32s function.
+func Float32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.Float32Kind) {
 			err := array.Sort()
@@ -113,8 +113,8 @@ func SortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return nil, errors.ErrArgumentType.In("sort.Float32s()")
 }
 
-// SortFloat64s implements the sort.Float64s function.
-func SortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Float64s implements the sort.Float64s function.
+func Float64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
 		if array.ValueType().IsKind(data.Float64Kind) {
 			err := array.Sort()

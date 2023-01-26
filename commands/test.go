@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
+	rutil "github.com/tucats/ego/runtime/util"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -59,7 +60,7 @@ func TestAction(c *cli.Context) error {
 	}
 
 	// Add test-specific functions and values
-	symbolTable.SetAlways("eval", runtime.Eval)
+	symbolTable.SetAlways("eval", rutil.Eval)
 	symbolTable.SetAlways(defs.ModeVariable, "test")
 	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 

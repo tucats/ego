@@ -1,4 +1,4 @@
-package runtime
+package sort
 
 import (
 	"sort"
@@ -10,12 +10,12 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// sortSlice implements the sort.Slice() function. Beause this function requires a callback
+// Slice implements the sort.Slice() function. Beause this function requires a callback
 // function written as bytecode, it cannot be in the functions package to avoid an import
 // cycle problem. So this function (and others like it) are declared outside the functions
 // package here in the runtime package, and are manually added to the dictionary when the
 // run command is invoked.
-func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Slice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 2 {
 		return nil, errors.ErrArgumentCount
 	}

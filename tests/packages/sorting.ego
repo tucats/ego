@@ -1,6 +1,5 @@
 @test "packages: sort"
 {
-
     // Sort an array of integers
     i := []int{5,2,6,4,0}
     i2 := sort.Ints(i)
@@ -18,7 +17,7 @@
 
     // Sort an array of floats
     f := []float64{5,2,6,4,0}
-    f2 := sort.Floats(f)
+    f2 := sort.Float64s(f)
     @assert T.Equal(f, f2)
     @assert T.Equal(f, []float64{0, 2,4,5,6})
 
@@ -28,4 +27,5 @@
     @assert T.Equal(s, s2)
     @assert T.Equal(s, []string{ "", "apple", "cherry", "pear"})
 }
+
 @pass
