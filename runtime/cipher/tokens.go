@@ -93,8 +93,8 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// Token extracts the data from a token and returns it as a struct.
-func Token(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Extract extracts the data from a token and returns it as a struct.
+func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -134,11 +134,12 @@ func Token(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	r := map[string]interface{}{}
-	r["expires"] = t.Expires.String()
-	r["name"] = t.Name
-	r["data"] = t.Data
-	r["session"] = t.AuthID.String()
-	r["id"] = t.TokenID.String()
+	r["Expires"] = t.Expires.String()
+	r["Name"] = t.Name
+	r["Data"] = t.Data
+	r["AuthID"] = t.AuthID.String()
+	r["TokenID"] = t.TokenID.String()
+	r[data.TypeMDKey] = authType
 
 	if err != nil {
 		err = errors.NewError(err)
@@ -147,8 +148,8 @@ func Token(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.NewStructFromMap(r), err
 }
 
-// Create creates a new token with a username and a data payload.
-func Create(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// New creates a new token with a username and a data payload.
+func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return nil, errors.ErrArgumentCount
 	}

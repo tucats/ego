@@ -134,7 +134,19 @@ func Initialize(s *symbols.SymbolTable) {
 		clientType = t.SetPackage("db")
 
 		newpkg := data.NewPackageFromMap("db", map[string]interface{}{
-			"New":              New,
+			"New": data.Function{
+				Declaration: &data.FunctionDeclaration{
+					Name: "New",
+					Parameters: []data.FunctionParameter{
+						{
+							Name:     "connection",
+							ParmType: data.StringType,
+						},
+					},
+					ReturnTypes: []*data.Type{t},
+				},
+				Value: New,
+			},
 			"Client":           t,
 			"Rows":             rowT,
 			data.TypeMDKey:     data.PackageType("db"),

@@ -9,14 +9,14 @@ import (
 // Simple test of storing user data
 {
 	msg := "hidden message"
-	t := cipher.Create(msg)
+	t := cipher.New(msg)
 	@assert T.True(cipher.Validate(t),            "token is not valid")
-	@assert T.Equal(cipher.Token(t).name, msg,    "token does not contain expected user data")
+	@assert T.Equal(cipher.Extract(t).Name, msg,  "token does not contain expected user data")
 }
 
 {
 	msg := "hidden message"
-	t := cipher.Create(msg) + "00"
+	t := cipher.New(msg) + "00"
 	@assert T.False(cipher.Validate(t), "token is not invalid")
 }
 {
@@ -27,7 +27,7 @@ import (
 	}
 	profile.Set(TokenExpirationSetting, ".5s")
 
-	t := cipher.Create("test")
+	t := cipher.New("test")
 	sec := time.ParseDuration("1s")
 	time.Sleep(sec)
 	@assert T.False(cipher.Validate(t), "token is not invalid")

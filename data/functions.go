@@ -10,12 +10,15 @@ type FunctionParameter struct {
 	ParmType *Type
 }
 
+type Range [2]int
+
 type FunctionDeclaration struct {
 	Name         string
 	ReceiverType *Type
 	Parameters   []FunctionParameter
 	ReturnTypes  []*Type
 	Variadic     bool
+	ArgCount     Range
 }
 
 // dictionary is a descriptive dictionary that shows the declaration string for
@@ -129,39 +132,6 @@ var dictionary = map[string]string{
 	"runtime.RestStatusMessage":    "Status(code int) string",
 	"runtime.sortSlice":            "Slice(data []interface{}, func comparison(i, j int) bool) []interface{}",
 	"runtime.SymbolTables":         "SymbolTables() []struct",
-	"runtime/base64.Encode":        "Encode(text string) string",
-	"runtime/base64.Decode":        "Decode(encodedText string) string",
-	"runtime/cipher.Create":        "Create(name string, data string) string",
-	"runtime/cipher.Decrypt":       "Decrypt(encryptedText string, key string) string",
-	"runtime/cipher.Encrypt":       "Encrypt(text string, key string) string",
-	"runtime/cipher.Hash":          "Hash(text string) string",
-	"runtime/cipher.Random":        "Random(bits int) string",
-	"runtime/cipher.Token":         "Token(token string) struct{}",
-	"runtime/cipher.Validate":      "Validate(token string) bool",
-	"runtime/db.New":               "New(connection string) *db.Client",
-	"runtime/filepath.Abs":         "Abs(partialPath string) string",
-	"runtime/filepath.Base":        "Base(path string) string",
-	"runtime/filepath.Clean":       "Clean(path string) string",
-	"runtime/filepath.Dir":         "Dir(path string) string",
-	"runtime/filepath.Ext":         "Ext(path string) string",
-	"runtime/filepath.Join":        "Join(pathElements... string) string",
-	"runtime/io.Expand":            "Expand(path string[, filter string]) []string",
-	"runtime/io.Open":              "Open(filename string) (File, error)",
-	"runtime/io.Prompt":            "Prompt(promptString string) string",
-	"runtime/io.ReadDir":           "ReadDir(path string) []io.Entry",
-	"runtime/os.Args":              "Args() []string",
-	"runtime/os.Chdir":             "Chdir(path string) error)",
-	"runtime/os.Chmod":             "Chmod(file string, mode int) error",
-	"runtime/os.Chown":             "Chown(file string, owner string) error",
-	"runtime/os.Clearenv":          "Clearenv()",
-	"runtime/os.Environ":           "Environ() []string",
-	"runtime/os.Executable":        "Executable() string",
-	"runtime/os.Exit":              "Exit(status int)",
-	"runtime/os.Getenv":            "Getenv(name string) string",
-	"runtime/os.Hostname":          "Hostname() string",
-	"runtime/os.Readfile":          "Readfile(filename string) ([]byte, error)",
-	"runtime/os.Remove":            "Remove(filename string) error",
-	"runtime/os.Writefile":         "Writefile(filename string, mode int, data []byte) error",
 	"runtime/rest.New":             "New() *rest.Client",
 	"runtime/rest.ParseURL":        "ParseURL(url string) map[string]interface{}",
 	"runtime/rest.Status":          "Status() int",
@@ -216,7 +186,17 @@ func (f FunctionDeclaration) String() string {
 	r.WriteString(f.Name)
 	r.WriteRune('(')
 
+	variable := (f.ArgCount[0] != 0 || f.ArgCount[1] != 0)
+
 	for i, p := range f.Parameters {
+		if variable && i == f.ArgCount[1]-1 {
+			if i == 0 {
+				r.WriteString("[")
+			} else {
+				r.WriteString(" [")
+			}
+		}
+
 		if i > 0 {
 			r.WriteString(", ")
 		}
@@ -229,6 +209,10 @@ func (f FunctionDeclaration) String() string {
 
 		r.WriteRune(' ')
 		r.WriteString(p.ParmType.String())
+	}
+
+	if variable {
+		r.WriteString("]")
 	}
 
 	r.WriteRune(')')

@@ -10,10 +10,6 @@ import (
 
 // Encode encodes a string as a BASE64 string using standard encoding rules.
 func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	text := data.String(args[0])
 
 	return base64.StdEncoding.EncodeToString([]byte(text)), nil
@@ -21,10 +17,6 @@ func Encode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Decode encodes a string as a BASE64 string using standard encoding rules.
 func Decode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	text := data.String(args[0])
 
 	b, err := base64.StdEncoding.DecodeString(text)

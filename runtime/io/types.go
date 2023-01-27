@@ -110,14 +110,65 @@ func Initialize(s *symbols.SymbolTable) {
 
 	fileType = t.SetPackage("io")
 	newpkg := data.NewPackageFromMap("io", map[string]interface{}{
-		"File":             fileType,
-		"Entry":            entryType,
-		"Expand":           Expand,
-		"Open":             Open,
-		"ReadDir":          ReadDir,
-		"Prompt":           Prompt,
-		data.TypeMDKey:     data.PackageType("io"),
-		data.ReadonlyMDKey: true,
+		"File":  fileType,
+		"Entry": entryType,
+		"Expand": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "Expand",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "path",
+						ParmType: data.StringType,
+					},
+					{
+						Name:     "filter",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.ArrayType(data.StringType)},
+				ArgCount:    data.Range{1, 2},
+			},
+			Value: Expand,
+		},
+		"Open": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "Open",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "filename",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{fileType, data.ErrorType},
+			},
+			Value: Open,
+		},
+		"ReadDir": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "ReadDir",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "path",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.ArrayType(entryType)},
+			},
+			Value: ReadDir,
+		},
+		"Prompt": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "Prompt",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "text",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.StringType},
+			},
+			Value: Prompt,
+		},
 	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())

@@ -350,6 +350,10 @@ func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
 	declaration["name"] = fd.Name
 	declaration["parameters"] = parameters
 	declaration["returns"] = data.NewArrayFromArray(data.StringType, returnTypes)
+	declaration["argcount"] = data.NewArrayFromArray(data.IntType, []interface{}{
+		fd.ArgCount[0],
+		fd.ArgCount[1],
+	})
 
 	return data.NewStructFromMap(declaration)
 }

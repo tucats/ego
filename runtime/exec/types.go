@@ -32,11 +32,34 @@ func Initialize(s *symbols.SymbolTable) {
 	commandTypeDef = t.SetPackage("exec")
 
 	newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
-		"Command":          Command,
-		"LookPath":         LookPath,
-		"Cmd":              t,
-		data.TypeMDKey:     data.PackageType("exec"),
-		data.ReadonlyMDKey: true,
+		"Command": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "Command",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "cmd",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{t},
+				Variadic:    true,
+			},
+			Value: Command,
+		},
+		"LookPath": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "LookPath",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "file",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.StringType, data.ErrorType},
+			},
+			Value: LookPath,
+		},
+		"Cmd": t,
 	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())

@@ -239,6 +239,19 @@ func callByteCode(c *Context, i interface{}) error {
 	// If this is a function pointer (from a stored type function list)
 	// unwrap the value of the function pointer.
 	if dp, ok := functionPointer.(data.Function); ok {
+		fargc := 0
+		if dp.Declaration != nil {
+			fargc = len(dp.Declaration.Parameters)
+		}
+
+		if fargc != argc {
+			if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
+				if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
+					return c.error(errors.ErrArgumentCount)
+				}
+			}
+		}
+
 		functionPointer = dp.Value
 	}
 

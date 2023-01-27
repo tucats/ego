@@ -25,10 +25,6 @@ import (
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
 func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args[0])
 
