@@ -30,14 +30,67 @@ func Initialize(s *symbols.SymbolTable) {
 	timeType = t.SetPackage("time")
 
 	newpkg := data.NewPackageFromMap("time", map[string]interface{}{
-		"Now":           Now,
-		"Parse":         Parse,
-		"ParseDuration": ParseDuration,
-		"Since":         Since,
-		"Sleep":         Sleep,
-		"Time":          t,
-		"Duration":      durationType,
-		"Reference":     basicLayout,
+		"Now": data.Function{
+			Declaration: &data.Declaration{
+				Name:    "Now",
+				Returns: []*data.Type{timeType},
+			},
+			Value: Now,
+		},
+		"Parse": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Parse",
+				Parameters: []data.Parameter{
+					{
+						Name: "test",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{timeType, data.ErrorType},
+			},
+			Value: Parse,
+		},
+		"ParseDuration": data.Function{
+			Declaration: &data.Declaration{
+				Name: "ParseDuration",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{durationType, data.ErrorType},
+			},
+			Value: ParseDuration,
+		},
+		"Since": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Since",
+				Parameters: []data.Parameter{
+					{
+						Name: "t",
+						Type: timeType,
+					},
+				},
+				Returns: []*data.Type{durationType},
+			},
+			Value: Since,
+		},
+		"Sleep": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Sleep",
+				Parameters: []data.Parameter{
+					{
+						Name: "d",
+						Type: durationType,
+					},
+				},
+			},
+			Value: Sleep,
+		},
+		"Time":      t,
+		"Duration":  durationType,
+		"Reference": basicLayout,
 	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())

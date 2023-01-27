@@ -304,6 +304,15 @@ func (t Type) ShortTypeString() string {
 	return t.String()
 }
 
+// Produce a short-form string
+func (t Type) ShortString() string {
+	if t.kind == TypeKind {
+		return t.name
+	}
+
+	return t.String()
+}
+
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	switch t.kind {

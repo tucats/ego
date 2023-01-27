@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
-	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
@@ -138,25 +137,7 @@ func Symbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Tables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// This function doesn't take any parameters.
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	// Compile the type definition for the structure we're going to return.
-	t, err := compiler.CompileTypeSpec(`
-	type SymbolTable struct{
-		depth int
-		name string
-		id string
-		root bool
-		shared bool
-		size int
-		}`)
-
-	if err != nil {
-		return nil, errors.NewError(err)
-	}
+	t := symbolTableTypeDef
 
 	result := data.NewArray(t, 0)
 	depth := 0
@@ -164,12 +145,13 @@ func Tables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	for p != nil {
 		item := data.NewStructFromMap(map[string]interface{}{
-			"depth":  depth,
-			"name":   p.Name,
-			"id":     p.ID().String(),
-			"root":   p.IsRoot(),
-			"size":   p.Size(),
-			"shared": p.IsShared(),
+			"depth":        depth,
+			"name":         p.Name,
+			"id":           p.ID().String(),
+			"root":         p.IsRoot(),
+			"size":         p.Size(),
+			"shared":       p.IsShared(),
+			data.TypeMDKey: t,
 		})
 
 		result.Append(item)

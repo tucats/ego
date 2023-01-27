@@ -28,11 +28,12 @@ func Memory(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
 
-	result["time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
-	result["current"] = bToMb(m.Alloc)
-	result["total"] = bToMb(m.TotalAlloc)
-	result["system"] = bToMb(m.Sys)
-	result["gc"] = int(m.NumGC)
+	result["Time"] = time.Now().Format("Mon Jan 2 2006 15:04:05 MST")
+	result["Current"] = bToMb(m.Alloc)
+	result["Total"] = bToMb(m.TotalAlloc)
+	result["System"] = bToMb(m.Sys)
+	result["GC"] = int(m.NumGC)
+	result[data.TypeMDKey] = memoryTypeDef
 
 	return data.NewStructFromMap(result), nil
 }
