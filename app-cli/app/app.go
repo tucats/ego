@@ -16,7 +16,6 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -78,7 +77,7 @@ func (app *App) SetBuildTime(s string) *App {
 	app.BuildTime = s
 
 	if t, err := time.Parse("20060102150405", s); err == nil {
-		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, functions.MakeTime(&t, nil))
+		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, t.String())
 	} else {
 		symbols.RootSymbolTable.SetAlways(defs.BuildTimeVariable, app.BuildTime)
 	}

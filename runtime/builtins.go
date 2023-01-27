@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/sort"
 	"github.com/tucats/ego/runtime/tables"
+	"github.com/tucats/ego/runtime/time"
 	"github.com/tucats/ego/runtime/util"
 	"github.com/tucats/ego/runtime/uuid"
 	"github.com/tucats/ego/symbols"
@@ -26,11 +27,12 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	errors.InitializeErrors(s)
 	exec.Initialize(s)
 	db.Initialize(s)
+	io.Initialize(s)
+	os.Initialize(s)
 	rest.Initialize(s)
 	sort.Initialize(s)
 	tables.Initialize(s)
-	io.Initialize(s)
-	os.Initialize(s)
+	time.Initialize(s)
 	util.Initialize(s)
 	uuid.Initialize(s)
 }

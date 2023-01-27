@@ -5,12 +5,14 @@
     t1, e := time.Parse( "Jan 11 10:15:01 EST 2021", pattern )
     @assert T.Equal(t1.String(), "Mon Jan 11 10:15:01 EST 2021" ,  "Time parse error")
 
-    t2 := t1.Add("2h")
+    d , _ := time.ParseDuration("2h")
+    t2 := t1.Add(d)
     @assert T.Equal(t2.String(), "Mon Jan 11 12:15:01 EST 2021",  "Time add error" )
 
     t3, e := time.Parse( "Jan 11 10:15:01 EST 2021", pattern )
     t4, e := time.Parse( "Jan 11 10:15:02 EST 2021", pattern )
-    @assert T.Equal(t4.Sub(t3), "1s", "Time sub error" )
+    sec, _ := time.ParseDuration("1s")
+    @assert T.Equal(t4.Sub(t3), sec, "Time sub error" )
 
 }
 @pass
