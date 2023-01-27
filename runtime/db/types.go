@@ -50,100 +50,100 @@ func Initialize(s *symbols.SymbolTable) {
 
 		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
-		t.DefineFunction("Begin", &data.FunctionDeclaration{
-			Name:         "Begin",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.ErrorType},
+		t.DefineFunction("Begin", &data.Declaration{
+			Name:    "Begin",
+			Type:    data.PointerType(t),
+			Returns: []*data.Type{data.ErrorType},
 		}, Begin)
 
-		t.DefineFunction("Commit", &data.FunctionDeclaration{
-			Name:         "Commit",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.ErrorType},
+		t.DefineFunction("Commit", &data.Declaration{
+			Name:    "Commit",
+			Type:    data.PointerType(t),
+			Returns: []*data.Type{data.ErrorType},
 		}, Commit)
 
-		t.DefineFunction("Rollback", &data.FunctionDeclaration{
-			Name:         "Rollback",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.ErrorType},
+		t.DefineFunction("Rollback", &data.Declaration{
+			Name:    "Rollback",
+			Type:    data.PointerType(t),
+			Returns: []*data.Type{data.ErrorType},
 		}, Rollback)
 
-		t.DefineFunction("Query", &data.FunctionDeclaration{
-			Name:         "Query",
-			ReceiverType: data.PointerType(t),
-			Parameters: []data.FunctionParameter{
+		t.DefineFunction("Query", &data.Declaration{
+			Name: "Query",
+			Type: data.PointerType(t),
+			Parameters: []data.Parameter{
 				{
-					Name:     "sql",
-					ParmType: data.StringType,
+					Name: "sql",
+					Type: data.StringType,
 				},
 			},
-			ReturnTypes: []*data.Type{
+			Returns: []*data.Type{
 				data.PointerType(rowsType),
 				data.ErrorType,
 			},
 		}, Query)
 
-		t.DefineFunction("QueryResult", &data.FunctionDeclaration{
-			Name:         "Execute",
-			ReceiverType: data.PointerType(t),
-			Parameters: []data.FunctionParameter{
+		t.DefineFunction("QueryResult", &data.Declaration{
+			Name: "Execute",
+			Type: data.PointerType(t),
+			Parameters: []data.Parameter{
 				{
-					Name:     "sql",
-					ParmType: data.StringType,
+					Name: "sql",
+					Type: data.StringType,
 				},
 			},
-			ReturnTypes: []*data.Type{
+			Returns: []*data.Type{
 				data.ArrayType(data.ArrayType(data.InterfaceType)),
 				data.ErrorType,
 			},
 		}, QueryResult)
 
-		t.DefineFunction("Execute", &data.FunctionDeclaration{
-			Name:         "Execute",
-			ReceiverType: data.PointerType(t),
-			Parameters: []data.FunctionParameter{
+		t.DefineFunction("Execute", &data.Declaration{
+			Name: "Execute",
+			Type: data.PointerType(t),
+			Parameters: []data.Parameter{
 				{
-					Name:     "sql",
-					ParmType: data.StringType,
+					Name: "sql",
+					Type: data.StringType,
 				},
 			},
-			ReturnTypes: []*data.Type{
+			Returns: []*data.Type{
 				data.IntType,
 				data.ErrorType,
 			},
 		}, Execute)
 
-		t.DefineFunction("Close", &data.FunctionDeclaration{
-			Name:         "Close",
-			ReceiverType: data.PointerType(t),
-			ReturnTypes:  []*data.Type{data.ErrorType},
+		t.DefineFunction("Close", &data.Declaration{
+			Name:    "Close",
+			Type:    data.PointerType(t),
+			Returns: []*data.Type{data.ErrorType},
 		}, Close)
 
-		t.DefineFunction("AsStruct", &data.FunctionDeclaration{
-			Name:         "AsStruct",
-			ReceiverType: data.PointerType(t),
-			Parameters: []data.FunctionParameter{
+		t.DefineFunction("AsStruct", &data.Declaration{
+			Name: "AsStruct",
+			Type: data.PointerType(t),
+			Parameters: []data.Parameter{
 				{
-					Name:     "flag",
-					ParmType: data.BoolType,
+					Name: "flag",
+					Type: data.BoolType,
 				},
 			},
-			ReturnTypes: []*data.Type{data.VoidType},
+			Returns: []*data.Type{data.VoidType},
 		}, AsStructures)
 
 		clientType = t.SetPackage("db")
 
 		newpkg := data.NewPackageFromMap("db", map[string]interface{}{
 			"New": data.Function{
-				Declaration: &data.FunctionDeclaration{
+				Declaration: &data.Declaration{
 					Name: "New",
-					Parameters: []data.FunctionParameter{
+					Parameters: []data.Parameter{
 						{
-							Name:     "connection",
-							ParmType: data.StringType,
+							Name: "connection",
+							Type: data.StringType,
 						},
 					},
-					ReturnTypes: []*data.Type{t},
+					Returns: []*data.Type{t},
 				},
 				Value: New,
 			},
@@ -162,35 +162,35 @@ func Initialize(s *symbols.SymbolTable) {
 func initRowsTypeDef() *data.Type {
 	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
 
-	t.DefineFunction("Next", &data.FunctionDeclaration{
-		Name:         "Next",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.BoolType},
+	t.DefineFunction("Next", &data.Declaration{
+		Name:    "Next",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.BoolType},
 	}, rowsNext)
 
-	t.DefineFunction("Scan", &data.FunctionDeclaration{
+	t.DefineFunction("Scan", &data.Declaration{
 		Name: "Scan",
-		Parameters: []data.FunctionParameter{
+		Parameters: []data.Parameter{
 			{
-				Name:     "value",
-				ParmType: data.PointerType(data.InterfaceType),
+				Name: "value",
+				Type: data.PointerType(data.InterfaceType),
 			},
 		},
-		Variadic:     true,
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.ErrorType},
+		Variadic: true,
+		Type:     data.PointerType(t),
+		Returns:  []*data.Type{data.ErrorType},
 	}, rowsScan)
 
-	t.DefineFunction("Close", &data.FunctionDeclaration{
-		Name:         "Close",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.ErrorType},
+	t.DefineFunction("Close", &data.Declaration{
+		Name:    "Close",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
 	}, rowsClose)
 
-	t.DefineFunction("Headings", &data.FunctionDeclaration{
-		Name:         "Headings",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.ArrayType(data.StringType)},
+	t.DefineFunction("Headings", &data.Declaration{
+		Name:    "Headings",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ArrayType(data.StringType)},
 	}, rowsHeadings)
 
 	rowsType = t.SetPackage("db")

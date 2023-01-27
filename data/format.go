@@ -177,10 +177,10 @@ func Format(element interface{}) string {
 	case string:
 		return "\"" + v + "\""
 
-	case *FunctionDeclaration:
+	case *Declaration:
 		return v.String()
 
-	case FunctionDeclaration:
+	case Declaration:
 		return v.String()
 
 	case *Package:

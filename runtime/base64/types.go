@@ -9,30 +9,30 @@ import (
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("base64", map[string]interface{}{
 		"Decode": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Decode",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.StringType,
+						Name: "data",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
-				ArgCount:    data.Range{1, 1},
+				Returns:  []*data.Type{data.StringType},
+				ArgCount: data.Range{1, 1},
 			},
 			Value: Decode,
 		},
 		"Encode": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Encode",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.StringType,
+						Name: "data",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
-				ArgCount:    data.Range{1, 1},
+				Returns:  []*data.Type{data.StringType},
+				ArgCount: data.Range{1, 1},
 			},
 			Value: Encode,
 		},

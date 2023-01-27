@@ -26,10 +26,10 @@ func Initialize(s *symbols.SymbolTable) {
 
 	t.DefineFunctions(map[string]data.Function{
 		"Close": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Close",
-				ReceiverType: t,
-				ReturnTypes: []*data.Type{
+			Declaration: &data.Declaration{
+				Name: "Close",
+				Type: t,
+				Returns: []*data.Type{
 					data.ErrorType,
 				},
 			},
@@ -37,16 +37,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Get": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Get",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Get",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "endpoint",
-						ParmType: data.StringType,
+						Name: "endpoint",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					data.ErrorType,
 				},
 			},
@@ -54,20 +54,20 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Post": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Post",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Post",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "endpoint",
-						ParmType: data.StringType,
+						Name: "endpoint",
+						Type: data.StringType,
 					},
 					{
-						Name:     "body",
-						ParmType: data.InterfaceType,
+						Name: "body",
+						Type: data.InterfaceType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					data.ErrorType,
 				},
 			},
@@ -75,16 +75,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Delete": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Delete",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Delete",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "endpoint",
-						ParmType: data.StringType,
+						Name: "endpoint",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					data.ErrorType,
 				},
 			},
@@ -92,16 +92,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Base": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Base",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Base",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "url",
-						ParmType: data.StringType,
+						Name: "url",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
@@ -109,16 +109,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Debug": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Debug",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Debug",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "flag",
-						ParmType: data.BoolType,
+						Name: "flag",
+						Type: data.BoolType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
@@ -126,31 +126,31 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Media": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Media",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Media",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "mediaType",
-						ParmType: data.StringType,
+						Name: "mediaType",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
 			Value: Media},
 		"Token": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Token",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Token",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "tokenString",
-						ParmType: data.StringType,
+						Name: "tokenString",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
@@ -158,20 +158,20 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Auth": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Auth",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Auth",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "username",
-						ParmType: data.StringType,
+						Name: "username",
+						Type: data.StringType,
 					},
 					{
-						Name:     "password",
-						ParmType: data.StringType,
+						Name: "password",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
@@ -179,16 +179,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Verify": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Verify",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Verify",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "flag",
-						ParmType: data.BoolType,
+						Name: "flag",
+						Type: data.BoolType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					t,
 				},
 			},
@@ -196,16 +196,16 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 
 		"Status": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "Status",
-				ReceiverType: t,
-				Parameters: []data.FunctionParameter{
+			Declaration: &data.Declaration{
+				Name: "Status",
+				Type: t,
+				Parameters: []data.Parameter{
 					{
-						Name:     "code",
-						ParmType: data.IntType,
+						Name: "code",
+						Type: data.IntType,
 					},
 				},
-				ReturnTypes: []*data.Type{
+				Returns: []*data.Type{
 					data.StringType,
 				},
 			},
@@ -217,35 +217,35 @@ func Initialize(s *symbols.SymbolTable) {
 
 	newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
 		"New": data.Function{
-			Declaration: &data.FunctionDeclaration{
-				Name:        "New",
-				ReturnTypes: []*data.Type{data.PointerType(restType)},
+			Declaration: &data.Declaration{
+				Name:    "New",
+				Returns: []*data.Type{data.PointerType(restType)},
 			},
 			Value: New,
 		},
 		"Status": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Status",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "code",
-						ParmType: data.IntType,
+						Name: "code",
+						Type: data.IntType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Status,
 		},
 		"ParseURL": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "ParseURL",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "url",
-						ParmType: data.StringType,
+						Name: "url",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+				Returns: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
 			},
 			Value: ParseURL,
 		},

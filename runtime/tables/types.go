@@ -33,17 +33,17 @@ func Initialize(s *symbols.SymbolTable) {
 
 		t.DefineFunctions(map[string]data.Function{
 			"AddRow": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "AddRow",
-					Variadic:     true,
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name:     "AddRow",
+					Variadic: true,
+					Type:     data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "value",
-							ParmType: data.InterfaceType,
+							Name: "value",
+							Type: data.InterfaceType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -51,10 +51,10 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Close": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Close",
-					ReceiverType: data.PointerType(t),
-					ReturnTypes: []*data.Type{
+				Declaration: &data.Declaration{
+					Name: "Close",
+					Type: data.PointerType(t),
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -62,17 +62,17 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Sort": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Sort",
-					Variadic:     true,
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name:     "Sort",
+					Variadic: true,
+					Type:     data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "columnName",
-							ParmType: data.StringType,
+							Name: "columnName",
+							Type: data.StringType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -80,16 +80,16 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Print": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Print",
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name: "Print",
+					Type: data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "format",
-							ParmType: data.StringType,
+							Name: "format",
+							Type: data.StringType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -97,20 +97,20 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Format": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Format",
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name: "Format",
+					Type: data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "headings",
-							ParmType: data.BoolType,
+							Name: "headings",
+							Type: data.BoolType,
 						},
 						{
-							Name:     "underlines",
-							ParmType: data.BoolType,
+							Name: "underlines",
+							Type: data.BoolType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -118,20 +118,20 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Align": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Align",
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name: "Align",
+					Type: data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "columnName",
-							ParmType: data.StringType,
+							Name: "columnName",
+							Type: data.StringType,
 						},
 						{
-							Name:     "alignment",
-							ParmType: data.StringType,
+							Name: "alignment",
+							Type: data.StringType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -139,16 +139,16 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"String": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "String",
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name: "String",
+					Type: data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "format",
-							ParmType: data.StringType,
+							Name: "format",
+							Type: data.StringType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.StringType,
 						data.ErrorType,
 					},
@@ -157,20 +157,20 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 
 			"Pagination": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Pagination",
-					ReceiverType: data.PointerType(t),
-					Parameters: []data.FunctionParameter{
+				Declaration: &data.Declaration{
+					Name: "Pagination",
+					Type: data.PointerType(t),
+					Parameters: []data.Parameter{
 						{
-							Name:     "width",
-							ParmType: data.IntType,
+							Name: "width",
+							Type: data.IntType,
 						},
 						{
-							Name:     "height",
-							ParmType: data.IntType,
+							Name: "height",
+							Type: data.IntType,
 						},
 					},
-					ReturnTypes: []*data.Type{
+					Returns: []*data.Type{
 						data.ErrorType,
 					},
 				},
@@ -182,16 +182,16 @@ func Initialize(s *symbols.SymbolTable) {
 
 		newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
 			"New": data.Function{
-				Declaration: &data.FunctionDeclaration{
+				Declaration: &data.Declaration{
 					Name: "New",
-					Parameters: []data.FunctionParameter{
+					Parameters: []data.Parameter{
 						{
-							Name:     "column",
-							ParmType: data.StringType,
+							Name: "column",
+							Type: data.StringType,
 						},
 					},
-					Variadic:    true,
-					ReturnTypes: []*data.Type{tableTypeDef},
+					Variadic: true,
+					Returns:  []*data.Type{tableTypeDef},
 				},
 				Value: New,
 			},

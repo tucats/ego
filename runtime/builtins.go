@@ -43,7 +43,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	uuid.Initialize(s)
 }
 
-func GetDeclaration(fname string) *data.FunctionDeclaration {
+func GetDeclaration(fname string) *data.Declaration {
 	if fname == "" {
 		return nil
 	}

@@ -50,62 +50,62 @@ func Initialize(s *symbols.SymbolTable) {
 
 	t := data.TypeDefinition("File", structType)
 
-	t.DefineFunction("Close", &data.FunctionDeclaration{
-		Name:         "Close",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.ErrorType},
+	t.DefineFunction("Close", &data.Declaration{
+		Name:    "Close",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
 	}, Close)
 
-	t.DefineFunction("ReadString", &data.FunctionDeclaration{
-		Name:         "ReadString",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.StringType, data.ErrorType},
+	t.DefineFunction("ReadString", &data.Declaration{
+		Name:    "ReadString",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.StringType, data.ErrorType},
 	}, ReadString)
 
-	t.DefineFunction("WriteString", &data.FunctionDeclaration{
-		Name:         "WriteString",
-		ReceiverType: data.PointerType(t),
-		Parameters: []data.FunctionParameter{
+	t.DefineFunction("WriteString", &data.Declaration{
+		Name: "WriteString",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
 			{
-				Name:     "data",
-				ParmType: data.StringType,
+				Name: "data",
+				Type: data.StringType,
 			},
 		},
-		ReturnTypes: []*data.Type{data.IntType, data.ErrorType},
+		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, WriteString)
 
-	t.DefineFunction("Write", &data.FunctionDeclaration{
-		Name:         "Write",
-		ReceiverType: data.PointerType(t),
-		Parameters: []data.FunctionParameter{
+	t.DefineFunction("Write", &data.Declaration{
+		Name: "Write",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
 			{
-				Name:     "data",
-				ParmType: data.ArrayType(data.ByteType),
+				Name: "data",
+				Type: data.ArrayType(data.ByteType),
 			},
 		},
-		ReturnTypes: []*data.Type{data.IntType, data.ErrorType},
+		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, Write)
 
-	t.DefineFunction("WriteAt", &data.FunctionDeclaration{
-		Name:         "WriteAt",
-		ReceiverType: data.PointerType(t),
-		Parameters: []data.FunctionParameter{
+	t.DefineFunction("WriteAt", &data.Declaration{
+		Name: "WriteAt",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
 			{
-				Name:     "data",
-				ParmType: data.ArrayType(data.ByteType),
+				Name: "data",
+				Type: data.ArrayType(data.ByteType),
 			},
 			{
-				Name:     "offset",
-				ParmType: data.IntType,
+				Name: "offset",
+				Type: data.IntType,
 			},
 		},
-		ReturnTypes: []*data.Type{data.IntType, data.ErrorType},
+		Returns: []*data.Type{data.IntType, data.ErrorType},
 	}, Write)
 
-	t.DefineFunction("String", &data.FunctionDeclaration{
-		Name:         "String",
-		ReceiverType: data.PointerType(t),
-		ReturnTypes:  []*data.Type{data.StringType},
+	t.DefineFunction("String", &data.Declaration{
+		Name:    "String",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.StringType},
 	}, AsString)
 
 	fileType = t.SetPackage("io")
@@ -113,59 +113,59 @@ func Initialize(s *symbols.SymbolTable) {
 		"File":  fileType,
 		"Entry": entryType,
 		"Expand": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Expand",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 					{
-						Name:     "filter",
-						ParmType: data.StringType,
+						Name: "filter",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.StringType)},
-				ArgCount:    data.Range{1, 2},
+				Returns:  []*data.Type{data.ArrayType(data.StringType)},
+				ArgCount: data.Range{1, 2},
 			},
 			Value: Expand,
 		},
 		"Open": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Open",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "filename",
-						ParmType: data.StringType,
+						Name: "filename",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{fileType, data.ErrorType},
+				Returns: []*data.Type{fileType, data.ErrorType},
 			},
 			Value: Open,
 		},
 		"ReadDir": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "ReadDir",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(entryType)},
+				Returns: []*data.Type{data.ArrayType(entryType)},
 			},
 			Value: ReadDir,
 		},
 		"Prompt": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Prompt",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "text",
-						ParmType: data.StringType,
+						Name: "text",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Prompt,
 		},

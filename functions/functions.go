@@ -47,7 +47,7 @@ type FunctionDefinition struct {
 
 	// D is a function declaration object that details the
 	// parameter and return types.
-	D *data.FunctionDeclaration
+	D *data.Declaration
 }
 
 // MultiValueReturn is a type used to return a list of values from a builtin
@@ -76,15 +76,15 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"len": {
 		Min: 1,
 		Max: 1,
-		D: &data.FunctionDeclaration{
+		D: &data.Declaration{
 			Name: "len",
-			Parameters: []data.FunctionParameter{
+			Parameters: []data.Parameter{
 				{
-					Name:     "any",
-					ParmType: data.InterfaceType,
+					Name: "any",
+					Type: data.InterfaceType,
 				},
 			},
-			ReturnTypes: []*data.Type{
+			Returns: []*data.Type{
 				data.IntType,
 			},
 		},

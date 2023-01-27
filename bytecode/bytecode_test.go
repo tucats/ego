@@ -264,7 +264,7 @@ func TestByteCode_String(t *testing.T) {
 	tests := []struct {
 		name        string
 		fname       string
-		declaration *data.FunctionDeclaration
+		declaration *data.Declaration
 		want        string
 	}{
 		{
@@ -275,15 +275,15 @@ func TestByteCode_String(t *testing.T) {
 		{
 			name:  "foo with declaration string",
 			fname: "foo",
-			declaration: &data.FunctionDeclaration{
+			declaration: &data.Declaration{
 				Name: "foo",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "i",
-						ParmType: data.Int32Type,
+						Name: "i",
+						Type: data.Int32Type,
 					},
 				},
-				ReturnTypes: []*data.Type{data.Float64Type},
+				Returns: []*data.Type{data.Float64Type},
 			},
 			want: "foo(i int32) float64",
 		},

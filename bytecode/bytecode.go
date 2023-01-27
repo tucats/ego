@@ -39,7 +39,7 @@ type ByteCode struct {
 	name         string
 	instructions []instruction
 	nextAddress  int
-	declaration  *data.FunctionDeclaration
+	declaration  *data.Declaration
 	sealed       bool
 }
 
@@ -56,11 +56,11 @@ func (b *ByteCode) String() string {
 // used in routines that format information about the bytecode. If you
 // change the name of this function, you will also need to update the
 // MethodByName() calls for this same function name.
-func (b *ByteCode) Declaration() *data.FunctionDeclaration {
+func (b *ByteCode) Declaration() *data.Declaration {
 	return b.declaration
 }
 
-func (b *ByteCode) SetDeclaration(fd *data.FunctionDeclaration) *ByteCode {
+func (b *ByteCode) SetDeclaration(fd *data.Declaration) *ByteCode {
 	b.declaration = fd
 
 	return b

@@ -33,29 +33,29 @@ func Initialize(s *symbols.SymbolTable) {
 
 	newpkg := data.NewPackageFromMap("exec", map[string]interface{}{
 		"Command": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Command",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "cmd",
-						ParmType: data.StringType,
+						Name: "cmd",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{t},
-				Variadic:    true,
+				Returns:  []*data.Type{t},
+				Variadic: true,
 			},
 			Value: Command,
 		},
 		"LookPath": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "LookPath",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "file",
-						ParmType: data.StringType,
+						Name: "file",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType, data.ErrorType},
+				Returns: []*data.Type{data.StringType, data.ErrorType},
 			},
 			Value: LookPath,
 		},

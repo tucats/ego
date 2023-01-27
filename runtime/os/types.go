@@ -9,155 +9,155 @@ import (
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("os", map[string]interface{}{
 		"Args": data.Function{
-			Declaration: &data.FunctionDeclaration{
-				Name:        "Args",
-				ReturnTypes: []*data.Type{data.ArrayType(data.StringType)},
+			Declaration: &data.Declaration{
+				Name:    "Args",
+				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
 			Value: Args,
 		},
 		"Chdir": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Chdir",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ErrorType},
+				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: Chdir,
 		},
 		"Chmod": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Chmod",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "file",
-						ParmType: data.StringType,
+						Name: "file",
+						Type: data.StringType,
 					},
 					{
-						Name:     "mode",
-						ParmType: data.IntType,
+						Name: "mode",
+						Type: data.IntType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ErrorType},
+				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: Chmod,
 		},
 		"Chown": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Chown",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "file",
-						ParmType: data.StringType,
+						Name: "file",
+						Type: data.StringType,
 					},
 					{
-						Name:     "owner",
-						ParmType: data.StringType,
+						Name: "owner",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ErrorType},
+				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: Chown,
 		},
 		"Clearenv": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Clearenv",
 			},
 			Value: Clearenv,
 		},
 		"Environ": data.Function{
-			Declaration: &data.FunctionDeclaration{
-				Name:        "Environ",
-				ReturnTypes: []*data.Type{data.ArrayType(data.StringType)},
+			Declaration: &data.Declaration{
+				Name:    "Environ",
+				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
 			Value: Environ,
 		},
 		"Executable": data.Function{
-			Declaration: &data.FunctionDeclaration{
-				Name:        "Executable",
-				ReturnTypes: []*data.Type{data.StringType},
+			Declaration: &data.Declaration{
+				Name:    "Executable",
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Executable,
 		},
 		"Exit": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Exit",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "code",
-						ParmType: data.IntType,
+						Name: "code",
+						Type: data.IntType,
 					},
 				},
 			},
 			Value: Exit,
 		},
 		"Getenv": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Getenv",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "name",
-						ParmType: data.StringType,
+						Name: "name",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Getenv,
 		},
 		"Hostname": data.Function{
-			Declaration: &data.FunctionDeclaration{
-				Name:        "Hostname",
-				ReturnTypes: []*data.Type{data.StringType},
+			Declaration: &data.Declaration{
+				Name:    "Hostname",
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Hostname,
 		},
 		"ReadFile": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "ReadFile",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "filename",
-						ParmType: data.StringType,
+						Name: "filename",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
+				Returns: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
 			},
 			Value: Readfile,
 		},
 		"Remove": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Remove",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "filename",
-						ParmType: data.StringType,
+						Name: "filename",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.ErrorType},
+				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: Remove,
 		},
 		"Writefile": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Writefile",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "filename",
-						ParmType: data.StringType,
+						Name: "filename",
+						Type: data.StringType,
 					},
 					{
-						Name:     "mode",
-						ParmType: data.IntType,
+						Name: "mode",
+						Type: data.IntType,
 					},
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.ByteType),
+						Name: "data",
+						Type: data.ArrayType(data.ByteType),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ErrorType},
+				Returns: []*data.Type{data.ErrorType},
 			},
 			Value: Writefile,
 		},

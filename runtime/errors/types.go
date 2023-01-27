@@ -15,45 +15,45 @@ func InitializeErrors(s *symbols.SymbolTable) {
 		Min:  1,
 		Max:  2,
 		F:    NewError,
-		D: &data.FunctionDeclaration{
+		D: &data.Declaration{
 			Name: "New",
-			Parameters: []data.FunctionParameter{
+			Parameters: []data.Parameter{
 				{
-					Name:     "msg",
-					ParmType: data.StringType,
+					Name: "msg",
+					Type: data.StringType,
 				},
 			},
-			ReturnTypes: []*data.Type{data.ErrorType},
+			Returns: []*data.Type{data.ErrorType},
 		},
 	})
 
 	// Register the (e error) Error() function, which generates a formatted string
 	// of the error value.
-	data.ErrorType.DefineFunction("Error", &data.FunctionDeclaration{
-		Name:         "Error",
-		ReceiverType: data.ErrorType,
-		ReturnTypes:  []*data.Type{data.StringType},
+	data.ErrorType.DefineFunction("Error", &data.Declaration{
+		Name:    "Error",
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.StringType},
 	}, Error)
 
 	// Register the (e error) Is( other error) bool function, which compares
 	// the receiver to anotehr error value and returns true if they are equal.
-	data.ErrorType.DefineFunction("Is", &data.FunctionDeclaration{
-		Name:         "Is",
-		ReceiverType: data.ErrorType,
-		Parameters: []data.FunctionParameter{
+	data.ErrorType.DefineFunction("Is", &data.Declaration{
+		Name: "Is",
+		Type: data.ErrorType,
+		Parameters: []data.Parameter{
 			{
-				Name:     "err",
-				ParmType: data.ErrorType,
+				Name: "err",
+				Type: data.ErrorType,
 			},
 		},
-		ReturnTypes: []*data.Type{data.StringType},
+		Returns: []*data.Type{data.StringType},
 	}, Is)
 
 	// Register the (e error) Unwrap( ) interface{} function, which returns
 	// the context value associated with the error.
-	data.ErrorType.DefineFunction("Unwrap", &data.FunctionDeclaration{
-		Name:         "Unwrap",
-		ReceiverType: data.ErrorType,
-		ReturnTypes:  []*data.Type{data.InterfaceType},
+	data.ErrorType.DefineFunction("Unwrap", &data.Declaration{
+		Name:    "Unwrap",
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.InterfaceType},
 	}, Unwrap)
 }

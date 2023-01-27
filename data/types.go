@@ -71,7 +71,7 @@ const (
 )
 
 type Function struct {
-	Declaration *FunctionDeclaration
+	Declaration *Declaration
 	Value       interface{} // Generally bytecode
 }
 
@@ -547,7 +547,7 @@ func (t Type) IsTypeDefinition() bool {
 
 // Define a function for a type, that can be used as a receiver
 // function.
-func (t *Type) DefineFunction(name string, declaration *FunctionDeclaration, value interface{}) {
+func (t *Type) DefineFunction(name string, declaration *Declaration, value interface{}) {
 	if t.functions == nil {
 		t.functions = map[string]Function{}
 	}

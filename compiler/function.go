@@ -28,7 +28,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	receiverType := tokenizer.EmptyToken
 	byValue := false
 
-	var fd *data.FunctionDeclaration
+	var fd *data.Declaration
 
 	// Increment the function depth for the time we're on this particular function,
 	// and decrement it when we are done.
@@ -254,7 +254,7 @@ func restoreByteCode(c *Compiler, saved *bytecode.ByteCode) {
 
 // ParseFunctionDeclaration compiles a function declaration, which specifies
 // the parameter and return type of a function.
-func (c *Compiler) ParseFunctionDeclaration() (*data.FunctionDeclaration, error) {
+func (c *Compiler) ParseFunctionDeclaration() (*data.Declaration, error) {
 	var err error
 
 	// Can't have side effects added to current bytecode, so save that off and
@@ -263,7 +263,7 @@ func (c *Compiler) ParseFunctionDeclaration() (*data.FunctionDeclaration, error)
 	savedBytecode := c.b
 	defer restoreByteCode(c, savedBytecode)
 
-	funcDef := data.FunctionDeclaration{}
+	funcDef := data.Declaration{}
 
 	// Start with the function name,  which must be a valid
 	// symbol name.
@@ -284,11 +284,11 @@ func (c *Compiler) ParseFunctionDeclaration() (*data.FunctionDeclaration, error)
 		return nil, err
 	}
 
-	funcDef.Parameters = make([]data.FunctionParameter, len(paramList))
+	funcDef.Parameters = make([]data.Parameter, len(paramList))
 	for i, p := range paramList {
-		funcDef.Parameters[i] = data.FunctionParameter{
-			Name:     p.name,
-			ParmType: p.kind,
+		funcDef.Parameters[i] = data.Parameter{
+			Name: p.name,
+			Type: p.kind,
 		}
 	}
 
@@ -304,7 +304,7 @@ func (c *Compiler) ParseFunctionDeclaration() (*data.FunctionDeclaration, error)
 			break
 		}
 
-		funcDef.ReturnTypes = append(funcDef.ReturnTypes, theType)
+		funcDef.Returns = append(funcDef.Returns, theType)
 
 		if c.t.Peek(1) != tokenizer.CommaToken {
 			break

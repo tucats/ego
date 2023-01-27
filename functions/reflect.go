@@ -56,7 +56,7 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 				}
 
 				r = reflect.ValueOf(v).MethodByName("Declaration").Call([]reflect.Value{})
-				fd, _ := r[0].Interface().(*data.FunctionDeclaration)
+				fd, _ := r[0].Interface().(*data.Declaration)
 
 				return data.NewStructFromMap(map[string]interface{}{
 					data.TypeMDName:     "func",
@@ -324,7 +324,7 @@ func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // makeDeclaration constructs a native data structure describing a function declaration.
-func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
+func makeDeclaration(fd *data.Declaration) *data.Struct {
 	parameterType := data.TypeDefinition(data.NoName, data.StructType)
 	parameterType.DefineField("name", data.StringType)
 	parameterType.DefineField(data.TypeMDName, data.StringType)
@@ -334,14 +334,14 @@ func makeDeclaration(fd *data.FunctionDeclaration) *data.Struct {
 	for n, i := range fd.Parameters {
 		parameter := data.NewStruct(parameterType)
 		_ = parameter.Set("name", i.Name)
-		_ = parameter.Set(data.TypeMDName, i.ParmType.Name())
+		_ = parameter.Set(data.TypeMDName, i.Type.Name())
 
 		_ = parameters.Set(n, parameter)
 	}
 
-	returnTypes := make([]interface{}, len(fd.ReturnTypes))
+	returnTypes := make([]interface{}, len(fd.Returns))
 
-	for i, t := range fd.ReturnTypes {
+	for i, t := range fd.Returns {
 		returnTypes[i] = t.TypeString()
 	}
 

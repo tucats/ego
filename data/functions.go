@@ -5,20 +5,20 @@ import (
 	"strings"
 )
 
-type FunctionParameter struct {
-	Name     string
-	ParmType *Type
+type Parameter struct {
+	Name string
+	Type *Type
 }
 
 type Range [2]int
 
-type FunctionDeclaration struct {
-	Name         string
-	ReceiverType *Type
-	Parameters   []FunctionParameter
-	ReturnTypes  []*Type
-	Variadic     bool
-	ArgCount     Range
+type Declaration struct {
+	Name       string
+	Type       *Type
+	Parameters []Parameter
+	Returns    []*Type
+	Variadic   bool
+	ArgCount   Range
 }
 
 // dictionary is a descriptive dictionary that shows the declaration string for
@@ -145,12 +145,12 @@ func GetBuiltinDeclaration(name string) string {
 	return dictionary[name]
 }
 
-func (f FunctionDeclaration) String() string {
+func (f Declaration) String() string {
 	r := strings.Builder{}
 
-	if f.ReceiverType != nil {
+	if f.Type != nil {
 		ptr := ""
-		ft := f.ReceiverType
+		ft := f.Type
 
 		if ft.kind == PointerKind {
 			ptr = "*"
@@ -195,7 +195,7 @@ func (f FunctionDeclaration) String() string {
 		}
 
 		r.WriteRune(' ')
-		r.WriteString(p.ParmType.String())
+		r.WriteString(p.Type.String())
 	}
 
 	if variable {
@@ -204,14 +204,14 @@ func (f FunctionDeclaration) String() string {
 
 	r.WriteRune(')')
 
-	if len(f.ReturnTypes) > 0 {
+	if len(f.Returns) > 0 {
 		r.WriteRune(' ')
 
-		if len(f.ReturnTypes) > 1 {
+		if len(f.Returns) > 1 {
 			r.WriteRune('(')
 		}
 
-		for i, p := range f.ReturnTypes {
+		for i, p := range f.Returns {
 			if i > 0 {
 				r.WriteString(", ")
 			}
@@ -219,7 +219,7 @@ func (f FunctionDeclaration) String() string {
 			r.WriteString(p.ShortTypeString())
 		}
 
-		if len(f.ReturnTypes) > 1 {
+		if len(f.Returns) > 1 {
 			r.WriteRune(')')
 		}
 	}

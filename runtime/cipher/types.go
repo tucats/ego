@@ -24,107 +24,107 @@ func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("cipher", map[string]interface{}{
 		"Token": authType,
 		"New": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "New",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "name",
-						ParmType: data.StringType,
+						Name: "name",
+						Type: data.StringType,
 					},
 					{
-						Name:     "data",
-						ParmType: data.StringType,
+						Name: "data",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
-				ArgCount:    data.Range{1, 2},
+				Returns:  []*data.Type{data.StringType},
+				ArgCount: data.Range{1, 2},
 			},
 			Value: New,
 		},
 		"Decrypt": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Decrypt",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "encryptedText",
-						ParmType: data.StringType,
+						Name: "encryptedText",
+						Type: data.StringType,
 					},
 					{
-						Name:     "key",
-						ParmType: data.StringType,
+						Name: "key",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType, data.ErrorType},
+				Returns: []*data.Type{data.StringType, data.ErrorType},
 			},
 			Value: Decrypt,
 		},
 		"Encrypt": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Encrypt",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "text",
-						ParmType: data.StringType,
+						Name: "text",
+						Type: data.StringType,
 					},
 					{
-						Name:     "key",
-						ParmType: data.StringType,
+						Name: "key",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Encrypt,
 		},
 		"Hash": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Hash",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "text",
-						ParmType: data.StringType,
+						Name: "text",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Hash,
 		},
 		"Random": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Random",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "bits",
-						ParmType: data.IntType,
+						Name: "bits",
+						Type: data.IntType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
-				ArgCount:    data.Range{0, 1},
+				Returns:  []*data.Type{data.StringType},
+				ArgCount: data.Range{0, 1},
 			},
 			Value: Random,
 		},
 		"Extract": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Extract",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "token",
-						ParmType: data.StringType,
+						Name: "token",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{authType},
+				Returns: []*data.Type{authType},
 			},
 			Value: Extract,
 		},
 		"Validate": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Validate",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "token",
-						ParmType: data.StringType,
+						Name: "token",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.BoolType},
+				Returns: []*data.Type{data.BoolType},
 			},
 			Value: Validate,
 		},

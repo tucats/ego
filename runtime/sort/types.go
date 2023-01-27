@@ -11,141 +11,141 @@ func Initialize(s *symbols.SymbolTable) {
 
 	newpkg := data.NewPackageFromMap("sort", map[string]interface{}{
 		"Bytes": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Byte",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.ByteType),
+						Name: "data",
+						Type: data.ArrayType(data.ByteType),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.ByteType)},
+				Returns: []*data.Type{data.ArrayType(data.ByteType)},
 			},
 			Value: Bytes,
 		},
 		"Float32s": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Float32s",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.Float32Type),
+						Name: "data",
+						Type: data.ArrayType(data.Float32Type),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.Float32Type)},
+				Returns: []*data.Type{data.ArrayType(data.Float32Type)},
 			},
 			Value: Float32s,
 		},
 		"Float64s": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Float64s",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.Float64Type),
+						Name: "data",
+						Type: data.ArrayType(data.Float64Type),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.Float64Type)},
+				Returns: []*data.Type{data.ArrayType(data.Float64Type)},
 			},
 			Value: Float64s,
 		},
 		"Int32s": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Int32s",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.Int32Type),
+						Name: "data",
+						Type: data.ArrayType(data.Int32Type),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.Int32Type)},
+				Returns: []*data.Type{data.ArrayType(data.Int32Type)},
 			},
 			Value: Int32s,
 		},
 		"Int64s": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Int64s",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.Int64Type),
+						Name: "data",
+						Type: data.ArrayType(data.Int64Type),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.Int64Type)},
+				Returns: []*data.Type{data.ArrayType(data.Int64Type)},
 			},
 			Value: Int64s,
 		},
 		"Ints": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Ints",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.IntType),
+						Name: "data",
+						Type: data.ArrayType(data.IntType),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.IntType)},
+				Returns: []*data.Type{data.ArrayType(data.IntType)},
 			},
 			Value: Ints,
 		},
 		"Slice": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Slice",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.InterfaceType),
+						Name: "data",
+						Type: data.ArrayType(data.InterfaceType),
 					},
 					{
 						Name: "lessThan",
-						ParmType: data.FunctionType(&data.Function{
-							Declaration: &data.FunctionDeclaration{
+						Type: data.FunctionType(&data.Function{
+							Declaration: &data.Declaration{
 								Name: "",
-								Parameters: []data.FunctionParameter{
+								Parameters: []data.Parameter{
 									{
-										Name:     "data",
-										ParmType: data.ArrayType(data.InterfaceType),
+										Name: "data",
+										Type: data.ArrayType(data.InterfaceType),
 									},
 									{
-										Name:     "i",
-										ParmType: data.IntType,
+										Name: "i",
+										Type: data.IntType,
 									}, {
-										Name:     "j",
-										ParmType: data.IntType,
+										Name: "j",
+										Type: data.IntType,
 									},
 								},
-								ReturnTypes: []*data.Type{data.BoolType},
+								Returns: []*data.Type{data.BoolType},
 							},
 						}),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.InterfaceType)},
+				Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
 			},
 			Value: Slice,
 		},
 		"Sort": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Sort",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.InterfaceType),
+						Name: "data",
+						Type: data.ArrayType(data.InterfaceType),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.InterfaceType)},
+				Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
 			},
 			Value: Sort,
 		},
 		"Strings": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Strings",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "data",
-						ParmType: data.ArrayType(data.StringType),
+						Name: "data",
+						Type: data.ArrayType(data.StringType),
 					},
 				},
-				ReturnTypes: []*data.Type{data.ArrayType(data.StringType)},
+				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
 			Value: Strings,
 		},

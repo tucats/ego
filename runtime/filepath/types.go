@@ -9,81 +9,81 @@ import (
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("filepath", map[string]interface{}{
 		"Abs": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Abs",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "partialPath",
-						ParmType: data.StringType,
+						Name: "partialPath",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Abs,
 		},
 		"Base": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Base",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Base,
 		},
 		"Clean": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Clean",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Clean,
 		},
 		"Dir": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Dir",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Dir,
 		},
 		"Ext": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Ext",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "path",
-						ParmType: data.StringType,
+						Name: "path",
+						Type: data.StringType,
 					},
 				},
-				ReturnTypes: []*data.Type{data.StringType},
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: Ext,
 		},
 		"Join": data.Function{
-			Declaration: &data.FunctionDeclaration{
+			Declaration: &data.Declaration{
 				Name: "Join",
-				Parameters: []data.FunctionParameter{
+				Parameters: []data.Parameter{
 					{
-						Name:     "elements",
-						ParmType: data.StringType,
+						Name: "elements",
+						Type: data.StringType,
 					},
 				},
-				Variadic:    true,
-				ReturnTypes: []*data.Type{data.StringType},
+				Variadic: true,
+				Returns:  []*data.Type{data.StringType},
 			},
 			Value: Join,
 		},

@@ -20,10 +20,10 @@ func Initialize(s *symbols.SymbolTable) {
 
 	t.DefineFunctions(map[string]data.Function{
 		"String": {
-			Declaration: &data.FunctionDeclaration{
-				Name:         "String",
-				ReceiverType: t,
-				ReturnTypes:  []*data.Type{data.StringType},
+			Declaration: &data.Declaration{
+				Name:    "String",
+				Type:    t,
+				Returns: []*data.Type{data.StringType},
 			},
 			Value: String,
 		},

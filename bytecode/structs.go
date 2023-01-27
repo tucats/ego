@@ -262,10 +262,10 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 	case *data.Type:
-		var defn *data.FunctionDeclaration
+		var defn *data.Declaration
 		if actual, ok := v.(*ByteCode); ok {
 			defn = actual.declaration
-		} else if actual, ok := v.(*data.FunctionDeclaration); ok {
+		} else if actual, ok := v.(*data.Declaration); ok {
 			defn = actual
 		}
 
