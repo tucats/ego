@@ -35,10 +35,6 @@ func applyBaseURL(url string, this *data.Struct) string {
 }
 
 func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	urlString := data.String(args[0])
 
 	url, err := url.Parse(urlString)

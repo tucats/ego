@@ -12,7 +12,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -26,10 +25,6 @@ const passwordPromptPrefix = "password~"
 // reader. This cannot reside in the runtime/io package, because it depends on
 // the console reader function.
 func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	prompt := ""
 	if len(args) > 0 {
 		prompt = data.String(args[0])

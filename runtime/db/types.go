@@ -1,8 +1,6 @@
 package db
 
 import (
-	"sync"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -11,7 +9,6 @@ import (
 
 var rowsType *data.Type
 var clientType *data.Type
-var typeDefLock sync.Mutex
 
 // db.Client type specification.
 const dbTypeSpec = `
@@ -42,121 +39,116 @@ const (
 )
 
 func Initialize(s *symbols.SymbolTable) {
-	typeDefLock.Lock()
-	defer typeDefLock.Unlock()
+	rowT := initRowsTypeDef()
 
-	if clientType == nil {
-		rowT := initRowsTypeDef()
+	t, _ := compiler.CompileTypeSpec(dbTypeSpec)
 
-		t, _ := compiler.CompileTypeSpec(dbTypeSpec)
+	t.DefineFunction("Begin", &data.Declaration{
+		Name:    "Begin",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
+	}, Begin)
 
-		t.DefineFunction("Begin", &data.Declaration{
-			Name:    "Begin",
-			Type:    data.PointerType(t),
-			Returns: []*data.Type{data.ErrorType},
-		}, Begin)
+	t.DefineFunction("Commit", &data.Declaration{
+		Name:    "Commit",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
+	}, Commit)
 
-		t.DefineFunction("Commit", &data.Declaration{
-			Name:    "Commit",
-			Type:    data.PointerType(t),
-			Returns: []*data.Type{data.ErrorType},
-		}, Commit)
+	t.DefineFunction("Rollback", &data.Declaration{
+		Name:    "Rollback",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
+	}, Rollback)
 
-		t.DefineFunction("Rollback", &data.Declaration{
-			Name:    "Rollback",
-			Type:    data.PointerType(t),
-			Returns: []*data.Type{data.ErrorType},
-		}, Rollback)
-
-		t.DefineFunction("Query", &data.Declaration{
-			Name: "Query",
-			Type: data.PointerType(t),
-			Parameters: []data.Parameter{
-				{
-					Name: "sql",
-					Type: data.StringType,
-				},
+	t.DefineFunction("Query", &data.Declaration{
+		Name: "Query",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
+			{
+				Name: "sql",
+				Type: data.StringType,
 			},
-			Returns: []*data.Type{
-				data.PointerType(rowsType),
-				data.ErrorType,
-			},
-		}, Query)
+		},
+		Returns: []*data.Type{
+			data.PointerType(rowsType),
+			data.ErrorType,
+		},
+	}, Query)
 
-		t.DefineFunction("QueryResult", &data.Declaration{
-			Name: "Execute",
-			Type: data.PointerType(t),
-			Parameters: []data.Parameter{
-				{
-					Name: "sql",
-					Type: data.StringType,
-				},
+	t.DefineFunction("QueryResult", &data.Declaration{
+		Name: "Execute",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
+			{
+				Name: "sql",
+				Type: data.StringType,
 			},
-			Returns: []*data.Type{
-				data.ArrayType(data.ArrayType(data.InterfaceType)),
-				data.ErrorType,
+		},
+		Returns: []*data.Type{
+			data.ArrayType(data.ArrayType(data.InterfaceType)),
+			data.ErrorType,
+		},
+	}, QueryResult)
+
+	t.DefineFunction("Execute", &data.Declaration{
+		Name: "Execute",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
+			{
+				Name: "sql",
+				Type: data.StringType,
 			},
-		}, QueryResult)
+		},
+		Returns: []*data.Type{
+			data.IntType,
+			data.ErrorType,
+		},
+	}, Execute)
 
-		t.DefineFunction("Execute", &data.Declaration{
-			Name: "Execute",
-			Type: data.PointerType(t),
-			Parameters: []data.Parameter{
-				{
-					Name: "sql",
-					Type: data.StringType,
-				},
+	t.DefineFunction("Close", &data.Declaration{
+		Name:    "Close",
+		Type:    data.PointerType(t),
+		Returns: []*data.Type{data.ErrorType},
+	}, Close)
+
+	t.DefineFunction("AsStruct", &data.Declaration{
+		Name: "AsStruct",
+		Type: data.PointerType(t),
+		Parameters: []data.Parameter{
+			{
+				Name: "flag",
+				Type: data.BoolType,
 			},
-			Returns: []*data.Type{
-				data.IntType,
-				data.ErrorType,
-			},
-		}, Execute)
+		},
+		Returns: []*data.Type{data.VoidType},
+	}, AsStructures)
 
-		t.DefineFunction("Close", &data.Declaration{
-			Name:    "Close",
-			Type:    data.PointerType(t),
-			Returns: []*data.Type{data.ErrorType},
-		}, Close)
+	clientType = t.SetPackage("db")
 
-		t.DefineFunction("AsStruct", &data.Declaration{
-			Name: "AsStruct",
-			Type: data.PointerType(t),
-			Parameters: []data.Parameter{
-				{
-					Name: "flag",
-					Type: data.BoolType,
-				},
-			},
-			Returns: []*data.Type{data.VoidType},
-		}, AsStructures)
-
-		clientType = t.SetPackage("db")
-
-		newpkg := data.NewPackageFromMap("db", map[string]interface{}{
-			"New": data.Function{
-				Declaration: &data.Declaration{
-					Name: "New",
-					Parameters: []data.Parameter{
-						{
-							Name: "connection",
-							Type: data.StringType,
-						},
+	newpkg := data.NewPackageFromMap("db", map[string]interface{}{
+		"New": data.Function{
+			Declaration: &data.Declaration{
+				Name: "New",
+				Parameters: []data.Parameter{
+					{
+						Name: "connection",
+						Type: data.StringType,
 					},
-					Returns: []*data.Type{t},
 				},
-				Value: New,
+				Returns: []*data.Type{t},
 			},
-			"Client":           t,
-			"Rows":             rowT,
-			data.TypeMDKey:     data.PackageType("db"),
-			data.ReadonlyMDKey: true,
-		}).SetBuiltins(true)
+			Value: New,
+		},
+		"Client":           t,
+		"Rows":             rowT,
+		data.TypeMDKey:     data.PackageType("db"),
+		data.ReadonlyMDKey: true,
+	}).SetBuiltins(true)
 
-		pkg, _ := bytecode.GetPackage(newpkg.Name())
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name(), newpkg)
-	}
+	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg.Merge(newpkg)
+	s.Root().SetAlways(newpkg.Name(), newpkg)
 }
 
 func initRowsTypeDef() *data.Type {

@@ -43,10 +43,6 @@ func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // using the given key, an empty string is returned. It is an error if the string does
 // not contain a valid hexadecimal character string.
 func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	b, err := hex.DecodeString(data.String(args[0]))
 	if err != nil {
 		return data.List(nil, err), errors.NewError(err)
@@ -60,10 +56,6 @@ func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Random implements the cipher.Random() function which generates a random token
 // string value using the cryptographic random number generator.
 func Random(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	n := 32
 	if len(args) > 0 {
 		n = data.Int(args[0])

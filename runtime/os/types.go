@@ -91,6 +91,7 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.IntType,
 					},
 				},
+				ArgCount: data.Range{0, 1},
 			},
 			Value: Exit,
 		},

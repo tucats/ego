@@ -29,15 +29,37 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 	})
 
-	uuidTypeDef = t.SetPackage("exec")
+	uuidTypeDef = t.SetPackage("uuid")
 
 	newpkg := data.NewPackageFromMap("uuid", map[string]interface{}{
-		"New":              New,
-		"Nil":              Nil,
-		"Parse":            Parse,
-		"UUID":             t,
-		data.TypeMDKey:     data.PackageType("exec"),
-		data.ReadonlyMDKey: true,
+		"New": data.Function{
+			Declaration: &data.Declaration{
+				Name:    "New",
+				Returns: []*data.Type{t},
+			},
+			Value: New,
+		},
+		"Nil": data.Function{
+			Declaration: &data.Declaration{
+				Name:    "Nil",
+				Returns: []*data.Type{t},
+			},
+			Value: Nil,
+		},
+		"Parse": data.Function{
+			Declaration: &data.Declaration{
+				Name: "Parse",
+				Parameters: []data.Parameter{
+					{
+						Name: "text",
+						Type: data.StringType,
+					},
+				},
+				Returns: []*data.Type{t, data.ErrorType},
+			},
+			Value: Parse,
+		},
+		"UUID": t,
 	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())

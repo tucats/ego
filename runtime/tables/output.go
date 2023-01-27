@@ -13,10 +13,6 @@ import (
 // Pagination sets the page width and height for paginated output. Set the
 // values both to zero to disable pagination support.
 func Pagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 2 {
-		return nil, errors.ErrInvalidVariableArguments
-	}
-
 	h := data.Int(args[0])
 	w := data.Int(args[1])
 
@@ -35,12 +31,6 @@ func Pagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // in the output. The second is examined only if the headings value is true;
 // it controls whether an underline string is printed under the column names.
 func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 2 {
-		err := errors.ErrArgumentCount
-
-		return err, err
-	}
-
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
@@ -64,12 +54,6 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Align specifies alignment for a given column.
 func Align(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 2 {
-		err := errors.ErrArgumentCount
-
-		return err, err
-	}
-
 	t, err := getTable(s)
 	if err == nil {
 		column := 0
@@ -114,10 +98,6 @@ func Align(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // TablePrint prints a table to the default output, in the default --output-format
 // type (text or json).
 func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
@@ -134,10 +114,6 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // String formats a table as a string in the default output.
 func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {

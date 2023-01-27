@@ -70,10 +70,6 @@ func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Add implements t.Add(duration string).
 func Add(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Add()")
-	}
-
 	t, err := getTime(s)
 	if err == nil {
 		t2 := t.Add(*getDurationV(args[0]))
@@ -86,10 +82,6 @@ func Add(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Sub implements t.Sub(t time.Time).
 func Sub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Sub()")
-	}
-
 	t, err := getTime(s)
 	if err == nil {
 		d, err := getTimeV(args[0])

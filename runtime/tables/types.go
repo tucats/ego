@@ -1,8 +1,6 @@
 package tables
 
 import (
-	"sync"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -22,184 +20,180 @@ const (
 )
 
 var tableTypeDef *data.Type
-var tableTypeDefLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
-	tableTypeDefLock.Lock()
-	defer tableTypeDefLock.Unlock()
+	t, _ := compiler.CompileTypeSpec(tableTypeSpec)
 
-	if tableTypeDef == nil {
-		t, _ := compiler.CompileTypeSpec(tableTypeSpec)
-
-		t.DefineFunctions(map[string]data.Function{
-			"AddRow": {
-				Declaration: &data.Declaration{
-					Name:     "AddRow",
-					Variadic: true,
-					Type:     data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "value",
-							Type: data.InterfaceType,
-						},
-					},
-					Returns: []*data.Type{
-						data.ErrorType,
+	t.DefineFunctions(map[string]data.Function{
+		"AddRow": {
+			Declaration: &data.Declaration{
+				Name:     "AddRow",
+				Variadic: true,
+				Type:     data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "value",
+						Type: data.InterfaceType,
 					},
 				},
-				Value: AddRow,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: AddRow,
+		},
 
-			"Close": {
-				Declaration: &data.Declaration{
-					Name: "Close",
-					Type: data.PointerType(t),
-					Returns: []*data.Type{
-						data.ErrorType,
+		"Close": {
+			Declaration: &data.Declaration{
+				Name: "Close",
+				Type: data.PointerType(t),
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
+			},
+			Value: Close,
+		},
+
+		"Sort": {
+			Declaration: &data.Declaration{
+				Name:     "Sort",
+				Variadic: true,
+				Type:     data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "columnName",
+						Type: data.StringType,
 					},
 				},
-				Value: Close,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Sort,
+		},
 
-			"Sort": {
-				Declaration: &data.Declaration{
-					Name:     "Sort",
-					Variadic: true,
-					Type:     data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "columnName",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						data.ErrorType,
+		"Print": {
+			Declaration: &data.Declaration{
+				Name: "Print",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "format",
+						Type: data.StringType,
 					},
 				},
-				Value: Sort,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
+				ArgCount: data.Range{0, 1},
 			},
+			Value: TablePrint,
+		},
 
-			"Print": {
-				Declaration: &data.Declaration{
-					Name: "Print",
-					Type: data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "format",
-							Type: data.StringType,
-						},
+		"Format": {
+			Declaration: &data.Declaration{
+				Name: "Format",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "headings",
+						Type: data.BoolType,
 					},
-					Returns: []*data.Type{
-						data.ErrorType,
+					{
+						Name: "underlines",
+						Type: data.BoolType,
 					},
 				},
-				Value: TablePrint,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: TableFormat,
+		},
 
-			"Format": {
-				Declaration: &data.Declaration{
-					Name: "Format",
-					Type: data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "headings",
-							Type: data.BoolType,
-						},
-						{
-							Name: "underlines",
-							Type: data.BoolType,
-						},
+		"Align": {
+			Declaration: &data.Declaration{
+				Name: "Align",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "columnName",
+						Type: data.StringType,
 					},
-					Returns: []*data.Type{
-						data.ErrorType,
+					{
+						Name: "alignment",
+						Type: data.StringType,
 					},
 				},
-				Value: TableFormat,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Align,
+		},
 
-			"Align": {
-				Declaration: &data.Declaration{
-					Name: "Align",
-					Type: data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "columnName",
-							Type: data.StringType,
-						},
-						{
-							Name: "alignment",
-							Type: data.StringType,
-						},
-					},
-					Returns: []*data.Type{
-						data.ErrorType,
+		"String": {
+			Declaration: &data.Declaration{
+				Name: "String",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "format",
+						Type: data.StringType,
 					},
 				},
-				Value: Align,
+				Returns: []*data.Type{
+					data.StringType,
+					data.ErrorType,
+				},
+				ArgCount: data.Range{0, 1},
 			},
+			Value: String,
+		},
 
-			"String": {
-				Declaration: &data.Declaration{
-					Name: "String",
-					Type: data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "format",
-							Type: data.StringType,
-						},
+		"Pagination": {
+			Declaration: &data.Declaration{
+				Name: "Pagination",
+				Type: data.PointerType(t),
+				Parameters: []data.Parameter{
+					{
+						Name: "width",
+						Type: data.IntType,
 					},
-					Returns: []*data.Type{
-						data.StringType,
-						data.ErrorType,
+					{
+						Name: "height",
+						Type: data.IntType,
 					},
 				},
-				Value: String,
+				Returns: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Pagination,
+		},
+	})
 
-			"Pagination": {
-				Declaration: &data.Declaration{
-					Name: "Pagination",
-					Type: data.PointerType(t),
-					Parameters: []data.Parameter{
-						{
-							Name: "width",
-							Type: data.IntType,
-						},
-						{
-							Name: "height",
-							Type: data.IntType,
-						},
-					},
-					Returns: []*data.Type{
-						data.ErrorType,
+	tableTypeDef = t.SetPackage("tables")
+
+	newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
+		"New": data.Function{
+			Declaration: &data.Declaration{
+				Name: "New",
+				Parameters: []data.Parameter{
+					{
+						Name: "column",
+						Type: data.StringType,
 					},
 				},
-				Value: Pagination,
+				Variadic: true,
+				Returns:  []*data.Type{tableTypeDef},
 			},
-		})
+			Value: New,
+		},
+		"Table": tableTypeDef,
+	}).SetBuiltins(true)
 
-		tableTypeDef = t.SetPackage("tables")
-
-		newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
-			"New": data.Function{
-				Declaration: &data.Declaration{
-					Name: "New",
-					Parameters: []data.Parameter{
-						{
-							Name: "column",
-							Type: data.StringType,
-						},
-					},
-					Variadic: true,
-					Returns:  []*data.Type{tableTypeDef},
-				},
-				Value: New,
-			},
-			"Table": tableTypeDef,
-		}).SetBuiltins(true)
-
-		pkg, _ := bytecode.GetPackage(newpkg.Name())
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name(), newpkg)
-	}
+	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg.Merge(newpkg)
+	s.Root().SetAlways(newpkg.Name(), newpkg)
 }

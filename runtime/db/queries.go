@@ -21,7 +21,7 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return data.List(nil, err), err
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	this.SetAlways(rowCountFieldName, -1)
 
 	query := data.String(args[0])
@@ -65,7 +65,7 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		return data.List(nil, err), err
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	asStruct := data.Bool(this.GetAlways(asStructFieldName))
 	this.SetAlways(rowCountFieldName, -1)
 
@@ -194,7 +194,7 @@ func Execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	r, err := sqlResult.RowsAffected()
-	this := getThisStruct(s)
+	this := getThis(s)
 	this.SetAlways(rowCountFieldName, int(r))
 
 	ui.Log(ui.DBLogger, "%d rows affected", r)

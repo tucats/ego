@@ -93,10 +93,6 @@ var dictionary = map[string]string{
 	"functions.Upper":              "ToUpper(s string) string",
 	"functions.Tokenize":           "Tokenize(s string) []string",
 	"functions.Truncate":           "Truncate(s string, maxLength int) string",
-	"runtime.sortSlice":            "Slice(data []interface{}, func comparison(i, j int) bool) []interface{}",
-	"runtime/uuid.New":             "New() uuid.UUID",
-	"runtime/uuid.Nil":             "Nil() uuid.UUID",
-	"runtime/uuid.Parse":           "Parse( text string ) uuid.UUID",
 }
 
 func GetBuiltinDeclaration(name string) string {

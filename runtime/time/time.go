@@ -35,10 +35,6 @@ func Parse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // TimeFormat implements time.Format().
 func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Format()")
-	}
-
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -51,10 +47,6 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // SleepUntil implements time.SleepUntil().
 func SleepUntil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Sleep()")
-	}
-
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -68,10 +60,6 @@ func SleepUntil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // String implements t.String().
 func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("String()")
-	}
-
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -84,10 +72,6 @@ func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Since implements time.Since().
 func Since(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Since()")
-	}
-
 	// Get the time value stored in the argument
 	t, err := getTimeV(args[0])
 	if err != nil {

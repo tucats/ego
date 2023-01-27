@@ -28,10 +28,6 @@ type authToken struct {
 
 // Validate determines if a token is valid and returns true/false.
 func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	var err error
 
 	reportErr := false
@@ -95,10 +91,6 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Extract extracts the data from a token and returns it as a struct.
 func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	var err error
 
 	// Take the token value, and decode the hex string.
@@ -150,10 +142,6 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // New creates a new token with a username and a data payload.
 func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	var err error
 
 	// Create a new token object, with the username and an ID. If there was a

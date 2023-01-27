@@ -7,10 +7,6 @@ import (
 
 // Close closes a file.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount.In("Close()")
-	}
-
 	f, err := getFile("Close", s)
 	if err == nil {
 		e2 := f.Close()

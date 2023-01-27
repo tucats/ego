@@ -48,10 +48,6 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.Context("LookPath")
-	}
-
 	path, err := exec.LookPath(data.String(args[0]))
 	if err != nil {
 		return "", errors.NewError(err).Context("LookPath")
@@ -62,7 +58,7 @@ func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // getThis returns a map for the "this" object in the current
 // symbol table.
-func getThisStruct(s *symbols.SymbolTable) *data.Struct {
+func getThis(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil

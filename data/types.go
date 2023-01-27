@@ -304,7 +304,9 @@ func (t Type) ShortTypeString() string {
 	return t.String()
 }
 
-// Produce a short-form string
+// Produce a short-form string of the Type. In short (!) if
+// the type is a declared type, we show it's name. Otherwise,
+// if it's a primitive type, we show the text of the type.
 func (t Type) ShortString() string {
 	if t.kind == TypeKind {
 		return t.name

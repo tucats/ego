@@ -70,6 +70,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns: []*data.Type{
 					data.ErrorType,
 				},
+				ArgCount: data.Range{1, 2},
 			},
 			Value: Post,
 		},
@@ -218,8 +219,19 @@ func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
 		"New": data.Function{
 			Declaration: &data.Declaration{
-				Name:    "New",
-				Returns: []*data.Type{data.PointerType(restType)},
+				Name: "New",
+				Parameters: []data.Parameter{
+					{
+						Name: "username",
+						Type: data.StringType,
+					},
+					{
+						Name: "password",
+						Type: data.StringType,
+					},
+				},
+				Returns:  []*data.Type{data.PointerType(restType)},
+				ArgCount: data.Range{0, 2},
 			},
 			Value: New,
 		},
@@ -244,8 +256,13 @@ func Initialize(s *symbols.SymbolTable) {
 						Name: "url",
 						Type: data.StringType,
 					},
+					{
+						Name: "template",
+						Type: data.StringType,
+					},
 				},
-				Returns: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+				ArgCount: data.Range{1, 2},
+				Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
 			},
 			Value: ParseURL,
 		},

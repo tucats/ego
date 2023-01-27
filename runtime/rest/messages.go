@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -67,10 +66,6 @@ var httpStatusCodeMessages = map[int]string{
 }
 
 func Status(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	code := data.Int(args[0])
 	if text, ok := httpStatusCodeMessages[code]; ok {
 		return text, nil

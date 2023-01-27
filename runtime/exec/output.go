@@ -14,10 +14,6 @@ import (
 
 // Output implements the command.Output functionality.
 func Output(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
@@ -26,7 +22,7 @@ func Output(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Get the Ego structure and the embedded exec.Cmd structure
 	cmd := &exec.Cmd{}
 
-	cmdStruct := getThisStruct(s)
+	cmdStruct := getThis(s)
 	if i, ok := cmdStruct.Get("cmd"); ok {
 		cmd, _ = i.(*exec.Cmd)
 	}

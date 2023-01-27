@@ -66,16 +66,12 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
 func AsStructures(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	_, _, err := client(s)
 	if err != nil {
 		return nil, err
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	this.SetAlways(asStructFieldName, data.Bool(args[0]))
 
 	return this, nil
@@ -84,10 +80,6 @@ func AsStructures(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // Close closes the database connection, frees up any resources held, and resets the
 // handle contents to prevent re-using the connection.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	db, tx, err := client(s)
 	if err != nil {
 		return nil, err
@@ -99,7 +91,7 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	db.Close()
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	this.SetAlways(clientFieldName, nil)
 	this.SetAlways(constrFieldName, "")
 	this.SetAlways(transactionFieldName, nil)
@@ -139,9 +131,9 @@ func client(symbols *symbols.SymbolTable) (*sql.DB, *sql.Tx, error) {
 	return nil, nil, errors.ErrNoFunctionReceiver
 }
 
-// getThis returns a map for the "this" object in the current
+// getThis returns the struct for the "this" object in the current
 // symbol table.
-func getThisStruct(s *symbols.SymbolTable) *data.Struct {
+func getThis(s *symbols.SymbolTable) *data.Struct {
 	t, ok := s.Get(defs.ThisVariable)
 	if !ok {
 		return nil

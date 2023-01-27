@@ -6,7 +6,6 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -19,10 +18,6 @@ var allowInsecure = false
 // This is the default mode for HTTPS connections. During debugging, you may wish to
 // turn this off when using self-generated certificates.
 func Verify(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	this := getThis(s)
 	verify := allowInsecure
 
@@ -46,10 +41,6 @@ func Auth(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	this := getThis(s)
 
-	if len(args) != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	user := data.String(args[0])
 	pass := data.String(args[1])
 
@@ -67,10 +58,6 @@ func Token(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	this := getThis(s)
-
-	if len(args) > 1 {
-		return nil, errors.ErrArgumentCount
-	}
 
 	token := settings.Get(defs.LogonTokenSetting)
 

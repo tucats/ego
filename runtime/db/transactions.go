@@ -19,7 +19,7 @@ func Begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	d, tx, err := client(s)
 	if err == nil {
-		this := getThisStruct(s)
+		this := getThis(s)
 
 		if tx == nil {
 			var e2 error
@@ -46,7 +46,7 @@ func Rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	_, tx, err := client(s)
 	if err == nil {
-		this := getThisStruct(s)
+		this := getThis(s)
 
 		if tx != nil {
 			err = tx.Rollback()
@@ -74,7 +74,7 @@ func Commit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	_, tx, err := client(s)
 	if err == nil {
-		this := getThisStruct(s)
+		this := getThis(s)
 
 		if tx != nil {
 			err = tx.Commit()

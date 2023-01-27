@@ -14,7 +14,7 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		return nil, errors.ErrArgumentCount
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 
 	err := rows.Close()
@@ -32,7 +32,7 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return nil, errors.ErrArgumentCount
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	rows := this.GetAlways(rowsFieldName).(*sql.Rows)
 	result := make([]interface{}, 0)
 
@@ -55,7 +55,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, errors.ErrArgumentCount
 	}
 
-	this := getThisStruct(s)
+	this := getThis(s)
 	if this == nil {
 		return nil, errors.ErrNoFunctionReceiver
 	}
@@ -69,11 +69,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	this := getThisStruct(s)
+	this := getThis(s)
 	if this == nil {
 		return nil, errors.ErrNoFunctionReceiver
 	}

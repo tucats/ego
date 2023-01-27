@@ -31,10 +31,6 @@ func Get(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	url := applyBaseURL(data.String(args[0]), this)
 	r := client.NewRequest()
 	isJSON := false
@@ -91,10 +87,6 @@ func Get(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Post implements the Post() rest function.
 func Post(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
-
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.ErrArgumentCount
-	}
 
 	client, err := getClient(s)
 	if err != nil {
@@ -176,10 +168,6 @@ func Post(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Delete implements the Delete() rest function.
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
-
-	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.ErrArgumentCount
-	}
 
 	client, err := getClient(s)
 	if err != nil {

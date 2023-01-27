@@ -18,10 +18,6 @@ import (
 // Readfile implements os.REadFile() which reads a file contents into a
 // byte array value.
 func Readfile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	name := data.String(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -39,10 +35,6 @@ func Readfile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // Writefile implements os.Writefile() writes a byte array (or string) to a file.
 func Writefile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	fileName := sandboxName(data.String(args[0]))
 
 	if a, ok := args[1].(*data.Array); ok {
@@ -68,10 +60,6 @@ func Writefile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 // DeleteFile deletes a file.
 func Remove(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	fileName := data.String(args[0])
 	fileName = sandboxName(fileName)
 

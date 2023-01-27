@@ -16,10 +16,6 @@ import (
 // a name with a leading ":" is left-aligned, and a trailing":" is right-
 // aligned. In either case the ":" is removed from the name.
 func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	// Fetch the arguments as column headings. If the value is passed by array,
 	// extract each array member as a column name.
 	headings := []string{}
@@ -92,10 +88,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Close closes the table handle, and releases any memory resources
 // being held by the table.
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	_, err := getTable(s)
 	if err != nil {
 		return nil, err
@@ -113,10 +105,6 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
 func AddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {

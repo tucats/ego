@@ -85,10 +85,6 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 
 // ReadString reads the next line from the file as a string.
 func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount.In("ReadString()")
-	}
-
 	f, err := getFile("ReadString", s)
 	if err != nil {
 		return data.List(nil, err), err
@@ -115,10 +111,6 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var e2 error
 
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("WriteString()")
-	}
-
 	length := 0
 
 	f, err := getFile("WriteString", s)
@@ -134,10 +126,6 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // Write writes an arbitrary binary object to a file.
 func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Write()")
-	}
-
 	var buf bytes.Buffer
 
 	enc := gob.NewEncoder(&buf)
@@ -165,10 +153,6 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Write writes an arbitrary binary object to a file at an offset.
 func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
-
-	if len(args) != 2 {
-		return nil, errors.ErrArgumentCount.In("WriteAt()")
-	}
 
 	offset := data.Int(args[1])
 	enc := gob.NewEncoder(&buf)

@@ -16,10 +16,6 @@ import (
 // package here in the runtime package, and are manually added to the dictionary when the
 // run command is invoked.
 func Slice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	array, ok := args[0].(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType

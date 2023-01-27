@@ -16,15 +16,15 @@ import (
 
 // New implements the New() rest function.
 func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 && len(args) != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	client := resty.New()
 
-	if len(args) == 2 {
+	if len(args) > 0 {
 		username := data.String(args[0])
-		password := data.String(args[1])
+		password := ""
+
+		if len(args) > 1 {
+			password = data.String(args[1])
+		}
 
 		client.SetBasicAuth(username, password)
 		client.SetDisableWarn(true)
@@ -34,7 +34,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			client.SetAuthToken(token)
 		}
 	}
-
 
 	if config, err := GetTLSConfiguration(); err != nil {
 		return nil, err
@@ -54,10 +53,6 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	c, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -76,10 +71,6 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // Debug implements the Debug() rest function. This specifies a boolean value that
 // enables or disables debug logging for the client.
 func Debug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -97,10 +88,6 @@ func Debug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // type that the REST service expects. In it's simplest form, this can be "application/text"
 // for free text responses, or "application/json" for JSON data payloads.
 func Media(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	_, err := getClient(s)
 	if err != nil {
 		return nil, err

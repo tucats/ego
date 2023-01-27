@@ -21,7 +21,7 @@ func Run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Get the Ego structure and the embedded exec.Cmd structure
 	cmd := &exec.Cmd{}
 
-	cmdStruct := getThisStruct(s)
+	cmdStruct := getThis(s)
 	if i, ok := cmdStruct.Get("cmd"); ok {
 		cmd, _ = i.(*exec.Cmd)
 	}

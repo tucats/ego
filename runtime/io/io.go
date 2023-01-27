@@ -14,10 +14,6 @@ import (
 
 // Expand expands a list of file or path names into a list of files.
 func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	path := data.String(args[0])
 	ext := ""
 
