@@ -119,6 +119,17 @@ func ArrayType(t *Type) *Type {
 	}
 }
 
+// Construct a function type value.
+func FunctionType(f *Function) *Type {
+	return &Type{
+		name: f.Declaration.Name,
+		kind: FunctionKind,
+		functions: map[string]Function{
+			f.Declaration.Name: *f,
+		},
+	}
+}
+
 // Construct a type that is a pointer to the given type.
 func PointerType(t *Type) *Type {
 	return &Type{

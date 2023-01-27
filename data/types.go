@@ -31,11 +31,11 @@ const (
 	ErrorKind
 	ChanKind
 	MapKind
-	InterfaceKind // alias for defs.Any
-	PointerKind   // Pointer to some type
-	ArrayKind     // Array of some type
-	PackageKind   // A package
-
+	InterfaceKind     // alias for defs.Any
+	PointerKind       // Pointer to some type
+	ArrayKind         // Array of some type
+	PackageKind       // A package
+	FunctionKind      // A function declaration
 	minimumNativeType // Before list of Go-native types mapped to Ego types
 	WaitGroupKind
 	MutexKind
@@ -60,6 +60,7 @@ const (
 	InterfaceTypeName = "interface{}"
 	ErrorTypeName     = "error"
 	VoidTypeName      = "void"
+	FunctionTypeName  = "func"
 	UndefinedTypeName = "undefined"
 )
 
@@ -188,7 +189,7 @@ func (t Type) FunctionNameList() string {
 		t = *t.valueType
 	}
 
-	if len(t.functions) == 0 {
+	if len(t.functions) == 0 || t.kind == FunctionKind {
 		return ""
 	}
 
@@ -306,6 +307,11 @@ func (t Type) ShortTypeString() string {
 // Produce a human-readable version of the type definition.
 func (t Type) String() string {
 	switch t.kind {
+	case FunctionKind:
+		f := t.functions[t.name]
+
+		return "func" + f.Declaration.String()
+
 	case TypeKind:
 		name := t.name
 		if t.pkg != "" {

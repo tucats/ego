@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"sync"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
@@ -22,217 +20,239 @@ type Client struct {
 }`
 
 var restType *data.Type
-var restTypeLock sync.Mutex
 
 func Initialize(s *symbols.SymbolTable) {
-	restTypeLock.Lock()
-	defer restTypeLock.Unlock()
+	t, _ := compiler.CompileTypeSpec(restTypeSpec)
 
-	if restType == nil {
-		t, _ := compiler.CompileTypeSpec(restTypeSpec)
-
-		t.DefineFunctions(map[string]data.Function{
-			"Close": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Close",
-					ReceiverType: t,
-					ReturnTypes: []*data.Type{
-						data.ErrorType,
-					},
+	t.DefineFunctions(map[string]data.Function{
+		"Close": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Close",
+				ReceiverType: t,
+				ReturnTypes: []*data.Type{
+					data.ErrorType,
 				},
-				Value: Close,
 			},
+			Value: Close,
+		},
 
-			"Get": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Get",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "endpoint",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						data.ErrorType,
+		"Get": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Get",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "endpoint",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Get,
+				ReturnTypes: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Get,
+		},
 
-			"Post": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Post",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "endpoint",
-							ParmType: data.StringType,
-						},
-						{
-							Name:     "body",
-							ParmType: data.InterfaceType,
-						},
+		"Post": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Post",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "endpoint",
+						ParmType: data.StringType,
 					},
-					ReturnTypes: []*data.Type{
-						data.ErrorType,
+					{
+						Name:     "body",
+						ParmType: data.InterfaceType,
 					},
 				},
-				Value: Post,
+				ReturnTypes: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Post,
+		},
 
-			"Delete": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Delete",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "endpoint",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						data.ErrorType,
+		"Delete": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Delete",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "endpoint",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Delete,
+				ReturnTypes: []*data.Type{
+					data.ErrorType,
+				},
 			},
+			Value: Delete,
+		},
 
-			"Base": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Base",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "url",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						t,
+		"Base": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Base",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "url",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Base,
+				ReturnTypes: []*data.Type{
+					t,
+				},
 			},
+			Value: Base,
+		},
 
-			"Debug": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Debug",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "flag",
-							ParmType: data.BoolType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						t,
+		"Debug": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Debug",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "flag",
+						ParmType: data.BoolType,
 					},
 				},
-				Value: Debug,
+				ReturnTypes: []*data.Type{
+					t,
+				},
 			},
+			Value: Debug,
+		},
 
-			"Media": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Media",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "mediaType",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						t,
+		"Media": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Media",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "mediaType",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Media},
-			"Token": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Token",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "tokenString",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						t,
-					},
+				ReturnTypes: []*data.Type{
+					t,
 				},
-				Value: Token,
 			},
-
-			"Auth": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Auth",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "username",
-							ParmType: data.StringType,
-						},
-						{
-							Name:     "password",
-							ParmType: data.StringType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						t,
+			Value: Media},
+		"Token": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Token",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "tokenString",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Auth,
+				ReturnTypes: []*data.Type{
+					t,
+				},
 			},
+			Value: Token,
+		},
 
-			"Verify": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Verify",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "flag",
-							ParmType: data.BoolType,
-						},
+		"Auth": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Auth",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "username",
+						ParmType: data.StringType,
 					},
-					ReturnTypes: []*data.Type{
-						t,
+					{
+						Name:     "password",
+						ParmType: data.StringType,
 					},
 				},
-				Value: Verify,
+				ReturnTypes: []*data.Type{
+					t,
+				},
 			},
+			Value: Auth,
+		},
 
-			"Status": {
-				Declaration: &data.FunctionDeclaration{
-					Name:         "Status",
-					ReceiverType: t,
-					Parameters: []data.FunctionParameter{
-						{
-							Name:     "code",
-							ParmType: data.IntType,
-						},
-					},
-					ReturnTypes: []*data.Type{
-						data.StringType,
+		"Verify": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Verify",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "flag",
+						ParmType: data.BoolType,
 					},
 				},
-				Value: Status,
+				ReturnTypes: []*data.Type{
+					t,
+				},
 			},
-		})
+			Value: Verify,
+		},
 
-		restType = t.SetPackage("rest")
+		"Status": {
+			Declaration: &data.FunctionDeclaration{
+				Name:         "Status",
+				ReceiverType: t,
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "code",
+						ParmType: data.IntType,
+					},
+				},
+				ReturnTypes: []*data.Type{
+					data.StringType,
+				},
+			},
+			Value: Status,
+		},
+	})
 
-		newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
-			"New":              New,
-			"Status":           Status,
-			"ParseURL":         ParseURL,
-			"Client":           restType,
-			data.TypeMDKey:     data.PackageType("rest"),
-			data.ReadonlyMDKey: true,
-		}).SetBuiltins(true)
+	restType = t.SetPackage("rest")
 
-		pkg, _ := bytecode.GetPackage(newpkg.Name())
-		pkg.Merge(newpkg)
-		s.Root().SetAlways(newpkg.Name(), newpkg)
-	}
+	newpkg := data.NewPackageFromMap("rest", map[string]interface{}{
+		"New": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name:        "New",
+				ReturnTypes: []*data.Type{data.PointerType(restType)},
+			},
+			Value: New,
+		},
+		"Status": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "Status",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "code",
+						ParmType: data.IntType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.StringType},
+			},
+			Value: Status,
+		},
+		"ParseURL": data.Function{
+			Declaration: &data.FunctionDeclaration{
+				Name: "ParseURL",
+				Parameters: []data.FunctionParameter{
+					{
+						Name:     "url",
+						ParmType: data.StringType,
+					},
+				},
+				ReturnTypes: []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+			},
+			Value: ParseURL,
+		},
+		"Client": restType,
+	}).SetBuiltins(true)
+
+	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg.Merge(newpkg)
+	s.Root().SetAlways(newpkg.Name(), newpkg)
 }

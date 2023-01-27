@@ -181,9 +181,21 @@ func Initialize(s *symbols.SymbolTable) {
 		tableTypeDef = t.SetPackage("tables")
 
 		newpkg := data.NewPackageFromMap("tables", map[string]interface{}{
-			"New":              New,
-			data.TypeMDKey:     data.PackageType("tables"),
-			data.ReadonlyMDKey: true,
+			"New": data.Function{
+				Declaration: &data.FunctionDeclaration{
+					Name: "New",
+					Parameters: []data.FunctionParameter{
+						{
+							Name:     "column",
+							ParmType: data.StringType,
+						},
+					},
+					Variadic:    true,
+					ReturnTypes: []*data.Type{tableTypeDef},
+				},
+				Value: New,
+			},
+			"Table": tableTypeDef,
 		}).SetBuiltins(true)
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name())
