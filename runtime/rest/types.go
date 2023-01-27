@@ -229,7 +229,7 @@ func Initialize(s *symbols.SymbolTable) {
 			"Client":           restType,
 			data.TypeMDKey:     data.PackageType("rest"),
 			data.ReadonlyMDKey: true,
-		})
+		}).SetBuiltins(true)
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name())
 		pkg.Merge(newpkg)

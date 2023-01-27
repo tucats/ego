@@ -429,8 +429,25 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			}
 		}
 
-		uniqueNames["os"] = true
-		uniqueNames["io"] = true
+		// Add the list of packages that live in the runtime
+		// area.
+		for _, name := range []string{
+			"base64",
+			"cipher",
+			"db",
+			"errors",
+			"exec",
+			"filepath",
+			"io",
+			"os",
+			"rest",
+			"sort",
+			"tables",
+			"time",
+			"util",
+		} {
+			uniqueNames[name] = true
+		}
 	} else {
 		for _, p := range requiredPackages {
 			uniqueNames[p] = true
@@ -456,7 +473,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		text := fmt.Sprintf("import \"%s\"", packageName)
 
 		_, err := c.CompileString(packageName, text)
-		if err == nil {
+		if err != nil && firstError == nil {
 			firstError = err
 		}
 	}

@@ -143,7 +143,7 @@ func (c *Compiler) compileImport() error {
 			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
-				if packageDef.Builtins() {
+				if !packageDef.IsEmpty() {
 					c.t.Advance(1)
 
 					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {

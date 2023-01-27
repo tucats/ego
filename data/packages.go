@@ -104,7 +104,7 @@ func (p *Package) IsEmpty() bool {
 		return true
 	}
 
-	return len(p.items) > 0
+	return len(p.items) == 0
 }
 
 // String formats the package as a string value, to support "%v" operations.
@@ -187,7 +187,15 @@ func (p *Package) Get(key string) (interface{}, bool) {
 
 // Merge adds any entries from a package to the current package that do not already
 // exist.
-func (p *Package) Merge(source *Package) {
+func (p *Package) Merge(source *Package) *Package {
+	if source.builtins {
+		p.builtins = true
+	}
+
+	if source.imported {
+		p.imported = true
+	}
+
 	keys := source.Keys()
 	for _, key := range keys {
 		if _, found := p.Get(key); !found {
@@ -196,6 +204,8 @@ func (p *Package) Merge(source *Package) {
 			ui.Log(ui.CompilerLogger, "... merging key %s from existing package", key)
 		}
 	}
+
+	return p
 }
 
 func (p *Package) Name() string {

@@ -139,7 +139,7 @@ func Initialize(s *symbols.SymbolTable) {
 			"Rows":             rowT,
 			data.TypeMDKey:     data.PackageType("db"),
 			data.ReadonlyMDKey: true,
-		})
+		}).SetBuiltins(true)
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name())
 		pkg.Merge(newpkg)

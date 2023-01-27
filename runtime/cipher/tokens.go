@@ -1,8 +1,6 @@
-package functions
+package cipher
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"time"
@@ -28,40 +26,12 @@ type authToken struct {
 	AuthID  uuid.UUID
 }
 
-// Hash implements the cipher.hash() function. For an arbitrary string
-// value, it computes a crypotraphic hash of the value, and returns it
-// as a 32-character string containing the hexadecimal hash value. Hashes
-// are irreversible.
-func Hash(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return util.Hash(data.String(args[0])), nil
-}
-
-// Encrypt implements the cipher.Encrypt() function. This takes a string value and
-// a string key, and encrypts the string using the key.
-func Encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	b, err := util.Encrypt(data.String(args[0]), data.String(args[1]))
-	if err != nil {
-		return b, err
-	}
-
-	return hex.EncodeToString([]byte(b)), nil
-}
-
-// Decrypt implements the cipher.Decrypt() function. It accepts an encrypted string
-// and a key, and attempts to decode the string. If the string is not a valid encryption
-// using the given key, an empty string is returned. It is an error if the string does
-// not contain a valid hexadecimal character string.
-func Decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	b, err := hex.DecodeString(data.String(args[0]))
-	if err != nil {
-		return nil, errors.NewError(err)
-	}
-
-	return util.Decrypt(string(b), data.String(args[1]))
-}
-
 // Validate determines if a token is valid and returns true/false.
 func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.ErrArgumentCount
+	}
+
 	var err error
 
 	reportErr := false
@@ -123,8 +93,12 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// Extract extracts the data from a token and returns it as a struct.
-func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Token extracts the data from a token and returns it as a struct.
+func Token(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, errors.ErrArgumentCount
+	}
+
 	var err error
 
 	// Take the token value, and decode the hex string.
@@ -173,8 +147,12 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.NewStructFromMap(r), err
 }
 
-// CreateToken creates a new token with a username and a data payload.
-func CreateToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Create creates a new token with a username and a data payload.
+func Create(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if len(args) < 1 || len(args) > 2 {
+		return nil, errors.ErrArgumentCount
+	}
+
 	var err error
 
 	// Create a new token object, with the username and an ID. If there was a
@@ -239,48 +217,4 @@ func getTokenKey() string {
 	}
 
 	return key
-}
-
-// Random implements the cipher.Random() function which generates a random token
-// string value using the cryptographic random number generator.
-func CipherRandom(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	n := 32
-	if len(args) > 0 {
-		n = data.Int(args[0])
-	}
-
-	b := make([]byte, n)
-
-	if _, err := rand.Read(b); err != nil {
-		return nil, errors.NewError(err)
-	}
-
-	return base64.URLEncoding.EncodeToString(b), nil
-}
-
-// EncodeBase64 encodes a string as a BASE64 string using standard encoding rules.
-func EncodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	text := data.String(args[0])
-
-	return base64.StdEncoding.EncodeToString([]byte(text)), nil
-}
-
-// DecodeBase64 encodes a string as a BASE64 string using standard encoding rules.
-func DecodeBase64(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
-	text := data.String(args[0])
-
-	b, err := base64.StdEncoding.DecodeString(text)
-	if err != nil {
-		return nil, errors.NewError(err)
-	}
-
-	return string(b), nil
 }

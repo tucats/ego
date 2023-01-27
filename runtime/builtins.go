@@ -5,9 +5,12 @@ import (
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/runtime/base64"
+	"github.com/tucats/ego/runtime/cipher"
 	"github.com/tucats/ego/runtime/db"
 	"github.com/tucats/ego/runtime/errors"
 	"github.com/tucats/ego/runtime/exec"
+	"github.com/tucats/ego/runtime/filepath"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/rest"
@@ -24,9 +27,12 @@ import (
 func AddBuiltinPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
+	base64.Initialize(s)
+	cipher.Initialize(s)
+	db.Initialize(s)
 	errors.InitializeErrors(s)
 	exec.Initialize(s)
-	db.Initialize(s)
+	filepath.Initialize(s)
 	io.Initialize(s)
 	os.Initialize(s)
 	rest.Initialize(s)

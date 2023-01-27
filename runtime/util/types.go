@@ -18,7 +18,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"SetLogger":    SetLogger,
 		"Symbols":      Symbols,
 		"SymbolTables": Tables,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ = bytecode.GetPackage("util")
 	pkg.Merge(newpkg)

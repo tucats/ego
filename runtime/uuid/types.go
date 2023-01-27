@@ -38,7 +38,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"UUID":             t,
 		data.TypeMDKey:     data.PackageType("exec"),
 		data.ReadonlyMDKey: true,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())
 	pkg.Merge(newpkg)

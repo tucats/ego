@@ -184,7 +184,7 @@ func Initialize(s *symbols.SymbolTable) {
 			"New":              New,
 			data.TypeMDKey:     data.PackageType("tables"),
 			data.ReadonlyMDKey: true,
-		})
+		}).SetBuiltins(true)
 
 		pkg, _ := bytecode.GetPackage(newpkg.Name())
 		pkg.Merge(newpkg)

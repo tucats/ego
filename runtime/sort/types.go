@@ -19,7 +19,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"Slice":    Slice,
 		"Sort":     Sort,
 		"Strings":  Strings,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ = bytecode.GetPackage(newpkg.Name())
 	pkg.Merge(newpkg)

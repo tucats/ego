@@ -37,7 +37,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"Cmd":              t,
 		data.TypeMDKey:     data.PackageType("exec"),
 		data.ReadonlyMDKey: true,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())
 	pkg.Merge(newpkg)

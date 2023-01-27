@@ -118,7 +118,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"Prompt":           Prompt,
 		data.TypeMDKey:     data.PackageType("io"),
 		data.ReadonlyMDKey: true,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())
 	pkg.Merge(newpkg)

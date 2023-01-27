@@ -38,7 +38,7 @@ func Initialize(s *symbols.SymbolTable) {
 		"Time":          t,
 		"Duration":      durationType,
 		"Reference":     basicLayout,
-	})
+	}).SetBuiltins(true)
 
 	pkg, _ := bytecode.GetPackage(newpkg.Name())
 	pkg.Merge(newpkg)
