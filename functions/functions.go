@@ -69,7 +69,7 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"$cast":  {Min: 2, Max: 2, F: InternalCast},
 	"$new":   {Min: 1, Max: 1, F: ReflectNew},
 	"append": {Min: 2, Max: Any, F: Append},
-	"close":  {Min: 1, Max: 1, F: CloseAny},
+	"close":  {Min: 1, Max: 1, F: Close},
 	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true},
 	//"error":  {Min: 1, Max: 1, F: Signal},
 	"index": {Min: 2, Max: 2, F: Index},

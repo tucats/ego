@@ -107,6 +107,20 @@ func List(items ...interface{}) Values {
 	return Values{Items: items}
 }
 
+// Get retrieves a named attribute (a field or a method)
+// from the type.
+func (t Type) Get(name string) interface{} {
+	if v, found := t.fields[name]; found {
+		return v
+	}
+
+	if v, found := t.functions[name]; found {
+		return v
+	}
+
+	return nil
+}
+
 // ValidateFunctions compares the functions for a given type against
 // the functions for an associated interface definition.
 func (t Type) ValidateFunctions(i *Type) error {
