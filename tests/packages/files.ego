@@ -2,7 +2,7 @@
 @test "packages: io.File object type"
 
 {
-    name := "file-" + uuid.New()
+    name := "file-" + uuid.New().String()
 
     f := io.Open(name, "create")
     f.WriteString("test")

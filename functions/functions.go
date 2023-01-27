@@ -174,9 +174,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"time.reference":      {V: "Mon Jan 2 15:04:05 -0700 MST 2006"},
 	"time.Since":          {Min: 1, Max: 1, F: TimeSince},
 	"time.Sleep":          {Min: 1, Max: 1, F: Sleep},
-	"uuid.New":            {Min: 0, Max: 0, F: UUIDNew},
-	"uuid.Nil":            {Min: 0, Max: 0, F: UUIDNil},
-	"uuid.Parse":          {Min: 1, Max: 1, F: UUIDParse, ErrReturn: true},
 }
 
 // AddBuiltins adds or overrides the default function library in the symbol map.

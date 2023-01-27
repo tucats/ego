@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/runtime/sort"
 	"github.com/tucats/ego/runtime/tables"
 	"github.com/tucats/ego/runtime/util"
+	"github.com/tucats/ego/runtime/uuid"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -31,6 +32,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	io.Initialize(s)
 	os.Initialize(s)
 	util.Initialize(s)
+	uuid.Initialize(s)
 }
 
 func GetDeclaration(fname string) *data.FunctionDeclaration {

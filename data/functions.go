@@ -160,6 +160,9 @@ var dictionary = map[string]string{
 	"runtime/sort.Sort":            "Sort(data []interface{}) []interface{}",
 	"runtime/sort.Strings":         "Strings(data []string) []string",
 	"runtime/tables.New":           "New(columns []string) Table",
+	"runtime/uuid.New":             "New() uuid.UUID",
+	"runtime/uuid.Nil":             "Nil() uuid.UUID",
+	"runtime/uuid.Parse":           "Parse( text string ) uuid.UUID",
 }
 
 func GetBuiltinDeclaration(name string) string {
