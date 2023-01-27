@@ -12,10 +12,14 @@ var timeType *data.Type
 var durationType *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
+	durationType = data.TypeDefinition("Duration", data.StructureType()).
+		DefineField("duration", data.Int64Type).
+		SetPackage("time")
+
+	durationType.DefineFunction("String", nil, DurationString)
+
 	structType := data.StructureType()
 	structType.DefineField("time", data.InterfaceType)
-
-	durationType = data.TypeDefinition("Duration", data.Int64Type)
 
 	t := data.TypeDefinition("Time", structType)
 	t.DefineFunction("Add", nil, Add)

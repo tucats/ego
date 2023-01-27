@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-
 // Now implements time.Now().
 func Now(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := time.Now()
@@ -32,18 +31,6 @@ func Parse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return data.List(MakeTime(&t, s), nil), nil
-}
-
-// ParseDuration implements the time.ParseDuration(d string)(time.Duration, error) function.
-func ParseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str := data.String(args[0])
-
-	t, err := time.ParseDuration(str)
-	if err != nil {
-		return data.List(nil, err), errors.NewError(err)
-	}
-
-	return data.List(int64(t), nil), nil
 }
 
 // TimeFormat implements time.Format().
@@ -109,8 +96,10 @@ func Since(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// Calculate duration and return as a string.
 	duration := time.Since(*t)
+	d := data.NewStruct(durationType)
+	_ = d.Set("duration", duration)
 
-	return int64(duration), nil
+	return d, nil
 }
 
 // getTime looks in the symbol table for the "this" receiver, and
