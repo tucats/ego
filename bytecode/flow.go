@@ -262,7 +262,7 @@ func callByteCode(c *Context, i interface{}) error {
 				if dp.Declaration.Variadic && n > len(parms) {
 					lastType := dp.Declaration.Parameters[len(parms)-1].Type
 
-					if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) {
+					if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
 						continue
 					}
 
@@ -276,7 +276,7 @@ func callByteCode(c *Context, i interface{}) error {
 						continue
 					}
 
-					if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) {
+					if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) || parms[n].Type.IsType(data.PointerType(data.InterfaceType)) {
 						continue
 					}
 
