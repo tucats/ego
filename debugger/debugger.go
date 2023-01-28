@@ -20,10 +20,10 @@ var breakAt = i18n.L("break.at")
 // Run a context but allow the debugger to take control as
 // needed.
 func Run(c *bytecode.Context) error {
-	return RunFrom(c, 0)
+	return runFrom(c, 0)
 }
 
-func RunFrom(c *bytecode.Context, pc int) error {
+func runFrom(c *bytecode.Context, pc int) error {
 	var err error
 
 	c.SetPC(pc)
@@ -76,7 +76,7 @@ func Debugger(c *bytecode.Context) error {
 
 		prompt = true
 	} else {
-		prompt = EvaluateBreakpoint(c)
+		prompt = evaluationBreakpoint(c)
 	}
 
 	for prompt {
@@ -99,7 +99,7 @@ func Debugger(c *bytecode.Context) error {
 			t := tokens.Peek(1)
 			switch t.Spelling() {
 			case "help":
-				_ = Help()
+				_ = showHelp()
 
 			case "go", "continue":
 				c.SetSingleStep(false)
@@ -134,7 +134,7 @@ func Debugger(c *bytecode.Context) error {
 				}
 
 			case "show":
-				err = Show(s, tokens, line, c)
+				err = showCommand(s, tokens, line, c)
 
 			case "set":
 				err = runAfterFirstToken(s, tokens, false)
@@ -143,7 +143,7 @@ func Debugger(c *bytecode.Context) error {
 				err = runAfterFirstToken(s, tokens, true)
 
 			case "print":
-				text := "fmt.Println(" + strings.Replace(tokens.GetSource(), "print", "", 1) + ")"
+				text := strings.ReplaceAll("fmt.Println("+strings.Replace(tokens.GetSource(), "print", "", 1)+")", "\n", "")
 				t2 := tokenizer.New(text, true)
 
 				traceMode := ui.IsActive(ui.TraceLogger)
@@ -157,7 +157,7 @@ func Debugger(c *bytecode.Context) error {
 				ui.Active(ui.TraceLogger, traceMode)
 
 			case "break":
-				err = Break(c, tokens)
+				err = breakCommand(c, tokens)
 
 			case "exit":
 				return errors.ErrStop

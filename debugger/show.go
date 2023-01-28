@@ -12,9 +12,9 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Show implements the debugger's show command. This can be used to display information
+// showCommand implements the debugger's show command. This can be used to display information
 // about the state of the running program or it's runtime environment.
-func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
+func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *bytecode.Context) error {
 	var err error
 
 	t := tokens.Peek(2)
@@ -22,7 +22,7 @@ func Show(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, c *byte
 
 	switch t.Spelling() {
 	case "breaks", "breakpoints":
-		ShowBreaks()
+		showBreaks()
 
 	case "symbols":
 		if tokens.Peek(3) != tokenizer.EndOfTokens {

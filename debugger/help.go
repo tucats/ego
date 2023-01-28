@@ -33,7 +33,7 @@ var helpText = [][]string{
 	{"step return", i18n.T("help.step.return")},
 }
 
-func Help() error {
+func showHelp() error {
 	table, err := tables.New([]string{i18n.L("Command"), i18n.L("Description")})
 
 	for _, helpItem := range helpText {

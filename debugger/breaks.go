@@ -37,7 +37,7 @@ type breakPoint struct {
 // This global variable maintains the list of breakpoints currently in effect.
 var breakPoints = []breakPoint{}
 
-func Break(c *bytecode.Context, t *tokenizer.Tokenizer) error {
+func breakCommand(c *bytecode.Context, t *tokenizer.Tokenizer) error {
 	var err error
 
 	t.Advance(1)
@@ -207,7 +207,7 @@ func breakAtLine(module string, line int) error {
 	breakPoints = append(breakPoints, b)
 
 	ui.Say("msg.debug.break.added", map[string]interface{}{
-		"break": FormatBreakpoint(b),
+		"break": formatBreakpoint(b),
 	})
 
 	return nil
@@ -232,23 +232,23 @@ func breakWhen(expression *bytecode.ByteCode, text string) error {
 	breakPoints = append(breakPoints, b)
 
 	ui.Say("msg.debug.break.added", map[string]interface{}{
-		"break": FormatBreakpoint(b),
+		"break": formatBreakpoint(b),
 	})
 
 	return nil
 }
 
-func ShowBreaks() {
+func showBreaks() {
 	if len(breakPoints) == 0 {
 		ui.Say("msg.debug.no.breakpoints")
 	} else {
 		for _, b := range breakPoints {
-			fmt.Printf("break %s\n", FormatBreakpoint(b))
+			fmt.Printf("break %s\n", formatBreakpoint(b))
 		}
 	}
 }
 
-func FormatBreakpoint(b breakPoint) string {
+func formatBreakpoint(b breakPoint) string {
 	switch b.Kind {
 	case BreakAlways:
 		return fmt.Sprintf("at %s:%d", b.Module, b.Line)
@@ -263,7 +263,7 @@ func FormatBreakpoint(b breakPoint) string {
 
 // Using the current execution state, determine if a breakpoint has
 // been encountered.
-func EvaluateBreakpoint(c *bytecode.Context) bool {
+func evaluationBreakpoint(c *bytecode.Context) bool {
 	s := c.GetSymbols()
 	msg := ""
 	prompt := false
