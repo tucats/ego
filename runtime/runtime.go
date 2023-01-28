@@ -4,7 +4,6 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/runtime/base64"
 	"github.com/tucats/ego/runtime/cipher"
 	"github.com/tucats/ego/runtime/db"
@@ -15,6 +14,7 @@ import (
 	"github.com/tucats/ego/runtime/i18n"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/json"
+	"github.com/tucats/ego/runtime/math"
 	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/reflect"
@@ -29,9 +29,9 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// AddBuiltinPackages adds in the pre-defined package receivers
+// AddPackages adds in the pre-defined package receivers
 // for things like the table and rest systems.
-func AddBuiltinPackages(s *symbols.SymbolTable) {
+func AddPackages(s *symbols.SymbolTable) {
 	ui.Log(ui.CompilerLogger, "Adding runtime packages to %s(%v)", s.Name, s.ID())
 
 	base64.Initialize(s)
@@ -44,6 +44,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	i18n.Initialize(s)
 	io.Initialize(s)
 	json.Initialize(s)
+	math.Initialize(s)
 	os.Initialize(s)
 	profile.Initialize(s)
 	reflect.Initialize(s)
@@ -55,19 +56,6 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	time.Initialize(s)
 	util.Initialize(s)
 	uuid.Initialize(s)
-}
-
-func GetDeclaration(fname string) *data.Declaration {
-	if fname == "" {
-		return nil
-	}
-
-	fd, ok := functions.FunctionDictionary[fname]
-	if ok {
-		return fd.D
-	}
-
-	return nil
 }
 
 func TypeCompiler(t string) *data.Type {

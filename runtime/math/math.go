@@ -1,4 +1,4 @@
-package functions
+package math
 
 import (
 	"math"
@@ -9,7 +9,15 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Min implements the min() function.
+// Normalize coerces a value to match the type of a model value. The
+// (possibly modified) value is returned as the function value.
+func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	v1, v2 := data.Normalize(args[0], args[1])
+
+	return data.List(v1, v2), nil
+}
+
+// Min implements the math.Min() function.
 func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
@@ -51,7 +59,7 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Max implements the max() function.
+// Max implements the math.Max() function.
 func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
@@ -94,7 +102,7 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Sum implements the sum() function.
+// Sum implements the math.Sum() function.
 func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := args[0]
 
@@ -137,26 +145,26 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return base, nil
 }
 
-// Sqrt implements the sqrt() function.
+// Sqrt implements the math.Sqrt() function.
 func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := data.Float64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
-// Abs implements the abs() function.
+// Abs implements the math.Abs() function.
 func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := data.Float64(args[0])
 
 	return math.Abs(f), nil
 }
 
-// Log is the log() function.
+// Log implements the math.Log() function.
 func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return math.Log(data.Float64(args[0])), nil
 }
 
-// Random implmeents the math.Random function.
+// Random implmeents the math.Random() function.
 func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	max := data.Int(args[0])
 	if max <= 0 {

@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
+	"github.com/tucats/ego/runtime/profile"
 	rutil "github.com/tucats/ego/runtime/util"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
@@ -28,7 +29,7 @@ func TestAction(c *cli.Context) error {
 
 	var err error
 
-	if err := runtime.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
 
@@ -64,7 +65,7 @@ func TestAction(c *cli.Context) error {
 	symbolTable.SetAlways(defs.ModeVariable, "test")
 	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
-	runtime.AddBuiltinPackages(symbolTable)
+	runtime.AddPackages(symbolTable)
 
 	exitValue := 0
 	builtinsAdded := false

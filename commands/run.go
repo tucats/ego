@@ -11,16 +11,17 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/debugger"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
+	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -38,7 +39,7 @@ func RunAction(c *cli.Context) error {
 		}
 	}
 
-	if err := runtime.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
 
@@ -429,9 +430,9 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 		ui.Active(ui.TraceLogger, true)
 	}
 
-	// Add the runtime builtins and the function library builtins
-	runtime.AddBuiltinPackages(symbolTable)
-	functions.AddBuiltins(symbolTable)
+	// Add the runtime packags and the builtins functions
+	runtime.AddPackages(symbolTable)
+	builtins.AddBuiltins(symbolTable)
 
 	return symbolTable
 }

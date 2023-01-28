@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -292,7 +292,7 @@ func TestByteCode_Run(t *testing.T) {
 			b.nextAddress = len(b.instructions)
 			s := symbols.NewSymbolTable(tt.name)
 			c := NewContext(s, b)
-			functions.AddBuiltins(c.symbols)
+			builtins.AddBuiltins(c.symbols)
 
 			err := c.Run()
 			if errors.Equals(err, errors.ErrStop) {

@@ -1,4 +1,4 @@
-package functions
+package builtins
 
 import (
 	"math"
@@ -17,14 +17,6 @@ import (
 // prevent complex structures from copying correctly. Setting it
 // too large can result in excessive memory consumption.
 const MaxDeepCopyDepth = 100
-
-// Normalize coerces a value to match the type of a model value. The
-// (possibly modified) value is returned as the function value.
-func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v1, v2 := data.Normalize(args[0], args[1])
-
-	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
-}
 
 // New implements the $new() function. This function creates a new
 // "zero value" of any given type or object. If an integer type

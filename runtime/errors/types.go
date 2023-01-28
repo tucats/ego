@@ -1,15 +1,15 @@
 package errors
 
 import (
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
 func InitializeErrors(s *symbols.SymbolTable) {
 	// Register the errors.New function. Unline the Go version, it can accept an optional second
 	// argument which is stored with the message as the context (data) value for the error.
-	_ = functions.AddFunction(s, functions.FunctionDefinition{
+	_ = builtins.AddFunction(s, builtins.FunctionDefinition{
 		Name: "New",
 		Pkg:  "errors",
 		Min:  1,

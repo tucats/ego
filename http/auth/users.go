@@ -9,10 +9,10 @@ import (
 	"github.com/tucats/ego/app-cli/cli"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -392,7 +392,7 @@ func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // optional second argument (true) tells the function to generate an error state for
 // the various ways the token was considered invalid.
 func ValidateToken(t string) bool {
-	v, err := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
+	v, err := builtins.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t, true)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "Token validation error: "+err.Error())
 	}
@@ -403,9 +403,9 @@ func ValidateToken(t string) bool {
 // TokenUser is a helper function that calls the builtin cipher.token() and returns
 // the user field.
 func TokenUser(t string) string {
-	v, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
+	v, _ := builtins.CallBuiltin(&symbols.SymbolTable{}, "cipher.Validate", t)
 	if data.Bool(v) {
-		t, _ := functions.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
+		t, _ := builtins.CallBuiltin(&symbols.SymbolTable{}, "cipher.Token", t)
 		if m, ok := t.(*data.Struct); ok {
 			if n, ok := m.Get("name"); ok {
 				return data.String(n)

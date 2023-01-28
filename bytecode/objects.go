@@ -1,9 +1,9 @@
 package bytecode
 
 import (
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/util"
 )
@@ -111,7 +111,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		// with the given name. If so, push that as if it was a builtin.
 		kind := data.TypeOf(mv)
 
-		fn := functions.FindNativeFunction(kind, name)
+		fn := builtins.FindNativeFunction(kind, name)
 		if fn != nil {
 			return c.push(fn)
 		}

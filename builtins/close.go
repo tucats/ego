@@ -1,10 +1,6 @@
-package functions
+package builtins
 
 import (
-	"path/filepath"
-	"strings"
-
-	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -30,16 +26,4 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	default:
 		return nil, errors.ErrInvalidType.In("close()")
 	}
-}
-
-func sandboxName(path string) string {
-	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
-		if strings.HasPrefix(path, sandboxPrefix) {
-			return path
-		}
-
-		return filepath.Join(sandboxPrefix, path)
-	}
-
-	return path
 }

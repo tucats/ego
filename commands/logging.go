@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/rest"
 )
 
@@ -48,7 +47,7 @@ func Logging(c *cli.Context) error {
 
 	if c.WasFound("keep") {
 		keep, _ := c.Integer("keep")
-		u := runtime.URLBuilder("/admin/loggers/?keep=%d", keep)
+		u := rest.URLBuilder("/admin/loggers/?keep=%d", keep)
 		count := defs.DBRowCount{}
 
 		err := rest.Exchange(u.String(), http.MethodDelete, nil, &count, defs.AdminAgent)

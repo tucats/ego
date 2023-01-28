@@ -27,22 +27,14 @@ type Declaration struct {
 // that is a builtin (as opposed to compiled) function.  Note that this data
 // MUST be kept in sync with the function definitions in the functions package.
 var dictionary = map[string]string{
-	"functions.Abs":       "Abs(any interface{}) interface{}",
-	"functions.Append":    "append( any []interface{}, item... interface{}) []interface{}",
-	"functions.CloseAny":  "close(any interface{})",
-	"functions.Delete":    "delete(map interface{}, key string)",
-	"functions.Length":    "len(any interface{}) int",
-	"functions.Log":       "log(f float64) float64",
-	"functions.Make":      "make(t type, count int) interface{}",
-	"functions.Max":       "Max(item... interface{}) interface{}",
-	"functions.Min":       "Min(item... interface{}) interface{}",
-	"functions.New":       "InstanceOf(any interface{}) interface{}",
-	"functions.Normalize": "Normalize(any1, any2 interface{}) interface{}",
-	"functions.Sizeof":    "sizeof(any interface{}) int",
-	"functions.Random":    "Random(maximumValue int) int",
-	"functions.Signal":    "error(msg string) error",
-	"functions.Sqrt":      "Sqrt(value float64) float64",
-	"functions.Sum":       "Sum(item... int) int",
+	"functions.Append":   "append( any []interface{}, item... interface{}) []interface{}",
+	"functions.CloseAny": "close(any interface{})",
+	"functions.Delete":   "delete(map interface{}, key string)",
+	"functions.Length":   "len(any interface{}) int",
+	"functions.Make":     "make(t type, count int) interface{}",
+	"functions.New":      "InstanceOf(any interface{}) interface{}",
+	"functions.Sizeof":   "sizeof(any interface{}) int",
+	"functions.Signal":   "error(msg string) error",
 }
 
 func GetBuiltinDeclaration(name string) string {

@@ -22,7 +22,7 @@ import (
 	"github.com/tucats/ego/http/server"
 	"github.com/tucats/ego/http/services"
 	"github.com/tucats/ego/http/tables"
-	"github.com/tucats/ego/runtime"
+	"github.com/tucats/ego/runtime/profile"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/symbols"
 )
@@ -32,7 +32,7 @@ var PathList []string
 // RunServer initializes and runs the REST server, which starts listenting for
 // new connections. This will never terminate until the process is killed.
 func RunServer(c *cli.Context) error {
-	if err := runtime.InitProfileDefaults(); err != nil {
+	if err := profile.InitProfileDefaults(); err != nil {
 		return err
 	}
 

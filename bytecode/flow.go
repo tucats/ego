@@ -8,10 +8,10 @@ import (
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -300,7 +300,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Calls to a type are really an attempt to cast the value.
 		args = append(args, function)
 
-		v, err := functions.InternalCast(c.symbols, args)
+		v, err := builtins.InternalCast(c.symbols, args)
 		if err == nil {
 			err = c.push(v)
 		}
@@ -344,10 +344,10 @@ func callByteCode(c *Context, i interface{}) error {
 		// Recode the argument list as a native array
 		c.setAlways(defs.ArgumentListVariable, data.NewArrayFromArray(data.InterfaceType, args))
 
-	case functions.NativeFunction:
+	case builtins.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
 		// code. Examples include the functions for waitgroup and mutex objects.
-		functionName := functions.GetName(function)
+		functionName := builtins.GetName(function)
 		funcSymbols := symbols.NewChildSymbolTable("builtin "+functionName, c.symbols)
 
 		if v, ok := c.popThis(); ok {
@@ -368,12 +368,12 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.error(err).In(functions.FindName(function))
+			err = c.error(err).In(builtins.FindName(function))
 		}
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
 		// First, can we check the argument count on behalf of the caller?
-		functionDefinition := functions.FindFunction(function)
+		functionDefinition := builtins.FindFunction(function)
 		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 		functionName = strings.Replace(functionName, "github.com/tucats/ego/", "", 1)
 
@@ -384,7 +384,7 @@ func callByteCode(c *Context, i interface{}) error {
 			fullSymbolVisibility = fullSymbolVisibility || functionDefinition.FullScope
 
 			if len(args) < functionDefinition.Min || len(args) > functionDefinition.Max {
-				name := functions.FindName(function)
+				name := builtins.FindName(function)
 
 				return c.error(errors.ErrArgumentCount).Context(name)
 			}
@@ -434,7 +434,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.error(err).In(functions.FindName(function))
+			err = c.error(err).In(builtins.FindName(function))
 		}
 
 	case error:

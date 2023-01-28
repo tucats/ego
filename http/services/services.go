@@ -144,7 +144,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("getuser", auth.GetUser)
 	symbolTable.SetAlways("deleteuser", auth.DeleteUser)
 	symbolTable.SetAlways("_rest_response", nil)
-	runtime.AddBuiltinPackages(symbolTable)
+	runtime.AddPackages(symbolTable)
 
 	// Put all the headers where they can be accessed as well. The authorization
 	// header is omitted.

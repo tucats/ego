@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/rest"
 )
 
@@ -67,7 +66,7 @@ func DeleteUser(c *cli.Context) error {
 	}
 
 	resp := defs.User{}
-	url := runtime.URLBuilder(defs.AdminUsersNamePath, user)
+	url := rest.URLBuilder(defs.AdminUsersNamePath, user)
 
 	err = rest.Exchange(url.String(), http.MethodDelete, nil, &resp, defs.AdminAgent)
 	if err == nil {

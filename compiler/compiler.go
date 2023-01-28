@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -220,14 +220,14 @@ func (c *Compiler) AddBuiltins(pkgname string) bool {
 	ui.Log(ui.CompilerLogger, "### Adding builtin packages to %s package", pkgname)
 
 	functionNames := make([]string, 0)
-	for k := range functions.FunctionDictionary {
+	for k := range builtins.FunctionDictionary {
 		functionNames = append(functionNames, k)
 	}
 
 	sort.Strings(functionNames)
 
 	for _, name := range functionNames {
-		f := functions.FunctionDictionary[name]
+		f := builtins.FunctionDictionary[name]
 
 		if dot := strings.Index(name, "."); dot >= 0 {
 			f.Pkg = name[:dot]
@@ -278,7 +278,7 @@ func (c *Compiler) AddStandard(s *symbols.SymbolTable) bool {
 
 	ui.Log(ui.CompilerLogger, "Adding standard functions to %s (%v)", s.Name, s.ID())
 
-	for name, f := range functions.FunctionDictionary {
+	for name, f := range builtins.FunctionDictionary {
 		if dot := strings.Index(name, "."); dot < 0 {
 			_ = s.SetConstant(name, f.F)
 		}
@@ -421,7 +421,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	uniqueNames := map[string]bool{}
 
 	if all {
-		for fn := range functions.FunctionDictionary {
+		for fn := range builtins.FunctionDictionary {
 			dot := strings.Index(fn, ".")
 			if dot > 0 {
 				fn = fn[:dot]
@@ -439,6 +439,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			"filepath",
 			"io",
 			"json",
+			"math",
 			"os",
 			"reflect",
 			"rest",

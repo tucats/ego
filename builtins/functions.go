@@ -1,4 +1,4 @@
-package functions
+package builtins
 
 import (
 	"fmt"
@@ -75,14 +75,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"len":            {Min: 1, Max: 1, F: Length},
 	"make":           {Min: 2, Max: 2, F: Make},
 	"sizeof":         {Min: 1, Max: 1, F: SizeOf},
-	"math.Abs":       {Min: 1, Max: 1, F: Abs},
-	"math.Log":       {Min: 1, Max: 1, F: Log},
-	"math.Max":       {Min: 1, Max: Any, F: Max},
-	"math.Min":       {Min: 1, Max: Any, F: Min},
-	"math.Normalize": {Min: 2, Max: 2, F: Normalize},
-	"math.Random":    {Min: 1, Max: 1, F: Random},
-	"math.Sqrt":      {Min: 1, Max: 1, F: Sqrt},
-	"math.Sum":       {Min: 1, Max: Any, F: Sum},
 	"sync.__empty":   {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
 	"sync.WaitGroup": {V: sync.WaitGroup{}},
 	"sync.Mutex":     {V: sync.Mutex{}},

@@ -14,7 +14,6 @@ import (
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
-	"github.com/tucats/ego/runtime"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/tokenizer"
@@ -33,7 +32,7 @@ func TableList(c *cli.Context) error {
 		rowCounts = false
 	}
 
-	url := runtime.URLBuilder(defs.TablesPath)
+	url := rest.URLBuilder(defs.TablesPath)
 
 	if limit, found := c.Integer("limit"); found {
 		url.Parameter(defs.LimitParameterName, limit)
@@ -88,7 +87,7 @@ func TableShow(c *cli.Context) error {
 	resp := defs.TableColumnsInfo{}
 	table := c.Parameter(0)
 
-	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 
 	err := rest.Exchange(urlString, http.MethodGet, nil, &resp, defs.TableAgent, defs.TableMetadataMediaType)
 	if err == nil {
@@ -135,7 +134,7 @@ func TableDrop(c *cli.Context) error {
 			break
 		}
 
-		urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+		urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 
 		err = rest.Exchange(urlString, http.MethodDelete, nil, &resp, defs.TableAgent)
 		if err == nil {
@@ -159,7 +158,7 @@ func TableDrop(c *cli.Context) error {
 func TableContents(c *cli.Context) error {
 	resp := defs.DBRowSet{}
 	table := c.Parameter(0)
-	url := runtime.URLBuilder(defs.TablesRowsPath, table)
+	url := rest.URLBuilder(defs.TablesRowsPath, table)
 
 	if columns, ok := c.StringList("columns"); ok {
 		url.Parameter(defs.ColumnParameterName, toInterfaces(columns)...)
@@ -309,7 +308,7 @@ func TableInsert(c *cli.Context) error {
 		return nil
 	}
 
-	urlString := runtime.URLBuilder(defs.TablesRowsPath, table).String()
+	urlString := rest.URLBuilder(defs.TablesRowsPath, table).String()
 
 	err := rest.Exchange(urlString, "PUT", payload, &resp, defs.TableAgent)
 	if err == nil {
@@ -434,7 +433,7 @@ func TableCreate(c *cli.Context) error {
 		payload[i] = fields[k]
 	}
 
-	urlString := runtime.URLBuilder(defs.TablesNamePath, table).String()
+	urlString := rest.URLBuilder(defs.TablesNamePath, table).String()
 
 	// Send the array to the server
 	err := rest.Exchange(
@@ -486,7 +485,7 @@ func TableUpdate(c *cli.Context) error {
 		}
 	}
 
-	url := runtime.URLBuilder(defs.TablesRowsPath, table)
+	url := rest.URLBuilder(defs.TablesRowsPath, table)
 
 	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
@@ -521,7 +520,7 @@ func TableDelete(c *cli.Context) error {
 	resp := defs.DBRowCount{}
 	table := c.Parameter(0)
 
-	url := runtime.URLBuilder(defs.TablesRowsPath, table)
+	url := rest.URLBuilder(defs.TablesRowsPath, table)
 
 	if filter, ok := c.StringList("filter"); ok {
 		f := makeFilter(filter)
@@ -733,7 +732,7 @@ func TableSQL(c *cli.Context) error {
 
 func TablePermissions(c *cli.Context) error {
 	permissions := defs.AllPermissionResponse{}
-	url := runtime.URLBuilder(defs.TablesPermissionsPath)
+	url := rest.URLBuilder(defs.TablesPermissionsPath)
 
 	user, found := c.String("user")
 	if found {
@@ -772,7 +771,7 @@ func TableGrant(c *cli.Context) error {
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
 
-	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
 	if user, found := c.String("user"); found {
 		url.Parameter(defs.UserParameterName, user)
 	}
@@ -788,7 +787,7 @@ func TableGrant(c *cli.Context) error {
 func TableShowPermission(c *cli.Context) error {
 	table := c.Parameter(0)
 	result := defs.PermissionObject{}
-	url := runtime.URLBuilder(defs.TablesNamePermissionsPath, table)
+	url := rest.URLBuilder(defs.TablesNamePermissionsPath, table)
 
 	err := rest.Exchange(url.String(), http.MethodGet, nil, &result, defs.TableAgent)
 	if err == nil {

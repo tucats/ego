@@ -1,9 +1,9 @@
 package expressions
 
 import (
+	"github.com/tucats/ego/builtins"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -21,7 +21,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 	}
 
 	// Add the builtin functions
-	functions.AddBuiltins(s)
+	builtins.AddBuiltins(s)
 
 	// Run the generated code to get a result
 	ctx := bytecode.NewContext(s, e.b)
