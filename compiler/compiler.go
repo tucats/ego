@@ -443,6 +443,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			"reflect",
 			"rest",
 			"sort",
+			"strconv",
 			"strings",
 			"tables",
 			"time",
