@@ -45,7 +45,7 @@
     stra := "[1, 2, 3]"
     inta := []int{}
 
-    a4, e := json.Unmarshal(stra, &inta)
+    e = json.Unmarshal([]byte(stra), &inta)
     if e != nil {
         fmt.Println("Error: ", e)
     }

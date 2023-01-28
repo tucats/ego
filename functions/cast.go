@@ -374,6 +374,16 @@ func InternalCast(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return r, nil
 		}
 
+		if kind.IsType(data.ArrayType(data.ByteType)) {
+			r := data.NewArray(data.ByteType, 0)
+
+			for _, rune := range actual {
+				r.Append(int(rune))
+			}
+
+			return r, nil
+		}
+
 		return data.Coerce(source, data.InstanceOfType(kind)), nil
 
 	default:

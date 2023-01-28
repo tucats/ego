@@ -489,6 +489,20 @@ func (t Type) IsType(i *Type) bool {
 		}
 	}
 
+	// If it's a map, we tolerate a key type or value type that are
+	// interfaces.
+	if t.kind == MapKind && i.kind == MapKind {
+		if t.keyType != InterfaceType && !t.keyType.IsType(i.keyType) {
+			return false
+		}
+
+		if t.valueType != InterfaceType && !t.valueType.IsType(i.valueType) {
+			return false
+		}
+
+		return true
+	}
+
 	// If it's a structure, let's go one better and compare the
 	// structure fields to ensure they match in name, number,
 	// and types.

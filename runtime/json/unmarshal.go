@@ -1,16 +1,15 @@
-package functions
+package json
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
-// JSONUnmarshal reads a string as JSON data.
-func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Unmarshal reads a string as JSON data.
+func Unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v interface{}
 
 	var err error
@@ -38,19 +37,19 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			err = errors.NewError(err)
 		}
 
-		return v, err
+		return data.List(v, err), err
 	}
 
 	// There's a model, so the return value should be an error code. IF we already
 	// have had an error on the Unmarshal, we report it now.
 	if err != nil {
-		return errors.NewError(err), nil
+		return data.List(errors.NewError(err)), nil
 	}
 
 	// There is a model, so do some mapping if possible.
 	pointer, ok := args[1].(*interface{})
 	if !ok {
-		return errors.ErrInvalidPointerType, nil
+		return data.List(errors.ErrInvalidPointerType), nil
 	}
 
 	value := *pointer
@@ -61,16 +60,16 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			for k, v := range m {
 				err = target.Set(k, v)
 				if err != nil {
-					return errors.NewError(err), nil
+					return data.List(errors.NewError(err)), nil
 				}
 			}
 		} else {
-			return errors.ErrInvalidType, nil
+			return data.List(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return nil, nil
+		return data.List(nil), nil
 	}
 
 	// Map
@@ -86,16 +85,16 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 				_, err = target.Set(k2, v2)
 				if err != nil {
-					return errors.NewError(err), nil
+					return data.List(errors.NewError(err)), nil
 				}
 			}
 		} else {
-			return errors.ErrInvalidType, nil
+			return data.List(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return nil, nil
+		return data.List(nil), nil
 	}
 
 	// Array
@@ -113,16 +112,16 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 				err = target.Set(k, v)
 				if err != nil {
-					return errors.NewError(err), nil
+					return data.List(errors.NewError(err)), nil
 				}
 			}
 		} else {
-			return errors.ErrInvalidType, nil
+			return data.List(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return nil, nil
+		return data.List(nil), nil
 	}
 
 	if !data.TypeOf(v).IsType(data.TypeOf(value)) {
@@ -136,72 +135,5 @@ func JSONUnmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		err = errors.NewError(err)
 	}
 
-	return err, nil
-}
-
-func Seal(i interface{}) interface{} {
-	switch actualValue := i.(type) {
-	case *data.Struct:
-		actualValue.SetStatic(true)
-
-		return actualValue
-
-	case *data.Array:
-		for i := 0; i <= actualValue.Len(); i++ {
-			element, _ := actualValue.Get(i)
-			actualValue.SetAlways(i, Seal(element))
-		}
-
-		return actualValue
-
-	default:
-		return actualValue
-	}
-}
-
-// JSONMarshal writes a JSON string from arbitrary data.
-func JSONMarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 1 {
-		jsonBuffer, err := json.Marshal(data.Sanitize(args[0]))
-		if err != nil {
-			err = errors.NewError(err)
-		}
-
-		return data.NewArray(data.ByteType, 0).Append(jsonBuffer), err
-	}
-
-	var b strings.Builder
-
-	b.WriteString("[")
-
-	for n, v := range args {
-		if n > 0 {
-			b.WriteString(", ")
-		}
-
-		jsonBuffer, err := json.Marshal(data.Sanitize(v))
-		if err != nil {
-			return nil, errors.NewError(err)
-		}
-
-		b.WriteString(string(jsonBuffer))
-	}
-
-	b.WriteString("]")
-	jsonBuffer := []byte(b.String())
-
-	return data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil
-}
-
-// JSONMarshalIndent writes a  JSON string from arbitrary data.
-func JSONMarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	prefix := data.String(args[1])
-	indent := data.String(args[2])
-
-	jsonBuffer, err := json.MarshalIndent(data.Sanitize(args[0]), prefix, indent)
-	if err != nil {
-		err = errors.NewError(err)
-	}
-
-	return data.NewArray(data.ByteType, 0).Append(jsonBuffer), err
+	return data.List(err), err
 }

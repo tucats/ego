@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/runtime/fmt"
 	"github.com/tucats/ego/runtime/i18n"
 	"github.com/tucats/ego/runtime/io"
+	"github.com/tucats/ego/runtime/json"
 	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/sort"
@@ -38,6 +39,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	fmt.Initialize(s)
 	i18n.Initialize(s)
 	io.Initialize(s)
+	json.Initialize(s)
 	os.Initialize(s)
 	rest.Initialize(s)
 	sort.Initialize(s)

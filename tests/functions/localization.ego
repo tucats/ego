@@ -18,11 +18,11 @@
     }
 
     // Try it in French
-    m := i18n.T("hello.msg", {Name: "Tom"}, "fr")
+    m := i18n.T("hello.msg", map[string]interface{}{"Name": "Tom"}, "fr")
     @assert m == "bonjour, Tom"
 
     // And in English
-    m = i18n.T("hello.msg", {Name: "Tom"}, "en")
+    m = i18n.T("hello.msg", map[string]interface{}{"Name": "Tom"}, "en")
     @assert m == "hello, Tom"
 
     // And without the parameter, which fills in something.

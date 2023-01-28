@@ -13,10 +13,6 @@ import (
 )
 
 func Language(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	language := os.Getenv("LANG")
 
 	if pos := strings.Index(language, "_"); pos > 0 {
