@@ -304,23 +304,6 @@ func (c *Compiler) parseArray() error {
 			return c.error(errors.ErrInvalidTypeName)
 		}
 
-		// It could be a cast operation. If so, remember where we are
-		// in case we need to back up, and take a look...
-		if c.t.IsNext(tokenizer.StartOfListToken) {
-			mark := c.t.Mark() - 1
-
-			exp, e2 := c.Expression()
-			if e2 == nil && c.t.IsNext(tokenizer.EndOfListToken) {
-				c.b.Emit(bytecode.Load, "$cast")
-				c.b.Append(exp)
-				c.b.Emit(bytecode.Push, kind)
-				c.b.Emit(bytecode.Call, 2)
-
-				return nil
-			}
-
-			c.t.Set(mark)
-		}
 		// Is it an empty declaration, such as []int{} ?
 		if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 			c.b.Emit(bytecode.Array, 0, kind)

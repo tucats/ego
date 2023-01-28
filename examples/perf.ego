@@ -9,7 +9,7 @@ func main() int {
 
 
    finish := time.Now()
-   fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start))
+   fmt.Printf("Finished, elapsed time %s\n", finish.Sub(start).String())
 
    return 0
  

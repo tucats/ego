@@ -63,6 +63,10 @@ func getDurationV(value interface{}) *time.Duration {
 func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	duration := getDurationV(args[0])
 
+	if duration == nil {
+		return false, nil
+	}
+
 	time.Sleep(*duration)
 
 	return true, nil

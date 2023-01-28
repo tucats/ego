@@ -18,7 +18,8 @@
             wg.Add(1)
             go thread(i, &wg)        }
         
-        time.Sleep("1s")
+        sec := time.ParseDuration("1s")
+        time.Sleep(sec)
         fmt.Printf("\nAll threads launched.\n\n")
         
         wg.Wait()

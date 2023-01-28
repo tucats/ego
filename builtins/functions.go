@@ -50,14 +50,6 @@ type FunctionDefinition struct {
 	D *data.Declaration
 }
 
-// MultiValueReturn is a type used to return a list of values from a builtin
-// function. This an be used to return a result and an err to the caller, for
-// example. The Value list must contain the values in the order received by
-// the caller.
-type MultiValueReturn struct {
-	Value []interface{}
-}
-
 // Any is a constant that defines that a function can have as many arguments
 // as desired.
 const Any = math.MaxInt32
@@ -66,7 +58,6 @@ const Any = math.MaxInt32
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$cast":          {Min: 2, Max: 2, F: InternalCast},
 	"$new":           {Min: 1, Max: 1, F: New},
 	"append":         {Min: 2, Max: Any, F: Append},
 	"close":          {Min: 1, Max: 1, F: Close},

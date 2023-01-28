@@ -9,7 +9,8 @@
 // completes its work.
 func f(c chan) {
    fmt.Println("Sleeping in a distant land")
-   time.Sleep("1s")
+   sec := time.ParseDuration("1s")
+   time.Sleep(sec)
    c <- "sent from afar"
 }
 

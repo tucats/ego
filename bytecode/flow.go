@@ -300,7 +300,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Calls to a type are really an attempt to cast the value.
 		args = append(args, function)
 
-		v, err := builtins.InternalCast(c.symbols, args)
+		v, err := builtins.Cast(c.symbols, args)
 		if err == nil {
 			err = c.push(v)
 		}
