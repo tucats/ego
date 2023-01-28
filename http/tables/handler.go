@@ -9,9 +9,9 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/functions"
 	"github.com/tucats/ego/http/auth"
 	"github.com/tucats/ego/http/server"
+	runtime_strings "github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/util"
 )
 
@@ -161,13 +161,13 @@ func TablesHandler(w http.ResponseWriter, r *http.Request) {
 		sessionID, user, hasAdminPermission, r.Method, path)
 	ui.Log(ui.RestLogger, "[%d] User agent: %s", sessionID, r.Header.Get("User-Agent"))
 
-	urlParts, valid := functions.ParseURLPattern(path, "/tables/{{table}}/rows")
+	urlParts, valid := runtime_strings.ParseURLPattern(path, "/tables/{{table}}/rows")
 	if !valid {
-		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/permissions")
+		urlParts, valid = runtime_strings.ParseURLPattern(path, "/tables/{{table}}/permissions")
 	}
 
 	if !valid {
-		urlParts, valid = functions.ParseURLPattern(path, "/tables/{{table}}/transaction")
+		urlParts, valid = runtime_strings.ParseURLPattern(path, "/tables/{{table}}/transaction")
 	}
 
 	if !valid || !data.Bool(urlParts["tables"]) {

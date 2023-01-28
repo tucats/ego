@@ -429,8 +429,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			}
 		}
 
-		// Add the list of packages that live in the runtime
-		// area.
+		// Add the list of packages that live in the runtime package tree.
 		for _, name := range []string{
 			"base64",
 			"cipher",
@@ -444,6 +443,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			"reflect",
 			"rest",
 			"sort",
+			"strings",
 			"tables",
 			"time",
 			"util",

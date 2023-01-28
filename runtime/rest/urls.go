@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
+	runtime_strings "github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/symbols"
 )
 
@@ -54,7 +54,7 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		templateString := data.String(args[1])
 
 		// Scan the URL and the template, and bulid a map of the parts.
-		urlParts, valid = functions.ParseURLPattern(path, templateString)
+		urlParts, valid = runtime_strings.ParseURLPattern(path, templateString)
 		if !valid {
 			return nil, errors.ErrInvalidURL.Context(path)
 		}

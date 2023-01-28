@@ -66,44 +66,6 @@ func TestFunctionLen(t *testing.T) {
 }
 
 
-func TestStrLen(t *testing.T) {
-	tests := []struct {
-		name    string
-		args    []interface{}
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "length of ASCII string",
-			args: []interface{}{"foo"},
-			want: 3,
-		},
-		{
-			name: "length of empty string",
-			args: []interface{}{""},
-			want: 0,
-		},
-		{
-			name: "length of Unicode string",
-			args: []interface{}{"\u2318Foo\u2318"},
-			want: 5,
-		},
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := StrLen(nil, tt.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("StrLen() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestLength(t *testing.T) {
 	tests := []struct {

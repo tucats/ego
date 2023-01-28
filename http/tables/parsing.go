@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
+	runtime_strings "github.com/tucats/ego/runtime/strings"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -583,7 +583,7 @@ func formUpdateQuery(u *url.URL, user string, items map[string]interface{}) (str
 		return "", nil
 	}
 
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return "", nil
 	}
@@ -708,7 +708,7 @@ func formCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		return ""
 	}
 
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}")
+	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}")
 	if !ok {
 		return ""
 	}
@@ -828,7 +828,7 @@ func tableNameFromRequest(r *http.Request) (string, error) {
 }
 
 func tableNameFromURL(u *url.URL) (string, error) {
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return "", errors.NewMessage("Invalid URL").Context(u.Path)
 	}

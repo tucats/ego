@@ -1,4 +1,4 @@
-package functions
+package strings
 
 import (
 	"reflect"
@@ -148,7 +148,7 @@ func TestFunctionLower(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Lower(nil, tt.args.args)
+			got, err := ToLower(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLower() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -202,7 +202,7 @@ func TestFunctionUpper(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Upper(nil, tt.args.args)
+			got, err := ToUpper(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionUpper() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -210,69 +210,6 @@ func TestFunctionUpper(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionUpper() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFunctionIndex(t *testing.T) {
-	type args struct {
-		args []interface{}
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "index found",
-			args: args{[]interface{}{"string of text", "of"}},
-			want: 8,
-		},
-		{
-			name: "index not found",
-			args: args{[]interface{}{"string of text", "burp"}},
-			want: 0,
-		},
-		{
-			name: "empty source string",
-			args: args{[]interface{}{"", "burp"}},
-			want: 0,
-		},
-		{
-			name: "empty test string",
-			args: args{[]interface{}{"string of text", ""}},
-			want: 1,
-		},
-		{
-			name: "non-string test",
-			args: args{[]interface{}{"A1B2C3D4", 3}},
-			want: 6,
-		},
-		{
-			name: "array index",
-			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, 3.14}},
-			want: 1,
-		},
-		{
-			name: "array not found",
-			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, false}},
-			want: -1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Index(nil, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FunctionIndex() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FunctionIndex() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -363,113 +300,40 @@ func TestSubstring(t *testing.T) {
 	}
 }
 
-func TestParseURLPattern(t *testing.T) {
+func TestStrLen(t *testing.T) {
 	tests := []struct {
 		name    string
-		url     string
-		pattern string
-		want    map[string]interface{}
-		matches bool
+		args    []interface{}
+		want    interface{}
+		wantErr bool
 	}{
 		{
-			name:    "constant pattern unused segment",
-			url:     "/service/debug",
-			pattern: "/service/debug/age",
-			want: map[string]interface{}{
-				"service": true,
-				"debug":   true,
-				"age":     false,
-			},
-			matches: true,
+			name: "length of ASCII string",
+			args: []interface{}{"foo"},
+			want: 3,
 		},
 		{
-			name:    "constant pattern unused sub",
-			url:     "/service/debug",
-			pattern: "/service/debug/{{age}}",
-			want: map[string]interface{}{
-				"service": true,
-				"debug":   true,
-				"age":     "",
-			},
-			matches: true,
+			name: "length of empty string",
+			args: []interface{}{""},
+			want: 0,
 		},
 		{
-			name:    "constant pattern matches",
-			url:     "/service/debug",
-			pattern: "/service/debug",
-			want: map[string]interface{}{
-				"service": true,
-				"debug":   true,
-			},
-			matches: true,
+			name: "length of Unicode string",
+			args: []interface{}{"\u2318Foo\u2318"},
+			want: 5,
 		},
-		{
-			name:    "constant pattern does not match",
-			url:     "/service/debug",
-			pattern: "/service/debugz",
-			want:    nil,
-			matches: false,
-		},
-		{
-			name:    "constant pattern trailing separator mismatch",
-			url:     "/service/debug/",
-			pattern: "/service/debug",
-			want:    nil,
-			matches: false,
-		},
-		{
-			name:    "one sub pattern matches",
-			url:     "/service/proc/1653",
-			pattern: "/service/proc/{{pid}}",
-			want: map[string]interface{}{
-				"service": true,
-				"proc":    true,
-				"pid":     "1653",
-			},
-			matches: true,
-		},
-		{
-			name:    "case sensitive string matches",
-			url:     "/service/proc/Accounts",
-			pattern: "/service/proc/{{table}}",
-			want: map[string]interface{}{
-				"service": true,
-				"proc":    true,
-				"table":   "Accounts",
-			},
-			matches: true,
-		},
-		{
-			name:    "two subs pattern matches",
-			url:     "/service/proc/1653/window/foobar",
-			pattern: "/service/proc/{{pid}}/window/{{name}}",
-			want: map[string]interface{}{
-				"service": true,
-				"proc":    true,
-				"window":  true,
-				"pid":     "1653",
-				"name":    "foobar",
-			},
-			matches: true,
-		},
-		{
-			name:    "two subs pattern does not match",
-			url:     "/service/proc/1653/frame/foobar",
-			pattern: "/service/proc/{{pid}}/window/{{name}}",
-			want:    nil,
-			matches: false,
-		},
-
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ParseURLPattern(tt.url, tt.pattern)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseURLPattern() got = %v, want %v", got, tt.want)
+			got, err := Length(nil, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
+
+				return
 			}
-			if got1 != tt.matches {
-				t.Errorf("ParseURLPattern() got1 = %v, want %v", got1, tt.matches)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StrLen() = %v, want %v", got, tt.want)
 			}
 		})
 	}

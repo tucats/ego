@@ -12,7 +12,7 @@ s1 := strings.Template(g_getlabels)
 // Test of using a parameter value
 @template g_getbytype `{{template "g_prefix"}}.hasLabel("{{.Label}}")`
 
-parms := { Label: "cars" }
+parms := map[string]interface{}{"Label": "cars" }
 s2 := strings.Template(g_getbytype, parms)
 @assert T.Equal(s2, `g.V().hasLabel("cars")` )
 

@@ -130,19 +130,6 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	}
 }
 
-// StrLen is the strings.Length() function, which counts characters/runes instead of
-// bytes like len() does.
-func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	count := 0
-	v := data.String(args[0])
-
-	for range v {
-		count++
-	}
-
-	return count, nil
-}
-
 
 // Signal creates an error object based on the
 // parameters.

@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/functions"
+	"github.com/tucats/ego/runtime/strings"
 )
 
 // urlDirective compiles the @url directive. This can only
@@ -10,7 +10,7 @@ import (
 func (c *Compiler) urlDirective() error {
 	_ = c.modeCheck("server", true)
 
-	c.b.Emit(bytecode.Push, functions.URLPattern)
+	c.b.Emit(bytecode.Push, strings.URLPattern)
 	c.b.Emit(bytecode.Load, "_path_suffix")
 
 	err := c.relations()

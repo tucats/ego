@@ -271,16 +271,6 @@ func TestNew(t *testing.T) {
 			want: 8,
 		},
 		{
-			name: "left function",
-			expr: "strings.Left(name, 2)",
-			want: "To",
-		},
-		{
-			name: "right function",
-			expr: "strings.Right(name, 2)",
-			want: "om",
-		},
-		{
 			name: "index of string function",
 			expr: "index(name, \"o\")",
 			want: 2,
@@ -299,61 +289,6 @@ func TestNew(t *testing.T) {
 			name: "index of array not found",
 			expr: "index(a, 55.5)",
 			want: -1,
-		},
-		{
-			name: "substring function",
-			expr: "strings.Substring(\"ABCDEF\", 2, 3)",
-			want: "BCD",
-		},
-		{
-			name: "empty substring function",
-			expr: "strings.Substring(\"ABCDEF\", 5, 0)",
-			want: "",
-		},
-		{
-			name: "Invalid argument count to function",
-			expr: "strings.Substring(\"ABCDEF\", 5)",
-			want: nil,
-		},
-		{
-			name: "upper function",
-			expr: "strings.ToUpper(name)",
-			want: "TOM",
-		},
-		{
-			name: "lower function",
-			expr: "strings.ToLower(name)",
-			want: "tom",
-		},
-		{
-			name: "min homogeneous args function",
-			expr: "math.Min(15,33,11,6)",
-			want: 6,
-		},
-		{
-			name: "min float64 args function",
-			expr: "math.Min(3.0, 1.0, 2.0)",
-			want: 1.0,
-		},
-		{
-			name: "min string args function",
-			expr: "math.Min(\"house\", \"cake\", \"pig\" )",
-			want: "cake",
-		},
-		{
-			name: "min heterogenous args function",
-			expr: "math.Min(15,33.5,\"11\",6)",
-			want: 6,
-		},
-		{
-			name: "sum heterogenous args function",
-			expr: "math.Sum(10.1, 5, \"2\")",
-			want: 17.1,
-		},
-		{
-			name: "sum homogeneous args function",
-			expr: "math.Sum(\"abc\", \"137\", \"def\")",
-			want: "abc137def",
 		},
 	}
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
-	"github.com/tucats/ego/functions"
+	runtime_strings "github.com/tucats/ego/runtime/strings"
 )
 
 func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []interface{}) string {
@@ -23,7 +23,7 @@ func formAbstractUpdateQuery(u *url.URL, user string, items []string, values []i
 		}
 	}
 
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return ""
 	}
@@ -89,7 +89,7 @@ func formAbstractInsertQuery(u *url.URL, user string, columns []string, values [
 		return "", nil
 	}
 
-	parts, ok := functions.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
+	parts, ok := runtime_strings.ParseURLPattern(u.Path, "/tables/{{name}}/rows")
 	if !ok {
 		return "", nil
 	}

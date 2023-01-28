@@ -233,22 +233,6 @@ func TestByteCode_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "left(n, 5) of string constant",
-			fields: fields{
-				opcodes: []instruction{
-					// Arguments are pushed in the order parsed
-					{Operation: Load, Operand: "strings"},
-					{Operation: Push, Operand: "Left"},
-					{Operation: Member},
-					{Operation: Push, Operand: "fruitcake"},
-					{Operation: Push, Operand: 5},
-					{Operation: Call, Operand: 2},
-					{Operation: Stop},
-				},
-				result: "fruit",
-			},
-		},
-		{
 			name: "simple branch",
 			fields: fields{
 				opcodes: []instruction{

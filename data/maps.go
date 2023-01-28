@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/errors"
 )
 
@@ -354,4 +355,27 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 	b.WriteString("}")
 
 	return []byte(b.String()), nil
+}
+
+// ToMap extracts the Ego map and converts it to a native map. This is needed
+// to access an Ego map object from a native Go runtime. Currently this only
+// supports making maps with string keys.
+func (m *Map) ToMap() map[string]interface{} {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	switch TypeOf(m.keyType).kind {
+	case StringKind:
+		result := map[string]interface{}{}
+
+		for k, v := range m.data {
+			result[String(k)] = DeepCopy(v)
+		}
+
+		return result
+	}
+
+	ui.Log(ui.InternalLogger, "Attempt to convert unsupported Ego map to native map, with key type %s", TypeOf(m.KeyType))
+
+	return nil
 }
