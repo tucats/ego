@@ -23,14 +23,6 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// Wrapper around strings.Count().
-func Count(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := data.String(args[0])
-	b := data.String(args[1])
-
-	return strings.Count(a, b), nil
-}
-
 // Tokenize splits a string into tokens.
 func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := data.String(args[0])

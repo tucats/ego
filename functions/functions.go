@@ -66,32 +66,15 @@ const Any = math.MaxInt32
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$cast":  {Min: 2, Max: 2, F: InternalCast},
-	"$new":   {Min: 1, Max: 1, F: New},
-	"append": {Min: 2, Max: Any, F: Append},
-	"close":  {Min: 1, Max: 1, F: Close},
-	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true},
-	"index":  {Min: 2, Max: 2, F: Index},
-	"len": {
-		Min: 1,
-		Max: 1,
-		D: &data.Declaration{
-			Name: "len",
-			Parameters: []data.Parameter{
-				{
-					Name: "any",
-					Type: data.InterfaceType,
-				},
-			},
-			Returns: []*data.Type{
-				data.IntType,
-			},
-		},
-		F: Length,
-	},
+	"$cast":          {Min: 2, Max: 2, F: InternalCast},
+	"$new":           {Min: 1, Max: 1, F: New},
+	"append":         {Min: 2, Max: Any, F: Append},
+	"close":          {Min: 1, Max: 1, F: Close},
+	"delete":         {Min: 1, Max: 2, F: Delete, FullScope: true},
+	"index":          {Min: 2, Max: 2, F: Index},
+	"len":            {Min: 1, Max: 1, F: Length},
 	"make":           {Min: 2, Max: 2, F: Make},
 	"sizeof":         {Min: 1, Max: 1, F: SizeOf},
-	"http.__empty":   {F: stubFunction},
 	"math.Abs":       {Min: 1, Max: 1, F: Abs},
 	"math.Log":       {Min: 1, Max: 1, F: Log},
 	"math.Max":       {Min: 1, Max: Any, F: Max},
@@ -100,14 +83,9 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"math.Random":    {Min: 1, Max: 1, F: Random},
 	"math.Sqrt":      {Min: 1, Max: 1, F: Sqrt},
 	"math.Sum":       {Min: 1, Max: Any, F: Sum},
-	"profile.Delete": {Min: 1, Max: 1, F: ProfileDelete},
-	"profile.Get":    {Min: 1, Max: 1, F: ProfileGet},
-	"profile.Keys":   {Min: 0, Max: 0, F: ProfileKeys},
-	"profile.Set":    {Min: 1, Max: 2, F: ProfileSet},
 	"sync.__empty":   {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
 	"sync.WaitGroup": {V: sync.WaitGroup{}},
 	"sync.Mutex":     {V: sync.Mutex{}},
-	"time.__empty":   {F: stubFunction},
 }
 
 // AddBuiltins adds or overrides the default function library in the symbol map.
