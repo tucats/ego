@@ -41,8 +41,6 @@ var dictionary = map[string]string{
 	"functions.Fields":             "Fields(text string) []string",
 	"functions.Format":             "Format(formatString string, args... interface{}) string",
 	"functions.Index":              "index(text string, substr string) int",
-	"functions.I18nLanguage":       "Language() string",
-	"functions.I18nT":              "T(key string, parameters map[string]interface{}...) string",
 	"functions.Join":               "Join( text []string, withText string) string",
 	"functions.JSONMarshal":        "Marshal(any interface) ([]byte, error)",
 	"functions.JSONMarshalIndent":  "MarshalIndent(any interface, prefix string, indent string) ([]byte, error)",

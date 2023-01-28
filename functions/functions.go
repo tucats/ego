@@ -93,8 +93,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"make":                {Min: 2, Max: 2, F: Make},
 	"sizeof":              {Min: 1, Max: 1, F: SizeOf},
 	"http.__empty":        {F: stubFunction},
-	"i18n.Language":       {F: I18nLanguage},
-	"i18n.T":              {Min: 1, Max: 3, F: I18nT},
 	"json.Unmarshal":      {Min: 1, Max: 2, F: JSONUnmarshal, ErrReturn: true},
 	"json.Marshal":        {Min: 1, Max: Any, F: JSONMarshal, ErrReturn: true},
 	"json.MarshalIndent":  {Min: 3, Max: 3, F: JSONMarshalIndent, ErrReturn: true},

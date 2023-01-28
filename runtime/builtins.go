@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/runtime/exec"
 	"github.com/tucats/ego/runtime/filepath"
 	"github.com/tucats/ego/runtime/fmt"
+	"github.com/tucats/ego/runtime/i18n"
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/os"
 	"github.com/tucats/ego/runtime/rest"
@@ -35,6 +36,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	exec.Initialize(s)
 	filepath.Initialize(s)
 	fmt.Initialize(s)
+	i18n.Initialize(s)
 	io.Initialize(s)
 	os.Initialize(s)
 	rest.Initialize(s)

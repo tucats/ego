@@ -1,4 +1,4 @@
-package functions
+package i18n
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Language(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -30,7 +30,7 @@ func I18nLanguage(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return language, nil
 }
 
-func I18nT(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func T(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
 	property := data.String(args[0])
 
