@@ -21,7 +21,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.ByteType)},
 			},
-			Value: Bytes,
+			Value: sortBytes,
 		},
 		"Float32s": data.Function{
 			Declaration: &data.Declaration{
@@ -34,7 +34,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.Float32Type)},
 			},
-			Value: Float32s,
+			Value: sortFloat32s,
 		},
 		"Float64s": data.Function{
 			Declaration: &data.Declaration{
@@ -47,7 +47,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.Float64Type)},
 			},
-			Value: Float64s,
+			Value: sortFloat64s,
 		},
 		"Int32s": data.Function{
 			Declaration: &data.Declaration{
@@ -60,7 +60,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.Int32Type)},
 			},
-			Value: Int32s,
+			Value: sortInt32s,
 		},
 		"Int64s": data.Function{
 			Declaration: &data.Declaration{
@@ -73,7 +73,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.Int64Type)},
 			},
-			Value: Int64s,
+			Value: sortInt64s,
 		},
 		"Ints": data.Function{
 			Declaration: &data.Declaration{
@@ -86,7 +86,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.IntType)},
 			},
-			Value: Ints,
+			Value: sortInts,
 		},
 		"Slice": data.Function{
 			Declaration: &data.Declaration{
@@ -122,7 +122,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
 			},
-			Value: Slice,
+			Value: sortSlice,
 		},
 		"Sort": data.Function{
 			Declaration: &data.Declaration{
@@ -135,7 +135,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
 			},
-			Value: Sort,
+			Value: genericSort,
 		},
 		"Strings": data.Function{
 			Declaration: &data.Declaration{
@@ -148,7 +148,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Strings,
+			Value: sortStrings,
 		},
 	}).SetBuiltins(true)
 

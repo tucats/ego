@@ -19,7 +19,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Abs,
+			Value: abs,
 		},
 		"Base": data.Function{
 			Declaration: &data.Declaration{
@@ -32,7 +32,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Base,
+			Value: base,
 		},
 		"Clean": data.Function{
 			Declaration: &data.Declaration{
@@ -45,7 +45,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Clean,
+			Value: clean,
 		},
 		"Dir": data.Function{
 			Declaration: &data.Declaration{
@@ -58,7 +58,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Dir,
+			Value: dir,
 		},
 		"Ext": data.Function{
 			Declaration: &data.Declaration{
@@ -71,7 +71,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Ext,
+			Value: ext,
 		},
 		"Join": data.Function{
 			Declaration: &data.Declaration{
@@ -85,7 +85,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.StringType},
 			},
-			Value: Join,
+			Value: join,
 		},
 	}).SetBuiltins(true)
 

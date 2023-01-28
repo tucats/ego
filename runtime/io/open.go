@@ -12,8 +12,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Open opens a file.
-func Open(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// openFile opens a file.
+func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var mask os.FileMode = 0644
 
 	var f *os.File

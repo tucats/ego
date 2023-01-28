@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Unmarshal reads a string as JSON data.
-func Unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// unmarshal reads a byte array or string as JSON data.
+func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v interface{}
 
 	var err error

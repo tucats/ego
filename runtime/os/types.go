@@ -13,7 +13,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "Args",
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Args,
+			Value: args,
 		},
 		"Chdir": data.Function{
 			Declaration: &data.Declaration{
@@ -26,7 +26,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Chdir,
+			Value: changeDirectory,
 		},
 		"Chmod": data.Function{
 			Declaration: &data.Declaration{
@@ -43,7 +43,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Chmod,
+			Value: changeMode,
 		},
 		"Chown": data.Function{
 			Declaration: &data.Declaration{
@@ -60,13 +60,13 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Chown,
+			Value: changeOwner,
 		},
 		"Clearenv": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Clearenv",
 			},
-			Value: Clearenv,
+			Value: clearEnv,
 		},
 		"Environ": data.Function{
 			Declaration: &data.Declaration{
@@ -80,7 +80,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "Executable",
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Executable,
+			Value: executable,
 		},
 		"Exit": data.Function{
 			Declaration: &data.Declaration{
@@ -93,7 +93,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				ArgCount: data.Range{0, 1},
 			},
-			Value: Exit,
+			Value: exit,
 		},
 		"Getenv": data.Function{
 			Declaration: &data.Declaration{
@@ -106,14 +106,14 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Getenv,
+			Value: getEnv,
 		},
 		"Hostname": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Hostname",
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Hostname,
+			Value: hostname,
 		},
 		"ReadFile": data.Function{
 			Declaration: &data.Declaration{
@@ -126,7 +126,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.ByteType), data.ErrorType},
 			},
-			Value: Readfile,
+			Value: readFile,
 		},
 		"Remove": data.Function{
 			Declaration: &data.Declaration{
@@ -139,7 +139,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Remove,
+			Value: removeFile,
 		},
 		"Writefile": data.Function{
 			Declaration: &data.Declaration{
@@ -160,7 +160,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Writefile,
+			Value: writeFile,
 		},
 	})
 

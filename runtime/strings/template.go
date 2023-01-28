@@ -10,8 +10,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Template implements the strings.template() function.
-func Template(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// evaluateTemplate implements the strings.template() function.
+func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	tree, ok := args[0].(*template.Template)

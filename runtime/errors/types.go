@@ -14,7 +14,7 @@ func InitializeErrors(s *symbols.SymbolTable) {
 		Pkg:  "errors",
 		Min:  1,
 		Max:  2,
-		F:    NewError,
+		F:    newError,
 		D: &data.Declaration{
 			Name: "New",
 			Parameters: []data.Parameter{
@@ -47,7 +47,7 @@ func InitializeErrors(s *symbols.SymbolTable) {
 			},
 		},
 		Returns: []*data.Type{data.StringType},
-	}, Is)
+	}, isError)
 
 	// Register the (e error) Unwrap( ) interface{} function, which returns
 	// the context value associated with the error.
@@ -55,5 +55,5 @@ func InitializeErrors(s *symbols.SymbolTable) {
 		Name:    "Unwrap",
 		Type:    data.ErrorType,
 		Returns: []*data.Type{data.InterfaceType},
-	}, Unwrap)
+	}, unwrap)
 }

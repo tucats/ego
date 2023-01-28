@@ -21,10 +21,10 @@ import (
 // as the prompt text.
 const passwordPromptPrefix = "password~"
 
-// Prompt implements the io.Prompt() function, which uses the console
+// prompt implements the io.prompt() function, which uses the console
 // reader. This cannot reside in the runtime/io package, because it depends on
 // the console reader function.
-func Prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func prompt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	prompt := ""
 	if len(args) > 0 {
 		prompt = data.String(args[0])

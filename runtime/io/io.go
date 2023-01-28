@@ -12,8 +12,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Expand expands a list of file or path names into a list of files.
-func Expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// expand expands a list of file or path names into a list of files.
+func expand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 	ext := ""
 
@@ -82,8 +82,8 @@ func ExpandPath(path, ext string) ([]string, error) {
 	return names, nil
 }
 
-// ReadDir implements the io.readdir() function.
-func ReadDir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// readDirectory implements the io.readdir() function.
+func readDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 	result := data.NewArray(entryType, 0)
 

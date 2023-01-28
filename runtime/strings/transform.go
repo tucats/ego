@@ -8,19 +8,19 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// ToLower implements the lower() function.
-func ToLower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// toLower implements the lower() function.
+func toLower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToLower(data.String(args[0])), nil
 }
 
-// ToUpper implements the upper() function.
-func ToUpper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// toUpper implements the upper() function.
+func toUpper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.ToUpper(data.String(args[0])), nil
 }
 
-// Split splits a string into lines separated by a newline. Optionally
+// splitString splits a string into lines separated by a newline. Optionally
 // a different delimiter can be supplied as the second argument.
-func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func splitString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var v []string
 
 	src := data.String(args[0])
@@ -52,8 +52,8 @@ func Split(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// Wrapper around strings.Join().
-func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Wrapper around strings.join().
+func join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	elemArray, ok := args[0].(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType.Context("Join()")

@@ -13,7 +13,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "Language",
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Language,
+			Value: language,
 		},
 		"T": data.Function{
 			Declaration: &data.Declaration{
@@ -35,7 +35,7 @@ func Initialize(s *symbols.SymbolTable) {
 				ArgCount: data.Range{1, 3},
 				Returns:  []*data.Type{data.StringType},
 			},
-			Value: T,
+			Value: translation,
 		},
 	})
 

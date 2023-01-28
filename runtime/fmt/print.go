@@ -10,11 +10,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Printf implements fmt.printf() and is a wrapper around the native Go function.
-func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// printFormat implements fmt.Printf() and is a wrapper around the native Go function.
+func printFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	length := 0
 
-	str, err := Sprintf(s, args)
+	str, err := stringPrintFormat(s, args)
 	if err == nil {
 		length, _ = fmt.Printf("%s", data.String(str))
 	}
@@ -22,8 +22,8 @@ func Printf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return length, err
 }
 
-// Sprintf implements fmt.sprintf() and is a wrapper around the native Go function.
-func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// stringPrintFormat implements fmt.Sprintf() and is a wrapper around the native Go function.
+func stringPrintFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return 0, nil
 	}
@@ -37,8 +37,8 @@ func Sprintf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return fmt.Sprintf(fmtString, args[1:]...), nil
 }
 
-// Print implements fmt.Print() and is a wrapper around the native Go function.
-func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// printList implements fmt.Println() and is a wrapper around the native Go function.
+func printList(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -46,7 +46,7 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			b.WriteString(" ")
 		}
 
-		b.WriteString(FormatAsString(s, v))
+		b.WriteString(formatUsingString(s, v))
 	}
 
 	text, e2 := fmt.Printf("%s", b.String())
@@ -58,8 +58,8 @@ func Print(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return text, e2
 }
 
-// Println implements fmt.Println() and is a wrapper around the native Go function.
-func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// printLine implements fmt.Println() and is a wrapper around the native Go function.
+func printLine(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for i, v := range args {
@@ -67,7 +67,7 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			b.WriteString(" ")
 		}
 
-		b.WriteString(FormatAsString(s, v))
+		b.WriteString(formatUsingString(s, v))
 	}
 
 	text, e2 := fmt.Printf("%s\n", b.String())
@@ -79,10 +79,10 @@ func Println(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return text, e2
 }
 
-// FormatAsString will attempt to use the String() function of the
+// formatUsingString will attempt to use the String() function of the
 // object type passed in, if it is a typed struct.  Otherwise, it
 // just returns the Unquoted format value.
-func FormatAsString(s *symbols.SymbolTable, v interface{}) string {
+func formatUsingString(s *symbols.SymbolTable, v interface{}) string {
 	if m, ok := v.(*data.Struct); ok {
 		if f := m.GetType().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {

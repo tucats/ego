@@ -10,8 +10,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Slice implements the sort.Slice() function.
-func Slice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// sortSlice implements the sort.sortSlice() function.
+func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	array, ok := args[0].(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType

@@ -25,8 +25,8 @@ func Initialize(s *symbols.SymbolTable) {
 	t, _ := compiler.CompileTypeSpec(commandTypeSpec)
 
 	t.DefineFunctions(map[string]data.Function{
-		"Output": {Value: Output},
-		"Run":    {Value: Run},
+		"Output": {Value: output},
+		"Run":    {Value: run},
 	})
 
 	commandTypeDef = t.SetPackage("exec")
@@ -44,7 +44,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{t},
 				Variadic: true,
 			},
-			Value: Command,
+			Value: newCommand,
 		},
 		"LookPath": data.Function{
 			Declaration: &data.Declaration{
@@ -57,7 +57,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType, data.ErrorType},
 			},
-			Value: LookPath,
+			Value: lookPath,
 		},
 		"Cmd": t,
 	}).SetBuiltins(true)

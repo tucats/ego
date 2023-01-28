@@ -68,7 +68,7 @@ func TestReflect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Reflect(tt.args.s, tt.args.args)
+			got, err := describe(tt.args.s, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Reflect() error = %v, wantErr %v", err, tt.wantErr)
 

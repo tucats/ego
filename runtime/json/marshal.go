@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Marshal writes a JSON string from arbitrary data.
-func Marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// marshal writes a JSON string from arbitrary data.
+func marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		jsonBuffer, err := json.Marshal(data.Sanitize(args[0]))
 		if err != nil {
@@ -43,8 +43,8 @@ func Marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.List(data.NewArray(data.ByteType, 0).Append(jsonBuffer), nil), nil
 }
 
-// MarshalIndent writes a  JSON string from arbitrary data.
-func MarshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// marshalIndent writes a  JSON string from arbitrary data.
+func marshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	prefix := data.String(args[1])
 	indent := data.String(args[2])
 

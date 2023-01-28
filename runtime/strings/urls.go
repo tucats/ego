@@ -7,8 +7,23 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// URLPattern uses ParseURLPattern and then puts the result in a
-// native Ego map structure.
+// URLPattern parses a URL using a provided pattern for what the string
+// is expected to be, and then generates an Ego map that indicates each
+// segment of the url endopint and it's value.
+//
+// If the pattern is
+//
+//	"/services/debug/processes/{{ID}}"
+//
+// and the url is
+//
+//	/services/debug/processses/1653
+//
+// Then the result map will be
+//
+//	map[string]interface{} {
+//	       "ID" : 1653
+//	}
 func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result := data.NewMap(data.StringType, data.InterfaceType)
 
@@ -42,7 +57,7 @@ func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // Then the result map will be
 //
 //	map[string]interface{} {
-//	         "ID" : 1653
+//	       "ID" : 1653
 //	}
 func ParseURLPattern(url, pattern string) (map[string]interface{}, bool) {
 	urlParts := strings.Split(url, "/")

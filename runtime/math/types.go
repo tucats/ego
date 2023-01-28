@@ -19,7 +19,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.InterfaceType},
 			},
-			Value: Abs,
+			Value: abs,
 		},
 		"Log": data.Function{
 			Declaration: &data.Declaration{
@@ -32,7 +32,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.Float64Type},
 			},
-			Value: Log,
+			Value: log,
 		},
 		"Max": data.Function{
 			Declaration: &data.Declaration{
@@ -46,7 +46,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.InterfaceType},
 			},
-			Value: Max,
+			Value: maximum,
 		},
 		"Min": data.Function{
 			Declaration: &data.Declaration{
@@ -60,7 +60,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.InterfaceType},
 			},
-			Value: Min,
+			Value: minimum,
 		},
 		"Normalize": data.Function{
 			Declaration: &data.Declaration{
@@ -78,7 +78,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.InterfaceType, data.InterfaceType},
 			},
-			Value: Normalize,
+			Value: normalize,
 		},
 		"Random": data.Function{
 			Declaration: &data.Declaration{
@@ -91,7 +91,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType},
 			},
-			Value: Random,
+			Value: random,
 		},
 		"Sqrt": data.Function{
 			Declaration: &data.Declaration{
@@ -104,7 +104,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.Float64Type},
 			},
-			Value: Sqrt,
+			Value: squareRoot,
 		},
 		"Sum": data.Function{
 			Declaration: &data.Declaration{
@@ -118,7 +118,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.InterfaceType},
 			},
-			Value: Sum,
+			Value: sum,
 		},
 	})
 

@@ -33,7 +33,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Close,
+			Value: closeClient,
 		},
 
 		"Get": {
@@ -50,7 +50,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Get,
+			Value: doGet,
 		},
 
 		"Post": {
@@ -72,7 +72,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				ArgCount: data.Range{1, 2},
 			},
-			Value: Post,
+			Value: doPost,
 		},
 
 		"Delete": {
@@ -89,7 +89,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Delete,
+			Value: doDelete,
 		},
 
 		"Base": {
@@ -106,7 +106,7 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Base,
+			Value: setBase,
 		},
 
 		"Debug": {
@@ -123,7 +123,7 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Debug,
+			Value: setDebug,
 		},
 
 		"Media": {
@@ -140,7 +140,8 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Media},
+			Value: setMedia,
+		},
 		"Token": {
 			Declaration: &data.Declaration{
 				Name: "Token",
@@ -155,7 +156,7 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Token,
+			Value: setToken,
 		},
 
 		"Auth": {
@@ -176,7 +177,7 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Auth,
+			Value: setAuthentication,
 		},
 
 		"Verify": {
@@ -193,7 +194,7 @@ func Initialize(s *symbols.SymbolTable) {
 					t,
 				},
 			},
-			Value: Verify,
+			Value: setVerify,
 		},
 
 		"Status": {

@@ -9,9 +9,9 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Query executes a query, with optional parameter substitution, and returns row object
+// query executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
-func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -53,9 +53,9 @@ func Query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.List(result, err), err
 }
 
-// QueryResult executes a query, with optional parameter substitution, and returns the
+// queryResult executes a query, with optional parameter substitution, and returns the
 // entire result set as an array in a single operation.
-func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -159,9 +159,9 @@ func QueryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return data.List(r, err), err
 }
 
-// Execute executes a SQL statement, and returns the number of rows that were
+// execute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
-func Execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return nil, errors.ErrArgumentCount
 	}

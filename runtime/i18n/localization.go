@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Language(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func language(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	language := os.Getenv("LANG")
 
 	if pos := strings.Index(language, "_"); pos > 0 {
@@ -26,7 +26,7 @@ func Language(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return language, nil
 }
 
-func T(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func translation(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parameters := map[string]string{}
 	property := data.String(args[0])
 

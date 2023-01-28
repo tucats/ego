@@ -113,11 +113,11 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.NewStructFromMap(urlParts), nil
 }
 
-// Base implements the Base() rest function. This specifies a string that is used
+// setBase implements the setBase() rest function. This specifies a string that is used
 // as the base prefix for any URL formed in a REST call. This lets you specify the
 // protocol/host/port information once, and then have each Get(), Post(), etc. call
 // just specify the endpoint.
-func Base(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
 		return nil, errors.ErrArgumentCount
 	}

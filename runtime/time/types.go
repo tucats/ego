@@ -35,7 +35,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "Now",
 				Returns: []*data.Type{timeType},
 			},
-			Value: Now,
+			Value: now,
 		},
 		"Parse": data.Function{
 			Declaration: &data.Declaration{
@@ -48,7 +48,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{timeType, data.ErrorType},
 			},
-			Value: Parse,
+			Value: parseTime,
 		},
 		"ParseDuration": data.Function{
 			Declaration: &data.Declaration{
@@ -61,7 +61,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{durationType, data.ErrorType},
 			},
-			Value: ParseDuration,
+			Value: parseDuration,
 		},
 		"Since": data.Function{
 			Declaration: &data.Declaration{
@@ -74,7 +74,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{durationType},
 			},
-			Value: Since,
+			Value: sinceTime,
 		},
 		"Sleep": data.Function{
 			Declaration: &data.Declaration{
@@ -86,7 +86,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 			},
-			Value: Sleep,
+			Value: sleepForDuration,
 		},
 		"Time":      t,
 		"Duration":  durationType,

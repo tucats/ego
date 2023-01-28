@@ -10,12 +10,12 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// New implements the New() table package function. This accepts a list
+// newTable implements the newTable() table package function. This accepts a list
 // of column names (as individual arguments or an array of strings) and allocates
 // a new table. Additionally, the column names can contain alignment information;
 // a name with a leading ":" is left-aligned, and a trailing":" is right-
 // aligned. In either case the ":" is removed from the name.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Fetch the arguments as column headings. If the value is passed by array,
 	// extract each array member as a column name.
 	headings := []string{}
@@ -85,9 +85,9 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// Close closes the table handle, and releases any memory resources
+// closeTable closes the table handle, and releases any memory resources
 // being held by the table.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func closeTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, err := getTable(s)
 	if err != nil {
 		return nil, err
@@ -99,12 +99,12 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// AddRow adds a row to the table. This can either be a list of values, or
+// addRow adds a row to the table. This can either be a list of values, or
 // a struct. When it's a struct, each column name must match a struct member
 // name, and the associated value is used as the table cell value. If a list of
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
-func AddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func addRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		if len(args) > 0 {
@@ -146,13 +146,13 @@ func AddRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return err, err
 }
 
-// Sort sorts the rows of the table. If you specify multiple arguments
+// sortTable sorts the rows of the table. If you specify multiple arguments
 // (column names) the sort is performed in the reverse order specified; that
 // is the least-significant sort is performed first, then the next-most-
 // significant sort, etc. until the first argument, which is the most
 // significant sort. The column names can start with a tilde ("~") character
 // to reverse the sort order from it's default value of ascending to descending.
-func Sort(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func sortTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		for i := len(args) - 1; i >= 0; i = i - 1 {

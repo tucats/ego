@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// InstanceOf implements the reflect.InstanceOf() function. This
+// instanceOf implements the reflect.instanceOf() function. This
 // function creates a new "zero value" of any given type or object.
 // If an integer type number or a string type name is given, the
 // "zero value" for that type is returned. For an array, struct,
@@ -20,7 +20,7 @@ import (
 //
 // @tomcole This is the same as the "$new" internal function. Look for ways to
 // consolidate these in the future.
-func InstanceOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func instanceOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args[0].(int); ok {
@@ -124,7 +124,7 @@ func InstanceOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	// Otherwise, make a deep copy of the item ourselves.
-	r := deepCopy(args[0], MaxDeepCopyDepth)
+	r := recursiveCopy(args[0], MaxDeepCopyDepth)
 
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {

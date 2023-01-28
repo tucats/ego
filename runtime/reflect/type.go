@@ -11,8 +11,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Type implements the type() function.
-func Type(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// describeType implements the type() function.
+func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch v := args[0].(type) {
 	case *data.Map:
 		return v.TypeString(), nil

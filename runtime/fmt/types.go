@@ -20,7 +20,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.IntType},
 			},
-			Value: Print,
+			Value: printList,
 		},
 		"Printf": data.Function{
 			Declaration: &data.Declaration{
@@ -38,7 +38,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.IntType},
 			},
-			Value: Printf,
+			Value: printFormat,
 		},
 		"Println": data.Function{
 			Declaration: &data.Declaration{
@@ -52,7 +52,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.IntType},
 			},
-			Value: Println,
+			Value: printLine,
 		},
 		"Sprintf": data.Function{
 			Declaration: &data.Declaration{
@@ -70,7 +70,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.StringType},
 			},
-			Value: Sprintf,
+			Value: stringPrintFormat,
 		},
 		"Sscanf": data.Function{
 			Declaration: &data.Declaration{
@@ -92,7 +92,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.IntType, data.ErrorType},
 			},
-			Value: Sscanf,
+			Value: stringScanFormat,
 		},
 	})
 

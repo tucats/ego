@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Formatbool implement the strconv.Formatbool() function.
-func Formatbool(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doFormatbool implement the strconv.doFormatbool() function.
+func doFormatbool(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if data.Bool(args[0]) {
 		return "true", nil
 	}
@@ -18,8 +18,8 @@ func Formatbool(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return "false", nil
 }
 
-// Formatfloat implement the strconv.Formatfloat() function.
-func Formatfloat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doFormatfloat implement the strconv.doFormatfloat() function.
+func doFormatfloat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	value := data.Float64(args[0])
 
 	fmtString := data.String(args[1])
@@ -39,8 +39,8 @@ func Formatfloat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return strconv.FormatFloat(value, fmt, prec, bitSize), nil
 }
 
-// Formatint implement the strconv.Formatint() function.
-func Formatint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doFormatint implement the strconv.doFormatint() function.
+func doFormatint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	value := data.Int64(args[0])
 
 	base := data.Int(args[1])

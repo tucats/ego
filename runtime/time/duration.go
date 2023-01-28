@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// ParseDuration implements the time.ParseDuration(d string)(time.Duration, error) function.
-func ParseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// parseDuration implements the time.parseDuration(d string)(time.Duration, error) function.
+func parseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := data.String(args[0])
 
 	t, err := time.ParseDuration(str)
@@ -59,8 +59,8 @@ func getDurationV(value interface{}) *time.Duration {
 	return nil
 }
 
-// Sleep implements time.Sleep(d time.Duration).
-func Sleep(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// sleepForDuration implements time.sleepForDuration(d time.Duration).
+func sleepForDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	duration := getDurationV(args[0])
 
 	if duration == nil {

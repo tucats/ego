@@ -20,7 +20,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.StringType},
 				ArgCount: data.Range{1, 1},
 			},
-			Value: Decode,
+			Value: decode,
 		},
 		"Encode": data.Function{
 			Declaration: &data.Declaration{
@@ -34,7 +34,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.StringType},
 				ArgCount: data.Range{1, 1},
 			},
-			Value: Encode,
+			Value: encode,
 		},
 	})
 

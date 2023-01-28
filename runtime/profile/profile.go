@@ -10,15 +10,15 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Get implements the profile.get() function.
-func Get(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// getKey implements the profile.get() function.
+func getKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	key := data.String(args[0])
 
 	return settings.Get(key), nil
 }
 
-// Set implements the profile.set() function.
-func Set(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// setKey implements the profile.set() function.
+func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	key := data.String(args[0])
@@ -64,15 +64,15 @@ func Set(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return err, settings.Save()
 }
 
-// Delete implements the profile.delete() function. This just calls
+// deleteKey implements the profile.delete() function. This just calls
 // the set operation with an empty value, which results in a delete operatinon.
 // The consolidates the persmission checking, etc. in the Set routine only.
-func Delete(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return Set(symbols, []interface{}{args[0], ""})
+func deleteKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	return setKey(symbols, []interface{}{args[0], ""})
 }
 
-// Keys implements the profile.keys() function.
-func Keys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// getKeys implements the profile.keys() function.
+func getKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	keys := settings.Keys()
 	result := make([]interface{}, len(keys))
 

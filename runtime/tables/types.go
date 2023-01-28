@@ -40,7 +40,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: AddRow,
+			Value: addRow,
 		},
 
 		"Close": {
@@ -51,7 +51,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Close,
+			Value: closeTable,
 		},
 
 		"Sort": {
@@ -69,7 +69,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Sort,
+			Value: sortTable,
 		},
 
 		"Print": {
@@ -87,7 +87,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				ArgCount: data.Range{0, 1},
 			},
-			Value: TablePrint,
+			Value: printTable,
 		},
 
 		"Format": {
@@ -108,7 +108,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: TableFormat,
+			Value: setFormat,
 		},
 
 		"Align": {
@@ -129,7 +129,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Align,
+			Value: setAlignment,
 		},
 
 		"String": {
@@ -148,7 +148,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				ArgCount: data.Range{0, 1},
 			},
-			Value: String,
+			Value: toString,
 		},
 
 		"Pagination": {
@@ -169,7 +169,7 @@ func Initialize(s *symbols.SymbolTable) {
 					data.ErrorType,
 				},
 			},
-			Value: Pagination,
+			Value: setPagination,
 		},
 	})
 
@@ -188,7 +188,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{tableTypeDef},
 			},
-			Value: New,
+			Value: newTable,
 		},
 		"Table": tableTypeDef,
 	}).SetBuiltins(true)

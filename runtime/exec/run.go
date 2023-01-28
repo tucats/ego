@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")

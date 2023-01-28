@@ -47,19 +47,19 @@ func Initialize(s *symbols.SymbolTable) {
 		Name:    "Begin",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.ErrorType},
-	}, Begin)
+	}, begin)
 
 	t.DefineFunction("Commit", &data.Declaration{
 		Name:    "Commit",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.ErrorType},
-	}, Commit)
+	}, commit)
 
 	t.DefineFunction("Rollback", &data.Declaration{
 		Name:    "Rollback",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.ErrorType},
-	}, Rollback)
+	}, rollback)
 
 	t.DefineFunction("Query", &data.Declaration{
 		Name: "Query",
@@ -74,7 +74,7 @@ func Initialize(s *symbols.SymbolTable) {
 			data.PointerType(rowsType),
 			data.ErrorType,
 		},
-	}, Query)
+	}, query)
 
 	t.DefineFunction("QueryResult", &data.Declaration{
 		Name: "Execute",
@@ -89,7 +89,7 @@ func Initialize(s *symbols.SymbolTable) {
 			data.ArrayType(data.ArrayType(data.InterfaceType)),
 			data.ErrorType,
 		},
-	}, QueryResult)
+	}, queryResult)
 
 	t.DefineFunction("Execute", &data.Declaration{
 		Name: "Execute",
@@ -104,13 +104,13 @@ func Initialize(s *symbols.SymbolTable) {
 			data.IntType,
 			data.ErrorType,
 		},
-	}, Execute)
+	}, execute)
 
 	t.DefineFunction("Close", &data.Declaration{
 		Name:    "Close",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.ErrorType},
-	}, Close)
+	}, closeConnection)
 
 	t.DefineFunction("AsStruct", &data.Declaration{
 		Name: "AsStruct",
@@ -122,7 +122,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 		},
 		Returns: []*data.Type{data.VoidType},
-	}, AsStructures)
+	}, asStructures)
 
 	clientType = t.SetPackage("db")
 
@@ -138,7 +138,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{t},
 			},
-			Value: New,
+			Value: newConnection,
 		},
 		"Client":           t,
 		"Rows":             rowT,

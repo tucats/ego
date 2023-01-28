@@ -19,7 +19,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType, data.ErrorType},
 			},
-			Value: Atoi,
+			Value: doAtoi,
 		},
 		"Formatbool": data.Function{
 			Declaration: &data.Declaration{
@@ -32,7 +32,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Formatbool,
+			Value: doFormatbool,
 		},
 		"Formatfloat": data.Function{
 			Declaration: &data.Declaration{
@@ -57,7 +57,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Formatfloat,
+			Value: doFormatfloat,
 		}, "Formatint": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Formatint",
@@ -73,7 +73,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Formatint,
+			Value: doFormatint,
 		},
 		"Itoa": data.Function{
 			Declaration: &data.Declaration{
@@ -86,7 +86,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Itoa,
+			Value: doItoa,
 		},
 		"Quote": data.Function{
 			Declaration: &data.Declaration{
@@ -99,7 +99,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Quote,
+			Value: doQuote,
 		},
 		"Unquote": data.Function{
 			Declaration: &data.Declaration{
@@ -112,7 +112,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType, data.ErrorType},
 			},
-			Value: Unquote,
+			Value: doUnquote,
 		},
 	})
 

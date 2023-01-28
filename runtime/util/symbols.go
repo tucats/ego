@@ -11,10 +11,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Symbols implements the util.symbols() function. We skip over the current
+// formatSymbols implements the util.symbols() function. We skip over the current
 // symbol table, which was created just for this function call and will always be
 // empty.
-func Symbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func formatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	selectedScope := -1
 	json := false
 	allItems := false
@@ -132,7 +132,7 @@ func Symbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return strings.Join(t.FormatText(), "\n") + "\n", nil
 }
 
-func Tables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func formatTables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t := symbolTableTypeDef
 
 	result := data.NewArray(t, 0)

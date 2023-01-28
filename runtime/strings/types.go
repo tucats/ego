@@ -13,7 +13,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "Blockfonts",
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: BlockFonts,
+			Value: blockFonts,
 		},
 		"Blockprint": data.Function{
 			Declaration: &data.Declaration{
@@ -31,7 +31,7 @@ func Initialize(s *symbols.SymbolTable) {
 				ArgCount: data.Range{1, 2},
 				Returns:  []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: BlockPrint,
+			Value: blockPrint,
 		},
 		"Chars": data.Function{
 			Declaration: &data.Declaration{
@@ -44,7 +44,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Chars,
+			Value: chars,
 		},
 		"Compare": data.Function{
 			Declaration: &data.Declaration{
@@ -61,7 +61,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType},
 			},
-			Value: Compare,
+			Value: compare,
 		},
 		"Contains": data.Function{
 			Declaration: &data.Declaration{
@@ -78,7 +78,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.BoolType},
 			},
-			Value: Contains,
+			Value: contains,
 		},
 		"ContainsAny": data.Function{
 			Declaration: &data.Declaration{
@@ -95,7 +95,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.BoolType},
 			},
-			Value: ContainsAny,
+			Value: containsAny,
 		},
 		"EqualFold": data.Function{
 			Declaration: &data.Declaration{
@@ -112,7 +112,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: EqualFold,
+			Value: equalFold,
 		},
 		"Fields": data.Function{
 			Declaration: &data.Declaration{
@@ -125,7 +125,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Fields,
+			Value: fields,
 		},
 		"Format": data.Function{
 			Declaration: &data.Declaration{
@@ -144,7 +144,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Variadic: true,
 				Returns:  []*data.Type{data.StringType},
 			},
-			Value: Format,
+			Value: format,
 		},
 		"Index": data.Function{
 			Declaration: &data.Declaration{
@@ -161,7 +161,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType},
 			},
-			Value: Index,
+			Value: index,
 		},
 		"Ints": data.Function{
 			Declaration: &data.Declaration{
@@ -174,7 +174,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType},
 			},
-			Value: Ints,
+			Value: extractInts,
 		},
 		"Join": data.Function{
 			Declaration: &data.Declaration{
@@ -191,7 +191,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Join,
+			Value: join,
 		},
 		"Left": data.Function{
 			Declaration: &data.Declaration{
@@ -208,7 +208,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Left,
+			Value: leftSubstring,
 		},
 		"Length": data.Function{
 			Declaration: &data.Declaration{
@@ -221,7 +221,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.IntType},
 			},
-			Value: Length,
+			Value: length,
 		},
 		"Right": data.Function{
 			Declaration: &data.Declaration{
@@ -238,7 +238,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Right,
+			Value: rightSubstring,
 		},
 		"Split": data.Function{
 			Declaration: &data.Declaration{
@@ -255,7 +255,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Split,
+			Value: splitString,
 		},
 		"String": data.Function{
 			Declaration: &data.Declaration{
@@ -268,7 +268,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: String,
+			Value: toString,
 		},
 		"Substring": data.Function{
 			Declaration: &data.Declaration{
@@ -289,7 +289,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Substring,
+			Value: substring,
 		},
 		"Template": data.Function{
 			Declaration: &data.Declaration{
@@ -308,7 +308,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Scope:    true,
 				Returns:  []*data.Type{data.StringType, data.ErrorType},
 			},
-			Value: Template,
+			Value: evaluateTemplate,
 		},
 		"ToLower": data.Function{
 			Declaration: &data.Declaration{
@@ -321,7 +321,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: ToLower,
+			Value: toLower,
 		},
 		"ToUpper": data.Function{
 			Declaration: &data.Declaration{
@@ -334,7 +334,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: ToUpper,
+			Value: toUpper,
 		},
 		"Tokenize": data.Function{
 			Declaration: &data.Declaration{
@@ -347,7 +347,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Tokenize,
+			Value: tokenize,
 		},
 		"Truncate": data.Function{
 			Declaration: &data.Declaration{
@@ -364,7 +364,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Truncate,
+			Value: truncate,
 		},
 		"URLPattern": data.Function{
 			Declaration: &data.Declaration{

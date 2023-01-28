@@ -25,7 +25,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Type:    t,
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: String,
+			Value: toString,
 		},
 	})
 
@@ -37,14 +37,14 @@ func Initialize(s *symbols.SymbolTable) {
 				Name:    "New",
 				Returns: []*data.Type{t},
 			},
-			Value: New,
+			Value: newUUID,
 		},
 		"Nil": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Nil",
 				Returns: []*data.Type{t},
 			},
-			Value: Nil,
+			Value: nilUUID,
 		},
 		"Parse": data.Function{
 			Declaration: &data.Declaration{
@@ -57,7 +57,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{t, data.ErrorType},
 			},
-			Value: Parse,
+			Value: parseUUID,
 		},
 		"UUID": t,
 	}).SetBuiltins(true)

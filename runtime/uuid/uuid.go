@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// New implements the uuid.New() function.
-func New(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// newUUID implements the uuid.newUUID() function.
+func newUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	u := uuid.New()
 
 	result := data.NewStruct(uuidTypeDef)
@@ -18,8 +18,8 @@ func New(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return result, err
 }
 
-// Nil implements the uuid.Nil() function.
-func Nil(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// nilUUID implements the uuid.nilUUID() function.
+func nilUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	u := uuid.Nil
 
 	result := data.NewStruct(uuidTypeDef)
@@ -28,8 +28,8 @@ func Nil(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return result, err
 }
 
-// Parse implements the uuid.Parse() function.
-func Parse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// parseUUID implements the uuid.parseUUID() function.
+func parseUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	s := data.String(args[0])
 
 	u, err := uuid.Parse(s)
@@ -43,8 +43,8 @@ func Parse(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return result, err
 }
 
-// String implements the (u uuid.UUID) String() function.
-func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// toString implements the (u uuid.UUID) toString() function.
+func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if UUID, ok := v.(*data.Struct); ok {
 			if u, found := UUID.Get("UUID"); found {

@@ -39,7 +39,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.StringType},
 				ArgCount: data.Range{1, 2},
 			},
-			Value: New,
+			Value: newToken,
 		},
 		"Decrypt": data.Function{
 			Declaration: &data.Declaration{
@@ -56,7 +56,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType, data.ErrorType},
 			},
-			Value: Decrypt,
+			Value: decrypt,
 		},
 		"Encrypt": data.Function{
 			Declaration: &data.Declaration{
@@ -73,7 +73,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Encrypt,
+			Value: encrypt,
 		},
 		"Hash": data.Function{
 			Declaration: &data.Declaration{
@@ -86,7 +86,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Hash,
+			Value: hash,
 		},
 		"Random": data.Function{
 			Declaration: &data.Declaration{
@@ -100,7 +100,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.StringType},
 				ArgCount: data.Range{0, 1},
 			},
-			Value: Random,
+			Value: random,
 		},
 		"Extract": data.Function{
 			Declaration: &data.Declaration{
@@ -113,7 +113,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{authType},
 			},
-			Value: Extract,
+			Value: extract,
 		},
 		"Validate": data.Function{
 			Declaration: &data.Declaration{
@@ -126,7 +126,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.BoolType},
 			},
-			Value: Validate,
+			Value: validate,
 		},
 	}).SetBuiltins(true)
 

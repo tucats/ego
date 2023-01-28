@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Format implements the strings.Format() function.
-func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// format implements the strings.format() function.
+func format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return "", nil
 	}
@@ -22,9 +22,9 @@ func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return fmt.Sprintf(data.String(args[0]), args[1:]...), nil
 }
 
-// Chars implements the strings.chars() function. This accepts a string
+// chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
-func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -46,9 +46,9 @@ func Chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// Ints implements the strings.ints() function. This accepts a string
+// extractInts implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
-func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func extractInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
@@ -70,10 +70,10 @@ func Ints(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-// String implements the strings.String() function, which accepts an array
+// toString implements the strings.toString() function, which accepts an array
 // of items and converts it to a single long string of each item. Normally , this is
 // an array of characters.
-func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	for _, v := range args {

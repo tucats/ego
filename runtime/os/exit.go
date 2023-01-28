@@ -6,8 +6,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Exit implements the os.exit() function.
-func Exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// exit implements the os.exit() function.
+func exit(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If no arguments, just do a simple exit
 	if len(args) == 0 {
 		return nil, errors.ErrExit.Context(0)

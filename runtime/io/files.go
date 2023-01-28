@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func AsString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func asString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	f := getThis(s)
@@ -83,8 +83,8 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 	return nil, errors.ErrInvalidfileIdentifier.In(fn)
 }
 
-// ReadString reads the next line from the file as a string.
-func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// readString reads the next line from the file as a string.
+func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f, err := getFile("ReadString", s)
 	if err != nil {
 		return data.List(nil, err), err
@@ -107,8 +107,8 @@ func ReadString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return data.List(scanner.Text(), err), err
 }
 
-// WriteString writes a string value to a file.
-func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// writeString writes a string value to a file.
+func writeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var e2 error
 
 	length := 0
@@ -124,8 +124,8 @@ func WriteString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return data.List(length, err), err
 }
 
-// Write writes an arbitrary binary object to a file.
-func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// write writes an arbitrary binary object to a file.
+func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
 
 	enc := gob.NewEncoder(&buf)
@@ -151,7 +151,7 @@ func Write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
-func WriteAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func writeAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var buf bytes.Buffer
 
 	offset := data.Int(args[1])

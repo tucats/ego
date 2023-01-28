@@ -11,7 +11,7 @@ import (
 // Given a list of path components, connect them together in the syntax
 // supported by the host platform as a file system path. Resolve duplicate
 // separators.
-func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	parts := make([]string, len(args))
 	for i, v := range args {
 		parts[i] = data.String(v)
@@ -20,13 +20,13 @@ func Join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return filepath.Join(parts...), nil
 }
 
-func Base(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func base(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 
 	return filepath.Base(path), nil
 }
 
-func Abs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func abs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 	absPath, err := filepath.Abs(path)
 
@@ -37,19 +37,19 @@ func Abs(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return absPath, err
 }
 
-func Ext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func ext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 
 	return filepath.Ext(path), nil
 }
 
-func Dir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func dir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 
 	return filepath.Dir(path), nil
 }
 
-func Clean(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func clean(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 
 	return filepath.Clean(path), nil

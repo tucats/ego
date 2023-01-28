@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// Wrapper around strings.Fields().
-func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Wrapper around strings.fields().
+func fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := data.String(args[0])
 
 	fields := strings.Fields(a)
@@ -23,8 +23,8 @@ func Fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// Tokenize splits a string into tokens.
-func Tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// tokenize splits a string into tokens.
+func tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	src := data.String(args[0])
 	t := tokenizer.New(src, false)
 

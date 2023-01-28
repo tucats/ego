@@ -7,10 +7,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Begin implements the Begin() db function. This allocated a new structure that
+// begin implements the begin() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func Begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -36,8 +36,8 @@ func Begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// Rollback implements the Rollback() db function.
-func Rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// rollback implements the rollback() db function.
+func rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.ErrArgumentCount
 	}
@@ -64,8 +64,8 @@ func Rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, err
 }
 
-// Commit implements the Commit() db function.
-func Commit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// commit implements the commit() db function.
+func commit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
 		return nil, errors.ErrArgumentCount
 	}

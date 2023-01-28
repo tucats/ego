@@ -21,10 +21,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// New implements the New() db function. This allocated a new structure that
+// newConnection implements the newConnection() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newConnection(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Get the connection string, which MUST be in URL format.
 	connStr := data.String(args[0])
 
@@ -61,11 +61,11 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// AsStructures sets the asStruct flag. When true, result sets from queries are an array
+// asStructures sets the asStruct flag. When true, result sets from queries are an array
 // of structs, where the struct members are the same as the result set column names. When
 // not true, the result set is an array of arrays, where the inner array contains the
 // column data in the order of the result set, but with no labels, etc.
-func AsStructures(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func asStructures(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	_, _, err := client(s)
 	if err != nil {
 		return nil, err
@@ -77,9 +77,9 @@ func AsStructures(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return this, nil
 }
 
-// Close closes the database connection, frees up any resources held, and resets the
+// closeConnection closes the database connection, frees up any resources held, and resets the
 // handle contents to prevent re-using the connection.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func closeConnection(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	db, tx, err := client(s)
 	if err != nil {
 		return nil, err

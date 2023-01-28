@@ -7,16 +7,16 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Wrapper around strings.Compare().
-func Compare(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Wrapper around strings.compare().
+func compare(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := data.String(args[0])
 	b := data.String(args[1])
 
 	return strings.Compare(a, b), nil
 }
 
-// Wrapper around strings.EqualFold().
-func EqualFold(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Wrapper around strings.equalFold().
+func equalFold(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := data.String(args[0])
 	b := data.String(args[1])
 

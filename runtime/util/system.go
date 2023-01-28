@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Mode implements the util.Mode() function which reports the runtime mode.
-func Mode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// getMode implements the util.getMode() function which reports the runtime mode.
+func getMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	m, ok := symbols.Get(defs.ModeVariable)
 	if !ok {
 		m = "run"
@@ -19,7 +19,7 @@ func Mode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return m, nil
 }
 
-func Memory(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getMemoryStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var m runtime.MemStats
 
 	result := map[string]interface{}{}

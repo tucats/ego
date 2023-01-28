@@ -26,8 +26,8 @@ type authToken struct {
 	AuthID  uuid.UUID
 }
 
-// Validate determines if a token is valid and returns true/false.
-func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// validate determines if a token is valid and returns true/false.
+func validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	reportErr := false
@@ -89,8 +89,8 @@ func Validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return true, err
 }
 
-// Extract extracts the data from a token and returns it as a struct.
-func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// extract extracts the data from a token and returns it as a struct.
+func extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	// Take the token value, and decode the hex string.
@@ -140,8 +140,8 @@ func Extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.NewStructFromMap(r), err
 }
 
-// New creates a new token with a username and a data payload.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// newToken creates a newToken token with a username and a data payload.
+func newToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var err error
 
 	// Create a new token object, with the username and an ID. If there was a

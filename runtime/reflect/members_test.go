@@ -43,7 +43,7 @@ func TestFunctionMembers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Members(nil, tt.args.args)
+			got, err := members(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMembers() error = %v, wantErr %v", err, tt.wantErr)
 

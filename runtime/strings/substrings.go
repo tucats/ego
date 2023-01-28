@@ -7,16 +7,16 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Index implements the strings.Index() function.
-func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// index implements the strings.index() function.
+func index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := data.String(args[0])
 	p := data.String(args[1])
 
 	return strings.Index(v, p) + 1, nil
 }
 
-// Substring implements the substring() function.
-func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// substring implements the substring() function.
+func substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v := data.String(args[0])
 
 	p1 := data.Int(args[1]) // Starting character position
@@ -59,8 +59,8 @@ func Substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 	return b.String(), nil
 }
 
-// Left implements the left() function.
-func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// leftSubstring implements the left() function.
+func leftSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var b strings.Builder
 
 	count := 0
@@ -84,8 +84,8 @@ func Left(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return b.String(), nil
 }
 
-// Right implements the right() function.
-func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// rightSubstring implements the right() function.
+func rightSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var charPos int
 
 	var b strings.Builder
@@ -113,8 +113,8 @@ func Right(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return b.String(), nil
 }
 
-// Wrapper around strings.Contains().
-func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// Wrapper around strings.contains().
+func contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := data.String(args[0])
 	b := data.String(args[1])
 
@@ -122,14 +122,14 @@ func Contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Wrapper around strings.Contains().
-func ContainsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func containsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	a := data.String(args[0])
 	b := data.String(args[1])
 
 	return strings.ContainsAny(a, b), nil
 }
 
-func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := data.String(args[0])
 	maxWidth := data.Int(args[1])
 
@@ -155,9 +155,9 @@ func Truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, er
 	return result, nil
 }
 
-// Length is the strings.Length() function, which counts characters/runes instead of
+// length is the strings.length() function, which counts characters/runes instead of
 // bytes like len() does.
-func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	count := 0
 	v := data.String(args[0])
 

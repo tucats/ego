@@ -9,7 +9,6 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	rreflect "github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -28,7 +27,6 @@ func initTestType() {
 		// Define the type receiver functions
 		t.DefineFunction("assert", nil, TestAssert)
 		t.DefineFunction("fail", nil, TestFail)
-		t.DefineFunction("isType", nil, TestIsType)
 		t.DefineFunction("Nil", nil, TestNil)
 		t.DefineFunction("NotNil", nil, TestNotNil)
 		t.DefineFunction("True", nil, TestTrue)
@@ -132,29 +130,6 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 		fmt.Println()
 
 		return nil, msg
-	}
-
-	return true, nil
-}
-
-// TestIsType implements the T.type() function.
-func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 2 || len(args) > 3 {
-		return nil, errors.ErrArgumentCount.In("IsType()")
-	}
-
-	// Use the Type() function to get a string representation of the type
-	got, _ := rreflect.Type(s, args[0:1])
-	expected := data.String(args[1])
-
-	b := (expected == got)
-	if !b {
-		msg := fmt.Sprintf("T.isType(\"%s\" != \"%s\") failure", got, expected)
-		if len(args) > 2 {
-			msg = data.String(args[2])
-		}
-
-		return nil, errors.NewMessage(msg).In(getTestName(s))
 	}
 
 	return true, nil

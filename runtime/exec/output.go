@@ -12,8 +12,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Output implements the command.Output functionality.
-func Output(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// output implements the command.output functionality.
+func output(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")

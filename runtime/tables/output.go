@@ -10,9 +10,9 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Pagination sets the page width and height for paginated output. Set the
+// setPagination sets the page width and height for paginated output. Set the
 // values both to zero to disable pagination support.
-func Pagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setPagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	h := data.Int(args[0])
 	w := data.Int(args[1])
 
@@ -26,11 +26,11 @@ func Pagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return true, err
 }
 
-// TableFormat specifies the headings format. It accepts two values, which
+// setFormat specifies the headings format. It accepts two values, which
 // are both booleans. The first indicates if a headings row is to be printed
 // in the output. The second is examined only if the headings value is true;
 // it controls whether an underline string is printed under the column names.
-func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
@@ -52,8 +52,8 @@ func TableFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	return err, err
 }
 
-// Align specifies alignment for a given column.
-func Align(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// setAlignment specifies alignment for a given column.
+func setAlignment(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		column := 0
@@ -95,9 +95,9 @@ func Align(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return err, err
 }
 
-// TablePrint prints a table to the default output, in the default --output-format
+// printTable prints a table to the default output, in the default --output-format
 // type (text or json).
-func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func printTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {
@@ -112,8 +112,8 @@ func TablePrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return err, err
 }
 
-// String formats a table as a string in the default output.
-func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// toString formats a table as a string in the default output.
+func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fmt := ui.OutputFormat
 
 	if len(args) > 0 {

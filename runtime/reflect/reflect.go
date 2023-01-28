@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func describe(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	vv := reflect.ValueOf(args[0])
 	ts := vv.String()
 
@@ -193,7 +193,7 @@ func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}), nil
 	}
 
-	typeString, err := Type(s, args)
+	typeString, err := describeType(s, args)
 	if err == nil {
 		result := map[string]interface{}{
 			data.TypeMDName:     typeString,

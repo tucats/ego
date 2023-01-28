@@ -8,15 +8,15 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Quote implements the strconv.Quote() function.
-func Quote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doQuote implements the strconv.doQuote() function.
+func doQuote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	value := data.String(args[0])
 
 	return strconv.Quote(value), nil
 }
 
-// Unquote implements the strconv.Unquote() function.
-func Unquote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doUnquote implements the strconv.doUnquote() function.
+func doUnquote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	value := data.String(args[0])
 
 	if v, err := strconv.Unquote(value); err != nil {

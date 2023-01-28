@@ -19,7 +19,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.ByteType)},
 			},
-			Value: Marshal,
+			Value: marshal,
 		},
 		"MarshalIndent": data.Function{
 			Declaration: &data.Declaration{
@@ -40,7 +40,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.ByteType)},
 			},
-			Value: MarshalIndent,
+			Value: marshalIndent,
 		},
 		"Unmarshal": data.Function{
 			Declaration: &data.Declaration{
@@ -57,7 +57,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ErrorType},
 			},
-			Value: Unmarshal,
+			Value: unmarshal,
 		},
 	})
 

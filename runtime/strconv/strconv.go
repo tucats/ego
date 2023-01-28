@@ -8,8 +8,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Atoi implements the strconv.Atoi() function.
-func Atoi(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doAtoi implements the strconv.doAtoi() function.
+func doAtoi(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := data.String(args[0])
 
 	if v, err := strconv.Atoi(str); err != nil {
@@ -19,8 +19,8 @@ func Atoi(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 }
 
-// Itoa implements the strconv.Itoa() function.
-func Itoa(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doItoa implements the strconv.doItoa() function.
+func doItoa(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	value := data.Int(args[0])
 
 	return strconv.Itoa(value), nil

@@ -66,28 +66,28 @@ func Initialize(s *symbols.SymbolTable) {
 				ArgCount: data.Range{1, 2},
 				Returns:  []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Log,
+			Value: getLogContents,
 		},
 		"Memory": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Memory",
 				Returns: []*data.Type{memoryTypeDef},
 			},
-			Value: Memory,
+			Value: getMemoryStats,
 		},
 		"Mode": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Mode",
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Mode,
+			Value: getMode,
 		},
 		"Packages": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Packages",
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Packages,
+			Value: getPackages,
 		},
 		"SetLogger": data.Function{
 			Declaration: &data.Declaration{
@@ -104,7 +104,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.BoolType},
 			},
-			Value: SetLogger,
+			Value: setLogger,
 		},
 		"Symbols": data.Function{
 			Declaration: &data.Declaration{
@@ -125,14 +125,14 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				ArgCount: data.Range{0, 3},
 			},
-			Value: Symbols,
+			Value: formatSymbols,
 		},
 		"SymbolTables": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "SymbolTables",
 				Returns: []*data.Type{symbolTableTypeDef},
 			},
-			Value: Tables,
+			Value: formatTables,
 		},
 	}).SetBuiltins(true)
 

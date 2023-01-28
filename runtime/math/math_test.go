@@ -53,7 +53,7 @@ func TestFunctionMin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Min(nil, tt.args.args)
+			got, err := minimum(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMin() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -114,7 +114,7 @@ func TestFunctionMax(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Max(nil, tt.args.args)
+			got, err := maximum(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMax() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -175,7 +175,7 @@ func TestFunctionSum(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Sum(nil, tt.args.args)
+			got, err := sum(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSum() error = %v, wantErr %v", err, tt.wantErr)
 

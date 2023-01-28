@@ -54,13 +54,13 @@ func Initialize(s *symbols.SymbolTable) {
 		Name:    "Close",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.ErrorType},
-	}, Close)
+	}, closeFile)
 
 	t.DefineFunction("ReadString", &data.Declaration{
 		Name:    "ReadString",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.StringType, data.ErrorType},
-	}, ReadString)
+	}, readString)
 
 	t.DefineFunction("WriteString", &data.Declaration{
 		Name: "WriteString",
@@ -72,7 +72,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, WriteString)
+	}, writeString)
 
 	t.DefineFunction("Write", &data.Declaration{
 		Name: "Write",
@@ -84,7 +84,7 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, Write)
+	}, write)
 
 	t.DefineFunction("WriteAt", &data.Declaration{
 		Name: "WriteAt",
@@ -100,13 +100,13 @@ func Initialize(s *symbols.SymbolTable) {
 			},
 		},
 		Returns: []*data.Type{data.IntType, data.ErrorType},
-	}, Write)
+	}, writeAt)
 
 	t.DefineFunction("String", &data.Declaration{
 		Name:    "String",
 		Type:    data.PointerType(t),
 		Returns: []*data.Type{data.StringType},
-	}, AsString)
+	}, asString)
 
 	fileType = t.SetPackage("io")
 	newpkg := data.NewPackageFromMap("io", map[string]interface{}{
@@ -128,7 +128,7 @@ func Initialize(s *symbols.SymbolTable) {
 				Returns:  []*data.Type{data.ArrayType(data.StringType)},
 				ArgCount: data.Range{1, 2},
 			},
-			Value: Expand,
+			Value: expand,
 		},
 		"Open": data.Function{
 			Declaration: &data.Declaration{
@@ -141,7 +141,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{fileType, data.ErrorType},
 			},
-			Value: Open,
+			Value: openFile,
 		},
 		"ReadDir": data.Function{
 			Declaration: &data.Declaration{
@@ -154,7 +154,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(entryType)},
 			},
-			Value: ReadDir,
+			Value: readDirectory,
 		},
 		"Prompt": data.Function{
 			Declaration: &data.Declaration{
@@ -167,7 +167,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Prompt,
+			Value: prompt,
 		},
 	}).SetBuiltins(true)
 

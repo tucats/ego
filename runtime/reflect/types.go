@@ -26,7 +26,7 @@ func Initialize(s *symbols.SymbolTable) {
 				ArgCount: data.Range{1, 2},
 				Returns:  []*data.Type{data.InterfaceType},
 			},
-			Value: DeepCopy,
+			Value: deepCopy,
 		},
 		"InstanceOf": data.Function{
 			Declaration: &data.Declaration{
@@ -39,7 +39,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.InterfaceType},
 			},
-			Value: InstanceOf,
+			Value: instanceOf,
 		},
 		"Members": data.Function{
 			Declaration: &data.Declaration{
@@ -52,7 +52,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Members,
+			Value: members,
 		},
 		"Reflect": data.Function{
 			Declaration: &data.Declaration{
@@ -65,7 +65,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StructType},
 			},
-			Value: Reflect,
+			Value: describe,
 		},
 		"Type": data.Function{
 			Declaration: &data.Declaration{
@@ -78,7 +78,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Type,
+			Value: describeType,
 		},
 	})
 

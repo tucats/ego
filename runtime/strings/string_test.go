@@ -41,7 +41,7 @@ func TestFunctionLeft(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Left(nil, tt.args.args)
+			got, err := leftSubstring(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLeft() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -94,7 +94,7 @@ func TestFunctionRight(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Right(nil, tt.args.args)
+			got, err := rightSubstring(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionRight() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -148,7 +148,7 @@ func TestFunctionLower(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ToLower(nil, tt.args.args)
+			got, err := toLower(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLower() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -202,7 +202,7 @@ func TestFunctionUpper(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ToUpper(nil, tt.args.args)
+			got, err := toUpper(nil, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionUpper() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -287,7 +287,7 @@ func TestSubstring(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Substring(nil, tt.args)
+			got, err := substring(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Substring() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -326,7 +326,7 @@ func TestStrLen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Length(nil, tt.args)
+			got, err := length(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StrLen() error = %v, wantErr %v", err, tt.wantErr)
 

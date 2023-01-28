@@ -9,14 +9,14 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Getenv implements the os.Getenv() function which reads
+// getEnv implements the os.getEnv() function which reads
 // an environment variable from the os.
-func Getenv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getEnv(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return os.Getenv(data.String(args[0])), nil
 }
 
-// Clearenv implements the os.Clearenv() function.
-func Clearenv(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// clearEnv implements the os.clearEnv() function.
+func clearEnv(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	os.Clearenv()
 
 	return nil, nil
@@ -37,8 +37,8 @@ func Environ(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-// Executable implements the os.Executable() function.
-func Executable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// executable implements the os.executable() function.
+func executable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path, err := os.Executable()
 
 	if err != nil {
@@ -48,9 +48,9 @@ func Executable(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return path, err
 }
 
-// Args implements os.Args() which fetches command-line arguments from
+// args implements os.args() which fetches command-line arguments from
 // the Ego command invocation, if any.
-func Args(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func args(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	r, found := s.Get(defs.CLIArgumentListVariable)
 	if !found {
 		r = data.NewArray(data.StringType, 0)

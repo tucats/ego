@@ -18,7 +18,7 @@ func Initialize(s *symbols.SymbolTable) {
 					},
 				},
 			},
-			Value: Delete,
+			Value: deleteKey,
 		},
 		"Get": data.Function{
 			Declaration: &data.Declaration{
@@ -31,14 +31,14 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Returns: []*data.Type{data.StringType},
 			},
-			Value: Get,
+			Value: getKey,
 		},
 		"Keys": data.Function{
 			Declaration: &data.Declaration{
 				Name:    "Get",
 				Returns: []*data.Type{data.ArrayType(data.StringType)},
 			},
-			Value: Keys,
+			Value: getKeys,
 		},
 		"Set": data.Function{
 			Declaration: &data.Declaration{
@@ -55,7 +55,7 @@ func Initialize(s *symbols.SymbolTable) {
 				},
 				Scope: true,
 			},
-			Value: Set,
+			Value: setKey,
 		},
 	})
 

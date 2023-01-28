@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func Packages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getPackages(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Make the unordered list of all package names defined in all
 	// scopes from here. This may include duplicates.
 	allNames := makePackageList(s)

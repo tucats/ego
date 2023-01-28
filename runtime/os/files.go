@@ -15,9 +15,9 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Readfile implements os.REadFile() which reads a file contents into a
+// readFile implements os.REadFile() which reads a file contents into a
 // byte array value.
-func Readfile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func readFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	name := data.String(args[0])
 	if name == "." {
 		return ui.Prompt(""), nil
@@ -33,8 +33,8 @@ func Readfile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return data.NewArray(data.ByteType, 0).Append(content), nil
 }
 
-// Writefile implements os.Writefile() writes a byte array (or string) to a file.
-func Writefile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// writeFile implements os.writeFile() writes a byte array (or string) to a file.
+func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fileName := sandboxName(data.String(args[0]))
 
 	if a, ok := args[1].(*data.Array); ok {
@@ -59,7 +59,7 @@ func Writefile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // DeleteFile deletes a file.
-func Remove(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func removeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fileName := data.String(args[0])
 	fileName = sandboxName(fileName)
 
@@ -71,8 +71,8 @@ func Remove(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return err == nil, err
 }
 
-// Chdir implements the os.Chdir() function.
-func Chdir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// changeDirectory implements the os.changeDirectory() function.
+func changeDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 
 	if err := os.Chdir(path); err != nil {
@@ -82,8 +82,8 @@ func Chdir(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-// Chmod implements the os.Chmod() function.
-func Chmod(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// changeMode implements the os.changeMode() function.
+func changeMode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 	mode := data.Int32(args[1])
 
@@ -94,8 +94,8 @@ func Chmod(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-// Chown implements the os.Chown() function.
-func Chown(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// changeOwner implements the os.changeOwner() function.
+func changeOwner(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path := data.String(args[0])
 	uid := data.Int(args[1])
 	gid := data.Int(args[1])

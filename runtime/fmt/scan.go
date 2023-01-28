@@ -10,11 +10,11 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-// Sscanf implements the fmt.Sscanf() function. This accepts a string containing
+// stringScanFormat implements the fmt.stringScanFormat() function. This accepts a string containing
 // arbitrary data, a format string that guides the scanner in how to interpret
 // the string, and a variable list of addresses to arbitrary objects, which
 // will receive the input values from the data string that are scanned.
-func Sscanf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	dataString := data.String(args[0])
 	formatString := data.String(args[1])
 

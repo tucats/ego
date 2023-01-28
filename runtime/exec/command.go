@@ -11,10 +11,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Command implements exec.Command() which executes a command in a
+// newCommand implements exec.newCommand() which executes a command in a
 // subprocess and returns a *exec.Cmd object that can be used to
 // interrogate the success of the operation and view the results.
-func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
@@ -47,7 +47,8 @@ func Command(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return result, nil
 }
 
-func LookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// lookPath implements the exec.LookPath() function.
+func lookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path, err := exec.LookPath(data.String(args[0]))
 	if err != nil {
 		return "", errors.NewError(err).Context("LookPath")

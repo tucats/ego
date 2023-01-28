@@ -13,11 +13,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Get implements the rest Get() function. This must be provided with a URL or
+// doGet implements the rest doGet() function. This must be provided with a URL or
 // URL fragment (depending on whether Base() was called). The URL is constructed, and
 // authentication set, and a GET HTTP operation is generated. The result is either a
 // string (for media type of text) or a struct (media type of JSON).
-func Get(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func doGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -84,8 +84,8 @@ func Get(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return rb, nil
 }
 
-// Post implements the Post() rest function.
-func Post(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doPost implements the doPost() rest function.
+func doPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
 
 	client, err := getClient(s)
@@ -165,8 +165,8 @@ func Post(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return rb, nil
 }
 
-// Delete implements the Delete() rest function.
-func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// doDelete implements the doDelete() rest function.
+func doDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	var body interface{} = ""
 
 	client, err := getClient(s)

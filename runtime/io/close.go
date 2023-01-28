@@ -5,8 +5,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Close closes a file.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// closeFile closes a file.
+func closeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f, err := getFile("Close", s)
 	if err == nil {
 		e2 := f.Close()

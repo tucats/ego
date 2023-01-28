@@ -7,8 +7,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Is implements the (e error) Is() method for Ego errors.
-func Is(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// isError implements the (e error) Is() method for Ego errors.
+func isError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
 		return nil, errors.ErrArgumentCount.In("Error()")
 	}

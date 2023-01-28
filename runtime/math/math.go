@@ -9,16 +9,16 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Normalize coerces a value to match the type of a model value. The
+// normalize coerces a value to match the type of a model value. The
 // (possibly modified) value is returned as the function value.
-func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := data.Normalize(args[0], args[1])
 
 	return data.List(v1, v2), nil
 }
 
-// Min implements the math.Min() function.
-func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// minimum implements the math.Min() function.
+func minimum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
 	}
@@ -59,8 +59,8 @@ func Min(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Max implements the math.Max() function.
-func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// maximum implements the math.Max() function.
+func maximum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) == 1 {
 		return args[0], nil
 	}
@@ -102,8 +102,8 @@ func Max(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return r, nil
 }
 
-// Sum implements the math.Sum() function.
-func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// sum implements the math.Sum() function.
+func sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	base := args[0]
 
 	for _, addendV := range args[1:] {
@@ -145,27 +145,27 @@ func Sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return base, nil
 }
 
-// Sqrt implements the math.Sqrt() function.
-func Sqrt(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// squareRoot implements the math.Sqrt() function.
+func squareRoot(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := data.Float64(args[0])
 
 	return math.Sqrt(f), nil
 }
 
-// Abs implements the math.Abs() function.
-func Abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// abs implements the math.Abs() function.
+func abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f := data.Float64(args[0])
 
 	return math.Abs(f), nil
 }
 
-// Log implements the math.Log() function.
-func Log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// log implements the math.Log() function.
+func log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return math.Log(data.Float64(args[0])), nil
 }
 
-// Random implmeents the math.Random() function.
-func Random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+// random implmeents the math.Random() function.
+func random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	max := data.Int(args[0])
 	if max <= 0 {
 		return nil, errors.ErrInvalidFunctionArgument.Context(max)
