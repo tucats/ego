@@ -3,7 +3,7 @@
 // Note this test is _very_ sensitive to changes in the output format
 {
     h := []string{"Name", "Age", "Title"}
-    t := tables.New(h)
+    t := tables.New(h...)
     t.Pagination(0,0)
     
     t.AddRow("Tom", "53", "Dad")

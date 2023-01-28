@@ -10,11 +10,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// Slice implements the sort.Slice() function. Beause this function requires a callback
-// function written as bytecode, it cannot be in the functions package to avoid an import
-// cycle problem. So this function (and others like it) are declared outside the functions
-// package here in the runtime package, and are manually added to the dictionary when the
-// run command is invoked.
+// Slice implements the sort.Slice() function.
 func Slice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	array, ok := args[0].(*data.Array)
 	if !ok {
@@ -47,7 +43,6 @@ func Slice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	sort.Slice(array.BaseArray(), func(i, j int) bool {
 		// Set the i,j variables as the current function arguments
 		sliceSymbols.SetAlways(defs.ArgumentListVariable, data.NewArrayFromArray(data.IntType, []interface{}{i, j}))
-
 		// Run the comparator function
 		if err := ctx.RunFromAddress(0); err != nil {
 			if funcError == nil {

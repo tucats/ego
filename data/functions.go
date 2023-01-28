@@ -18,6 +18,7 @@ type Declaration struct {
 	Parameters []Parameter
 	Returns    []*Type
 	Variadic   bool
+	Scope      bool
 	ArgCount   Range
 }
 

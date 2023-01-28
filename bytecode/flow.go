@@ -205,6 +205,7 @@ func callByteCode(c *Context, i interface{}) error {
 	// Normally, this value is zero.
 	argc := data.Int(i) + c.argCountDelta
 	c.argCountDelta = 0
+	fullSymbolVisibility := c.fullSymbolScope
 
 	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
@@ -240,14 +241,52 @@ func callByteCode(c *Context, i interface{}) error {
 	// unwrap the value of the function pointer.
 	if dp, ok := functionPointer.(data.Function); ok {
 		fargc := 0
+
 		if dp.Declaration != nil {
 			fargc = len(dp.Declaration.Parameters)
+			fullSymbolVisibility = dp.Declaration.Scope
 		}
 
 		if fargc != argc {
 			if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
 				if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
 					return c.error(errors.ErrArgumentCount)
+				}
+			}
+		}
+
+		if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
+			for n, arg := range args {
+				parms := dp.Declaration.Parameters
+
+				if dp.Declaration.Variadic && n > len(parms) {
+					lastType := dp.Declaration.Parameters[len(parms)-1].Type
+
+					if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) {
+						continue
+					}
+
+					if !data.TypeOf(arg).IsType(lastType) {
+						return c.error(errors.ErrArgumentType).Context(data.TypeOf(arg).String())
+					}
+				}
+
+				if n < len(parms) {
+					if parms[n].Type.IsInterface() {
+						continue
+					}
+
+					if parms[n].Type.IsType(data.ArrayType(data.InterfaceType)) {
+						continue
+					}
+
+					if data.TypeOf(arg).IsInterface() {
+						continue
+					}
+
+					if !data.TypeOf(arg).IsType(parms[n].Type) {
+						return c.error(errors.ErrArgumentType).Context(data.TypeOf(arg).String())
+					}
 				}
 			}
 		}
@@ -341,7 +380,6 @@ func callByteCode(c *Context, i interface{}) error {
 		// See if it is a builtin function that needs visibility to the entire
 		// symbol stack without binding the scope to the parent of the current
 		// stack.
-		fullSymbolVisibility := c.fullSymbolScope
 		if functionDefinition != nil {
 			fullSymbolVisibility = fullSymbolVisibility || functionDefinition.FullScope
 

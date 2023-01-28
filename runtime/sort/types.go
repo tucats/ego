@@ -90,7 +90,8 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 		"Slice": data.Function{
 			Declaration: &data.Declaration{
-				Name: "Slice",
+				Name:  "Slice",
+				Scope: true,
 				Parameters: []data.Parameter{
 					{
 						Name: "data",

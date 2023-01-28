@@ -2,7 +2,7 @@
 
 {
     h := []string{"Name", "Age", "Title"}
-    t := tables.New(h)
+    t := tables.New(h...)
 
     t.AddRow("Tom", "53", "Dad")
     t.AddRow([]string{"Mary", "47", "Mom"}...)
