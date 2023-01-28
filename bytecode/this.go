@@ -1,13 +1,8 @@
 package bytecode
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
 )
 
 // setThisByteCode implements the SetThis opcode. Given a named value,
@@ -83,7 +78,6 @@ func (c *Context) pushThis(name string, v interface{}) {
 	}
 
 	c.thisStack = append(c.thisStack, this{name, v})
-	c.PrintThisStack("push")
 }
 
 // popThis removes a receiver value from this "this" stack.
@@ -95,36 +89,5 @@ func (c *Context) popThis() (interface{}, bool) {
 	this := c.thisStack[len(c.thisStack)-1]
 	c.thisStack = c.thisStack[:len(c.thisStack)-1]
 
-	c.PrintThisStack("pop")
-
 	return this.value, true
-}
-
-// Add a line to the trace output that shows the "this" stack of
-// saved function receivers.
-func (c *Context) PrintThisStack(operation string) {
-	if ui.IsActive(ui.TraceLogger) {
-		var b strings.Builder
-
-		label := fmt.Sprintf("(%d) %s this; stack =", c.threadID, operation)
-
-		if c.thisStack == nil || len(c.thisStack) == 0 {
-			b.WriteString(fmt.Sprintf("%s <empty>", label))
-		} else {
-			b.WriteString(fmt.Sprintf("%s ", label))
-
-			lastOne := len(c.thisStack) - 1
-			for index := lastOne; index >= 0; index-- {
-				v := c.thisStack[index]
-				n := v.name
-				r, _ := functions.ReflectType(c.symbols, []interface{}{v.value})
-				b.WriteString(fmt.Sprintf("\"%s\" T(%s)", n, r))
-				if index > 0 {
-					b.WriteString(",")
-				}
-			}
-		}
-
-		ui.Log(ui.SymbolLogger, b.String())
-	}
 }

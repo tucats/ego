@@ -67,7 +67,7 @@ const Any = math.MaxInt32
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"$cast":  {Min: 2, Max: 2, F: InternalCast},
-	"$new":   {Min: 1, Max: 1, F: ReflectNew},
+	"$new":   {Min: 1, Max: 1, F: New},
 	"append": {Min: 2, Max: Any, F: Append},
 	"close":  {Min: 1, Max: 1, F: Close},
 	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true},
@@ -105,11 +105,6 @@ var FunctionDictionary = map[string]FunctionDefinition{
 	"profile.Get":         {Min: 1, Max: 1, F: ProfileGet},
 	"profile.Keys":        {Min: 0, Max: 0, F: ProfileKeys},
 	"profile.Set":         {Min: 1, Max: 2, F: ProfileSet},
-	"reflect.DeepCopy":    {Min: 1, Max: 1, F: ReflectDeepCopy},
-	"reflect.InstanceOf":  {Min: 1, Max: 1, F: ReflectNew},
-	"reflect.Members":     {Min: 1, Max: 1, F: ReflectMembers},
-	"reflect.Reflect":     {Min: 1, Max: 1, F: ReflectReflect},
-	"reflect.Type":        {Min: 1, Max: 1, F: ReflectType},
 	"strconv.Atoi":        {Min: 1, Max: 1, F: StrConvAtoi, ErrReturn: true},
 	"strconv.Formatbool":  {Min: 1, Max: 1, F: StrConvFormatBool},
 	"strconv.Formatfloat": {Min: 4, Max: 4, F: StrConvFormatFloat},

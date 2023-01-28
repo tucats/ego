@@ -1,11 +1,9 @@
-package functions
+package reflect
 
 import (
-	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -14,7 +12,7 @@ import (
 	"github.com/tucats/ego/util"
 )
 
-func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Reflect(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	vv := reflect.ValueOf(args[0])
 	ts := vv.String()
 
@@ -195,7 +193,7 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 		}), nil
 	}
 
-	typeString, err := ReflectType(s, args)
+	typeString, err := Type(s, args)
 	if err == nil {
 		result := map[string]interface{}{
 			data.TypeMDName:     typeString,
@@ -207,120 +205,6 @@ func ReflectReflect(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 	}
 
 	return nil, err
-}
-
-// ReflectDeepCopy implements the reflect.DeepCopy function.
-func ReflectDeepCopy(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	depth := MaxDeepCopyDepth
-	if len(args) > 1 {
-		depth = data.Int(args[1])
-	}
-
-	return DeepCopy(args[0], depth), nil
-}
-
-// ReflectType implements the type() function.
-func ReflectType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	switch v := args[0].(type) {
-	case *data.Map:
-		return v.TypeString(), nil
-
-	case *data.Array:
-		return v.TypeString(), nil
-
-	case *data.Struct:
-		return v.TypeString(), nil
-
-	case data.Struct:
-		return v.TypeString(), nil
-
-	case nil:
-		return "nil", nil
-
-	case error:
-		return "error", nil
-
-	case *sync.WaitGroup:
-		return "sync.Waitgroup", nil
-
-	case **sync.WaitGroup:
-		return "*sync.WaitGroup", nil
-
-	case **sync.Mutex:
-		return "*sync.Mutex", nil
-
-	case *sync.Mutex:
-		return "sync.Mutex", nil
-
-	case *data.Channel:
-		return "chan", nil
-
-	case *data.Type:
-		typeName := v.String()
-
-		space := strings.Index(typeName, " ")
-		if space > 0 {
-			typeName = typeName[space+1:]
-		}
-
-		return "type " + typeName, nil
-
-	case *data.Package:
-		t := data.TypeOf(v)
-
-		if t.IsTypeDefinition() {
-			return t.Name(), nil
-		}
-
-		return t.String(), nil
-
-	case *interface{}:
-		tt := data.TypeOfPointer(v)
-
-		return "*" + tt.String(), nil
-
-	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, error):
-		return "<builtin>", nil
-
-	default:
-		tt := data.TypeOf(v)
-		if tt.IsUndefined() {
-			vv := reflect.ValueOf(v)
-			if vv.Kind() == reflect.Func {
-				return "builtin", nil
-			}
-
-			if vv.Kind() == reflect.Ptr {
-				ts := vv.String()
-				if ts == defs.ByteCodeReflectionTypeString {
-					return "func", nil
-				}
-
-				return fmt.Sprintf("ptr %s", ts), nil
-			}
-
-			return "unknown", nil
-		}
-
-		vv := reflect.ValueOf(v)
-		if vv.Kind() == reflect.Ptr {
-			ts := vv.String()
-			if ts == defs.ByteCodeReflectionTypeString {
-				return "func", nil
-			}
-
-			return fmt.Sprintf("ptr %s", ts), nil
-		}
-
-		return tt.String(), nil
-	}
-}
-
-// SizeOf returns the size in bytes of an arbibrary object.
-func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	size := data.RealSizeOf(args[0])
-
-	return size, nil
 }
 
 // makeDeclaration constructs a native data structure describing a function declaration.

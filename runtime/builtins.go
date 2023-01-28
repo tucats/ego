@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/runtime/io"
 	"github.com/tucats/ego/runtime/json"
 	"github.com/tucats/ego/runtime/os"
+	"github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/runtime/rest"
 	"github.com/tucats/ego/runtime/sort"
 	"github.com/tucats/ego/runtime/tables"
@@ -41,6 +42,7 @@ func AddBuiltinPackages(s *symbols.SymbolTable) {
 	io.Initialize(s)
 	json.Initialize(s)
 	os.Initialize(s)
+	reflect.Initialize(s)
 	rest.Initialize(s)
 	sort.Initialize(s)
 	tables.Initialize(s)

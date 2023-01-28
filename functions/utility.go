@@ -144,42 +144,6 @@ func StrLen(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 
-// ReflectMembers gets an array of the names of the fields in a structure.
-func ReflectMembers(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	switch v := args[0].(type) {
-	case *data.Map:
-		keys := data.NewArray(data.StringType, 0)
-		keyList := v.Keys()
-
-		for i, v := range keyList {
-			_ = keys.Set(i, v)
-		}
-
-		_ = keys.Sort()
-
-		return keys, nil
-
-	case *data.Struct:
-		return v.FieldNamesArray(), nil
-
-	case *data.Package:
-		keys := data.NewArray(data.StringType, 0)
-
-		for _, k := range v.Keys() {
-			if !strings.HasPrefix(k, data.MetadataPrefix) {
-				keys.Append(k)
-			}
-		}
-
-		err := keys.Sort()
-
-		return keys, err
-
-	default:
-		return nil, errors.ErrInvalidType.In("Members()")
-	}
-}
-
 // Signal creates an error object based on the
 // parameters.
 func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
@@ -189,6 +153,13 @@ func Signal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	return r, nil
+}
+
+// SizeOf returns the size in bytes of an arbibrary object.
+func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	size := data.RealSizeOf(args[0])
+
+	return size, nil
 }
 
 // Append implements the builtin append() function, which concatenates all the items

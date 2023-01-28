@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
-	"github.com/tucats/ego/functions"
+	rreflect "github.com/tucats/ego/runtime/reflect"
 	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -144,7 +144,7 @@ func TestIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	// Use the Type() function to get a string representation of the type
-	got, _ := functions.ReflectType(s, args[0:1])
+	got, _ := rreflect.Type(s, args[0:1])
 	expected := data.String(args[1])
 
 	b := (expected == got)

@@ -439,12 +439,15 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 			"exec",
 			"filepath",
 			"io",
+			"json",
 			"os",
+			"reflect",
 			"rest",
 			"sort",
 			"tables",
 			"time",
 			"util",
+			"uuid",
 		} {
 			uniqueNames[name] = true
 		}

@@ -26,12 +26,12 @@ func Normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return MultiValueReturn{Value: []interface{}{v1, v2}}, nil
 }
 
-// ReflectNew implements the new() function. This function creates a new
+// New implements the $new() function. This function creates a new
 // "zero value" of any given type or object. If an integer type
 // number or a string type name is given, the "zero value" for
 // that type is returned. For an array, struct, or map, a recursive
 // copy is done of the members to a new object which is returned.
-func ReflectNew(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
 	if typeValue, ok := args[0].(int); ok {
