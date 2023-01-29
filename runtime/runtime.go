@@ -1,3 +1,8 @@
+// Package runtime manages the suite of builting runtime functions
+// expressed as Ego packages. Each package has it's own package tree
+// within the runtime folder. Each package type must provide a
+// function called Initialized which is passed a symbol table, and
+// registers the package functionality with the symbol table.
 package runtime
 
 import (

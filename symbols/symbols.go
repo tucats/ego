@@ -1,3 +1,19 @@
+// Package symbols provides symbol table functions for Ego.
+//
+// A symbol table is similar to a map in that it references
+// elements using a string key. The symbol tables can be marked
+// as shared, in which case they are always accessed in a
+// thread-safe manner.
+//
+// Symbol tables can be nested, so a given table always has a
+// parent table. This allows the language to support scope. A
+// Get of the symbol table searches the current table and all
+// it's parents. A create of a symbol is only done in the current
+// scope.
+//
+// At the top level is a global symbol table, which is ultimately
+// the parent of every other table (this allows setting global
+// state information for the entire process in the global table).
 package symbols
 
 import (
@@ -23,6 +39,10 @@ type UndefinedValue struct {
 // table that exists.
 func (s *SymbolTable) Get(name string) (interface{}, bool) {
 	var v interface{}
+
+	if s == nil {
+		return nil, false
+	}
 
 	if s.shared {
 		symbolTable := s.RLock()
@@ -66,6 +86,10 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 	var v interface{}
 
+	if s == nil {
+		return nil, false
+	}
+
 	if s.shared {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
@@ -99,6 +123,10 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 // table that exists.
 func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttribute, bool) {
 	var v interface{}
+
+	if s == nil {
+		return nil, nil, false
+	}
 
 	if s.shared {
 		symbolTable := s.RLock()
@@ -136,6 +164,10 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 	var v interface{}
 
+	if s == nil {
+		return nil, false
+	}
+
 	if s.shared {
 		symbolTable := s.RLock()
 		defer symbolTable.RUnlock()
@@ -158,6 +190,10 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
 // done from many different threads in a REST server mode, use a lock to serialize writes.
 func (s *SymbolTable) SetConstant(name string, v interface{}) error {
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("SetConstant")
+	}
+
 	if s.shared {
 		s.Lock()
 		defer s.Unlock()
@@ -193,6 +229,10 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 // value. It returns nil if this was successful, else a symbol-not-found
 // error is reported.
 func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("SetReadOnly")
+	}
+
 	if s.shared {
 		s.Lock()
 		defer s.Unlock()
@@ -225,6 +265,10 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 // any parent table is affected. This can be used for functions and
 // readonly values.
 func (s *SymbolTable) SetAlways(name string, v interface{}) {
+	if s == nil {
+		return
+	}
+
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -273,6 +317,10 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 // any parent table is affected. This can be used for functions and
 // readonly values.
 func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr SymbolAttribute) error {
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("SetWithAttributes")
+	}
+
 	// Hack. If this is the "_rest_response" variable, we have
 	// to find the right table to put it in, which may be different
 	// that were we started.
@@ -325,6 +373,10 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 // Set stores a symbol value in the table where it was found.
 func (s *SymbolTable) Set(name string, v interface{}) error {
 	var old interface{}
+
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("Set")
+	}
 
 	if s.shared {
 		originalTable := s.Lock()
@@ -406,6 +458,10 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 // flag is set, this deletes even if the name is marked as a readonly
 // variable ("_" as the first character).
 func (s *SymbolTable) Delete(name string, always bool) error {
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("Delete")
+	}
+
 	if len(name) == 0 {
 		return errors.ErrInvalidSymbolName
 	}
@@ -440,6 +496,10 @@ func (s *SymbolTable) Delete(name string, always bool) error {
 
 // Create creates a symbol name in the table.
 func (s *SymbolTable) Create(name string) error {
+	if s == nil {
+		return errors.ErrNoSymbolTable.In("Create")
+	}
+
 	if len(name) == 0 {
 		return errors.ErrInvalidSymbolName
 	}
@@ -471,6 +531,10 @@ func (s *SymbolTable) Create(name string) error {
 
 // IsConstant determines if a name is a constant or readonly value.
 func (s *SymbolTable) IsConstant(name string) bool {
+	if s == nil {
+		return false
+	}
+
 	if s.shared {
 		originalTable := s.RLock()
 		defer originalTable.RUnlock()

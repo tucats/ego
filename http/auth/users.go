@@ -1,3 +1,6 @@
+// Package auth handles authentication for an Ego server. It includes
+// the service providers for database and filesystem authentication
+// storage modes.
 package auth
 
 import (

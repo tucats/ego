@@ -13,11 +13,13 @@
 
 &nbsp;
 
+```text
      ____    _____   ____    _____        _      ____    ___
     |  _ \  | ____| / ___|  |_   _|      / \    |  _ \  |_ _|  ___
     | |_) | |  _|   \___ \    | |       / _ \   | |_) |  | |  / __|
     |  _ <  | |___   ___) |   | |      / ___ \  |  __/   | |  \__ \
     |_| \_\ |_____| |____/    |_|     /_/   \_\ |_|     |___| |___/
+```
 
 &nbsp;
 
@@ -89,6 +91,7 @@ The resulting JSON payload is an object with the following fields:
 
 Here is an example response payload:
 &nbsp;
+
 ```json
 {
     "server": {
@@ -137,6 +140,7 @@ secure. The request body must contain the following two fields:
 
 Here is an example request payload for the logon operation, with a string for
 the username and a string for the password:
+
 ```json
 {
     "username": "joesmith",
@@ -363,6 +367,7 @@ privileges.
 
 Here is an example response payload from this request:
 &nbsp;
+
 ```json
 {
     "server": {
@@ -416,6 +421,7 @@ lines are returned, otherwise the result is limited to the last `n` lines of the
 
 Here is an example output with a `tail` value of 5:
 &nbsp;
+
 ```json
 {
     "server": {
@@ -460,8 +466,8 @@ of logging.
 
 Here is a sample request body, that enables the INFO logger and disables the TRACE logger.
 Note that the names of the loggers are not case-sensitive.
-
 &nbsp;
+
 ```json
 {
 "loggers": {
@@ -691,6 +697,7 @@ Here is an example of the result data when the call is made by the user "smith",
 available tables of info:
 
 &nbsp;
+
 ```json
 {
     "server": {
@@ -759,6 +766,7 @@ The valid types that you can specify in the array of column structure definition
 
 The request payload must be a JSON representation of the columns to be created. As an
 example, this payload creates a table with three columns.
+
 ```json
 {
     "columns": [
@@ -843,10 +851,12 @@ For example, here is a request payload that joins two tables and returns a resul
 this is a SQL `select` statement, the _Ego_ server knows to reeturn a rowset as the result.
 Otherwise, it returns a rowcount as the result.
 
+```sql
     "select people.name, surname.name 
          from \"mary\".\"people\" 
          join \"mary\".\"surname\"
             on people.id == surname.id"
+```
 
 Note that the string must be properly escaped as a JSON string.
 
@@ -863,7 +873,7 @@ an array of strings. For example,
 ```
 
 This executes both statements in order, as a transaction. That is, every statement
-in the operation must succeed for any of the statements to take effect. If any 
+in the operation must succeed for any of the statements to take effect. If any
 statement fails, the error reponse describes the failing statement.  When using
 a transaction of more than one statement, if a SELECT statement is included it must
 be the last statement in the array.
@@ -935,6 +945,7 @@ with an HTTP 404 ("not found") error. This allows the caller to determine if a t
 proceed if the given task did not have any effect.
 
 Here is a sample payload with three transactions:
+
 ```json
 [
     {
@@ -980,15 +991,14 @@ Here is a sample payload with three transactions:
 ]
 ```
 
-The first and second tasks insert new data into the table "x6". The third task updates the address
-of any row that matches the filter of a "description" field equal to "tx row". Note that the third
-task also explicitly specifies a `columns` list. This means that even though the `data` item contains
-many fields, the only field that will be updated is "address" from the data object.
+The first and second tasks insert new data into the table "x6". The third task updates
+the address of any row that matches the filter of a "description" field equal to
+"tx row". Note that the third task also explicitly specifies a `columns` list. This
+means that even though the `data` item contains many fields, the only field that will
+be updated is "address" from the data object.
 
-If the insert fails (perhaps due to a constraint violation, etc.) then no data will be inserted. If
-the inserts succeed but the upddate fails (perhaps there is a syntax error in the filter list), then
-no inserts or updates will occur.  If any error occurs, the resulting message indicates how many
-tasks were processed before the error was encountered, and what the error was.
+If the insert fails (perhaps due to a constraint violation, etc.) then no data will
+be inserted. If the inserts succeed but the upddate fails (perhaps there is a syntax error in the filter list), then no inserts or updates will occur.  If any error occurs, the resulting message indicates how many tasks were processed before the error was encountered, and what the error was.
 
 Note that the third task set the `emptyError` property to true. In this case, the transaction
 would fail (and no inserts or updates would have occurred) if the filter expression did not
@@ -1309,8 +1319,8 @@ new row is created.
 
 Here is an example payload that can be sent to the server to insert a single
 new row for account number 103 wtih name "Susan".
-
 &nbsp;
+
 ```json
 {
     "Name": "Susan",
@@ -1328,6 +1338,7 @@ of rows inserted.
 You can also send a list of rows that are to be inserted using a rowset. Here is a
 sample payload that inserts three rows as a single operation:
 &nbsp;
+
 ```json
 {
     "rows" :[
@@ -1414,7 +1425,9 @@ only one row in the table has the given account number of 101.
 
 The url request formed would be something like:
 
+```text
     PATCH http://localhost:8080/tables/Accounts/rows?filter=EQ(Number,101)
+```
 
 This specifies that the row is to be updated (a `PATCH` method call) and the
 only row(s) to be updated are those where the `Number` field is equal to 101.

@@ -1,3 +1,7 @@
+// Package assets handles the server side asset caching of arbitrary
+// objects. This is typically used to provide server-side caching of
+// objects retrieved via the /assets/ endpoing. This is most often
+// used in HTML pages accessing static information in the server.
 package assets
 
 import (

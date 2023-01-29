@@ -495,6 +495,9 @@ var messages = map[string]map[string]string{
 	"error.no.main.package": {
 		"en": "no main package found",
 	},
+	"error.no.symbol.table": {
+		"en": "no symbol table available",
+	},
 	"error.not.assignment.list": {
 		"en": "not an assignment list",
 	},

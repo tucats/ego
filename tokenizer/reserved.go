@@ -283,6 +283,12 @@ var (
 
 	// "-" token.
 	NegateToken = NewSpecialToken("-")
+
+	// "true" token.
+	TrueToken = NewToken(BooleanTokenClass, "true")
+
+	// "false" token.
+	FalseToken = NewToken(BooleanTokenClass, "false")
 )
 
 // TypeTokens is a list of tokens that represent type names.

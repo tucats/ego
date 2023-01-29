@@ -67,8 +67,8 @@
    1. [@error](#at-error)
    2. [@global](#at-global)
    3. [@localization](#at-localization)
-   5. [@template](#at-template)
-   6. [@type](#at-type)
+   4. [@template](#at-template)
+   5. [@type](#at-type)
 
 1. [Testing](#testing)
    1. [The `test` command](#at-test)
@@ -81,12 +81,13 @@
 &nbsp;
 {% raw %}
 
-     _
+```text
     | |       __ _   _ __     __ _   _   _    __ _    __ _    ___
     | |      / _` | | '_ \   / _` | | | | |  / _` |  / _` |  / _ \
     | |___  | (_| | | | | | | (_| | | |_| | | (_| | | (_| | |  __/
     |_____|  \__,_| |_| |_|  \__, |  \__,_|  \__,_|  \__, |  \___|
                               |___/                   |___/
+```
 
 # Introduction to _Ego_ Language <a name="intro"></a>
 
@@ -118,8 +119,8 @@ environment.
 The _Ego_ language is Copyright 2020-2022 by Tom Cole, and is freely
 available for any use, public or private, including commercial software.
 The only requirement is that any software that incorporates or makes use
-of _Ego_ or the packages written by Tom Cole to support _Ego_ must 
-include a statement attributing authorship to _Ego_ and it's runtime 
+of _Ego_ or the packages written by Tom Cole to support _Ego_ must
+include a statement attributing authorship to _Ego_ and it's runtime
 environment to Tom Cole.
 
 &nbsp;
@@ -131,8 +132,8 @@ The _Ego_ language supports a number of base types which express a
 single value of some type (string, integer, boolean, etc.). These base
 types can be members of complex types consisting of arrays (ordered
 lists), maps (dynamic types key/value pairs) and structs (field-name/value
-pairs). Additionally, the user can create types based on the base or complex 
-types, such as a type describing a structure that records information 
+pairs). Additionally, the user can create types based on the base or complex
+types, such as a type describing a structure that records information
 about an employee; this type can be used to create instances of the structure, etc.
 
 ## Base Types<a name="basetypes"></a>
@@ -146,7 +147,8 @@ listed here.
 | Type       | Example  | Range                 | Description  |
 |:-----------|:---------|:----------------------|:-------------|
 | `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
-| `bool`     | true     | true, false           | A Boolean value that is either true or false |
+| `bool`     | true     | true, false           | A Boolean value that is either
+true or false |
 | `byte`     | 5        | 0-255                 | An 8-bit unsigned integer |
 | `int32`    | 1024     | -32768 to 32767       | A signed 32-bit integer |
 | `int`      | 1024     | -32768 to 32767       | A signed 32-bit integer |
@@ -189,8 +191,8 @@ list of values separated by commas. The values may be any valid value
 same type. For example,
 
 ```go
-[ 101, 335, 153, 19, -55, 0 ]
-[ 123, "Fred", true, 55.738]
+    [ 101, 335, 153, 19, -55, 0 ]
+    [ 123, "Fred", true, 55.738]
 ```
 
 The first example is an array of integers. The value at position 0 is
@@ -242,6 +244,7 @@ unless static type checking is enabled.
 
 You cannot add new fields to this struct if you create a struct
 constant with fields already. That is, you cannot
+
 ```go
 a := { Name: "Bob" }
 a.Age = 43
@@ -251,6 +254,7 @@ The second line will generate an error because Age is not a member
 of the structure. There is one special case of an _anonymous_
 struct that can have fields added (or removed) dynamically. This is
 an empty _anonymous_ struct,
+
 ```go
 a := {}
 a.Name = "Fred"
@@ -269,6 +273,7 @@ map and you can fetch a value from the map.
 
 You can create create a map by setting a value to an empty map constant.
 For example,
+
 ```go
 staff := map[int]string{}
 ```
@@ -279,6 +284,7 @@ contain only one key of a given value; setting the key value a second
 time just replaces the value of the map for that key.
 
 You can also initialize the map values using `{}` notation, as in:
+
 ```go
 staff := map[int]string{101:"Jeff", 102:"Susan"}
 
@@ -286,13 +292,13 @@ staff[103] = "Buddy"
 staff[104] = "Donna"
 ```
 
-
 This adds members to the map. Note that the key  _must_ be an integer
 value, and the value _must_ be a string value because that's how the
 map was declared. Unlike a variable, a map always has a static definition
 once it is created and cannot contain values of a different type.
 Attempting to store a boolean in the map results in a runtime error,
 for example.
+
 ```go
 id := 102
 name := staff[id]
@@ -546,7 +552,7 @@ i++
 These statements have the identical function. They require that the
 variable `i` already exist, and a value of 1 is added to `i`. The
 same thing can be done using the `--` operator to subtract one from
-a value. This is commonly used in `for` loops, discussed later. 
+a value. This is commonly used in `for` loops, discussed later.
 
 If _Ego_ language extensions are enabled, the `++` and `--` operators
 can be used in an expression value. For example, consider this code:
@@ -573,7 +579,7 @@ auto-increment expression value above. Using the auto-increment
 value in a temporary variable, and reduces code clutter.
 
 _Ego_ also supports implied operators in the assignment, using the
-assignment operators `+=`, `-=`, `*=`, and `/=`. Each of these 
+assignment operators `+=`, `-=`, `*=`, and `/=`. Each of these
 performs an assignment that includes the given operation (addition,
 subtraction, multiplication, or division) of the value following
 the `=` character. For example,
@@ -765,7 +771,6 @@ a single value.
 | len()     | len(items)            | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
 | make()    | make([]int, 5)        | Create an array of int values with `5` elements in the array |
 
-
 &nbsp;
 &nbsp;
 
@@ -782,7 +787,7 @@ For base types, the following are available:
 | Function   | Example               | Description |
 |:---------- |:--------------------- |:----------- |
 | bool()     | bool(55)              | Convert the value to a boolean, where zero values are false and non-zero values are true |
-| byte()     | byte(65)              | Convert the value to an 8-bit integer |           
+| byte()     | byte(65)              | Convert the value to an 8-bit integer |
 | int32()    | int32(4096)           | Convert the value to an 32-bit integer |
 | int()      | int(78.3)             | Convert the value to an integer, in this case `78` |
 | int64()    | int64(2^20)           | Convert the value to a 64-bit integer, in this case `1125899906842624` |
@@ -869,11 +874,13 @@ condition is met.
 
 The general nature of a conditional `if` statement is
 
+```go
      if <condition> {
          <statements>
      } else { 
          <statements>
      }
+```
 
 The `else` clause is optional, as described below. Even when there
 is only a single statement in the block, a basic block is used for
@@ -884,7 +891,7 @@ Consider the following example code:
  ```go
 salary := hours * wage                  // (1)
 if salary < 100.0 {                     // (2)
-    fmt.Println("Not paid enough!")     // (3)
+   fmt.Println("Not paid enough!")       // (3)
 }                                       // (4)
 
 total = total + salary                  // (5)
@@ -954,9 +961,11 @@ The simplest form of iterative execution (also referred to as a
 "loop") is the `for` statement, followed by a condition, and a
 basic block that is executed as long as the condition is true.
 
-     for <condition> {
-        <statements>
-     }
+```go
+for <condition> {
+  <statements>
+}
+```
 
 Here is an example
 
@@ -1007,7 +1016,7 @@ to be executed. This is evaluated before the loop body is run each
 time. The third clause is the statement that modifies the index
 value _after_ the body of the loop is run but _before_ the  next
 evaluation of the clause that determines if the loop continues. In
-this example, we could have used 
+this example, we could have used:
 
 ```go
 for i := 0; i < 10; i = i + 1 {
@@ -1096,6 +1105,7 @@ for product, count := range inventory {
     fmt.Println("There are ", count, " ", product, " in stock.")
 }
 ```
+
 When the loop runs, the value of `product` is set to each key in the
 map, and `count` is set to the value associated with that key. These
 variables exist only within the body of the loop. Note that if you
@@ -1199,6 +1209,7 @@ already the right value type. For example,
 ```go
 y := addValues("15", 2)
 ```
+
 Would result in `y` containing the floating point value 17.0.
 This is because the string value "15" would be converted to a
 float64 value, and the integer value 2 would be converted to a
@@ -1232,6 +1243,7 @@ func addValues( v1 float64, v2 float64) string {
 
 y := addValues(true, 5)
 ```
+
 The resulting value  for `y` would be the string "6". This is
 because not only will the boolean `true` value and the integer
 5 be converted to floating point values, bue the result will
@@ -1633,11 +1645,11 @@ the pay.
 
 You can cause a panic error to be signalled from within your
 code, which would optionally be caught by a try/catch block,
-using the @error directive:
+using the panic function:
 
 ```go
 if x == 0 {
-    @error "Invalid value for x"
+    panic("Invalid value for x")
 }
 ```
 
@@ -1898,15 +1910,17 @@ without filling up memory with the entire result set at once.
 &nbsp;
 
 ## errors <a name="error"></a>
+
 The `errors` package implements simple error types. There is a single method, `New`, which
 is used to create a new error. The resulting error has a number of functions that can be
 accessed.
 
 ### errors.New()
+
 The `New` function creates a new instance of an error. The first parameter is the text
 of the error message, which must be a string value.
 
-The optional second value is a context value, which is stored in the error. This is 
+The optional second value is a context value, which is stored in the error. This is
 displayed when the error is formatted, and can be retrieved using the Unwrap() function.
 
 ```go
@@ -1924,9 +1938,9 @@ If a context value is not supplied (i.e. only one argument is passed to `New`) t
 is no context value output.
 
 ### (e error) Error() string
-The `Error()` function can be used with any error as the receiver value, and will 
-generate a textual representation of the error.
 
+The `Error()` function can be used with any error as the receiver value, and will
+generate a textual representation of the error.
 
 ```go
 
@@ -1942,39 +1956,38 @@ generate a textual representation of the error.
 After this code executes, `m` will contain the string value "not found: foobar.txt".
 
 ### (e error) Is(other error) bool
-The `Is()` function can be used with any error as the receiver value, and will 
+
+The `Is()` function can be used with any error as the receiver value, and will
 compare the error to the provided parameter which is also an error value. This
 lets you compare error messages to see if they match. Note that this does not
 compare the context, only the actual error message.
 
-
 ### (e error) Unwrap() interface{}
-The `Unwrap()` function can be used with any error as the receiver value, and will 
+
+The `Unwrap()` function can be used with any error as the receiver value, and will
 return the context value stored in the error. If there is no context, the result is
 `nil`.
 
-
 ```go
+var e error
 
-    var e error
+fn := "foobar.txt"
+e = errors.New("not found", fn)
 
-    fn := "foobar.txt"
-    e = errors.New("not found", fn)
-
-    f2 := e.Unwrap()
-
+f2 := e.Unwrap()
 ```
 
 After this code executes, `f2` will contain the string value "foobar.txt".
 
 ## exec <a name="exec"></a>
+
 The `exec` package is a subset of the Go package that supports executing a command as
 a subprocess of the current Ego program. This package allows the caller to create a
 new `exec.Cmd` object, and then use that object to optionally set arguments and
 stdin values for the command, execute the command, and then access the stdout values.
 
-The `exec.Cmd`  structure includes a field `Env` which is a string array for environment 
-variables which must all be strings of the form "name=value", and these are set in 
+The `exec.Cmd`  structure includes a field `Env` which is a string array for environment
+variables which must all be strings of the form "name=value", and these are set in
 the context of the process to be run. Additionally, the field `Stdin` is an optional
 string array -- if present, the string array is converted to a byte stream and becomes
 the stdin contents for the commadn to be executed.
@@ -2001,22 +2014,20 @@ would use Windows-style commands on a Windows-based deployment of _Ego_.  The
 program runs the command, and then prints out the lines of output stored in the
 `Stdout` field of the command structure.
 
-
 ### exec.Command()
 
 The `Command()` function creates a new `Cmd` object and returns it to the caller.
-The call can include parameters, which are the name of the command to execute 
+The call can include parameters, which are the name of the command to execute
 followed by any optional argument strings that are passed to the program to be run.
 
-The resulting structure supports the `Run()` method. After an `exec.Cmd` object 
-is initialized, it can be run using its `Run()` method. This method returns an 
+The resulting structure supports the `Run()` method. After an `exec.Cmd` object
+is initialized, it can be run using its `Run()` method. This method returns an
 error if the command does not complete successfully. If it does
 complete successfully, the `Stdout` array can be consulted to collect any output
 from the command as strings.
 
 &nbsp;
 &nbsp;
-
 
 ## fmt <a name="fmt"></a>
 
@@ -2230,10 +2241,10 @@ fn := "mydata.txt"
 s := io.ReadFile(fn)
 ```
 
-The variable `s` will contain a `[]byte` array containing the entire contents of the input
-file. You can convert this to a string (including line breaks) using the `string()` cast
-operation. You can then use `strings.Split()` to convert this into an array of strings 
-based on the line breaks if you wish.
+The variable `s` will contain a `[]byte` array containing the entire contents of
+the input file. You can convert this to a string (including line breaks) using
+the `string()` cast operation. You can then use `strings.Split()` to convert
+this into an array of strings based on the line breaks if you wish.
 
 ```go
 fn := "mydata.txt"
@@ -2244,11 +2255,10 @@ a := strings.Split(string(b), "\n")
 After this code runs, `a` contains an array of strings, one for each line in the input
 file.
 
-
 ### io.WriteFile(filename, string)
 
 The `WriteFile()` function writes an array of bytes or a string value to a file. If the
-file does not exist, it is created. If the file previously existed, the contents are 
+file does not exist, it is created. If the file previously existed, the contents are
 over-written by the new file.
 
 ```go
@@ -2258,7 +2268,7 @@ s := io.ReadFile(fn)
 io.WriteFile("newdata.txt", s)
 ```
 
-This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then 
+This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
 writes it to the "newdata.txt" file, in its entirety.  You can also just write a string
 value to the file, such as
 
@@ -2269,7 +2279,7 @@ s := []string{"This is line one", "This is line two"}
 io.WriteFile("newdata.txt", strings.Join(s, "\n"))
 ```
 
-This results in the array of strings `s` being combined into a single string value wiht
+This results in the array of strings `s` being combined into a single string value with
 new-line characters, and the resulting string being written to the file.
 
 ## json <a name="json"></a>
@@ -2280,7 +2290,7 @@ as a string value, or convert a JSON string to a comparable _ego_ data value.
 ### json.Marshal(v)
 
 The `Marshal` function converts a value into a JSON byte array, which is the function
-result. 
+result.
 
 ```go
 a := { name: "Tom", age: 44 }
@@ -2331,7 +2341,7 @@ err := json.Unmarshal(s, &r)
 If `s` contains the JSON byte array from the `Marshal` example above, the result is a
 structure { age: 44, name:"Tom"} in the variable `r`. You can use the `reflect.Members()`
 function to examine if a structure contains a field you expected. Note that the Unmarshal
-function returns an error code as it's result; this will be nil if there are no errors 
+function returns an error code as it's result; this will be nil if there are no errors
 found.
 
 You can optionally not pass the value to store the resulting decoded value as the second
@@ -2341,6 +2351,7 @@ value.
 ```go
 r := json.Unarshal(s) 
 ```
+
 In this usage, if there is an error decoding the byte array in `s` then an error is thrown.
 
 ## math <a name="math"></a>
@@ -2488,7 +2499,9 @@ The "tom$" is the shell prompt; the remainder of the command is the command line
 that after the name of the program file there are additional command line tokens. The main
 function in "args.ego" will retrieve these and print them, and the output will look like:
 
+```go
     [ "stuff", "I", "want"]
+```
 
 The result is an array where each element of the array is the next token from the original
 command line.
@@ -2540,7 +2553,9 @@ func main() int {
 Invoking this on a macOS or Linux system while running the "bash" shell will result in
 output similar to:
 
+```text
     You are running the  /bin/bash  shell program
+```
 
 ### os.Remove(filename)
 
@@ -2637,7 +2652,7 @@ by the parser include:
 | urlUsername | The username from the URL, if given |
 | urlPassword | The password from the URL, if given |
 | urlPath     | The raw path string from the URL |
-| urlQuery    | A map[string][]string for each query parameter specified |
+| urlQuery    | A `map[string][]string` for each query parameter specified |
 
 &nbsp;
 
@@ -3219,11 +3234,13 @@ gets the value of counter, adds one to it, and puts it back, another routine cou
 performed the same operation. This means we would over-write the value from the other
 thread. In this case, the output of the count value might be more like this:
 
+```text
     thread 0, counter 1
     thread 4, counter 1
     thread 2, counter 2
     thread 3, counter 2
     thread 1, counter 3
+```
 
 To fix this, we use a mutex value to block access to the counter for each
 thread, so they are forced to take turns incrementing the counter.
@@ -3259,11 +3276,13 @@ Now that there is a mutex protecting access to the counter, no matter what order
 go routines run, the increment of the count value will always be sequential, resulting
 in output that might look like this:
 
+```text
     thread 4, counter 1
     thread 0, counter 2
     thread 2, counter 3
     thread 3, counter 4
     thread 1, counter 5
+```
 
 ### sync.WaitGroup
 
@@ -3310,13 +3329,8 @@ Here's a breakdown of important steps in this example:
    instance of that variable.
 
 2. The `Done()` call is made by the go routine when it has completed all it's
-   operations. This could also be implemented as
-
-```go
-defer wg.Done()
-```
-
-    to ensure that it is always executed whenever the function exits.
+   operations. To ensure that it is always executed whenever the function exits.
+   this could also be implemented as `defer wg.Done()`
 
 3. This declares the instance of the `WaitGroup` variable that will be used
     for this example. There is no initialization needed; the variable instance
@@ -3353,7 +3367,7 @@ Note that this _does not_ match the native Go functions at this point.
 
 This makes a "deep copy" of the value. For scalar objects, it is just a
 simple copy of the object. For complex types such as structs, arrays, or
-maps it makes a recursive copy of the entire object, so every member of 
+maps it makes a recursive copy of the entire object, so every member of
 the result is a new instance of the old member value, essentially doubling
 the memory consumed. The depth is optional, and if not given defaults to
 100. This indicates how deep the recursive copy should go before stopping.
@@ -3361,22 +3375,23 @@ the memory consumed. The depth is optional, and if not given defaults to
 ### reflect.InstanceOf(type)
 
 This create a "Zero Value" of the given type. The result is always of the
-specified type, with all the values of the item set to the native zero 
-value for that type (`false` for `bool`, an empty string for `string`, 
+specified type, with all the values of the item set to the native zero
+value for that type (`false` for `bool`, an empty string for `string`,
 etc.)
-
 
 ### reflect.Members(i struct) []string
 
-Returns an array of strings containing the names of each member of the 
+Returns an array of strings containing the names of each member of the
 structure passed as an argument. If the value passed is not a structure
 it causes an error. Note that the resulting array elements can be used
 to reference fields in a structure using array index notation.
 
+```go
     e := { name: "Dave", age: 33 }
     m := reflect.Members(e)
 
     e[m[1]] := 55
+```
 
 The `reflect.Members()` function returns an array [ "age", "name" ]. These are
 the fields of the structure, and they are always returned in alphabetical
@@ -3389,7 +3404,6 @@ This returns a structure that contains detailed information about the
 type of value given.  The resulting structure has fields that are
 specific to each type, and will not be present in the structure for
 other types.
-
 
 | Field        | Description                |
 |:-------------|:---------------------------|
@@ -3405,13 +3419,11 @@ other types.
 | type         | The _Ego_ type name of the value |
 | static       | Is the field list fixed for this struct? |
 
-
-
 ### reflect.Type(value)
 
-This returns a string containing the type name of the item. For built-in 
+This returns a string containing the type name of the item. For built-in
 scalar types like `int32` or `string`, the result is that native type name
-as a string. For complex types or user-defined types, the type string is 
+as a string. For complex types or user-defined types, the type string is
 the cannocial type declaration string for the type.
 
 ## tables <a name="tables"></a>
@@ -3487,14 +3499,16 @@ format specification.
 The `Now()` function gets the current time at the moment of the call, and sets it as the time value in the
 result.
 
+```go
     now := time.Now()
     ...
     elapsed := time.Now().Sub(now)
+```
 
 In this case, the code first captures the current time and stores it in the variable `now`.
 It then does some other work for the program, and when done we want to find out the elapsed
 time. The value of `elapsed` is a duration string that indicates how much time passed between
-the `now` value and the current time. For example, this could be a value such as "5s" for 
+the `now` value and the current time. For example, this could be a value such as "5s" for
 five seconds of time passing.
 
 ### time.Parse(string, model)
@@ -3562,8 +3576,10 @@ total consumption for the life of the program, system memory on behalf of the _E
 processes, and a count of the number of times the garbage collector that manages
 memory for Ego has been run.
 
+```text
     ego> fmt.Println(util.Memory())
     { current: 0.9879989624023438, gc: 0, system: 68.58106994628906, time: "Thu Apr 22 2021 10:07:36 EDT", total: 0.9879989624023438 }
+```
 
 The result of the function is always a structure. The `current` and `system` values
 are expressed in megabytes; so in the above example, the current memory consumption
@@ -3731,21 +3747,34 @@ Directives are special _Ego_ statements that perform special functions
 outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
 
-## @error <a name="at-error"></a>
+## @extensions true|false|default
 
-You can generate a runtime error by adding in a `@error` directive,
-which is followed by a string expression that is used to formulate
-the error message text.
+Language extensions are off by default when you first start running
+_Ego_. You can override the default value by setting it in the configuration
+using the command line:
 
-```go
-v = "unknown"
-
-@error "unrecognized value: " + v
+```sh
+    ego config set ego.compiler.extensions=true
 ```
 
-This will result in a runtime error being generated with the error text
-"unrecognized value: unknown". This error can be intercepted in a try/catch
-block if desired.
+When extensions are enabled, additional language features are availabe.
+These include:
+
+* The `print` command as a shorter form of `fmt.Println()`
+* The `try` and `catch` statements for error catching
+* Use of len() with any data type
+* Addition of the index() function for searching any data type
+* Support for variable-length argument lists in functions (as distinct
+  from functions with variadic `...` argument lists)
+
+You can also temporarily set this value within any function by using
+the `@extensions` directive, followed by one of `true`, `false`, or
+`default`. The `default` value sets the setting back to whatever it
+is in the default configuration.
+
+Note that if the directive is used within a function, it only remains
+in effect for that function. If the directive is used at the start
+of a source file, it remains in effect for the entire source file.
 
 ## @global
 
@@ -3825,7 +3854,9 @@ The resulting templates are available to the template() function,
  parameter is a record containing all the named values that might
  be substituted into the template.  For example,
 
+```go
      print strings.template(hello, { Name: "Tom"})
+```
 
 This results in the string "Greetings, Tom" being printed on the
 stdout console. Note that `hello` becomes a global variable in the program, and

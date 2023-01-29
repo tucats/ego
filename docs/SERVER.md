@@ -15,11 +15,13 @@
 
 &nbsp
 
+```text
      ____
     / ___|    ___   _ __  __   __   ___   _ __
     \___ \   / _ \ | '__| \ \ / /  / _ \ | '__|
      ___) | |  __/ | |     \ V /  |  __/ | |
     |____/   \___| |_|      \_/    \___| |_|
+```
 
 &nbsp;
 &nbsp;
@@ -47,7 +49,7 @@ number.
 |:----------------|:------------|
 | start           | Start a server. You can start multiple servers as long as they each have a different --port number assigned to them. |
 | stop            | Stop the server that is listening on the named port. If the port is not specified, then the default port is assumed. |
-| restart         | Stop the current server and restart it with the exact same command line values. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
+| restart         | Stop the current server and restart it with the options. This can be used to restart a server that has run out of memory, or when upgrading the version of ego being used. |
 | status          | Report on the status of the server. |
 | logging         | Enable or disable logging on the server |
 | users set       | Create or update a user in the server database |
@@ -248,10 +250,10 @@ data type, with the following fields:
 | Authentication | string  | The kind of authentication, "none", "basic", or "token"  |
 | Body           | string  | The request body if this was a POST operation            |
 | Endpoint       | string  | The endpoint for this request                            |
-| Headers        | map     | A map[string][]string containing all the headers         |
+| Headers        | map     | A `map[string][]string` containing all the headers         |
 | Media          | string  | "text" or "json" based on the Accept header value        |
 | Method         | string  | The request method, "GET", "POST", "DELETE", etc.        |
-| Parameters     | map     | A map[string][]string containing the parameters          |
+| Parameters     | map     | A `map[string][]string` containing the parameters          |
 | Url            | string  | The full URL used to make the request.                   |
 | Username       | string  | If authenitcated, the username of the requestor          |
 
@@ -309,7 +311,9 @@ The given pattern is applied to the current URL. The pattern can include literal
 or symbols enclosed in `{{` and `}}` characters. The part of the URL represented by those
 symbols will be stored in a local variable of the given name. For example,
 
+```go
     @url "/catalog/{{item}}/names"
+```
 
 If the request was called with a URL of "/catalog/1551/names" then the value of `item` is
 set to the string "1551". If the URL does not include the constant values of the pattern,

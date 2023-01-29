@@ -4,12 +4,13 @@ import (
 	"math"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 // Length implements the len() function.
-func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Length(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if args[0] == nil {
 		return 0, nil
 	}
@@ -43,6 +44,19 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		return len(arg), nil
 
 	default:
+		// Extensions have to be enabled and we must not be in strict
+		// type checking mode to return length of the stringified argument.
+		if v, found := s.Get(defs.ExtensionsVariable); found {
+			if data.Bool(v) {
+				if v, found := s.Get(defs.TypeCheckingVariable); found {
+					if data.Int(v) > 0 {
+						return len(data.String(arg)), nil
+					}
+				}
+			}
+		}
+
+		// Otherwise, invalid type.
 		return 0, errors.ErrArgumentType.In("len").Context(data.TypeOf(args[0]))
 	}
 }

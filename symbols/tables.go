@@ -96,6 +96,10 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 // collisions in the table maps. Set the flag to true if you want
 // this table (and all it's parents) to support sharing.
 func (s *SymbolTable) Shared(flag bool) *SymbolTable {
+	if s == nil {
+		return s
+	}
+
 	if alwaysShared && !flag {
 		s.shared = false
 
@@ -121,6 +125,10 @@ func (s *SymbolTable) Shared(flag bool) *SymbolTable {
 }
 
 func (s *SymbolTable) IsShared() bool {
+	if s == nil {
+		return false
+	}
+
 	return s.shared
 }
 
@@ -129,6 +137,10 @@ func (s *SymbolTable) IsShared() bool {
 // prune off the non-shared tables from the scope of a go
 // routine, for example.
 func (s *SymbolTable) SharedParent() *SymbolTable {
+	if s == nil {
+		return nil
+	}
+
 	for s != nil && !s.shared {
 		s = s.parent
 	}
@@ -138,6 +150,10 @@ func (s *SymbolTable) SharedParent() *SymbolTable {
 
 // Lock locks the symbol table so it cannot be used concurrently.
 func (s *SymbolTable) Lock() *SymbolTable {
+	if s == nil {
+		return s
+	}
+
 	if s.shared {
 		s.mutex.Lock()
 	}

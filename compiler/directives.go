@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
@@ -430,11 +431,26 @@ func (c *Compiler) errorDirective() error {
 }
 
 func (c *Compiler) extensionsDirective() error {
-	c.b.Emit(bytecode.Push, true)
+	var extensions bool
+
+	if c.t.IsNext(tokenizer.NewIdentifierToken("default")) {
+		extensions = settings.GetBool(defs.ExtensionsEnabledSetting)
+	} else if c.t.IsNext(tokenizer.TrueToken) {
+		extensions = true
+	} else if c.t.IsNext(tokenizer.FalseToken) {
+		extensions = false
+	} else if c.t.IsNext(tokenizer.SemicolonToken) {
+		c.t.Advance(-1)
+		extensions = true
+	} else {
+		return c.error(errors.ErrInvalidBooleanValue)
+	}
+
+	c.b.Emit(bytecode.Push, extensions)
 	c.b.Emit(bytecode.StoreGlobal, defs.ExtensionsVariable)
 
-	c.ExtensionsEnabled(true)
-	symbols.RootSymbolTable.SetAlways(defs.ExtensionsEnabledSetting, true)
+	c.ExtensionsEnabled(extensions)
+	symbols.RootSymbolTable.SetAlways(defs.ExtensionsEnabledSetting, extensions)
 
 	return nil
 }

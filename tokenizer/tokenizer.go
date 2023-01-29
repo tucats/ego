@@ -1,3 +1,6 @@
+// Package tokenizer provides a language-aware tokenizer for Ego. This
+// performs the functions of a lexical scanner, with the addition of doing
+// parsing analysis of data types, which can set the token's class.
 package tokenizer
 
 import (

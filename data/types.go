@@ -1,3 +1,4 @@
+// Package data manages language types and value.
 package data
 
 import (

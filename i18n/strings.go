@@ -1,3 +1,5 @@
+// Package i18n provides localization and internationalization
+// functionality for Ego itself.
 package i18n
 
 import (

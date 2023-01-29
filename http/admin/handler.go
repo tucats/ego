@@ -1,3 +1,5 @@
+// Package admin handles the server side administrative functions
+// of an Ego server.
 package admin
 
 import (
