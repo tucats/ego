@@ -41,6 +41,7 @@ func (r *Response) WriteJSON( i interface{}) {
 }
 
 func (r *Response) WriteTemplate( fn string, i interface{}) {
+    @extensions
     try {
         // Load the page file as a template.
         fn := filepath.Join(profile.Get("ego.runtime.path"), fn)

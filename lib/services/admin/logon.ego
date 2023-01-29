@@ -11,8 +11,12 @@ func handler(req http.Request, resp http.Response ) {
     @authenticated user
 
 // Generate a token and return it as text to the caller
-    token := cipher.Create(_user)
-
+    token := cipher.New(_user, "")
+    duration, e = time.ParseDuration(profile.Get("ego.server.token.expiration"))
+    if e != nil {
+        duration, _ = time.ParseDuration("24h")
+    }
+    
     payload := {
         "server": {
             "name": os.Hostname(),
@@ -21,7 +25,7 @@ func handler(req http.Request, resp http.Response ) {
             "session": _session,
         },
         "token":token, 
-        "expires": time.Now().Add(profile.Get("ego.server.token.expiration")).String(),
+        "expires": time.Now().Add(duration).String(),
         "identity": _user,
         }
 

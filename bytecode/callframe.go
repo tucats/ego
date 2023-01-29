@@ -30,6 +30,7 @@ type CallFrame struct {
 	thisStack     []this
 	singleStep    bool
 	breakOnReturn bool
+	extensions    bool
 	blockDepth    int
 	pc            int
 	fp            int
@@ -60,6 +61,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 		Module:     c.bc.name,
 		Line:       c.line,
 		blockDepth: c.blockDepth,
+		extensions: c.extensions,
 	})
 
 	ui.Log(ui.SymbolLogger, "(%d) push symbol table \"%s\" <= \"%s\"",
@@ -137,6 +139,11 @@ func (c *Context) callFramePop() error {
 		c.framePointer = callFrame.fp
 		c.blockDepth = callFrame.blockDepth
 		c.breakOnReturn = callFrame.breakOnReturn
+
+		// Restore the setting for extensions, both in the context and in
+		// the global table.
+		c.extensions = callFrame.extensions
+		c.symbols.Root().SetAlways(defs.ExtensionsVariable, c.extensions)
 	} else {
 		return c.error(errors.ErrInvalidCallFrame)
 	}

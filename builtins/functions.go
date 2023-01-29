@@ -247,6 +247,28 @@ func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) 
 }
 
 func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (interface{}, error) {
+	// See if it's a runtime package item (as opposed to a builtin)
+	if dot := strings.Index(name, "."); dot > 0 {
+		packageName := name[:dot]
+		functionName := name[dot+1:]
+
+		if v, ok := s.Get(packageName); ok {
+			if pkg, ok := v.(*data.Package); ok {
+				if v, ok := pkg.Get(functionName); ok {
+					if fd, ok := v.(data.Function); ok {
+						if fn, ok := fd.Value.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
+							v, e := fn(s, args)
+
+							return v, e
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Nope, see if it's a builtin
+
 	var fdef = FunctionDefinition{}
 
 	found := false

@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 	"github.com/tucats/ego/util"
 )
@@ -18,6 +19,7 @@ const (
 	DebugDirective        = "debug"
 	EntryPointDirective   = "entrypoint"
 	ErrorDirective        = "error"
+	ExtensionsDirective   = "extensions"
 	FileDirective         = "file"
 	FailDirective         = "fail"
 	GlobalDirective       = "global"
@@ -65,6 +67,9 @@ func (c *Compiler) compileDirective() error {
 
 	case ErrorDirective:
 		return c.errorDirective()
+
+	case ExtensionsDirective:
+		return c.extensionsDirective()
 
 	case FailDirective:
 		return c.Fail()
@@ -137,7 +142,8 @@ func (c *Compiler) entrypointDirective() error {
 	c.b.Emit(bytecode.Push, 0)
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
-	c.b.Emit(bytecode.Call, 0)
+	c.b.Emit(bytecode.Push, 0)
+	c.b.Emit(bytecode.Call, 1)
 
 	return nil
 }
@@ -419,6 +425,16 @@ func (c *Compiler) errorDirective() error {
 
 	c.b.Emit(bytecode.Call, 1) // Does not cause fatal error
 	c.b.Emit(bytecode.DropToMarker)
+
+	return nil
+}
+
+func (c *Compiler) extensionsDirective() error {
+	c.b.Emit(bytecode.Push, true)
+	c.b.Emit(bytecode.StoreGlobal, defs.ExtensionsVariable)
+
+	c.ExtensionsEnabled(true)
+	symbols.RootSymbolTable.SetAlways(defs.ExtensionsEnabledSetting, true)
 
 	return nil
 }

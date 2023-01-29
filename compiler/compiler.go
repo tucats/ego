@@ -72,6 +72,11 @@ type Compiler struct {
 
 // New creates a new compiler instance.
 func New(name string) *Compiler {
+	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
+	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsEnabledSetting); ok {
+		extensions = data.Bool(v)
+	}
+
 	cInstance := Compiler{
 		b:            bytecode.New(name),
 		t:            nil,
@@ -84,7 +89,7 @@ func New(name string) *Compiler {
 		packages:     map[string]*data.Package{},
 		flags: flagSet{
 			normalizedIdentifiers: false,
-			extensionsEnabled:     settings.GetBool(defs.ExtensionsEnabledSetting),
+			extensionsEnabled:     extensions,
 		},
 		rootTable: &symbols.RootSymbolTable,
 	}

@@ -75,6 +75,7 @@ type Context struct {
 	throwUncheckedErrors bool
 	fullStackTrace       bool
 	tracing              bool
+	extensions           bool
 }
 
 // NewContext generates a new context. It must be passed a symbol table and a bytecode
@@ -103,6 +104,11 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		s = symbols.NewSymbolTable("")
 	}
 
+	extensions := false
+	if v, ok := s.Root().Get(defs.ExtensionsVariable); ok {
+		extensions = data.Bool(v)
+	}
+
 	// Create the context object.
 	ctx := Context{
 		name:                 name,
@@ -125,6 +131,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),
 		tracing:              false,
+		extensions:           extensions,
 	}
 	contextPointer := &ctx
 	contextPointer.SetByteCode(b)

@@ -115,6 +115,11 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_start_time", server.StartTime)
 	symbolTable.SetAlways("_requestor", requestor)
 
+	// Make sure we have recorded the extensions status.
+	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
+	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
+	ui.Log(ui.ServerLogger, "Extensions enabled: %v", extensions)
+
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
 		staticTypes = defs.NoTypeEnforcement
@@ -429,6 +434,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 		serviceCacheMutex.Lock()
 		delete(ServiceCache, endpoint)
 		serviceCacheMutex.Unlock()
+		ui.Log(ui.ServerLogger, "Service execution error: %v", err)
 	}
 
 	// Determine the status of the REST call by looking for the

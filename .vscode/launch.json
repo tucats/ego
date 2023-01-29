@@ -151,6 +151,14 @@
             "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "--typing=strict"]
         },
         {
+            "name": "Local ego server (relaxed type checking)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "--typing=relaxed"]
+        },
+        {
             "name": "Detached ego server",
             "type": "go",
             "request": "launch",

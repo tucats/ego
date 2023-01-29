@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
+	"github.com/tucats/ego/symbols"
 	"github.com/tucats/ego/tokenizer"
 )
 
@@ -179,6 +180,7 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 	cx.functionDepth = c.functionDepth
 	cx.coercions = coercions
 	cx.sourceFile = c.sourceFile
+	savedExtensions := c.flags.extensionsEnabled
 
 	// If we are compiling a function INSIDE a package definition, make sure
 	// the code has access to the full package definition at runtime.
@@ -240,6 +242,9 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 			c.b.Emit(bytecode.StoreAlways, functionName)
 		}
 	}
+
+	c.flags.extensionsEnabled = savedExtensions
+	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, savedExtensions)
 
 	return nil
 }

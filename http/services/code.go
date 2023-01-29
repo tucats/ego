@@ -39,6 +39,10 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	symbolTable.SetAlways(defs.TypeCheckingVariable, staticTypes)
 
+	// Make sure we have recorded the extensions status.
+	symbolTable.Root().SetAlways(defs.ExtensionsVariable,
+		settings.GetBool(defs.ExtensionsEnabledSetting))
+
 	u := r.URL.Query()
 	args := map[string]interface{}{}
 

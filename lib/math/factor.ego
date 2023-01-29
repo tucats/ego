@@ -5,6 +5,8 @@ package math
  */
 
 func Factor(n int) []int {
+    @extensions
+
     if n < 1 {
         return make([]int, 0)
     }

@@ -9,8 +9,6 @@ func (c *Compiler) compileExit() error {
 	c.b.Emit(bytecode.Load, "os")
 	c.b.Emit(bytecode.Member, "Exit")
 
-	argCount := 0
-
 	if !c.isStatementEnd() {
 		bc, err := c.Expression()
 		if err != nil {
@@ -18,11 +16,11 @@ func (c *Compiler) compileExit() error {
 		}
 
 		c.b.Append(bc)
-
-		argCount = 1
+	} else {
+		c.b.Emit(bytecode.Push, 0)
 	}
 
-	c.b.Emit(bytecode.Call, argCount)
+	c.b.Emit(bytecode.Call, 1)
 
 	return nil
 }
