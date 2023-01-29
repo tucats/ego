@@ -276,16 +276,15 @@ func Format(element interface{}) string {
 			fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())
 
 			name := fn.Name()
-			name = strings.Replace(name, "github.com/tucats/ego/runtime.", "runtime.", 1)
-			name = strings.Replace(name, "github.com/tucats/ego/functions.", "functions.", 1)
+			name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
 			name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
 
 			if name == "" {
 				name = defs.Anon
 			}
 
-			if d := dictionary[name]; d != "" {
-				name = d
+			if d, found := BuiltinsDictionary[strings.ToLower(name)]; found {
+				name = d.String()
 			} else {
 				name = name + "()"
 			}

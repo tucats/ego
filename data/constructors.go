@@ -7,6 +7,11 @@ var UndefinedType = &Type{
 	kind: UndefinedKind,
 }
 
+var TypeType = &Type{
+	name: "Type",
+	kind: TypeKind,
+}
+
 var StructType = &Type{
 	name: StructTypeName,
 	kind: StructKind,

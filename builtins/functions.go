@@ -58,14 +58,93 @@ const Any = math.MaxInt32
 // to allow the return of both a value and an error as multi-part results, add the
 // ErrReturn:true flag to each function definition.
 var FunctionDictionary = map[string]FunctionDefinition{
-	"$new":           {Min: 1, Max: 1, F: New},
-	"append":         {Min: 2, Max: Any, F: Append},
-	"close":          {Min: 1, Max: 1, F: Close},
-	"delete":         {Min: 1, Max: 2, F: Delete, FullScope: true},
-	"index":          {Min: 2, Max: 2, F: Index},
-	"len":            {Min: 1, Max: 1, F: Length},
-	"make":           {Min: 2, Max: 2, F: Make},
-	"sizeof":         {Min: 1, Max: 1, F: SizeOf},
+	"$new": {Min: 1, Max: 1, F: New},
+	"append": {Min: 2, Max: Any, F: Append, D: &data.Declaration{
+		Name: "append",
+		Parameters: []data.Parameter{
+			{
+				Name: "array",
+				Type: data.ArrayType(data.InterfaceType),
+			},
+			{
+				Name: "item",
+				Type: data.InterfaceType,
+			},
+		},
+		Variadic: true,
+		Returns:  []*data.Type{data.ArrayType(data.InterfaceType)},
+	}},
+	"close": {Min: 1, Max: 1, F: Close, D: &data.Declaration{
+		Name: "close",
+		Parameters: []data.Parameter{
+			{
+				Name: "any",
+				Type: data.InterfaceType,
+			},
+		},
+	}},
+	"delete": {Min: 1, Max: 2, F: Delete, FullScope: true, D: &data.Declaration{
+		Name: "delete",
+		Parameters: []data.Parameter{
+			{
+				Name: "item",
+				Type: data.InterfaceType,
+			},
+			{
+				Name: "index",
+				Type: data.InterfaceType,
+			},
+		},
+		ArgCount: data.Range{1, 2},
+	}},
+	"index": {Min: 2, Max: 2, F: Index, D: &data.Declaration{
+		Name: "index",
+		Parameters: []data.Parameter{
+			{
+				Name: "item",
+				Type: data.InterfaceType,
+			},
+			{
+				Name: "index",
+				Type: data.InterfaceType,
+			},
+		},
+		Returns: []*data.Type{data.IntType},
+	}},
+	"len": {Min: 1, Max: 1, F: Length, D: &data.Declaration{
+		Name: "len",
+		Parameters: []data.Parameter{
+			{
+				Name: "item",
+				Type: data.InterfaceType,
+			},
+		},
+		Returns: []*data.Type{data.IntType},
+	}},
+	"make": {Min: 2, Max: 2, F: Make, D: &data.Declaration{
+		Name: "make",
+		Parameters: []data.Parameter{
+			{
+				Name: "t",
+				Type: data.TypeType,
+			},
+			{
+				Name: "count",
+				Type: data.IntType,
+			},
+		},
+		Returns: []*data.Type{data.IntType},
+	}},
+	"sizeof": {Min: 1, Max: 1, F: SizeOf, D: &data.Declaration{
+		Name: "sizeof",
+		Parameters: []data.Parameter{
+			{
+				Name: "item",
+				Type: data.InterfaceType,
+			},
+		},
+		Returns: []*data.Type{data.IntType},
+	}},
 	"sync.__empty":   {Min: 0, Max: 0, F: stubFunction}, // Package auto imports, but has no functions
 	"sync.WaitGroup": {V: sync.WaitGroup{}},
 	"sync.Mutex":     {V: sync.Mutex{}},
@@ -86,6 +165,11 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 	for _, n := range functionNames {
 		d := FunctionDictionary[n]
+
+		if d.D != nil {
+			data.RegisterDeclaration(d.D)
+		}
+
 		if dot := strings.Index(n, "."); dot >= 0 {
 			d.Pkg = n[:dot]
 			n = n[dot+1:]
@@ -94,10 +178,9 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 		if d.Pkg == "" {
 			_ = symbolTable.SetWithAttributes(n, d.F, symbols.SymbolAttribute{Readonly: true})
 		} else {
-			// Does package already exist? IF not, make it. The package
+			// Does package already exist? If not, make it. The package
 			// is just a struct containing where each member is a function
 			// definition.
-
 			pkg := data.NewPackage(d.Pkg)
 
 			if p, found := symbolTable.Root().Get(d.Pkg); found {
