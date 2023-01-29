@@ -17,7 +17,7 @@ func (e *Expression) Eval(s *symbols.SymbolTable) (interface{}, error) {
 
 	// If the symbol table we're given is unallocated, make one for our use now.
 	if s == nil {
-		s = symbols.NewSymbolTable("eval()")
+		s = symbols.NewSymbolTable("eval")
 	}
 
 	// Add the builtin functions

@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/symbols"
 )
 
 func TestFunctionSort(t *testing.T) {
@@ -18,6 +20,13 @@ func TestFunctionSort(t *testing.T) {
 		want    interface{}
 		wantErr bool
 	}{
+		{
+			name: "integer sort",
+			args: args{[]interface{}{
+				data.NewArrayFromArray(data.IntType, []interface{}{55, 2, 18})},
+			},
+			want: []interface{}{2, 18, 55},
+		},
 		{
 			name: "scalar args",
 			args: args{
@@ -56,7 +65,10 @@ func TestFunctionSort(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := genericSort(nil, tt.args.args)
+			s := symbols.NewSymbolTable("sort testing")
+			s.SetAlways(defs.ExtensionsVariable, true)
+
+			got, err := genericSort(s, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionSort() error = %v, wantErr %v", err, tt.wantErr)
 

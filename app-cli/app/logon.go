@@ -128,7 +128,7 @@ func Logon(c *cli.Context) error {
 
 		err := json.Unmarshal(r.Body(), &payload)
 		if err != nil {
-			return errors.NewError(err).Context("logon")
+			return errors.NewError(err).In("logon")
 		}
 
 		if ui.IsActive(ui.RestLogger) {

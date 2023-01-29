@@ -13,7 +13,7 @@ import (
 // sync.Mutex.Lock() function.
 func mutexLock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Lock()")
+		return nil, errors.ErrArgumentCount.In("Lock")
 	}
 
 	this := getNativeThis(s)
@@ -29,7 +29,7 @@ func mutexLock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // sync.Mutex.Unlock() function.
 func mutexUnlock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Unock()")
+		return nil, errors.ErrArgumentCount.In("Unock")
 	}
 
 	this := getNativeThis(s)
@@ -47,7 +47,7 @@ func mutexUnlock(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // sync.WaitGroup Add() function.
 func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 1 {
-		return nil, errors.ErrArgumentCount.In("Add()")
+		return nil, errors.ErrArgumentCount.In("Add")
 	}
 
 	this := getNativeThis(s)
@@ -64,7 +64,7 @@ func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // sync.WaitGroup Done() function.
 func waitGroupDone(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Done()")
+		return nil, errors.ErrArgumentCount.In("Done")
 	}
 
 	this := getNativeThis(s)
@@ -80,7 +80,7 @@ func waitGroupDone(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 // sync.WaitGroup Wait() function.
 func waitGroupWait(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Wait()")
+		return nil, errors.ErrArgumentCount.In("Wait")
 	}
 
 	this := getNativeThis(s)

@@ -24,6 +24,6 @@ func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return callTypeMethod(arg.TypeString(), "Close", s, args)
 
 	default:
-		return nil, errors.ErrInvalidType.In("close()")
+		return nil, errors.ErrInvalidType.In("close")
 	}
 }

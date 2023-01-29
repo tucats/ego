@@ -29,9 +29,10 @@ func TestFunctionLen(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "numeric value length",
-			args: args{[]interface{}{3.14}},
-			want: 4,
+			name:    "numeric value length",
+			args:    args{[]interface{}{3.14}},
+			want:    0,
+			wantErr: true,
 		},
 		{
 			name: "array length",
@@ -64,8 +65,6 @@ func TestFunctionLen(t *testing.T) {
 		})
 	}
 }
-
-
 
 func TestLength(t *testing.T) {
 	tests := []struct {

@@ -5,11 +5,16 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 // Index implements the index() function.
 func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	if !extensions() {
+		return nil, errors.ErrExtension.Context("index")
+	}
+
 	switch arg := args[0].(type) {
 	case *data.Array:
 		for i := 0; i < arg.Len(); i++ {

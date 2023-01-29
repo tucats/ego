@@ -50,7 +50,7 @@ func validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	j, err := util.Decrypt(string(b), key)
 	if err == nil && len(j) == 0 {
-		err = errors.ErrInvalidTokenEncryption.In("validate()")
+		err = errors.ErrInvalidTokenEncryption.In("Validate")
 	}
 
 	if err != nil {
@@ -76,7 +76,7 @@ func validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
 		if reportErr {
-			err = errors.ErrExpiredToken.In("validate()")
+			err = errors.ErrExpiredToken.In("Validate")
 		} else {
 			return false, nil
 		}
@@ -109,7 +109,7 @@ func extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if len(j) == 0 {
-		return nil, errors.ErrInvalidTokenEncryption.In("extract()")
+		return nil, errors.ErrInvalidTokenEncryption.In("Extract")
 	}
 
 	var t = authToken{}
@@ -122,7 +122,7 @@ func extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		err = errors.ErrExpiredToken.In("validate()")
+		err = errors.ErrExpiredToken.In("Extract")
 	}
 
 	r := map[string]interface{}{}

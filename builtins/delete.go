@@ -13,16 +13,20 @@ import (
 func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if _, ok := args[0].(string); ok {
 		if len(args) != 1 {
-			return nil, errors.ErrArgumentCount.In("delete{}")
+			return nil, errors.ErrArgumentCount.In("delete")
 		}
 	} else {
 		if len(args) != 2 {
-			return nil, errors.ErrArgumentCount.In("delete{}")
+			return nil, errors.ErrArgumentCount.In("delete")
 		}
 	}
 
 	switch v := args[0].(type) {
 	case string:
+		if !extensions() {
+			return nil, errors.ErrArgumentType.In("delete")
+		}
+
 		return nil, s.Delete(v, false)
 
 	case *data.Map:
@@ -37,6 +41,6 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return v, err
 
 	default:
-		return nil, errors.ErrInvalidType.In("delete()")
+		return nil, errors.ErrInvalidType.In("delete")
 	}
 }

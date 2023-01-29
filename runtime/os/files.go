@@ -27,7 +27,9 @@ func readFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	content, err := os.ReadFile(name)
 	if err != nil {
-		return nil, errors.NewError(err)
+		err = errors.NewError(err).In("ReadFile")
+
+		return nil, err
 	}
 
 	return data.NewArray(data.ByteType, 0).Append(content), nil
@@ -41,7 +43,9 @@ func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		if a.ValueType().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
-				err = errors.NewError(err)
+				err = errors.NewError(err).In("WriteFile")
+
+				return 0, err
 			}
 
 			return a.Len(), err
@@ -52,7 +56,7 @@ func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	err := os.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.NewError(err).In("WriteFile")
 	}
 
 	return len(text), err

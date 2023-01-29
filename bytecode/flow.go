@@ -207,6 +207,14 @@ func callByteCode(c *Context, i interface{}) error {
 	c.argCountDelta = 0
 	fullSymbolVisibility := c.fullSymbolScope
 
+	// Determine if language extensions are supported. This is required
+	// for variable length argument lists that are not variadic.
+	extensions := false
+
+	if v, found := c.symbols.Get(defs.ExtensionsVariable); found {
+		extensions = data.Bool(v)
+	}
+
 	// Arguments are in reverse order on stack.
 	args := make([]interface{}, argc)
 
@@ -248,6 +256,11 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		if fargc != argc {
+			// If extensions are not enabled, we don't allow variable argument counts.
+			if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
+				return c.error(errors.ErrArgumentCount)
+			}
+
 			if fargc > 0 && (dp.Declaration.ArgCount[0] != 0 || dp.Declaration.ArgCount[1] != 0) {
 				if argc < dp.Declaration.ArgCount[0] || argc > dp.Declaration.ArgCount[1] {
 					return c.error(errors.ErrArgumentCount)
@@ -434,7 +447,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Functions implemented natively cannot wrap them up as runtime
 		// errors, so let's help them out.
 		if err != nil {
-			err = c.error(err).In(builtins.FindName(function))
+			err = c.error(err)
 		}
 
 	case error:

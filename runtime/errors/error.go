@@ -14,7 +14,7 @@ var verbose bool = false
 // Error implements the (e error) Error() method for Ego errors.
 func Error(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount.In("Error()")
+		return nil, errors.ErrArgumentCount.In("Error")
 	}
 
 	if v, found := s.Get(defs.ThisVariable); found {
@@ -31,6 +31,3 @@ func Error(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	return nil, errors.ErrNoFunctionReceiver
 }
-
-
-

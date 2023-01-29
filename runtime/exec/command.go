@@ -17,7 +17,7 @@ import (
 func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
+		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 
 	// Let's build the Ego instance of exec.Cmd
@@ -51,7 +51,7 @@ func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 func lookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	path, err := exec.LookPath(data.String(args[0]))
 	if err != nil {
-		return "", errors.NewError(err).Context("LookPath")
+		return "", errors.NewError(err).In("LookPath")
 	}
 
 	return path, nil

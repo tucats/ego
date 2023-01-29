@@ -9,7 +9,7 @@ import (
 
 func newError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) < 1 || len(args) > 2 {
-		return nil, errors.ErrArgumentCount.In("New()")
+		return nil, errors.ErrArgumentCount.In("New")
 	}
 
 	result := errors.NewMessage(data.String(args[0]))

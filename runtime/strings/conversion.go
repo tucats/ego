@@ -91,7 +91,7 @@ func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			b.WriteRune(rune(a))
 
 		default:
-			return nil, errors.ErrArgumentCount.In("String()")
+			return nil, errors.ErrArgumentCount.In("String")
 		}
 	}
 

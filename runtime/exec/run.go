@@ -15,7 +15,7 @@ import (
 func run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
-		return nil, errors.ErrNoPrivilegeForOperation.Context("Run")
+		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 
 	// Get the Ego structure and the embedded exec.Cmd structure

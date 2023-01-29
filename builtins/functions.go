@@ -10,6 +10,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
+	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/symbols"
@@ -294,4 +295,15 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 
 func stubFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.ErrInvalidFunctionName
+}
+
+// extensions retrieves the boolean indicating if extensions are supported. This can
+// be used to do runtime checks for etended featues of builtins.
+func extensions() bool {
+	f := false
+	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
+		f = data.Bool(v)
+	}
+
+	return f
 }

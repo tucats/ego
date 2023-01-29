@@ -17,10 +17,10 @@ func sortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Strings()")
+		return nil, errors.ErrWrongArrayValueType.In("Strings")
 	}
 
-	return nil, errors.ErrArgumentType.In("Strings()").Context(args[0])
+	return nil, errors.ErrArgumentType.In("Strings").Context(args[0])
 }
 
 // sortBytes implements the sort.sortBytes function.
@@ -32,10 +32,10 @@ func sortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.Context("sort.Bytes()")
+		return nil, errors.ErrWrongArrayValueType.Context("Bytes").In("Bytes")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Bytes()")
+	return nil, errors.ErrArgumentType.In("Bytes")
 }
 
 // sortInts implements the sort.sortInts function.
@@ -47,10 +47,10 @@ func sortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Ints()")
+		return nil, errors.ErrWrongArrayValueType.In("Ints")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Ints()")
+	return nil, errors.ErrArgumentType.In("Ints")
 }
 
 // sortInt32s implements the sort.sortInt32s function.
@@ -62,10 +62,10 @@ func sortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Int32s()")
+		return nil, errors.ErrWrongArrayValueType.In("Int32s")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Int32s()")
+	return nil, errors.ErrArgumentType.In("Int32s")
 }
 
 // sortInt64s implements the sort.sortInt64s function.
@@ -77,10 +77,10 @@ func sortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Int64s()")
+		return nil, errors.ErrWrongArrayValueType.In("Int64s")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Int64s()")
+	return nil, errors.ErrArgumentType.In("Int64s")
 }
 
 // Floats implements the sort.Floats function.
@@ -92,10 +92,10 @@ func Floats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Floats()")
+		return nil, errors.ErrWrongArrayValueType.In("Floats")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Floats()")
+	return nil, errors.ErrArgumentType.In("Floats")
 }
 
 // sortFloat32s implements the sort.sortFloat32s function.
@@ -107,10 +107,10 @@ func sortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Float32s()")
+		return nil, errors.ErrWrongArrayValueType.In("Float32s")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Float32s()")
+	return nil, errors.ErrArgumentType.In("Float32s")
 }
 
 // sortFloat64s implements the sort.sortFloat64s function.
@@ -122,10 +122,10 @@ func sortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			return array, err
 		}
 
-		return nil, errors.ErrWrongArrayValueType.In("sort.Float64s()")
+		return nil, errors.ErrWrongArrayValueType.In("Float64s")
 	}
 
-	return nil, errors.ErrArgumentType.In("sort.Float64s()")
+	return nil, errors.ErrArgumentType.In("Float64s")
 }
 
 // genericSort implements the sort.genericSort() function, whichi sorts an array regardless of it's type.
@@ -138,6 +138,9 @@ func genericSort(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 	if len(args) == 1 {
 		if array, ok := args[0].(*data.Array); ok {
 			err := array.Sort()
+			if err != nil {
+				err = errors.NewError(err).In("Sort")
+			}
 
 			return array, err
 		}
@@ -280,6 +283,6 @@ func genericSort(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		return resultArray, nil
 
 	default:
-		return nil, errors.ErrInvalidType.In("sort()").Context(data.TypeOf(rv).String())
+		return nil, errors.ErrInvalidType.In("Sort").Context(data.TypeOf(rv).String())
 	}
 }

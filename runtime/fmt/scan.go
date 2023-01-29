@@ -34,7 +34,7 @@ func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
 	if err != nil {
-		return data.List(0, err), errors.NewError(err).Context("Sscanf()")
+		return data.List(0, err), errors.NewError(err).In("Sscanf")
 	}
 
 	// Stride over the return value pointers, assigning as many
@@ -96,7 +96,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).Context("Sscanf()")
+					err = errors.NewError(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -109,7 +109,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).Context("Sscanf()")
+					err = errors.NewError(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -122,7 +122,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).Context("Sscanf()")
+					err = errors.NewError(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -135,7 +135,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).Context("Sscanf()")
+					err = errors.NewError(e).In("Sscanf")
 					parsing = false
 
 					break
@@ -148,7 +148,7 @@ func scanner(data, format string) ([]interface{}, error) {
 
 				_, e := fmt.Sscanf(d[idx].Spelling(), token, &v)
 				if e != nil {
-					err = errors.NewError(e).Context("Sscanf()")
+					err = errors.NewError(e).In("Sscanf")
 					parsing = false
 
 					break

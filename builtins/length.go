@@ -39,13 +39,11 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	case nil:
 		return 0, nil
 
-	default:
-		v := data.Coerce(args[0], "")
-		if v == nil {
-			return 0, nil
-		}
+	case string:
+		return len(arg), nil
 
-		return len(v.(string)), nil
+	default:
+		return 0, errors.ErrArgumentType.In("len").Context(data.TypeOf(args[0]))
 	}
 }
 

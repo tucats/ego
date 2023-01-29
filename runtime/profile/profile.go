@@ -29,7 +29,7 @@ func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	// doesn't exist yet, for example
 	if isEgoSetting {
 		if !settings.Exists(key) {
-			return nil, errors.ErrReservedProfileSetting.In("Set()").Context(key)
+			return nil, errors.ErrReservedProfileSetting.In("Set").Context(key)
 		}
 	}
 
@@ -43,7 +43,7 @@ func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		(strings.HasPrefix(key, "ego.runtime") ||
 			strings.HasPrefix(key, "ego.server") ||
 			strings.HasPrefix(key, "ego.compiler")) {
-		return nil, errors.ErrReservedProfileSetting.In("Set()").Context(key)
+		return nil, errors.ErrReservedProfileSetting.In("Set").Context(key)
 	}
 
 	// If the value is an empty string, delete the key else

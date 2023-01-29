@@ -40,6 +40,6 @@ func members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return keys, err
 
 	default:
-		return nil, errors.ErrInvalidType.In("Members()")
+		return nil, errors.ErrInvalidType.In("Members")
 	}
 }

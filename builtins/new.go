@@ -43,7 +43,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return float64(0), nil
 
 		default:
-			return nil, errors.ErrInvalidType.In("new()").Context(typeValue)
+			return nil, errors.ErrInvalidType.In("new").Context(typeValue)
 		}
 	}
 
@@ -80,7 +80,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return float64(0), nil
 
 		default:
-			return nil, errors.ErrInvalidType.In("new()").Context(typeValue)
+			return nil, errors.ErrInvalidType.In("new").Context(typeValue)
 		}
 	}
 
@@ -125,10 +125,10 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {
 	case nil:
-		return nil, errors.ErrInvalidValue.In("new()").Context(nil)
+		return nil, errors.ErrInvalidValue.In("new").Context(nil)
 
 	case symbols.SymbolTable:
-		return nil, errors.ErrInvalidValue.In("new()").Context("symbol table")
+		return nil, errors.ErrInvalidValue.In("new").Context("symbol table")
 
 	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
 		return v, nil
@@ -164,7 +164,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 	default:
-		return nil, errors.ErrInvalidType.In("new()").Context(v)
+		return nil, errors.ErrInvalidType.In("new").Context(v)
 	}
 
 	return r, nil

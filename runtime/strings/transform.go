@@ -56,7 +56,7 @@ func splitString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 func join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	elemArray, ok := args[0].(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType.Context("Join()")
+		return nil, errors.ErrArgumentType.In("Join")
 	}
 
 	separator := data.String(args[1])

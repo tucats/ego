@@ -62,6 +62,16 @@ func (e *Error) In(name string) *Error {
 	return e
 }
 
+// HasIn returns true if the associated error already has a module
+// name in the location data.
+func (e *Error) HasIn() bool {
+	if e == nil || e.location == nil {
+		return false
+	}
+
+	return e.location.name != ""
+}
+
 // At specifies a line number and column position related to
 // the error. The line number is always present, the column
 // is typically only set during compilation; if it is zero then
@@ -79,6 +89,16 @@ func (e *Error) At(line int, column int) *Error {
 	e.location.column = column
 
 	return e
+}
+
+// HasAt returns true if the  associated error has line and/or column info
+// already in the location data.
+func (e *Error) HasAt() bool {
+	if e == nil || e.location == nil {
+		return false
+	}
+
+	return e.location.line != 0 || e.location.column != 0
 }
 
 // Context specifies the context value. This is a message-

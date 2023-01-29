@@ -19,7 +19,7 @@ func asString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	f := getThis(s)
 	if f == nil {
-		return nil, errors.ErrNoFunctionReceiver.In("String()")
+		return nil, errors.ErrNoFunctionReceiver.In("String")
 	}
 
 	b.WriteString("<file")
@@ -87,6 +87,8 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	f, err := getFile("ReadString", s)
 	if err != nil {
+		err = errors.NewError(err).In("ReadString")
+
 		return data.List(nil, err), err
 	}
 
@@ -119,6 +121,8 @@ func writeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		if e2 != nil {
 			err = errors.NewError(e2)
 		}
+	} else {
+		err = errors.NewError(err).In("WriteString")
 	}
 
 	return data.List(length, err), err
@@ -132,6 +136,8 @@ func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	err := enc.Encode(args[0])
 	if err != nil {
+		err = errors.NewError(err).In("Write")
+
 		return data.List(nil, err), errors.NewError(err)
 	}
 
@@ -144,7 +150,7 @@ func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.NewError(err).In("Write")
 	}
 
 	return data.List(length, err), err
@@ -159,6 +165,8 @@ func writeAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	err := enc.Encode(args[0])
 	if err != nil {
+		err = errors.NewError(err).In("WriteAt")
+
 		return nil, errors.NewError(err)
 	}
 
@@ -171,7 +179,7 @@ func writeAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if err != nil {
-		err = errors.NewError(err)
+		err = errors.NewError(err).In("WriteAt")
 	}
 
 	return data.List(length, err), err

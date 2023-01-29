@@ -55,5 +55,5 @@ func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	return nil, errors.ErrNoFunctionReceiver.In("String()")
+	return nil, errors.ErrNoFunctionReceiver.In("String")
 }

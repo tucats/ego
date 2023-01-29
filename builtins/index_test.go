@@ -3,6 +3,9 @@ package builtins
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/symbols"
 )
 
 func TestFunctionIndex(t *testing.T) {
@@ -55,7 +58,12 @@ func TestFunctionIndex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Index(nil, tt.args.args)
+			// We will need a symbol table so the Index function can find out
+			// if it is allowed or not.
+			s := symbols.NewSymbolTable("testing")
+			s.Root().SetAlways(defs.ExtensionsVariable, true)
+
+			got, err := Index(s, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionIndex() error = %v, wantErr %v", err, tt.wantErr)
 

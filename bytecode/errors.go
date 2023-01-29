@@ -13,7 +13,21 @@ func (c *Context) error(err error, context ...interface{}) *errors.Error {
 		return nil
 	}
 
-	r := errors.NewError(err).In(c.name).At(c.GetLine(), 0)
+	var r *errors.Error
+
+	if e, ok := err.(*errors.Error); ok {
+		if !e.HasIn() {
+			e = e.In(c.name)
+		}
+
+		if !e.HasAt() {
+			e = e.At(c.GetLine(), 0)
+		}
+
+		r = e
+	} else {
+		r = errors.NewError(err).In(c.name).At(c.GetLine(), 0)
+	}
 
 	if len(context) > 0 {
 		r = r.Context(context[0])

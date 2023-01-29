@@ -5,12 +5,11 @@ func DirList(path string) string {
     a := []string{}
     r := ""
 
-    try {
-        a = io.ReadDir(path)
-    } catch (e) {
-        print e
-        return "unable to read directory path: " + path
+    a, e = io.ReadDir(path)
+    if e != nil {
+        return "unable to read directory path: " + e.Error()
     }
+    
     fmtstr := "%s  %-20s  %10d  %s\n"
     for _, i := range a {
         r = r + fmt.Sprintf(fmtstr, i.Mode,  strings.Left(i.Modified, 19), i.Size, i.Name) 

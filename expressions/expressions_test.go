@@ -22,6 +22,11 @@ func TestNew(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "index of string function",
+			expr: "index(name, \"o\")",
+			want: 2,
+		},
+		{
 			name: "Bitwise AND",
 			expr: "7 & 1",
 			want: 1,
@@ -271,11 +276,6 @@ func TestNew(t *testing.T) {
 			want: 8,
 		},
 		{
-			name: "index of string function",
-			expr: "index(name, \"o\")",
-			want: 2,
-		},
-		{
 			name: "index not found function",
 			expr: "index(name, \"g\")",
 			want: 0,
@@ -302,6 +302,7 @@ func TestNew(t *testing.T) {
 			s.SetAlways("b", true)
 			s.SetAlways("roman12", "XII")
 			s.SetAlways("a", data.NewArrayFromArray(data.InterfaceType, []interface{}{1, "tom", 33., false}))
+			s.Root().SetAlways(defs.ExtensionsVariable, true)
 
 			// Compile the string and evaluate using the symbol table
 			v1, err := Evaluate(tt.expr, s)

@@ -20,6 +20,8 @@ func closeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		this.SetAlways(modeFieldName, "closed")
 		this.SetAlways(fileFieldName, nil)
 		this.SetAlways(nameFieldName, "")
+	} else {
+		err = errors.NewError(err).In("Close")
 	}
 
 	return err, nil

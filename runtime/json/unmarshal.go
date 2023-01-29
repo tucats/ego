@@ -23,6 +23,12 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		err = json.Unmarshal([]byte(jsonBuffer), &v)
 	}
 
+	if err != nil {
+		err = errors.NewError(err).In("Unmarshal")
+
+		return data.List(nil, err), err
+	}
+
 	// If there is no model, assume a generic return value is okay
 	if len(args) < 2 {
 		// Hang on, if the result is a map, then Ego won't be able to use it,
@@ -43,7 +49,7 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	// There's a model, so the return value should be an error code. IF we already
 	// have had an error on the Unmarshal, we report it now.
 	if err != nil {
-		return data.List(errors.NewError(err)), nil
+		return data.List(errors.NewError(err).In("Unmarshal")), nil
 	}
 
 	// There is a model, so do some mapping if possible.
@@ -60,7 +66,9 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			for k, v := range m {
 				err = target.Set(k, v)
 				if err != nil {
-					return data.List(errors.NewError(err)), nil
+					err = errors.NewError(err).In("Unmarshal")
+
+					return data.List(err), nil
 				}
 			}
 		} else {
@@ -85,7 +93,7 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 				_, err = target.Set(k2, v2)
 				if err != nil {
-					return data.List(errors.NewError(err)), nil
+					return data.List(errors.NewError(err).In("Unmarshal")), nil
 				}
 			}
 		} else {

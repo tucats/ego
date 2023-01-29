@@ -10,7 +10,7 @@ import (
 // unwrap implements the (e error) unwrap() method for Ego errors.
 func unwrap(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) > 0 {
-		return nil, errors.ErrArgumentCount.In("Error()")
+		return nil, errors.ErrArgumentCount.In("Error")
 	}
 
 	if v, found := s.Get(defs.ThisVariable); found {

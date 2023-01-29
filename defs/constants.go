@@ -269,6 +269,7 @@ const (
 	PathsVariable            = InvisiblePrefix + "paths"
 	LocalizationVariable     = InvisiblePrefix + "localization"
 	LineVariable             = InvisiblePrefix + "line"
+	ExtensionsVariable       = InvisiblePrefix + "extensions"
 	ModuleVariable           = InvisiblePrefix + "module"
 	RestStatusVariable       = InvisiblePrefix + "rest_status"
 	DiscardedVariable        = "_"

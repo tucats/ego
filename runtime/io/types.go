@@ -152,7 +152,7 @@ func Initialize(s *symbols.SymbolTable) {
 						Type: data.StringType,
 					},
 				},
-				Returns: []*data.Type{data.ArrayType(entryType)},
+				Returns: []*data.Type{data.ArrayType(entryType), data.ErrorType},
 			},
 			Value: readDirectory,
 		},

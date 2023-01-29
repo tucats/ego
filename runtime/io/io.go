@@ -91,7 +91,9 @@ func readDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return result, errors.NewError(err).In("ReadDir()")
+		err = errors.NewError(err).In("ReadDir")
+
+		return data.List(result, err), err
 	}
 
 	for _, file := range files {
@@ -106,7 +108,7 @@ func readDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 		result.Append(entry)
 	}
 
-	return result, nil
+	return data.List(result, nil), nil
 }
 
 func sandboxName(path string) string {

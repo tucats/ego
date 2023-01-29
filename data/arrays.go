@@ -557,7 +557,7 @@ func (a *Array) Sort() error {
 				a.data[i] = v
 
 			default:
-				return errors.ErrInvalidType.Context("sort")
+				return errors.ErrInvalidType.In("Sort")
 			}
 		}
 
@@ -578,7 +578,7 @@ func (a *Array) Sort() error {
 				a.data[i] = v
 
 			default:
-				return errors.ErrInvalidType.Context("sort")
+				return errors.ErrInvalidType.In("Sort")
 			}
 		}
 

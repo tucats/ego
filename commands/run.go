@@ -52,6 +52,7 @@ func RunAction(c *cli.Context) error {
 	fullScope := false
 	lineNumber := 1
 	isProject := false
+	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
 	entryPoint, _ := c.String("entry-point")
 	if entryPoint == "" {
@@ -243,13 +244,14 @@ func RunAction(c *cli.Context) error {
 	// Set up the symbol table.
 	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive, disassemble)
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
+	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 
 	exitValue := 0
 
 	for {
 		// If we are processing interactive console commands, and help is enabled, and this is a
 		// "help" command, handle that specially.
-		if interactive && settings.GetBool(defs.ExtensionsEnabledSetting) && (strings.HasPrefix(text, "help\n") || strings.HasPrefix(text, "help ")) {
+		if interactive && extensions && (strings.HasPrefix(text, "help\n") || strings.HasPrefix(text, "help ")) {
 			keys := strings.Split(strings.ToLower(text), " ")
 
 			help(keys)

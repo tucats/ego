@@ -22,7 +22,9 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	fname, err := filepath.Abs(sandboxName(data.String(args[0])))
 	if err != nil {
-		return data.List(nil, err), errors.NewError(err)
+		err = errors.NewError(err).In("ReadDir")
+
+		return data.List(nil, err), err
 	}
 
 	modeValue := "input"
@@ -54,6 +56,8 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	f, err = os.OpenFile(fname, mode, mask)
 	if err != nil {
+		err = errors.NewError(err).In("ReadDir")
+
 		return data.List(nil, err), errors.NewError(err)
 	}
 

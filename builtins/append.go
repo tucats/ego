@@ -30,7 +30,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			result = append(result, array...)
 		} else {
 			if !kind.IsInterface() && !data.TypeOf(j).IsType(kind) {
-				return nil, errors.ErrWrongArrayValueType.In("append()")
+				return nil, errors.ErrWrongArrayValueType.In("append")
 			}
 			result = append(result, j)
 		}

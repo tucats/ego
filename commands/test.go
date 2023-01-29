@@ -37,6 +37,7 @@ func TestAction(c *cli.Context) error {
 	// operations will break tests, so disable that.
 	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
 	settings.SetDefault(defs.SandboxPathSetting, "")
+	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
 
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests").Shared(true)

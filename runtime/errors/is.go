@@ -10,7 +10,7 @@ import (
 // isError implements the (e error) Is() method for Ego errors.
 func isError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if len(args) != 0 {
-		return nil, errors.ErrArgumentCount.In("Error()")
+		return nil, errors.ErrArgumentCount.In("Error")
 	}
 
 	var test error
@@ -24,7 +24,7 @@ func isError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return e.Is(test), nil
 		}
 
-		return nil, errors.ErrInvalidType.Context(data.TypeOf(v)).In("Is()")
+		return nil, errors.ErrInvalidType.Context(data.TypeOf(v)).In("Is")
 	}
 
 	return nil, errors.ErrNoFunctionReceiver

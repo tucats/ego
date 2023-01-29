@@ -324,6 +324,9 @@ var messages = map[string]map[string]string{
 	"error.expression.term": {
 		"en": "missing term",
 	},
+	"error.extension": {
+		"en": "unsupported language extension",
+	},
 	"error.field.for.type": {
 		"en": "invalid field name for type",
 	},

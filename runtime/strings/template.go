@@ -16,7 +16,7 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return data.List(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template()").Context(data.TypeOf(args[0]).String())
+		return data.List(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template").Context(data.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -27,14 +27,14 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 			// Get the named template and add it's tree here
 			tv, ok := s.Get(templateNode.Name)
 			if !ok {
-				e := errors.ErrInvalidTemplateName.In("Template()").Context(templateNode.Name)
+				e := errors.ErrInvalidTemplateName.In("Template").Context(templateNode.Name)
 
 				return data.List(nil, e), e
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
-				e := errors.ErrInvalidType.In("Template()").Context(data.TypeOf(tv).String())
+				e := errors.ErrInvalidType.In("Template").Context(data.TypeOf(tv).String())
 
 				return data.List(nil, e), e
 			}

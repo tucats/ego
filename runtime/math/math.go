@@ -28,7 +28,7 @@ func minimum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	for _, v := range args[1:] {
 		v = data.Coerce(v, r)
 		if v == nil {
-			return nil, errors.ErrInvalidType.In("min()")
+			return nil, errors.ErrInvalidType.In("Min")
 		}
 
 		switch rv := r.(type) {
@@ -70,7 +70,7 @@ func maximum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	for _, xv := range args[1:] {
 		v := data.Coerce(xv, r)
 		if v == nil {
-			return nil, errors.ErrInvalidType.In("max()").Context(data.TypeOf(r).String())
+			return nil, errors.ErrInvalidType.In("Max").Context(data.TypeOf(r).String())
 		}
 
 		switch rr := r.(type) {
@@ -95,7 +95,7 @@ func maximum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 			}
 
 		default:
-			return nil, errors.ErrInvalidType.In("max()").Context(data.TypeOf(rr).String())
+			return nil, errors.ErrInvalidType.In("Max").Context(data.TypeOf(rr).String())
 		}
 	}
 
@@ -109,7 +109,7 @@ func sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	for _, addendV := range args[1:] {
 		addend := data.Coerce(addendV, base)
 		if addend == nil {
-			return nil, errors.ErrInvalidType.In("sum()").Context(data.TypeOf(addendV).String())
+			return nil, errors.ErrInvalidType.In("Sum").Context(data.TypeOf(addendV).String())
 		}
 
 		switch rv := addend.(type) {
@@ -138,7 +138,7 @@ func sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			base = base.(string) + addend.(string)
 
 		default:
-			return nil, errors.ErrInvalidType.In("sum()").Context(data.TypeOf(rv).String())
+			return nil, errors.ErrInvalidType.In("Sum").Context(data.TypeOf(rv).String())
 		}
 	}
 
