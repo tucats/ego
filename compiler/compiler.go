@@ -364,8 +364,8 @@ func (c *Compiler) AddPackageToSymbols(s *symbols.SymbolTable) *Compiler {
 		}
 		// Make sure the package is marked as readonly so the user can't modify
 		// any function definitions, etc. that are built in.
-		data.SetMetadata(m, data.TypeMDKey, data.PackageType(packageName))
-		data.SetMetadata(m, data.ReadonlyMDKey, true)
+		m.Set(data.TypeMDKey, data.PackageType(packageName))
+		m.Set(data.ReadonlyMDKey, true)
 
 		if packageName != "" {
 			s.SetAlways(packageName, m)

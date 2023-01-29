@@ -2,19 +2,14 @@ package data
 
 import (
 	"fmt"
-	"sync"
+	"sync/atomic"
 )
 
-var nameSequenceNumber int = 0
-var nameMutex sync.Mutex
+var nameSequenceNumber int32 = 0
 
 // Threadsafe name generator.
 func GenerateName() string {
-	nameMutex.Lock()
-	defer nameMutex.Unlock()
-
-	nameSequenceNumber++
-	n := nameSequenceNumber
+	n := atomic.AddInt32(&nameSequenceNumber, 1)
 
 	return fmt.Sprintf("$%d", n)
 }

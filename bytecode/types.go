@@ -140,7 +140,7 @@ func requiredTypeByteCode(c *Context, i interface{}) error {
 				// verify the value against the interface entries.
 				if t.HasFunctions() {
 					vt := data.TypeOf(v)
-					if e := t.ValidateFunctions(vt); e != nil {
+					if e := t.ValidateInterfaceConformity(vt); e != nil {
 						return c.error(e)
 					}
 				}

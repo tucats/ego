@@ -51,7 +51,7 @@ func Length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 // SizeOf returns the size in bytes of an arbibrary object.
 func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	size := data.RealSizeOf(args[0])
+	size := data.SizeOf(args[0])
 
 	return size, nil
 }

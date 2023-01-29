@@ -8,18 +8,13 @@ without incurring the overhead of parsing and semantic analysis each time.
 The _Ego_ language is loosely based on _Go_ but with some important
 differences. Some important attributes of _Ego_ programs are:
 
-* There are no pointer types, and no dynamic memory allocation.
-* All objects are passed by value in function calls.
-* Variables are untyped, but can be cast explicitly or will be type converted
-automatically when possible.
-
-The program stream executes at the topmost scope. You can define one or more
-functions in that topmost scope, or execute commands directly. Each function
-runs in its own scope; it can access variables from outer scopes but cannot
-set them. Functions defined within another function only exist as long as
-that function is running.
+* Ego supports optional language extensions (such as try/catch blocks)
+* By default, Ego runs with relaxed type checking and will modify value 
+  types as needed.
+* Strict type checking can be enabled when an Ego program is run.
 
 ## Example
+
 Here is a trivial example of compiling and running some _Ego_ code in your
 Go program.
 
@@ -63,7 +58,11 @@ as values.
 
 | type | description |
 |:-:|:-|
+|byte| 8-bit integer value |
+|int32| 32-bit integer value |
 |int| 64-bit integer value |
+|int64| 64-bit integer value |
+|float32| 32-bit floating point value |
 |float64| 64-bit floating point value |
 |string| Unicode string |
 |bool| Boolean value of true or false |

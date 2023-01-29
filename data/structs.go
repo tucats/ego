@@ -18,7 +18,7 @@ type Struct struct {
 	typeName           string
 	static             bool
 	readonly           bool
-	strongTyping       bool
+	strictTypeChecks   bool
 	fromBuiltinPackage bool
 	mutex              sync.RWMutex
 	fields             map[string]interface{}
@@ -168,18 +168,24 @@ func (s *Struct) GetType() *Type {
 	return s.typeDef
 }
 
-func (s *Struct) SetTyping(b bool) *Struct {
-	s.strongTyping = b
+// SetStrictTypeChecks enables or disables strict type checking
+// for field assignments. This is typically set when
+// a structure is created.
+func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
+	s.strictTypeChecks = b
 
 	return s
 }
 
+// SetReadonly marks this structure as readonly.
 func (s *Struct) SetReadonly(b bool) *Struct {
 	s.readonly = b
 
 	return s
 }
 
+// SetStatic indicates if this structure is static. That is,
+// once defined, fields cannot be added to the structure.
 func (s *Struct) SetStatic(b bool) *Struct {
 	s.static = b
 
@@ -213,7 +219,7 @@ func (s *Struct) GetAlways(name string) interface{} {
 	return value
 }
 
-func (s *Struct) PackageType() string {
+func (s *Struct) PackageName() string {
 	if s.typeDef.pkg != "" {
 		return s.typeDef.pkg
 	}
@@ -247,6 +253,10 @@ func (s *Struct) Get(name string) (interface{}, bool) {
 	return value, ok
 }
 
+// ToMap generates a map[string]interface{} from the structure, so
+// it's fields can be accessed natively, such as using a structure
+// to hold the parameter data for a template evaluation when not in
+// strict type checking mode.
 func (s *Struct) ToMap() map[string]interface{} {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -277,6 +287,9 @@ func (s *Struct) SetAlways(name string, value interface{}) *Struct {
 	return s
 }
 
+// Set stores a value in the structure. The structure must not be
+// readonly, and the field must not be a readonly field. If strict
+// type checking is enabled, the type is validated.
 func (s *Struct) Set(name string, value interface{}) error {
 	if s.readonly {
 		return errors.ErrReadOnly
@@ -303,7 +316,7 @@ func (s *Struct) Set(name string, value interface{}) error {
 	if s.typeDef.fields != nil {
 		if t, ok := s.typeDef.fields[name]; ok {
 			// Does it have to match already?
-			if s.strongTyping && !IsType(value, t) {
+			if s.strictTypeChecks && !IsType(value, t) {
 				return errors.ErrInvalidType.Context(TypeOf(value).String())
 			}
 			// Make sure it is compatible with the field type.
@@ -322,11 +335,14 @@ func (s *Struct) Copy() *Struct {
 	defer s.mutex.RUnlock()
 
 	result := NewStructFromMap(s.fields)
-	result.readonly = s.readonly
-	result.static = s.static
-	result.strongTyping = s.strongTyping
 	result.typeDef = s.typeDef
 	result.typeName = s.typeName
+	result.readonly = s.readonly
+	result.static = s.static
+	result.strictTypeChecks = s.strictTypeChecks
+	result.typeDef = s.typeDef
+	result.typeName = s.typeName
+	result.fromBuiltinPackage = s.fromBuiltinPackage
 
 	return result
 }

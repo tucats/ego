@@ -136,6 +136,8 @@ func (m *Map) Keys() []interface{} {
 		idx := 0
 		array := make([]int, len(m.data))
 
+		sort.Ints(array)
+
 		for k := range m.data {
 			array[idx] = Int(k)
 			idx++
@@ -153,6 +155,8 @@ func (m *Map) Keys() []interface{} {
 	} else if m.keyType.IsType(Float64Type) {
 		idx := 0
 		array := make([]float64, len(m.data))
+
+		sort.Float64s(array)
 
 		for k := range m.data {
 			array[idx] = Float64(k)

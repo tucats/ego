@@ -32,7 +32,7 @@ func Sanitize(v interface{}) interface{} {
 
 		return result
 
-	case Package:
+	case *Package:
 		result := map[string]interface{}{}
 
 		for _, key := range v.Keys() {

@@ -201,9 +201,9 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 				ui.Log(ui.CompilerLogger, "    adding value %s to %s", n, d.Pkg)
 			} else {
 				pkg.Set(n, d.F)
+				pkg.Set(data.TypeMDKey, data.PackageType(d.Pkg))
+				pkg.Set(data.ReadonlyMDKey, true)
 
-				data.SetMetadata(pkg, data.TypeMDKey, data.PackageType(d.Pkg))
-				data.SetMetadata(pkg, data.ReadonlyMDKey, true)
 				_ = root.SetWithAttributes(d.Pkg, pkg, symbols.SymbolAttribute{Readonly: true})
 
 				ui.Log(ui.CompilerLogger, "    adding builtin %s to %s", n, d.Pkg)

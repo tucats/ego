@@ -141,15 +141,6 @@ func instanceOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	case byte, int32, int, int64, string, float32, float64:
 
 	case *data.Package:
-		// Create the replica count if needed, and update it.
-		replica := 0
-
-		if replicaX, ok := data.GetMetadata(v, data.ReplicaMDKey); ok {
-			replica = data.Int(replicaX) + 1
-		}
-
-		data.SetMetadata(v, data.ReplicaMDKey, replica)
-
 		dropList := []string{}
 
 		// Organize the new item by removing things that are handled via the parent.

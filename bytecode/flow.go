@@ -584,7 +584,7 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 	this := c.thisStack[len(c.thisStack)-1]
 
 	if pkg, ok := this.value.(*data.Package); ok {
-		if s, ok := data.GetMetadata(pkg, data.SymbolsMDKey); ok {
+		if s, ok := pkg.Get(data.SymbolsMDKey); ok {
 			if table, ok := s.(*symbols.SymbolTable); ok {
 				if !c.inPackageSymbolTable(table.Package()) {
 					ui.Log(ui.TraceLogger, "(%d)  Using symbol table from package %s", c.threadID, table.Package())

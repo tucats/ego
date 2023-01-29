@@ -229,24 +229,3 @@ func DeepCopy(v interface{}) interface{} {
 		return nil // Unsupported type, (for example, pointers)
 	}
 }
-
-// GetNativeMap extracts a map from an abstract interface. Returns nil
-// if the interface did not contain a map. Note this is NOT an
-// Ego map, but rather is used by  runtime.Table() for actual maps.
-func GetNativeMap(v interface{}) map[string]interface{} {
-	if m, ok := v.(map[string]interface{}); ok {
-		return m
-	}
-
-	return nil
-}
-
-// GetNativeArray extracts a struct from an abstract interface. Returns nil
-// if the interface did not contain a struct/map.
-func GetNativeArray(v interface{}) []interface{} {
-	if m, ok := v.([]interface{}); ok {
-		return m
-	}
-
-	return nil
-}

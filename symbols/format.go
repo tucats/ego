@@ -61,7 +61,7 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 			typeString = actual.TypeString()
 
 		case *data.Package:
-			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
+			if tsx, ok := actual.Get(data.TypeMDKey); ok {
 				typeString = data.String(tsx)
 			}
 
@@ -176,7 +176,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			typeString = actual.TypeString()
 
 		case *data.Package:
-			if tsx, ok := data.GetMetadata(actual, data.TypeMDKey); ok {
+			if tsx, ok := actual.Get(data.TypeMDKey); ok {
 				typeString = data.String(tsx)
 			}
 

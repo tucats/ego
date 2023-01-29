@@ -70,11 +70,15 @@ const (
 	NoName = ""
 )
 
+// Function defines a function, which includes the declaration
+// metadata for the function as well as the actual function pointer,
+// which can be either bytecode or a runtime package function.
 type Function struct {
 	Declaration *Declaration
-	Value       interface{} // Generally bytecode
+	Value       interface{}
 }
 
+// Type defines the type of an Ego object.
 type Type struct {
 	name      string
 	pkg       string
@@ -85,11 +89,15 @@ type Type struct {
 	valueType *Type
 }
 
+// Field defines the name and type of a structure field.
 type Field struct {
 	Name string
 	Type *Type
 }
 
+// Values is a type used to hold multiple values. It is most often
+// used to describe a list of return values to be treated as a tuple
+// when returning from a builtin or runtime function.
 type Values struct {
 	Items []interface{}
 }
@@ -122,9 +130,10 @@ func (t Type) Get(name string) interface{} {
 	return nil
 }
 
-// ValidateFunctions compares the functions for a given type against
-// the functions for an associated interface definition.
-func (t Type) ValidateFunctions(i *Type) error {
+// ValidateInterfaceConformity compares the functions for a given type against
+// the functions for an associated interface definition. This is used
+// to determine if a given type conforms to an interface type.
+func (t Type) ValidateInterfaceConformity(i *Type) error {
 	if i.kind != TypeKind || i.valueType == nil {
 		return errors.ErrArgumentType
 	}
@@ -170,7 +179,7 @@ func (t Type) ValidateFunctions(i *Type) error {
 	return nil
 }
 
-// Return a flag indicating if the given type includes function
+// Return a flag indicating if the given type includes receiver function
 // definitions.
 func (t Type) HasFunctions() bool {
 	if t.kind == TypeKind {

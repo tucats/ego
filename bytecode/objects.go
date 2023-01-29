@@ -67,7 +67,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		}
 
 		// If this is from a package, we must be in the same package to access it.
-		if pkg := mv.PackageType(); pkg != "" && pkg != c.pkg {
+		if pkg := mv.PackageName(); pkg != "" && pkg != c.pkg {
 			if !util.HasCapitalizedName(name) {
 				return c.error(errors.ErrSymbolNotExported).Context(name)
 			}

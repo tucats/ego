@@ -293,7 +293,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		// If this is from a package, we must be in the same package to access it.
-		if pkg := a.PackageType(); pkg != "" && pkg != c.pkg {
+		if pkg := a.PackageName(); pkg != "" && pkg != c.pkg {
 			if !util.HasCapitalizedName(key) {
 				return c.error(errors.ErrSymbolNotExported).Context(key)
 			}

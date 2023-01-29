@@ -6,7 +6,7 @@ import (
 	"math/bits"
 )
 
-func RealSizeOf(v interface{}) int {
+func SizeOf(v interface{}) int {
 	size := 0
 
 	switch v.(type) {
