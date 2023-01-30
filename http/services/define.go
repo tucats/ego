@@ -39,7 +39,9 @@ func DefineLibHandlers(root, subpath string) error {
 		fullname = strings.TrimSuffix(fullname, path.Ext(fullname))
 
 		if !f.IsDir() {
-			paths = append(paths, path.Join(subpath, fullname))
+			paths = append(paths, strings.ReplaceAll(
+				filepath.Join(subpath, fullname),
+				string(os.PathSeparator), "/"))
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
