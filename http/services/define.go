@@ -3,6 +3,7 @@ package services
 import (
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -59,7 +60,9 @@ func DefineLibHandlers(root, subpath string) error {
 			}
 		}
 
-		path = path + "/"
+		// Edit the path to replace Windows-style path separators (if present)
+		// with forward slashes.
+		path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
 		ui.Log(ui.ServerLogger, "  Endpoint %s", path)
 		http.HandleFunc(path, ServiceHandler)
 	}
