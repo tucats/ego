@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
@@ -43,6 +44,7 @@ var ProfileName = "default"
 type Configuration struct {
 	Description string            `json:"description,omitempty"`
 	ID          string            `json:"id,omitempty"`
+	Modified    string            `json:"modified,omitempty"`
 	Items       map[string]string `json:"items"`
 }
 
@@ -58,7 +60,7 @@ var ProfileDirty = false
 
 // Configurations is a map keyed by the configuration name for each
 // configuration in the config file.
-var Configurations map[string]Configuration
+var Configurations map[string]*Configuration
 
 // Load reads in the named profile, if it exists.
 func Load(application string, name string) error {
@@ -68,7 +70,7 @@ func Load(application string, name string) error {
 	}
 
 	CurrentConfiguration = &c
-	Configurations = map[string]Configuration{"default": c}
+	Configurations = map[string]*Configuration{"default": CurrentConfiguration}
 	ProfileFile = application + ".json"
 
 	home, err := os.UserHomeDir()
@@ -98,13 +100,13 @@ func Load(application string, name string) error {
 		c, found := Configurations[name]
 
 		if !found {
-			c = Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
+			c = &Configuration{Description: DefaultConfiguration, Items: map[string]string{}}
 			Configurations[name] = c
 			ProfileDirty = true
 		}
 
 		ProfileName = name
-		CurrentConfiguration = &c
+		CurrentConfiguration = c
 	}
 
 	if err != nil {
@@ -160,13 +162,13 @@ func Save() error {
 func UseProfile(name string) {
 	c, found := Configurations[name]
 	if !found {
-		c = Configuration{Description: name + " " + i18n.L("configuration"), Items: map[string]string{}}
+		c = &Configuration{Description: name + " " + i18n.L("configuration"), Items: map[string]string{}}
 		Configurations[name] = c
 		ProfileDirty = true
 	}
 
 	ProfileName = name
-	CurrentConfiguration = &c
+	CurrentConfiguration = c
 }
 
 // Set puts a profile entry in the current Configuration structure.
@@ -174,6 +176,7 @@ func Set(key string, value string) {
 	explicitValues.Items[key] = value
 	c := getCurrentConfiguration()
 	c.Items[key] = value
+	c.Modified = time.Now().Format(time.RFC1123Z)
 	ProfileDirty = true
 
 	ui.Log(ui.AppLogger, "Setting profile key \"%s\" = \"%s\"", key, value)
@@ -248,6 +251,8 @@ func Delete(key string) error {
 	delete(c.Items, key)
 	delete(explicitValues.Items, key)
 
+	c.Modified = time.Now().Format(time.RFC1123Z)
+
 	ProfileDirty = true
 
 	ui.Log(ui.AppLogger, "Deleting profile key \"%s\"", key)
@@ -280,8 +285,8 @@ func Exists(key string) bool {
 }
 
 func DeleteProfile(key string) error {
-	if cfg, ok := Configurations[key]; ok {
-		if cfg.ID == getCurrentConfiguration().ID {
+	if c, ok := Configurations[key]; ok {
+		if c.ID == getCurrentConfiguration().ID {
 			ui.Log(ui.AppLogger, "cannot delete active profile")
 
 			return errors.ErrCannotDeleteActiveProfile.Context(key)
@@ -289,11 +294,13 @@ func DeleteProfile(key string) error {
 
 		delete(Configurations, key)
 
+		c.Modified = time.Now().Format(time.RFC1123Z)
+
 		ProfileDirty = true
 
 		err := Save()
 		if err == nil {
-			ui.Log(ui.AppLogger, "deleted profile %s (%s)", key, cfg.ID)
+			ui.Log(ui.AppLogger, "deleted profile %s (%s)", key, c.ID)
 		}
 
 		return err
