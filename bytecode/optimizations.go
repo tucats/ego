@@ -2,6 +2,25 @@ package bytecode
 
 var optimizations = []optimization{
 	{
+		Description: "Sequential AtLine opcodes",
+		Pattern: []instruction{
+			{
+				Operation: AtLine,
+				Operand:   placeholder{Name: "line1"},
+			},
+			{
+				Operation: AtLine,
+				Operand:   placeholder{Name: "line2"},
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: AtLine,
+				Operand:   placeholder{Name: "line2"},
+			},
+		},
+	},
+	{
 		Description: "Load followed by SetThis",
 		Pattern: []instruction{
 			{

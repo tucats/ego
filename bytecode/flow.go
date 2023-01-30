@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -74,7 +75,8 @@ func atLineByteCode(c *Context, i interface{}) error {
 	if c.Tracing() && c.tokenizer != nil && c.line != c.lastLine {
 		text := c.tokenizer.GetLine(c.line)
 		if len(strings.TrimSpace(text)) > 0 {
-			ui.Log(ui.TraceLogger, "(%d) Source line  >>>>  %3d: %s", c.threadID, c.line, text)
+			location := fmt.Sprintf("line %d", c.line)
+			ui.Log(ui.TraceLogger, "(%d) >>> %-19s %s", c.threadID, location, strings.TrimSpace(text))
 		}
 	}
 

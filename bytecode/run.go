@@ -93,8 +93,15 @@ func (c *Context) RunFromAddress(addr int) error {
 				stack = stack[:80]
 			}
 
-			ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
-				c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
+			if len(instruction) > 30 {
+				ui.Log(ui.TraceLogger, "(%d) %18s %3d: %s",
+					c.threadID, c.GetModuleName(), c.programCounter, instruction)
+				ui.Log(ui.TraceLogger, "(%d) %18s %3s  %-30s stack[%2d]: %s",
+					c.threadID, " ", " ", " ", c.stackPointer, stack)
+			} else {
+				ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
+					c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
+			}
 		}
 
 		c.programCounter = c.programCounter + 1

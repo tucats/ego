@@ -49,7 +49,9 @@ func (c *Compiler) compileDirective() error {
 		return c.error(errors.ErrInvalidDirective, name)
 	}
 
-	c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
+	if name.Spelling() != "main" {
+		c.b.Emit(bytecode.AtLine, c.t.Line[c.t.TokenP-1])
+	}
 
 	switch name.Spelling() {
 	case AssertDirective:

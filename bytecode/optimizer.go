@@ -198,7 +198,8 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 				// Back up the pointer and continue, since we may now be part of
 				// a previous pattern.
-				idx = idx - maxPatternSize
+				idx = (idx - maxPatternSize) - 1
+
 				if idx < 0 {
 					idx = 0
 				}
