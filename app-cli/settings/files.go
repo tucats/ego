@@ -19,8 +19,10 @@ import (
 )
 
 // ProfileDirectory is the name of the invisible directory that is created
-// in the user's home directory to host configuration data.
-const ProfileDirectory = ".org.fernwood"
+// in the user's home directory to host configuration data. This is the
+// default value, but the main program can override it before starting the
+// app to choose a different directory name.
+var ProfileDirectory = ".org.fernwood"
 
 // Default permission for the ProfileDirectory and the ProfileFile.
 const securePermission = 0700

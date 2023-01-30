@@ -31,7 +31,8 @@ func main() {
 	app := app.New("ego: " + i18n.T("ego")).
 		SetVersion(parseVersion(BuildVersion)).
 		SetCopyright(Copyright).
-		SetDefaultAction(commands.RunAction)
+		SetDefaultAction(commands.RunAction).
+		SetProfileDirectory(".ego")
 
 	if BuildTime > "" {
 		app.SetBuildTime(BuildTime)

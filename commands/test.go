@@ -242,8 +242,14 @@ func ReadFile(name string) (string, error) {
 	if e2 != nil {
 		content, e2 = ioutil.ReadFile(name + defs.EgoFilenameExtension)
 		if e2 != nil {
-			r := os.Getenv(defs.EgoPathEnv)
-			fn := filepath.Join(r, defs.LibPathName, name+defs.EgoFilenameExtension)
+			path := ""
+			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+				path = libpath
+			} else {
+				path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+			}
+
+			fn := filepath.Join(path, name+defs.EgoFilenameExtension)
 
 			content, e2 = ioutil.ReadFile(fn)
 			if e2 != nil {

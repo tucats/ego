@@ -242,8 +242,26 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			kind = "skipping server verification"
 		} else {
 			// Is there a server cert file we can/should be using?
-			filename := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, ServerCertificateFile)
-			if b, err := os.ReadFile(filename); err == nil {
+			var err error
+
+			var b []byte
+
+			filename := ServerCertificateFile
+
+			b, err = os.ReadFile(filename)
+			if err != nil {
+				path := ""
+				if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+					path = libpath
+				} else {
+					path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+				}
+
+				filename = filepath.Join(path, ServerCertificateFile)
+				b, err = os.ReadFile(filename)
+			}
+
+			if err == nil {
 				kind = kind + " " + filename
 				roots := x509.NewCertPool()
 

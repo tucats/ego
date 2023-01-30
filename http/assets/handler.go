@@ -52,14 +52,20 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 			path = path[1:]
 		}
 
-		root := settings.Get(defs.EgoPathSetting)
-		fn := filepath.Join(root, defs.LibPathName, "services", path)
+		root := ""
+		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+			root = libpath
+		} else {
+			root = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+		}
+
+		fn := filepath.Join(root, "services", path)
 
 		ui.Log(ui.InfoLogger, "[%d] Asset read from file %s", sessionID, fn)
 
 		data, err = ioutil.ReadFile(fn)
 		if err != nil {
-			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, defs.LibPathName, "services"), "")
+			errorMsg := strings.ReplaceAll(err.Error(), filepath.Join(root, "services"), "")
 
 			msg := fmt.Sprintf(`{"err": "%s"}`, errorMsg)
 

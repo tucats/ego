@@ -83,7 +83,7 @@ detaching it as a separate process) using the `ego server run` command option.
 This accepts the same options as `ego server start` and runs the code directly
 in the current shell, sending logging to stdout.
 
-When a server is started, a file is created (by default in ~/.org.fernwood) that
+When a server is started, a file is created (by default in ~/.ego) that
 describes the server status and command-line options. This information is re-read
 when issuing a `ego server status` command to display server information. It is also
 read by the `ego server restart`  command to determine the command-line options

@@ -263,7 +263,14 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 			}
 
 			// Try to see if it's in the lib directory under EGO path
-			fn = filepath.Join(r, defs.LibPathName, name+defs.EgoFilenameExtension)
+			path := ""
+			if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+				path = libpath
+			} else {
+				path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+			}
+
+			fn = filepath.Join(path, name+defs.EgoFilenameExtension)
 			content, e2 = ioutil.ReadFile(fn)
 
 			// Nope, see if it's in the path relative to EGO path
@@ -294,18 +301,18 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 func (c *Compiler) directoryContents(name string) (string, error) {
 	var b strings.Builder
 
-	r := os.Getenv(defs.EgoPathEnv)
-	if r == "" {
-		r = settings.Get(defs.EgoPathSetting)
+	path := ""
+	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+		path = libpath
+	} else {
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 	}
 
-	r = filepath.Join(r, defs.LibPathName)
-
 	dirname := name
-	if !strings.HasPrefix(dirname, r) {
-		dirname = filepath.Join(r, name)
+	if !strings.HasPrefix(dirname, path) {
+		dirname = filepath.Join(path, name)
 
-		ui.Log(ui.CompilerLogger, "+++ Applying EGO_PATH, %s", dirname)
+		ui.Log(ui.CompilerLogger, "+++ Applying path, %s", dirname)
 	}
 
 	fi, err := ioutil.ReadDir(dirname)

@@ -170,7 +170,7 @@ line `profile` subcommand. These preferences can be used to control the behavior
 ommand-line interface, and are also used by the other subcommands that run unit tests, the 
 REST server, etc.
 
-The preferences are stored in ~/.org.fernwood/ego.json which is a JSON file that contains
+The preferences are stored in ~/.ego/ego.json which is a JSON file that contains
 all the active profiles and their defaults. You can use the `ego config` command to view
 the list of available profiles, the current contents of the profiles, and to set or
 delete profile items in the active profile.

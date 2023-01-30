@@ -50,6 +50,13 @@ const (
 	// and test directories.
 	EgoPathSetting = PrivilegedKeyPrefix + "runtime.path"
 
+	// File system location used to locate the lib directory. If
+	// this setting isn't set, it defaults to the runtime.path
+	// concatenated with "/lib". This lets the user set the lib
+	// location to be a standard location like /usr/local/lib
+	// if desired.
+	EgoLibPathSetting = PrivilegedKeyPrefix + "runtime.path.lib"
+
 	// Do we normalize the case of all symbols to a common
 	// (lower) case string. If not true, symbol names are
 	// case-sensitive.
@@ -285,6 +292,7 @@ const (
 // command line.
 var ValidSettings map[string]bool = map[string]bool{
 	EgoPathSetting:                  true,
+	EgoLibPathSetting:               true,
 	CaseNormalizedSetting:           true,
 	OutputFormatSetting:             true,
 	ExtensionsEnabledSetting:        true,

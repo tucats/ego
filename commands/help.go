@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -67,15 +67,29 @@ func help(userKeys []string) {
 }
 
 func printHelp(keys []string) {
-	fn := path.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, helpFileName)
+	var err error
 
-	b, err := ioutil.ReadFile(fn)
+	var b []byte
+
+	path := ""
+
+	if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+		path = libpath
+	} else {
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	filename := filepath.Join(path, helpFileName)
+
+	b, err = os.ReadFile(filename)
 	if err != nil {
 		fmt.Println("Help unavailable (unable to read help text file)")
-		ui.Log(ui.DebugLogger, "Help error: %v", err)
+		ui.Log(ui.AppLogger, "Help error: %v", err)
 
 		return
 	}
+
+	ui.Log(ui.AppLogger, "Using help file %s", filename)
 
 	lines := strings.Split(string(b), "\n")
 	topic := strings.Join(keys, ".")

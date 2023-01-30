@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/cli"
+	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -43,6 +44,12 @@ func New(appName string) *App {
 	}
 
 	app := &App{Name: appName, Description: appDescription}
+
+	return app
+}
+
+func (app *App) SetProfileDirectory(name string) *App {
+	settings.ProfileDirectory = name
 
 	return app
 }

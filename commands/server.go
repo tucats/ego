@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -155,7 +154,16 @@ func RunServer(c *cli.Context) error {
 		}
 	}
 
-	server.PathRoot = path.Join(server.PathRoot, defs.LibPathName)
+	path := ""
+
+	libpath := settings.Get(defs.EgoLibPathSetting)
+	if libpath != "" {
+		path = filepath.Join(libpath)
+	} else {
+		path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+	}
+
+	server.PathRoot = path
 
 	// Determine the realm used in security challenges.
 	server.Realm = os.Getenv("EGO_REALM")
@@ -250,8 +258,15 @@ func RunServer(c *cli.Context) error {
 	} else {
 		ui.Log(ui.ServerLogger, "** REST service (secured) starting on port %d", port)
 
-		certFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerCertificateFile)
-		keyFile := filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName, rest.ServerKeyFile)
+		path := ""
+		if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+			path = libpath
+		} else {
+			path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
+		}
+
+		certFile := filepath.Join(path, rest.ServerCertificateFile)
+		keyFile := filepath.Join(path, rest.ServerKeyFile)
 
 		ui.Log(ui.ServerLogger, "**   cert file: %s", certFile)
 		ui.Log(ui.ServerLogger, "**   key  file: %s", keyFile)

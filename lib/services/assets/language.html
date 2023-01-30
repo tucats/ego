@@ -2020,8 +2020,8 @@ of <code>n</code> but it must be at no larger than 10</em>. The value of
 <p>The <code>profile</code> package help manage persistent profile settings. These are the same settings that can be accessed from the command line using the <code>ego config</code> command. They apply to settings found in the current active profile.</p>
 <p>Profile settings all have a name, which is a string value to identify the key. The prefix “ego.” is reserved for settings related to the
     <em>Ego</em> compiler, runtime, and server settings. You can use any other prefix to store settings related to your particular <em>Ego</em> application usage.</p>
-<p>The profile values are stored in the .org.fernwood/ego.json file located in your default home directory. This file must be readable to access profile settings, and the file is rewritten when a setting value is changed and <em>Ego</em> exits. Note that
-    this file contains all the profiles, not just the default profile (or profile specified with the –profile command-line option).</p>
+<p>The profile values are stored in the .ego/ego.json file located in your default home directory. This file must be readable to access profile settings, and the file is rewritten when a setting value is changed and <em>Ego</em> exits. Note that this file
+    contains all the profiles, not just the default profile (or profile specified with the –profile command-line option).</p>
 <h3 id="profile.deletekey">profile.Delete(key)</h3>
 <p>The <code>Delete()</code> function deletes a setting from the active profile by name. If the profile value does not exist, there is no error.
 </p>
