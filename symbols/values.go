@@ -1,6 +1,9 @@
 package symbols
 
-import "github.com/tucats/ego/app-cli/ui"
+import (
+	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
+)
 
 // A few notes about how values are stored in a symbol table.
 //
@@ -96,4 +99,33 @@ func (s *SymbolTable) AddressOfValue(index int) *interface{} {
 	}
 
 	return &(*s.values[bin])[slot]
+}
+
+// Given an index, return the address of the value in that
+// slot.
+func (s *SymbolTable) AddressOfImmuableValue(index int) *interface{} {
+	if index == noSlot {
+		return nil
+	}
+
+	bin := index / SymbolAllocationSize
+	slot := index % SymbolAllocationSize
+
+	if bin >= len(s.values) {
+		return nil
+	}
+
+	oldValue := (*s.values[bin])[slot]
+	if _, ok := oldValue.(data.Immutable); !ok {
+		newValue := data.Constant(data.DeepCopy(oldValue))
+		r := makeInterface(newValue)
+
+		return &r
+	}
+
+	return &oldValue
+}
+
+func makeInterface(i data.Immutable) interface{} {
+	return i
 }

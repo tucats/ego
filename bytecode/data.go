@@ -1,6 +1,8 @@
 package bytecode
 
 import (
+	"strings"
+
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -79,6 +81,10 @@ func storeByteCode(c *Context, i interface{}) error {
 	value, err = c.checkType(name, value)
 	if err != nil {
 		return c.error(err)
+	}
+
+	if strings.HasPrefix(name, defs.DiscardedVariable) {
+		return c.set(name, data.Constant(value))
 	}
 
 	return c.set(name, value)
@@ -203,6 +209,13 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrNilPointerReference).Context(name)
 	}
 
+	if x, ok := dest.(*interface{}); ok {
+		z := *x
+		if _, ok := z.(data.Immutable); ok {
+			return c.error(errors.ErrReadOnlyValue).Context("*" + name)
+		}
+	}
+
 	src, err := c.Pop()
 	if err != nil {
 		return err
@@ -213,6 +226,9 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	}
 
 	switch actual := dest.(type) {
+	case *data.Immutable:
+		return c.error(errors.ErrReadOnlyValue)
+
 	case *interface{}:
 		*actual = src
 
@@ -371,7 +387,7 @@ func loadByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrUnknownIdentifier).Context(name)
 	}
 
-	return c.push(v)
+	return c.push(data.UnwrapConstant(v))
 }
 
 // explodeByteCode implements Explode. This accepts a struct on the top of

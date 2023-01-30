@@ -29,7 +29,12 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 		// TODO: Add test cases.
 	}
 
-	_ = settings.Load("ego", "")
+	settings.ProfileDirectory = ".ego"
+
+	err := settings.Load("ego", "")
+	if err != nil {
+		t.Error("Unable to initialize settings, ", err)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

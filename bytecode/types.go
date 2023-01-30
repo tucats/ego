@@ -315,6 +315,11 @@ func deRefByteCode(c *Context, i interface{}) error {
 
 		c2 := *content
 		if c3, ok := c2.(*interface{}); ok {
+			xc3 := *c3
+			if c4, ok := xc3.(data.Immutable); ok {
+				return c.push(c4.Value)
+			}
+
 			if data.IsNil(content) {
 				return c.error(errors.ErrNilPointerReference)
 			}

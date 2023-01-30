@@ -175,7 +175,11 @@ func (s *SymbolTable) GetAddress(name string) (interface{}, bool) {
 
 	attr, found := s.symbols[name]
 	if found {
-		v = s.AddressOfValue(attr.slot)
+		if name[0:1] == "_" {
+			v = s.AddressOfImmuableValue(attr.slot)
+		} else {
+			v = s.AddressOfValue(attr.slot)
+		}
 	}
 
 	if !found && !s.IsRoot() {
@@ -414,7 +418,10 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	// is marked as readeonly.
 	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 		attr.Readonly = true
-		v = data.DeepCopy(v)
+		
+		if _, ok := v.(data.Immutable); !ok {
+			v = data.DeepCopy(v)
+		}
 
 		switch actual := v.(type) {
 		case *data.Array:
