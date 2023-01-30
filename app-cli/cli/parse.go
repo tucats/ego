@@ -158,6 +158,10 @@ func (c *Context) parseGrammar(args []string) error {
 			}
 		}
 
+		if location != nil {
+			ui.Log(ui.CLILogger, "Setting value for option %s", location.LongName)
+		}
+
 		// If it was an option (short or long) and not found, this is an error.
 		if name != "" && location == nil && defaultVerb.LongName == "" {
 			return errors.ErrUnknownOption.Context(option)
@@ -281,6 +285,8 @@ func (c *Context) parseGrammar(args []string) error {
 
 			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
 
+			lastArg = currentArg
+
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
 				err = location.Action(c)
@@ -293,9 +299,16 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// No subcommand found, but was there a default we should use anyway?
 	if defaultVerb.LongName != "" {
+		lastArg = lastArg - c.ParameterCount()
+
 		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
 
-		return doSubcommand(c, defaultVerb, args, 0)
+		if lastArg < len(args)-1 {
+			ui.Log(ui.CLILogger, "Passing remaining arguments to default action: %v",
+				args[lastArg+1:])
+		}
+
+		return doSubcommand(c, defaultVerb, args[lastArg:], 0)
 	}
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that

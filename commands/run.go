@@ -181,8 +181,6 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Remaining command line arguments are stored
-	ui.Log(ui.CLILogger, "Processing remaining arguments (%d)", argc)
-
 	if argc > 1 {
 		programArgs = make([]interface{}, argc-1)
 
@@ -190,7 +188,7 @@ func RunAction(c *cli.Context) error {
 			programArgs[n-1] = c.Parameter(n)
 		}
 
-		ui.Log(ui.CLILogger, "Saving CLI parameters %v", programArgs)
+		ui.Log(ui.CLILogger, "Saving program parameters %v", programArgs)
 	} else if argc == 0 {
 		wasCommandLine = false
 
