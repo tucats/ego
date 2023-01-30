@@ -19,7 +19,7 @@ func InitProfileDefaults() error {
 
 	// The initialzier for the pid directory is platform-specific.
 	homedir, _ := os.UserHomeDir()
-	piddir := path.Join(homedir, settings.DefaultConfiguration)
+	piddir := path.Join(homedir, settings.ProfileDirectory)
 
 	// The default values we check for.
 	initialSettings := map[string]string{
