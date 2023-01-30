@@ -25,10 +25,10 @@ func handler(req http.Request, response http.Response) {
 
         m := util.Memory()
         r.memory         = {}
-        r.memory.current = m.current
-        r.memory.gc      = m.gc
-        r.memory.system  = m.system
-        r.memory.total   = m.total
+        r.memory.current = m.Current
+        r.memory.gc      = m.GC
+        r.memory.system  = m.System
+        r.memory.total   = m.Total
 
         if _token_valid {
             // If the token was valid, get some additional info about the user it represents
@@ -86,6 +86,6 @@ Memory usage:
                             req.Url,
                             req.Username,
                             getuser(req.Username),
-                            m.current, m.total, m.system, m.gc))
+                            m.Current, m.Total, m.System, m.GC))
     }
 }

@@ -11,10 +11,10 @@ func handler( req http.Request, resp http.Response ) {
     // Prepare the data to be used by the page.
     m := util.Memory()    
     pageData := { 
-        Allocated: mb(m.current),
-        Total: mb(m.total),
-        System: mb(m.system),
-        GC: m.gc,
+        Allocated: mb(m.Current),
+        Total: mb(m.Total),
+        System: mb(m.System),
+        GC: m.GC,
         ID: _server_instance,
         Date: time.Now().String(),
         Host: os.Hostname(),

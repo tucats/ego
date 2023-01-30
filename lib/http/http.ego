@@ -45,14 +45,14 @@ func (r *Response) WriteTemplate( fn string, i interface{}) {
     try {
         // Load the page file as a template.
         fn := filepath.Join(profile.Get("ego.runtime.path"), fn)
-        b := io.ReadFile(fn)
+        b := os.ReadFile(fn)
         @template mempage string(b)
 
         // Render the page using the dynamic data, and return it as the response
         page := strings.Template(mempage, pageData)
         resp.Write(page)
     } catch(e) {
-        resp.Status(500)
+        resp.WriteStatus(500)
         resp.WriteMessage(e)
     }
 }
