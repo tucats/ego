@@ -66,21 +66,22 @@ func (c *Context) parseGrammar(args []string) error {
 
 	// No dangling parameters, let's keep going.
 	lastArg := len(args)
+	parsedSoFar := 0
 	parametersOnly := false
 	helpVerb := true
-	defaultVerb := Option{}
 
 	// See if we have a default verb we should know about.
-	// Is it a subcommand?
+	var defaultVerb *Option
 
-	for _, entry := range c.Grammar {
+	for index, entry := range c.Grammar {
 		if entry.DefaultVerb {
-			defaultVerb = entry
+			defaultVerb = &c.Grammar[index]
 
 			ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
 		}
 	}
 
+	// Scan over the tokens, parsing until we hit a subcommand.
 	for currentArg := 0; currentArg < lastArg; currentArg++ {
 		var location *Option
 
@@ -90,6 +91,7 @@ func (c *Context) parseGrammar(args []string) error {
 
 		option := args[currentArg]
 		isShort := false
+		parsedSoFar = currentArg
 
 		ui.Log(ui.CLILogger, "Processing token: %s", option)
 
@@ -163,7 +165,7 @@ func (c *Context) parseGrammar(args []string) error {
 		}
 
 		// If it was an option (short or long) and not found, this is an error.
-		if name != "" && location == nil && defaultVerb.LongName == "" {
+		if name != "" && location == nil && defaultVerb == nil {
 			return errors.ErrUnknownOption.Context(option)
 		}
 
@@ -171,12 +173,6 @@ func (c *Context) parseGrammar(args []string) error {
 		if location == nil {
 			// Is it a subcommand?
 			for _, entry := range c.Grammar {
-				if entry.DefaultVerb {
-					defaultVerb = entry
-
-					ui.Log(ui.CLILogger, "Registering default verb %s", defaultVerb.LongName)
-				}
-
 				// Is it one of the aliases permitted?
 				isAlias := false
 
@@ -194,10 +190,10 @@ func (c *Context) parseGrammar(args []string) error {
 			}
 
 			// No subcommand found, but was there a default we should use anyway?
-			if defaultVerb.LongName != "" {
+			if defaultVerb != nil {
 				ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
 
-				return doSubcommand(c, defaultVerb, args, currentArg-1)
+				return doSubcommand(c, *defaultVerb, args, parsedSoFar-1)
 			}
 
 			// Not a subcommand, just save it as an unclaimed parameter
@@ -285,8 +281,6 @@ func (c *Context) parseGrammar(args []string) error {
 
 			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)
 
-			lastArg = currentArg
-
 			// After parsing the option value, if there is an action routine, call it
 			if location.Action != nil {
 				err = location.Action(c)
@@ -298,17 +292,21 @@ func (c *Context) parseGrammar(args []string) error {
 	}
 
 	// No subcommand found, but was there a default we should use anyway?
-	if defaultVerb.LongName != "" {
-		lastArg = lastArg - c.ParameterCount()
+	if defaultVerb != nil {
+		parsedSoFar = parsedSoFar - c.ParameterCount() + 1
 
 		ui.Log(ui.CLILogger, "Using default verb %s", defaultVerb.LongName)
 
-		if lastArg < len(args)-1 {
+		if parsedSoFar < len(args) {
 			ui.Log(ui.CLILogger, "Passing remaining arguments to default action: %v",
-				args[lastArg+1:])
+				args[parsedSoFar+1:])
 		}
 
-		return doSubcommand(c, defaultVerb, args[lastArg:], 0)
+		if parsedSoFar > len(args) {
+			parsedSoFar = len(args)
+		}
+
+		return doSubcommand(c, *defaultVerb, args[parsedSoFar:], 0)
 	}
 
 	// Whew! Everything parsed and in it's place. Before we wind up, let's verify that
@@ -404,5 +402,8 @@ func doSubcommand(c *Context, entry Option, args []string, currentArg int) error
 		return subContext.parseGrammar([]string{})
 	}
 
-	return subContext.parseGrammar(args[currentArg+1:])
+	tokens := args[currentArg+1:]
+	ui.Log(ui.CLILogger, "Remaining tokens %v", tokens)
+
+	return subContext.parseGrammar(tokens)
 }
