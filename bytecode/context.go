@@ -303,25 +303,18 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 		return ""
 	}
 
-	if newlines {
-		result.WriteString("stack elements:\n")
-	}
-
 	first := true
 	for stackIndex := c.stackPointer - 1; stackIndex >= 0; stackIndex = stackIndex - 1 {
-		if !first {
+		if !first && !newlines {
 			result.WriteString(", ")
-
-			if newlines {
-				result.WriteString("\n")
-			}
-		} else {
-			first = false
 		}
 
-		if newlines {
-			result.WriteString(fmt.Sprintf("%90s      [%2d]:   ", " ", stackIndex))
+		if newlines && !first {
+			result.WriteString("\n")
+			result.WriteString(fmt.Sprintf("%95s      [%2d]: ", " ", stackIndex+1))
 		}
+
+		first = false
 
 		// If it's a string, escape the newlines for readability.
 
