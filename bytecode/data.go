@@ -194,15 +194,29 @@ func storeGlobalByteCode(c *Context, i interface{}) error {
 // StoreViaPointer has a name as it's argument. It loads the value,
 // verifies it is a pointer, and stores TOS into that pointer.
 func storeViaPointerByteCode(c *Context, i interface{}) error {
-	name := data.String(i)
+	var dest interface{}
 
-	if i == nil || name == "" || name[0:1] == defs.DiscardedVariable {
-		return c.error(errors.ErrInvalidIdentifier)
-	}
+	name := ""
+	ok := false
 
-	dest, ok := c.get(name)
-	if !ok {
-		return c.error(errors.ErrUnknownIdentifier).Context(name)
+	if i != nil {
+		name = data.String(i)
+
+		if name == "" || name[0:1] == defs.DiscardedVariable {
+			return c.error(errors.ErrInvalidIdentifier)
+		}
+
+		if d, ok := c.get(name); !ok {
+			return c.error(errors.ErrUnknownIdentifier).Context(name)
+		} else {
+			dest = d
+		}
+	} else {
+		if d, err := c.Pop(); err != nil {
+			return err
+		} else {
+			dest = d
+		}
 	}
 
 	if data.IsNil(dest) {
@@ -212,7 +226,11 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 	if x, ok := dest.(*interface{}); ok {
 		z := *x
 		if _, ok := z.(data.Immutable); ok {
-			return c.error(errors.ErrReadOnlyValue).Context("*" + name)
+			if name != "" {
+				return c.error(errors.ErrReadOnlyValue).Context("*" + name)
+			}
+
+			return c.error(errors.ErrReadOnlyValue)
 		}
 	}
 

@@ -15,8 +15,9 @@ func (c *Compiler) isAssignmentTarget() bool {
 	mark := c.t.Mark()
 	defer c.t.Set(mark)
 
-	// If this is a leading asterisk, that's fine.
-	if c.t.Peek(1) == tokenizer.PointerToken {
+	// If this is a leading asterisk, that's fine. Eat all the "*" in the string,
+	// which covers things like **x=3 and such.
+	for c.t.Peek(1) == tokenizer.PointerToken {
 		c.t.Advance(1)
 	}
 
@@ -170,12 +171,28 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	bc := bytecode.New("lvalue")
 	isPointer := false
 
+	// Let's look at the first token. This tells us if it is a direct
+	// store versus a pointer store.
 	name := c.t.Next()
+
+	// If it's a pointer as the first token, this is a pointer store
+	// through an address. Use the standard expression evaluator to
+	// generate code that gets the pointer value, and then add the
+	// StoreViaPointer with no operand, which mean suse the top-of-stack
+	// as the address (the TOS must be a pointer type or an error occurs).
 	if name == tokenizer.PointerToken {
-		isPointer = true
-		name = c.t.Next()
+		lv, err := c.Expression()
+		if err != nil {
+			return nil, err
+		}
+
+		bc.Append(lv)
+		bc.Emit(bytecode.StoreViaPointer)
+
+		return bc, nil
 	}
 
+	// Not a pointer operation, so we require it to be a valid identifier.
 	if !name.IsIdentifier() {
 		return nil, c.error(errors.ErrInvalidSymbolName, name)
 	}

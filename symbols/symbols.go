@@ -203,6 +203,9 @@ func (s *SymbolTable) SetConstant(name string, v interface{}) error {
 		defer s.Unlock()
 	}
 
+	// Wrap the value in the Immutable wrapper.
+	v = data.Constant(v)
+
 	// Does it already exist and is it readonly? IF so, fail
 	attr, ok := s.symbols[name]
 	if ok && attr.Readonly {
@@ -418,7 +421,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 	// is marked as readeonly.
 	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 		attr.Readonly = true
-		
+
 		if _, ok := v.(data.Immutable); !ok {
 			v = data.DeepCopy(v)
 		}

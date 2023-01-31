@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -57,8 +58,10 @@ func TestNewContext(t *testing.T) {
 		t.Error("Failed to find previously created constant")
 	}
 
-	if !reflect.DeepEqual(r, "frobozz") {
-		t.Errorf("Retrieval of constant has wrong value: %v", r)
+	// Note that the value of a constant is an immutable object. So
+	// unwrap it for the comparison.
+	if !reflect.DeepEqual(data.UnwrapConstant(r), "frobozz") {
+		t.Errorf("Retrieval of constant has wrong value: %#v", r)
 	}
 	// Change some of the attributes of the context and validate
 	if !c.fullSymbolScope {
