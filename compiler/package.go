@@ -160,7 +160,7 @@ func (c *Compiler) compileImport() error {
 			ui.Log(ui.CompilerLogger, "+++ Adding source for package "+packageName)
 
 			importCompiler := New("import " + filePath).SetRoot(c.rootTable).SetTestMode(c.flags.testMode)
-			importCompiler.b = bytecode.New("import " + filePath)
+			importCompiler.b = bytecode.New("import " + filepath.Base(filePath))
 			importCompiler.t = tokenizer.New(text, true)
 			importCompiler.activePackageName = packageName
 			importCompiler.sourceFile = c.sourceFile
@@ -215,7 +215,7 @@ func (c *Compiler) compileImport() error {
 				ui.Log(ui.CompilerLogger, "+++ package keys: %s", keyString)
 			}
 
-			symbols.RootSymbolTable.SetAlways(filePath, packageDef)
+			symbols.RootSymbolTable.SetAlways(packageName, packageDef)
 		}
 
 		// Now that the package is in the cache, add the instruction to the active

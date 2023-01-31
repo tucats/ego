@@ -111,6 +111,10 @@ func Format(element interface{}) string {
 	}
 
 	switch v := element.(type) {
+	// Immutable object
+	case Immutable:
+		return "constant{ " + Format(v.Value) + " }"
+
 	// Built-in types
 	case Type:
 		return v.String() + v.FunctionNameList() + " type"

@@ -81,7 +81,7 @@ func memberByteCode(c *Context, i interface{}) error {
 				syms := symV.(*symbols.SymbolTable)
 
 				if v, ok := syms.Get(name); ok {
-					return c.push(v)
+					return c.push(data.UnwrapConstant(v))
 				}
 			}
 		}
@@ -97,11 +97,6 @@ func memberByteCode(c *Context, i interface{}) error {
 			} else {
 				v = fv
 			}
-		}
-
-		// Special case; if the value being retrieved is a constant, unwrap it.
-		if vconst, ok := v.(ConstantWrapper); ok {
-			v = vconst.Value
 		}
 
 		c.lastStruct = m
@@ -125,7 +120,7 @@ func memberByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrInvalidStructOrPackage).Context(data.TypeOf(v).String())
 	}
 
-	return c.push(v)
+	return c.push(data.UnwrapConstant(v))
 }
 
 func storeBytecodeByteCode(c *Context, i interface{}) error {

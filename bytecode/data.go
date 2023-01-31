@@ -223,17 +223,23 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrNilPointerReference).Context(name)
 	}
 
+	// IF the destination is a pointer type and it's a pointer to an
+	// immutable object, we don't allow that. If we have a name, add
+	// that to the context of the error we create.
 	if x, ok := dest.(*interface{}); ok {
 		z := *x
 		if _, ok := z.(data.Immutable); ok {
+			e := c.error(errors.ErrReadOnlyValue)
 			if name != "" {
-				return c.error(errors.ErrReadOnlyValue).Context("*" + name)
+				e = e.Context("*" + name)
 			}
 
-			return c.error(errors.ErrReadOnlyValue)
+			return e
 		}
 	}
 
+	// Get the value we are going to store from the stack. if it's
+	// a stack marker, there was no return value on the stack.
 	src, err := c.Pop()
 	if err != nil {
 		return err
@@ -243,6 +249,7 @@ func storeViaPointerByteCode(c *Context, i interface{}) error {
 		return c.error(errors.ErrFunctionReturnedVoid)
 	}
 
+	// Based on the type, do the store.
 	switch actual := dest.(type) {
 	case *data.Immutable:
 		return c.error(errors.ErrReadOnlyValue)

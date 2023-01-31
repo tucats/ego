@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
@@ -19,7 +18,7 @@ type packageDef struct {
 
 // Note there are reflection dependencies on the name of the
 // field; it must be named "Value".
-type ConstantWrapper struct {
+type ConstantWrapperx struct {
 	Value interface{}
 }
 
@@ -33,12 +32,6 @@ func CopyPackagesToSymbols(s *symbols.SymbolTable) {
 	for k, v := range packageCache {
 		s.SetAlways(k, v)
 	}
-}
-
-// String generates a human-readable string describing the value
-// in the constant wrapper.
-func (w ConstantWrapper) String() string {
-	return fmt.Sprintf("%s <read only>", data.Format(w.Value))
 }
 
 func IsPackage(name string) bool {
@@ -194,14 +187,9 @@ func popPackageByteCode(c *Context, i interface{}) error {
 
 			ui.Log(ui.TraceLogger, "(%d)   symbol   %s", c.threadID, k)
 
-			// If it was readonly, and not already in a constant wrapper,
-			// wrap it as a constant now.
+			// If it was readonly, store it as a constant value now.
 			if attr.Readonly {
-				if _, ok := v.(ConstantWrapper); !ok {
-					pkg.Set(k, ConstantWrapper{v})
-				} else {
-					pkg.Set(k, v)
-				}
+				pkg.Set(k, data.Constant(v))
 			} else {
 				pkg.Set(k, v)
 			}
