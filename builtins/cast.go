@@ -14,39 +14,43 @@ import (
 // to an array of integer (rune) values, etc.  It is called from within
 // the Call bytecode when the function is really a type.
 func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	// Target kind is the last parameter
-	kind := data.TypeOf(args[len(args)-1])
+	// Target t is the last parameter
+	t := data.TypeOf(args[len(args)-1])
 
 	source := args[0]
 	if len(args) > 2 {
 		source = data.NewArrayFromArray(data.InterfaceType, args[:len(args)-1])
 	}
 
-	if kind.IsKind(data.StringKind) {
-		r := strings.Builder{}
+	if t.IsKind(data.StringKind) {
+		// If the source is a []byte type, we can just fetch the bytes and do a direct convesion.
+		// If the source is a []int type, we can convert each integer to a rune and add it to a
+		// string builder. Otherwise, just format it as a string value.
+		if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsType(data.ByteType) {
+			b := actual.GetBytes()
 
-		// If the source is an array of integers, treat them as runes to re-assemble.
-		if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsIntegerType() {
+			return string(b), nil
+		} else if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsIntegerType() {
+			r := strings.Builder{}
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
 				r.WriteRune(rune(data.Int(ch) & math.MaxInt32))
 			}
-		} else {
-			str := data.FormatUnquoted(source)
-			r.WriteString(str)
-		}
 
-		return r.String(), nil
+			return r.String(), nil
+		} else {
+			return data.FormatUnquoted(source), nil
+		}
 	}
 
 	switch actual := source.(type) {
 	// Conversion of one array type to another
 	case *data.Array:
-		if kind.IsType(actual.ValueType()) {
+		if t.IsType(actual.ValueType()) {
 			return actual, nil
 		}
 
-		if kind.IsKind(data.StringKind) &&
+		if t.IsKind(data.StringKind) &&
 			(actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
 			r := strings.Builder{}
 
@@ -58,8 +62,8 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return r.String(), nil
 		}
 
-		elementKind := *kind.BaseType()
-		r := data.NewArray(kind.BaseType(), actual.Len())
+		elementKind := *t.BaseType()
+		r := data.NewArray(t.BaseType(), actual.Len())
 
 		for i := 0; i < actual.Len(); i++ {
 			v, _ := actual.Get(i)
@@ -97,7 +101,7 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return r, nil
 
 	case string:
-		if kind.IsType(data.ArrayType(data.IntType)) {
+		if t.IsType(data.ArrayType(data.IntType)) {
 			r := data.NewArray(data.IntType, 0)
 
 			for _, rune := range actual {
@@ -107,28 +111,28 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return r, nil
 		}
 
-		if kind.IsType(data.ArrayType(data.ByteType)) {
+		if t.IsType(data.ArrayType(data.ByteType)) {
 			r := data.NewArray(data.ByteType, 0)
 
-			for _, rune := range actual {
-				r.Append(int(rune))
+			for i := 0; i < len(actual); i++ {
+				r.Append(actual[i])
 			}
 
 			return r, nil
 		}
 
-		return data.Coerce(source, data.InstanceOfType(kind)), nil
+		return data.Coerce(source, data.InstanceOfType(t)), nil
 
 	default:
-		if kind.IsArray() {
-			r := data.NewArray(kind.BaseType(), 1)
-			value := data.Coerce(source, data.InstanceOfType(kind.BaseType()))
+		if t.IsArray() {
+			r := data.NewArray(t.BaseType(), 1)
+			value := data.Coerce(source, data.InstanceOfType(t.BaseType()))
 			_ = r.Set(0, value)
 
 			return r, nil
 		}
 
-		v := data.Coerce(source, data.InstanceOfType(kind))
+		v := data.Coerce(source, data.InstanceOfType(t))
 		if v != nil {
 			return v, nil
 		}
