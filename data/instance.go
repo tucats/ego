@@ -4,21 +4,6 @@ import (
 	"sync"
 )
 
-func NewInterfaceType(name string) *Type {
-	if name == "" {
-		name = "interface{}"
-	}
-
-	t := &Type{
-		name:      name,
-		kind:      InterfaceKind,
-		functions: make(map[string]Function),
-		valueType: InterfaceType,
-	}
-
-	return t
-}
-
 // InstanceOfType accepts a kind type indicator, and returns the zero-value
 // model of that type. This only applies to base types.
 func InstanceOfType(t *Type) interface{} {
@@ -66,36 +51,31 @@ func InstanceOfType(t *Type) interface{} {
 	return nil
 }
 
+// For a given type, create a "zero-instance" of that type. For builtin scalar
+// types, it is the same as the InstanceOf() function. However, this can also
+// generate structs, maps, arrays, and user type instances as well.
 func (t Type) InstanceOf(superType *Type) interface{} {
-	if t.kind == TypeKind {
+	switch t.kind {
+	case TypeKind:
 		return t.valueType.InstanceOf(&t)
-	}
 
-	if t.kind == StructKind {
+	case StructKind:
 		if superType == nil {
 			superType = StructType
 		}
 
 		return NewStruct(superType)
+
+	case ArrayKind:
+		return NewArray(t.valueType, 0)
+
+	case MapKind:
+		return NewMap(t.keyType, t.valueType)
+
+	case PointerKind:
+		return t.valueType.InstanceOf(nil)
+
+	default:
+		return InstanceOfType(&t)
 	}
-
-	if t.kind == ArrayKind {
-		result := NewArray(t.valueType, 0)
-
-		return result
-	}
-
-	if t.kind == MapKind {
-		result := NewMap(t.keyType, t.valueType)
-
-		return result
-	}
-
-	if t.kind == PointerKind {
-		result := t.valueType.InstanceOf(nil)
-
-		return &result
-	}
-
-	return InstanceOfType(&t)
 }

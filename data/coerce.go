@@ -8,7 +8,9 @@ import (
 )
 
 // Coerce returns the value after it has been converted to the type of the
-// model value.
+// model value. If the value passed in is non-nil but cannot be converted
+// to the type of the model object, the function returns nil. Note that the
+// model is an _instance_ of the type to convert to, not a type iteself.
 func Coerce(v interface{}, model interface{}) interface{} {
 	if e, ok := v.(error); ok {
 		return e
@@ -313,7 +315,11 @@ func Coerce(v interface{}, model interface{}) interface{} {
 }
 
 // Normalize accepts two different values and promotes them to
-// the most compatable format.
+// the most highest precision type of the values.  If they are
+// both the same type already, no work is done.
+//
+// For example, passing in an int32 and a float64 returns the
+// values both converted to float64.
 func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 	kind1 := KindOf(v1)
 	kind2 := KindOf(v2)
@@ -331,38 +337,9 @@ func Normalize(v1 interface{}, v2 interface{}) (interface{}, interface{}) {
 	return v1, v2
 }
 
-// CoerceType will coerce an interface to a given type by name.
-func CoerceType(v interface{}, typeName string) interface{} {
-	switch typeName {
-	case ByteTypeName:
-		return Coerce(v, byte(0))
-
-	case Int32TypeName:
-		return Coerce(v, int32(0))
-
-	case IntTypeName:
-		return Coerce(v, int(0))
-
-	case Int64TypeName:
-		return Coerce(v, int64(0))
-
-	case Float32TypeName:
-		return Coerce(v, float32(0))
-
-	case Float64TypeName:
-		return Coerce(v, float64(0))
-
-	case StringTypeName:
-		return Coerce(v, "")
-
-	case BoolTypeName:
-		return Coerce(v, true)
-
-	default:
-		return nil
-	}
-}
-
+// For a given Type, coverce the given value to the same
+// type. This only works for builtin scalar values like
+// int or string.
 func (t Type) Coerce(v interface{}) interface{} {
 	switch t.kind {
 	case ByteKind:

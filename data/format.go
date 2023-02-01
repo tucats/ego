@@ -29,6 +29,11 @@ func FormatUnquoted(arg interface{}) string {
 	}
 }
 
+// This formats a value with additional decoration that describes the
+// type of the object. Strings are identified by being in quotes, and
+// other types have a type enclosure, such as int(42) for the value
+// 42 expressed as an int. This is used to format data on the stack
+// during debugging and tracking, for example.
 func FormatWithType(element interface{}) string {
 	switch actual := element.(type) {
 	case error:
@@ -103,6 +108,9 @@ func FormatWithType(element interface{}) string {
 	return TypeOf(element).String() + "{" + fmtString + "}"
 }
 
+// Format a value as a human-readable value, such as you would see from fmt.Printf()
+// for the associated value. This includes formatting for non-concrete objects, such
+// as types, nil values, constants, etc.
 func Format(element interface{}) string {
 	if IsNil(element) {
 		return "<nil>"

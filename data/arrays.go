@@ -345,6 +345,8 @@ func (a *Array) TypeString() string {
 }
 
 // Make a string representation of the array suitable for display.
+// This is called when you use fmt.Printf with the "%v" operator,
+// for example.
 func (a *Array) String() string {
 	var b strings.Builder
 

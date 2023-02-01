@@ -9,7 +9,10 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Structure of an Ego channel wrapper around Go channels.
+// Structure of an Ego channel wrapper around Go channels. In addition to
+// a native channel object (of type interface{}), it includes a mutex to
+// protect threaded access to the structure, as well as info about the
+// size and state (open, closed, queue size) of the Ego channel.
 type Channel struct {
 	channel chan interface{}
 	mutex   sync.RWMutex
@@ -123,6 +126,10 @@ func (c *Channel) Close() bool {
 	return wasActive
 }
 
+// Generate a human-readlable expression of a channel object. This is
+// most often used for debugging, so it includes the UUID of the
+// channel object so debugging a program with multiple channels is
+// easier.
 func (c *Channel) String() string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()

@@ -2,79 +2,72 @@ package data
 
 // Prebuilt definitions for each given type.
 
+// UndefinedType is instance of the Undefined type object.
 var UndefinedType = &Type{
 	name: UndefinedTypeName,
 	kind: UndefinedKind,
 }
 
+// TypeType is instance of the Type type object.
 var TypeType = &Type{
 	name: "Type",
 	kind: TypeKind,
 }
 
+// StructType is an instance of the Struct type.
 var StructType = &Type{
 	name: StructTypeName,
 	kind: StructKind,
 }
 
+// InterfaceType is an instance of the Interface type.
 var InterfaceType = &Type{
-	name:      InterfaceTypeName,
-	kind:      InterfaceKind,
-	keyType:   nil,
-	valueType: nil,
+	name: InterfaceTypeName,
+	kind: InterfaceKind,
 }
 
+// ErrorType is an instance of the Error type.
 var ErrorType = &Type{
 	name: ErrorTypeName,
 	kind: ErrorKind,
 }
 
+// VoidType is an instance of the Void type.
 var VoidType = &Type{
 	name: VoidTypeName,
 }
 
+// BoolType is an instance of the Bool type.
 var BoolType = &Type{
-	name:      BoolTypeName,
-	kind:      BoolKind,
-	keyType:   nil,
-	valueType: nil,
+	name: BoolTypeName,
+	kind: BoolKind,
 }
 
+// ByteType is an instance of the Byte type.
 var ByteType = &Type{
-	name:      ByteTypeName,
-	kind:      ByteKind,
-	keyType:   nil,
-	valueType: nil,
+	name: ByteTypeName,
+	kind: ByteKind,
 }
 
+// Int32Type is an instance of the Int32 type.
 var Int32Type = &Type{
-	name:      Int32TypeName,
-	kind:      Int32Kind,
-	keyType:   nil,
-	valueType: nil,
+	name: Int32TypeName,
+	kind: Int32Kind,
 }
 
+// IntType is an instance of the Int type.
 var IntType = &Type{
-	name:      IntTypeName,
-	kind:      IntKind,
-	keyType:   nil,
-	valueType: nil,
+	name: IntTypeName,
+	kind: IntKind,
 }
 
+// Int64Type is an instance of the Int64 type.
 var Int64Type = &Type{
-	name:      Int64TypeName,
-	kind:      Int64Kind,
-	keyType:   nil,
-	valueType: nil,
+	name: Int64TypeName,
+	kind: Int64Kind,
 }
 
-var Float64Type = &Type{
-	name:      Float64TypeName,
-	kind:      Float64Kind,
-	keyType:   nil,
-	valueType: nil,
-}
-
+// Float32Type is an instance of the Float32 type.
 var Float32Type = &Type{
 	name:      Float32TypeName,
 	kind:      Float32Kind,
@@ -82,40 +75,47 @@ var Float32Type = &Type{
 	valueType: nil,
 }
 
+// Float64Type is an instance of the Float64 type.
+var Float64Type = &Type{
+	name:      Float64TypeName,
+	kind:      Float64Kind,
+	keyType:   nil,
+	valueType: nil,
+}
+
+// StringType is an instance of the String type.
 var StringType = &Type{
-	name:      StringTypeName,
-	kind:      StringKind,
-	keyType:   nil,
-	valueType: nil,
+	name: StringTypeName,
+	kind: StringKind,
 }
 
+// ChanType is an instance of the Chan type.
 var ChanType = &Type{
-	name:      "chan",
-	kind:      ChanKind,
-	keyType:   nil,
-	valueType: nil,
+	name: ChanTypeName,
+	kind: ChanKind,
 }
 
+// WaitGroupType is an instance of the WaitGroup type.
 var WaitGroupType = &Type{
-	name:      "WaitGroup",
-	kind:      WaitGroupKind,
-	keyType:   nil,
-	valueType: nil,
+	name: "WaitGroup",
+	kind: WaitGroupKind,
 }
 
+// MutexType is an instance of the Mutex type.
 var MutexType = &Type{
-	name:      "Mutex",
-	kind:      MutexKind,
-	keyType:   nil,
-	valueType: nil,
+	name: "Mutex",
+	kind: MutexKind,
 }
 
+// VarArgsType is an instance of the VarArgs type.
 var VarArgsType = &Type{
 	name: "...",
 	kind: VarArgsKind,
 }
 
-// Construct a type that is an array of the given type.
+// Construct a type that is an Array type with a base type
+// of the provided type. This essentially creates a nested
+// type object.
 func ArrayType(t *Type) *Type {
 	return &Type{
 		name:      "[]",
@@ -124,7 +124,7 @@ func ArrayType(t *Type) *Type {
 	}
 }
 
-// Construct a function type value.
+// Construct a Type describing a single function.
 func FunctionType(f *Function) *Type {
 	return &Type{
 		name: f.Declaration.Name,
@@ -135,7 +135,8 @@ func FunctionType(f *Function) *Type {
 	}
 }
 
-// Construct a type that is a pointer to the given type.
+// Construct a type that is a Pointer type that points to
+// an instance of the given type.
 func PointerType(t *Type) *Type {
 	return &Type{
 		name:      "*",
@@ -144,7 +145,9 @@ func PointerType(t *Type) *Type {
 	}
 }
 
-// Construct a type that is a map, specifying the key and value types.
+// Construct a type that is a Map type. This includes the type for
+// both the key for the map as well as the type of the values stored
+// in the map.
 func MapType(key, value *Type) *Type {
 	return &Type{
 		name:      "map",
@@ -154,8 +157,9 @@ func MapType(key, value *Type) *Type {
 	}
 }
 
-// Construct a structure type, with optional field definitions. You
-// can later add additional fields using the AddField method.
+// Construct a Structure type, with optional field definitions. The
+// use of optional arguments to describe the fields of the type can
+// be done now, or added later as the type is being built.
 func StructureType(fields ...Field) *Type {
 	t := Type{
 		name:   StructTypeName,
@@ -170,8 +174,9 @@ func StructureType(fields ...Field) *Type {
 	return &t
 }
 
-// Create a type that is a named type definition, with the
-// given type name and base type.
+// Create a type that is a named Type definition, with the
+// given type name and base type. This is used to describe
+// any type created by the 'type' statement in Ego code.
 func TypeDefinition(name string, base *Type) *Type {
 	return &Type{
 		name:      name,
@@ -180,11 +185,29 @@ func TypeDefinition(name string, base *Type) *Type {
 	}
 }
 
-// Construct a type for a package of the given name.
+// Construct a type for a Package of the given name.
 func PackageType(name string) *Type {
 	return &Type{
 		name:      name,
 		kind:      PackageKind,
 		valueType: StructType,
 	}
+}
+
+// Construct a new instance of an Interface type. This
+// includes preparing the internal map used to describe
+// the required functions in the Interface specification.
+func NewInterfaceType(name string) *Type {
+	if name == "" {
+		name = "interface{}"
+	}
+
+	t := &Type{
+		name:      name,
+		kind:      InterfaceKind,
+		functions: make(map[string]Function),
+		valueType: InterfaceType,
+	}
+
+	return t
 }

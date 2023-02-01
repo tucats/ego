@@ -9,26 +9,30 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
-// String retrieves the string value of the argument, converting if needed.
+// String retrieves the string value of the argument, converting the
+// underlying value if needed.
 func String(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
-// Byte retrieves the byte value of the argument, converting if needed.
+// Byte retrieves the byte value of the argument, converting the
+// underlying value if needed.
 func Byte(v interface{}) byte {
 	i := Int(v)
 
 	return byte(i & math.MaxInt8)
 }
 
-// Int32 retrieves the int32 value of the argument, converting if needed.
+// Int32 retrieves the int32 value of the argument, converting the
+// underlying value if needed.
 func Int32(v interface{}) int32 {
 	i := Int(v)
 
 	return int32(i & math.MaxInt32)
 }
 
-// Int retrieves the int value of the argument, converting if needed.
+// Int retrieves the int value of the argument, converting the
+// underlying value if needed.
 func Int(v interface{}) int {
 	result := 0
 
@@ -63,7 +67,8 @@ func Int(v interface{}) int {
 	return result
 }
 
-// Int64 retrieves the int64 value of the argument, converting if needed.
+// Int64 retrieves the int64 value of the argument, converting the
+// underlying value if needed.
 func Int64(v interface{}) int64 {
 	var result int64
 
@@ -98,7 +103,8 @@ func Int64(v interface{}) int64 {
 	return result
 }
 
-// Float64 retrieves the float64 value of the argument, converting if needed.
+// Float64 retrieves the float64 value of the argument, converting the
+// underlying value if needed.
 func Float64(v interface{}) float64 {
 	var result float64
 
@@ -130,14 +136,16 @@ func Float64(v interface{}) float64 {
 	return result
 }
 
-// Float32 retrieves the float32 value of the argument, converting if needed.
+// Float32 retrieves the float32 value of the argument, converting the
+// underlying value if needed.
 func Float32(v interface{}) float32 {
 	f := Float64(v)
 
 	return float32(f)
 }
 
-// GetString retrieves the boolean value of the argument, converting if needed.
+// GetString retrieves the boolean value of the argument, converting the
+// underlying value if needed.
 func Bool(v interface{}) bool {
 	switch actual := v.(type) {
 	case byte, int32, int, int64:

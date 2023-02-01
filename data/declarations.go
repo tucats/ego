@@ -2,7 +2,7 @@ package data
 
 import "github.com/tucats/ego/errors"
 
-// This defines the token structure for various type declarations, including a model of that
+// This defines the token sequence for various type declarations, including a model of that
 // type and the type designation.
 type TypeDeclaration struct {
 	Tokens []string
@@ -10,7 +10,7 @@ type TypeDeclaration struct {
 	Kind   *Type
 }
 
-// This is the "zero instance" value for various types.
+// This is the "zero instance" value for various builtin types.
 var interfaceModel interface{}
 var byteModel byte = 0
 var int32Model int32 = 0

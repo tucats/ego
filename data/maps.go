@@ -330,6 +330,9 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 	return result
 }
 
+// MarshalJSON is a helper function used by the JSON package to marshal
+// an Ego map value. This is required to create and maintain the metadata
+// for the Ego map in sync with the JSON stream.
 func (m *Map) MarshalJSON() ([]byte, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()

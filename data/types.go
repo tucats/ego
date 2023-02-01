@@ -1,4 +1,4 @@
-// Package data manages language types and value.
+// Package data manages language types and values.
 package data
 
 import (
@@ -10,44 +10,113 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
-// Define data types as abstract identifiers. These are the base
+// Define data kinds as abstract identifiers. These are the base
 // types for all other types. For example, a pointer to an integer
 // in constructed from a PointerKind type that references an IntKind
 // type.
+//
+// Note that these are integer values for rapid comparison, etc. The
+// kind of a type is just one of it's attributes (others include
+// dependent type information, names, and other metadata).
 //
 // IMPORTANT: the order of these must be from less-precise to most-precise
 // for numeric values, as this ordering is used to normalize two values of
 // different types before performing math on them.
 const (
+	// The "not-a-type" kind.
 	UndefinedKind = iota
+
+	// Boolean kind.
 	BoolKind
+
+	// Byte (8-bit integer) kind.
 	ByteKind
+
+	// Int32 (32-bit integer) kind.
 	Int32Kind
+
+	// Int (native integer) kind.
 	IntKind
+
+	// Int64 (64-bit integer) kind.
 	Int64Kind
+
+	// Float32 (32-bit floatting point) kind.
 	Float32Kind
+
+	// Float64 (64-bit floatting point) kind.
 	Float64Kind
+
+	// Unicode string kind.
 	StringKind
+
+	// Struct kind. A struct has an _Ego_ implementation
+	// that includes the fields and their values as well as
+	// additional typing metata.
 	StructKind
+
+	// Error kind. This holds an _Ego_ error value (errors.Error).
 	ErrorKind
+
+	// Channel kind. This holds an _Ego_ channel, which is a Go
+	// channel with additioanl state information.
 	ChanKind
+
+	// Map kind. An _Ego_ map functions like a standard Go map
+	// with the addition of being inherently thread-safe.  The
+	// map type includes metadata about the type of the key
+	// and value objects in the map.
 	MapKind
-	InterfaceKind     // alias for defs.Any
-	PointerKind       // Pointer to some type
-	ArrayKind         // Array of some type
-	PackageKind       // A package
-	FunctionKind      // A function declaration
+
+	// Interface kind. This is used as a placeholder for an untyped
+	// value.
+	InterfaceKind // alias for defs.Any
+
+	// Pointer kind. This includes metadata for what data type pointer
+	// actually points to.
+	PointerKind // Pointer to some type
+
+	// Array kind. An _Ego_ array is an array of interface values, along
+	// with metadata on the expected concrete type of those values and other
+	// metadata.
+	ArrayKind
+
+	// Package kind. A package describes everything that is known about a
+	// package, including name, exported constants and types, and function
+	// and receiver function definitions.
+	PackageKind
+
 	minimumNativeType // Before list of Go-native types mapped to Ego types
+
+	// WaitGroup kind. This is a type that describes a Go native WaitGroup.
+	// Special method call operations can be done that pass control to helper
+	// functions that call the native method on the actual object value.
 	WaitGroupKind
+
+	// Mutex kind. This is a type that describes a Go native Mutex.
+	// Special method call operations can be done that pass control to helper
+	// functions that call the native method on the actual object value.
 	MutexKind
 	maximumNativeType // After list of Go-native types
 
-	VarArgsKind // pseudo type used for variable argument list items
-	TypeKind    // something defined by a type statement
+	// Type kind. This is the type that wrappers any defined Type value. It
+	// has an underlying base type (struct, int, etc) as well as metadata about
+	// the type (including what package it is owned by, etc).
+	TypeKind // something defined by a type statement
+
+	// Function kind. This type contains a function declaration, which is all
+	// the metadata about the function.
+	FunctionKind
+
+	// Variable Arguments kind. This is used as a wrapper for argument lists that
+	// are variadic.
+	VarArgsKind
 )
 
+// These constants are used to map a type name to a string. This creates a single place
+// where the "common" name for built-in types is found.
 const (
-	StringTypeName    = "string"
+	InterfaceTypeName = "interface{}"
 	BoolTypeName      = "bool"
 	ByteTypeName      = "byte"
 	IntTypeName       = "int"
@@ -55,16 +124,18 @@ const (
 	Int64TypeName     = "int64"
 	Float32TypeName   = "float32"
 	Float64TypeName   = "float64"
+	StringTypeName    = "string"
 	StructTypeName    = "struct"
 	MapTypeName       = "map"
 	PackageTypeName   = "package"
-	InterfaceTypeName = "interface{}"
 	ErrorTypeName     = "error"
 	VoidTypeName      = "void"
 	FunctionTypeName  = "func"
 	UndefinedTypeName = "undefined"
+	ChanTypeName      = "chan"
 )
 
+// These are miscellaneous constants used through-out the data package.
 const (
 	True   = "true"
 	False  = "false"
@@ -75,11 +146,23 @@ const (
 // metadata for the function as well as the actual function pointer,
 // which can be either bytecode or a runtime package function.
 type Function struct {
+	// The declaration for the function. If nil, then there is no
+	// declaration defined, This should be an error condition.
 	Declaration *Declaration
-	Value       interface{}
+
+	// The value of the function. For a compiled Ego function, this
+	// is a pointer to the assicated byte code. For a native function,
+	// this is the function value.
+	Value interface{}
 }
 
-// Type defines the type of an Ego object.
+// Type defines the type of an Ego object. All types have a kind which
+// is a unique numeric identifier for the type. They may have additional
+// information abou the type, such as it's name, the package that defines
+// it, the list of fields in the object if it's a struct, and the type of
+// the underlying type, key, or data values. Additionally, it contains a
+// list of the receiver functions that can respond to an object of this
+// type.
 type Type struct {
 	name      string
 	pkg       string
@@ -112,7 +195,7 @@ var implements map[string]bool
 
 var validationLock sync.Mutex
 
-// List creates a new list item, placing the items in the list object.
+// List creates a new Values list object, placing the items in the list.
 func List(items ...interface{}) Values {
 	return Values{Items: items}
 }
