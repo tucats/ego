@@ -16,7 +16,7 @@ const uuidTypeSpec = `
 var uuidTypeDef *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(uuidTypeSpec)
+	t, _ := compiler.CompileTypeSpec(uuidTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{
 		"String": {

@@ -441,6 +441,13 @@ func (t Type) IsInterface() bool {
 	return t.Kind() == TypeKind && t.valueType != nil && t.valueType.Kind() == InterfaceKind
 }
 
+// IsString returns true if the type represents a string type.
+func (t Type) IsString() bool {
+	kind := t.kind
+
+	return kind == StringKind
+}
+
 // IsIntegerType returns true if the type represents any of the integer
 // types. This is used to relax type checking for array initializers,
 // for example.
@@ -1047,59 +1054,6 @@ func PackageForKind(kind int) string {
 	}
 
 	return ""
-}
-
-// Generate a reflection object that describes the type.
-func (t Type) Reflect() *Struct {
-	r := map[string]interface{}{}
-
-	r["istype"] = true
-
-	r[TypeMDName] = t.TypeString()
-	if t.IsTypeDefinition() {
-		r["basetype"] = t.valueType.TypeString()
-		r[TypeMDName] = "type"
-	}
-
-	methodList := t.FunctionNameList()
-	if methodList > "" {
-		r["methods"] = methodList
-	}
-
-	if t.name != "" {
-		r["name"] = t.name
-	}
-
-	functionList := t.functions
-	if t.valueType != nil && t.valueType.kind == InterfaceKind {
-		functionList = t.valueType.functions
-	}
-
-	if len(functionList) > 0 {
-		functions := NewArray(StringType, len(functionList))
-
-		names := make([]string, 0)
-		for k := range functionList {
-			names = append(names, k)
-		}
-
-		sort.Strings(names)
-
-		for i, k := range names {
-			fName := functionList[k]
-			name := k
-
-			if fName.Declaration != nil {
-				name = fName.Declaration.String()
-			}
-
-			_ = functions.Set(i, name)
-		}
-
-		r["functions"] = functions
-	}
-
-	return NewStructFromMap(r)
 }
 
 func (t *Type) SetPackage(name string) *Type {

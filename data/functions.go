@@ -76,15 +76,15 @@ func RegisterDeclaration(d *Declaration) {
 
 // GetBuiltinDeclaration retrieves a builtin delaration by name. This is used
 // when formatting the function for output, or validating parameters.
-func GetBuiltinDeclaration(name string) string {
+func GetBuiltinDeclaration(name string) *Declaration {
 	dictionaryMutex.Lock()
 	defer dictionaryMutex.Unlock()
 
 	if d, found := BuiltinsDictionary[name]; found {
-		return d.String()
+		return d
 	}
 
-	return name + "()"
+	return nil
 }
 
 // Format a declaration object as an Ego-language compliant human-readable

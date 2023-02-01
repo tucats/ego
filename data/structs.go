@@ -135,6 +135,18 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 
 	fields := map[string]interface{}{}
 
+	// Populate the map with all the required fields and
+	// a nil value.
+
+	typeFields := t.fields
+	if typeFields == nil && t.BaseType() != nil {
+		typeFields = t.BaseType().fields
+	}
+
+	for k := range typeFields {
+		fields[k] = nil
+	}
+
 	// Copy all the map items except any metadata items. Make
 	// sure the map value matches the field definition.
 	for k, v := range m {
@@ -149,10 +161,12 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 	}
 
 	result := Struct{
-		static:   static,
-		typeDef:  t,
-		readonly: readonly,
-		fields:   fields,
+		static:             static,
+		typeName:           t.name,
+		typeDef:            t,
+		readonly:           readonly,
+		fields:             fields,
+		fromBuiltinPackage: t.pkg != "",
 	}
 
 	return &result
@@ -347,14 +361,14 @@ func (s *Struct) Copy() *Struct {
 	return result
 }
 
-func (s *Struct) FieldNames() []string {
+func (s *Struct) FieldNames(private bool) []string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	keys := make([]string, 0)
 
 	for k := range s.fields {
-		if s.fromBuiltinPackage && !hasCapitalizedName(k) {
+		if !private && s.fromBuiltinPackage && !hasCapitalizedName(k) {
 			continue
 		}
 
@@ -368,8 +382,8 @@ func (s *Struct) FieldNames() []string {
 	return keys
 }
 
-func (s *Struct) FieldNamesArray() *Array {
-	keys := s.FieldNames()
+func (s *Struct) FieldNamesArray(private bool) *Array {
+	keys := s.FieldNames(private)
 	keyValues := make([]interface{}, len(keys))
 
 	for i, v := range keys {
@@ -442,43 +456,6 @@ func (s *Struct) String() string {
 	return b.String()
 }
 
-func (s *Struct) Reflect() *Struct {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	m := map[string]interface{}{}
-
-	m[TypeMDName] = s.TypeString()
-	if s.typeDef.IsTypeDefinition() {
-		m["basetype"] = s.typeDef.BaseType().String()
-	} else {
-		m["basetype"] = s.typeDef.String()
-	}
-
-	// If there are methods associated with this type, add them to the output structure.
-	methods := s.typeDef.FunctionNames()
-	if len(methods) > 0 {
-		names := make([]interface{}, 0)
-
-		for _, name := range methods {
-			if name > "" {
-				names = append(names, name)
-			}
-		}
-
-		m["methods"] = NewArrayFromArray(StringType, names)
-	}
-
-	m["istype"] = false
-	m["native"] = true
-	m["members"] = s.FieldNamesArray()
-	m["readonly"] = s.readonly
-	m["static"] = s.static
-	m["package"] = s.fromBuiltinPackage
-
-	return NewStructFromMap(m)
-}
-
 func (s *Struct) MarshalJSON() ([]byte, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -488,7 +465,7 @@ func (s *Struct) MarshalJSON() ([]byte, error) {
 
 	// Need to use the sorted list of names so results are deterministic,
 	// as opposed to ranging over the fields directly.
-	keys := s.FieldNames()
+	keys := s.FieldNames(false)
 	for i, k := range keys {
 		if i > 0 {
 			b.WriteString(",")

@@ -4,9 +4,9 @@
 {
     p := reflect.Reflect(strings)
 
-    @assert p.type == "*package"
-    @assert index(p.members, "Camel") > -1
-    @assert p.native == false
+    @assert p.Type() == "*package"
+    @assert index(p.Members(), "Camel") > -1
+    @assert p.Native() == false
 }
 
 @pass

@@ -22,7 +22,7 @@ type Client struct {
 var restType *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(restTypeSpec)
+	t, _ := compiler.CompileTypeSpec(restTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{
 		"Close": {

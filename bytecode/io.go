@@ -91,10 +91,10 @@ func printByteCode(c *Context, i interface{}) error {
 			s = formats.PackageAsString(actualValue)
 
 		case *data.Struct:
-			s = formats.StructAsString(actualValue)
+			s = formats.StructAsString(actualValue, false)
 
 		case *data.Map:
-			s = formats.MapAsString(actualValue)
+			s = formats.MapAsString(actualValue, false)
 
 		default:
 			s = data.FormatUnquoted(value)

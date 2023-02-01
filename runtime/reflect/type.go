@@ -13,6 +13,8 @@ import (
 
 // describeType implements the type() function.
 func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+	const funcLabel = "func"
+
 	switch v := args[0].(type) {
 	case *data.Map:
 		return v.TypeString(), nil
@@ -74,6 +76,13 @@ func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, error):
 		return "<builtin>", nil
 
+	case data.Function:
+		if v.Declaration == nil {
+			return funcLabel, nil
+		}
+
+		return "func " + v.Declaration.Name, nil
+
 	default:
 		tt := data.TypeOf(v)
 		if tt.IsUndefined() {
@@ -85,7 +94,7 @@ func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 			if vv.Kind() == reflect.Ptr {
 				ts := vv.String()
 				if ts == defs.ByteCodeReflectionTypeString {
-					return "func", nil
+					return funcLabel, nil
 				}
 
 				return fmt.Sprintf("ptr %s", ts), nil
@@ -98,7 +107,7 @@ func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 		if vv.Kind() == reflect.Ptr {
 			ts := vv.String()
 			if ts == defs.ByteCodeReflectionTypeString {
-				return "func", nil
+				return funcLabel, nil
 			}
 
 			return fmt.Sprintf("ptr %s", ts), nil

@@ -435,7 +435,7 @@ func explodeByteCode(c *Context, i interface{}) error {
 	empty := true
 
 	if m, ok := v.(*data.Map); ok {
-		if m.KeyType().Kind() != data.StringKind {
+		if !m.KeyType().IsString() {
 			err = c.error(errors.ErrWrongMapKeyType)
 		} else {
 			keys := m.Keys()

@@ -196,7 +196,7 @@ func coerceByteCode(c *Context, i interface{}) error {
 	case data.StructKind:
 		// Check all the fields in the struct to ensure they exist in the type.
 		vv := v.(*data.Struct)
-		for _, k := range vv.FieldNames() {
+		for _, k := range vv.FieldNames(false) {
 			_, e2 := t.Field(k)
 			if e2 != nil {
 				return errors.NewError(e2)

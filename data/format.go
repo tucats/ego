@@ -67,9 +67,6 @@ func FormatWithType(element interface{}) string {
 	}
 
 	fmtString := Format(element)
-	//if strings.HasPrefix(fmtString, "[") && strings.HasSuffix(fmtString, "]") {
-	//	fmtString = strings.TrimSuffix(strings.TrimPrefix(fmtString, "["), "]")
-	//}
 
 	// For things already formatted with a type prefix, don't add to the string.
 	for _, prefix := range []string{"[", "M<", "F<", "Pkg<"} {
@@ -102,6 +99,7 @@ func FormatWithType(element interface{}) string {
 	}
 
 	// It's some kind of more complex type, output the type and the value(s)
+
 	return TypeOf(element).String() + "{" + fmtString + "}"
 }
 

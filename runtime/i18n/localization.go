@@ -44,7 +44,7 @@ func translation(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 				parameters[data.String(key)] = data.String(value)
 			}
 		} else if egoStruct, ok := value.(*data.Struct); ok {
-			for _, field := range egoStruct.FieldNames() {
+			for _, field := range egoStruct.FieldNames(false) {
 				value := egoStruct.GetAlways(field)
 				parameters[field] = data.String(value)
 			}

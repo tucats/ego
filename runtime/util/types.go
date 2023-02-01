@@ -22,7 +22,7 @@ func Initialize(s *symbols.SymbolTable) {
 		root bool
 		shared bool
 		size int
-		}`)
+		}`, nil)
 
 	memoryTypeDef, _ = compiler.CompileTypeSpec(`
 		type MemoryStatus struct {
@@ -31,7 +31,7 @@ func Initialize(s *symbols.SymbolTable) {
 			Total float64
 			System float64
 			GC int
-		}`)
+		}`, nil)
 
 	memoryTypeDef.SetPackage("util")
 	symbolTableTypeDef.SetPackage("util")

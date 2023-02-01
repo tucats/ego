@@ -247,7 +247,7 @@ func structByteCode(c *Context, i interface{}) error {
 			// function definitions in the model, as they will be
 			// found later during function invocation if needed
 			// by chasing the model chain.
-			for _, fieldName := range model.FieldNames() {
+			for _, fieldName := range model.FieldNames(false) {
 				fieldValue, _ := model.Get(fieldName)
 
 				if value := reflect.ValueOf(fieldValue); value.Kind() == reflect.Ptr {

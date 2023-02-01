@@ -47,7 +47,7 @@ func TestCompileTypeSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := CompileTypeSpec(tt.name)
+			got, err := CompileTypeSpec(tt.name, nil)
 			if err != nil {
 				t.Errorf("CompileTypeSpec() error %v", err)
 			} else {

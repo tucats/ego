@@ -11,7 +11,7 @@ import (
 // sortStrings implements the sort.sortStrings function.
 func sortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if array, ok := args[0].(*data.Array); ok {
-		if array.ValueType().IsKind(data.StringKind) {
+		if array.ValueType().IsString() {
 			err := array.Sort()
 
 			return array, err

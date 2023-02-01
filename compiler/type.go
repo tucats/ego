@@ -111,11 +111,21 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 //
 // If the string starts with the keyword `type` followed by a type name, then
 // the resulting value is a type definition of the given name.
-func CompileTypeSpec(source string) (*data.Type, error) {
+//
+// The dependent types map contains types from previous standalone type
+// compilations that the current spec is dependent upon. For example,
+// a type definition for a sub-structure that is then referenced in
+// the current type compilation. Passing nil just means there are no
+// dependent types.
+func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data.Type, error) {
 	typeCompiler := New("type compiler")
 	typeCompiler.t = tokenizer.New(source, true)
-	nameSpelling := ""
 
+	if dependentTypes != nil {
+		typeCompiler.types = dependentTypes
+	}
+
+	nameSpelling := ""
 	// Does it have a type <name> prefix? And is that a package.name style name?
 	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
 		name := typeCompiler.t.Next()

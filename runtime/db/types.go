@@ -41,7 +41,7 @@ const (
 func Initialize(s *symbols.SymbolTable) {
 	rowT := initRowsTypeDef()
 
-	t, _ := compiler.CompileTypeSpec(dbTypeSpec)
+	t, _ := compiler.CompileTypeSpec(dbTypeSpec ,nil)
 
 	t.DefineFunction("Begin", &data.Declaration{
 		Name:    "Begin",
@@ -152,7 +152,7 @@ func Initialize(s *symbols.SymbolTable) {
 }
 
 func initRowsTypeDef() *data.Type {
-	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec)
+	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec ,nil)
 
 	t.DefineFunction("Next", &data.Declaration{
 		Name:    "Next",

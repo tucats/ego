@@ -24,7 +24,7 @@ func members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		return keys, nil
 
 	case *data.Struct:
-		return v.FieldNamesArray(), nil
+		return v.FieldNamesArray(false), nil
 
 	case *data.Package:
 		keys := data.NewArray(data.StringType, 0)

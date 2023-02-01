@@ -22,7 +22,7 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		source = data.NewArrayFromArray(data.InterfaceType, args[:len(args)-1])
 	}
 
-	if t.IsKind(data.StringKind) {
+	if t.IsString() {
 		// If the source is a []byte type, we can just fetch the bytes and do a direct convesion.
 		// If the source is a []int type, we can convert each integer to a rune and add it to a
 		// string builder. Otherwise, just format it as a string value.
@@ -50,8 +50,7 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			return actual, nil
 		}
 
-		if t.IsKind(data.StringKind) &&
-			(actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
+		if t.IsString() && (actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {

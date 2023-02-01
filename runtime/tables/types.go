@@ -22,7 +22,7 @@ const (
 var tableTypeDef *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(tableTypeSpec)
+	t, _ := compiler.CompileTypeSpec(tableTypeSpec, nil)
 
 	t.DefineFunctions(map[string]data.Function{
 		"AddRow": {

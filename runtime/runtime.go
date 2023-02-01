@@ -64,7 +64,7 @@ func AddPackages(s *symbols.SymbolTable) {
 }
 
 func TypeCompiler(t string) *data.Type {
-	typeDefintion, _ := compiler.CompileTypeSpec(t)
+	typeDefintion, _ := compiler.CompileTypeSpec(t, nil)
 
 	return typeDefintion
 }

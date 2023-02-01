@@ -492,6 +492,9 @@ var messages = map[string]map[string]string{
 	"error.nil": {
 		"en": "nil pointer reference",
 	},
+	"error.no.info": {
+		"en": "no information for item",
+	},
 	"error.no.main.package": {
 		"en": "no main package found",
 	},

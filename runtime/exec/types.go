@@ -22,7 +22,7 @@ const commandTypeSpec = `
 var commandTypeDef *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	t, _ := compiler.CompileTypeSpec(commandTypeSpec)
+	t, _ := compiler.CompileTypeSpec(commandTypeSpec ,nil)
 
 	t.DefineFunctions(map[string]data.Function{
 		"Output": {Value: output},

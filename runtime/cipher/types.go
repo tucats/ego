@@ -19,7 +19,7 @@ type Token struct {
 var authType *data.Type
 
 func Initialize(s *symbols.SymbolTable) {
-	authType, _ = compiler.CompileTypeSpec(authTypeDef)
+	authType, _ = compiler.CompileTypeSpec(authTypeDef, nil)
 
 	newpkg := data.NewPackageFromMap("cipher", map[string]interface{}{
 		"Token": authType,

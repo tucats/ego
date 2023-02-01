@@ -10,10 +10,10 @@ import (
 
 // StructAsString formats a map for printing as a table. The result is
 // a string suitable for directing to the console.
-func StructAsString(vv *data.Struct) string {
+func StructAsString(vv *data.Struct, showTypes bool) string {
 	t, _ := tables.New([]string{i18n.L("Field"), i18n.L("Type"), i18n.L("Value")})
 
-	keys := vv.FieldNames()
+	keys := vv.FieldNames(false)
 	for _, key := range keys {
 		keyString := data.String(key)
 		value, _ := vv.Get(keyString)
@@ -21,6 +21,10 @@ func StructAsString(vv *data.Struct) string {
 		typeString := data.TypeOf(value).String()
 
 		_ = t.AddRowItems(keyString, typeString, valueString)
+	}
+
+	if !showTypes {
+		_ = t.SetColumnOrderByName([]string{i18n.L("Field"), i18n.L("Value")})
 	}
 
 	r, _ := t.String("text")

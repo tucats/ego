@@ -3400,24 +3400,23 @@ the value of e.age.
 
 ### reflect.Reflect(value)
 
-This returns a structure that contains detailed information about the
-type of value given.  The resulting structure has fields that are
-specific to each type, and will not be present in the structure for
-other types.
+This returns a reflect.Reflection{} that can be used to learn further information
+about the value specified. These are available via accessor functions. Not all
+types have all values available via accessor function, but you can use the Items()
+method of the reflection object to see the list of methods that are avialble for a
+given type.
 
-| Field        | Description                |
-|:-------------|:---------------------------|
-| basetype     | The native Go type of the value |
-| declaration  | The declaration string for functions or native types |
-| istype       | Boolean indicating if the value was itself a type |
-| members      | The names of the fields in the struct or type |
-| methods      | The names of the receiver methods for this type |
-| native       | Boolean indicating if this is a native Go structure or type |
-| package      | Boolean indicating if this type is from a package |
-| readonly     | Boolean indicating if this is a readonly value |
-| size         | For arrays and maps, the number of elements |
-| type         | The _Ego_ type name of the value |
-| static       | Is the field list fixed for this struct? |
+| Method         | Description                |
+|:---------------|:---------------------------|
+| Basetype()     | The native Go type of the value |
+| Declaration()  | The declaration string for functions or native types |
+| IsType()       | Boolean indicating if the value was itself a type |
+| Members()      | The names of the fields in the struct or type |
+| Functions()    | The names of the functions  or receiver methods for this type |
+| Native()       | Boolean indicating if this is a native Go structure or type |
+| Package()      | Boolean indicating if this type is from a package |
+| Size()         | For arrays and maps, the number of elements |
+| Type()         | The _Ego_ type name of the value |
 
 ### reflect.Type(value)
 

@@ -112,9 +112,9 @@ func addRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				if len(args) > 1 {
 					err = errors.ErrArgumentCount
 				} else {
-					values := make([]string, len(m.FieldNames()))
+					values := make([]string, len(m.FieldNames(false)))
 
-					for _, k := range m.FieldNames() {
+					for _, k := range m.FieldNames(false) {
 						v := m.GetAlways(k)
 						if v == nil {
 							return nil, errors.ErrInvalidField
