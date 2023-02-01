@@ -1,6 +1,8 @@
 package data
 
-// Prebuilt definitions for each given type.
+// Prebuilt instances for each given type. These can be used to reference
+// the type in comparison operations, or to define function parameter and
+// return value types, etc.
 
 // UndefinedType is instance of the Undefined type object.
 var UndefinedType = &Type{

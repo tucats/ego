@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// InstanceOfType accepts a kind type indicator, and returns the zero-value
+// InstanceOfType accepts a type object, and returns the zero-value
 // model of that type. This only applies to base types.
 func InstanceOfType(t *Type) interface{} {
 	switch t.kind {

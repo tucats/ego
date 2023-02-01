@@ -9,8 +9,10 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 )
 
-// This describes the items in a package. Each item could be an arbitrary object
-// (function, data type, etc).
+// This describes the items in a package. A package consists of a map of items,
+// which may includes constant defintions, type definitions, function bodies,
+// or receiver function bodies. It also includes metadata regarding whether it
+// has import source, or includes Go-native builtins.
 type Package struct {
 	name     string
 	ID       string
@@ -208,6 +210,7 @@ func (p *Package) Merge(source *Package) *Package {
 	return p
 }
 
+// Name returns the name of a package.
 func (p *Package) Name() string {
 	return p.name
 }

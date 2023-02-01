@@ -2,8 +2,10 @@ package data
 
 import "github.com/tucats/ego/errors"
 
-// This defines the token sequence for various type declarations, including a model of that
-// type and the type designation.
+// This defines the semantic information needed to define a type in Ego. This
+// includes the token sequence for the type declaration, a model of that
+// type, and the type designation. This is used by the Type compiler to
+// parse all base type strings and convert them to the appropriate Type.
 type TypeDeclaration struct {
 	Tokens []string
 	Model  interface{}
@@ -22,6 +24,8 @@ var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
 
+// These are instances of teh zero value of each object, expressed
+// as an interface{}.
 var byteInterface interface{} = byte(0)
 var int32Interface interface{} = int32(0)
 var intInterface interface{} = int(0)
@@ -32,10 +36,8 @@ var float32Interface interface{} = float32(0.0)
 var stringInterface interface{} = ""
 
 // TypeDeclarations is a dictionary of all the type declaration token sequences.
-// This includes _Ego_ types and also native types, such as sync.WaitGroup.  Note
-// that for native types, you may also have to update InstanceOf() to generate a
-// unique instance of the required type, usually via pointer so the native function
-// can reference/update the native value.
+// This includes _Ego_ types and also native types, such as sync.WaitGroup.  There
+// should be a type in InstanceOf to match each of these types
 var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"sync", ".", "WaitGroup"},

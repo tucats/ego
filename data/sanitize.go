@@ -5,8 +5,13 @@ import (
 )
 
 // For any given _Ego_ object type, remove any metadata from it
-// and return a sanitized copy. This is used to send HTTP response
-// values, for example.
+// and return a sanitized version. For scalar types like int,
+// bool, or string, there is no operation performed and the
+// object is returned unchanged. For Struct and Map types, the
+// response is always a map[string]interface{}. For Array types,
+// this will always be an []interface{} structure. This can then
+// be used serialized to JSON to send HTTP response
+// bodies, for example.
 func Sanitize(v interface{}) interface{} {
 	switch v := v.(type) {
 	case *Array:

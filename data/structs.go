@@ -13,6 +13,15 @@ import (
 	"github.com/tucats/ego/errors"
 )
 
+// Struct describes an Ego structure. This includes the associated type
+// definition if it is a struct that is part of a type, and the name of
+// that type. It also has metadata indicating if the structure's definition
+// is static or if fields can be added to it, and if the structure is
+// considered read-only.
+//
+// Access to the struct is thread-safe, and will enforce package namespace
+// visibility if the struct is defined in one package but referneced from
+// outside that pacikage.
 type Struct struct {
 	typeDef            *Type
 	typeName           string
@@ -24,6 +33,9 @@ type Struct struct {
 	fields             map[string]interface{}
 }
 
+// Create a new Struct of the given type. This can be a type wrapper
+// for the struct type, or data.StructType to indicate an anonymous
+// struct value.
 func NewStruct(t *Type) *Struct {
 	// If this is a user type, get the base type.
 	typeName := ""
@@ -73,6 +85,13 @@ func NewStruct(t *Type) *Struct {
 	return &result
 }
 
+// NewStructFromMap will create an anonymous Struct (with no type),
+// and populate the fields and their types and values based on the
+// provided map. This is often used within Ego to build a map with
+// the information needed in the structure, and then assign the
+// associated values in the map to the fields of the structure.
+// Note that the only fields that will be defined are the ones
+// indicated by the map.
 func NewStructFromMap(m map[string]interface{}) *Struct {
 	t := StructureType()
 
@@ -113,6 +132,11 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	return &result
 }
 
+// NewStructOfTypeFromMap creates a new structure of a given type, and
+// populates the fields using a map. The map does not have to have a value
+// for each field in the new structure (the fields are determined by the
+// type information), but the map cannot contain values that do not map
+// to a structure field name.
 func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 	if value, ok := m[TypeMDKey]; ok {
 		t = TypeOf(value)
@@ -172,12 +196,18 @@ func NewStructOfTypeFromMap(t *Type, m map[string]interface{}) *Struct {
 	return &result
 }
 
+// FromBuiltinPackage sets the flag in the structure metadata that
+// indicates that it should be considered a member of a package.
+// This setting is used to enforce package visibility rules. The
+// function returns the same pointer that was passed to it, so
+// this can be chained with other operations on the structure.
 func (s *Struct) FromBuiltinPackage() *Struct {
 	s.fromBuiltinPackage = true
 
 	return s
 }
 
+// GetType returns the Type description of the structure.
 func (s *Struct) GetType() *Type {
 	return s.typeDef
 }
@@ -233,6 +263,10 @@ func (s *Struct) GetAlways(name string) interface{} {
 	return value
 }
 
+// PackageName returns the package in which the structure was
+// defined. This is used to compare against the current package
+// code being executed to determine if private structure members
+// are accessible.
 func (s *Struct) PackageName() string {
 	if s.typeDef.pkg != "" {
 		return s.typeDef.pkg
@@ -343,7 +377,8 @@ func (s *Struct) Set(name string, value interface{}) error {
 	return nil
 }
 
-// Make a copy of the current structure object.
+// Make a copy of the current structure object. The resulting structure
+// will be an exact duplicate, but allocated in new storage.
 func (s *Struct) Copy() *Struct {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -361,6 +396,10 @@ func (s *Struct) Copy() *Struct {
 	return result
 }
 
+// FieldNames returns an array of strings containing the names of the
+// structure fields that can be accessed. The private flag is used to
+// indicate if private structures should be visible. When this is false,
+// the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNames(private bool) []string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -382,6 +421,11 @@ func (s *Struct) FieldNames(private bool) []string {
 	return keys
 }
 
+// FieldNamesArray constructs an Ego array of strings containing
+// the names of the fields in the structure that can be accessed.
+// The private flag is used to
+// indicate if private structures should be visible. When this is false,
+// the list of names is filtered to remove any private (lower-case) names.
 func (s *Struct) FieldNamesArray(private bool) *Array {
 	keys := s.FieldNames(private)
 	keyValues := make([]interface{}, len(keys))
@@ -393,6 +437,11 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 	return NewArrayFromArray(StringType, keyValues)
 }
 
+// TypeString generates a string representation fo this current
+// Type. If the structure is actually a typed structure, then the
+// result is th  name of the type. Otherwise it is the full
+// type string that enumerates the names of the fields and their
+// types.
 func (s *Struct) TypeString() string {
 	if s.typeName != "" {
 		return s.typeName
@@ -410,6 +459,8 @@ func (s *Struct) TypeString() string {
 	return s.typeDef.String()
 }
 
+// String creates a human-readable representation of a structure, showing
+// the field names and their values.
 func (s *Struct) String() string {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -456,6 +507,9 @@ func (s *Struct) String() string {
 	return b.String()
 }
 
+// MarshalJSON is a helper function that assists the json package
+// operations that must generate the JSON sequence that represents
+// the Ego structure (as opposed to the native Struct object itself).
 func (s *Struct) MarshalJSON() ([]byte, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
