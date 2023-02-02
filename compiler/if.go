@@ -37,15 +37,6 @@ func (c *Compiler) compileIf() error {
 		return err
 	}
 
-	/*
-		if !c.flags.strictTypes {
-			c.b.Append(bc)
-		} else {
-			c.b.Emit(bytecode.Push, data.BoolType)
-			c.b.Append(bc)
-			c.b.Emit(bytecode.Call, 1)
-		}*/
-
 	c.b.Append(bc)
 
 	b1 := c.b.Mark()
