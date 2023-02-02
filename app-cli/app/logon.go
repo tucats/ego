@@ -16,7 +16,7 @@ import (
 	"github.com/tucats/ego/runtime/rest"
 )
 
-// LogonGrammar describes the login subcommand.
+// LogonGrammar describes the login subcommand options.
 var LogonGrammar = []cli.Option{
 	{
 		LongName:            "username",

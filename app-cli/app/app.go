@@ -24,16 +24,37 @@ import (
 // It contains the globals needed for the application as well as the runtime
 // context root.
 type App struct {
-	Name        string
+	// The name of the application. This is used to form the name of
+	// configuration files, and the default prompt for console input.
+	Name string
+
+	// This is a text description of the application, which is used
+	// when forming the default "help" output.
 	Description string
-	Copyright   string
-	Version     string
-	BuildTime   string
-	Context     *cli.Context
-	Action      func(c *cli.Context) error
+
+	// This is a copyright string for the app, which is displayed in the
+	// "help" output.
+	Copyright string
+
+	// This is a version string for the application. This is displayed in
+	// the "help" output, and is available as a global variable.
+	Version string
+
+	// This is a string representation of the time and date the application
+	// was built.
+	BuildTime string
+
+	// This is a command-line context object that is associated with the app,
+	// and is used to manage parsing command line options.
+	Context *cli.Context
+
+	// This is the default action to run to execute the application. This can
+	// be overridden in the grammar definition for the command line options and
+	// subcommands.
+	Action func(c *cli.Context) error
 }
 
-// New creates a new instance of an application context, given the name of the
+// New creates a new instance of an application object, given the name of the
 // application.
 func New(appName string) *App {
 	// Extract the description of the app if it was given
@@ -48,13 +69,20 @@ func New(appName string) *App {
 	return app
 }
 
+// SetProfileDirectory sets the default directory name in the user's home
+// directory for storing profile configuration inforation. The default is
+// ".org.fernwood" but this can be overridden by the main program using
+// this function.
 func (app *App) SetProfileDirectory(name string) *App {
 	settings.ProfileDirectory = name
 
 	return app
 }
 
-// SetVersion sets the version number for the application.
+// SetVersion sets the version number for the application. If the
+// values for major, minor, and delta (often build number) are
+// zero, the default version is "developer build". This value
+// is also stored in the global symbol table.
 func (app *App) SetVersion(major, minor, delta int) *App {
 	if major == 0 && minor == 0 && delta == 0 {
 		app.Version = `"developer build"`
@@ -68,7 +96,8 @@ func (app *App) SetVersion(major, minor, delta int) *App {
 }
 
 // SetCopyright sets the copyright string (if any) used in the
-// help output.
+// help output. This value is also stored in the global symbol
+// table.
 func (app *App) SetCopyright(s string) *App {
 	app.Copyright = s
 	symbols.RootSymbolTable.SetAlways(defs.CopyrightVariable, app.Copyright)
@@ -101,6 +130,8 @@ func (app *App) Parse(grammar []cli.Option, args []string, action func(c *cli.Co
 	return app.Run(grammar, args)
 }
 
+// This operation sets the default action function of the application. This is used
+// when the command line contains only options without a command verb.
 func (app *App) SetDefaultAction(f func(c *cli.Context) error) *App {
 	app.Action = f
 

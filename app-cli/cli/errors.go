@@ -7,9 +7,14 @@ import (
 
 // Exit codes passed to the operating system.
 const (
-	ExitSuccess      = 0
+	// The application exited without error.
+	ExitSuccess = 0
+
+	// The applicaation incurred an error during execution.
 	ExitGeneralError = 1
-	ExitUsageError   = 2
+
+	// The application had an error in command line specification or environment.
+	ExitUsageError = 2
 )
 
 // ExitError is a wrapped error code structure used to return a message

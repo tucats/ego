@@ -24,7 +24,7 @@ var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
 
-// These are instances of teh zero value of each object, expressed
+// These are instances of the zero value of each object, expressed
 // as an interface{}.
 var byteInterface interface{} = byte(0)
 var int32Interface interface{} = int32(0)
@@ -37,7 +37,7 @@ var stringInterface interface{} = ""
 
 // TypeDeclarations is a dictionary of all the type declaration token sequences.
 // This includes _Ego_ types and also native types, such as sync.WaitGroup.  There
-// should be a type in InstanceOf to match each of these types
+// should be a type in InstanceOf to match each of these types.
 var TypeDeclarations = []TypeDeclaration{
 	{
 		[]string{"sync", ".", "WaitGroup"},

@@ -18,7 +18,7 @@ import (
 
 const maxKeyValuePrintWidth = 60
 
-// Grammar describes profile subcommands.
+// Grammar describes the "config" subcommands.
 var Grammar = []cli.Option{
 	{
 		LongName:    "list",
@@ -86,7 +86,8 @@ var Grammar = []cli.Option{
 	},
 }
 
-// ShowAction Displays the current contents of the active configuration.
+// ShowAction implements the "config show" subcommand. This displays the
+// current contents of the active configuration.
 func ShowAction(c *cli.Context) error {
 	// Is the user asking for a single value?
 	if c.ParameterCount() > 0 {
@@ -120,7 +121,8 @@ func ShowAction(c *cli.Context) error {
 	return nil
 }
 
-// ListAction Displays the current contents of the active configuration.
+// ListAction implements the "config list" subcommand. This displays the
+// list of configuration names.
 func ListAction(c *cli.Context) error {
 	t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Description")})
 
@@ -138,7 +140,7 @@ func ListAction(c *cli.Context) error {
 	return nil
 }
 
-// SetOutputAction is the action handler for the set-output subcommand.
+// SetOutputAction is the action handler for the "config set-output" subcommand.
 func SetOutputAction(c *cli.Context) error {
 	if c.ParameterCount() == 1 {
 		outputType := c.Parameter(0)
@@ -157,7 +159,9 @@ func SetOutputAction(c *cli.Context) error {
 	return errors.ErrMissingOutputType
 }
 
-// SetAction uses the first two parameters as a key and value.
+// SetAction implements the "config set" subcommand. This uses the first
+// two parameters as a key and value. If the key has an "=" in it, then
+// the value is assumed to be the string after the "=".
 func SetAction(c *cli.Context) error {
 	// Generic --key and --value specification.
 	key := c.Parameter(0)
@@ -182,7 +186,8 @@ func SetAction(c *cli.Context) error {
 	return nil
 }
 
-// DeleteAction deletes a named key value.
+// DeleteAction implements the "config delete" subcommand This deletes a
+// named key value from the active configuration.
 func DeleteAction(c *cli.Context) error {
 	var err error
 
@@ -206,7 +211,8 @@ func DeleteAction(c *cli.Context) error {
 	return nil
 }
 
-// DeleteProfileAction deletes a named profile.
+// DeleteProfileAction implements the "config remove" actcion. This
+// deletes a named configuration.
 func DeleteProfileAction(c *cli.Context) error {
 	name := c.Parameter(0)
 
@@ -220,7 +226,7 @@ func DeleteProfileAction(c *cli.Context) error {
 	return err
 }
 
-// SetDescriptionAction sets the profile description string.
+// SetDescriptionAction sets the configuration's description string.
 func SetDescriptionAction(c *cli.Context) error {
 	config := settings.Configurations[settings.ProfileName]
 	config.Description = c.Parameter(0)

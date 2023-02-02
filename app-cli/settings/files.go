@@ -42,10 +42,23 @@ var ProfileName = "default"
 
 // Configuration describes what is known about a configuration.
 type Configuration struct {
-	Description string            `json:"description,omitempty"`
-	ID          string            `json:"id,omitempty"`
-	Modified    string            `json:"modified,omitempty"`
-	Items       map[string]string `json:"items"`
+	// A textual description of the configuration. This is displayed
+	// when the profiles are listed.
+	Description string `json:"description,omitempty"`
+
+	// A UUID expressed as a string, which uniquely identifies this
+	// configuration for the life of the application.
+	ID string `json:"id,omitempty"`
+
+	// The date and time of the last modification of this profile,
+	// expressed as a string.
+	Modified string `json:"modified,omitempty"`
+
+	// The Items map contains the individual configuration values. Each
+	// has a key which is the name of the option, and a string value for
+	// that configuration item. Configuration items that are not strings
+	// must be serialized as a string.
+	Items map[string]string `json:"items"`
 }
 
 // CurrentConfiguration describes the current configuration that is active.
@@ -116,7 +129,7 @@ func Load(application string, name string) error {
 	return err
 }
 
-// Save the current configuration.
+// Save the current configuration to persistent disk storage.
 func Save() error {
 	// So we even need to do anything?
 	if !ProfileDirty {
@@ -171,7 +184,7 @@ func UseProfile(name string) {
 	CurrentConfiguration = c
 }
 
-// Set puts a profile entry in the current Configuration structure.
+// Set stores a profile entry in the current configuration.
 func Set(key string, value string) {
 	explicitValues.Items[key] = value
 	c := getCurrentConfiguration()
@@ -204,8 +217,8 @@ func Get(key string) string {
 	return v
 }
 
-// GetBool returns the boolean value of a profile string. If the string is
-// "Y", "YES", "1", or "true" then the value returns true.
+// GetBool returns the boolean value of a configuration item. If the item
+// string is "Y", "YES", "1", or "true" then the value returns true.
 func GetBool(key string) bool {
 	s := strings.ToLower(Get(key))
 	if s == "y" || s == "yes" || s == defs.True || s == "t" || s == "1" {
@@ -215,7 +228,8 @@ func GetBool(key string) bool {
 	return false
 }
 
-// GetInt returns the integer value of a profile string.
+// GetInt returns the integer value of a configuration item by name.
+// The string is converted to an int and returned.
 func GetInt(key string) int {
 	s := strings.ToLower(Get(key))
 	value, _ := strconv.Atoi(s)
@@ -239,8 +253,7 @@ func GetUsingList(key string, values ...string) int {
 	return 0
 }
 
-// Delete removes a key from the map entirely. Also removes if from the
-// active defaults.
+// Delete removes a key from the configuration.
 func Delete(key string) error {
 	c := getCurrentConfiguration()
 
@@ -284,6 +297,7 @@ func Exists(key string) bool {
 	return exists
 }
 
+// DeleteProfile deletes an entire named configuration.
 func DeleteProfile(key string) error {
 	if c, ok := Configurations[key]; ok {
 		if c.ID == getCurrentConfiguration().ID {

@@ -1,14 +1,6 @@
 package cli
 
-import (
-	"fmt"
-	"reflect"
-	"runtime"
-	"strings"
-)
-
 const (
-
 	// StringType accepts a string (in quotes if it contains spaces or punctuation).
 	StringType = 1
 
@@ -40,213 +32,161 @@ const (
 
 // Option defines the structure of each option that can be parsed.
 type Option struct {
-	ShortName            string
-	LongName             string
-	Description          string
+	// The full name of an option, not including the dash punctuation. For
+	// example, the --trace option would have a name of "trace".
+	LongName string
+
+	// The short name, if specified, allows a short option name with only
+	// a single dash and typically a single letter. For example, the --trace
+	// option might be specified as -t, so the short name would be "t".
+	ShortName string
+
+	// This is a one-line description of what this option or subcommand is
+	// used for. This is displayed when outputing the standard --help output.
+	Description string
+
+	// If there parameters are permitted other than subcommands and options,
+	// the description of that parameter string is here. This is used by the
+	// standard --help output.
 	ParameterDescription string
-	EnvironmentVariable  string
-	Aliases              []string
-	Keywords             []string
-	Value                interface{}
-	Action               func(c *Context) error
-	OptionType           int
-	ParametersExpected   int
-	Found                bool
-	Required             bool
-	Private              bool
-	DefaultVerb          bool
+
+	// If there is an environment variable that can provide the value of this
+	// option, specify it here. Any option names that were not specified on
+	// the command line, but have an environment variable, will get their value
+	// by reading the environment as part of the parsing operation.
+	EnvironmentVariable string
+
+	// Aliases is a list of alternate spellings of the LongName value.  For example,
+	// an option called --type could also be expresssed as --types or --typing. In
+	// that case, the Aliases would be []string{"types", "typing"}. Only the LongName
+	// is displayed in the standard --help output, but the parser accepts the aliases
+	// while processing the command line.
+	Aliases []string
+
+	// If the option takes keyword values (that is, string tokens from a specific list
+	// of keyword values), then Keywords is the array of all the allowed values.
+	Keywords []string
+
+	// If the option isn't a boolean option, then it's value is stored here. The value
+	// is either expressed after LongName (or ShortName) followed by an "=" and the value,
+	// or it is the next token on the command line after the option name. The type of
+	// the option will control what is stored in the Value.
+	Value interface{}
+
+	// Action defines a function to call if this option or subcommand is specified on
+	// the command line. For an option, this can call a function to set the value in
+	// internal storage, etc. For a subcommand, this function executions the actual
+	// subcommand.
+	Action func(c *Context) error
+
+	// OptionType describes what kind of option this is, or if it is a subcommand
+	// instead. Boolean options are true (the option was specified) or false (the
+	// option was not present). All other options have a data value that follows
+	// the option name. The parser uses this option type information to validate
+	// that the data provided on the command line is in the correct format.
+	OptionType int
+
+	// This indicates how many parameters are expected on the command line. If
+	// the value is zero, then there are no parameters other than options and
+	// subcommands. Specify -1 to allow a variable number of parameters.
+	ParametersExpected int
+
+	// Found indicates if the value was found on the command line. If true, then
+	// a value was either provided on the command line or optionally located in
+	// an environment variable. If false, this option has not been specified by
+	// the command line invocation.
+	Found bool
+
+	// Required indicates if this option is required. That is, if true, then
+	// the parser will report an error if this option's Found value is false
+	// after parsing all the command line values.
+	Required bool
+
+	// Private indicates that this option or subcommand is not displayed in the
+	// help output.
+	Private bool
+
+	// For options that are subcommands, this flag indicates that this is to be
+	// considered the default subcommand verb. That is, if during parsing, no
+	// subcommand was specified but one option is marked as the DefaultVerb,
+	// then that verb is assumed to have been present on the command line, and
+	// control transfers to the Action routine if specified..
+	DefaultVerb bool
 }
 
-// Context is a simple array of Option types, and is used to express
-// a grammar at a given level (root, subcommand, etc.).
+// Context is the information used by the Parser. It includes metadata
+// about the program command or subcommand, the grammar definition, and
+// information about what was found on the command line (parameters).
+//
+// There may be multiple contexts, so it includes a pointer to the "parent"
+// context as well. For simple applications without a subcommand, the
+// pointer will be nil. But for a command that has multiple subcommands
+// such as "foobar config show", there is a global context that is first
+// created when the App is run, but when the subcommand "config" is found,
+// a new subcontext is created for the information found after that subcommand.
+// This can be arbitrarily complex depending on how deeply nested the command
+// line grammar is.
 type Context struct {
-	AppName              string
-	MainProgram          string
-	Description          string
-	Copyright            string
-	Version              string
-	Command              string
+	// A copy of the application name from the enclosing Application
+	// context. It is here to help generate the default --help output
+	// when a partial command line is followed by the --help option.
+	AppName string
+
+	// This is the name of the main program that is run by this application.
+	// By default this is the same as the AppName, but if specified as a
+	// different string, this is used in the --help output instead.
+	MainProgram string
+
+	// This is the description of the current context. For a simple
+	// grammar with no subcommands, this is the same as the description
+	// from the App object. For grammars with subcommands, this description
+	// is unique to each subcommand, and is used when formatting --help
+	// output following the command text.
+	Description string
+
+	// This is a copy of the copyright string from the App object, and is
+	// used to formulate the --help output.
+	Copyright string
+
+	// This is a copy of the version string from the App object, and is
+	// used to formulate the --help output.
+	Version string
+
+	// If specified, this is a text string that expresses how the command
+	// syntax should be displayed for the invocation of the verb.
+	Command string
+
+	// If specified, this is added to the Command text when forming the
+	// help output, to describe the expected parameters.
 	ParameterDescription string
-	Grammar              []Option
-	Args                 []string
-	Parameters           []string
-	Parent               *Context
-	Action               func(c *Context) error
-	Count                int
-	Expected             int
-}
 
-func DumpGrammar(ctx *Context) {
-	fmt.Println("// Representation of the CLI grammar. This is used for diagnostic")
-	fmt.Println("// purposes only, and is not compiled into the program.")
-	fmt.Printf("\nvar context = &Context ")
+	// This is an array of command line option descriptions. Each one
+	// represents information used by the parser to validate and store
+	// option values, or direct parsing to a sub-grammar when a subcommand
+	// is parsed.
+	Grammar []Option
 
-	dumpGrammarLevel(ctx, 0)
-}
+	// This is a copy of the command line argument strings originally
+	// read from the operation system when the main program was run.
+	Args []string
 
-func dumpGrammarLevel(ctx *Context, level int) {
-	prefix := strings.Repeat("  ", level)
+	// This is a list of the parameter values found (if any) during
+	// parsing.
+	Parameters []string
 
-	fmt.Printf("%s  {\n", prefix)
+	// This is a pointer to the parent context (the command grammar
+	// that was being parsed up to the point where this subcommand
+	// was encountered). This will be nill for the top-level context.
+	Parent *Context
 
-	p(level+1, "AppName", ctx.AppName)
-	p(level+1, "MainProgram", ctx.MainProgram)
-	p(level+1, "Description", ctx.Description)
-	p(level+1, "Copyright", ctx.Copyright)
-	p(level+1, "Version", ctx.Version)
-	p(level+1, "Command", ctx.Command)
-	p(level+1, "Grammar", ctx.Grammar)
-	p(level+1, "Parameters", ctx.Parameters)
+	// This is the function that is to be run by default for this
+	// context. That is, when all the command line grammar has been
+	// parsed, unless control transferred to a subcommand context, then
+	// this function represents the actual "work" of the application.
+	Action func(c *Context) error
 
-	if level > 0 {
-		p(level+1, "Action", ctx.Action)
-		p(level+1, "Args", ctx.Args)
-	}
-
-	p(level+1, "ParameterDescription", ctx.ParameterDescription)
-	p(level+1, "Count", ctx.Count)
-	p(level+1, "Expected", ctx.Expected)
-
-	fmt.Printf("%s  }\n", prefix)
-}
-
-func dumpOption(level int, option Option, comma bool) {
-	prefix := strings.Repeat("  ", level)
-	fmt.Printf("%s  {\n", prefix)
-
-	p(level+1, "LongName", option.LongName)
-	p(level+1, "ShortName", option.ShortName)
-	p(level+1, "Aliases", option.Aliases)
-	p(level+1, "Description", option.Description)
-	p(level+1, "ParameterDescription", option.ParameterDescription)
-	p(level+1, "ParametersExpected", option.ParametersExpected)
-	p(level+1, "OptionType", optionType(option.OptionType))
-	p(level+1, "Keywords", option.Keywords)
-	p(level+1, "Action", option.Action)
-	p(level+1, "Value", option.Value)
-	p(level+1, "Required", option.Required)
-	p(level+1, "Private", option.Private)
-
-	commaString := ""
-	if comma {
-		commaString = ","
-	}
-
-	fmt.Printf("%s  }%s\n", prefix, commaString)
-}
-
-func p(level int, label string, value interface{}) {
-	prefix := strings.Repeat("  ", level)
-
-	switch v := value.(type) {
-	case nil:
-
-	case []string:
-		if len(v) > 0 {
-			a := strings.Builder{}
-
-			a.WriteString("[]string{ ")
-
-			for n, i := range v {
-				if n > 0 {
-					a.WriteString(", ")
-				}
-
-				a.WriteRune('"')
-				a.WriteString(i)
-				a.WriteRune('"')
-			}
-
-			a.WriteString(" }")
-			fmt.Printf("%s  %s %s,\n", prefix, pad(label), a.String())
-		}
-
-	case string:
-		if v != "" {
-			if strings.HasPrefix(v, "!") {
-				fmt.Printf("%s  %s %s,\n", prefix, pad(label), v[1:])
-			} else {
-				fmt.Printf("%s  %s \"%s\",\n", prefix, pad(label), v)
-			}
-		}
-
-	case int:
-		if v != 0 {
-			fmt.Printf("%s  %s %d,\n", prefix, pad(label), v)
-		}
-
-	case bool:
-		if v {
-			fmt.Printf("%s  %s %v,\n", prefix, pad(label), v)
-		}
-
-	case *Context:
-		if v != nil {
-			fmt.Printf("%s  %s,\n", prefix, pad(label))
-			dumpGrammarLevel(v, level+1)
-		}
-
-	case []Option:
-		if len(v) > 0 {
-			fmt.Printf("%s  %s []Option{\n", prefix, pad(label))
-
-			for n, option := range v {
-				dumpOption(level+1, option, n < len(v))
-			}
-
-			fmt.Printf("%s  },\n", prefix)
-		}
-
-	case func(*Context) error:
-		if v != nil {
-			vv := reflect.ValueOf(v)
-
-			// IF it's an internal function, show it's name. If it is a standard builtin from the
-			// function library, show the short form of the name.
-			if vv.Kind() == reflect.Func {
-				name := runtime.FuncForPC(reflect.ValueOf(v).Pointer()).Name()
-				name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
-				name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
-				fmt.Printf("%s  %s %s(),\n", prefix, pad(label), name)
-			}
-		}
-
-	default:
-		fmt.Printf("%s  %s %v,\n", prefix, pad(label), v)
-	}
-}
-
-func optionType(t int) string {
-	typeNames := []string{
-		"None 0",
-		"StringType",
-		"IntType",
-		"BooleanType",
-		"BooleanValueType",
-		"None 5",
-		"SubCommand",
-		"StringListType",
-		"ParameterType",
-		"UUIDType",
-		"KeywordType",
-	}
-
-	var name string
-
-	if t < 0 || t > len(typeNames) {
-		name = fmt.Sprintf("!Invalid(%d)", t)
-	} else {
-		name = "!" + typeNames[t]
-	}
-
-	return name
-}
-
-func pad(s string) string {
-	s = s + ":"
-	for len(s) < len("ExpectedParameterCount:") {
-		s = s + " "
-	}
-
-	return s
+	// This indicates how many were expected for this level of the grammar,
+	// by evaluating the grammar options to see how many parameters are
+	// explicitly defined.
+	Expected int
 }

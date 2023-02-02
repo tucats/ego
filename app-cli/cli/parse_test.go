@@ -379,7 +379,6 @@ func TestContext_ParseGrammar(t *testing.T) {
 				Args:                 tt.fields.Args,
 				Parent:               tt.fields.Parent,
 				Parameters:           tt.fields.Parameters,
-				Count:                tt.fields.Count,
 				Expected:             tt.fields.Expected,
 				ParameterDescription: tt.fields.ParameterDescription,
 			}
