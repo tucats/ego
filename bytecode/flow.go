@@ -95,14 +95,20 @@ func branchFalseByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	// Get destination
-	address := data.Int(i)
-	if address < 0 || address > c.bc.nextAddress {
-		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
+	if c.typeStrictness == 0 {
+		if _, ok := v.(bool); !ok {
+			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
+		}
 	}
 
-	if !data.Bool(v) {
-		c.programCounter = address
+	// Get destination
+
+	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
+		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
+	} else {
+		if !data.Bool(v) {
+			c.programCounter = address
+		}
 	}
 
 	return nil
@@ -131,8 +137,13 @@ func branchTrueByteCode(c *Context, i interface{}) error {
 		return err
 	}
 
-	// Get destination
+	if c.typeStrictness == 0 {
+		if _, ok := v.(bool); !ok {
+			return c.error(errors.ErrConditionalBool).Context(data.TypeOf(v).String())
+		}
+	}
 
+	// Get destination
 	if address := data.Int(i); address < 0 || address > c.bc.nextAddress {
 		return c.error(errors.ErrInvalidBytecodeAddress).Context(address)
 	} else {

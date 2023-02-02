@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"github.com/tucats/ego/bytecode"
-	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokenizer"
 )
@@ -38,9 +37,16 @@ func (c *Compiler) compileIf() error {
 		return err
 	}
 
-	c.b.Emit(bytecode.Push, data.BoolType)
+	/*
+		if !c.flags.strictTypes {
+			c.b.Append(bc)
+		} else {
+			c.b.Emit(bytecode.Push, data.BoolType)
+			c.b.Append(bc)
+			c.b.Emit(bytecode.Call, 1)
+		}*/
+
 	c.b.Append(bc)
-	c.b.Emit(bytecode.Call, 1)
 
 	b1 := c.b.Mark()
 

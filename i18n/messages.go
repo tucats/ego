@@ -263,6 +263,9 @@ var messages = map[string]map[string]string{
 	"error.compiler": {
 		"en": "internal compiler error",
 	},
+	"error.conditional.bool": {
+		"en": "invalid conditional expression type",
+	},
 	"error.constant": {
 		"en": "invalid constant expression",
 	},

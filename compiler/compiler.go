@@ -43,6 +43,7 @@ type flagSet struct {
 	disallowStructInits   bool
 	extensionsEnabled     bool
 	normalizedIdentifiers bool
+	strictTypes           bool
 	testMode              bool
 	mainSeen              bool
 }
@@ -77,6 +78,11 @@ func New(name string) *Compiler {
 		extensions = data.Bool(v)
 	}
 
+	typeChecking := settings.GetBool(defs.StaticTypesSetting)
+	if v, ok := symbols.RootSymbolTable.Get(defs.TypeCheckingVariable); ok {
+		typeChecking = (data.Int(v) == defs.StrictTypeEnforcement)
+	}
+
 	cInstance := Compiler{
 		b:            bytecode.New(name),
 		t:            nil,
@@ -90,6 +96,7 @@ func New(name string) *Compiler {
 		flags: flagSet{
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
+			strictTypes:           typeChecking,
 		},
 		rootTable: &symbols.RootSymbolTable,
 	}
