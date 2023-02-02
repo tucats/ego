@@ -82,6 +82,7 @@
 {% raw %}
 
 ```text
+     _
     | |       __ _   _ __     __ _   _   _    __ _    __ _    ___
     | |      / _` | | '_ \   / _` | | | | |  / _` |  / _` |  / _ \
     | |___  | (_| | | | | | | (_| | | |_| | | (_| | | (_| | |  __/
@@ -91,7 +92,7 @@
 
 # Introduction to _Ego_ Language <a name="intro"></a>
 
-Version 1.1
+Version 1.3
 
 This document describes the language _Ego_, which is a scripting
 language and tool set patterned off of the _Go_ programming language.
