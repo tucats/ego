@@ -148,8 +148,7 @@ listed here.
 | Type       | Example  | Range                 | Description  |
 |:-----------|:---------|:----------------------|:-------------|
 | `nil`      | nil      | nil                   | The `nil` value indicates no value or type specified |
-| `bool`     | true     | true, false           | A Boolean value that is either
-true or false |
+| `bool`     | true     | true, false           | A Boolean value that is either true or false |
 | `byte`     | 5        | 0-255                 | An 8-bit unsigned integer |
 | `int32`    | 1024     | -32768 to 32767       | A signed 32-bit integer |
 | `int`      | 1024     | -32768 to 32767       | A signed 32-bit integer |
