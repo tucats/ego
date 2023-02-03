@@ -40,7 +40,7 @@ func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	fileName := sandboxName(data.String(args[0]))
 
 	if a, ok := args[1].(*data.Array); ok {
-		if a.ValueType().Kind() == data.ByteKind {
+		if a.Type().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
 				err = errors.NewError(err).In("WriteFile")

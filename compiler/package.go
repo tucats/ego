@@ -109,8 +109,8 @@ func (c *Compiler) compileImport() error {
 		packageName = strings.ToLower(packageName)
 		packageDef, _ := bytecode.GetPackage(packageName)
 
-		wasBuiltin := packageDef.Builtins()
-		wasImported := packageDef.HasImportedSource()
+		wasBuiltin := packageDef.Builtins
+		wasImported := packageDef.Source
 
 		ui.Log(ui.CompilerLogger, "*** Importing package \"%s\"", fileName)
 
@@ -119,15 +119,13 @@ func (c *Compiler) compileImport() error {
 			continue
 		}
 
-		if !packageDef.Builtins() {
-			packageDef.SetBuiltins(c.AddBuiltins(packageName))
-
+		if !packageDef.Builtins {
 			ui.Log(ui.CompilerLogger, "+++ Added builtins for package "+fileName.Spelling())
 		} else {
 			ui.Log(ui.CompilerLogger, "--- Builtins already initialized for package "+fileName.Spelling())
 		}
 
-		if !packageDef.Builtins() {
+		if !packageDef.Builtins {
 			// The nil in the packages list just prevents this from being read again
 			// if it was already processed once.
 			ui.Log(ui.CompilerLogger, "+++ No builtins for package "+fileName.Spelling())
@@ -138,7 +136,7 @@ func (c *Compiler) compileImport() error {
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
-		if !packageDef.HasImportedSource() {
+		if !packageDef.Source {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
@@ -197,7 +195,7 @@ func (c *Compiler) compileImport() error {
 		}
 
 		// Rewrite the package if we've added stuff to it.
-		if wasImported != packageDef.HasImportedSource() || wasBuiltin != packageDef.Builtins() {
+		if wasImported != packageDef.Source || wasBuiltin != packageDef.Builtins {
 			if ui.IsActive(ui.CompilerLogger) {
 				ui.Log(ui.CompilerLogger, "+++ updating package definition: %s", fileName)
 

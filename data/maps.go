@@ -17,11 +17,11 @@ import (
 // types for key and value, as well as a counting semaphore to determine if the map
 // should be considered immutable (such as during a for...range loop).
 type Map struct {
-	data      map[interface{}]interface{}
-	keyType   *Type
-	valueType *Type
-	immutable int
-	mutex     sync.RWMutex
+	data        map[interface{}]interface{}
+	keyType     *Type
+	elementType *Type
+	immutable   int
+	mutex       sync.RWMutex
 }
 
 // Generate a new map value. The caller must supply the data type codes for the expected
@@ -30,10 +30,10 @@ type Map struct {
 // result is an initialized map that you can begin to store or read values from.
 func NewMap(keyType, valueType *Type) *Map {
 	return &Map{
-		data:      map[interface{}]interface{}{},
-		keyType:   keyType,
-		valueType: valueType,
-		immutable: 0,
+		data:        map[interface{}]interface{}{},
+		keyType:     keyType,
+		elementType: valueType,
+		immutable:   0,
 	}
 }
 
@@ -43,10 +43,10 @@ func (m *Map) KeyType() *Type {
 	return m.keyType
 }
 
-// ValueType returns the integer description of the declared value type for
+// ElementType returns the integer description of the declared value type for
 // this map.
-func (m *Map) ValueType() *Type {
-	return m.valueType
+func (m *Map) ElementType() *Type {
+	return m.elementType
 }
 
 // SetReadonly marks the map as immutable. This is passed in as a boolean
@@ -98,7 +98,7 @@ func (m *Map) Set(key interface{}, value interface{}) (bool, error) {
 		return false, errors.ErrWrongMapKeyType.Context(key)
 	}
 
-	if !IsBaseType(value, m.valueType) {
+	if !IsBaseType(value, m.elementType) {
 		return false, errors.ErrWrongMapValueType.Context(value)
 	}
 
@@ -226,7 +226,7 @@ func (m *Map) Delete(key interface{}) (bool, error) {
 // TypeString produces a human-readable string describing the map type in Ego
 // native terms.
 func (m *Map) TypeString() string {
-	return fmt.Sprintf("map[%s]%s", m.keyType.String(), m.valueType.String())
+	return fmt.Sprintf("map[%s]%s", m.keyType.String(), m.elementType.String())
 }
 
 // String displays a simplified formatted string value of a map, using the Ego
@@ -265,7 +265,7 @@ func (m *Map) Type() *Type {
 		name:      "map",
 		kind:      MapKind,
 		keyType:   m.keyType,
-		valueType: m.valueType,
+		valueType: m.elementType,
 	}
 }
 

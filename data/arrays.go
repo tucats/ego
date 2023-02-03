@@ -128,8 +128,8 @@ func (a *Array) BaseArray() []interface{} {
 	return r
 }
 
-// ValueType returns the base type of the array.
-func (a *Array) ValueType() *Type {
+// Type returns the base type of the array.
+func (a *Array) Type() *Type {
 	return a.valueType
 }
 

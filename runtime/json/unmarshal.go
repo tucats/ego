@@ -16,7 +16,7 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	// Simplest case, []byte input. Otherwise, treat the argument
 	// as a string.
-	if a, ok := args[0].(*data.Array); ok && a.ValueType().Kind() == data.ByteKind {
+	if a, ok := args[0].(*data.Array); ok && a.Type().Kind() == data.ByteKind {
 		err = json.Unmarshal(a.GetBytes(), &v)
 	} else {
 		jsonBuffer := data.String(args[0])
@@ -87,8 +87,8 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				k2 := data.Coerce(k, data.InstanceOfType(target.KeyType()))
 				v2 := v
 
-				if !target.ValueType().IsInterface() {
-					v2 = data.Coerce(v, data.InstanceOfType(target.ValueType()))
+				if !target.ElementType().IsInterface() {
+					v2 = data.Coerce(v, data.InstanceOfType(target.ElementType()))
 				}
 
 				_, err = target.Set(k2, v2)
@@ -112,9 +112,9 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			target.SetSize(len(m))
 
 			for k, v := range m {
-				if target.ValueType().Kind() == data.StructKind {
+				if target.Type().Kind() == data.StructKind {
 					if mm, ok := v.(map[string]interface{}); ok {
-						v = data.NewStructOfTypeFromMap(target.ValueType(), mm)
+						v = data.NewStructOfTypeFromMap(target.Type(), mm)
 					}
 				}
 

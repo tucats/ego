@@ -91,9 +91,9 @@ func Initialize(s *symbols.SymbolTable) {
 		"Time":      t,
 		"Duration":  durationType,
 		"Reference": basicLayout,
-	}).SetBuiltins(true)
+	})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg, _ := bytecode.GetPackage(newpkg.Name)
 	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name(), newpkg)
+	s.Root().SetAlways(newpkg.Name, newpkg)
 }

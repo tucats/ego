@@ -44,7 +44,7 @@ func printByteCode(c *Context, i interface{}) error {
 		switch actualValue := value.(type) {
 		case *data.Array:
 			// Is this an array of a single type that is a structure?
-			valueType := actualValue.ValueType()
+			valueType := actualValue.Type()
 			isStruct := valueType.Kind() == data.StructKind
 			isStructType := valueType.Kind() == data.TypeKind && valueType.BaseType().Kind() == data.StructKind
 

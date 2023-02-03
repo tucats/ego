@@ -26,11 +26,11 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		// If the source is a []byte type, we can just fetch the bytes and do a direct convesion.
 		// If the source is a []int type, we can convert each integer to a rune and add it to a
 		// string builder. Otherwise, just format it as a string value.
-		if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsType(data.ByteType) {
+		if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsType(data.ByteType) {
 			b := actual.GetBytes()
 
 			return string(b), nil
-		} else if actual, ok := source.(*data.Array); ok && actual != nil && actual.ValueType().IsIntegerType() {
+		} else if actual, ok := source.(*data.Array); ok && actual != nil && actual.Type().IsIntegerType() {
 			r := strings.Builder{}
 			for i := 0; i < actual.Len(); i++ {
 				ch, _ := actual.Get(i)
@@ -46,11 +46,11 @@ func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	switch actual := source.(type) {
 	// Conversion of one array type to another
 	case *data.Array:
-		if t.IsType(actual.ValueType()) {
+		if t.IsType(actual.Type()) {
 			return actual, nil
 		}
 
-		if t.IsString() && (actual.ValueType().IsIntegerType() || actual.ValueType().IsInterface()) {
+		if t.IsString() && (actual.Type().IsIntegerType() || actual.Type().IsInterface()) {
 			r := strings.Builder{}
 
 			for i := 0; i < actual.Len(); i++ {

@@ -54,7 +54,7 @@ func makePackageList(s *symbols.SymbolTable) []string {
 		// to our list.
 		v, _ := s.Get(k)
 		if p, ok := v.(*data.Package); ok {
-			result = append(result, p.Name())
+			result = append(result, p.Name)
 		}
 	}
 

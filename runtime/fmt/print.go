@@ -84,7 +84,7 @@ func printLine(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // just returns the Unquoted format value.
 func formatUsingString(s *symbols.SymbolTable, v interface{}) string {
 	if m, ok := v.(*data.Struct); ok {
-		if f := m.GetType().Function("String"); f != nil {
+		if f := m.Type().Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				local.SetAlways(defs.ThisVariable, v)

@@ -62,7 +62,7 @@ func recursiveCopy(source interface{}, depth int) interface{} {
 		return v.Copy()
 
 	case *data.Array:
-		r := data.NewArray(v.ValueType(), v.Len())
+		r := data.NewArray(v.Type(), v.Len())
 
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
@@ -73,7 +73,7 @@ func recursiveCopy(source interface{}, depth int) interface{} {
 		return r
 
 	case *data.Map:
-		r := data.NewMap(v.KeyType(), v.ValueType())
+		r := data.NewMap(v.KeyType(), v.ElementType())
 
 		for _, k := range v.Keys() {
 			d, _, _ := v.Get(k)

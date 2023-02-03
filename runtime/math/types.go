@@ -122,7 +122,7 @@ func Initialize(s *symbols.SymbolTable) {
 		},
 	})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg, _ := bytecode.GetPackage(newpkg.Name)
 	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name(), newpkg)
+	s.Root().SetAlways(newpkg.Name, newpkg)
 }

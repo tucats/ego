@@ -14,11 +14,28 @@ import (
 // or receiver function bodies. It also includes metadata regarding whether it
 // has import source, or includes Go-native builtins.
 type Package struct {
-	name     string
-	ID       string
-	imported bool
-	builtins bool
-	items    map[string]interface{}
+	// Name is the name of the package. This must be a valid Ego identifier string.
+	Name string
+
+	// ID is the UUID of this package. Each package is given a unique ID on creation,
+	// to assist in debugging package operations.
+	ID string
+
+	// Source indicates that this package includes constants, types, or functions
+	// that were read from source files as part of an "import" operations.
+	Source bool
+
+	// Builtins is true if the package includes one ore more native (Go) functions.
+	Builtins bool
+
+	// Types is true if the package includes one ore more type definitions.
+	Types bool
+
+	// Constants is true if the package includes one or more const declarations.
+	Constants bool
+
+	// Items contains map of named constants, types, and functions for this package.
+	items map[string]interface{}
 }
 
 // This mutex protects ALL packages. This serializes package operations across all threads. This
@@ -26,10 +43,12 @@ type Package struct {
 // synchronous.
 var packageLock sync.RWMutex
 
-// NewPackage creates a new, empty package definition.
+// NewPackage creates a new, empty package definition. The supplied name must be a valid Ego
+// identifier name. The package is assigned a unique UUID at the time of creation that never
+// changes for the life of this package object.
 func NewPackage(name string) *Package {
 	pkg := Package{
-		name:  name,
+		Name:  name,
 		ID:    uuid.New().String(),
 		items: map[string]interface{}{},
 	}
@@ -44,31 +63,33 @@ func NewPackageFromMap(name string, items map[string]interface{}) *Package {
 		items = map[string]interface{}{}
 	}
 
-	pkg := Package{
-		name:  name,
+	pkg := &Package{
+		Name:  name,
 		ID:    uuid.New().String(),
 		items: items,
 	}
 
-	return &pkg
+	for _, v := range items {
+		updatePackageClassIndicators(pkg, v)
+	}
+
+	return pkg
 }
 
-func (p *Package) SetBuiltins(f bool) *Package {
-	p.builtins = f
-
-	return p
-}
-
-func (p *Package) Builtins() bool {
-	return p.builtins
-}
-
+// SetBuiltins sets the imported flag for the package. This flag indicates
+// that the package includes type, constants, or functions that came from
+// a source file that was read as part of an "import" statement.
+//
+// The function returns the same *Package it received, so this can be
+// chained with other "set" functions.
 func (p *Package) SetImported(f bool) *Package {
-	p.imported = f
+	p.Source = f
 
 	return p
 }
 
+// HasTypes returns true if the package contains one ore more Type
+// declarations.
 func (p *Package) HasTypes() bool {
 	for _, v := range p.items {
 		if t, ok := v.(*Type); ok {
@@ -79,20 +100,6 @@ func (p *Package) HasTypes() bool {
 	}
 
 	return false
-}
-
-func (p *Package) Constants() bool {
-	for _, v := range p.items {
-		if _, ok := v.(*Type); ok {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (p *Package) HasImportedSource() bool {
-	return p.imported
 }
 
 // IsEmpty reports if a package is empty. This could be due to a null pointer, uninitialized
@@ -109,13 +116,13 @@ func (p *Package) IsEmpty() bool {
 	return len(p.items) == 0
 }
 
-// String formats the package as a string value, to support "%v" operations.
+// String formats the package data as a string value, to support "%v" operations.
 func (p *Package) String() string {
 	return Format(p)
 }
 
-// Delete removes a package from the list. It is not an error if the package does not
-// have a hash map, or the value is not in the hash map.
+// Delete removes an item from the package. It is not an error if the package did
+// not contain the named item. This operation is thread-safe.
 func (p *Package) Delete(name string) {
 	packageLock.Lock()
 	defer packageLock.Unlock()
@@ -165,8 +172,10 @@ func (p *Package) Set(key string, value interface{}) {
 			action = "update"
 		}
 
-		ui.Log(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.name, action, key, v))
+		ui.Log(ui.SymbolLogger, fmt.Sprintf(" for package %s, %s %s to %#v", p.Name, action, key, v))
 	}
+
+	updatePackageClassIndicators(p, value)
 
 	p.items[key] = value
 }
@@ -190,12 +199,12 @@ func (p *Package) Get(key string) (interface{}, bool) {
 // Merge adds any entries from a package to the current package that do not already
 // exist.
 func (p *Package) Merge(source *Package) *Package {
-	if source.builtins {
-		p.builtins = true
+	if source.Builtins {
+		p.Builtins = true
 	}
 
-	if source.imported {
-		p.imported = true
+	if source.Source {
+		p.Source = true
 	}
 
 	keys := source.Keys()
@@ -210,7 +219,15 @@ func (p *Package) Merge(source *Package) *Package {
 	return p
 }
 
-// Name returns the name of a package.
-func (p *Package) Name() string {
-	return p.name
+// updatePackageClassIndicators updates the various boolean flags in the package
+// based on the type of the value. These flags track whether there are Types,
+// Constants, Builtins, or Imports in this package.
+func updatePackageClassIndicators(pkg *Package, v interface{}) {
+	if _, ok := v.(*Type); ok {
+		pkg.Types = true
+	} else if _, ok := v.(Immutable); ok {
+		pkg.Constants = true
+	} else if _, ok := v.(Function); ok {
+		pkg.Builtins = true
+	}
 }

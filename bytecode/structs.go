@@ -225,12 +225,12 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 
 		// Must be an exported (capitalized) name.
 		if !util.HasCapitalizedName(name) {
-			return c.error(errors.ErrSymbolNotExported, a.Name()+"."+name)
+			return c.error(errors.ErrSymbolNotExported, a.Name+"."+name)
 		}
 
 		// Cannot start with the read-only name
 		if name[0:1] == defs.DiscardedVariable {
-			return c.error(errors.ErrReadOnlyValue, a.Name()+"."+name)
+			return c.error(errors.ErrReadOnlyValue, a.Name+"."+name)
 		}
 
 		// If it's a declared item in the package, is it one of the ones
@@ -242,7 +242,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 				func(*symbols.SymbolTable, []interface{}) (interface{}, error),
 				data.Immutable:
 				// Tell the caller nope...
-				return c.error(errors.ErrReadOnlyValue, a.Name()+"."+name)
+				return c.error(errors.ErrReadOnlyValue, a.Name+"."+name)
 			}
 		}
 
@@ -254,7 +254,7 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 			existingValue, found := syms.Get(name)
 			if found {
 				if _, ok := existingValue.(data.Immutable); ok {
-					return c.error(errors.ErrInvalidConstant, a.Name()+"."+name)
+					return c.error(errors.ErrInvalidConstant, a.Name+"."+name)
 				}
 			}
 

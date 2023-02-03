@@ -213,7 +213,7 @@ func DeepCopy(v interface{}) interface{} {
 		return result
 
 	case *Map:
-		result := NewMap(actual.keyType, actual.valueType)
+		result := NewMap(actual.keyType, actual.elementType)
 		keys := actual.Keys()
 
 		for _, k := range keys {

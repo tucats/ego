@@ -82,7 +82,7 @@ func negateByteCode(c *Context, i interface{}) error {
 
 	case *data.Array:
 		// Create an array in inverse order.
-		r := data.NewArray(value.ValueType(), value.Len())
+		r := data.NewArray(value.Type(), value.Len())
 
 		for n := 0; n < value.Len(); n = n + 1 {
 			d, _ := value.Get(n)

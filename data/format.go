@@ -200,13 +200,13 @@ func Format(element interface{}) string {
 
 		b.WriteString("Pkg<")
 
-		b.WriteString(strconv.Quote(v.name))
+		b.WriteString(strconv.Quote(v.Name))
 
-		if v.Builtins() {
+		if v.Builtins {
 			b.WriteString(", builtins")
 		}
 
-		if v.HasImportedSource() {
+		if v.Source {
 			b.WriteString(", source")
 		}
 

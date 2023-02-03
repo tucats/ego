@@ -86,14 +86,14 @@ func describe(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		m := map[string]interface{}{}
 
 		m[data.TypeMDName] = s.TypeString()
-		if s.GetType().IsTypeDefinition() {
-			m[data.BasetypeMDName] = s.GetType().BaseType().String()
+		if s.Type().IsTypeDefinition() {
+			m[data.BasetypeMDName] = s.Type().BaseType().String()
 		} else {
-			m[data.BasetypeMDName] = s.GetType().String()
+			m[data.BasetypeMDName] = s.Type().String()
 		}
 
 		// If there are methods associated with this type, add them to the output structure.
-		methods := s.GetType().FunctionNames()
+		methods := s.Type().FunctionNames()
 		if len(methods) > 0 {
 			names := make([]interface{}, 0)
 
@@ -183,8 +183,8 @@ func describe(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		result[data.TypeMDName] = "*package"
 		result[data.NativeMDName] = false
 		result[data.IsTypeMDName] = false
-		result[data.ImportsMDName] = m.HasImportedSource()
-		result[data.BuiltinsMDName] = m.Builtins()
+		result[data.ImportsMDName] = m.Source
+		result[data.BuiltinsMDName] = m.Builtins
 
 		t := data.TypeOf(m)
 		if t.IsTypeDefinition() {
@@ -201,7 +201,7 @@ func describe(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		// be an array of interface{} unless this is []byte in which
 		// case the native type is []byte as well.
 		btName := "[]interface{}"
-		if m.ValueType().Kind() == data.ByteType.Kind() {
+		if m.Type().Kind() == data.ByteType.Kind() {
 			btName = "[]byte"
 		}
 

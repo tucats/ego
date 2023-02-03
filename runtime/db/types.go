@@ -41,7 +41,7 @@ const (
 func Initialize(s *symbols.SymbolTable) {
 	rowT := initRowsTypeDef()
 
-	t, _ := compiler.CompileTypeSpec(dbTypeSpec ,nil)
+	t, _ := compiler.CompileTypeSpec(dbTypeSpec, nil)
 
 	t.DefineFunction("Begin", &data.Declaration{
 		Name:    "Begin",
@@ -144,15 +144,15 @@ func Initialize(s *symbols.SymbolTable) {
 		"Rows":             rowT,
 		data.TypeMDKey:     data.PackageType("db"),
 		data.ReadonlyMDKey: true,
-	}).SetBuiltins(true)
+	})
 
-	pkg, _ := bytecode.GetPackage(newpkg.Name())
+	pkg, _ := bytecode.GetPackage(newpkg.Name)
 	pkg.Merge(newpkg)
-	s.Root().SetAlways(newpkg.Name(), newpkg)
+	s.Root().SetAlways(newpkg.Name, newpkg)
 }
 
 func initRowsTypeDef() *data.Type {
-	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec ,nil)
+	t, _ := compiler.CompileTypeSpec(dbRowsTypeSpec, nil)
 
 	t.DefineFunction("Next", &data.Declaration{
 		Name:    "Next",

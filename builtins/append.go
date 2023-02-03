@@ -24,7 +24,7 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			result = append(result, array.BaseArray()...)
 
 			if kind.IsInterface() {
-				kind = array.ValueType()
+				kind = array.Type()
 			}
 		} else if array, ok := j.([]interface{}); ok && i == 0 {
 			result = append(result, array...)

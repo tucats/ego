@@ -207,8 +207,8 @@ func (s *Struct) FromBuiltinPackage() *Struct {
 	return s
 }
 
-// GetType returns the Type description of the structure.
-func (s *Struct) GetType() *Type {
+// Type returns the Type description of the structure.
+func (s *Struct) Type() *Type {
 	return s.typeDef
 }
 
