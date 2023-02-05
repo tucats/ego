@@ -1,7 +1,3 @@
-// Package builtins contains the builtin functions native to the
-// Ego language. These are distinct from functions found in
-// packages. Examples are len() and append().
-
 package builtins
 
 import (

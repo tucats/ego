@@ -1,8 +1,3 @@
-// Package bytecode contains a byte code interpreter. A ByteCode object can be
-// created, and pseudo instructions (byte codes) can be added to the object.
-// The package also allows for creating a Context object that encapsulates the
-// runtime status of the execution of a ByteCode object. Finally, you can use
-// the Run() method on a context to execute the bytecode instructions.
 package bytecode
 
 import (
