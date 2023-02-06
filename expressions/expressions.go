@@ -15,12 +15,12 @@
 //
 //	 The value is returned as an opaque interface{} type. You can use the
 //	 following helper functions to retrieve the value from the interface,
-//	 and coerce the type if possible.
+//	 and coerce the implicit type if possible.
 //
-//	   i := GetInt(v)
-//	   f := GetFloat(v)
-//	   s := GetString(v)
-//	   b := GetBool(v)
+//	   i := data.Int64(v)
+//	   f := data.Float64(v)
+//	   s := data.String(v)
+//	   b := data.Bool(v)
 package expressions
 
 import (
