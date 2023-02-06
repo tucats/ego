@@ -56,7 +56,7 @@ func NewArrayFromArray(valueType *Type, source []interface{}) *Array {
 		}
 
 		for n, v := range source {
-			m.bytes[n] = byte(Int(v))
+			m.bytes[n] = Byte(v)
 		}
 
 		return m
@@ -331,7 +331,7 @@ func (a *Array) SetAlways(i interface{}, value interface{}) *Array {
 	}
 
 	if a.valueType.Kind() == ByteKind {
-		a.bytes[index] = byte(Int(value))
+		a.bytes[index] = Byte(value)
 	} else {
 		a.data[index] = value
 	}

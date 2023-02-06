@@ -76,7 +76,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := http.StatusOK
 	sessionID := atomic.AddInt32(&server.NextSessionID, 1)
-	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+	symbolTable := symbols.NewRootSymbolTable(fmt.Sprintf("%s %s", r.Method, data.SanitizeName(r.URL.Path)))
 	requestor := r.RemoteAddr
 
 	server.LogRequest(r, sessionID)

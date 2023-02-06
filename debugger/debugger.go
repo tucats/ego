@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/compiler"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/io"
@@ -71,7 +72,7 @@ func Debugger(c *bytecode.Context) error {
 				"name": strings.TrimPrefix(text, "@entrypoint "),
 			})
 		} else {
-			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, c.GetModuleName(), line, text)
+			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, data.SanitizeName(c.GetModuleName()), line, text)
 		}
 
 		prompt = true
