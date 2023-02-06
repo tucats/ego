@@ -105,6 +105,27 @@ var loggers []logger = []logger{
 // creating a profile item called "ego.log.format".
 var LogTimeStampFormat string
 
+// DefineLogger creates a new logger that can be used by the program.
+// The logger name must be unique. The return value is the logger id
+// passed to subsequent calls to ui.Log(loggerId, msg...) calls to
+// generate log output. This must be done in the main program before
+// the parser starts running, since it will use this list of logger names
+// to validate logger setting options.
+func DefineLogger(name string, active bool) int {
+	name = strings.ToUpper(name)
+
+	for _, logger := range loggers {
+		if logger.name == name {
+			panic("Duplicate logger name: " + name)
+		}
+	}
+
+	loggers = append(loggers, logger{name: name, active: active})
+
+	return len(loggers) - 1
+}
+
+// LoggerNames returns a string array with the names of all defined loggers.
 func LoggerNames() []string {
 	result := make([]string, len(loggers))
 
