@@ -14,13 +14,11 @@ func MungeArguments(args ...string) []string {
 }
 
 // Run forks a standalone window-less process on Windows, using
-// the arguments provided.
+// the arguments provided. The arguments are modified to support
+// the use of the cmd.exe executor.
 func Run(cmd string, args []string) (int, error) {
-	cmdargs := []string{"/C", "start", "/b"}
-	cmdargs = append(cmdargs, cmd)
-	cmdargs = append(cmdargs, args...)
-
-	executor := exec.Command("cmd.exe", cmdargs...)
+	cmdargs := append(cmd, args...)
+	executor := exec.Command("cmd.exe", MungeArguments(cmdargs)...)
 
 	return 0, executor.Run()
 }
