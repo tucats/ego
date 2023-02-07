@@ -67,6 +67,12 @@ type Option struct {
 	// of keyword values), then Keywords is the array of all the allowed values.
 	Keywords []string
 
+	// Unsupported is a list of platforms (GOOS like "windows", "linux") where this
+	// command is NOT supported. This means when the help is displayed, the information
+	// is not presented as an available option. Normally, this is a nil array and no
+	// filtering occurs.
+	Unsupported []string
+
 	// If the option isn't a boolean option, then it's value is stored here. The value
 	// is either expressed after LongName (or ShortName) followed by an "=" and the value,
 	// or it is the next token on the command line after the option name. The type of

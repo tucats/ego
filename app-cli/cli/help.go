@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/tables"
@@ -99,6 +100,20 @@ func ShowHelp(c *Context) {
 
 	for _, option := range c.Grammar {
 		if option.OptionType == Subcommand && !option.Private {
+
+			unsupported := false
+			for _, platform := range option.Unsupported {
+				if runtime.GOOS == platform {
+					unsupported = true
+
+					break
+				}
+			}
+
+			if unsupported {
+				continue
+			}
+
 			if !headerShown {
 				fmt.Printf("%s:\n", i18n.L("Commands"))
 
@@ -176,6 +191,19 @@ func ShowHelp(c *Context) {
 
 	for _, option := range c.Grammar {
 		if option.Private {
+			continue
+		}
+
+		unsupported := false
+		for _, platform := range option.Unsupported {
+			if runtime.GOOS == platform {
+				unsupported = true
+
+				break
+			}
+		}
+
+		if unsupported {
 			continue
 		}
 

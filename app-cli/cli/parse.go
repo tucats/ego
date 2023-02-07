@@ -2,6 +2,7 @@ package cli
 
 import (
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -185,6 +186,20 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				if (isAlias || entry.LongName == option) && entry.OptionType == Subcommand {
+
+					unsupported := false
+					for _, platform := range entry.Unsupported {
+						if runtime.GOOS == platform {
+							unsupported = true
+
+							break
+						}
+					}
+
+					if unsupported {
+						return errors.ErrUnsupportedOnOS.Context(entry.LongName)
+					}
+
 					return doSubcommand(c, entry, args, currentArg)
 				}
 			}
@@ -277,6 +292,20 @@ func (c *Context) parseGrammar(args []string) error {
 				}
 
 				location.Value = i
+			}
+
+			unsupported := false
+			for _, platform := range location.Unsupported {
+				if runtime.GOOS == platform {
+					unsupported = true
+					ui.Log(ui.CLILogger, "Option value unsupported on platform %s", platform)
+
+					break
+				}
+			}
+
+			if unsupported {
+				return errors.ErrUnsupportedOnOS.Context("--" + location.LongName)
 			}
 
 			ui.Log(ui.CLILogger, "Option value set to %#v", location.Value)

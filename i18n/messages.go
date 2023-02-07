@@ -702,6 +702,9 @@ var messages = map[string]map[string]string{
 	"error.type.spec": {
 		"en": "invalid type specification",
 	},
+	"error.unsupported.on.os": {
+		"en": "command not implemented for this operating system",
+	},
 	"error.url": {
 		"en": "invalid URL path specification",
 	},

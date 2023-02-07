@@ -545,6 +545,7 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.Restart,
 		Value:       ServerStateGrammar,
+		Unsupported: []string{"windows"},
 	},
 	{
 		LongName:             "status",
@@ -561,6 +562,7 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.Start,
 		Value:       ServerRunGrammar,
+		Unsupported: []string{"windows"},
 	},
 	{
 		LongName:    "stop",
@@ -568,6 +570,7 @@ var ServerGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Action:      commands.Stop,
 		Value:       ServerStopGrammar,
+		Unsupported: []string{"windows"},
 	},
 }
 
