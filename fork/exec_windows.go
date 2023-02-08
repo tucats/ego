@@ -17,8 +17,8 @@ func MungeArguments(args ...string) []string {
 // the arguments provided. The arguments are modified to support
 // the use of the cmd.exe executor.
 func Run(cmd string, args []string) (int, error) {
-	cmdargs := append(cmd, args...)
-	executor := exec.Command("cmd.exe", MungeArguments(cmdargs)...)
+	cmdargs := append([]string{cmd}, args...)
+	executor := exec.Command("cmd.exe", MungeArguments(cmdargs...)...)
 
 	return 0, executor.Run()
 }
