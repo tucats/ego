@@ -11,7 +11,7 @@ import (
 )
 
 // printFormat implements fmt.Printf() and is a wrapper around the native Go function.
-func printFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func printFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	length := 0
 
 	str, err := stringPrintFormat(s, args)
@@ -23,25 +23,25 @@ func printFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 // stringPrintFormat implements fmt.Sprintf() and is a wrapper around the native Go function.
-func stringPrintFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
+func stringPrintFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 0 {
 		return 0, nil
 	}
 
-	fmtString := data.String(args[0])
+	fmtString := data.String(args.Get(0))
 
-	if len(args) == 1 {
+	if args.Len() == 1 {
 		return fmtString, nil
 	}
 
-	return fmt.Sprintf(fmtString, args[1:]...), nil
+	return fmt.Sprintf(fmtString, args.Elements()[1:]...), nil
 }
 
 // printList implements fmt.Println() and is a wrapper around the native Go function.
-func printList(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func printList(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var b strings.Builder
 
-	for i, v := range args {
+	for i, v := range args.Elements() {
 		if i > 0 {
 			b.WriteString(" ")
 		}
@@ -59,10 +59,10 @@ func printList(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
-func printLine(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func printLine(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var b strings.Builder
 
-	for i, v := range args {
+	for i, v := range args.Elements() {
 		if i > 0 {
 			b.WriteString(" ")
 		}
@@ -85,11 +85,11 @@ func printLine(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 func formatUsingString(s *symbols.SymbolTable, v interface{}) string {
 	if m, ok := v.(*data.Struct); ok {
 		if f := m.Type().Function("String"); f != nil {
-			if fmt, ok := f.(func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)); ok {
+			if fmt, ok := f.(func(s *symbols.SymbolTable, args data.List) (interface{}, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				local.SetAlways(defs.ThisVariable, v)
 
-				if si, err := fmt(local, []interface{}{}); err == nil {
+				if si, err := fmt(local, data.NewList()); err == nil {
 					if str, ok := si.(string); ok {
 						return str
 					}

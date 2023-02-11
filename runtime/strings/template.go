@@ -11,12 +11,12 @@ import (
 )
 
 // evaluateTemplate implements the strings.template() function.
-func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func evaluateTemplate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
-	tree, ok := args[0].(*template.Template)
+	tree, ok := args.Get(0).(*template.Template)
 	if !ok {
-		return data.NewList(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template").Context(data.TypeOf(args[0]).String())
+		return data.NewList(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template").Context(data.TypeOf(args.Get(0)).String())
 	}
 
 	root := tree.Tree.Root
@@ -48,15 +48,15 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	var r bytes.Buffer
 
-	if len(args) == 1 {
+	if args.Len() == 1 {
 		err = tree.Execute(&r, nil)
 	} else {
-		if structure, ok := args[1].(*data.Struct); ok {
+		if structure, ok := args.Get(1).(*data.Struct); ok {
 			err = tree.Execute(&r, structure.ToMap())
-		} else if m, ok := args[1].(*data.Map); ok {
+		} else if m, ok := args.Get(1).(*data.Map); ok {
 			err = tree.Execute(&r, m.ToMap())
 		} else {
-			err = tree.Execute(&r, args[1])
+			err = tree.Execute(&r, args.Get(1))
 		}
 	}
 

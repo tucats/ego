@@ -293,10 +293,20 @@ func Format(element interface{}) string {
 				name = defs.Anon
 			}
 
+			// Ugly hack. The Ego len() function cannot be named "len" because it would
+			// shadow the Go function is must use. So look for the special case of a
+			// builtin named "Length" and remap it to "len".
+			if name == "Length" {
+				name = "len"
+			}
+
+			// Get the declaration from the dictionary, and format as a string.
 			if d, found := BuiltinsDictionary[strings.ToLower(name)]; found {
 				name = d.String()
 			} else {
-				name = name + "()"
+				// Something went wrong, there isn't a dictionary entry. Just format
+				// it so it makes some sense.
+				name = "builtin " + name + "()"
 			}
 
 			return name

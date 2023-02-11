@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func getString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r := getThis(s)
 	t := strings.Builder{}
 

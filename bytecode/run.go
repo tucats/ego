@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
@@ -180,7 +181,7 @@ func (c *Context) RunFromAddress(addr int) error {
 
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
-func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
+func GoRoutine(fName string, parentCtx *Context, args data.List) {
 	parentCtx.mux.RLock()
 	parentSymbols := parentCtx.symbols
 	parentCtx.mux.RUnlock()
@@ -198,11 +199,11 @@ func GoRoutine(fName string, parentCtx *Context, args []interface{}) {
 			callCode := New("go " + fName)
 			callCode.Emit(Load, fName)
 
-			for _, arg := range args {
+			for _, arg := range args.Elements() {
 				callCode.Emit(Push, arg)
 			}
 
-			callCode.Emit(Call, len(args))
+			callCode.Emit(Call, args.Len())
 
 			// Make a new table that is parently only to the root table (for access to
 			// packages). Copy the function definition into this new table so the invocation

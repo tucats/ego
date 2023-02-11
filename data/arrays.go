@@ -44,18 +44,24 @@ func NewArray(valueType *Type, size int) *Array {
 	return m
 }
 
-// NewArrayFromArray accepts a type and an array of interfaces, and constructs
+// NewArrayFromInterfaces will generate an array that contains the values
+// passed as the sources values.
+func NewArrayFromInterfaces(valueType *Type, elements ...interface{}) *Array {
+	return NewArrayFromList(valueType, NewList(elements...))
+}
+
+// NewArrayFromList accepts a type and an array of interfaces, and constructs
 // an EgoArray that uses the source array as it's base array. Note special
 // processing for []byte which results in a native Go []byte array.
-func NewArrayFromArray(valueType *Type, source []interface{}) *Array {
+func NewArrayFromList(valueType *Type, source List) *Array {
 	if valueType.kind == ArrayKind && valueType.BaseType().kind == ByteKind {
 		m := &Array{
-			bytes:     make([]byte, len(source)),
+			bytes:     make([]byte, source.Len()),
 			valueType: valueType,
 			immutable: 0,
 		}
 
-		for n, v := range source {
+		for n, v := range source.Elements() {
 			m.bytes[n] = Byte(v)
 		}
 
@@ -63,7 +69,7 @@ func NewArrayFromArray(valueType *Type, source []interface{}) *Array {
 	}
 
 	m := &Array{
-		data:      source,
+		data:      source.Elements(),
 		valueType: valueType,
 		immutable: 0,
 	}
@@ -417,7 +423,7 @@ func (a *Array) GetSliceAsArray(first, last int) (*Array, error) {
 		return nil, err
 	}
 
-	r := NewArrayFromArray(a.valueType, slice)
+	r := NewArrayFromInterfaces(a.valueType, slice...)
 
 	return r, nil
 }

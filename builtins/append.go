@@ -9,11 +9,11 @@ import (
 // Append implements the builtin append() function, which concatenates all the items
 // together as an array. The first argument is flattened into the result, and then each
 // additional argument is added to the array as-is.
-func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Append(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	result := make([]interface{}, 0)
 	kind := data.InterfaceType
 
-	for i, j := range args {
+	for i, j := range args.Elements() {
 		if array, ok := j.(*data.Array); ok && i == 0 {
 			if !kind.IsInterface() {
 				if err := array.Validate(kind); err != nil {
@@ -36,5 +36,5 @@ func Append(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	return data.NewArrayFromArray(kind, result), nil
+	return data.NewArrayFromInterfaces(kind, result...), nil
 }

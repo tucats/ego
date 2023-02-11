@@ -9,7 +9,7 @@ import (
 )
 
 // newUUID implements the uuid.newUUID() function.
-func newUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	u := uuid.New()
 
 	result := data.NewStruct(uuidTypeDef)
@@ -19,7 +19,7 @@ func newUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // nilUUID implements the uuid.nilUUID() function.
-func nilUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func nilUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	u := uuid.Nil
 
 	result := data.NewStruct(uuidTypeDef)
@@ -29,8 +29,8 @@ func nilUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // parseUUID implements the uuid.parseUUID() function.
-func parseUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	s := data.String(args[0])
+func parseUUID(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	s := data.String(args.Get(0))
 
 	u, err := uuid.Parse(s)
 	if err != nil {
@@ -44,7 +44,7 @@ func parseUUID(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 }
 
 // toString implements the (u uuid.UUID) toString() function.
-func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if v, found := s.Get(defs.ThisVariable); found {
 		if UUID, ok := v.(*data.Struct); ok {
 			if u, found := UUID.Get("UUID"); found {

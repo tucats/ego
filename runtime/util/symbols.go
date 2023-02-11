@@ -14,21 +14,21 @@ import (
 // formatSymbols implements the util.symbols() function. We skip over the current
 // symbol table, which was created just for this function call and will always be
 // empty.
-func formatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func formatSymbols(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	selectedScope := -1
 	json := false
 	allItems := false
 
-	if len(args) > 0 {
-		selectedScope = data.Int(args[0])
+	if args.Len() > 0 {
+		selectedScope = data.Int(args.Get(0))
 	}
 
-	if len(args) > 1 {
-		json = strings.EqualFold(data.String(args[1]), "json")
+	if args.Len() > 1 {
+		json = strings.EqualFold(data.String(args.Get(1)), "json")
 	}
 
-	if len(args) > 2 {
-		allItems = data.Bool(args[2])
+	if args.Len() > 2 {
+		allItems = data.Bool(args.Get(2))
 	}
 
 	// We start counting scope one level above the scope created just for
@@ -132,7 +132,7 @@ func formatSymbols(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	return strings.Join(t.FormatText(), "\n") + "\n", nil
 }
 
-func formatTables(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func formatTables(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t := symbolTableTypeDef
 
 	result := data.NewArray(t, 0)

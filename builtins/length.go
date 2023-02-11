@@ -10,12 +10,12 @@ import (
 )
 
 // Length implements the len() function.
-func Length(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if args[0] == nil {
+func Length(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Get(0) == nil {
 		return 0, nil
 	}
 
-	switch arg := args[0].(type) {
+	switch arg := args.Get(0).(type) {
 	// For a channel, it's length either zero if it's drained, or bottomless
 	case *data.Channel:
 		size := int(math.MaxInt32)
@@ -57,13 +57,13 @@ func Length(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 
 		// Otherwise, invalid type.
-		return 0, errors.ErrArgumentType.In("len").Context(data.TypeOf(args[0]))
+		return 0, errors.ErrArgumentType.In("len").Context(data.TypeOf(args.Get(0)))
 	}
 }
 
 // SizeOf returns the size in bytes of an arbibrary object.
-func SizeOf(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	size := data.SizeOf(args[0])
+func SizeOf(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	size := data.SizeOf(args.Get(0))
 
 	return size, nil
 }

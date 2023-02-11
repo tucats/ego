@@ -15,22 +15,22 @@ import (
 // value, it computes a crypotraphic hash of the value, and returns it
 // as a 32-character string containing the hexadecimal hash value. Hashes
 // are irreversible.
-func hash(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
+func hash(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
-	return util.Hash(data.String(args[0])), nil
+	return util.Hash(data.String(args.Get(0))), nil
 }
 
 // encrypt implements the cipher.encrypt() function. This takes a string value and
 // a string key, and encrypts the string using the key.
-func encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 2 {
+func encrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 2 {
 		return nil, errors.ErrArgumentCount
 	}
 
-	b, err := util.Encrypt(data.String(args[0]), data.String(args[1]))
+	b, err := util.Encrypt(data.String(args.Get(0)), data.String(args.Get(1)))
 	if err != nil {
 		return b, err
 	}
@@ -42,23 +42,23 @@ func encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // and a key, and attempts to decode the string. If the string is not a valid encryption
 // using the given key, an empty string is returned. It is an error if the string does
 // not contain a valid hexadecimal character string.
-func decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	b, err := hex.DecodeString(data.String(args[0]))
+func decrypt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		return data.NewList(nil, err), errors.NewError(err)
 	}
 
-	result, err := util.Decrypt(string(b), data.String(args[1]))
+	result, err := util.Decrypt(string(b), data.String(args.Get(1)))
 
 	return data.NewList(result, err), err
 }
 
 // random implements the cipher.random() function which generates a random token
 // string value using the cryptographic random number generator.
-func random(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func random(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	n := 32
-	if len(args) > 0 {
-		n = data.Int(args[0])
+	if args.Len() > 0 {
+		n = data.Int(args.Get(0))
 	}
 
 	b := make([]byte, n)

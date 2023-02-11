@@ -8,23 +8,23 @@ import (
 )
 
 // index implements the strings.index() function.
-func index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := data.String(args[0])
-	p := data.String(args[1])
+func index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	v := data.String(args.Get(0))
+	p := data.String(args.Get(1))
 
 	return strings.Index(v, p) + 1, nil
 }
 
 // substring implements the substring() function.
-func substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v := data.String(args[0])
+func substring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	v := data.String(args.Get(0))
 
-	p1 := data.Int(args[1]) // Starting character position
+	p1 := data.Int(args.Get(1)) // Starting character position
 	if p1 < 1 {
 		p1 = 1
 	}
 
-	p2 := data.Int(args[2]) // Number of characters
+	p2 := data.Int(args.Get(2)) // Number of characters
 	if p2 == 0 {
 		return "", nil
 	}
@@ -60,13 +60,13 @@ func substring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 }
 
 // leftSubstring implements the left() function.
-func leftSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func leftSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var b strings.Builder
 
 	count := 0
-	v := data.String(args[0])
+	v := data.String(args.Get(0))
 
-	p := data.Int(args[1])
+	p := data.Int(args.Get(1))
 	if p <= 0 {
 		return "", nil
 	}
@@ -85,14 +85,14 @@ func leftSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface{
 }
 
 // rightSubstring implements the right() function.
-func rightSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rightSubstring(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var charPos int
 
 	var b strings.Builder
 
-	v := data.String(args[0])
+	v := data.String(args.Get(0))
 
-	p := data.Int(args[1])
+	p := data.Int(args.Get(1))
 	if p <= 0 {
 		return "", nil
 	}
@@ -114,24 +114,24 @@ func rightSubstring(symbols *symbols.SymbolTable, args []interface{}) (interface
 }
 
 // Wrapper around strings.contains().
-func contains(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := data.String(args[0])
-	b := data.String(args[1])
+func contains(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	a := data.String(args.Get(0))
+	b := data.String(args.Get(1))
 
 	return strings.Contains(a, b), nil
 }
 
 // Wrapper around strings.Contains().
-func containsAny(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := data.String(args[0])
-	b := data.String(args[1])
+func containsAny(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	a := data.String(args.Get(0))
+	b := data.String(args.Get(1))
 
 	return strings.ContainsAny(a, b), nil
 }
 
-func truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := data.String(args[0])
-	maxWidth := data.Int(args[1])
+func truncate(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	name := data.String(args.Get(0))
+	maxWidth := data.Int(args.Get(1))
 
 	if len(name) <= maxWidth {
 		return name, nil
@@ -157,9 +157,9 @@ func truncate(symbols *symbols.SymbolTable, args []interface{}) (interface{}, er
 
 // length is the strings.length() function, which counts characters/runes instead of
 // bytes like len() does.
-func length(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func length(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	count := 0
-	v := data.String(args[0])
+	v := data.String(args.Get(0))
 
 	for range v {
 		count++

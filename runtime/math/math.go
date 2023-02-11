@@ -11,21 +11,21 @@ import (
 
 // normalize coerces a value to match the type of a model value. The
 // (possibly modified) value is returned as the function value.
-func normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	v1, v2 := data.Normalize(args[0], args[1])
+func normalize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	v1, v2 := data.Normalize(args.Get(0), args.Get(1))
 
 	return data.NewList(v1, v2), nil
 }
 
 // minimum implements the math.Min() function.
-func minimum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 1 {
-		return args[0], nil
+func minimum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 1 {
+		return args.Get(0), nil
 	}
 
-	r := args[0]
+	r := args.Get(0)
 
-	for _, v := range args[1:] {
+	for _, v := range args.Elements()[1:] {
 		v = data.Coerce(v, r)
 		if v == nil {
 			return nil, errors.ErrInvalidType.In("Min")
@@ -60,14 +60,14 @@ func minimum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // maximum implements the math.Max() function.
-func maximum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 1 {
-		return args[0], nil
+func maximum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 1 {
+		return args.Get(0), nil
 	}
 
-	r := args[0]
+	r := args.Get(0)
 
-	for _, xv := range args[1:] {
+	for _, xv := range args.Elements()[1:] {
 		v := data.Coerce(xv, r)
 		if v == nil {
 			return nil, errors.ErrInvalidType.In("Max").Context(data.TypeOf(r).String())
@@ -103,10 +103,10 @@ func maximum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // sum implements the math.Sum() function.
-func sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	base := args[0]
+func sum(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	base := args.Get(0)
 
-	for _, addendV := range args[1:] {
+	for _, addendV := range args.Elements()[1:] {
 		addend := data.Coerce(addendV, base)
 		if addend == nil {
 			return nil, errors.ErrInvalidType.In("Sum").Context(data.TypeOf(addendV).String())
@@ -146,27 +146,27 @@ func sum(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // squareRoot implements the math.Sqrt() function.
-func squareRoot(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := data.Float64(args[0])
+func squareRoot(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	f := data.Float64(args.Get(0))
 
 	return math.Sqrt(f), nil
 }
 
 // abs implements the math.Abs() function.
-func abs(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	f := data.Float64(args[0])
+func abs(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	f := data.Float64(args.Get(0))
 
 	return math.Abs(f), nil
 }
 
 // log implements the math.Log() function.
-func log(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return math.Log(data.Float64(args[0])), nil
+func log(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return math.Log(data.Float64(args.Get(0))), nil
 }
 
 // random implmeents the math.Random() function.
-func random(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	max := data.Int(args[0])
+func random(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	max := data.Int(args.Get(0))
 	if max <= 0 {
 		return nil, errors.ErrInvalidFunctionArgument.Context(max)
 	}

@@ -11,13 +11,13 @@ import (
 )
 
 // sortSlice implements the sort.sortSlice() function.
-func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	array, ok := args[0].(*data.Array)
+func sortSlice(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	array, ok := args.Get(0).(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType
 	}
 
-	fn, ok := args[1].(*bytecode.ByteCode)
+	fn, ok := args.Get(1).(*bytecode.ByteCode)
 	if !ok {
 		return nil, errors.ErrArgumentType
 	}
@@ -42,7 +42,8 @@ func sortSlice(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	// the two native arguments
 	sort.Slice(array.BaseArray(), func(i, j int) bool {
 		// Set the i,j variables as the current function arguments
-		sliceSymbols.SetAlways(defs.ArgumentListVariable, data.NewArrayFromArray(data.IntType, []interface{}{i, j}))
+		sliceSymbols.SetAlways(defs.ArgumentListVariable,
+			data.NewArrayFromInterfaces(data.IntType, i, j))
 		// Run the comparator function
 		if err := ctx.RunFromAddress(0); err != nil {
 			if funcError == nil {

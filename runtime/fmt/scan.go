@@ -14,14 +14,14 @@ import (
 // arbitrary data, a format string that guides the scanner in how to interpret
 // the string, and a variable list of addresses to arbitrary objects, which
 // will receive the input values from the data string that are scanned.
-func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	dataString := data.String(args[0])
-	formatString := data.String(args[1])
+func stringScanFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	dataString := data.String(args.Get(0))
+	formatString := data.String(args.Get(1))
 
 	// Verify the remaining arguments are all pointers, and unwrap them.
-	pointerList := make([]*interface{}, len(args)-2)
+	pointerList := make([]*interface{}, args.Len()-2)
 
-	for i, v := range args[2:] {
+	for i, v := range args.Elements()[2:] {
 		if data.TypeOfPointer(v).IsUndefined() {
 			return data.NewList(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
 		}

@@ -8,52 +8,47 @@ import (
 )
 
 func TestFunctionLen(t *testing.T) {
-	type args struct {
-		args []interface{}
-	}
-
 	tests := []struct {
 		name    string
-		args    args
+		args    data.List
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			name: "string length",
-			args: args{[]interface{}{"hamster"}},
+			args: data.NewList("hamster"),
 			want: 7,
 		},
 		{
 			name: "empty string length",
-			args: args{[]interface{}{""}},
+			args: data.NewList(""),
 			want: 0,
 		},
 		{
 			name:    "numeric value length",
-			args:    args{[]interface{}{3.14}},
+			args:    data.NewList(3.14),
 			want:    0,
 			wantErr: true,
 		},
 		{
 			name: "array length",
-			args: args{
-				[]interface{}{
-					data.NewArrayFromArray(
-						data.InterfaceType,
-						[]interface{}{
-							true,
-							3.14,
-							"Tom",
-						}),
-				},
-			},
+			args: data.NewList(
+				data.NewArrayFromList(
+					data.InterfaceType,
+					data.NewList(
+						true,
+						3.14,
+						"Tom",
+					),
+				),
+			),
 			want: 3,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Length(nil, tt.args.args)
+			got, err := Length(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionLen() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -69,41 +64,41 @@ func TestFunctionLen(t *testing.T) {
 func TestLength(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    []interface{}
+		args    data.List
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			name: "simple string",
-			args: []interface{}{"foo"},
+			args: data.NewList("foo"),
 			want: 3,
 		},
 		{
 			name: "unicode string",
-			args: []interface{}{"\u2318foo\u2318"},
+			args: data.NewList("\u2318foo\u2318"),
 			want: 9,
 		},
 		{
 			name: "simple array",
-			args: []interface{}{
-				data.NewArrayFromArray(data.IntType, []interface{}{1, 2, 3, 4}),
-			},
+			args: data.NewList(
+				data.NewArrayFromList(data.IntType, data.NewList(1, 2, 3, 4)),
+			),
 			want: 4,
 		},
 		{
 			name: "simple map",
-			args: []interface{}{
+			args: data.NewList(
 				data.NewMapFromMap(
 					map[string]interface{}{
 						"name": "Bob",
 						"age":  35,
 					}),
-			},
+			),
 			want: 2,
 		},
 		{
 			name: "int converted to string",
-			args: []interface{}{"123456"},
+			args: data.NewList("123456"),
 			want: 6,
 		},
 		// TODO: Add test cases.

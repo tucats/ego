@@ -12,9 +12,9 @@ import (
 
 // setPagination sets the page width and height for paginated output. Set the
 // values both to zero to disable pagination support.
-func setPagination(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	h := data.Int(args[0])
-	w := data.Int(args[1])
+func setPagination(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	h := data.Int(args.Get(0))
+	w := data.Int(args.Get(1))
 
 	t, err := getTable(s)
 	if err != nil {
@@ -30,19 +30,19 @@ func setPagination(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 // are both booleans. The first indicates if a headings row is to be printed
 // in the output. The second is examined only if the headings value is true;
 // it controls whether an underline string is printed under the column names.
-func setFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setFormat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		headings := true
 		lines := true
 
-		if len(args) > 0 {
-			headings = data.Bool(args[0])
+		if args.Len() > 0 {
+			headings = data.Bool(args.Get(0))
 			lines = headings
 		}
 
-		if len(args) > 1 {
-			lines = data.Bool(args[1])
+		if args.Len() > 1 {
+			lines = data.Bool(args.Get(1))
 		}
 
 		t.ShowHeadings(headings)
@@ -53,12 +53,12 @@ func setFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // setAlignment specifies alignment for a given column.
-func setAlignment(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setAlignment(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
 		column := 0
 
-		if columnName, ok := args[0].(string); ok {
+		if columnName, ok := args.Get(0).(string); ok {
 			column, ok = t.Column(columnName)
 			if !ok {
 				err = errors.ErrInvalidColumnName.Context(columnName)
@@ -66,12 +66,12 @@ func setAlignment(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 				return err, err
 			}
 		} else {
-			column = data.Int(args[0])
+			column = data.Int(args.Get(0))
 		}
 
 		mode := tables.AlignmentLeft
 
-		if modeName, ok := args[1].(string); ok {
+		if modeName, ok := args.Get(1).(string); ok {
 			switch strings.ToLower(modeName) {
 			case "left":
 				mode = tables.AlignmentLeft
@@ -97,11 +97,11 @@ func setAlignment(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 // printTable prints a table to the default output, in the default --output-format
 // type (text or json).
-func printTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func printTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fmt := ui.OutputFormat
 
-	if len(args) > 0 {
-		fmt = data.String(args[0])
+	if args.Len() > 0 {
+		fmt = data.String(args.Get(0))
 	}
 
 	t, err := getTable(s)
@@ -113,11 +113,11 @@ func printTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // toString formats a table as a string in the default output.
-func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	fmt := ui.OutputFormat
 
-	if len(args) > 0 {
-		fmt = data.String(args[0])
+	if args.Len() > 0 {
+		fmt = data.String(args.Get(0))
 	}
 
 	t, err := getTable(s)

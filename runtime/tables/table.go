@@ -15,12 +15,12 @@ import (
 // a new table. Additionally, the column names can contain alignment information;
 // a name with a leading ":" is left-aligned, and a trailing":" is right-
 // aligned. In either case the ":" is removed from the name.
-func newTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Fetch the arguments as column headings. If the value is passed by array,
 	// extract each array member as a column name.
 	headings := []string{}
 
-	for _, h := range args {
+	for _, h := range args.Elements() {
 		if list, ok := h.(*data.Array); ok {
 			for idx := 0; idx < list.Len(); idx++ {
 				str, _ := list.Get(idx)
@@ -87,7 +87,7 @@ func newTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // closeTable closes the table handle, and releases any memory resources
 // being held by the table.
-func closeTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func closeTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	_, err := getTable(s)
 	if err != nil {
 		return nil, err
@@ -104,12 +104,12 @@ func closeTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // name, and the associated value is used as the table cell value. If a list of
 // values is given, they are stored in the row in the same order that the columns
 // were defined when the table was created.
-func addRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func addRow(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
-		if len(args) > 0 {
-			if m, ok := args[0].(*data.Struct); ok {
-				if len(args) > 1 {
+		if args.Len() > 0 {
+			if m, ok := args.Get(0).(*data.Struct); ok {
+				if args.Len() > 1 {
 					err = errors.ErrArgumentCount
 				} else {
 					values := make([]string, len(m.FieldNames(false)))
@@ -129,15 +129,15 @@ func addRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 					err = t.AddRow(values)
 				}
 			} else {
-				if m, ok := args[0].([]interface{}); ok {
-					if len(args) > 1 {
+				if m, ok := args.Get(0).([]interface{}); ok {
+					if args.Len() > 1 {
 						err = errors.ErrArgumentCount
 
 						return err, err
 					}
 					err = t.AddRowItems(m...)
 				} else {
-					err = t.AddRowItems(args...)
+					err = t.AddRowItems(args.Elements()...)
 				}
 			}
 		}
@@ -152,11 +152,11 @@ func addRow(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // significant sort, etc. until the first argument, which is the most
 // significant sort. The column names can start with a tilde ("~") character
 // to reverse the sort order from it's default value of ascending to descending.
-func sortTable(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func sortTable(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTable(s)
 	if err == nil {
-		for i := len(args) - 1; i >= 0; i = i - 1 {
-			v := args[i]
+		for i := args.Len() - 1; i >= 0; i = i - 1 {
+			v := args.Get(i)
 			ascending := true
 
 			heading := data.String(v)

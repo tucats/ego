@@ -11,17 +11,17 @@ import (
 )
 
 // getKey implements the profile.get() function.
-func getKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	key := data.String(args[0])
+func getKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	key := data.String(args.Get(0))
 
 	return settings.Get(key), nil
 }
 
 // setKey implements the profile.set() function.
-func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
-	key := data.String(args[0])
+	key := data.String(args.Get(0))
 	isEgoSetting := strings.HasPrefix(key, defs.PrivilegedKeyPrefix)
 
 	// Quick check here. The key must already exist if it's one of the
@@ -48,7 +48,7 @@ func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
-	value := data.String(args[1])
+	value := data.String(args.Get(1))
 	if value == "" {
 		err = settings.Delete(key)
 	} else {
@@ -67,12 +67,12 @@ func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 // deleteKey implements the profile.delete() function. This just calls
 // the set operation with an empty value, which results in a delete operatinon.
 // The consolidates the persmission checking, etc. in the Set routine only.
-func deleteKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return setKey(symbols, []interface{}{args[0], ""})
+func deleteKey(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return setKey(symbols, data.NewList(args.Get(0), ""))
 }
 
 // getKeys implements the profile.keys() function.
-func getKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getKeys(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	keys := settings.Keys()
 	result := make([]interface{}, len(keys))
 
@@ -80,5 +80,5 @@ func getKeys(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 		result[i] = key
 	}
 
-	return data.NewArrayFromArray(data.StringType, result), nil
+	return data.NewArrayFromInterfaces(data.StringType, result...), nil
 }

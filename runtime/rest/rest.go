@@ -15,15 +15,15 @@ import (
 )
 
 // New implements the New() rest function.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	client := resty.New()
 
-	if len(args) > 0 {
-		username := data.String(args[0])
+	if args.Len() > 0 {
+		username := data.String(args.Get(0))
 		password := ""
 
-		if len(args) > 1 {
-			password = data.String(args[1])
+		if args.Len() > 1 {
+			password = data.String(args.Get(1))
 		}
 
 		client.SetBasicAuth(username, password)
@@ -52,7 +52,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return r, nil
 }
 
-func closeClient(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func closeClient(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	c, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func closeClient(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // setDebug implements the setDebug() rest function. This specifies a boolean value that
 // enables or disables debug logging for the client.
-func setDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setDebug(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func setDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	this := getThis(s)
 
-	flag := data.Bool((args[0]))
+	flag := data.Bool((args.Get(0)))
 	r.SetDebug(flag)
 
 	return this, nil
@@ -87,14 +87,14 @@ func setDebug(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // setMedia implements the setMedia() function. This specifies a string containing the media
 // type that the REST service expects. In it's simplest form, this can be "application/text"
 // for free text responses, or "application/json" for JSON data payloads.
-func setMedia(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setMedia(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	_, err := getClient(s)
 	if err != nil {
 		return nil, err
 	}
 
 	this := getThis(s)
-	media := data.String(args[0])
+	media := data.String(args.Get(0))
 	this.SetAlways(mediaTypeFieldName, media)
 
 	return this, nil

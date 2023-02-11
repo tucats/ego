@@ -10,9 +10,9 @@ import (
 )
 
 // marshal writes a JSON string from arbitrary data.
-func marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 1 {
-		jsonBuffer, err := json.Marshal(data.Sanitize(args[0]))
+func marshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 1 {
+		jsonBuffer, err := json.Marshal(data.Sanitize(args.Get(0)))
 		if err != nil {
 			err = errors.NewError(err).In("Marshal")
 		}
@@ -24,7 +24,7 @@ func marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	b.WriteString("[")
 
-	for n, v := range args {
+	for n, v := range args.Elements() {
 		if n > 0 {
 			b.WriteString(", ")
 		}
@@ -44,11 +44,11 @@ func marshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // marshalIndent writes a  JSON string from arbitrary data.
-func marshalIndent(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	prefix := data.String(args[1])
-	indent := data.String(args[2])
+func marshalIndent(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	prefix := data.String(args.Get(1))
+	indent := data.String(args.Get(2))
 
-	jsonBuffer, err := json.MarshalIndent(data.Sanitize(args[0]), prefix, indent)
+	jsonBuffer, err := json.MarshalIndent(data.Sanitize(args.Get(0)), prefix, indent)
 	if err != nil {
 		err = errors.NewError(err).In("MarshalIndent")
 	}

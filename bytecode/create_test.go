@@ -27,7 +27,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{3, 5, data.IntType},
 				i:     2,
 			},
-			want: data.NewArrayFromArray(data.IntType, []interface{}{3, 5}),
+			want: data.NewArrayFromList(data.IntType, data.NewList(3, 5)),
 		},
 		{
 			name: "[]string{\"Tom\", \"Cole\"}",
@@ -35,7 +35,7 @@ func Test_makeArrayByteCode(t *testing.T) {
 				stack: []interface{}{"Cole", "Tom", data.StringType},
 				i:     2,
 			},
-			want: data.NewArrayFromArray(data.IntType, []interface{}{3, 5}),
+			want: data.NewArrayFromList(data.IntType, data.NewList(3, 5)),
 		},
 	}
 	for _, tt := range tests {
@@ -68,7 +68,7 @@ func Test_arrayByteCode(t *testing.T) {
 			arg:   2,
 			stack: []interface{}{3, "test", float64(3.5)},
 			err:   nil,
-			want:  data.NewArrayFromArray(data.InterfaceType, []interface{}{"test", float64(3.5)}),
+			want:  data.NewArrayFromList(data.InterfaceType, data.NewList("test", float64(3.5))),
 		},
 		{
 			name:   "typed array",
@@ -76,14 +76,14 @@ func Test_arrayByteCode(t *testing.T) {
 			stack:  []interface{}{byte(3), "55", float64(3.5)},
 			err:    nil,
 			static: 2,
-			want:   data.NewArrayFromArray(data.Int32Type, []interface{}{int32(3), int32(55), int32(3)}),
+			want:   data.NewArrayFromList(data.Int32Type, data.NewList(int32(3), int32(55), int32(3))),
 		},
 		{
 			name:   "untyped static (valid) array",
 			arg:    3,
 			stack:  []interface{}{int32(10), int32(11), int32(12)},
 			static: 0,
-			want:   data.NewArrayFromArray(data.InterfaceType, []interface{}{int32(10), int32(11), int32(12)}),
+			want:   data.NewArrayFromList(data.InterfaceType, data.NewList(int32(10), int32(11), int32(12))),
 		},
 		{
 			name:   "stack underflow",
@@ -91,7 +91,7 @@ func Test_arrayByteCode(t *testing.T) {
 			stack:  []interface{}{"test", float64(3.5)},
 			err:    errors.ErrStackUnderflow,
 			static: 2,
-			want:   data.NewArrayFromArray(data.InterfaceType, []interface{}{"test", float64(3.5)}),
+			want:   data.NewArrayFromList(data.InterfaceType, data.NewList("test", float64(3.5))),
 		},
 	}
 

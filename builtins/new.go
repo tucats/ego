@@ -16,10 +16,10 @@ import (
 // number or a string type name is given, the "zero value" for
 // that type is returned. For an array, struct, or map, a recursive
 // copy is done of the members to a new object which is returned.
-func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Is the type an integer? If so it's a type kind from the native
 	// reflection package.
-	if typeValue, ok := args[0].(int); ok {
+	if typeValue, ok := args.Get(0).(int); ok {
 		switch reflect.Kind(typeValue) {
 		case reflect.Uint8, reflect.Int8:
 			return byte(0), nil
@@ -48,12 +48,12 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Is it an actual type?
-	if typeValue, ok := args[0].(*data.Type); ok {
+	if typeValue, ok := args.Get(0).(*data.Type); ok {
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
 	// Is the type a string? If so it's a bult-in scalar type name
-	if typeValue, ok := args[0].(string); ok {
+	if typeValue, ok := args.Get(0).(string); ok {
 		switch strings.ToLower(typeValue) {
 		case data.BoolType.Name():
 			return false, nil
@@ -88,27 +88,27 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	// form here to prevent Go from complaining that the interface{} is being copied.
 	// In reality, we don't care as we don't actually make a copy anyway but instead
 	// make a new waitgroup object.
-	switch args[0].(type) {
+	switch args.Get(0).(type) {
 	case sync.WaitGroup:
 		return data.InstanceOfType(data.WaitGroupType), nil
 	}
 
 	// If it's a Mutex, make a new one. We hae to do this as a swtich on the type, since a
 	// cast attempt will yield a warning on invalid mutex copy operation.
-	switch args[0].(type) {
+	switch args.Get(0).(type) {
 	case *sync.Mutex:
 		return data.InstanceOfType(data.MutexType), nil
 	}
 
 	// If it's a channel, just return the value
-	if typeValue, ok := args[0].(*data.Channel); ok {
+	if typeValue, ok := args.Get(0).(*data.Channel); ok {
 		return typeValue, nil
 	}
 
 	// Some native complex types work using the data package deep
 	// copy operation on that type.
 
-	switch actual := args[0].(type) {
+	switch actual := args.Get(0).(type) {
 	case *data.Struct:
 		return data.DeepCopy(actual), nil
 
@@ -120,7 +120,7 @@ func New(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	// Otherwise, make a deep copy of the item ourselves.
-	r := DeepCopy(args[0], MaxDeepCopyDepth)
+	r := DeepCopy(args.Get(0), MaxDeepCopyDepth)
 
 	// If there was a user-defined type in the source, make the clone point back to it
 	switch v := r.(type) {

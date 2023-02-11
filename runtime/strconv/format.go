@@ -10,8 +10,8 @@ import (
 )
 
 // doFormatbool implement the strconv.doFormatbool() function.
-func doFormatbool(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if data.Bool(args[0]) {
+func doFormatbool(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if data.Bool(args.Get(0)) {
 		return "true", nil
 	}
 
@@ -19,18 +19,18 @@ func doFormatbool(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 // doFormatfloat implement the strconv.doFormatfloat() function.
-func doFormatfloat(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	value := data.Float64(args[0])
+func doFormatfloat(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	value := data.Float64(args.Get(0))
 
-	fmtString := data.String(args[1])
+	fmtString := data.String(args.Get(1))
 	if !util.InList(fmtString, "f", "F", "g", "G", "b", "x", "e", "E") {
 		return nil, errors.ErrInvalidFunctionArgument.In("Formatfloat").Context(fmtString)
 	}
 
 	fmt := fmtString[0]
 
-	prec := data.Int(args[2])
-	bitSize := data.Int(args[3])
+	prec := data.Int(args.Get(2))
+	bitSize := data.Int(args.Get(3))
 
 	if bitSize != 32 && bitSize != 64 {
 		return nil, errors.ErrInvalidBitSize.Context(bitSize).In("Formatfloat").Context(bitSize)
@@ -40,10 +40,10 @@ func doFormatfloat(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // doFormatint implement the strconv.doFormatint() function.
-func doFormatint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	value := data.Int64(args[0])
+func doFormatint(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	value := data.Int64(args.Get(0))
 
-	base := data.Int(args[1])
+	base := data.Int(args.Get(1))
 	if base < 2 || base > 36 {
 		return nil, errors.ErrInvalidFunctionArgument.In("Formatfloat").Context(base)
 	}

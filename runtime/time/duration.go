@@ -10,8 +10,8 @@ import (
 )
 
 // parseDuration implements the time.parseDuration(d string)(time.Duration, error) function.
-func parseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str := data.String(args[0])
+func parseDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	str := data.String(args.Get(0))
 
 	t, err := time.ParseDuration(str)
 	if err != nil {
@@ -24,7 +24,7 @@ func parseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 	return data.NewList(d, nil), nil
 }
 
-func DurationString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DurationString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	duration := getDuration(s)
 	if duration != nil {
 		return duration.String(), nil
@@ -60,8 +60,8 @@ func getDurationV(value interface{}) *time.Duration {
 }
 
 // sleepForDuration implements time.sleepForDuration(d time.Duration).
-func sleepForDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	duration := getDurationV(args[0])
+func sleepForDuration(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	duration := getDurationV(args.Get(0))
 
 	if duration == nil {
 		return false, nil
@@ -73,10 +73,10 @@ func sleepForDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 }
 
 // Add implements t.Add(duration string).
-func Add(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Add(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		t2 := t.Add(*getDurationV(args[0]))
+		t2 := t.Add(*getDurationV(args.Get(0)))
 
 		return MakeTime(&t2, s), nil
 	}
@@ -85,10 +85,10 @@ func Add(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Sub implements t.Sub(t time.Time).
-func Sub(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Sub(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err == nil {
-		d, err := getTimeV(args[0])
+		d, err := getTimeV(args.Get(0))
 		if err == nil && d != nil {
 			d := t.Sub(*d)
 

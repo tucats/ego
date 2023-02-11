@@ -9,6 +9,6 @@ import (
 // Eval implements the eval() function which accepts a string representation of
 // an expression and returns the expression result. This can also be used to convert
 // string expressions of structs or arrays.
-func Eval(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return expressions.Evaluate(data.String(args[0]), symbols)
+func Eval(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return expressions.Evaluate(data.String(args.Get(0)), symbols)
 }

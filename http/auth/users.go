@@ -222,12 +222,12 @@ func HashString(s string) string {
 // Authenticated implements the Authenticated(user,pass) function. This accepts a username
 // and password string, and determines if they are authenticated using the
 // users database.
-func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Authenticated(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var user, pass string
 
 	// If there are no arguments, then we look for the _user and _password
 	// variables and use those. Otherwise, fetch them as the two parameters.
-	if len(args) == 0 {
+	if args.Len() == 0 {
 		if ux, ok := s.Get("_user"); ok {
 			user = data.String(ux)
 		}
@@ -236,12 +236,12 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 			pass = data.String(px)
 		}
 	} else {
-		if len(args) != 2 {
+		if args.Len() != 2 {
 			return false, errors.ErrArgumentCount
 		}
 
-		user = data.String(args[0])
-		pass = data.String(args[1])
+		user = data.String(args.Get(0))
+		pass = data.String(args.Get(1))
 	}
 
 	// If the user exists and the password matches then valid.
@@ -250,15 +250,15 @@ func Authenticated(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 // Permission implements the Permission(user,priv) function. It returns
 // a boolean value indicating if the given username has the given permission.
-func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Permission(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var user, priv string
 
-	if len(args) != 2 {
+	if args.Len() != 2 {
 		return false, errors.ErrArgumentCount
 	}
 
-	user = data.String(args[0])
-	priv = strings.ToUpper(data.String(args[1]))
+	user = data.String(args.Get(0))
+	priv = strings.ToUpper(data.String(args.Get(1)))
 
 	// If the user exists and the privilege exists, return it's status
 	return GetPermission(user, priv), nil
@@ -267,7 +267,7 @@ func Permission(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 // SetUser implements the SetUser() function. For the super user, this function
 // can be used to update user data in the persistent use database for the Ego
 // web server.
-func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func SetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
 	// Before we do anything else, are we running this call as a superuser?
@@ -283,11 +283,11 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// There must be one parameter, which is a struct containing
 	// the user data
-	if len(args) != 1 {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
-	if u, ok := args[0].(*data.Map); ok {
+	if u, ok := args.Get(0).(*data.Map); ok {
 		name := ""
 		if n, ok, _ := u.Get("name"); ok {
 			name = strings.ToLower(data.String(n))
@@ -333,7 +333,7 @@ func SetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // DeleteUser implements the DeleteUser() function. For a privileged user,
 // this will delete a record from the persistent user database. Returns true
 // if the name was deleted, else false if it was not a valid username.
-func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func DeleteUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Before we do anything else, are we running this call as a superuser?
 	superUser := false
 
@@ -346,11 +346,11 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	}
 
 	// There must be one parameter, which is the username
-	if len(args) != 1 {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
-	name := strings.ToLower(data.String(args[0]))
+	name := strings.ToLower(data.String(args.Get(0)))
 
 	if _, ok := AuthService.ReadUser(name, false); ok == nil {
 		err := AuthService.DeleteUser(name)
@@ -366,14 +366,14 @@ func DeleteUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // GetUser implements the GetUser() function. This returns a struct defining the
 // persisted information about an existing user in the user database.
-func GetUser(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func GetUser(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// There must be one parameter, which is a username
-	if len(args) != 1 {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
 	r := data.NewMap(data.StringType, data.InterfaceType)
-	name := strings.ToLower(data.String(args[0]))
+	name := strings.ToLower(data.String(args.Get(0)))
 
 	t, ok := AuthService.ReadUser(name, false)
 	if ok != nil {

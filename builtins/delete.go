@@ -10,18 +10,18 @@ import (
 // an element from an array by index number, or to delete a symbol entirely. The
 // first form requires a string name, the second form requires an integer index,
 // and the third form does not have a second parameter.
-func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if _, ok := args[0].(string); ok {
-		if len(args) != 1 {
+func Delete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if _, ok := args.Get(0).(string); ok {
+		if args.Len() != 1 {
 			return nil, errors.ErrArgumentCount.In("delete")
 		}
 	} else {
-		if len(args) != 2 {
+		if args.Len() != 2 {
 			return nil, errors.ErrArgumentCount.In("delete")
 		}
 	}
 
-	switch v := args[0].(type) {
+	switch v := args.Get(0).(type) {
 	case string:
 		if !extensions() {
 			return nil, errors.ErrArgumentType.In("delete")
@@ -30,12 +30,12 @@ func Delete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return nil, s.Delete(v, false)
 
 	case *data.Map:
-		_, err := v.Delete(args[1])
+		_, err := v.Delete(args.Get(1))
 
 		return v, err
 
 	case *data.Array:
-		i := data.Int(args[1])
+		i := data.Int(args.Get(1))
 		err := v.Delete(i)
 
 		return v, err

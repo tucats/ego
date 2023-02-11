@@ -10,16 +10,16 @@ import (
 )
 
 // Index implements the index() function.
-func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Index(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if !extensions() {
 		return nil, errors.ErrExtension.Context("index")
 	}
 
-	switch arg := args[0].(type) {
+	switch arg := args.Get(0).(type) {
 	case *data.Array:
 		for i := 0; i < arg.Len(); i++ {
 			vv, _ := arg.Get(i)
-			if reflect.DeepEqual(vv, args[1]) {
+			if reflect.DeepEqual(vv, args.Get(1)) {
 				return i, nil
 			}
 		}
@@ -30,13 +30,13 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		return nil, errors.ErrInvalidType.Context("[]interface{}")
 
 	case *data.Map:
-		_, found, err := arg.Get(args[1])
+		_, found, err := arg.Get(args.Get(1))
 
 		return found, err
 
 	default:
-		v := data.String(args[0])
-		p := data.String(args[1])
+		v := data.String(args.Get(0))
+		p := data.String(args.Get(1))
 
 		return strings.Index(v, p) + 1, nil
 	}

@@ -26,5 +26,5 @@
         
         elapsed := time.Since(start)
         
-        fmt.Println("\nAll done, real time ", elapsed)
+        fmt.Println("\nAll done, real time ", elapsed.String())
     }

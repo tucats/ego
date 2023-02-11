@@ -14,7 +14,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func asString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func asString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var b strings.Builder
 
 	f := getThis(s)
@@ -84,7 +84,7 @@ func getFile(fn string, s *symbols.SymbolTable) (*os.File, error) {
 }
 
 // readString reads the next line from the file as a string.
-func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func readString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	f, err := getFile("ReadString", s)
 	if err != nil {
 		err = errors.NewError(err).In("ReadString")
@@ -110,14 +110,14 @@ func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // writeString writes a string value to a file.
-func writeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func writeString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var e2 error
 
 	length := 0
 
 	f, err := getFile("WriteString", s)
 	if err == nil {
-		length, e2 = f.WriteString(data.String(args[0]) + "\n")
+		length, e2 = f.WriteString(data.String(args.Get(0)) + "\n")
 		if e2 != nil {
 			err = errors.NewError(e2)
 		}
@@ -129,12 +129,12 @@ func writeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 // write writes an arbitrary binary object to a file.
-func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func write(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var buf bytes.Buffer
 
 	enc := gob.NewEncoder(&buf)
 
-	err := enc.Encode(args[0])
+	err := enc.Encode(args.Get(0))
 	if err != nil {
 		err = errors.NewError(err).In("Write")
 
@@ -157,13 +157,13 @@ func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
-func writeAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func writeAt(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var buf bytes.Buffer
 
-	offset := data.Int(args[1])
+	offset := data.Int(args.Get(1))
 	enc := gob.NewEncoder(&buf)
 
-	err := enc.Encode(args[0])
+	err := enc.Encode(args.Get(0))
 	if err != nil {
 		err = errors.NewError(err).In("WriteAt")
 

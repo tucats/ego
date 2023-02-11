@@ -8,8 +8,8 @@ import (
 )
 
 // unwrap implements the (e error) unwrap() method for Ego errors.
-func unwrap(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func unwrap(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount.In("Error")
 	}
 

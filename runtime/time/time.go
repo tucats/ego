@@ -10,19 +10,19 @@ import (
 )
 
 // now implements time.now().
-func now(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func now(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t := time.Now()
 
 	return MakeTime(&t, s), nil
 }
 
 // parseTime implements the time.parseTime()(time.Time, error) function.
-func parseTime(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	str := data.String(args[0])
+func parseTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	str := data.String(args.Get(0))
 	fmt := basicLayout
 
-	if len(args) > 1 {
-		fmt = data.String(args[1])
+	if args.Len() > 1 {
+		fmt = data.String(args.Get(1))
 	}
 
 	t, err := time.Parse(fmt, str)
@@ -34,19 +34,19 @@ func parseTime(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // TimeFormat implements time.Format().
-func Format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Format(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
 	}
 
-	layout := data.String(args[0])
+	layout := data.String(args.Get(0))
 
 	return t.Format(layout), nil
 }
 
 // SleepUntil implements time.SleepUntil().
-func SleepUntil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func SleepUntil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func SleepUntil(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // String implements t.String().
-func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func String(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	t, err := getTime(s)
 	if err != nil {
 		return nil, err
@@ -71,9 +71,9 @@ func String(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // sinceTime implements time.sinceTime().
-func sinceTime(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func sinceTime(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Get the time value stored in the argument
-	t, err := getTimeV(args[0])
+	t, err := getTimeV(args.Get(0))
 	if err != nil {
 		return nil, err
 	}

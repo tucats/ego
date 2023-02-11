@@ -9,25 +9,25 @@ import (
 )
 
 // toLower implements the lower() function.
-func toLower(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToLower(data.String(args[0])), nil
+func toLower(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return strings.ToLower(data.String(args.Get(0))), nil
 }
 
 // toUpper implements the upper() function.
-func toUpper(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	return strings.ToUpper(data.String(args[0])), nil
+func toUpper(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	return strings.ToUpper(data.String(args.Get(0))), nil
 }
 
 // splitString splits a string into lines separated by a newline. Optionally
 // a different delimiter can be supplied as the second argument.
-func splitString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func splitString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var v []string
 
-	src := data.String(args[0])
+	src := data.String(args.Get(0))
 	delim := "\n"
 
-	if len(args) > 1 {
-		delim = data.String(args[1])
+	if args.Len() > 1 {
+		delim = data.String(args.Get(1))
 	}
 
 	// Are we seeing Windows-style line endings? If we are doing a split
@@ -53,13 +53,13 @@ func splitString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 }
 
 // Wrapper around strings.join().
-func join(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	elemArray, ok := args[0].(*data.Array)
+func join(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	elemArray, ok := args.Get(0).(*data.Array)
 	if !ok {
 		return nil, errors.ErrArgumentType.In("Join")
 	}
 
-	separator := data.String(args[1])
+	separator := data.String(args.Get(1))
 	elements := make([]string, elemArray.Len())
 
 	for i := 0; i < elemArray.Len(); i++ {

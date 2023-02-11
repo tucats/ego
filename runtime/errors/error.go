@@ -12,8 +12,8 @@ import (
 var verbose bool = false
 
 // Error implements the (e error) Error() method for Ego errors.
-func Error(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func Error(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount.In("Error")
 	}
 

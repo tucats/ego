@@ -33,39 +33,39 @@ func get(s *symbols.SymbolTable, key string) (interface{}, error) {
 	return nil, errors.ErrNoFunctionReceiver
 }
 
-func getBasetype(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getBasetype(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.BasetypeMDName)
 }
 
-func getBuiltins(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getBuiltins(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.BuiltinsMDName)
 }
 
-func getContext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getContext(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.ContextMDName)
 }
 
-func getDeclaration(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getDeclaration(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.DeclarationMDName)
 }
 
-func getError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.ErrorMDName)
 }
 
-func getFunctions(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getFunctions(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.FunctionsMDName)
 }
 
-func getImports(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getImports(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.ImportsMDName)
 }
 
-func getIsType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getIsType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.IsTypeMDName)
 }
 
-func getItems(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getItems(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if r := getThis(s); r != nil {
 		names := r.FieldNames(true)
 		a := data.NewArray(data.StringType, 0)
@@ -95,25 +95,25 @@ func getItems(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return nil, errors.ErrNoFunctionReceiver
 }
 
-func getMembers(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getMembers(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.MembersMDName)
 }
 
-func getName(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getName(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.NameMDName)
 }
-func getNative(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getNative(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.NativeMDName)
 }
 
-func getSize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getSize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.SizeMDName)
 }
 
-func getText(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getText(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.TextMDName)
 }
 
-func getType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return get(s, data.TypeMDName)
 }

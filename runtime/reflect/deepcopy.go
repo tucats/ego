@@ -6,13 +6,13 @@ import (
 )
 
 // deepCopy implements the reflect.deepCopy function.
-func deepCopy(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func deepCopy(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	depth := MaxDeepCopyDepth
-	if len(args) > 1 {
-		depth = data.Int(args[1])
+	if args.Len() > 1 {
+		depth = data.Int(args.Get(1))
 	}
 
-	return recursiveCopy(args[0], depth), nil
+	return recursiveCopy(args.Get(0), depth), nil
 }
 
 // DeepCopy makes a deep copy of an Ego data type. It should be called with the

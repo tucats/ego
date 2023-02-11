@@ -9,8 +9,8 @@ import (
 )
 
 // members gets an array of the names of the fields in a structure.
-func members(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	switch v := args[0].(type) {
+func members(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	switch v := args.Get(0).(type) {
 	case *data.Map:
 		keys := data.NewArray(data.StringType, 0)
 		keyList := v.Keys()

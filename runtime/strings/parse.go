@@ -9,8 +9,8 @@ import (
 )
 
 // Wrapper around strings.fields().
-func fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	a := data.String(args[0])
+func fields(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	a := data.String(args.Get(0))
 
 	fields := strings.Fields(a)
 
@@ -24,8 +24,8 @@ func fields(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // tokenize splits a string into tokens.
-func tokenize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	src := data.String(args[0])
+func tokenize(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	src := data.String(args.Get(0))
 	t := tokenizer.New(src, false)
 
 	r := data.NewArray(data.StringType, len(t.Tokens))

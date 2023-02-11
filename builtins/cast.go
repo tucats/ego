@@ -13,13 +13,13 @@ import (
 // convert numeric arrays to a different kind of array, to convert a string
 // to an array of integer (rune) values, etc.  It is called from within
 // the Call bytecode when the function is really a type.
-func Cast(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func Cast(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Target t is the last parameter
-	t := data.TypeOf(args[len(args)-1])
+	t := data.TypeOf(args.Get(args.Len() - 1))
 
-	source := args[0]
-	if len(args) > 2 {
-		source = data.NewArrayFromArray(data.InterfaceType, args[:len(args)-1])
+	source := args.Get(0)
+	if args.Len() > 2 {
+		source = data.NewArrayFromList(data.InterfaceType, args.Slice(0, args.Len()-1))
 	}
 
 	if t.IsString() {

@@ -274,7 +274,7 @@ func getVarArgsByteCode(c *Context, i interface{}) error {
 				return err
 			}
 
-			return c.push(data.NewArrayFromArray(data.InterfaceType, value))
+			return c.push(data.NewArrayFromInterfaces(data.InterfaceType, value...))
 		}
 	}
 

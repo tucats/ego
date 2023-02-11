@@ -17,12 +17,12 @@ var allowInsecure = false
 // a connection will not be made if the server's certificate cannot be authenticated.
 // This is the default mode for HTTPS connections. During debugging, you may wish to
 // turn this off when using self-generated certificates.
-func setVerify(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setVerify(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this := getThis(s)
 	verify := allowInsecure
 
-	if len(args) == 1 {
-		verify = data.Bool(args[0])
+	if args.Len() == 1 {
+		verify = data.Bool(args.Get(0))
 	}
 
 	this.SetAlways(verifyFieldName, verify)
@@ -33,7 +33,7 @@ func setVerify(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 // setAuthentication implements the setAuthentication() rest function. When present, it accepts a username and
 // password as parameters, and sets the rest client to use BasicAuth authentication, where
 // the username and password are part of an Authentication header.
-func setAuthentication(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setAuthentication(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func setAuthentication(s *symbols.SymbolTable, args []interface{}) (interface{},
 
 	this := getThis(s)
 
-	user := data.String(args[0])
-	pass := data.String(args[1])
+	user := data.String(args.Get(0))
+	pass := data.String(args.Get(1))
 
 	r.SetBasicAuth(user, pass)
 
@@ -51,7 +51,7 @@ func setAuthentication(s *symbols.SymbolTable, args []interface{}) (interface{},
 
 // setToken implements the setToken() rest function. When present, it accepts a token string
 // and sets the rest client to use Bearer token authentication using this token value.
-func setToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func setToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	r, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -61,8 +61,8 @@ func setToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	token := settings.Get(defs.LogonTokenSetting)
 
-	if len(args) > 0 {
-		token = data.String(args[0])
+	if args.Len() > 0 {
+		token = data.String(args.Get(0))
 	}
 
 	r.SetAuthToken(token)

@@ -11,8 +11,8 @@ import (
 
 // query executes a query, with optional parameter substitution, and returns row object
 // for subsequent calls to fetch the data.
-func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
+func query(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -24,7 +24,7 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	this.SetAlways(rowCountFieldName, -1)
 
-	query := data.String(args[0])
+	query := data.String(args.Get(0))
 
 	var rows *sql.Rows
 
@@ -33,11 +33,11 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if tx == nil {
 		ui.Log(ui.DBLogger, "QueryRows: %s", query)
 
-		rows, e2 = db.Query(query, args[1:]...)
+		rows, e2 = db.Query(query, args.Elements()[1:args.Len()]...)
 	} else {
 		ui.Log(ui.DBLogger, "(Tx) QueryRows: %s", query)
 
-		rows, e2 = tx.Query(query, args[1:]...)
+		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
 
 	if e2 != nil {
@@ -55,8 +55,8 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // queryResult executes a query, with optional parameter substitution, and returns the
 // entire result set as an array in a single operation.
-func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
+func queryResult(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -73,17 +73,17 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	var e2 error
 
-	query := data.String(args[0])
+	query := data.String(args.Get(0))
 	ui.Log(ui.DBLogger, "Query: %s", query)
 
 	if tx == nil {
 		ui.Log(ui.DBLogger, "Query: %s", query)
 
-		rows, e2 = db.Query(query, args[1:]...)
+		rows, e2 = db.Query(query, args.Elements()[1:]...)
 	} else {
 		ui.Log(ui.DBLogger, "(Tx) Query: %s", query)
 
-		rows, e2 = tx.Query(query, args[1:]...)
+		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
 
 	if rows != nil {
@@ -152,7 +152,7 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 	} else {
 		for i, v := range arrayResult {
-			rv := data.NewArrayFromArray(data.InterfaceType, v)
+			rv := data.NewArrayFromInterfaces(data.InterfaceType, v...)
 			r.SetAlways(i, rv)
 		}
 	}
@@ -162,8 +162,8 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 // execute executes a SQL statement, and returns the number of rows that were
 // affected by the statement (such as number of rows deleted for a DELETE statement).
-func execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
+func execute(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -176,18 +176,18 @@ func execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	var err error
 
-	query := data.String(args[0])
+	query := data.String(args.Get(0))
 
 	ui.Log(ui.DBLogger, "Executing: %s", query)
 
 	if tx == nil {
 		ui.Log(ui.DBLogger, "Execute: %s", query)
 
-		sqlResult, err = db.Exec(query, args[1:]...)
+		sqlResult, err = db.Exec(query, args.Elements()[1:]...)
 	} else {
 		ui.Log(ui.DBLogger, "(Tx) Execute: %s", query)
 
-		sqlResult, err = tx.Exec(query, args[1:]...)
+		sqlResult, err = tx.Exec(query, args.Elements()[1:]...)
 	}
 
 	if err != nil {

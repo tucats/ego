@@ -9,17 +9,17 @@ import (
 )
 
 // unmarshal reads a byte array or string as JSON data.
-func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func unmarshal(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var v interface{}
 
 	var err error
 
 	// Simplest case, []byte input. Otherwise, treat the argument
 	// as a string.
-	if a, ok := args[0].(*data.Array); ok && a.Type().Kind() == data.ByteKind {
+	if a, ok := args.Get(0).(*data.Array); ok && a.Type().Kind() == data.ByteKind {
 		err = json.Unmarshal(a.GetBytes(), &v)
 	} else {
-		jsonBuffer := data.String(args[0])
+		jsonBuffer := data.String(args.Get(0))
 		err = json.Unmarshal([]byte(jsonBuffer), &v)
 	}
 
@@ -30,13 +30,13 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	// If there is no model, assume a generic return value is okay
-	if len(args) < 2 {
+	if args.Len() < 2 {
 		// Hang on, if the result is a map, then Ego won't be able to use it,
 		// so convert that to an EgoMap. Same for an array.
 		if m, ok := v.(map[string]interface{}); ok {
 			v = data.NewMapFromMap(m)
 		} else if a, ok := v.([]interface{}); ok {
-			v = data.NewArrayFromArray(data.InterfaceType, a)
+			v = data.NewArrayFromInterfaces(data.InterfaceType, a...)
 		}
 
 		if err != nil {
@@ -53,7 +53,7 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	}
 
 	// There is a model, so do some mapping if possible.
-	pointer, ok := args[1].(*interface{})
+	pointer, ok := args.Get(1).(*interface{})
 	if !ok {
 		return data.NewList(errors.ErrInvalidPointerType), nil
 	}

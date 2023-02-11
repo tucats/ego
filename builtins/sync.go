@@ -11,8 +11,8 @@ import (
 // Mutex functions.
 
 // sync.Mutex.Lock() function.
-func mutexLock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
+func mutexLock(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 0 {
 		return nil, errors.ErrArgumentCount.In("Lock")
 	}
 
@@ -27,8 +27,8 @@ func mutexLock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // sync.Mutex.Unlock() function.
-func mutexUnlock(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
+func mutexUnlock(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 0 {
 		return nil, errors.ErrArgumentCount.In("Unock")
 	}
 
@@ -45,14 +45,14 @@ func mutexUnlock(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // Waitgroup functions.
 
 // sync.WaitGroup Add() function.
-func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
+func waitGroupAdd(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount.In("Add")
 	}
 
 	this := getNativeThis(s)
 	if wg, ok := this.(*sync.WaitGroup); ok {
-		count := data.Int(args[0])
+		count := data.Int(args.Get(0))
 		wg.Add(count)
 
 		return nil, nil
@@ -62,8 +62,8 @@ func waitGroupAdd(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 // sync.WaitGroup Done() function.
-func waitGroupDone(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
+func waitGroupDone(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 0 {
 		return nil, errors.ErrArgumentCount.In("Done")
 	}
 
@@ -78,8 +78,8 @@ func waitGroupDone(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 }
 
 // sync.WaitGroup Wait() function.
-func waitGroupWait(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 0 {
+func waitGroupWait(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 0 {
 		return nil, errors.ErrArgumentCount.In("Wait")
 	}
 

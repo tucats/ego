@@ -10,7 +10,7 @@ import (
 )
 
 // getMode implements the util.getMode() function which reports the runtime mode.
-func getMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getMode(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	m, ok := symbols.Get(defs.ModeVariable)
 	if !ok {
 		m = "run"
@@ -19,7 +19,7 @@ func getMode(symbols *symbols.SymbolTable, args []interface{}) (interface{}, err
 	return m, nil
 }
 
-func getMemoryStats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func getMemoryStats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var m runtime.MemStats
 
 	result := map[string]interface{}{}

@@ -10,8 +10,8 @@ import (
 // Close implements the generic close() function which can be used
 // to close a channel or a file, or a database connection. Maybe later,
 // other items as well.
-func Close(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	switch arg := args[0].(type) {
+func Close(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	switch arg := args.Get(0).(type) {
 	case *data.Channel:
 		return arg.Close(), nil
 

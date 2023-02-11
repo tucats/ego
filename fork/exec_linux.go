@@ -24,5 +24,5 @@ func Run(cmd string, args []string) (int, error) {
 		},
 	}
 
-	return syscall.ForkExec(args[0], args, &attr)
+	return syscall.ForkExec(args.Get(0), args, &attr)
 }

@@ -3,11 +3,13 @@ package strings
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/data"
 )
 
 func TestFunctionLeft(t *testing.T) {
 	type args struct {
-		args []interface{}
+		args data.List
 	}
 
 	tests := []struct {
@@ -18,22 +20,22 @@ func TestFunctionLeft(t *testing.T) {
 	}{
 		{
 			name: "simple test",
-			args: args{[]interface{}{"Abraham", 4}},
+			args: args{data.NewList("Abraham", 4)},
 			want: "Abra",
 		},
 		{
 			name: "negative length test",
-			args: args{[]interface{}{"Abraham", -5}},
+			args: args{data.NewList("Abraham", -5)},
 			want: "",
 		},
 		{
 			name: "length too long test",
-			args: args{[]interface{}{"Abraham", 50}},
+			args: args{data.NewList("Abraham", 50)},
 			want: "Abraham",
 		},
 		{
 			name: "unicode string",
-			args: args{[]interface{}{"\u2318foo\u2318", 3}},
+			args: args{data.NewList("\u2318foo\u2318", 3)},
 			want: "\u2318fo",
 		},
 		// TODO: Add test cases.
@@ -56,7 +58,7 @@ func TestFunctionLeft(t *testing.T) {
 
 func TestFunctionRight(t *testing.T) {
 	type args struct {
-		args []interface{}
+		args data.List
 	}
 
 	tests := []struct {
@@ -67,27 +69,27 @@ func TestFunctionRight(t *testing.T) {
 	}{
 		{
 			name: "simple test",
-			args: args{[]interface{}{"Abraham", 3}},
+			args: args{data.NewList("Abraham", 3)},
 			want: "ham",
 		},
 		{
 			name: "length too small test",
-			args: args{[]interface{}{"Abraham", -5}},
+			args: args{data.NewList("Abraham", -5)},
 			want: "",
 		},
 		{
 			name: "length too long test",
-			args: args{[]interface{}{"Abraham", 103}},
+			args: args{data.NewList("Abraham", 103)},
 			want: "Abraham",
 		},
 		{
 			name: "empty string test",
-			args: args{[]interface{}{"", 3}},
+			args: args{data.NewList("", 3)},
 			want: "",
 		},
 		{
 			name: "unicode string",
-			args: args{[]interface{}{"\u2318foo\u2318", 3}},
+			args: args{data.NewList("\u2318foo\u2318", 3)},
 			want: "oo\u2318",
 		},
 	}
@@ -109,7 +111,7 @@ func TestFunctionRight(t *testing.T) {
 
 func TestFunctionLower(t *testing.T) {
 	type args struct {
-		args []interface{}
+		args data.List
 	}
 
 	tests := []struct {
@@ -120,27 +122,27 @@ func TestFunctionLower(t *testing.T) {
 	}{
 		{
 			name: "lower case",
-			args: args{[]interface{}{"short"}},
+			args: args{data.NewList("short")},
 			want: "short",
 		},
 		{
 			name: "upper case",
-			args: args{[]interface{}{"TALL"}},
+			args: args{data.NewList("TALL")},
 			want: "tall",
 		},
 		{
 			name: "mixed case",
-			args: args{[]interface{}{"camelCase"}},
+			args: args{data.NewList("camelCase")},
 			want: "camelcase",
 		},
 		{
 			name: "empty string",
-			args: args{[]interface{}{""}},
+			args: args{data.NewList("")},
 			want: "",
 		},
 		{
 			name: "non-string",
-			args: args{[]interface{}{3.14}},
+			args: args{data.NewList(3.14)},
 			want: "3.14",
 		},
 		// TODO: Add test cases.
@@ -163,7 +165,7 @@ func TestFunctionLower(t *testing.T) {
 
 func TestFunctionUpper(t *testing.T) {
 	type args struct {
-		args []interface{}
+		args data.List
 	}
 
 	tests := []struct {
@@ -174,27 +176,27 @@ func TestFunctionUpper(t *testing.T) {
 	}{
 		{
 			name: "lower case",
-			args: args{[]interface{}{"short"}},
+			args: args{data.NewList("short")},
 			want: "SHORT",
 		},
 		{
 			name: "upper case",
-			args: args{[]interface{}{"TALL"}},
+			args: args{data.NewList("TALL")},
 			want: "TALL",
 		},
 		{
 			name: "mixed case",
-			args: args{[]interface{}{"camelCase"}},
+			args: args{data.NewList("camelCase")},
 			want: "CAMELCASE",
 		},
 		{
 			name: "empty string",
-			args: args{[]interface{}{""}},
+			args: args{data.NewList("")},
 			want: "",
 		},
 		{
 			name: "non-string",
-			args: args{[]interface{}{3.14}},
+			args: args{data.NewList(3.14)},
 			want: "3.14",
 		},
 		// TODO: Add test cases.
@@ -218,68 +220,68 @@ func TestFunctionUpper(t *testing.T) {
 func TestSubstring(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    []interface{}
+		args    data.List
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			name: "left case",
-			args: []interface{}{"simple", 1, 3},
+			args: data.NewList("simple", 1, 3),
 			want: "sim",
 		},
 		{
 			name: "right case",
-			args: []interface{}{"simple", 3, 4},
+			args: data.NewList("simple", 3, 4),
 			want: "mple",
 		},
 		{
 			name: "middle case",
-			args: []interface{}{"simple", 3, 1},
+			args: data.NewList("simple", 3, 1),
 			want: "m",
 		},
 		{
 			name: "invalid start case",
-			args: []interface{}{"simple", -5, 3},
+			args: data.NewList("simple", -5, 3),
 			want: "sim",
 		},
 		{
 			name: "invalid len case",
-			args: []interface{}{"simple", 1, 355},
+			args: data.NewList("simple", 1, 355),
 			want: "simple",
 		},
 		{
 			name: "simple ASCII string starting at 1",
-			args: []interface{}{"foobar", 1, 3},
+			args: data.NewList("foobar", 1, 3),
 			want: "foo",
 		},
 		{
 			name: "simple ASCII string starting at 3",
-			args: []interface{}{"foobar", 3, 2},
+			args: data.NewList("foobar", 3, 2),
 			want: "ob",
 		},
 		{
 			name: "simple ASCII string with zero len",
-			args: []interface{}{"foobar", 3, 0},
+			args: data.NewList("foobar", 3, 0),
 			want: "",
 		},
 		{
 			name: "simple ASCII string with len too big",
-			args: []interface{}{"foobar", 3, 10},
+			args: data.NewList("foobar", 3, 10),
 			want: "obar",
 		},
 		{
 			name: "Unicode string with zero len",
-			args: []interface{}{"\u2318foo\u2318", 3, 0},
+			args: data.NewList("\u2318foo\u2318", 3, 0),
 			want: "",
 		},
 		{
 			name: "Unicode string starting at 1",
-			args: []interface{}{"\u2318foo\u2318", 1, 3},
+			args: data.NewList("\u2318foo\u2318", 1, 3),
 			want: "\u2318fo",
 		},
 		{
 			name: "Unicode string starting at 2",
-			args: []interface{}{"\u2318foo\u2318", 2, 3},
+			args: data.NewList("\u2318foo\u2318", 2, 3),
 			want: "foo",
 		},
 
@@ -303,23 +305,23 @@ func TestSubstring(t *testing.T) {
 func TestStrLen(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    []interface{}
+		args    data.List
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			name: "length of ASCII string",
-			args: []interface{}{"foo"},
+			args: data.NewList("foo"),
 			want: 3,
 		},
 		{
 			name: "length of empty string",
-			args: []interface{}{""},
+			args: data.NewList(""),
 			want: 0,
 		},
 		{
 			name: "length of Unicode string",
-			args: []interface{}{"\u2318Foo\u2318"},
+			args: data.NewList("\u2318Foo\u2318"),
 			want: 5,
 		},
 		// TODO: Add test cases.

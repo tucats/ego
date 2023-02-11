@@ -34,8 +34,8 @@ func applyBaseURL(url string, this *data.Struct) string {
 	return url
 }
 
-func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	urlString := data.String(args[0])
+func ParseURL(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	urlString := data.String(args.Get(0))
 
 	url, err := url.Parse(urlString)
 	if err != nil {
@@ -47,11 +47,11 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	// If the second parameter was provided, it's a template string. Use it to parse
 	// apart the path components of the url.
-	if len(args) > 1 {
+	if args.Len() > 1 {
 		var valid bool
 
 		path := url.Path
-		templateString := data.String(args[1])
+		templateString := data.String(args.Get(1))
 
 		// Scan the URL and the template, and bulid a map of the parts.
 		urlParts, valid = runtime_strings.ParseURLPattern(path, templateString)
@@ -104,7 +104,7 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 				values[i] = j
 			}
 
-			query[key] = data.NewArrayFromArray(data.StringType, values)
+			query[key] = data.NewArrayFromInterfaces(data.StringType, values...)
 		}
 
 		urlParts[urlQueryElmeent] = data.NewMapFromMap(query)
@@ -117,8 +117,8 @@ func ParseURL(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 // as the base prefix for any URL formed in a REST call. This lets you specify the
 // protocol/host/port information once, and then have each Get(), Post(), etc. call
 // just specify the endpoint.
-func setBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) != 1 {
+func setBase(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() != 1 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -130,8 +130,8 @@ func setBase(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	this := getThis(s)
 	base := ""
 
-	if len(args) > 0 {
-		base = data.String(args[0])
+	if args.Len() > 0 {
+		base = data.String(args.Get(0))
 	} else {
 		base = settings.Get(defs.LogonServerSetting)
 	}

@@ -194,7 +194,7 @@ func goByteCode(c *Context, i interface{}) error {
 		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
 		waitGroup.Add(1)
 
-		go GoRoutine(fName, c, args)
+		go GoRoutine(fName, c, data.NewList(args...))
 
 		return nil
 	}
@@ -326,7 +326,7 @@ func callByteCode(c *Context, i interface{}) error {
 		// Calls to a type are really an attempt to cast the value.
 		args = append(args, function)
 
-		v, err := builtins.Cast(c.symbols, args)
+		v, err := builtins.Cast(c.symbols, data.NewList(args...))
 		if err == nil {
 			err = c.push(v)
 		}
@@ -368,7 +368,9 @@ func callByteCode(c *Context, i interface{}) error {
 		}
 
 		// Recode the argument list as a native array
-		c.setAlways(defs.ArgumentListVariable, data.NewArrayFromArray(data.InterfaceType, args))
+		c.setAlways(defs.ArgumentListVariable,
+			data.NewArrayFromInterfaces(data.InterfaceType, args...),
+		)
 
 	case builtins.NativeFunction:
 		// Native functions are methods on actual Go objects that we surface to Ego
@@ -380,7 +382,7 @@ func callByteCode(c *Context, i interface{}) error {
 			funcSymbols.SetAlways(defs.ThisVariable, v)
 		}
 
-		result, err = function(funcSymbols, args)
+		result, err = function(funcSymbols, data.NewList(args...))
 
 		if r, ok := result.(data.List); ok {
 			_ = c.push(NewStackMarker("results"))
@@ -397,7 +399,7 @@ func callByteCode(c *Context, i interface{}) error {
 			err = c.error(err).In(builtins.FindName(function))
 		}
 
-	case func(*symbols.SymbolTable, []interface{}) (interface{}, error):
+	case func(*symbols.SymbolTable, data.List) (interface{}, error):
 		// First, can we check the argument count on behalf of the caller?
 		functionDefinition := builtins.FindFunction(function)
 		functionName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
@@ -435,7 +437,7 @@ func callByteCode(c *Context, i interface{}) error {
 			functionSymbols.SetAlways(defs.ThisVariable, v)
 		}
 
-		result, err = function(functionSymbols, args)
+		result, err = function(functionSymbols, data.NewList(args...))
 
 		if results, ok := result.(data.List); ok {
 			_ = c.push(NewStackMarker("results"))

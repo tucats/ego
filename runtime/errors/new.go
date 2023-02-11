@@ -7,15 +7,15 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func newError(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func newError(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In("New")
 	}
 
-	result := errors.NewMessage(data.String(args[0]))
+	result := errors.NewMessage(data.String(args.Get(0)))
 
-	if len(args) > 1 {
-		_ = result.Context(args[1])
+	if args.Len() > 1 {
+		_ = result.Context(args.Get(1))
 	}
 
 	if verbose {

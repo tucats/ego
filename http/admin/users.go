@@ -85,7 +85,7 @@ func userAction(sessionID int32, w http.ResponseWriter, r *http.Request) int {
 
 			var response defs.User
 
-			_, err = auth.SetUser(s, []interface{}{args})
+			_, err = auth.SetUser(s, data.NewList(args))
 			if err == nil {
 				u, err = auth.AuthService.ReadUser(name, false)
 				if err == nil {
@@ -185,7 +185,7 @@ func deleteUserMethod(name string, w http.ResponseWriter, sessionID int32, s *sy
 	u.Password = ""
 	response := u
 
-	v, err := auth.DeleteUser(s, []interface{}{u.Name})
+	v, err := auth.DeleteUser(s, data.NewList(u.Name))
 	if err != nil || !data.Bool(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 

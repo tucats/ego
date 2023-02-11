@@ -434,7 +434,7 @@ func (s *Struct) FieldNamesArray(private bool) *Array {
 		keyValues[i] = v
 	}
 
-	return NewArrayFromArray(StringType, keyValues)
+	return NewArrayFromInterfaces(StringType, keyValues...)
 }
 
 // TypeString generates a string representation fo this current

@@ -12,14 +12,14 @@ import (
 
 var fontSet []string
 
-func blockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func blockPrint(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	initFonts()
 
-	msg := data.String(args[0])
+	msg := data.String(args.Get(0))
 
 	fontName := "standard"
-	if len(args) > 1 {
-		fontName = data.String(args[1])
+	if args.Len() > 1 {
+		fontName = data.String(args.Get(1))
 	}
 
 	if !isFont(fontName) {
@@ -31,7 +31,7 @@ func blockPrint(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	return myFigure.String(), nil
 }
 
-func blockFonts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func blockFonts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	initFonts()
 
 	result := data.NewArray(data.StringType, len(fontSet))

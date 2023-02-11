@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
@@ -10,8 +11,8 @@ import (
 // begin implements the begin() db function. This allocated a new structure that
 // contains all the info needed to call the database, including the function pointers
 // for the functions available to a specific handle.
-func begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func begin(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -37,8 +38,8 @@ func begin(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // rollback implements the rollback() db function.
-func rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func rollback(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -65,8 +66,8 @@ func rollback(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // commit implements the commit() db function.
-func commit(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func commit(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 

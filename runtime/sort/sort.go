@@ -9,8 +9,8 @@ import (
 )
 
 // sortStrings implements the sort.sortStrings function.
-func sortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortStrings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsString() {
 			err := array.Sort()
 
@@ -20,12 +20,12 @@ func sortStrings(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		return nil, errors.ErrWrongArrayValueType.In("Strings")
 	}
 
-	return nil, errors.ErrArgumentType.In("Strings").Context(args[0])
+	return nil, errors.ErrArgumentType.In("Strings").Context(args.Get(0))
 }
 
 // sortBytes implements the sort.sortBytes function.
-func sortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortBytes(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.ByteKind) {
 			err := array.Sort()
 
@@ -39,8 +39,8 @@ func sortBytes(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // sortInts implements the sort.sortInts function.
-func sortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.IntKind) {
 			err := array.Sort()
 
@@ -54,8 +54,8 @@ func sortInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // sortInt32s implements the sort.sortInt32s function.
-func sortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortInt32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.Int32Kind) {
 			err := array.Sort()
 
@@ -69,8 +69,8 @@ func sortInt32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // sortInt64s implements the sort.sortInt64s function.
-func sortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortInt64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.Int64Kind) {
 			err := array.Sort()
 
@@ -84,8 +84,8 @@ func sortInt64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // Floats implements the sort.Floats function.
-func Floats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func Floats(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.Float64Kind) {
 			err := array.Sort()
 
@@ -99,8 +99,8 @@ func Floats(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // sortFloat32s implements the sort.sortFloat32s function.
-func sortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortFloat32s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.Float32Kind) {
 			err := array.Sort()
 
@@ -114,8 +114,8 @@ func sortFloat32s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 // sortFloat64s implements the sort.sortFloat64s function.
-func sortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if array, ok := args[0].(*data.Array); ok {
+func sortFloat64s(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if array, ok := args.Get(0).(*data.Array); ok {
 		if array.Type().IsKind(data.Float64Kind) {
 			err := array.Sort()
 
@@ -129,14 +129,14 @@ func sortFloat64s(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 }
 
 // genericSort implements the sort.genericSort() function, whichi sorts an array regardless of it's type.
-func genericSort(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func genericSort(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Make a master array of the values presented
 	var array []interface{}
 
 	// Special case. If there is a single argument, and it is already an Ego array,
 	// use the native sort function
-	if len(args) == 1 {
-		if array, ok := args[0].(*data.Array); ok {
+	if args.Len() == 1 {
+		if array, ok := args.Get(0).(*data.Array); ok {
 			err := array.Sort()
 			if err != nil {
 				err = errors.NewError(err).In("Sort")
@@ -146,7 +146,7 @@ func genericSort(symbols *symbols.SymbolTable, args []interface{}) (interface{},
 		}
 	}
 
-	for _, a := range args {
+	for _, a := range args.Elements() {
 		switch v := a.(type) {
 		case *data.Array:
 			array = append(array, v.BaseArray()...)

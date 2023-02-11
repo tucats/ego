@@ -25,7 +25,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name: "array",
-			arg:  NewArrayFromArray(IntType, []interface{}{1, 2, 3}),
+			arg:  NewArrayFromList(IntType, NewList(1, 2, 3)),
 			want: "[1, 2, 3]",
 		},
 		{

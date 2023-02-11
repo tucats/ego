@@ -12,10 +12,10 @@ import (
 )
 
 // describeType implements the type() function.
-func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	const funcLabel = "func"
 
-	switch v := args[0].(type) {
+	switch v := args.Get(0).(type) {
 	case *data.Map:
 		return v.TypeString(), nil
 
@@ -73,7 +73,7 @@ func describeType(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 
 		return "*" + tt.String(), nil
 
-	case func(s *symbols.SymbolTable, args []interface{}) (interface{}, error):
+	case func(s *symbols.SymbolTable, args data.List) (interface{}, error):
 		return "<builtin>", nil
 
 	case data.Function:

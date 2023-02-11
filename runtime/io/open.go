@@ -13,14 +13,14 @@ import (
 )
 
 // openFile opens a file.
-func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func openFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var mask os.FileMode = 0644
 
 	var f *os.File
 
 	mode := os.O_RDONLY
 
-	fname, err := filepath.Abs(sandboxName(data.String(args[0])))
+	fname, err := filepath.Abs(sandboxName(data.String(args.Get(0))))
 	if err != nil {
 		err = errors.NewError(err).In("ReadDir")
 
@@ -29,8 +29,8 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	modeValue := "input"
 
-	if len(args) > 1 {
-		modeValue = strings.ToLower(data.String(args[1]))
+	if args.Len() > 1 {
+		modeValue = strings.ToLower(data.String(args.Get(1)))
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
@@ -50,8 +50,8 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		}
 	}
 
-	if len(args) > 2 {
-		mask = os.FileMode(data.Int(args[2]) & math.MaxInt8)
+	if args.Len() > 2 {
+		mask = os.FileMode(data.Int(args.Get(2)) & math.MaxInt8)
 	}
 
 	f, err = os.OpenFile(fname, mode, mask)

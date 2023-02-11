@@ -1,12 +1,13 @@
 package io
 
 import (
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/symbols"
 )
 
 // closeFile closes a file.
-func closeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func closeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	f, err := getFile("Close", s)
 	if err == nil {
 		e2 := f.Close()

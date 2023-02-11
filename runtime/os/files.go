@@ -17,8 +17,8 @@ import (
 
 // readFile implements os.REadFile() which reads a file contents into a
 // byte array value.
-func readFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := data.String(args[0])
+func readFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	name := data.String(args.Get(0))
 	if name == "." {
 		return ui.Prompt(""), nil
 	}
@@ -36,10 +36,10 @@ func readFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // writeFile implements os.writeFile() writes a byte array (or string) to a file.
-func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	fileName := sandboxName(data.String(args[0]))
+func writeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	fileName := sandboxName(data.String(args.Get(0)))
 
-	if a, ok := args[1].(*data.Array); ok {
+	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
 			err := ioutil.WriteFile(fileName, a.GetBytes(), 0777)
 			if err != nil {
@@ -52,7 +52,7 @@ func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		}
 	}
 
-	text := data.String(args[1])
+	text := data.String(args.Get(1))
 
 	err := os.WriteFile(fileName, []byte(text), 0777)
 	if err != nil {
@@ -63,8 +63,8 @@ func writeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 }
 
 // DeleteFile deletes a file.
-func removeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	fileName := data.String(args[0])
+func removeFile(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	fileName := data.String(args.Get(0))
 	fileName = sandboxName(fileName)
 
 	err := os.Remove(fileName)
@@ -76,8 +76,8 @@ func removeFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // changeDirectory implements the os.changeDirectory() function.
-func changeDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path := data.String(args[0])
+func changeDirectory(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	path := data.String(args.Get(0))
 
 	if err := os.Chdir(path); err != nil {
 		return nil, errors.NewError(err).In("Chdir")
@@ -87,9 +87,9 @@ func changeDirectory(s *symbols.SymbolTable, args []interface{}) (interface{}, e
 }
 
 // changeMode implements the os.changeMode() function.
-func changeMode(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path := data.String(args[0])
-	mode := data.Int32(args[1])
+func changeMode(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	path := data.String(args.Get(0))
+	mode := data.Int32(args.Get(1))
 
 	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
 		return nil, errors.NewError(err).In("Chmod")
@@ -99,10 +99,10 @@ func changeMode(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // changeOwner implements the os.changeOwner() function.
-func changeOwner(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path := data.String(args[0])
-	uid := data.Int(args[1])
-	gid := data.Int(args[1])
+func changeOwner(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	path := data.String(args.Get(0))
+	uid := data.Int(args.Get(1))
+	gid := data.Int(args.Get(1))
 
 	if err := os.Chown(path, uid, gid); err != nil {
 		return nil, errors.NewError(err).In("Chown")

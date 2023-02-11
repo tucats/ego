@@ -27,16 +27,16 @@ type authToken struct {
 }
 
 // validate determines if a token is valid and returns true/false.
-func validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func validate(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
 	reportErr := false
-	if len(args) > 1 {
-		reportErr = data.Bool(args[1])
+	if args.Len() > 1 {
+		reportErr = data.Bool(args.Get(1))
 	}
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(data.String(args[0]))
+	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		if reportErr {
 			return false, errors.NewError(err)
@@ -90,11 +90,11 @@ func validate(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // extract extracts the data from a token and returns it as a struct.
-func extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func extract(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
 	// Take the token value, and decode the hex string.
-	b, err := hex.DecodeString(data.String(args[0]))
+	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
 		return nil, errors.NewError(err)
 	}
@@ -141,18 +141,18 @@ func extract(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // newToken creates a newToken token with a username and a data payload.
-func newToken(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newToken(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var err error
 
 	// Create a new token object, with the username and an ID. If there was a
 	// data payload as well, add that to the token.
 	t := authToken{
-		Name:    data.String(args[0]),
+		Name:    data.String(args.Get(0)),
 		TokenID: uuid.New(),
 	}
 
-	if len(args) == 2 {
-		t.Data = data.String(args[1])
+	if args.Len() == 2 {
+		t.Data = data.String(args.Get(1))
 	}
 
 	// Get the session ID of the current Ego program and add it to

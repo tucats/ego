@@ -9,8 +9,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func rowsClose(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -27,8 +27,8 @@ func rowsClose(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	return err, nil
 }
 
-func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func rowsHeadings(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -50,8 +50,8 @@ func rowsHeadings(s *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	return result, err
 }
 
-func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) > 0 {
+func rowsNext(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() > 0 {
 		return nil, errors.ErrArgumentCount
 	}
 
@@ -68,7 +68,7 @@ func rowsNext(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	return active, nil
 }
 
-func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func rowsScan(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this := getThis(s)
 	if this == nil {
 		return nil, errors.ErrNoFunctionReceiver
@@ -101,5 +101,5 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		return data.NewList(data.NewMapFromMap(rowMap), nil), nil
 	}
 
-	return data.NewList(data.NewArrayFromArray(data.InterfaceType, rowValues), nil), nil
+	return data.NewList(data.NewArrayFromInterfaces(data.InterfaceType, rowValues...), nil), nil
 }

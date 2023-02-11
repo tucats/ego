@@ -95,14 +95,14 @@ func getTestName(s *symbols.SymbolTable) string {
 }
 
 // TestAssert implements the T.assert() function.
-func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func TestAssert(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In("assert")
 	}
 
 	// The argument could be an array with the boolean value and the
 	// messaging string, or it might just be the boolean.
-	if array, ok := args[0].([]interface{}); ok && len(array) == 2 {
+	if array, ok := args.Get(0).([]interface{}); ok && len(array) == 2 {
 		b := data.Bool(array[0])
 		if !b {
 			msg := data.String(array[1])
@@ -117,12 +117,12 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	// Just the boolean; the string is optionally in the second
 	// argument.
-	b := data.Bool(args[0])
+	b := data.Bool(args.Get(0))
 	if !b {
 		msg := errors.ErrTestingAssert
 
-		if len(args) > 1 {
-			msg = msg.Context(args[1])
+		if args.Len() > 1 {
+			msg = msg.Context(args.Get(1))
 		} else {
 			msg = msg.Context(getTestName(s))
 		}
@@ -137,114 +137,114 @@ func TestAssert(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 // TestFail implements the T.fail() function which generates a fatal
 // error.
-func TestFail(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func TestFail(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	msg := "T.fail()"
 
-	if len(args) == 1 {
-		msg = data.String(args[0])
+	if args.Len() == 1 {
+		msg = data.String(args.Get(0))
 	}
 
 	return nil, errors.NewMessage(msg).In(getTestName(s))
 }
 
 // TestNil implements the T.Nil() function.
-func TestNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func TestNil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 
-	isNil := args[0] == nil
-	if e, ok := args[0].(error); ok {
+	isNil := args.Get(0) == nil
+	if e, ok := args.Get(0).(error); ok {
 		isNil = errors.Nil(e)
 	}
 
-	if len(args) == 2 {
-		return []interface{}{isNil, data.String(args[1])}, nil
+	if args.Len() == 2 {
+		return []interface{}{isNil, data.String(args.Get(1))}, nil
 	}
 
 	return isNil, nil
 }
 
 // TestNotNil implements the T.NotNil() function.
-func TestNotNil(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func TestNotNil(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 
-	isNil := args[0] == nil
-	if e, ok := args[0].(error); ok {
+	isNil := args.Get(0) == nil
+	if e, ok := args.Get(0).(error); ok {
 		isNil = errors.Nil(e)
 	}
 
-	if len(args) == 2 {
-		return []interface{}{!isNil, data.String(args[1])}, nil
+	if args.Len() == 2 {
+		return []interface{}{!isNil, data.String(args.Get(1))}, nil
 	}
 
 	return !isNil, nil
 }
 
 // TestTrue implements the T.True() function.
-func TestTrue(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func TestTrue(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 
-	if len(args) == 2 {
-		return []interface{}{data.Bool(args[0]), data.String(args[1])}, nil
+	if args.Len() == 2 {
+		return []interface{}{data.Bool(args.Get(0)), data.String(args.Get(1))}, nil
 	}
 
-	return data.Bool(args[0]), nil
+	return data.Bool(args.Get(0)), nil
 }
 
 // TestFalse implements the T.False() function.
-func TestFalse(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 1 || len(args) > 2 {
+func TestFalse(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 1 || args.Len() > 2 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 
-	if len(args) == 2 {
-		return []interface{}{!data.Bool(args[0]), data.String(args[1])}, nil
+	if args.Len() == 2 {
+		return []interface{}{!data.Bool(args.Get(0)), data.String(args.Get(1))}, nil
 	}
 
-	return !data.Bool(args[0]), nil
+	return !data.Bool(args.Get(0)), nil
 }
 
 // TestEqual implements the T.Equal() function.
-func TestEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 2 || len(args) > 3 {
+func TestEqual(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 2 || args.Len() > 3 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 
-	b := reflect.DeepEqual(args[0], args[1])
+	b := reflect.DeepEqual(args.Get(0), args.Get(1))
 
-	if a1, ok := args[0].([]interface{}); ok {
-		if a2, ok := args[1].(*data.Array); ok {
+	if a1, ok := args.Get(0).([]interface{}); ok {
+		if a2, ok := args.Get(1).(*data.Array); ok {
 			b = reflect.DeepEqual(a1, a2.BaseArray())
 		}
-	} else if a1, ok := args[1].([]interface{}); ok {
-		if a2, ok := args[0].(*data.Array); ok {
+	} else if a1, ok := args.Get(1).([]interface{}); ok {
+		if a2, ok := args.Get(0).(*data.Array); ok {
 			b = reflect.DeepEqual(a1, a2.BaseArray())
 		}
-	} else if a1, ok := args[0].(*data.Array); ok {
-		if a2, ok := args[1].(*data.Array); ok {
+	} else if a1, ok := args.Get(0).(*data.Array); ok {
+		if a2, ok := args.Get(1).(*data.Array); ok {
 			b = a1.DeepEqual(a2)
 		}
 	}
 
-	if len(args) == 3 {
-		return []interface{}{b, data.String(args[2])}, nil
+	if args.Len() == 3 {
+		return []interface{}{b, data.String(args.Get(2))}, nil
 	}
 
 	if !b {
-		ui.Log(ui.DebugLogger, "T.Equals fail, args[0] = %v; args[1] = %v", args[0], args[1])
+		ui.Log(ui.DebugLogger, "T.Equals fail, args.Get(0) = %v; args.Get(1) = %v", args.Get(0), args.Get(1))
 	}
 
 	return b, nil
 }
 
 // TestNotEqual implements the T.NotEqual() function.
-func TestNotEqual(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) < 2 || len(args) > 3 {
+func TestNotEqual(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() < 2 || args.Len() > 3 {
 		return nil, errors.ErrArgumentCount.In(getTestName(s))
 	}
 

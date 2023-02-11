@@ -411,7 +411,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []interface{
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable(sourceType + mainName).Shared(true)
 
-	args := data.NewArrayFromArray(data.StringType, programArgs)
+	args := data.NewArrayFromInterfaces(data.StringType, programArgs...)
 	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)
 
 	if typeEnforcement < defs.StrictTypeEnforcement || typeEnforcement > defs.NoTypeEnforcement {

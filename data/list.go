@@ -2,7 +2,8 @@ package data
 
 // List is a type used to hold multiple values. It is most often
 // used to describe a list of return values to be treated as a tuple
-// when returning from a builtin or runtime function.
+// when returning from a builtin or runtime function. It is also used
+// as the argument list to native functions.
 type List struct {
 	elements []interface{}
 }
@@ -12,14 +13,42 @@ func NewList(items ...interface{}) List {
 	return List{elements: items}
 }
 
+// Len returns an integer value indicating the length of the list.
 func (l List) Len() int {
 	return len(l.elements)
 }
 
+// Get retrievs the nth value from the list. If the index is less than
+// zero or greater than the size of the list, nil is returned.
 func (l List) Get(n int) interface{} {
 	if n < 0 || n >= len(l.elements) {
 		return nil
 	}
 
 	return l.elements[n]
+}
+
+// Elements returns an array of interface elemtns reflecting the individual
+// items stored in the list.
+func (l List) Elements() []interface{} {
+	return l.elements
+}
+
+// Slice returns a new List that is a subset of the original list. It is built
+// using native Go slices of the list elements, so the storage is not duplicated.
+func (l List) Slice(begin, end int) List {
+	if begin < 0 || begin > len(l.elements) || end < begin || end > len(l.elements) {
+		return List{nil}
+	}
+
+	return List{l.elements[begin:end]}
+}
+
+// Append adds elements to the list. The argument list can be any interface{}
+// desired, and it is added to the list. The function returns the number of
+// elements now in the list.
+func (l *List) Append(i ...interface{}) int {
+	l.elements = append(l.elements, i...)
+
+	return len(l.elements)
 }

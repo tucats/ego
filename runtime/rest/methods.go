@@ -17,7 +17,7 @@ import (
 // URL fragment (depending on whether Base() was called). The URL is constructed, and
 // authentication set, and a GET HTTP operation is generated. The result is either a
 // string (for media type of text) or a struct (media type of JSON).
-func doGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	client, err := getClient(s)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func doGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
-	url := applyBaseURL(data.String(args[0]), this)
+	url := applyBaseURL(data.String(args.Get(0)), this)
 	r := client.NewRequest()
 	isJSON := false
 
@@ -71,7 +71,7 @@ func doGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			jsonResponse = data.NewMapFromMap(actual)
 
 		case []interface{}:
-			jsonResponse = data.NewArrayFromArray(data.InterfaceType, actual)
+			jsonResponse = data.NewArrayFromInterfaces(data.InterfaceType, actual...)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
@@ -85,7 +85,7 @@ func doGet(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // doPost implements the doPost() rest function.
-func doPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var body interface{} = ""
 
 	client, err := getClient(s)
@@ -101,10 +101,10 @@ func doPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
-	url := applyBaseURL(data.String(args[0]), this)
+	url := applyBaseURL(data.String(args.Get(0)), this)
 
-	if len(args) > 1 {
-		body = args[1]
+	if args.Len() > 1 {
+		body = args.Get(1)
 	}
 
 	// If the media type is json, then convert the value passed
@@ -166,7 +166,7 @@ func doPost(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 }
 
 // doDelete implements the doDelete() rest function.
-func doDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var body interface{} = ""
 
 	client, err := getClient(s)
@@ -182,10 +182,10 @@ func doDelete(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
-	url := applyBaseURL(data.String(args[0]), this)
+	url := applyBaseURL(data.String(args.Get(0)), this)
 
-	if len(args) > 1 {
-		body = args[1]
+	if args.Len() > 1 {
+		body = args.Get(1)
 	}
 
 	// If the media type is json, then convert the value passed

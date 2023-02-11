@@ -14,7 +14,7 @@ import (
 // newCommand implements exec.newCommand() which executes a command in a
 // subprocess and returns a *exec.Cmd object that can be used to
 // interrogate the success of the operation and view the results.
-func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func newCommand(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
@@ -23,8 +23,8 @@ func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	// Let's build the Ego instance of exec.Cmd
 	result := data.NewStruct(commandTypeDef).FromBuiltinPackage()
 
-	strArray := make([]string, len(args))
-	for n, v := range args {
+	strArray := make([]string, args.Len())
+	for n, v := range args.Elements() {
 		strArray[n] = data.String(v)
 	}
 
@@ -48,8 +48,8 @@ func newCommand(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 }
 
 // lookPath implements the exec.LookPath() function.
-func lookPath(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	path, err := exec.LookPath(data.String(args[0]))
+func lookPath(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	path, err := exec.LookPath(data.String(args.Get(0)))
 	if err != nil {
 		return "", errors.NewError(err).In("LookPath")
 	}

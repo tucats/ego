@@ -9,15 +9,15 @@ import (
 )
 
 // doQuote implements the strconv.doQuote() function.
-func doQuote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	value := data.String(args[0])
+func doQuote(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	value := data.String(args.Get(0))
 
 	return strconv.Quote(value), nil
 }
 
 // doUnquote implements the strconv.doUnquote() function.
-func doUnquote(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	value := data.String(args[0])
+func doUnquote(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	value := data.String(args.Get(0))
 
 	if v, err := strconv.Unquote(value); err != nil {
 		return data.NewList(nil, err), errors.NewError(err).In("Unquote")

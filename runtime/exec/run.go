@@ -12,7 +12,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-func run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func run(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	// Check to see if we're even allowed to do this.
 	if !settings.GetBool(defs.ExecPermittedSetting) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
@@ -92,7 +92,7 @@ func run(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		resultArray[n] = v
 	}
 
-	result := data.NewArrayFromArray(data.StringType, resultArray)
+	result := data.NewArrayFromInterfaces(data.StringType, resultArray...)
 	_ = cmdStruct.Set("Stdout", result)
 
 	return nil, nil

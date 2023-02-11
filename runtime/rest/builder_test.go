@@ -3,34 +3,36 @@ package rest
 import (
 	"reflect"
 	"testing"
+
+	"github.com/tucats/ego/data"
 )
 
 func TestURLs(t *testing.T) {
 	tests := []struct {
 		name string
-		args []interface{}
+		args data.List
 		want string
 	}{
 		{
 			name: "localhost:8080/tables/%s/rows",
-			args: []interface{}{"mytable"},
+			args: data.NewList("mytable"),
 			want: "localhost:8080/tables/mytable/rows",
 		},
 		{
 			name: "localhost:8080/tables/%s/rows",
-			args: []interface{}{"mytable", "count=3"},
+			args: data.NewList("mytable", "count=3"),
 			want: "localhost:8080/tables/mytable/rows?count%3D3",
 		},
 		{
 			name: "localhost:8080/tables/%s/rows",
-			args: []interface{}{"mytable", "count=3", "nosort"},
+			args: data.NewList("mytable", "count=3", "nosort"),
 			want: "localhost:8080/tables/mytable/rows?count%3D3&nosort",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := URLBuilder()
-			u.Path(tt.name, tt.args...)
+			u.Path(tt.name, tt.args.Elements()...)
 
 			if got := u.String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("URL.WritePath() = %v, want %v", got, tt.want)

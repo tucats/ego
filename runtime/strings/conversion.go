@@ -10,26 +10,26 @@ import (
 )
 
 // format implements the strings.format() function.
-func format(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	if len(args) == 0 {
+func format(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	if args.Len() == 0 {
 		return "", nil
 	}
 
-	if len(args) == 1 {
-		return data.String(args[0]), nil
+	if args.Len() == 1 {
+		return data.String(args.Get(0)), nil
 	}
 
-	return fmt.Sprintf(data.String(args[0]), args[1:]...), nil
+	return fmt.Sprintf(data.String(args.Get(0)), args.Elements()[1:]...), nil
 }
 
 // chars implements the strings.chars() function. This accepts a string
 // value and converts it to an array of characters.
-func chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func chars(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := data.String(args[0])
+	v := data.String(args.Get(0))
 	for i := range v {
 		count = i + 1
 	}
@@ -48,12 +48,12 @@ func chars(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 // extractInts implements the strings.ints() function. This accepts a string
 // value and converts it to an array of integer rune values.
-func extractInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func extractInts(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	count := 0
 
 	// Count the number of characters in the string. (We can't use len() here
 	// which onl returns number of bytes)
-	v := data.String(args[0])
+	v := data.String(args.Get(0))
 	for i := range v {
 		count = i + 1
 	}
@@ -73,10 +73,10 @@ func extractInts(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 // toString implements the strings.toString() function, which accepts an array
 // of items and converts it to a single long string of each item. Normally , this is
 // an array of characters.
-func toString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func toString(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	var b strings.Builder
 
-	for _, v := range args {
+	for _, v := range args.Elements() {
 		switch a := v.(type) {
 		case string:
 			b.WriteString(a)

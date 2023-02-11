@@ -13,9 +13,9 @@ import (
 // be enabled or disabled, and returns the previous state of the logger. It is
 // an error to specify a non-existent logger name. Logger names are not case
 // sensitive.
-func setLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	name := strings.TrimSpace(data.String(args[0]))
-	enabled := data.Bool(args[1])
+func setLogger(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
+	name := strings.TrimSpace(data.String(args.Get(0)))
+	enabled := data.Bool(args.Get(1))
 
 	loggerID := ui.LoggerByName(name)
 	if loggerID <= 0 {
@@ -31,12 +31,12 @@ func setLogger(symbols *symbols.SymbolTable, args []interface{}) (interface{}, e
 
 // getLogContents implements the util.getLogContents(n) function, which returns the last 'n' lines
 // from the current.
-func getLogContents(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
-	count := data.Int(args[0])
+func getLogContents(s *symbols.SymbolTable, args data.List) (interface{}, error) {
+	count := data.Int(args.Get(0))
 	filter := 0
 
-	if len(args) > 1 {
-		filter = data.Int(args[1])
+	if args.Len() > 1 {
+		filter = data.Int(args.Get(1))
 	}
 
 	lines := ui.Tail(count, filter)
@@ -50,5 +50,5 @@ func getLogContents(s *symbols.SymbolTable, args []interface{}) (interface{}, er
 		xLines[i] = j
 	}
 
-	return data.NewArrayFromArray(data.StringType, xLines), nil
+	return data.NewArrayFromInterfaces(data.StringType, xLines...), nil
 }

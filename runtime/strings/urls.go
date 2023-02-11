@@ -24,10 +24,10 @@ import (
 //	map[string]interface{} {
 //	       "ID" : 1653
 //	}
-func URLPattern(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func URLPattern(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	result := data.NewMap(data.StringType, data.InterfaceType)
 
-	patternMap, match := ParseURLPattern(data.String(args[0]), data.String(args[1]))
+	patternMap, match := ParseURLPattern(data.String(args.Get(0)), data.String(args.Get(1)))
 	if !match {
 		return result, nil
 	}

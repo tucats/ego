@@ -55,9 +55,9 @@ type FunctionDefinition struct {
 // as desired.
 const Any = math.MaxInt32
 
-// FunctionDictionary is the dictionary of functions. As functions are determined
-// to allow the return of both a value and an error as multi-part results, add the
-// ErrReturn:true flag to each function definition.
+// FunctionDictionary is the dictionary of functions. Each entry in the dictionary
+// indicates the min and max argument counts, the native function address, and
+// the declaration metadata for the builtin function.
 var FunctionDictionary = map[string]FunctionDefinition{
 	"$new": {Min: 1, Max: 1, F: New},
 	"append": {Min: 2, Max: Any, F: Append, D: &data.Declaration{
@@ -215,7 +215,7 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 // FindFunction returns the function definition associated with the
 // provided function pointer, if one is found.
-func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) *FunctionDefinition {
+func FindFunction(f func(*symbols.SymbolTable, data.List) (interface{}, error)) *FunctionDefinition {
 	sf1 := reflect.ValueOf(f)
 
 	for _, d := range FunctionDictionary {
@@ -231,7 +231,7 @@ func FindFunction(f func(*symbols.SymbolTable, []interface{}) (interface{}, erro
 }
 
 // FindName returns the name of a function from the dictionary if one is found.
-func FindName(f func(*symbols.SymbolTable, []interface{}) (interface{}, error)) string {
+func FindName(f func(*symbols.SymbolTable, data.List) (interface{}, error)) string {
 	sf1 := reflect.ValueOf(f)
 
 	for name, d := range FunctionDictionary {
@@ -288,13 +288,13 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 		return nil, errors.ErrPanic.Context(i18n.E("arg.count"))
 	}
 
-	fn, ok := fdef.F.(func(*symbols.SymbolTable, []interface{}) (interface{}, error))
+	fn, ok := fdef.F.(func(*symbols.SymbolTable, data.List) (interface{}, error))
 	if !ok {
 		return nil, errors.ErrPanic.Context(fmt.Errorf(i18n.E("function.pointer",
 			map[string]interface{}{"ptr": fdef.F})))
 	}
 
-	return fn(s, args)
+	return fn(s, data.NewList(args...))
 }
 
 func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
@@ -315,7 +315,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	return nil
 }
 
-func stubFunction(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
+func stubFunction(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	return nil, errors.ErrInvalidFunctionName
 }
 

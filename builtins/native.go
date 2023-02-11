@@ -20,7 +20,7 @@ import (
 
 // NativeFunction defines the signature of native (i.e. builtin) runtime
 // functions.
-type NativeFunction func(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
+type NativeFunction func(s *symbols.SymbolTable, args data.List) (interface{}, error)
 
 type nativeFunctionDef struct {
 	Kind *data.Type
