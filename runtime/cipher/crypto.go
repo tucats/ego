@@ -45,12 +45,12 @@ func encrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 func decrypt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	b, err := hex.DecodeString(data.String(args[0]))
 	if err != nil {
-		return data.List(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.NewError(err)
 	}
 
 	result, err := util.Decrypt(string(b), data.String(args[1]))
 
-	return data.List(result, err), err
+	return data.NewList(result, err), err
 }
 
 // random implements the cipher.random() function which generates a random token

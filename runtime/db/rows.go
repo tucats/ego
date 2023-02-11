@@ -88,7 +88,7 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if err := rows.Scan(rowTemplate...); err != nil {
-		return data.List(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	if asStruct {
@@ -98,8 +98,8 @@ func rowsScan(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 			rowMap[v] = rowValues[i]
 		}
 
-		return data.List(data.NewMapFromMap(rowMap), nil), nil
+		return data.NewList(data.NewMapFromMap(rowMap), nil), nil
 	}
 
-	return data.List(data.NewArrayFromArray(data.InterfaceType, rowValues), nil), nil
+	return data.NewList(data.NewArrayFromArray(data.InterfaceType, rowValues), nil), nil
 }

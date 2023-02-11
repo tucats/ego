@@ -14,7 +14,7 @@ import (
 func normalize(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	v1, v2 := data.Normalize(args[0], args[1])
 
-	return data.List(v1, v2), nil
+	return data.NewList(v1, v2), nil
 }
 
 // minimum implements the math.Min() function.

@@ -23,7 +23,7 @@ func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	for i, v := range args[2:] {
 		if data.TypeOfPointer(v).IsUndefined() {
-			return data.List(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
+			return data.NewList(nil, errors.ErrNotAPointer), errors.ErrNotAPointer
 		}
 
 		if content, ok := v.(*interface{}); ok {
@@ -34,7 +34,7 @@ func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 	// Do the scan, returning an array of values
 	items, err := scanner(dataString, formatString)
 	if err != nil {
-		return data.List(0, err), errors.NewError(err).In("Sscanf")
+		return data.NewList(0, err), errors.NewError(err).In("Sscanf")
 	}
 
 	// Stride over the return value pointers, assigning as many
@@ -47,7 +47,7 @@ func stringScanFormat(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 		*p = items[idx]
 	}
 
-	return data.List(len(items), nil), nil
+	return data.NewList(len(items), nil), nil
 }
 
 func scanner(data, format string) ([]interface{}, error) {

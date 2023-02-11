@@ -382,10 +382,10 @@ func callByteCode(c *Context, i interface{}) error {
 
 		result, err = function(funcSymbols, args)
 
-		if r, ok := result.(data.Values); ok {
+		if r, ok := result.(data.List); ok {
 			_ = c.push(NewStackMarker("results"))
-			for i := len(r.Items) - 1; i >= 0; i = i - 1 {
-				_ = c.push(r.Items[i])
+			for i := r.Len() - 1; i >= 0; i = i - 1 {
+				_ = c.push(r.Get(i))
 			}
 
 			return nil
@@ -437,11 +437,11 @@ func callByteCode(c *Context, i interface{}) error {
 
 		result, err = function(functionSymbols, args)
 
-		if results, ok := result.(data.Values); ok {
+		if results, ok := result.(data.List); ok {
 			_ = c.push(NewStackMarker("results"))
 
-			for i := len(results.Items) - 1; i >= 0; i = i - 1 {
-				_ = c.push(results.Items[i])
+			for i := results.Len() - 1; i >= 0; i = i - 1 {
+				_ = c.push(results.Get(i))
 			}
 
 			return nil

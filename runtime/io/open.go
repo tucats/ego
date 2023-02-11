@@ -24,7 +24,7 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		err = errors.NewError(err).In("ReadDir")
 
-		return data.List(nil, err), err
+		return data.NewList(nil, err), err
 	}
 
 	modeValue := "input"
@@ -58,7 +58,7 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		err = errors.NewError(err).In("ReadDir")
 
-		return data.List(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.NewError(err)
 	}
 
 	fobj := data.NewStruct(fileType)
@@ -68,5 +68,5 @@ func openFile(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	fobj.SetAlways(nameFieldName, fname)
 	fobj.SetAlways(modeFieldName, modeValue)
 
-	return data.List(fobj, nil), nil
+	return data.NewList(fobj, nil), nil
 }

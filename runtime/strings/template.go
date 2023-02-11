@@ -16,7 +16,7 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 
 	tree, ok := args[0].(*template.Template)
 	if !ok {
-		return data.List(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template").Context(data.TypeOf(args[0]).String())
+		return data.NewList(nil, errors.ErrInvalidType), errors.ErrInvalidType.In("Template").Context(data.TypeOf(args[0]).String())
 	}
 
 	root := tree.Tree.Root
@@ -29,19 +29,19 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 			if !ok {
 				e := errors.ErrInvalidTemplateName.In("Template").Context(templateNode.Name)
 
-				return data.List(nil, e), e
+				return data.NewList(nil, e), e
 			}
 
 			t, ok := tv.(*template.Template)
 			if !ok {
 				e := errors.ErrInvalidType.In("Template").Context(data.TypeOf(tv).String())
 
-				return data.List(nil, e), e
+				return data.NewList(nil, e), e
 			}
 
 			_, err = tree.AddParseTree(templateNode.Name, t.Tree)
 			if err != nil {
-				return data.List(nil, err), errors.NewError(err)
+				return data.NewList(nil, err), errors.NewError(err)
 			}
 		}
 	}
@@ -64,5 +64,5 @@ func evaluateTemplate(s *symbols.SymbolTable, args []interface{}) (interface{}, 
 		err = errors.NewError(err)
 	}
 
-	return data.List(r.String(), err), err
+	return data.NewList(r.String(), err), err
 }

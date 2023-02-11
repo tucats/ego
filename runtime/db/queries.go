@@ -18,7 +18,7 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 
 	db, tx, err := client(s)
 	if err != nil {
-		return data.List(nil, err), err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
@@ -41,7 +41,7 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	}
 
 	if e2 != nil {
-		return data.List(nil, errors.NewError(e2)), errors.NewError(e2)
+		return data.NewList(nil, errors.NewError(e2)), errors.NewError(e2)
 	}
 
 	result := data.NewStruct(rowsType).FromBuiltinPackage()
@@ -50,7 +50,7 @@ func query(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	result.SetAlways(dbFieldName, this)
 	result.SetReadonly(true)
 
-	return data.List(result, err), err
+	return data.NewList(result, err), err
 }
 
 // queryResult executes a query, with optional parameter substitution, and returns the
@@ -62,7 +62,7 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 
 	db, tx, err := client(s)
 	if err != nil {
-		return data.List(nil, err), err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
@@ -91,7 +91,7 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	}
 
 	if e2 != nil {
-		return data.List(nil, errors.NewError(e2)), errors.NewError(e2)
+		return data.NewList(nil, errors.NewError(e2)), errors.NewError(e2)
 	}
 
 	arrayResult := make([][]interface{}, 0)
@@ -134,12 +134,12 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 	ui.Log(ui.DBLogger, "Scanned %d rows, asStruct=%v", size, asStruct)
 
 	if err := rows.Close(); err != nil {
-		return data.List(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return data.List(nil, errors.NewError(err)), errors.NewError(err)
+		return data.NewList(nil, errors.NewError(err)), errors.NewError(err)
 	}
 
 	// Need to convert the results from a slice to an actual array
@@ -157,7 +157,7 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 	}
 
-	return data.List(r, err), err
+	return data.NewList(r, err), err
 }
 
 // execute executes a SQL statement, and returns the number of rows that were
@@ -204,5 +204,5 @@ func execute(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err)
 	}
 
-	return data.List(int(r), err), err
+	return data.NewList(int(r), err), err
 }

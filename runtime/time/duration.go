@@ -15,13 +15,13 @@ func parseDuration(s *symbols.SymbolTable, args []interface{}) (interface{}, err
 
 	t, err := time.ParseDuration(str)
 	if err != nil {
-		return data.List(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.NewError(err)
 	}
 
 	d := data.NewStruct(durationType)
 	_ = d.Set("duration", t)
 
-	return data.List(d, nil), nil
+	return data.NewList(d, nil), nil
 }
 
 func DurationString(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {

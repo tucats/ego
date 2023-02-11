@@ -13,9 +13,9 @@ func doAtoi(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	str := data.String(args[0])
 
 	if v, err := strconv.Atoi(str); err != nil {
-		return data.List(nil, err), errors.NewError(err).In("Atoi")
+		return data.NewList(nil, err), errors.NewError(err).In("Atoi")
 	} else {
-		return data.List(v, nil), nil
+		return data.NewList(v, nil), nil
 	}
 }
 

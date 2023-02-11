@@ -26,7 +26,7 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 	if err != nil {
 		err = errors.NewError(err).In("Unmarshal")
 
-		return data.List(nil, err), err
+		return data.NewList(nil, err), err
 	}
 
 	// If there is no model, assume a generic return value is okay
@@ -43,19 +43,19 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 			err = errors.NewError(err)
 		}
 
-		return data.List(v, err), err
+		return data.NewList(v, err), err
 	}
 
 	// There's a model, so the return value should be an error code. IF we already
 	// have had an error on the Unmarshal, we report it now.
 	if err != nil {
-		return data.List(errors.NewError(err).In("Unmarshal")), nil
+		return data.NewList(errors.NewError(err).In("Unmarshal")), nil
 	}
 
 	// There is a model, so do some mapping if possible.
 	pointer, ok := args[1].(*interface{})
 	if !ok {
-		return data.List(errors.ErrInvalidPointerType), nil
+		return data.NewList(errors.ErrInvalidPointerType), nil
 	}
 
 	value := *pointer
@@ -68,16 +68,16 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 				if err != nil {
 					err = errors.NewError(err).In("Unmarshal")
 
-					return data.List(err), nil
+					return data.NewList(err), nil
 				}
 			}
 		} else {
-			return data.List(errors.ErrInvalidType), nil
+			return data.NewList(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return data.List(nil), nil
+		return data.NewList(nil), nil
 	}
 
 	// Map
@@ -93,16 +93,16 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 				_, err = target.Set(k2, v2)
 				if err != nil {
-					return data.List(errors.NewError(err).In("Unmarshal")), nil
+					return data.NewList(errors.NewError(err).In("Unmarshal")), nil
 				}
 			}
 		} else {
-			return data.List(errors.ErrInvalidType), nil
+			return data.NewList(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return data.List(nil), nil
+		return data.NewList(nil), nil
 	}
 
 	// Array
@@ -120,16 +120,16 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 				err = target.Set(k, v)
 				if err != nil {
-					return data.List(errors.NewError(err)), nil
+					return data.NewList(errors.NewError(err)), nil
 				}
 			}
 		} else {
-			return data.List(errors.ErrInvalidType), nil
+			return data.NewList(errors.ErrInvalidType), nil
 		}
 
 		*pointer = target
 
-		return data.List(nil), nil
+		return data.NewList(nil), nil
 	}
 
 	if !data.TypeOf(v).IsType(data.TypeOf(value)) {
@@ -143,5 +143,5 @@ func unmarshal(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 		err = errors.NewError(err)
 	}
 
-	return data.List(err), err
+	return data.NewList(err), err
 }

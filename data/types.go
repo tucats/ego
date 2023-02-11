@@ -178,13 +178,6 @@ type Field struct {
 	Type *Type
 }
 
-// Values is a type used to hold multiple values. It is most often
-// used to describe a list of return values to be treated as a tuple
-// when returning from a builtin or runtime function.
-type Values struct {
-	Items []interface{}
-}
-
 // This map caches whether a given type implements a given interface.
 // Initially this is not known, but after the first validation, the
 // result is stored here to accelerate any subsequent evaluations.
@@ -194,10 +187,6 @@ var implements map[string]bool
 
 var validationLock sync.Mutex
 
-// List creates a new Values list object, placing the items in the list.
-func List(items ...interface{}) Values {
-	return Values{Items: items}
-}
 
 // Get retrieves a named attribute (a field or a method)
 // from the type.

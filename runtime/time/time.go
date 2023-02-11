@@ -27,10 +27,10 @@ func parseTime(s *symbols.SymbolTable, args []interface{}) (interface{}, error) 
 
 	t, err := time.Parse(fmt, str)
 	if err != nil {
-		return data.List(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.NewError(err)
 	}
 
-	return data.List(MakeTime(&t, s), nil), nil
+	return data.NewList(MakeTime(&t, s), nil), nil
 }
 
 // TimeFormat implements time.Format().

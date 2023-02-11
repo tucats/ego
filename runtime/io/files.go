@@ -89,7 +89,7 @@ func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 	if err != nil {
 		err = errors.NewError(err).In("ReadString")
 
-		return data.List(nil, err), err
+		return data.NewList(nil, err), err
 	}
 
 	var scanner *bufio.Scanner
@@ -106,7 +106,7 @@ func readString(s *symbols.SymbolTable, args []interface{}) (interface{}, error)
 
 	scanner.Scan()
 
-	return data.List(scanner.Text(), err), err
+	return data.NewList(scanner.Text(), err), err
 }
 
 // writeString writes a string value to a file.
@@ -125,7 +125,7 @@ func writeString(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		err = errors.NewError(err).In("WriteString")
 	}
 
-	return data.List(length, err), err
+	return data.NewList(length, err), err
 }
 
 // write writes an arbitrary binary object to a file.
@@ -138,7 +138,7 @@ func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 	if err != nil {
 		err = errors.NewError(err).In("Write")
 
-		return data.List(nil, err), errors.NewError(err)
+		return data.NewList(nil, err), errors.NewError(err)
 	}
 
 	bytes := buf.Bytes()
@@ -153,7 +153,7 @@ func write(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err).In("Write")
 	}
 
-	return data.List(length, err), err
+	return data.NewList(length, err), err
 }
 
 // Write writes an arbitrary binary object to a file at an offset.
@@ -182,5 +182,5 @@ func writeAt(s *symbols.SymbolTable, args []interface{}) (interface{}, error) {
 		err = errors.NewError(err).In("WriteAt")
 	}
 
-	return data.List(length, err), err
+	return data.NewList(length, err), err
 }
