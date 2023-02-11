@@ -118,7 +118,6 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	// Make sure we have recorded the extensions status.
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
-	ui.Log(ui.ServerLogger, "Extensions enabled: %v", extensions)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {

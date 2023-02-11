@@ -207,7 +207,7 @@ func resolveServerName(name string) (string, error) {
 	// Start by trying to connect with what we have, if it had a scheme. In this
 	// case, the string is expected to be complete.
 	if hasScheme {
-		settings.SetDefault("ego.application.server", name)
+		settings.SetDefault(defs.ApplicationServerSetting, name)
 
 		err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 		if err == nil {
@@ -218,7 +218,7 @@ func resolveServerName(name string) (string, error) {
 	// No scheme, so let's try https. If no port supplied, assume the default port.
 	normalizedName = "https://" + name + port
 
-	settings.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 	if err == nil {
@@ -228,7 +228,7 @@ func resolveServerName(name string) (string, error) {
 	// Nope. Same deal with http scheme.
 	normalizedName = "http://" + name + port
 
-	settings.SetDefault("ego.application.server", normalizedName)
+	settings.SetDefault(defs.ApplicationServerSetting, normalizedName)
 
 	err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, nil, defs.LogonAgent)
 

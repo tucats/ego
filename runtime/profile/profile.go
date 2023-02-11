@@ -22,7 +22,7 @@ func setKey(symbols *symbols.SymbolTable, args []interface{}) (interface{}, erro
 	var err error
 
 	key := data.String(args[0])
-	isEgoSetting := strings.HasPrefix(key, "ego.")
+	isEgoSetting := strings.HasPrefix(key, defs.PrivilegedKeyPrefix)
 
 	// Quick check here. The key must already exist if it's one of the
 	// "system" settings. That is, you can't create an ego.* setting that

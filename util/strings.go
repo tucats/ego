@@ -88,7 +88,7 @@ func SessionLog(id int32, text string) string {
 	lines := strings.Split(text, "\n")
 
 	for n := 0; n < len(lines); n++ {
-		lines[n] = fmt.Sprintf("                                   : [%d] %s", id, lines[n])
+		lines[n] = fmt.Sprintf("%35s: [%d] %s", " ", id, lines[n])
 	}
 
 	return strings.Join(lines, "\n")

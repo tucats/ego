@@ -44,17 +44,23 @@ func T(key string, valueMap ...map[string]interface{}) string {
 	return text
 }
 
+func ofType(prefix, key string, valueMap ...map[string]interface{}) string {
+	prefix = prefix + "."
+	m := T(prefix+key, valueMap...)
+	return strings.TrimPrefix(m, prefix)
+}
+
 // L returns a label with the given key.
 func L(key string, valueMap ...map[string]interface{}) string {
-	return T("label."+key, valueMap...)
+	return ofType("label", key, valueMap...)
 }
 
 // M returns a message with the given key.
 func M(key string, valueMap ...map[string]interface{}) string {
-	return T("msg."+key, valueMap...)
+	return ofType("msg", key, valueMap...)
 }
 
 // E returns an error with the given key.
 func E(key string, valueMap ...map[string]interface{}) string {
-	return T("error."+key, valueMap...)
+	return ofType("error", key, valueMap...)
 }
