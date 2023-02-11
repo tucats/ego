@@ -78,6 +78,39 @@ func LogRequest(r *http.Request, sessionID int32) {
 	}
 }
 
+// Debugging tool that dumps interesting things about a request. Only outputs
+// when REST logging is enabled.
+func LogResponse(w http.ResponseWriter, sessionID int32) {
+	if ui.IsActive(ui.RestLogger) {
+		headerMsg := strings.Builder{}
+
+		for k, v := range w.Header() {
+			for _, i := range v {
+				// A bit of a hack, but if this is the Authorization header, only show
+				// the first token in the value (Bearer, Basic, etc).
+				if strings.EqualFold(k, "Authorization") {
+					f := strings.Fields(i)
+					if len(f) > 0 {
+						i = f[0] + " <hidden value>"
+					}
+				}
+
+				headerMsg.WriteString("   ")
+				headerMsg.WriteString(k)
+				headerMsg.WriteString(": ")
+				headerMsg.WriteString(i)
+				headerMsg.WriteString("\n")
+			}
+		}
+
+		ui.WriteLog(ui.RestLogger, "[%d] Response headers:\n%s",
+			sessionID,
+			util.SessionLog(sessionID,
+				strings.TrimSuffix(headerMsg.String(), "\n"),
+			))
+	}
+}
+
 // LogMemoryStatitics is a go-routine launched when a server is started. It generates a logging
 // entry every ten minutes indicating the current memory allocation, the total memory ever
 // allocated, the system memory, and the number of times the garbage-collector has run.

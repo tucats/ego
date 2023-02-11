@@ -11,6 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-sqlite3 v1.14.14
+	github.com/vektra/mockery/v2 v2.20.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/term v0.4.0
 	gopkg.in/resty.v1 v1.12.0

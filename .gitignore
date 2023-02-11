@@ -10,6 +10,7 @@ user-database.json
 *.key
 *.log
 *.code-workspace
+*.mp4
 builds
 out
 __debug_bin

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -46,8 +47,11 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cached := true
+
 	data := findAsset(sessionID, path)
 	if data == nil {
+		cached = false
 		for strings.HasPrefix(path, ".") || strings.HasPrefix(path, "/") {
 			path = path[1:]
 		}
@@ -79,6 +83,40 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		saveAsset(sessionID, path, data)
 	}
 
+	start := 0
+	end := len(data)
+
+	if h, found := r.Header["Range"]; found && len(h) > 0 {
+		text := strings.ReplaceAll(h[0], "bytes=", "")
+		ranges := strings.Split(text, "-")
+		if len(ranges) > 0 {
+			start, _ = strconv.Atoi(ranges[0])
+		}
+		if len(ranges) > 1 {
+			end, _ = strconv.Atoi(ranges[1])
+		}
+	}
+
+	slice := data[start:end]
+
+	mode := "from cache"
+	if !cached {
+		mode = "from disk"
+	}
+
+	isVideo := ""
+	if strings.HasSuffix(path, ".mp4") {
+		isVideo = " is video;"
+		w.Header()["Content-Type"] = []string{"video/mp4"}
+		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, end, len(data))}
+		w.Header()["Accept-Ranges"] = []string{"bytes"}
+	}
+
+	server.LogResponse(w, sessionID)
+
+	ui.Log(ui.ServerLogger, "[%d] GET %s; %s;%s range %d:%d; status 200",
+		sessionID, path, mode, isVideo, start, end)
+
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_, _ = w.Write(slice)
 }
