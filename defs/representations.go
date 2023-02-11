@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+type Arguments []interface{}
+
 type ServerInfo struct {
 	Version  int    `json:"api,omitempty"`
 	Hostname string `json:"name,omitempty"`

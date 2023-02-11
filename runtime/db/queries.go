@@ -152,7 +152,8 @@ func queryResult(s *symbols.SymbolTable, args []interface{}) (interface{}, error
 		}
 	} else {
 		for i, v := range arrayResult {
-			r.SetAlways(i, v)
+			rv := data.NewArrayFromArray(data.InterfaceType, v)
+			r.SetAlways(i, rv)
 		}
 	}
 

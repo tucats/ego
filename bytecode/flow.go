@@ -545,6 +545,7 @@ func argCheckByteCode(c *Context, i interface{}) error {
 
 	switch operand := i.(type) {
 	case []interface{}:
+		// ArgCheck is normally stored as an array interface.
 		if len(operand) < 2 || len(operand) > 3 {
 			return c.error(errors.ErrArgumentTypeCheck)
 		}

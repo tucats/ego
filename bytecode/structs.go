@@ -103,16 +103,6 @@ func loadIndexByteCode(c *Context, i interface{}) error {
 		v, _ := a.Get(subscript)
 		err = c.push(v)
 
-	case []interface{}:
-		// Needed for varars processing
-		subscript := data.Int(index)
-		if subscript < 0 || subscript >= len(a) {
-			return c.error(errors.ErrArrayIndex).Context(subscript)
-		}
-
-		v := a[subscript]
-		err = c.push(v)
-
 	default:
 		err = c.error(errors.ErrInvalidType)
 	}
@@ -166,26 +156,10 @@ func loadSliceByteCode(c *Context, i interface{}) error {
 		}
 
 		return err
-	// Array of objects means we retrieve a slice.
-	case []interface{}:
-		subscript1 := data.Int(index1)
-		if subscript1 < 0 || subscript1 >= len(a) {
-			return c.error(errors.ErrInvalidSliceIndex).Context(subscript1)
-		}
-
-		subscript2 := data.Int(index2)
-		if subscript2 < subscript1 || subscript2 >= len(a) {
-			return c.error(errors.ErrInvalidSliceIndex).Context(subscript2)
-		}
-
-		v := a[subscript1 : subscript2+1]
-		_ = c.push(v)
 
 	default:
 		return c.error(errors.ErrInvalidType)
 	}
-
-	return nil
 }
 
 // storeIndexByteCode instruction processor.
@@ -321,23 +295,6 @@ func storeIndexByteCode(c *Context, i interface{}) error {
 		}
 
 		return err
-
-	// Index into array is integer index
-	case []interface{}:
-		subscript := data.Int(index)
-		if subscript < 0 || subscript >= len(a) {
-			return c.error(errors.ErrArrayIndex).Context(subscript)
-		}
-
-		if c.typeStrictness == 0 {
-			vv := a[subscript]
-			if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-				return c.error(errors.ErrInvalidVarType)
-			}
-		}
-
-		a[subscript] = v
-		_ = c.push(a)
 
 	default:
 		return c.error(errors.ErrInvalidType).Context(data.TypeOf(a).String())

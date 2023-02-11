@@ -1,6 +1,8 @@
 package builtins
 
-import "github.com/tucats/ego/data"
+import (
+	"github.com/tucats/ego/data"
+)
 
 // MaxDeepCopyDepth specifies the maximum depth that a recursive
 // copy will go before failing. Setting this too small will
@@ -41,15 +43,6 @@ func DeepCopy(source interface{}, depth int) interface{} {
 
 	case float64:
 		return v
-
-	case []interface{}:
-		r := make([]interface{}, 0)
-
-		for _, d := range v {
-			r = append(r, DeepCopy(d, depth-1))
-		}
-
-		return r
 
 	case *data.Struct:
 		return v.Copy()

@@ -49,15 +49,6 @@ func recursiveCopy(source interface{}, depth int) interface{} {
 	case float64:
 		return v
 
-	case []interface{}:
-		r := make([]interface{}, 0)
-
-		for _, d := range v {
-			r = append(r, recursiveCopy(d, depth-1))
-		}
-
-		return r
-
 	case *data.Struct:
 		return v.Copy()
 

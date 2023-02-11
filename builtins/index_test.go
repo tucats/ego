@@ -4,54 +4,54 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/symbols"
 )
 
 func TestFunctionIndex(t *testing.T) {
-	type args struct {
-		args []interface{}
-	}
-
 	tests := []struct {
 		name    string
-		args    args
+		args    []interface{}
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			name: "index found",
-			args: args{[]interface{}{"string of text", "of"}},
+			args: []interface{}{"string of text", "of"},
 			want: 8,
 		},
 		{
 			name: "index not found",
-			args: args{[]interface{}{"string of text", "burp"}},
+			args: []interface{}{"string of text", "burp"},
 			want: 0,
 		},
 		{
 			name: "empty source string",
-			args: args{[]interface{}{"", "burp"}},
+			args: []interface{}{"", "burp"},
 			want: 0,
 		},
 		{
 			name: "empty test string",
-			args: args{[]interface{}{"string of text", ""}},
+			args: []interface{}{"string of text", ""},
 			want: 1,
 		},
 		{
 			name: "non-string test",
-			args: args{[]interface{}{"A1B2C3D4", 3}},
+			args: []interface{}{"A1B2C3D4", 3},
 			want: 6,
 		},
 		{
 			name: "array index",
-			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, 3.14}},
+			args: []interface{}{
+				data.NewArrayFromArray(data.InterfaceType, []interface{}{"tom", 3.14, true}),
+				3.14},
 			want: 1,
 		},
 		{
 			name: "array not found",
-			args: args{[]interface{}{[]interface{}{"tom", 3.14, true}, false}},
+			args: []interface{}{
+				data.NewArrayFromArray(data.InterfaceType, []interface{}{"tom", 3.14, true}), false},
 			want: -1,
 		},
 	}
@@ -63,7 +63,7 @@ func TestFunctionIndex(t *testing.T) {
 			s := symbols.NewSymbolTable("testing")
 			s.Root().SetAlways(defs.ExtensionsVariable, true)
 
-			got, err := Index(s, tt.args.args)
+			got, err := Index(s, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionIndex() error = %v, wantErr %v", err, tt.wantErr)
 

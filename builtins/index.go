@@ -27,13 +27,7 @@ func Index(symbols *symbols.SymbolTable, args []interface{}) (interface{}, error
 		return -1, nil
 
 	case []interface{}:
-		for n, v := range arg {
-			if reflect.DeepEqual(v, args[1]) {
-				return n, nil
-			}
-		}
-
-		return -1, nil
+		return nil, errors.ErrInvalidType.Context("[]interface{}")
 
 	case *data.Map:
 		_, found, err := arg.Get(args[1])
