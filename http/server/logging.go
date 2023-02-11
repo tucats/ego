@@ -103,11 +103,13 @@ func LogResponse(w http.ResponseWriter, sessionID int32) {
 			}
 		}
 
-		ui.WriteLog(ui.RestLogger, "[%d] Response headers:\n%s",
-			sessionID,
-			util.SessionLog(sessionID,
-				strings.TrimSuffix(headerMsg.String(), "\n"),
-			))
+		if headerMsg.Len() > 0 {
+			ui.WriteLog(ui.RestLogger, "[%d] Response headers:\n%s",
+				sessionID,
+				util.SessionLog(sessionID,
+					strings.TrimSuffix(headerMsg.String(), "\n"),
+				))
+		}
 	}
 }
 

@@ -85,7 +85,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	start := 0
 	end := len(data)
-
+	hasRange := ""
 	if h, found := r.Header["Range"]; found && len(h) > 0 {
 		text := strings.ReplaceAll(h[0], "bytes=", "")
 		ranges := strings.Split(text, "-")
@@ -94,6 +94,7 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if len(ranges) > 1 {
 			end, _ = strconv.Atoi(ranges[1])
+			hasRange = fmt.Sprintf(" range %d-%d;", start, end)
 		}
 	}
 
@@ -104,18 +105,38 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 		mode = "from disk"
 	}
 
-	isVideo := ""
-	if strings.HasSuffix(path, ".mp4") {
-		isVideo = " is video;"
-		w.Header()["Content-Type"] = []string{"video/mp4"}
+	contentType := ""
+
+	// Map the extension type of the object into a content type
+	// value if possible.
+	ext := filepath.Ext(path)
+	if t, found := map[string]string{
+		".txt":  "application/text",
+		".text": "application/text",
+		".json": "application/json",
+		".mp4":  "video/mp4",
+		".pdf":  "application/pdf",
+		".htm":  "text/html",
+		".html": "text/html",
+		".css":  "text/css",
+		".js":   "text/javascript",
+	}[ext]; found {
+		w.Header()["Content-Type"] = []string{t}
+		contentType = " " + t + ";"
+
+	}
+
+	if hasRange != "" {
 		w.Header()["Content-Range"] = []string{fmt.Sprintf("bytes %d-%d/%d", start, end, len(data))}
 		w.Header()["Accept-Ranges"] = []string{"bytes"}
+	} else {
+		hasRange = fmt.Sprintf(" size %d", len(data))
 	}
 
 	server.LogResponse(w, sessionID)
 
-	ui.Log(ui.ServerLogger, "[%d] GET %s; %s;%s range %d:%d; status 200",
-		sessionID, path, mode, isVideo, start, end)
+	ui.Log(ui.ServerLogger, "[%d] GET %s; %s;%s%s status 200",
+		sessionID, path, mode, contentType, hasRange)
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(slice)
