@@ -68,8 +68,10 @@ func Debugger(c *bytecode.Context) error {
 		if line < 0 {
 			ui.Say("msg.debug.return")
 		} else if strings.HasPrefix(text, "@entrypoint ") {
+			// Strip of the directive and the parser's helpful trailing semicolon.
+			entry := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(text, "@entrypoint")), ";"))
 			ui.Say("msg.debug.start", map[string]interface{}{
-				"name": strings.TrimPrefix(text, "@entrypoint "),
+				"name": entry,
 			})
 		} else {
 			fmt.Printf("%s:\n  %s %3d, %s\n", stepTo, data.SanitizeName(c.GetModuleName()), line, text)

@@ -136,6 +136,8 @@ func (c *Compiler) compileImport() error {
 
 		// Read the imported object as a file path if we haven't already done this
 		// for this package.
+		savedSourceFile := c.sourceFile
+
 		if !packageDef.Source {
 			text, err := c.readPackageFile(fileName.Spelling())
 			if err != nil {
@@ -193,6 +195,8 @@ func (c *Compiler) compileImport() error {
 		} else {
 			ui.Log(ui.CompilerLogger, "--- Import of package \"%s\" already done", fileName)
 		}
+
+		c.sourceFile = savedSourceFile
 
 		// Rewrite the package if we've added stuff to it.
 		if wasImported != packageDef.Source || wasBuiltin != packageDef.Builtins {

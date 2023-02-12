@@ -24,6 +24,7 @@ type CallFrame struct {
 	Module        string
 	Line          int
 	Package       string
+	name          string
 	symbols       *symbols.SymbolTable
 	bytecode      *ByteCode
 	tokenizer     *tokenizer.Tokenizer
@@ -52,6 +53,7 @@ func (c *Context) callframePush(tableName string, bc *ByteCode, pc int, boundary
 	_ = c.push(CallFrame{
 		Package:    c.pkg,
 		symbols:    c.symbols,
+		name:       c.name,
 		bytecode:   c.bc,
 		singleStep: c.singleStep,
 		tokenizer:  c.tokenizer,
@@ -130,6 +132,7 @@ func (c *Context) callFramePop() error {
 
 		c.pkg = callFrame.Package
 		c.line = callFrame.Line
+		c.name = callFrame.name
 		c.symbols = callFrame.symbols
 		c.singleStep = callFrame.singleStep
 		c.tokenizer = callFrame.tokenizer

@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/tucats/ego/bytecode"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/errors"
@@ -75,10 +73,6 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 
 	for _, typeDef := range data.TypeDeclarations {
 		found := true
-
-		if c.t.PeekText(1) == "interface" {
-			fmt.Println("DEBUG")
-		}
 
 		for pos, token := range typeDef.Tokens {
 			eval := c.t.Peek(1 + pos)

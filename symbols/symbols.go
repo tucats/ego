@@ -56,7 +56,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 
 	if !found && !s.IsRoot() {
 		if s.parent == nil || s.parent == s {
-			fmt.Println("DEBUG: SYMBOL TABLE LOOP")
+			fmt.Println("DEBUG: SYMBOL TABLE LOOP AT ", s.Name)
 			os.Exit(3)
 		}
 
