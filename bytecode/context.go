@@ -57,6 +57,7 @@ type Context struct {
 	lastStruct           interface{}
 	result               interface{}
 	mux                  sync.RWMutex
+	goErr                error
 	programCounter       int
 	stackPointer         int
 	framePointer         int
@@ -141,6 +142,15 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	contextPointer.SetByteCode(b)
 
 	return contextPointer
+}
+
+// GetName returns the name of the module currently executing.
+func (c *Context) GetName() string {
+	if c.bc != nil {
+		return c.bc.name
+	}
+
+	return defs.Main
 }
 
 // GetLine retrieves the current line number from the
@@ -330,6 +340,11 @@ func (c *Context) formatStack(syms *symbols.SymbolTable, newlines bool) string {
 	}
 
 	return result.String()
+}
+
+// Helper function that retrieves the symbol table for the running context.
+func (c *Context) GetSymbols() *symbols.SymbolTable {
+	return c.symbols
 }
 
 // setConstant is a helper function to define a constant value.

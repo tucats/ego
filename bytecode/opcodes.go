@@ -21,6 +21,9 @@ import (
  * 4. Implement the actual opcode, nominally in the appropriate op_*.go file.
  */
 
+// opcodeHandler defines a function that implements an opcode.
+type opcodeHandler func(b *Context, i interface{}) error
+
 // The dispatchTable map is a global that must be initialized once. It is an
 // array indexed by the opcode (which is an integer value) and contains the
 // function pointer of the implentation of the instruction.

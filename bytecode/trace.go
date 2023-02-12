@@ -1,0 +1,24 @@
+package bytecode
+
+import "github.com/tucats/ego/app-cli/ui"
+
+// Trace instruction traces a single instruction in the current context. It formats a TRACE
+// log line that contains the instruction, arguments, and current stack information.
+func traceInstruction(c *Context, i instruction) {
+	instruction := FormatInstruction(i)
+
+	stack := c.formatStack(c.symbols, c.fullStackTrace)
+	if !c.fullStackTrace && len(stack) > 80 {
+		stack = stack[:80]
+	}
+
+	if len(instruction) > 30 {
+		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %s",
+			c.threadID, c.GetModuleName(), c.programCounter, instruction)
+		ui.Log(ui.TraceLogger, "(%d) %18s %3s  %-30s stack[%2d]: %s",
+			c.threadID, " ", " ", " ", c.stackPointer, stack)
+	} else {
+		ui.Log(ui.TraceLogger, "(%d) %18s %3d: %-30s stack[%2d]: %s",
+			c.threadID, c.GetModuleName(), c.programCounter, instruction, c.stackPointer, stack)
+	}
+}

@@ -1,38 +1,42 @@
-#!/bin/zsh -v
+#!/bin/zsh
 
 # Rudimentary script for generating TLS cert and key files for testing an 
 # Ego server. Note that these are not trusted certs.
 #
 # This tool depends on the "certstrap" tool, found at
 #       https://github.com/square/certstrap/releases
+#
+# We create a self-signed authority (the "common name") and
+# the name of a server, which in this case is assumed to be
+# the current node on the .local mDNS name space.
 
-# Define a pass phrase. This could be randomly generated...
-PHRASE=""
-COMMONNAME="Forest Edge"
-COMMONFILE=Forest_Edge
+COMMONNAME="ForestEdge"
+SERVERNAME=$(hostname -s).local
+#SERVERNAME="*.local"
+
+FN=$(echo $SERVERNAME | tr "*" "_")
 
 # Clear away anything old 
-rm -rfv out/
-rm -fv lib/https-server.*
+rm -rf out/
+rm -f lib/https-server.*
 
+# Create an initial setup for the common name. This creates 
+# the out/ directory if it doesn't already exist. This will
+# fail if CN crt or key files already exist in the directory.
+certstrap init --common-name $COMMONNAME 
 
-# Create an initial setup for the common name, Forest Edge
-# in this case. This creates the out/ directory if it doesn't
-# already exist. This will fail if CN crt or key files already
-# exist in the out directory.
-certstrap init --common-name $COMMONNAME  $PHRASE
-
-# request CA signing for each of the domains that will be used
+# request CA signing for each of the servers that will be used
 # for testing.
-certstrap request-cert  $PHRASE --domain  "*.local"
+certstrap request-cert --common-name $SERVERNAME
 
-# Add certificate info for localhost, and for test machines
-certstrap sign  --CA $COMMONFILE   $PHRASE _.local
+# Sign the certificate using our certificate authority.
+certstrap sign  $FN --CA $COMMONNAME
 
 # Copy the newly-made certificate/key info to the parent
-# directory for use by the server and clients
-
-cp out/_.local.key lib/https-server.key
-cp out/_.local.crt lib/https-server.crt
+# directory for use by the server and clients. If the server
+# name is a wildcard, substitute "_" the same was the certstrap
+# program does so we find the correct file names to copy.
+cp out/$FN.key lib/https-server.key
+cp out/$FN.crt lib/https-server.crt
 
 exit

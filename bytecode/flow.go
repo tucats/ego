@@ -192,7 +192,7 @@ func goByteCode(c *Context, i interface{}) error {
 
 		// Launch the function call as a separate thread.
 		ui.Log(ui.TraceLogger, "--> (%d)  Launching go routine \"%s\"", c.threadID, fName)
-		waitGroup.Add(1)
+		goRoutineCompletion.Add(1)
 
 		go GoRoutine(fName, c, data.NewList(args...))
 
@@ -646,7 +646,7 @@ func waitByteCode(c *Context, i interface{}) error {
 	if _, ok := i.(*sync.WaitGroup); ok {
 		i.(*sync.WaitGroup).Wait()
 	} else {
-		waitGroup.Wait()
+		goRoutineCompletion.Wait()
 	}
 
 	return nil
