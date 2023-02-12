@@ -17,11 +17,6 @@ import (
 // opcodeHandler defines a function that implements an opcode.
 type opcodeHandler func(b *Context, i interface{}) error
 
-// dispatchMap is a map that is used to locate the function for an opcode.
-type dispatchMap map[Opcode]opcodeHandler
-
-var dispatch dispatchMap
-var dispatchMux sync.Mutex
 var waitGroup sync.WaitGroup
 
 // growStackBy indicates the number of elements to add to the stack when
@@ -62,12 +57,6 @@ func (c *Context) IsRunning() bool {
 func (c *Context) RunFromAddress(addr int) error {
 	var err error
 
-	// Make sure globals are initialized. Because this updates a global, let's
-	// do it in a thread-safe fashion.
-	dispatchMux.Lock()
-	initializeDispatch()
-	dispatchMux.Unlock()
-
 	// Reset the runtime context.
 	c.programCounter = addr
 	c.running = true
@@ -107,9 +96,9 @@ func (c *Context) RunFromAddress(addr int) error {
 
 		c.programCounter = c.programCounter + 1
 
-		imp, found := dispatch[i.Operation]
-		if !found {
-			return c.error(errors.ErrUnimplementedInstruction).Context(i.Operation)
+		imp := dispatchTable[i.Operation]
+		if imp == nil {
+			continue
 		}
 
 		err = imp(c, i.Operand)

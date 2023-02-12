@@ -83,6 +83,10 @@ type Context struct {
 // runtime stack, symbol table) and is used to actually run bytecode. The bytecode
 // can continue to be modified after it is associated with a context.
 func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
+	// Make sure globals are initialized.
+	initializeDispatch()
+
+	// Determine the name using the associated ByteCode object.
 	name := ""
 	if b != nil {
 		name = b.name

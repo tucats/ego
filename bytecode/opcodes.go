@@ -1,5 +1,9 @@
 package bytecode
 
+import (
+	"sync"
+)
+
 /*
  * ADDING A NEW OPCODE
  *
@@ -7,14 +11,23 @@ package bytecode
  *    that has a bytecode address as its operand, put it in the section
  *    identified as "branch instructions".
  *
- * 2. Add the opcode name to the map below, which converts the const identifier
+ * 2. Add the opcode name to the string map below, which converts the const identifier
  *    to a human-readable name. By convention, the human-readable name is the same as
  *    the constant itself.
  *
- * 3. Add the dispatch entry which points to the function that implements the opcode.
+ * 3. Add the dispatch entry which points to the function that implements the opcode
+ *    in the initializer for the dispatchTable.
  *
  * 4. Implement the actual opcode, nominally in the appropriate op_*.go file.
  */
+
+// The dispatchTable map is a global that must be initialized once. It is an
+// array indexed by the opcode (which is an integer value) and contains the
+// function pointer of the implentation of the instruction.
+var dispatchTable []opcodeHandler
+
+// Mutex used to protect updating the global dispatch map.
+var dispatchMux sync.Mutex
 
 // Constant describing instruction opcodes.
 type Opcode int
@@ -125,6 +138,9 @@ const (
 	LocalCall
 	RangeNext
 	Try
+
+	// This marks the end of the list.
+	LastOpcode
 )
 
 var opcodeNames = map[Opcode]string{
@@ -209,7 +225,7 @@ var opcodeNames = map[Opcode]string{
 	StoreGlobal:        "StoreGlobal",
 	StoreIndex:         "StoreIndex",
 	StoreInto:          "StoreInto",
-	StoreViaPointer:    "StorePointer",
+	StoreViaPointer:    "StoreViaPointer",
 	Struct:             "Struct",
 	Sub:                "Sub",
 	Swap:               "Swap",
@@ -224,103 +240,113 @@ var opcodeNames = map[Opcode]string{
 	WillCatch:          "WillCatch",
 }
 
+// Iniitialize the dispatch map. This cannot be done as a static
+// global initializer because some of the functions referenced
+// depend on the dispatch map existing, creating an illegal
+// initialization cycle.
+//
+// This initialization is done to a global that is accessed by
+// every thread, so the map must be protected by a mutex.
 func initializeDispatch() {
-	if dispatch == nil {
-		dispatch = dispatchMap{
-			Add:                addByteCode,
-			AddressOf:          addressOfByteCode,
-			And:                andByteCode,
-			ArgCheck:           argCheckByteCode,
-			Array:              arrayByteCode,
-			AtLine:             atLineByteCode,
-			Auth:               authByteCode,
-			BitAnd:             bitAndByteCode,
-			BitOr:              bitOrByteCode,
-			BitShift:           bitShiftByteCode,
-			Branch:             branchByteCode,
-			BranchFalse:        branchFalseByteCode,
-			BranchTrue:         branchTrueByteCode,
-			Call:               callByteCode,
-			Coerce:             coerceByteCode,
-			Constant:           constantByteCode,
-			Copy:               copyByteCode,
-			CreateAndStore:     createAndStoreByteCode,
-			DeRef:              deRefByteCode,
-			Div:                divideByteCode,
-			Drop:               dropByteCode,
-			DropToMarker:       dropToMarkerByteCode,
-			Dup:                dupByteCode,
-			EntryPoint:         entryPointByteCode,
-			Equal:              equalByteCode,
-			Exp:                exponentByteCode,
-			Explode:            explodeByteCode,
-			Flatten:            flattenByteCode,
-			FromFile:           fromFileByteCode,
-			GetThis:            getThisByteCode,
-			GetVarArgs:         getVarArgsByteCode,
-			Go:                 goByteCode,
-			GreaterThan:        greaterThanByteCode,
-			GreaterThanOrEqual: greaterThanOrEqualByteCode,
-			Import:             importByteCode,
-			InFile:             inFileByteCode,
-			InPackage:          inPackageByteCode,
-			LessThan:           lessThanByteCode,
-			LessThanOrEqual:    lessThanOrEqualByteCode,
-			Load:               loadByteCode,
-			LoadIndex:          loadIndexByteCode,
-			LoadSlice:          loadSliceByteCode,
-			LoadThis:           loadThisByteCode,
-			LocalCall:          localCallByteCode,
-			Log:                logByteCode,
-			MakeArray:          makeArrayByteCode,
-			MakeMap:            makeMapByteCode,
-			Member:             memberByteCode,
-			ModeCheck:          modeCheckBytecode,
-			Modulo:             moduloByteCode,
-			Mul:                multiplyByteCode,
-			Negate:             negateByteCode,
-			Newline:            newlineByteCode,
-			NoOperation:        nil,
-			NotEqual:           notEqualByteCode,
-			Or:                 orByteCode,
-			Panic:              panicByteCode,
-			PopPackage:         popPackageByteCode,
-			PopScope:           popScopeByteCode,
-			Print:              printByteCode,
-			Push:               pushByteCode,
-			PushPackage:        pushPackageByteCode,
-			PushScope:          pushScopeByteCode,
-			RangeInit:          rangeInitByteCode,
-			RangeNext:          rangeNextByteCode,
-			ReadStack:          readStackByteCode,
-			RequiredType:       requiredTypeByteCode,
-			Response:           responseByteCode,
-			Return:             returnByteCode,
-			Say:                sayByteCode,
-			SetThis:            setThisByteCode,
-			StackCheck:         stackCheckByteCode,
-			StaticTyping:       staticTypingByteCode,
-			Stop:               stopByteCode,
-			Store:              storeByteCode,
-			StoreAlways:        storeAlwaysByteCode,
-			StoreBytecode:      storeBytecodeByteCode,
-			StoreChan:          storeChanByteCode,
-			StoreGlobal:        storeGlobalByteCode,
-			StoreIndex:         storeIndexByteCode,
-			StoreInto:          storeIntoByteCode,
-			StoreViaPointer:    storeViaPointerByteCode,
-			Struct:             structByteCode,
-			Sub:                subtractByteCode,
-			Swap:               swapByteCode,
-			SymbolCreate:       symbolCreateByteCode,
-			SymbolDelete:       symbolDeleteByteCode,
-			SymbolOptCreate:    symbolCreateIfByteCode,
-			Template:           templateByteCode,
-			Timer:              timerByteCode,
-			Try:                tryByteCode,
-			TryPop:             tryPopByteCode,
-			Wait:               waitByteCode,
-			WillCatch:          willCatchByteCode,
-		}
+	dispatchMux.Lock()
+	defer dispatchMux.Unlock()
+
+	if dispatchTable == nil {
+		dispatchTable = make([]opcodeHandler, LastOpcode)
+
+		dispatchTable[Add] = addByteCode
+		dispatchTable[AddressOf] = addressOfByteCode
+		dispatchTable[And] = andByteCode
+		dispatchTable[ArgCheck] = argCheckByteCode
+		dispatchTable[Array] = arrayByteCode
+		dispatchTable[AtLine] = atLineByteCode
+		dispatchTable[Auth] = authByteCode
+		dispatchTable[BitAnd] = bitAndByteCode
+		dispatchTable[BitOr] = bitOrByteCode
+		dispatchTable[BitShift] = bitShiftByteCode
+		dispatchTable[Branch] = branchByteCode
+		dispatchTable[BranchFalse] = branchFalseByteCode
+		dispatchTable[BranchTrue] = branchTrueByteCode
+		dispatchTable[Call] = callByteCode
+		dispatchTable[Coerce] = coerceByteCode
+		dispatchTable[Constant] = constantByteCode
+		dispatchTable[Copy] = copyByteCode
+		dispatchTable[CreateAndStore] = createAndStoreByteCode
+		dispatchTable[DeRef] = deRefByteCode
+		dispatchTable[Div] = divideByteCode
+		dispatchTable[Drop] = dropByteCode
+		dispatchTable[DropToMarker] = dropToMarkerByteCode
+		dispatchTable[Dup] = dupByteCode
+		dispatchTable[EntryPoint] = entryPointByteCode
+		dispatchTable[Equal] = equalByteCode
+		dispatchTable[Exp] = exponentByteCode
+		dispatchTable[Explode] = explodeByteCode
+		dispatchTable[Flatten] = flattenByteCode
+		dispatchTable[FromFile] = fromFileByteCode
+		dispatchTable[GreaterThan] = greaterThanByteCode
+		dispatchTable[GreaterThanOrEqual] = greaterThanOrEqualByteCode
+		dispatchTable[GetThis] = getThisByteCode
+		dispatchTable[GetVarArgs] = getVarArgsByteCode
+		dispatchTable[Go] = goByteCode
+		dispatchTable[Import] = importByteCode
+		dispatchTable[InFile] = inFileByteCode
+		dispatchTable[InPackage] = inPackageByteCode
+		dispatchTable[LessThan] = lessThanByteCode
+		dispatchTable[LessThanOrEqual] = lessThanOrEqualByteCode
+		dispatchTable[Load] = loadByteCode
+		dispatchTable[LoadIndex] = loadIndexByteCode
+		dispatchTable[LoadSlice] = loadSliceByteCode
+		dispatchTable[LoadThis] = loadThisByteCode
+		dispatchTable[LocalCall] = localCallByteCode
+		dispatchTable[Log] = logByteCode
+		dispatchTable[MakeArray] = makeArrayByteCode
+		dispatchTable[MakeMap] = makeMapByteCode
+		dispatchTable[Member] = memberByteCode
+		dispatchTable[ModeCheck] = modeCheckBytecode
+		dispatchTable[Modulo] = moduloByteCode
+		dispatchTable[Mul] = multiplyByteCode
+		dispatchTable[Negate] = negateByteCode
+		dispatchTable[Newline] = newlineByteCode
+		dispatchTable[NotEqual] = notEqualByteCode
+		dispatchTable[Or] = orByteCode
+		dispatchTable[Panic] = panicByteCode
+		dispatchTable[PopPackage] = popPackageByteCode
+		dispatchTable[PopScope] = popScopeByteCode
+		dispatchTable[Print] = printByteCode
+		dispatchTable[Push] = pushByteCode
+		dispatchTable[PushPackage] = pushPackageByteCode
+		dispatchTable[PushScope] = pushScopeByteCode
+		dispatchTable[RangeInit] = rangeInitByteCode
+		dispatchTable[RangeNext] = rangeNextByteCode
+		dispatchTable[ReadStack] = readStackByteCode
+		dispatchTable[RequiredType] = requiredTypeByteCode
+		dispatchTable[Response] = responseByteCode
+		dispatchTable[Return] = returnByteCode
+		dispatchTable[Say] = sayByteCode
+		dispatchTable[SetThis] = setThisByteCode
+		dispatchTable[StackCheck] = stackCheckByteCode
+		dispatchTable[StaticTyping] = staticTypingByteCode
+		dispatchTable[Stop] = stopByteCode
+		dispatchTable[Store] = storeByteCode
+		dispatchTable[StoreAlways] = storeAlwaysByteCode
+		dispatchTable[StoreBytecode] = storeBytecodeByteCode
+		dispatchTable[StoreChan] = storeChanByteCode
+		dispatchTable[StoreGlobal] = storeGlobalByteCode
+		dispatchTable[StoreIndex] = storeIndexByteCode
+		dispatchTable[StoreInto] = storeIntoByteCode
+		dispatchTable[StoreViaPointer] = storeViaPointerByteCode
+		dispatchTable[Struct] = structByteCode
+		dispatchTable[Sub] = subtractByteCode
+		dispatchTable[Swap] = swapByteCode
+		dispatchTable[SymbolCreate] = symbolCreateByteCode
+		dispatchTable[SymbolDelete] = symbolDeleteByteCode
+		dispatchTable[SymbolOptCreate] = symbolCreateIfByteCode
+		dispatchTable[Template] = templateByteCode
+		dispatchTable[Timer] = timerByteCode
+		dispatchTable[Try] = tryByteCode
+		dispatchTable[TryPop] = tryPopByteCode
+		dispatchTable[Wait] = waitByteCode
+		dispatchTable[WillCatch] = willCatchByteCode
+
 	}
 }
