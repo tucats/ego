@@ -8,31 +8,6 @@ import (
 
 func Initialize(s *symbols.SymbolTable) {
 	newpkg := data.NewPackageFromMap("strings", map[string]interface{}{
-		"Blockfonts": data.Function{
-			Declaration: &data.Declaration{
-				Name:    "Blockfonts",
-				Returns: []*data.Type{data.ArrayType(data.StringType)},
-			},
-			Value: blockFonts,
-		},
-		"Blockprint": data.Function{
-			Declaration: &data.Declaration{
-				Name: "Blockprint",
-				Parameters: []data.Parameter{
-					{
-						Name: "text",
-						Type: data.StringType,
-					},
-					{
-						Name: "fontName",
-						Type: data.StringType,
-					},
-				},
-				ArgCount: data.Range{1, 2},
-				Returns:  []*data.Type{data.ArrayType(data.StringType)},
-			},
-			Value: blockPrint,
-		},
 		"Chars": data.Function{
 			Declaration: &data.Declaration{
 				Name: "Chars",

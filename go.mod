@@ -6,12 +6,10 @@ go 1.15
 
 require (
 	github.com/chzyer/readline v1.5.1
-	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/go-resty/resty v1.12.0
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-sqlite3 v1.14.14
-	github.com/vektra/mockery/v2 v2.20.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/term v0.4.0
 	gopkg.in/resty.v1 v1.12.0
