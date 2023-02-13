@@ -267,14 +267,23 @@ func Coerce(v interface{}, model interface{}) interface{} {
 
 			return False
 
-		case byte, int, int32, int64:
+		case byte:
+			return strconv.Itoa(int(value))
+
+		case int:
+			return strconv.Itoa(value)
+
+		case int32:
+			return strconv.Itoa(int(value))
+
+		case int64:
 			return fmt.Sprintf("%v", Int64(v))
 
 		case float32:
-			return fmt.Sprintf("%v", value)
+			return strconv.FormatFloat(float64(value), 'g', 10, 32)
 
 		case float64:
-			return fmt.Sprintf("%v", value)
+			return strconv.FormatFloat(value, 'g', 10, 64)
 
 		case string:
 			return value
