@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -277,10 +276,10 @@ func Coerce(v interface{}, model interface{}) interface{} {
 			return strconv.Itoa(int(value))
 
 		case int64:
-			return fmt.Sprintf("%v", Int64(v))
+			return strconv.FormatInt(value, 10)
 
 		case float32:
-			return strconv.FormatFloat(float64(value), 'g', 10, 32)
+			return strconv.FormatFloat(float64(value), 'g', 8, 32)
 
 		case float64:
 			return strconv.FormatFloat(value, 'g', 10, 64)

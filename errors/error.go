@@ -3,6 +3,7 @@ package errors
 import (
 	goerror "errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/defs"
@@ -236,12 +237,10 @@ func (e *Error) Error() string {
 		}
 
 		if e.location.line > 0 {
-			var lineStr string
+			lineStr := strconv.Itoa(e.location.line)
 
 			if e.location.column > 0 {
-				lineStr = fmt.Sprintf("%d:%d", e.location.line, e.location.column)
-			} else {
-				lineStr = fmt.Sprintf("%d", e.location.line)
+				lineStr = lineStr + "+" + strconv.Itoa(e.location.column)
 			}
 
 			b.WriteString("at ")

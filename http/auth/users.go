@@ -5,7 +5,7 @@ package auth
 
 import (
 	"crypto/sha256"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -213,7 +213,7 @@ func HashString(s string) string {
 
 	v := h.Sum(nil)
 	for _, b := range v {
-		r.WriteString(fmt.Sprintf("%02x", b))
+		r.WriteString(strconv.FormatInt(int64(b), 16))
 	}
 
 	return r.String()

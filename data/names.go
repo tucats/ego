@@ -1,7 +1,7 @@
 package data
 
 import (
-	"fmt"
+	"strconv"
 	"sync/atomic"
 )
 
@@ -12,5 +12,5 @@ var nameSequenceNumber int32 = 0
 func GenerateName() string {
 	n := atomic.AddInt32(&nameSequenceNumber, 1)
 
-	return fmt.Sprintf("$%d", n)
+	return "$" + strconv.Itoa(int(n))
 }

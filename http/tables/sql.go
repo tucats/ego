@@ -3,9 +3,9 @@ package tables
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -259,7 +259,7 @@ func splitSQLStatements(s string) []string {
 			}
 
 			if token.IsString() {
-				next = fmt.Sprintf("%s\"%s\"", next, token.Spelling())
+				next = next + strconv.Quote(token.Spelling())
 			} else {
 				next = next + token.Spelling()
 			}

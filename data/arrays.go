@@ -347,7 +347,7 @@ func (a *Array) SetAlways(i interface{}, value interface{}) *Array {
 
 // Generate a type description string for this array.
 func (a *Array) TypeString() string {
-	return fmt.Sprintf("[]%s", a.valueType)
+	return "[]" + a.valueType.String()
 }
 
 // Make a string representation of the array suitable for display.

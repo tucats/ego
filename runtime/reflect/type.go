@@ -1,7 +1,6 @@
 package reflect
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -97,7 +96,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 					return funcLabel, nil
 				}
 
-				return fmt.Sprintf("ptr %s", ts), nil
+				return "ptr " + ts, nil
 			}
 
 			return "unknown", nil
@@ -110,7 +109,7 @@ func describeType(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 				return funcLabel, nil
 			}
 
-			return fmt.Sprintf("ptr %s", ts), nil
+			return "ptr " + ts, nil
 		}
 
 		return tt.String(), nil

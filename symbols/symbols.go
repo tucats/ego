@@ -19,6 +19,7 @@ package symbols
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
@@ -74,7 +75,7 @@ func (s *SymbolTable) Get(name string) (interface{}, bool) {
 			}
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
 			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
@@ -111,7 +112,7 @@ func (s *SymbolTable) GetLocal(name string) (interface{}, bool) {
 			}
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
 			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
@@ -151,7 +152,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (interface{}, *SymbolAttrib
 			}
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), get       %-10s, slot %2d = %s",
 			s.Name, s.id.String(), quotedName, attr.slot, status)
 	}
@@ -314,7 +315,7 @@ func (s *SymbolTable) SetAlways(name string, v interface{}) {
 			valueString = valueString[:57] + "..."
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setalways %-10s, slot %2d = %s",
 			s.Name, s.id, quotedName, attr.slot, valueString)
 	}
@@ -369,7 +370,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v interface{}, newAttr Symb
 			valueString = valueString[:57] + "..."
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), setWithAttributes %-10s, slot %2d = %s, readonly=%v",
 			s.Name, s.id, quotedName, attr.slot, valueString, attr.Readonly)
 	}
@@ -455,7 +456,7 @@ func (s *SymbolTable) Set(name string, v interface{}) error {
 			valueString = valueString[:57] + "..."
 		}
 
-		quotedName := fmt.Sprintf("\"%s\"", name)
+		quotedName := strconv.Quote(name)
 		ui.WriteLog(ui.SymbolLogger, "%-20s(%s), set       %-10s, slot %2d = %s",
 			s.Name, s.id, quotedName, attr.slot, valueString)
 	}

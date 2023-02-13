@@ -157,7 +157,7 @@ func Format(element interface{}) string {
 		return "*" + v.String()
 
 	case error:
-		return fmt.Sprintf("%v", v)
+		return v.Error()
 
 	case bool:
 		if v {
@@ -167,22 +167,22 @@ func Format(element interface{}) string {
 		return defs.False
 
 	case byte:
-		return fmt.Sprintf("%v", v)
+		return strconv.Itoa(int(v))
 
 	case int32:
-		return fmt.Sprintf("%v", v)
+		return strconv.Itoa(int(v))
 
 	case int:
-		return fmt.Sprintf("%d", v)
+		return strconv.Itoa(v)
 
 	case int64:
-		return fmt.Sprintf("%d", v)
+		return strconv.FormatInt(v, 10)
 
 	case float32:
-		return fmt.Sprintf("%v", v)
+		return strconv.FormatFloat(float64(v), 'g', 8, 32)
 
 	case float64:
-		return fmt.Sprintf("%v", v)
+		return strconv.FormatFloat(v, 'g', 10, 64)
 
 	case string:
 		return "\"" + v + "\""
@@ -264,7 +264,7 @@ func Format(element interface{}) string {
 				return "&rest.Client{}"
 
 			default:
-				return fmt.Sprintf("&%s", Format(vv))
+				return "&" + Format(vv)
 			}
 		} else {
 			return "nil<*interface{}>"
@@ -321,7 +321,7 @@ func Format(element interface{}) string {
 				return fmt.Sprintf("%v", v)
 			}
 
-			return fmt.Sprintf("ptr %s", ts)
+			return "ptr " + ts
 		}
 
 		if strings.HasPrefix(vv.String(), "<bytecode.StackMarker") {

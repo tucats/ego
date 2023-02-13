@@ -1,8 +1,8 @@
 package compiler
 
 import (
-	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -487,7 +487,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	var firstError error
 
 	for _, packageName := range sortedPackageNames {
-		text := fmt.Sprintf("import \"%s\"", packageName)
+		text := "import " + strconv.Quote(packageName)
 
 		_, err := c.CompileString(packageName, text)
 		if err != nil && firstError == nil {
