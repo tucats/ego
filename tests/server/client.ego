@@ -1,7 +1,9 @@
 @test "server: client - verify server heartbeat"
 {
+	@global ServerAddr os.Hostname() + ".local"
+
     // Empty username in the New() call means no authentication provided.
-    conn := rest.New("").Base("https://scout.local:8080").Verify(false).Media("application/json")
+    conn := rest.New("").Base("https://" + ServerAddr + ":8080").Verify(false).Media("application/json")
 
     // First, lets try to see if the server is even running. If not, then
     // we'll skip all these tests.
