@@ -195,6 +195,9 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_path", "/"+path)
 	symbolTable.SetAlways("_path_suffix", pathSuffix)
 
+	hostName, _ := os.Hostname()
+	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
+
 	// Now that we know the actual endpoint, see if this is the endpoint
 	// we are debugging?
 	var debug bool

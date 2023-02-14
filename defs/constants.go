@@ -277,6 +277,7 @@ const (
 	LocalizationVariable     = InvisiblePrefix + "localization"
 	LineVariable             = InvisiblePrefix + "line"
 	ExtensionsVariable       = InvisiblePrefix + "extensions"
+	HostNameVariable         = InvisiblePrefix + "hostname"
 	ModuleVariable           = InvisiblePrefix + "module"
 	RestStatusVariable       = InvisiblePrefix + "rest_status"
 	DiscardedVariable        = "_"

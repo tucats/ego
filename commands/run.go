@@ -244,6 +244,8 @@ func RunAction(c *cli.Context) error {
 	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
 	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
 
+	hostName, _ := os.Hostname()
+	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
 	exitValue := 0
 
 	for {

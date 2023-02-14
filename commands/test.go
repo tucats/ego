@@ -39,6 +39,9 @@ func TestAction(c *cli.Context) error {
 	settings.SetDefault(defs.SandboxPathSetting, "")
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
 
+	hostName, _ := os.Hostname()
+	symbols.RootSymbolTable.SetAlways(defs.HostNameVariable, hostName)
+
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("Unit Tests").Shared(true)
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1

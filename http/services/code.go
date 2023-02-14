@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"os"
 	"sync/atomic"
 
 	"github.com/tucats/ego/app-cli/settings"
@@ -31,6 +32,9 @@ func CodeHandler(w http.ResponseWriter, r *http.Request) {
 	// Create an empty symbol table and store the program arguments.
 	symbolTable := symbols.NewSymbolTable("REST /code")
 	symbolTable.SetAlways(defs.ModeVariable, "server")
+
+	hostName, _ := os.Hostname()
+	symbolTable.Root().SetAlways(defs.HostNameVariable, hostName)
 
 	staticTypes := settings.GetUsingList(defs.StaticTypesSetting, defs.Strict, defs.Loose, defs.Dynamic) - 1
 	if staticTypes < defs.StrictTypeEnforcement {
