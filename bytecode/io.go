@@ -21,6 +21,12 @@ import (
 *                                         *
 \******************************************/
 
+func consoleByteCode(c *Context, i interface{}) error {
+	c.EnableConsoleOutput(data.Bool(i))
+
+	return nil
+}
+
 // printByteCode instruction processor. If the operand is given, it represents the number of items
 // to remove from the stack and print to stdout.
 func printByteCode(c *Context, i interface{}) error {
@@ -154,11 +160,17 @@ func sayByteCode(c *Context, i interface{}) error {
 	if c.output != nil {
 		msg = c.output.String()
 		c.output = nil
+
+		if len(msg) > 0 {
+			ui.Say("%s", strings.TrimSuffix(msg, "\n"))
+		}
+
+		return nil
 	}
 
-	fmt := "%s\n"
-	if data.Bool(i) && len(msg) > 0 {
-		fmt = "%s"
+	fmt := "%s"
+	if data.Bool(i) && len(msg) == 0 {
+		fmt = "%s\n"
 	}
 
 	ui.Say(fmt, msg)

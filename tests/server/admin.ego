@@ -1,0 +1,65 @@
+@test "server: log on to server"
+{
+    // Empty username in the New() call means no authentication provided.
+    conn := rest.New("").Base("https://scout.local:8080").Verify(false).Media("application/json")
+
+    // First, lets try to see if the server is even running. If not, then
+    // we'll skip all these tests.
+    try {
+        r := conn.Get("admin/heartbeat/")
+    } catch {
+        if index(__error, "connection refused") > 0 {
+            fmt.Println("Client/server tests will not be run, server unavailable")
+            return
+        }
+
+        fmt.Println("Failed, ", __error)
+
+        return
+    }
+
+    credentials := { username: "admin", password: "password"}
+    r := conn.Post("services/admin/logon/", credentials)
+
+    // Validate the reesult values that are static
+    @assert r.server.api == 1
+    @assert r.identity == "admin"
+
+    // Save the token for the rest of the test stream
+    @global AuthToken r.token
+    @global ServerID  r.server.id
+
+    conn.Close()
+}
+@pass
+
+@test "server: get server cache info"
+{
+   conn := rest.New().Base("https://scout.local:8080").Verify(false).Media("application/json")
+
+   r := conn.Get("/admin/caches")
+
+   // Validate the reesult values that are static
+   @assert r.server.api == 1
+   @assert r.server.id == ServerID
+   @assert reflect.Members(r) == ["assetSize","assets", "count",  "items", "limit", "server"]
+   
+   conn.Close()
+}
+@pass
+
+@test "server: get server logger status"
+{
+   conn := rest.New().Base("https://scout.local:8080").Verify(false).Media("application/json")
+
+   r := conn.Get("/admin/loggers/")
+
+   // Validate the reesult values that are static
+   @assert r.server.api == 1
+   @assert r.server.id == ServerID
+   @assert reflect.Members(r) == ["file","keep", "loggers",  "server"]
+   @assert r.loggers.SERVER == true
+   @assert r.loggers.CLI == false
+   conn.Close()
+}
+@pass

@@ -323,8 +323,18 @@ func NewMapFromMap(sourceMap interface{}) *Map {
 	val := reflect.ValueOf(sourceMap)
 
 	for _, key := range val.MapKeys() {
-		value := val.MapIndex(key)
-		_, _ = result.Set(key.Interface(), value.Interface())
+		value := val.MapIndex(key).Interface()
+		switch actual := value.(type) {
+		case []interface{}:
+			value = NewArrayFromInterfaces(InterfaceType, actual...)
+
+		case map[string]interface{}:
+			value = NewStructFromMap(actual)
+
+		case map[interface{}]interface{}:
+			value = NewMapFromMap(actual)
+		}
+		_, _ = result.Set(key.Interface(), value)
 	}
 
 	return result

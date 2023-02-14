@@ -49,6 +49,7 @@ const (
 	BitShift
 	Call
 	Coerce
+	Console
 	Constant
 	Copy
 	CreateAndStore
@@ -162,6 +163,7 @@ var opcodeNames = map[Opcode]string{
 	BranchTrue:         "BranchTrue",
 	Call:               "Call",
 	Coerce:             "Coerce",
+	Console:            "Console",
 	Constant:           "Constant",
 	Copy:               "Copy",
 	CreateAndStore:     "CreateAndStore",
@@ -272,6 +274,7 @@ func initializeDispatch() {
 		dispatchTable[BranchTrue] = branchTrueByteCode
 		dispatchTable[Call] = callByteCode
 		dispatchTable[Coerce] = coerceByteCode
+		dispatchTable[Console] = consoleByteCode
 		dispatchTable[Constant] = constantByteCode
 		dispatchTable[Copy] = copyByteCode
 		dispatchTable[CreateAndStore] = createAndStoreByteCode

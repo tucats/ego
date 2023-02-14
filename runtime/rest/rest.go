@@ -26,8 +26,10 @@ func New(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 			password = data.String(args.Get(1))
 		}
 
-		client.SetBasicAuth(username, password)
-		client.SetDisableWarn(true)
+		if username != "" || password != "" {
+			client.SetBasicAuth(username, password)
+			client.SetDisableWarn(true)
+		}
 	} else {
 		token := settings.Get(defs.LogonTokenSetting)
 		if token != "" {

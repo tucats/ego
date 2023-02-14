@@ -307,6 +307,8 @@ func Say(format string, args ...interface{}) {
 			s = fmt.Sprintf(format, args...)
 		}
 
-		fmt.Println(s)
+		if s != "" {
+			fmt.Println(s)
+		}
 	}
 }

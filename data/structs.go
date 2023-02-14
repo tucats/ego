@@ -118,6 +118,17 @@ func NewStructFromMap(m map[string]interface{}) *Struct {
 	// Copy all the map items except any metadata items.
 	for k, v := range m {
 		if !strings.HasPrefix(k, MetadataPrefix) {
+			switch actual := v.(type) {
+			case []interface{}:
+				v = NewArrayFromInterfaces(InterfaceType, actual...)
+
+			case map[string]interface{}:
+				v = NewStructFromMap(actual)
+
+			case map[interface{}]interface{}:
+				v = NewMapFromMap(actual)
+			}
+
 			fields[k] = v
 		}
 	}

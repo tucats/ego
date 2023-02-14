@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty"
+	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/errors"
@@ -44,6 +45,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	AddAgent(r, defs.ClientAgent)
 
+	log(r, "GET", url)
 	response, e2 := r.Get(url)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
@@ -95,7 +97,13 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 
 	this := getThis(s)
 
-	client.SetRedirectPolicy()
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(20))
+
+	if tlsConf, err := GetTLSConfiguration(); err != nil {
+		return nil, err
+	} else {
+		client.SetTLSClientConfig(tlsConf)
+	}
 
 	if !data.Bool(this.GetAlways("verify")) {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
@@ -112,28 +120,32 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	if mt := this.GetAlways(mediaTypeFieldName); mt != nil {
 		media := data.String(mt)
 		if strings.Contains(media, defs.JSONMediaType) {
-			b, err := json.Marshal(body)
-			if err != nil {
-				return nil, errors.NewError(err)
-			}
-
-			body = string(b)
+			body = makeBodyFromEgoType(body)
 		}
 	}
 
-	r := client.NewRequest().SetBody(body)
+	r := client.NewRequest()
+	switch actual := body.(type) {
+	default:
+		r.Body = actual
+
+	}
+
+	r.SetContentLength(true)
+
 	isJSON := false
 
 	if media := this.GetAlways(mediaTypeFieldName); media != nil {
 		ms := data.String(media)
 		isJSON = strings.Contains(ms, defs.JSONMediaType)
 
-		r.Header.Add("Accept", ms)
-		r.Header.Add("Content-Type", ms)
+		r.Header.Set("Accept", ms)
+		r.Header.Set("Content-Type", ms+"; charset=utf-8")
 	}
 
 	AddAgent(r, defs.ClientAgent)
 
+	log(r, "POST", url)
 	response, e2 := r.Post(url)
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
@@ -154,6 +166,8 @@ func doPost(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 		if err != nil {
 			err = errors.NewError(err)
 		}
+
+		jsonResponse = makeEgoTypeFromBody(jsonResponse)
 
 		this.SetAlways(responseFieldName, jsonResponse)
 
@@ -214,6 +228,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	}
 
 	AddAgent(r, defs.ClientAgent)
+	log(r, "DELETE", url)
 
 	response, e2 := r.Delete(url)
 	if e2 != nil {
@@ -244,4 +259,53 @@ func doDelete(s *symbols.SymbolTable, args data.List) (interface{}, error) {
 	this.SetAlways(responseFieldName, rb)
 
 	return rb, nil
+}
+
+func log(r *resty.Request, method, url string) {
+	if !ui.IsActive(ui.RestLogger) {
+		return
+	}
+
+	for headerName, headerValues := range r.Header {
+		if strings.EqualFold(headerName, "Authorization") {
+			headerValues = []string{"*****"}
+		}
+
+		ui.Log(ui.RestLogger, "Header: %s %v", headerName, headerValues)
+	}
+
+	if r.Body != nil {
+		ui.Log(ui.RestLogger, "Request body: %v", r.Body)
+	}
+
+	ui.Log(ui.RestLogger, "%s %s", strings.ToUpper(method), url)
+}
+
+func makeBodyFromEgoType(v interface{}) interface{} {
+	switch actual := v.(type) {
+	case *data.Array:
+		return actual.BaseArray()
+
+	case *data.Map:
+		return actual.ToMap()
+
+	case *data.Struct:
+		return actual.ToMap()
+
+	default:
+		return actual
+	}
+}
+
+func makeEgoTypeFromBody(v interface{}) interface{} {
+	switch actual := v.(type) {
+	case []interface{}:
+		return data.NewArrayFromInterfaces(data.InterfaceType, actual...)
+
+	case map[string]interface{}:
+		return data.NewMapFromMap(actual)
+
+	default:
+		return v
+	}
 }

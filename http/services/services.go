@@ -305,8 +305,10 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 	symbolTable.SetAlways("_token", "")
 	symbolTable.SetAlways("_token_valid", false)
 
-	authorization := r.Header.Get("Authorization")
-
+	authorization := ""
+	if len(r.Header.Values("Authorization")) > 0 {
+		authorization = r.Header.Get("Authorization")
+	}
 	// If there are no authentication credentials provided, but the method is PUT with a payload
 	// containing credentials, use them.
 

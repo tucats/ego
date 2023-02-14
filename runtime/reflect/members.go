@@ -12,11 +12,11 @@ import (
 func members(symbols *symbols.SymbolTable, args data.List) (interface{}, error) {
 	switch v := args.Get(0).(type) {
 	case *data.Map:
-		keys := data.NewArray(data.StringType, 0)
 		keyList := v.Keys()
+		keys := data.NewArray(data.StringType, len(keyList))
 
 		for i, v := range keyList {
-			_ = keys.Set(i, v)
+			_ = keys.Set(i, data.String(v))
 		}
 
 		_ = keys.Sort()
@@ -31,7 +31,7 @@ func members(symbols *symbols.SymbolTable, args data.List) (interface{}, error) 
 
 		for _, k := range v.Keys() {
 			if !strings.HasPrefix(k, data.MetadataPrefix) {
-				keys.Append(k)
+				keys.Append(data.String(k))
 			}
 		}
 

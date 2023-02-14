@@ -45,7 +45,7 @@ func DefineLibHandlers(root, subpath string) error {
 		} else {
 			newpath := filepath.Join(subpath, fullname)
 
-			ui.Log(ui.ServerLogger, "Processing endpoint directory %s", newpath)
+			ui.Log(ui.ServerLogger, "Scanning endpoint directory %s", newpath)
 
 			err := DefineLibHandlers(root, newpath)
 			if err != nil {

@@ -68,8 +68,23 @@ func NewArrayFromList(valueType *Type, source List) *Array {
 		return m
 	}
 
+	data := make([]interface{}, len(source.elements))
+	for k, v := range source.elements {
+		switch actual := v.(type) {
+		case []interface{}:
+			v = NewArrayFromInterfaces(InterfaceType, actual...)
+
+		case map[string]interface{}:
+			v = NewStructFromMap(actual)
+
+		case map[interface{}]interface{}:
+			v = NewMapFromMap(actual)
+		}
+		data[k] = v
+	}
+
 	m := &Array{
-		data:      source.Elements(),
+		data:      data,
 		valueType: valueType,
 		immutable: 0,
 	}

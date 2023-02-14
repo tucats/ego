@@ -124,7 +124,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "trace", "test", "test.ego", "--typing=strict"]
+            "args": ["--log", "trace,rest", "test", "test.ego"]
         },
         {
             "name": "Trace test test.ego",
@@ -157,6 +157,14 @@
             "mode": "debug",
             "program": "${workspaceFolder}", 
             "args": ["--log", "rest,trace,compiler,debug,symbols", "server", "run", "--typing=relaxed"]
+        },
+        {
+            "name": "Local ego server (default type checking)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}", 
+            "args": ["--log", "rest,auth,debug", "server", "run"]
         },
         {
             "name": "CLI Testing",

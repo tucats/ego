@@ -66,6 +66,7 @@ func (c *Compiler) testDirective() error {
 	c.b.Emit(bytecode.StoreAlways, "T")
 
 	// Generate code to report that the test is starting.
+	c.b.Emit(bytecode.Console, false)
 	c.b.Emit(bytecode.Push, "TEST: ")
 	c.b.Emit(bytecode.Print)
 	c.b.Emit(bytecode.Load, "T")
