@@ -22,7 +22,7 @@
     r := conn.Post("services/admin/logon/", credentials)
 
     // Validate the reesult values that are static
-    @assert r.server.api == 1
+    @assert int(r.server.api) == 1
     @assert r.identity == "admin"
 
     // Save the token for the rest of the test stream
@@ -40,7 +40,7 @@
    r := conn.Get("/admin/caches")
 
    // Validate the reesult values that are static
-   @assert r.server.api == 1
+   @assert int(r.server.api)== 1
    @assert r.server.id == ServerID
    @assert reflect.Members(r) == ["assetSize","assets", "count",  "items", "limit", "server"]
    
@@ -55,7 +55,7 @@
    r := conn.Get("/admin/loggers/")
 
    // Validate the reesult values that are static
-   @assert r.server.api == 1
+   @assert int(r.server.api)== 1
    @assert r.server.id == ServerID
    @assert reflect.Members(r) == ["file","keep", "loggers",  "server"]
    @assert r.loggers.SERVER == true

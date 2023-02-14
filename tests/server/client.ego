@@ -1,0 +1,40 @@
+@test "server: client - verify server heartbeat"
+{
+    // Empty username in the New() call means no authentication provided.
+    conn := rest.New("").Base("https://scout.local:8080").Verify(false).Media("application/json")
+
+    // First, lets try to see if the server is even running. If not, then
+    // we'll skip all these tests.
+    try {
+        r := conn.Get("admin/heartbeat/")
+    } catch {
+        if index(__error, "connection refused") > 0 {
+            fmt.Println("Client/server tests will not be run, server unavailable")
+            return
+        }
+
+        fmt.Println("Failed, ", __error)
+
+        return
+    }
+
+    conn.Close()
+}
+@pass
+
+@test "server: client - factorial service"
+{
+	// Use of empty username in New() signals no credentials provided.
+	conn := rest.New("").Base("https://scout.local:8080").Verify(false).Media("application/json")
+	r := conn.Get("services/factor/10")
+
+	@assert reflect.Type(r) == "[]interface{}"
+	@assert len(r) == 4
+	@assert int(r[0]) == 1
+	@assert int(r[1]) == 2
+	@assert int(r[2]) == 5
+	@assert int(r[3]) == 10
+	
+}
+@pass
+
