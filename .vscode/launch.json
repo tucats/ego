@@ -156,7 +156,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": ["--log", "trace,compiler,debug,symbols", "server", "run", "--typing=relaxed"]
+            "args": ["--log", "rest,trace,compiler,debug,symbols", "server", "run", "--typing=relaxed"]
         },
         {
             "name": "CLI Testing",

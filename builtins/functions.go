@@ -256,8 +256,8 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...interface{}) (inte
 			if pkg, ok := v.(*data.Package); ok {
 				if v, ok := pkg.Get(functionName); ok {
 					if fd, ok := v.(data.Function); ok {
-						if fn, ok := fd.Value.(func(*symbols.SymbolTable, []interface{}) (interface{}, error)); ok {
-							v, e := fn(s, args)
+						if fn, ok := fd.Value.(func(*symbols.SymbolTable, data.List) (interface{}, error)); ok {
+							v, e := fn(s, data.NewList(args...))
 
 							return v, e
 						}

@@ -213,7 +213,14 @@ func HashString(s string) string {
 
 	v := h.Sum(nil)
 	for _, b := range v {
-		r.WriteString(strconv.FormatInt(int64(b), 16))
+		// Format the byte. It must be two digits long, so if it was a
+		// value less than 0x10, add a leading zero.
+		byteString := strconv.FormatInt(int64(b), 16)
+		if len(byteString) < 2 {
+			byteString = "0" + byteString
+		}
+
+		r.WriteString(byteString)
 	}
 
 	return r.String()

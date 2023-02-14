@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/zsh 
 
 # Rudimentary script for generating TLS cert and key files for testing an 
 # Ego server. Note that these are not trusted certs.
@@ -27,10 +27,10 @@ certstrap init --common-name $COMMONNAME
 
 # request CA signing for each of the servers that will be used
 # for testing.
-certstrap request-cert --common-name $SERVERNAME
+certstrap request-cert  --domain "$FN" $(hostname)
 
 # Sign the certificate using our certificate authority.
-certstrap sign  $FN --CA $COMMONNAME
+certstrap sign  $FN --CA $COMMONNAME 
 
 # Copy the newly-made certificate/key info to the parent
 # directory for use by the server and clients. If the server
