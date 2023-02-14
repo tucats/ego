@@ -135,7 +135,7 @@ func ServiceHandler(w http.ResponseWriter, r *http.Request) {
 			values = append(values, vs)
 		}
 
-		parameterStruct[k] = values
+		parameterStruct[k] = data.NewArrayFromInterfaces(data.InterfaceType, values...)
 	}
 
 	symbolTable.SetAlways("_parms", data.NewMapFromMap(parameterStruct))
