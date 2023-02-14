@@ -1,4 +1,4 @@
-@test "server: log on to server"
+@test "server: admin - log on to server"
 {
     // Empty username in the New() call means no authentication provided.
     conn := rest.New("").Base("https://scout.local:8080").Verify(false).Media("application/json")
@@ -33,7 +33,7 @@
 }
 @pass
 
-@test "server: get server cache info"
+@test "server: admin - get server cache info"
 {
    conn := rest.New().Base("https://scout.local:8080").Verify(false).Media("application/json")
 
@@ -48,7 +48,7 @@
 }
 @pass
 
-@test "server: get server logger status"
+@test "server: admin - get server logger status"
 {
    conn := rest.New().Base("https://scout.local:8080").Verify(false).Media("application/json")
 
